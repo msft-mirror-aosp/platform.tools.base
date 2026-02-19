@@ -26,7 +26,6 @@ import org.junit.Test
  * Test for the standalone lint plugin.
  *
  * <p>Tip: To execute just this test run:
- *
  * <pre>
  *     $ cd tools
  *     $ ./gradlew :base:build-system:integration-test:lint:test --tests=LintStandaloneVitalTest
@@ -34,27 +33,23 @@ import org.junit.Test
  */
 class LintStandaloneVitalTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder().fromTestProject("lintStandaloneVital").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("lintStandaloneVital").create()
 
-    @Test
-    fun checkStandaloneLintVital() {
-        // Run twice to catch issues with configuration caching
-        project.executor().expectFailure().run("clean", "lintVital")
-        val result = project.executor().expectFailure().run("clean", "lintVital")
-        result.assertConfigurationCacheHit()
-        Truth.assertThat(result.failedTasks).contains(":lintVitalJvm")
-        Truth.assertThat(result.didWorkTasks).contains(":lintVitalReportJvm")
-        Truth.assertThat(result.failedTasks).doesNotContain(":lintVitalReportJvm")
+  @Test
+  fun checkStandaloneLintVital() {
+    // Run twice to catch issues with configuration caching
+    project.executor().expectFailure().run("clean", "lintVital")
+    val result = project.executor().expectFailure().run("clean", "lintVital")
+    result.assertConfigurationCacheHit()
+    Truth.assertThat(result.failedTasks).contains(":lintVitalJvm")
+    Truth.assertThat(result.didWorkTasks).contains(":lintVitalReportJvm")
+    Truth.assertThat(result.failedTasks).doesNotContain(":lintVitalReportJvm")
 
-        result.stderr.use {
-            assertThat(it).contains("Lint found errors in the project; aborting build.")
-        }
+    result.stderr.use { assertThat(it).contains("Lint found errors in the project; aborting build.") }
 
-        result.stderr.use {
-            assertThat(it).contains("MyClass.java:5: Error: Use Boolean.valueOf(true) instead")
-            assertThat(it).contains("1 error")
-        }
+    result.stderr.use {
+      assertThat(it).contains("MyClass.java:5: Error: Use Boolean.valueOf(true) instead")
+      assertThat(it).contains("1 error")
     }
+  }
 }

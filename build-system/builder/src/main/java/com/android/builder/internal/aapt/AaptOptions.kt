@@ -25,7 +25,6 @@ import java.io.Serializable
  *
  * Not suitable for use as a task input, see `LinkingTaskInputAaptOptions`
  */
-data class AaptOptions @JvmOverloads constructor(
-        val noCompress: Collection<String>? = null,
-        val additionalParameters: List<String>? = null
-) : Serializable
+data class AaptOptions
+@JvmOverloads
+constructor(val noCompress: Collection<String>? = null, val additionalParameters: List<String>? = null) : Serializable

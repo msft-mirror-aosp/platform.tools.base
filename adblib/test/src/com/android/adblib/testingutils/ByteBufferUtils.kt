@@ -20,19 +20,19 @@ import java.nio.ByteBuffer
 
 object ByteBufferUtils {
 
-    fun stringToByteBuffer(value: String): ByteBuffer {
-        return ByteBuffer.wrap(stringToBytes(value))
-    }
+  fun stringToByteBuffer(value: String): ByteBuffer {
+    return ByteBuffer.wrap(stringToBytes(value))
+  }
 
-    fun stringToBytes(value: String): ByteArray {
-        return value.toByteArray(AdbProtocolUtils.ADB_CHARSET)
-    }
+  fun stringToBytes(value: String): ByteArray {
+    return value.toByteArray(AdbProtocolUtils.ADB_CHARSET)
+  }
 
-    fun byteBufferToByteArray(buffer: ByteBuffer): ByteArray {
-        val result = ByteArray(buffer.remaining())
-        val savedPosition = buffer.position()
-        buffer.get(result)
-        buffer.position(savedPosition)
-        return result
-    }
+  fun byteBufferToByteArray(buffer: ByteBuffer): ByteArray {
+    val result = ByteArray(buffer.remaining())
+    val savedPosition = buffer.position()
+    buffer.get(result)
+    buffer.position(savedPosition)
+    return result
+  }
 }

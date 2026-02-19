@@ -17,49 +17,49 @@
 package com.android.build.gradle.internal.matcher
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
 class FileNameWithSuffixPathMatcherTest {
 
-    @Test
-    fun testPattern() {
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/foo.bar").matches()).isTrue()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~").matches()).isTrue()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/*").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/**").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("*/*~/**").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/**").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("*~/**").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("/a/b/*~").matches()).isFalse()
-        assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("/a/*~").matches()).isFalse()
-    }
+  @Test
+  fun testPattern() {
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/foo.bar").matches()).isTrue()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~").matches()).isTrue()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/*").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/**").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("*/*~/**").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~/**").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("*~/**").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("/a/b/*~").matches()).isFalse()
+    assertThat(FileNameWithSuffixPathMatcher.factory().pattern().matcher("/a/*~").matches()).isFalse()
+  }
 
-    @Test
-    fun testFullNameMatching() {
-        val matcher = FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/foo.bar")
-        val pathMatcher = FileNameWithSuffixPathMatcher(matcher)
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/foo.bar"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foobar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/a/foobar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("foobar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("foo.bar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar2"))).isFalse()
-    }
+  @Test
+  fun testFullNameMatching() {
+    val matcher = FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/foo.bar")
+    val pathMatcher = FileNameWithSuffixPathMatcher(matcher)
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/foo.bar"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foobar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/a/foobar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("foobar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("foo.bar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar2"))).isFalse()
+  }
 
-    @Test
-    fun testFileSuffixMatching() {
-        val matcher = FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~")
-        val pathMatcher = FileNameWithSuffixPathMatcher(matcher)
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar~"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo~"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/foo~"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/foo~~"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/foo.bar~"))).isTrue()
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar~2"))).isFalse()
-        assertThat(pathMatcher.matches(Paths.get("foo.bar~"))).isFalse()
-    }
+  @Test
+  fun testFileSuffixMatching() {
+    val matcher = FileNameWithSuffixPathMatcher.factory().pattern().matcher("**/*~")
+    val pathMatcher = FileNameWithSuffixPathMatcher(matcher)
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar~"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo~"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/foo~"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/foo~~"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/foo.bar~"))).isTrue()
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("/a/b/foo.bar~2"))).isFalse()
+    assertThat(pathMatcher.matches(Paths.get("foo.bar~"))).isFalse()
+  }
 }

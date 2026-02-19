@@ -22,8 +22,7 @@ import org.junit.runners.Parameterized.Parameters
 
 /** Runs tests using a [SimpleEngine] */
 @RunWith(Parameterized::class)
-internal class SimpleEngineDebuggerTest(testClass: String) :
-  DebuggerTestBase(testClass, SimpleEngine()) {
+internal class SimpleEngineDebuggerTest(testClass: String) : DebuggerTestBase(testClass, SimpleEngine()) {
 
   companion object {
 

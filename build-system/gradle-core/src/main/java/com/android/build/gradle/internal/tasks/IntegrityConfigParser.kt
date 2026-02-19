@@ -22,113 +22,93 @@ import com.android.bundle.AppIntegrityConfigOuterClass.InstallerCheck
 import com.android.bundle.AppIntegrityConfigOuterClass.LicenseCheck
 import com.android.bundle.AppIntegrityConfigOuterClass.Policy
 import com.android.utils.forEach
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.xml.sax.SAXParseException
 import javax.xml.XMLConstants
 import javax.xml.transform.dom.DOMSource
 import javax.xml.validation.SchemaFactory
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+import org.xml.sax.SAXParseException
 
 class IntegrityConfigParser(private val config: Document) {
 
-    class InvalidIntegrityConfigException(message: String, t: Throwable) : Exception(message, t)
+  class InvalidIntegrityConfigException(message: String, t: Throwable) : Exception(message, t)
 
-    fun parseConfig(): AppIntegrityConfig {
-        try {
-            validate(config)
-        } catch (e: SAXParseException) {
-            throw InvalidIntegrityConfigException("The IntegrityConfig xml provided is invalid.", e)
+  fun parseConfig(): AppIntegrityConfig {
+    try {
+      validate(config)
+    } catch (e: SAXParseException) {
+      throw InvalidIntegrityConfigException("The IntegrityConfig xml provided is invalid.", e)
+    }
+    val configElement = config.documentElement
+    return AppIntegrityConfig.newBuilder()
+      .setEnabled(isEnabled(configElement))
+      .setLicenseCheck(parseLicenseCheckConfig(configElement))
+      .setInstallerCheck(parseInstallerCheckConfig(configElement))
+      .setEmulatorCheck(parseEmulatorCheckConfig(configElement))
+      .build()
+  }
+
+  companion object {
+    private val POLICY_ACTION_MAP: Map<String, Policy.Action> =
+      mapOf("DISABLE" to Policy.Action.DISABLE, "WARN" to Policy.Action.WARN, "WARN_THEN_DISABLE" to Policy.Action.WARN_THEN_DISABLE)
+
+    private val DEFAULT_CONFIG: AppIntegrityConfig =
+      AppIntegrityConfig.newBuilder()
+        .setEnabled(true)
+        .setLicenseCheck(LicenseCheck.newBuilder().setEnabled(false).setPolicy(Policy.newBuilder().setAction(Policy.Action.WARN)))
+        .setInstallerCheck(InstallerCheck.newBuilder().setEnabled(true).setPolicy(Policy.newBuilder().setAction(Policy.Action.WARN)))
+        .setEmulatorCheck(EmulatorCheck.newBuilder().setEnabled(true))
+        .build()
+
+    private fun org.w3c.dom.Element.getChildByTagName(tagName: String): Element? {
+      childNodes.forEach {
+        if (it is Element && it.tagName == tagName) {
+          return it
         }
-        val configElement = config.documentElement
-        return AppIntegrityConfig.newBuilder()
-            .setEnabled(isEnabled(configElement))
-            .setLicenseCheck(parseLicenseCheckConfig(configElement))
-            .setInstallerCheck(parseInstallerCheckConfig(configElement))
-            .setEmulatorCheck(parseEmulatorCheckConfig(configElement))
-            .build()
+      }
+      return null
     }
 
-    companion object {
-        private val POLICY_ACTION_MAP: Map<String, Policy.Action> = mapOf(
-            "DISABLE" to Policy.Action.DISABLE,
-            "WARN" to Policy.Action.WARN,
-            "WARN_THEN_DISABLE" to Policy.Action.WARN_THEN_DISABLE
-        )
-
-        private val DEFAULT_CONFIG: AppIntegrityConfig = AppIntegrityConfig.newBuilder()
-            .setEnabled(true)
-            .setLicenseCheck(
-                LicenseCheck.newBuilder().setEnabled(false).setPolicy(
-                    Policy.newBuilder().setAction(Policy.Action.WARN)
-                )
-            )
-            .setInstallerCheck(
-                InstallerCheck.newBuilder().setEnabled(true).setPolicy(
-                    Policy.newBuilder().setAction(Policy.Action.WARN)
-                )
-            )
-            .setEmulatorCheck(EmulatorCheck.newBuilder().setEnabled(true))
-            .build()
-
-        private fun org.w3c.dom.Element.getChildByTagName(tagName: String): Element? {
-            childNodes.forEach {
-                if (it is Element && it.tagName == tagName) {
-                    return it
-                }
-            }
-            return null
-        }
-
-        private fun parseLicenseCheckConfig(parent: Element): LicenseCheck.Builder {
-            val builder = LicenseCheck.newBuilder(DEFAULT_CONFIG.licenseCheck)
-            parent.getChildByTagName("LicenseCheck")?.let { licenseCheckElement ->
-                builder.enabled = isEnabled(licenseCheckElement)
-                parsePolicy(licenseCheckElement)?.let { policy ->
-                    builder.policy = policy
-                }
-            }
-            return builder
-        }
-
-        private fun parseInstallerCheckConfig(parent: Element): InstallerCheck.Builder {
-            val builder = InstallerCheck.newBuilder(DEFAULT_CONFIG.installerCheck)
-            parent.getChildByTagName("InstallerCheck")?.let { installerCheckElement ->
-                builder.enabled = isEnabled(installerCheckElement)
-                parsePolicy(installerCheckElement)?.let { policy ->
-                    builder.policy = policy
-                }
-                installerCheckElement.getElementsByTagName("AdditionalInstallSource").forEach {
-                    builder.addAdditionalInstallSource(it.textContent)
-                }
-            }
-            return builder
-        }
-
-        private fun parseEmulatorCheckConfig(parent: Element): EmulatorCheck.Builder {
-            val builder = EmulatorCheck.newBuilder(DEFAULT_CONFIG.emulatorCheck)
-            parent.getChildByTagName("EmulatorCheck")?.let { emulatorCheckElement ->
-                builder.enabled = isEnabled(emulatorCheckElement)
-            }
-            return builder
-        }
-
-        private fun parsePolicy(parent: Element): Policy? {
-            return parent.getChildByTagName("Policy")?.let { policyElement ->
-                val action = POLICY_ACTION_MAP[policyElement.getAttribute("action")]
-                return Policy.newBuilder().setAction(action).build()
-            }
-        }
-
-        private fun isEnabled(element: Element): Boolean {
-            return !element.hasAttribute("enabled")
-                    || element.getAttribute("enabled") == "true"
-        }
-
-        private fun validate(document: Document) {
-            val schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-            val schema =
-                schemaFactory.newSchema(IntegrityConfigParser::class.java.getResource("integrity_config_schema.xsd"))
-            schema.newValidator().validate(DOMSource(document))
-        }
+    private fun parseLicenseCheckConfig(parent: Element): LicenseCheck.Builder {
+      val builder = LicenseCheck.newBuilder(DEFAULT_CONFIG.licenseCheck)
+      parent.getChildByTagName("LicenseCheck")?.let { licenseCheckElement ->
+        builder.enabled = isEnabled(licenseCheckElement)
+        parsePolicy(licenseCheckElement)?.let { policy -> builder.policy = policy }
+      }
+      return builder
     }
+
+    private fun parseInstallerCheckConfig(parent: Element): InstallerCheck.Builder {
+      val builder = InstallerCheck.newBuilder(DEFAULT_CONFIG.installerCheck)
+      parent.getChildByTagName("InstallerCheck")?.let { installerCheckElement ->
+        builder.enabled = isEnabled(installerCheckElement)
+        parsePolicy(installerCheckElement)?.let { policy -> builder.policy = policy }
+        installerCheckElement.getElementsByTagName("AdditionalInstallSource").forEach { builder.addAdditionalInstallSource(it.textContent) }
+      }
+      return builder
+    }
+
+    private fun parseEmulatorCheckConfig(parent: Element): EmulatorCheck.Builder {
+      val builder = EmulatorCheck.newBuilder(DEFAULT_CONFIG.emulatorCheck)
+      parent.getChildByTagName("EmulatorCheck")?.let { emulatorCheckElement -> builder.enabled = isEnabled(emulatorCheckElement) }
+      return builder
+    }
+
+    private fun parsePolicy(parent: Element): Policy? {
+      return parent.getChildByTagName("Policy")?.let { policyElement ->
+        val action = POLICY_ACTION_MAP[policyElement.getAttribute("action")]
+        return Policy.newBuilder().setAction(action).build()
+      }
+    }
+
+    private fun isEnabled(element: Element): Boolean {
+      return !element.hasAttribute("enabled") || element.getAttribute("enabled") == "true"
+    }
+
+    private fun validate(document: Document) {
+      val schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+      val schema = schemaFactory.newSchema(IntegrityConfigParser::class.java.getResource("integrity_config_schema.xsd"))
+      schema.newValidator().validate(DOMSource(document))
+    }
+  }
 }

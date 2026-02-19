@@ -37,91 +37,76 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * To merge global synthetics for native multidex build
- */
+/** To merge global synthetics for native multidex build */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DEXING, secondaryTaskCategories = [TaskCategory.MERGING])
 abstract class GlobalSyntheticsMergeTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val globalSynthetics: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val globalSynthetics: ConfigurableFileCollection
 
-    @get:Nested
-    abstract val sharedParams: DexMergingTask.SharedParams
+  @get:Nested abstract val sharedParams: DexMergingTask.SharedParams
 
-    @get:OutputDirectory
-    abstract val globalSyntheticsOutput: DirectoryProperty
+  @get:OutputDirectory abstract val globalSyntheticsOutput: DirectoryProperty
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(DexMergingTaskDelegate::class.java) {
-            it.initializeFromBaseTask(this)
-            it.initialize(
-                sharedParams = sharedParams,
-                numberOfBuckets = 1,
-                dexDirsOrJars = emptyList(),
-                globalSynthetics = globalSynthetics,
-                outputDir = globalSyntheticsOutput,
-                incremental = false,
-                fileChanges = null,
-                mainDexListOutput = null
-            )
-        }
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(DexMergingTaskDelegate::class.java) {
+      it.initializeFromBaseTask(this)
+      it.initialize(
+        sharedParams = sharedParams,
+        numberOfBuckets = 1,
+        dexDirsOrJars = emptyList(),
+        globalSynthetics = globalSynthetics,
+        outputDir = globalSyntheticsOutput,
+        incremental = false,
+        fileChanges = null,
+        mainDexListOutput = null,
+      )
+    }
+  }
+
+  class CreationAction
+  constructor(
+    creationConfig: ApkCreationConfig,
+    private val dexingUsingArtifactTransform: Boolean = true,
+    private val separateFileDependenciesTask: Boolean = false,
+  ) : VariantTaskCreationAction<GlobalSyntheticsMergeTask, ApkCreationConfig>(creationConfig) {
+
+    override val name = computeTaskName("merge", "GlobalSynthetics")
+    override val type = GlobalSyntheticsMergeTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<GlobalSyntheticsMergeTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, GlobalSyntheticsMergeTask::globalSyntheticsOutput)
+        .on(InternalArtifactType.GLOBAL_SYNTHETICS_DEX)
     }
 
-    class CreationAction constructor(
-        creationConfig: ApkCreationConfig,
-        private val dexingUsingArtifactTransform: Boolean = true,
-        private val separateFileDependenciesTask: Boolean = false
-    ) : VariantTaskCreationAction<GlobalSyntheticsMergeTask, ApkCreationConfig>(creationConfig) {
+    override fun configure(task: GlobalSyntheticsMergeTask) {
+      super.configure(task)
+      task.sharedParams.apply {
+        dexingType.setDisallowChanges(DexingType.NATIVE_MULTIDEX)
+        minSdkVersion.setDisallowChanges(creationConfig.dexing.minSdkVersionForDexing)
+        debuggable.setDisallowChanges(creationConfig.debuggable)
+        errorFormatMode.setDisallowChanges(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
+        useThreadPool.setDisallowChanges(true)
+        r8D8ThreadPoolBuildService.setDisallowChanges(
+          getBuildService(creationConfig.services.buildServiceRegistry, R8D8ThreadPoolBuildService::class.java)
+        )
+      }
 
-        override val name = computeTaskName("merge", "GlobalSynthetics")
-        override val type = GlobalSyntheticsMergeTask::class.java
+      task.globalSynthetics.from(
+        getGlobalSyntheticsInput(creationConfig, DexMergingAction.MERGE_ALL, dexingUsingArtifactTransform, separateFileDependenciesTask)
+      )
 
-        override fun handleProvider(taskProvider: TaskProvider<GlobalSyntheticsMergeTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                GlobalSyntheticsMergeTask::globalSyntheticsOutput
-            ).on(InternalArtifactType.GLOBAL_SYNTHETICS_DEX)
-        }
-
-        override fun configure(task: GlobalSyntheticsMergeTask) {
-            super.configure(task)
-            task.sharedParams.apply {
-                dexingType.setDisallowChanges(DexingType.NATIVE_MULTIDEX)
-                minSdkVersion.setDisallowChanges(
-                    creationConfig.dexing.minSdkVersionForDexing)
-                debuggable.setDisallowChanges(creationConfig.debuggable)
-                errorFormatMode.setDisallowChanges(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
-                useThreadPool.setDisallowChanges(true)
-                r8D8ThreadPoolBuildService.setDisallowChanges(
-                    getBuildService(
-                        creationConfig.services.buildServiceRegistry,
-                        R8D8ThreadPoolBuildService::class.java
-                    )
-                )
-            }
-
-            task.globalSynthetics.from(
-                getGlobalSyntheticsInput(
-                    creationConfig,
-                    DexMergingAction.MERGE_ALL,
-                    dexingUsingArtifactTransform,
-                    separateFileDependenciesTask
-                )
-            )
-
-            if (creationConfig.componentType.isBaseModule) {
-                task.globalSynthetics.from(
-                    creationConfig.variantDependencies.getArtifactFileCollection(
-                        AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-                        AndroidArtifacts.ArtifactScope.PROJECT,
-                        AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS_MERGED
-                    )
-                )
-            }
-        }
+      if (creationConfig.componentType.isBaseModule) {
+        task.globalSynthetics.from(
+          creationConfig.variantDependencies.getArtifactFileCollection(
+            AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
+            AndroidArtifacts.ArtifactScope.PROJECT,
+            AndroidArtifacts.ArtifactType.GLOBAL_SYNTHETICS_MERGED,
+          )
+        )
+      }
     }
+  }
 }

@@ -25,40 +25,38 @@ import org.junit.Test
 
 class MacroTagTest {
 
-    private val app = MinimalSubProject.app("com.example.app")
-            .withFile(
-                    "src/main/res/values/strings.xml",
-                    """
-                <resources>
-                    <string name="hello">Hello world</string>
-                    <macro name="string_ref">@string/hello</macro>
-                    <string name="macro_ref_str">@macro/string_ref</string>
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """
+         <resources>
+             <string name="hello">Hello world</string>
+             <macro name="string_ref">@string/hello</macro>
+             <string name="macro_ref_str">@macro/string_ref</string>
 
-                    <macro name="macro_raw">123</macro>
-                    <integer name="macro_ref_int">@macro/macro_raw</integer>
+             <macro name="macro_raw">123</macro>
+             <integer name="macro_ref_int">@macro/macro_raw</integer>
 
-                    <macro name="str_const">FOO BAR</macro>
-                    <string name="macro_ref_str_raw">@macro/str_const</string>
+             <macro name="str_const">FOO BAR</macro>
+             <string name="macro_ref_str_raw">@macro/str_const</string>
 
-                    <attr name="colorError"/>
-                    <color name="gm_sys_color_dark_error_state_layer">?attr/colorError</color>
-                    <macro name="gm_sys_color_dark_error_state_layer">?attr/colorError</macro>
-               </resources>""".trimIndent()
-            )
+             <attr name="colorError"/>
+             <color name="gm_sys_color_dark_error_state_layer">?attr/colorError</color>
+             <macro name="gm_sys_color_dark_error_state_layer">?attr/colorError</macro>
+        </resources>
+        """
+          .trimIndent(),
+      )
 
+  private val testApp = MultiModuleTestProject.builder().subproject(":app", app).build()
 
-    private val testApp =
-            MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .build()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
-
-    @Test
-    fun checkMacros() {
-        // Macro references are verified during aapt2 link.
-        val result = project.executor().run(":app:assembleDebug")
-        assertThat(result.didWorkTasks).contains(":app:processDebugResources")
-    }
+  @Test
+  fun checkMacros() {
+    // Macro references are verified during aapt2 link.
+    val result = project.executor().run(":app:assembleDebug")
+    assertThat(result.didWorkTasks).contains(":app:processDebugResources")
+  }
 }

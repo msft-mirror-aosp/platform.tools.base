@@ -40,16 +40,11 @@ open class LintCliFixPerformer(
   private val printStatistics: Boolean = true,
   /** Should applied fixes be limited to those marked as safe to be applied automatically? */
   requireAutoFixable: Boolean = true,
-  /**
-   * Should we include markers in the applied files like indicators for the marker and selection?
-   */
+  /** Should we include markers in the applied files like indicators for the marker and selection? */
   private val includeMarkers: Boolean = false,
   /** Should we also add import statements? */
   private val updateImports: Boolean = includeMarkers,
-  /**
-   * Whether to perform shortening of all symbols in the replacement string, not just imported
-   * symbpls.
-   */
+  /** Whether to perform shortening of all symbols in the replacement string, not just imported symbpls. */
   private val shortenAll: Boolean = includeMarkers,
 ) : LintFixPerformer(client, requireAutoFixable) {
   fun getSourceText(file: File): CharSequence {
@@ -85,11 +80,7 @@ open class LintCliFixPerformer(
     return super.computeEdits(incident, lintFix, LintCliFileProvider())
   }
 
-  override fun applyEdits(
-    fileProvider: FileProvider,
-    fileData: PendingEditFile,
-    edits: List<PendingEdit>,
-  ) {
+  override fun applyEdits(fileProvider: FileProvider, fileData: PendingEditFile, edits: List<PendingEdit>) {
     var fileContents = fileProvider.getFileContents(fileData)
 
     // First selection in the source (edits are sorted in reverse order so pick the last one)
@@ -105,27 +96,15 @@ open class LintCliFixPerformer(
           // attributes; these use the fix().set().todo() call, and todo will default
           // to selecting the "TODO" token, but we only want to select the first one.
         } else {
-          fileContents =
-            injectSelection(
-              fileContents,
-              edit.startOffset + edit.selectStart,
-              edit.startOffset + edit.selectEnd,
-            )
+          fileContents = injectSelection(fileContents, edit.startOffset + edit.selectStart, edit.startOffset + edit.selectEnd)
         }
       }
     }
     writeFile(fileData.file, fileContents)
   }
 
-  /**
-   * Indicates caret position with a `|` and the selection range using square brackets if set by the
-   * fix.
-   */
-  private fun injectSelection(
-    fileContents: String,
-    selectionStartOffset: Int,
-    selectionEndOffset: Int,
-  ): String {
+  /** Indicates caret position with a `|` and the selection range using square brackets if set by the fix. */
+  private fun injectSelection(fileContents: String, selectionStartOffset: Int, selectionEndOffset: Int): String {
     assert(includeMarkers)
     if (selectionStartOffset == -1) {
       return fileContents
@@ -142,27 +121,16 @@ open class LintCliFixPerformer(
       .toString()
   }
 
-  override fun printStatistics(
-    editMap: MutableMap<String, Int>,
-    appliedEditCount: Int,
-    editedFileCount: Int,
-  ) {
+  override fun printStatistics(editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
     if (printStatistics && editedFileCount > 0) {
       val printWriter = PrintWriter(System.out, true, Charsets.UTF_8)
       printStatistics(printWriter, editMap, appliedEditCount, editedFileCount)
     }
   }
 
-  protected open fun printStatistics(
-    writer: PrintWriter,
-    editMap: MutableMap<String, Int>,
-    appliedEditCount: Int,
-    editedFileCount: Int,
-  ) {
+  protected open fun printStatistics(writer: PrintWriter, editMap: MutableMap<String, Int>, appliedEditCount: Int, editedFileCount: Int) {
     if (editMap.keys.size == 1) {
-      writer.println(
-        "Applied $appliedEditCount edits across $editedFileCount files for this fix: ${editMap.keys.first()}"
-      )
+      writer.println("Applied $appliedEditCount edits across $editedFileCount files for this fix: ${editMap.keys.first()}")
     } else {
       writer.println("Applied $appliedEditCount edits across $editedFileCount files")
       editMap.forEach { (name, count) -> writer.println("$count: $name") }
@@ -195,8 +163,7 @@ open class LintCliFixPerformer(
 
       val isJava = file.file.path.endsWith(SdkConstants.DOT_JAVA)
       val allowCommentNesting = !isJava
-      val importInfo: ImportInfo =
-        getExistingImports(contents, allowCommentNesting = allowCommentNesting)
+      val importInfo: ImportInfo = getExistingImports(contents, allowCommentNesting = allowCommentNesting)
       if (replaceFix.shortenNames) {
         // This isn't fully shortening names, it's only removing fully qualified
         // names for symbols already imported.
@@ -252,10 +219,7 @@ open class LintCliFixPerformer(
             val importName = import.substring(0, nameEnd)
 
             removePrefix.add(importName)
-            if (
-              !addImports.contains(importName) &&
-                !implicitlyImported(importName.substringBeforeLast('.'))
-            ) {
+            if (!addImports.contains(importName) && !implicitlyImported(importName.substringBeforeLast('.'))) {
               addImports.add(importName)
             }
           }
@@ -292,8 +256,7 @@ open class LintCliFixPerformer(
           if (!nonstaticImports.contains(import) && !staticImports.contains(import)) {
             var insertOffset = -1
 
-            val imports =
-              if (isStaticImport && staticImports.isNotEmpty()) staticImports else nonstaticImports
+            val imports = if (isStaticImport && staticImports.isNotEmpty()) staticImports else nonstaticImports
             for ((imported, importedOffset) in imports) {
               if (imported > import) {
                 insertOffset = importedOffset
@@ -304,8 +267,7 @@ open class LintCliFixPerformer(
               // Insert after all import statements
               if (imports.isNotEmpty()) {
                 val last = imports.maxOf { it.value }
-                val lineEnd =
-                  contents.indexOf('\n', last).let { if (it == -1) contents.length else it }
+                val lineEnd = contents.indexOf('\n', last).let { if (it == -1) contents.length else it }
                 // What if end begins block comment? This is unlikely, but just to be safe,
                 // make sure there isn't the beginning of a block comment on this line. It
                 // could also terminate here, but in this case, we'll just insert before
@@ -363,20 +325,14 @@ open class LintCliFixPerformer(
   }
 
   /**
-   * Given a package [prefix] and a Java/Kotlin source fragment, removes the package prefix from any
-   * fully qualified references with that package prefix. The reason we can't just use
-   * [String.replace] is that we only want to replace prefixes in the same package, not in any sub
-   * packages.
+   * Given a package [prefix] and a Java/Kotlin source fragment, removes the package prefix from any fully qualified references with that
+   * package prefix. The reason we can't just use [String.replace] is that we only want to replace prefixes in the same package, not in any
+   * sub packages.
    *
-   * For example, given the package prefix `p1.p2`, for the source string `p1.p2.p3.Class1,
-   * `p1.p2.Class2`, this method will return `p1.p2.p3.Class1, Class2`.
+   * For example, given the package prefix `p1.p2`, for the source string `p1.p2.p3.Class1, `p1.p2.Class2`, this method will return
+   * `p1.p2.p3.Class1, Class2`.
    */
-  private fun removePackage(
-    source: String,
-    prefix: String,
-    names: Set<String>,
-    isWildcard: Boolean,
-  ): String {
+  private fun removePackage(source: String, prefix: String, names: Set<String>, isWildcard: Boolean): String {
     if (prefix.isEmpty()) {
       return source
     }
@@ -451,12 +407,7 @@ open class LintCliFixPerformer(
           index++
         }
         val symbolStart = index
-        while (
-          index < length &&
-            contents[index] != '\n' &&
-            contents[index] != ';' &&
-            contents[index] != '/'
-        ) {
+        while (index < length && contents[index] != '\n' && contents[index] != ';' && contents[index] != '/') {
           index++
         }
         // back up over any trailing spaces
@@ -478,11 +429,7 @@ open class LintCliFixPerformer(
           index++
         }
         var isStatic = false
-        if (
-          contents.startsWith("static", index) &&
-            index + "static".length < length &&
-            contents[index + "static".length].isWhitespace()
-        ) {
+        if (contents.startsWith("static", index) && index + "static".length < length && contents[index + "static".length].isWhitespace()) {
           index += "static".length
           isStatic = true
         }
@@ -493,12 +440,7 @@ open class LintCliFixPerformer(
         // Find end of imported symbol (e.g. in Java, ';', and possibly avoiding
         // trailing line comments too). Allow spaces inside (e.g. import "java .
         // util . List"; allowed but not common.)
-        while (
-          index < length &&
-            contents[index] != '\n' &&
-            contents[index] != ';' &&
-            contents[index] != '/'
-        ) {
+        while (index < length && contents[index] != '\n' && contents[index] != ';' && contents[index] != '/') {
           index++
         }
         // back up over any trailing spaces
@@ -583,10 +525,7 @@ open class LintCliFixPerformer(
   }
 }
 
-/**
- * Collects fully qualified names in the given code sample (skipping references in comments and
- * string literals)
- */
+/** Collects fully qualified names in the given code sample (skipping references in comments and string literals) */
 @VisibleForTesting
 fun collectNames(code: String, allowCommentNesting: Boolean): Set<String> {
   val set = mutableSetOf<String>()
@@ -624,8 +563,8 @@ fun collectNames(code: String, allowCommentNesting: Boolean): Set<String> {
 }
 
 /**
- * Given Java or Kotlin [source] code, and a starting offset which points at a string or character
- * literal, return the offset of the character after the final closing character.
+ * Given Java or Kotlin [source] code, and a starting offset which points at a string or character literal, return the offset of the
+ * character after the final closing character.
  */
 @VisibleForTesting
 fun skipStringLiteral(source: CharSequence, start: Int): Int {

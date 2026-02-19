@@ -16,97 +16,77 @@
 
 package com.android.build.gradle.tasks
 
+import java.io.File
+import java.io.FileOutputStream
+import java.util.Random
 import org.objectweb.asm.AnnotationVisitor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.MethodVisitor
 import org.objectweb.asm.Opcodes
 import org.objectweb.asm.Type
-import java.io.File
-import java.io.FileOutputStream
-import java.util.Random
 
 /**
  * Generate a simple class with an org.junit.Test annotated method.
  *
- * This is to trick the Gradle's Test task to always execute as it checks for annotated classes
- * before involving the junit engine and won't run the task if it cannot find a class with @Test
- * annotated methods in it.
+ * This is to trick the Gradle's Test task to always execute as it checks for annotated classes before involving the junit engine and won't
+ * run the task if it cannot find a class with @Test annotated methods in it.
  *
  * We will work with Gradle to remove this limitation, making this workaround obsolete.
  */
 class UniqueClassGenerator() {
 
-    fun generateSimpleClass(location: File) {
-        val className = "JourneysEntryPoint"
-        val classInternalName = className.replace('.', '/')
-        val fieldName = "randomNumber"
-        val random = Random()
-        val randomNumber = random.nextInt()
+  fun generateSimpleClass(location: File) {
+    val className = "JourneysEntryPoint"
+    val classInternalName = className.replace('.', '/')
+    val fieldName = "randomNumber"
+    val random = Random()
+    val randomNumber = random.nextInt()
 
-        val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES)
-        classWriter.visit(
-            Opcodes.V1_8,
-            Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER,
-            classInternalName,
-            null,
-            "java/lang/Object",
-            null
-        )
+    val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+    classWriter.visit(Opcodes.V1_8, Opcodes.ACC_PUBLIC + Opcodes.ACC_SUPER, classInternalName, null, "java/lang/Object", null)
 
-        // Add a field to store the random number
-        classWriter.visitField(
-            Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, // public final field
-            fieldName,
-            "I", // Integer type descriptor
-            null,
-            randomNumber // set initial Value
-        ).visitEnd()
+    // Add a field to store the random number
+    classWriter
+      .visitField(
+        Opcodes.ACC_PUBLIC + Opcodes.ACC_FINAL, // public final field
+        fieldName,
+        "I", // Integer type descriptor
+        null,
+        randomNumber, // set initial Value
+      )
+      .visitEnd()
 
-        // Add default constructor
-        val constructorVisitor = classWriter.visitMethod(
-            Opcodes.ACC_PUBLIC,
-            "<init>",
-            "()V",
-            null,
-            null
-        )
-        constructorVisitor.visitCode()
-        constructorVisitor.visitVarInsn(Opcodes.ALOAD, 0)
-        constructorVisitor.visitMethodInsn(
-            Opcodes.INVOKESPECIAL,
-            "java/lang/Object",
-            "<init>",
-            "()V",
-            false
-        )
+    // Add default constructor
+    val constructorVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null)
+    constructorVisitor.visitCode()
+    constructorVisitor.visitVarInsn(Opcodes.ALOAD, 0)
+    constructorVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false)
 
-        constructorVisitor.visitInsn(Opcodes.RETURN)
-        constructorVisitor.visitMaxs(1, 1)
-        constructorVisitor.visitEnd()
+    constructorVisitor.visitInsn(Opcodes.RETURN)
+    constructorVisitor.visitMaxs(1, 1)
+    constructorVisitor.visitEnd()
 
-        // Test method
-        val mv: MethodVisitor =
-            classWriter.visitMethod(Opcodes.ACC_PUBLIC, "simpleTestMethod", "()V", null, null)
+    // Test method
+    val mv: MethodVisitor = classWriter.visitMethod(Opcodes.ACC_PUBLIC, "simpleTestMethod", "()V", null, null)
 
-        // Add @Test annotation
-        val av: AnnotationVisitor = mv.visitAnnotation(Type.getObjectType("org/junit/Test").descriptor, true)
-        av.visitEnd()
+    // Add @Test annotation
+    val av: AnnotationVisitor = mv.visitAnnotation(Type.getObjectType("org/junit/Test").descriptor, true)
+    av.visitEnd()
 
-        mv.visitCode()
+    mv.visitCode()
 
-        mv.visitInsn(Opcodes.RETURN)
-        mv.visitMaxs(2, 1) // Adjust max stack and locals as needed
-        mv.visitEnd()
+    mv.visitInsn(Opcodes.RETURN)
+    mv.visitMaxs(2, 1) // Adjust max stack and locals as needed
+    mv.visitEnd()
 
-        classWriter.visitEnd()
+    classWriter.visitEnd()
 
-        // Write the class file to disk
-        val classBytes = classWriter.toByteArray()
-        location.mkdirs()
-        val file = FileOutputStream(File(location, "$className.class"))
-        file.write(classBytes)
-        file.close()
-        println("Class file $className.class generated successfully in $location.")
-
-    }
+    // Write the class file to disk
+    val classBytes = classWriter.toByteArray()
+    location.mkdirs()
+    val file = FileOutputStream(File(location, "$className.class"))
+    file.write(classBytes)
+    file.close()
+    println("Class file $className.class generated successfully in $location.")
+  }
 }

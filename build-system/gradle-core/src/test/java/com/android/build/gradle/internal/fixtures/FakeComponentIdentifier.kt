@@ -19,5 +19,5 @@ package com.android.build.gradle.internal.fixtures
 import org.gradle.api.artifacts.component.ComponentIdentifier
 
 class FakeComponentIdentifier(private val displayName: String) : ComponentIdentifier {
-    override fun getDisplayName() = displayName
+  override fun getDisplayName() = displayName
 }

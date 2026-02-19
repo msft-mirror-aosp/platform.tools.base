@@ -70,10 +70,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
         }
       }
       REF_ADDLANGUAGE -> {
-        if (
-          !playCoreLanguageRequestFound &&
-            context.evaluator.isMemberInClass(method, CLASS_SPLITINSTALLREQUEST_BUILDER)
-        ) {
+        if (!playCoreLanguageRequestFound && context.evaluator.isMemberInClass(method, CLASS_SPLITINSTALLREQUEST_BUILDER)) {
           playCoreLanguageRequestFound = true
         }
       }
@@ -86,9 +83,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
               evaluator.typeMatches(parameters[0].type, CLASS_SPLITINSTALLMANAGER) &&
               evaluator.isSuspend(method) &&
               (node.valueArgumentCount == 2 ||
-                node.sourcePsi?.collectDescendantsOfType<KtValueArgumentName>()?.any {
-                  it.text == "languages"
-                } == true)
+                node.sourcePsi?.collectDescendantsOfType<KtValueArgumentName>()?.any { it.text == "languages" } == true)
           ) {
             playCoreLanguageRequestFound = true
           }
@@ -98,16 +93,8 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
   }
 
   @Suppress("LintImplPsiEquals")
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
-    if (
-      localeChangeLocation == null &&
-        referenced is PsiField &&
-        context.evaluator.isMemberInClass(referenced, CLASS_CONFIGURATION)
-    ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
+    if (localeChangeLocation == null && referenced is PsiField && context.evaluator.isMemberInClass(referenced, CLASS_CONFIGURATION)) {
       // Check if we're assigning to the `locale` field
       val binaryExpr = reference.getParentOfType(UBinaryExpression::class.java)
       if (
@@ -145,12 +132,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
     valueCookie: Any,
     statementCookie: Any,
   ) {
-    if (
-      property == "enableSplit" &&
-        parent == "language" &&
-        parentParent == "bundle" &&
-        value == "false"
-    ) {
+    if (property == "enableSplit" && parent == "language" && parentParent == "bundle" && value == "false") {
       bundleLanguageSplittingDisabled = true
     }
   }
@@ -167,9 +149,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
       }
     } else {
       val partialResults = context.getPartialResults(ISSUE).map()
-      localeChangeLocation?.let { location ->
-        partialResults.put(KEY_LOCALE_CHANGE_LOCATION, location)
-      }
+      localeChangeLocation?.let { location -> partialResults.put(KEY_LOCALE_CHANGE_LOCATION, location) }
       if (playCoreLanguageRequestFound) {
         partialResults.put(KEY_PLAYCORE_LANGUAGE_REQUEST_FOUND, true)
       }
@@ -186,8 +166,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
           context,
           getLocation(KEY_LOCALE_CHANGE_LOCATION),
           playCoreLanguageRequestFound = getBoolean(KEY_PLAYCORE_LANGUAGE_REQUEST_FOUND) ?: false,
-          bundleLanguageSplittingDisabled =
-            getBoolean(KEY_BUNDLE_LANGUAGE_SPLITTING_DISABLED) ?: false,
+          bundleLanguageSplittingDisabled = getBoolean(KEY_BUNDLE_LANGUAGE_SPLITTING_DISABLED) ?: false,
         )
       }
     }
@@ -199,10 +178,7 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
     playCoreLanguageRequestFound: Boolean,
     bundleLanguageSplittingDisabled: Boolean,
   ) {
-    if (
-      localeChangeLocation != null &&
-        !(playCoreLanguageRequestFound || bundleLanguageSplittingDisabled)
-    ) {
+    if (localeChangeLocation != null && !(playCoreLanguageRequestFound || bundleLanguageSplittingDisabled)) {
       Incident(context)
         .issue(ISSUE)
         .message(
@@ -231,13 +207,8 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
         priority = 5,
         severity = Severity.WARNING,
         androidSpecific = true,
-        implementation =
-          Implementation(
-            AppBundleLocaleChangesDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE),
-          ),
-        moreInfo =
-          "https://developer.android.com/guide/app-bundle/configure-base#handling_language_changes",
+        implementation = Implementation(AppBundleLocaleChangesDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.GRADLE_FILE)),
+        moreInfo = "https://developer.android.com/guide/app-bundle/configure-base#handling_language_changes",
       )
 
     private const val REF_SETLOCALE = "setLocale"
@@ -246,10 +217,8 @@ class AppBundleLocaleChangesDetector : Detector(), SourceCodeScanner, GradleScan
     private const val REF_ADDLANGUAGE = "addLanguage"
     private const val REF_REQUESTINSTALL = "requestInstall"
     private const val CLASS_CONFIGURATION = "android.content.res.Configuration"
-    private const val CLASS_SPLITINSTALLREQUEST_BUILDER =
-      "com.google.android.play.core.splitinstall.SplitInstallRequest.Builder"
-    private const val CLASS_SPLITINSTALLMANAGER =
-      "com.google.android.play.core.splitinstall.SplitInstallManager"
+    private const val CLASS_SPLITINSTALLREQUEST_BUILDER = "com.google.android.play.core.splitinstall.SplitInstallRequest.Builder"
+    private const val CLASS_SPLITINSTALLMANAGER = "com.google.android.play.core.splitinstall.SplitInstallManager"
     private const val KEY_LOCALE_CHANGE_LOCATION = "localeChangeLocation"
     private const val KEY_PLAYCORE_LANGUAGE_REQUEST_FOUND = "playCoreLanguageRequestFound"
     private const val KEY_BUNDLE_LANGUAGE_SPLITTING_DISABLED = "bundleLanguageSplittingDisabled"

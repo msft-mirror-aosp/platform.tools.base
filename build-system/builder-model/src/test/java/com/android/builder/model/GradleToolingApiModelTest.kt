@@ -20,45 +20,42 @@ import com.google.common.collect.ImmutableSet
 import com.google.common.io.Resources
 import com.google.common.reflect.ClassPath
 import org.junit.Test
-import java.io.IOException
 
 class GradleToolingApiModelTest {
-    @Test
-    @Throws(Exception::class)
-    fun stableApiElements() {
-        getApiTester().checkApiElements()
-    }
+  @Test
+  @Throws(Exception::class)
+  fun stableApiElements() {
+    getApiTester().checkApiElements()
+  }
 
-    companion object {
-        private val EXCLUDED_CLASSES = ImmutableSet.of<Class<*>>(
-            GradleToolingApiModelTest::class.java,
-            GradleToolingApiModelUpdater::class.java,
-            TestOptionsTest::class.java
-        )
-        private val STABLE_API_URL = Resources.getResource(
-            GradleToolingApiModelTest::class.java, "tooling-api-model-api.txt"
-        )
+  companion object {
+    private val EXCLUDED_CLASSES =
+      ImmutableSet.of<Class<*>>(
+        GradleToolingApiModelTest::class.java,
+        GradleToolingApiModelUpdater::class.java,
+        TestOptionsTest::class.java,
+      )
+    private val STABLE_API_URL = Resources.getResource(GradleToolingApiModelTest::class.java, "tooling-api-model-api.txt")
 
-        fun getApiTester(): ApiTester {
-            val classes =
-                ClassPath
-                    .from(GradleToolingApiModelTest::class.java.classLoader)
-                    .getTopLevelClassesRecursive("com.android.builder.model")
-                    .filter { !EXCLUDED_CLASSES.contains(it.load()) }
-            return ApiTester(
-                "Android Gradle Plugin Tooling Model API.",
-                classes,
-                ApiTester.Filter.ALL,
-                "The Android Gradle Plugin Tooling Model API."
-                        + " API has changed, either revert the api change or run\n"
-                        + "gradlew :base:builder-model:updateToolingModelApi\n"
-                        + "\n"
-                        + "To update all the API expectation files, run \n"
-                        + "    gradlew updateApi\n"
-                        + "\n"
-                        + "GradleToolingApiModelUpdater will apply the following changes if run:\n",
-                STABLE_API_URL
-            )
+    fun getApiTester(): ApiTester {
+      val classes =
+        ClassPath.from(GradleToolingApiModelTest::class.java.classLoader).getTopLevelClassesRecursive("com.android.builder.model").filter {
+          !EXCLUDED_CLASSES.contains(it.load())
         }
+      return ApiTester(
+        "Android Gradle Plugin Tooling Model API.",
+        classes,
+        ApiTester.Filter.ALL,
+        "The Android Gradle Plugin Tooling Model API." +
+          " API has changed, either revert the api change or run\n" +
+          "gradlew :base:builder-model:updateToolingModelApi\n" +
+          "\n" +
+          "To update all the API expectation files, run \n" +
+          "    gradlew updateApi\n" +
+          "\n" +
+          "GradleToolingApiModelUpdater will apply the following changes if run:\n",
+        STABLE_API_URL,
+      )
     }
+  }
 }

@@ -24,173 +24,157 @@ import com.android.builder.model.v2.ide.ProjectInfo
 import java.io.File
 import java.io.Serializable
 
-/**
- * Implementation of [Library] for serialization via the Tooling API.
- */
+/** Implementation of [Library] for serialization via the Tooling API. */
 @Suppress("DataClassPrivateConstructor")
-data class LibraryImpl private constructor(
-    override val key: String,
-    override val type: LibraryType,
-    override val projectInfo: ProjectInfo? = null,
-    override val libraryInfo: LibraryInfo? = null,
-    override val artifact: File? = null,
-    override val lintJar: File?,
-    override val srcJar: File?,
-    override val srcJars: List<File>,
-    override val docJar: File?,
-    override val samplesJar: File?,
-    override val androidLibraryData: AndroidLibraryData? = null
+data class LibraryImpl
+private constructor(
+  override val key: String,
+  override val type: LibraryType,
+  override val projectInfo: ProjectInfo? = null,
+  override val libraryInfo: LibraryInfo? = null,
+  override val artifact: File? = null,
+  override val lintJar: File?,
+  override val srcJar: File?,
+  override val srcJars: List<File>,
+  override val docJar: File?,
+  override val samplesJar: File?,
+  override val androidLibraryData: AndroidLibraryData? = null,
 ) : Library, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
 
-        fun createProjectLibrary(
-            key: String,
-            projectInfo: ProjectInfo,
-            artifactFile: File?,
-            lintJar: File?,
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.PROJECT,
-            projectInfo = projectInfo,
-            artifact = artifactFile,
-            lintJar = lintJar,
-            srcJar = null,
-            srcJars = listOf(),
-            docJar = null,
-            samplesJar = null,
-        )
+    fun createProjectLibrary(key: String, projectInfo: ProjectInfo, artifactFile: File?, lintJar: File?) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.PROJECT,
+        projectInfo = projectInfo,
+        artifact = artifactFile,
+        lintJar = lintJar,
+        srcJar = null,
+        srcJars = listOf(),
+        docJar = null,
+        samplesJar = null,
+      )
 
-        fun createJavaLibrary(
-            key: String,
-            libraryInfo: LibraryInfo,
-            artifact: File,
-            srcJars: List<File>,
-            docJar: File?,
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.JAVA_LIBRARY,
-            libraryInfo = libraryInfo,
-            artifact = artifact,
-            lintJar = null,
-            srcJar = null,
-            srcJars = srcJars,
-            docJar = docJar,
-            samplesJar = null,
-        )
+    fun createJavaLibrary(key: String, libraryInfo: LibraryInfo, artifact: File, srcJars: List<File>, docJar: File?) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.JAVA_LIBRARY,
+        libraryInfo = libraryInfo,
+        artifact = artifact,
+        lintJar = null,
+        srcJar = null,
+        srcJars = srcJars,
+        docJar = docJar,
+        samplesJar = null,
+      )
 
-        fun createAndroidLibrary(
-            key: String,
-            libraryInfo: LibraryInfo,
-            artifact: File,
-            manifest: File,
-            compileJarFiles: List<File>,
-            runtimeJarFiles: List<File>,
-            resFolder: File,
-            resStaticLibrary: File,
-            assetsFolder: File,
-            jniFolder: File,
-            aidlFolder: File,
-            renderscriptFolder: File,
-            proguardRules: File,
-            lintJar: File?,
-            srcJars: List<File>,
-            docJar: File?,
-            externalAnnotations: File,
-            publicResources: File,
-            symbolFile: File
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.ANDROID_LIBRARY,
-            libraryInfo = libraryInfo,
-            artifact = artifact,
-            lintJar = lintJar,
-            docJar = docJar,
-            srcJars = srcJars,
-            srcJar = null,
-            samplesJar = null,
-            androidLibraryData = AndroidLibraryDataImpl(
-                manifest = manifest,
-                compileJarFiles = compileJarFiles,
-                runtimeJarFiles = runtimeJarFiles,
-                resFolder = resFolder,
-                resStaticLibrary = resStaticLibrary,
-                assetsFolder = assetsFolder,
-                jniFolder = jniFolder,
-                aidlFolder = aidlFolder,
-                renderscriptFolder = renderscriptFolder,
-                proguardRules = proguardRules,
-                externalAnnotations = externalAnnotations,
-                publicResources = publicResources,
-                symbolFile = symbolFile
-            )
-        )
+    fun createAndroidLibrary(
+      key: String,
+      libraryInfo: LibraryInfo,
+      artifact: File,
+      manifest: File,
+      compileJarFiles: List<File>,
+      runtimeJarFiles: List<File>,
+      resFolder: File,
+      resStaticLibrary: File,
+      assetsFolder: File,
+      jniFolder: File,
+      aidlFolder: File,
+      renderscriptFolder: File,
+      proguardRules: File,
+      lintJar: File?,
+      srcJars: List<File>,
+      docJar: File?,
+      externalAnnotations: File,
+      publicResources: File,
+      symbolFile: File,
+    ) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.ANDROID_LIBRARY,
+        libraryInfo = libraryInfo,
+        artifact = artifact,
+        lintJar = lintJar,
+        docJar = docJar,
+        srcJars = srcJars,
+        srcJar = null,
+        samplesJar = null,
+        androidLibraryData =
+          AndroidLibraryDataImpl(
+            manifest = manifest,
+            compileJarFiles = compileJarFiles,
+            runtimeJarFiles = runtimeJarFiles,
+            resFolder = resFolder,
+            resStaticLibrary = resStaticLibrary,
+            assetsFolder = assetsFolder,
+            jniFolder = jniFolder,
+            aidlFolder = aidlFolder,
+            renderscriptFolder = renderscriptFolder,
+            proguardRules = proguardRules,
+            externalAnnotations = externalAnnotations,
+            publicResources = publicResources,
+            symbolFile = symbolFile,
+          ),
+      )
 
-        fun createRelocatedLibrary(
-            key: String,
-            libraryInfo: LibraryInfo,
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.RELOCATED,
-            libraryInfo = libraryInfo,
-            artifact = null,
-            lintJar = null,
-            srcJar = null,
-            srcJars = listOf(),
-            docJar = null,
-            samplesJar = null,
-        )
+    fun createRelocatedLibrary(key: String, libraryInfo: LibraryInfo) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.RELOCATED,
+        libraryInfo = libraryInfo,
+        artifact = null,
+        lintJar = null,
+        srcJar = null,
+        srcJars = listOf(),
+        docJar = null,
+        samplesJar = null,
+      )
 
-        fun createNoArtifactProjectLibrary(
-            key: String,
-            projectInfo: ProjectInfo,
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.NO_ARTIFACT_FILE,
-            projectInfo = projectInfo,
-            artifact = null,
-            lintJar = null,
-            srcJar = null,
-            srcJars = listOf(),
-            docJar = null,
-            samplesJar = null,
-        )
+    fun createNoArtifactProjectLibrary(key: String, projectInfo: ProjectInfo) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.NO_ARTIFACT_FILE,
+        projectInfo = projectInfo,
+        artifact = null,
+        lintJar = null,
+        srcJar = null,
+        srcJars = listOf(),
+        docJar = null,
+        samplesJar = null,
+      )
 
-        fun createNoArtifactFileLibrary(
-            key: String,
-            libraryInfo: LibraryInfo,
-        ) = LibraryImpl(
-            key = key,
-            type = LibraryType.NO_ARTIFACT_FILE,
-            libraryInfo = libraryInfo,
-            artifact = null,
-            lintJar = null,
-            srcJar = null,
-            srcJars = listOf(),
-            docJar = null,
-            samplesJar = null,
-        )
-    }
+    fun createNoArtifactFileLibrary(key: String, libraryInfo: LibraryInfo) =
+      LibraryImpl(
+        key = key,
+        type = LibraryType.NO_ARTIFACT_FILE,
+        libraryInfo = libraryInfo,
+        artifact = null,
+        lintJar = null,
+        srcJar = null,
+        srcJars = listOf(),
+        docJar = null,
+        samplesJar = null,
+      )
+  }
 }
 
 private data class AndroidLibraryDataImpl(
-    override val manifest: File,
-    override val compileJarFiles: List<File>,
-    override val runtimeJarFiles: List<File>,
-    override val resFolder: File,
-    override val resStaticLibrary: File,
-    override val assetsFolder: File,
-    override val jniFolder: File,
-    override val aidlFolder: File,
-    override val renderscriptFolder: File,
-    override val proguardRules: File,
-    override val externalAnnotations: File,
-    override val publicResources: File,
-    override val symbolFile: File
+  override val manifest: File,
+  override val compileJarFiles: List<File>,
+  override val runtimeJarFiles: List<File>,
+  override val resFolder: File,
+  override val resStaticLibrary: File,
+  override val assetsFolder: File,
+  override val jniFolder: File,
+  override val aidlFolder: File,
+  override val renderscriptFolder: File,
+  override val proguardRules: File,
+  override val externalAnnotations: File,
+  override val publicResources: File,
+  override val symbolFile: File,
 ) : AndroidLibraryData, Serializable {
-    companion object {
-       @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

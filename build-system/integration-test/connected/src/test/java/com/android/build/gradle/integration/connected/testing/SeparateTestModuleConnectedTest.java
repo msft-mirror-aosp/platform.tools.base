@@ -36,7 +36,6 @@ public class SeparateTestModuleConnectedTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("separateTestModule")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();

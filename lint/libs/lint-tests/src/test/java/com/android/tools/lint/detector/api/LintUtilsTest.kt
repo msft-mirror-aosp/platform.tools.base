@@ -81,14 +81,8 @@ class LintUtilsTest : TestCase() {
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 3, false))
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 5, false))
 
-    assertEquals(
-      "foo, bar, baz... (3 more)",
-      formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 3, false),
-    )
-    assertEquals(
-      "foo... (5 more)",
-      formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 1, false),
-    )
+    assertEquals("foo, bar, baz... (3 more)", formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 3, false))
+    assertEquals("foo... (5 more)", formatList(listOf("foo", "bar", "baz", "4", "5", "6"), 1, false))
     assertEquals("foo, bar, baz", formatList(listOf("foo", "bar", "baz"), 0, false))
 
     assertEquals("foo, bar and baz", formatList(listOf("foo", "bar", "baz"), 0, false, true))
@@ -126,13 +120,10 @@ class LintUtilsTest : TestCase() {
     assertThat(describeCounts(5, 4, 2, true, true)).isEqualTo("5 errors, 4 warnings, 2 hints")
     assertThat(describeCounts(5, 4, 2, false, true)).isEqualTo("5 errors, 4 warnings and 2 hints")
 
-    assertThat(describeCounts(5, 4, 2, false, true, true))
-      .isEqualTo("5 errors, 4 warnings and 2 hints")
+    assertThat(describeCounts(5, 4, 2, false, true, true)).isEqualTo("5 errors, 4 warnings and 2 hints")
     assertThat(describeCounts(0, 4, 0, false, true, true)).isEqualTo("0 errors, 4 warnings")
-    assertThat(describeCounts(0, 4, 1, false, true, true))
-      .isEqualTo("0 errors, 4 warnings and 1 hint")
-    assertThat(describeCounts(0, 0, 2, false, true, true))
-      .isEqualTo("0 errors, 0 warnings and 2 hints")
+    assertThat(describeCounts(0, 4, 1, false, true, true)).isEqualTo("0 errors, 4 warnings and 1 hint")
+    assertThat(describeCounts(0, 0, 2, false, true, true)).isEqualTo("0 errors, 0 warnings and 2 hints")
     assertThat(describeCounts(0, 0, 2, true, true, true)).isEqualTo("0 errors, 0 warnings, 2 hints")
   }
 
@@ -187,44 +178,25 @@ class LintUtilsTest : TestCase() {
   }
 
   fun testSplitPath() {
-    assertTrue(
-      arrayOf("/foo", "/bar", "/baz")
-        .contentEquals(Iterables.toArray(splitPath("/foo:/bar:/baz"), String::class.java))
-    )
+    assertTrue(arrayOf("/foo", "/bar", "/baz").contentEquals(Iterables.toArray(splitPath("/foo:/bar:/baz"), String::class.java)))
 
-    assertTrue(
-      arrayOf("/foo", "/bar")
-        .contentEquals(Iterables.toArray(splitPath("/foo;/bar"), String::class.java))
-    )
+    assertTrue(arrayOf("/foo", "/bar").contentEquals(Iterables.toArray(splitPath("/foo;/bar"), String::class.java)))
 
-    assertTrue(
-      arrayOf("/foo", "/bar:baz")
-        .contentEquals(Iterables.toArray(splitPath("/foo;/bar:baz"), String::class.java))
-    )
+    assertTrue(arrayOf("/foo", "/bar:baz").contentEquals(Iterables.toArray(splitPath("/foo;/bar:baz"), String::class.java)))
 
-    assertTrue(
-      arrayOf("\\foo\\bar", "\\bar\\foo")
-        .contentEquals(Iterables.toArray(splitPath("\\foo\\bar;\\bar\\foo"), String::class.java))
-    )
+    assertTrue(arrayOf("\\foo\\bar", "\\bar\\foo").contentEquals(Iterables.toArray(splitPath("\\foo\\bar;\\bar\\foo"), String::class.java)))
 
     assertTrue(
       arrayOf("\${sdk.dir}\\foo\\bar", "\\bar\\foo")
-        .contentEquals(
-          Iterables.toArray(splitPath("\${sdk.dir}\\foo\\bar;\\bar\\foo"), String::class.java)
-        )
+        .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}\\foo\\bar;\\bar\\foo"), String::class.java))
     )
 
     assertTrue(
       arrayOf("\${sdk.dir}/foo/bar", "/bar/foo")
-        .contentEquals(
-          Iterables.toArray(splitPath("\${sdk.dir}/foo/bar:/bar/foo"), String::class.java)
-        )
+        .contentEquals(Iterables.toArray(splitPath("\${sdk.dir}/foo/bar:/bar/foo"), String::class.java))
     )
 
-    assertTrue(
-      arrayOf("C:\\foo", "/bar")
-        .contentEquals(Iterables.toArray(splitPath("C:\\foo:/bar"), String::class.java))
-    )
+    assertTrue(arrayOf("C:\\foo", "/bar").contentEquals(Iterables.toArray(splitPath("C:\\foo:/bar"), String::class.java)))
   }
 
   fun testCommonParen1() {
@@ -251,14 +223,8 @@ class LintUtilsTest : TestCase() {
     assertNull(getCommonParent(listOf(File("C:/Program Files"), File("F:/"))))
 
     assertEquals(File("/foo"), getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"))))
-    assertEquals(
-      File("/foo"),
-      getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"), File("/foo/baz/f"))),
-    )
-    assertEquals(
-      File("/foo/bar"),
-      getCommonParent(listOf(File("/foo/bar"), File("/foo/bar/baz"), File("/foo/bar/foo2/foo3"))),
-    )
+    assertEquals(File("/foo"), getCommonParent(listOf(File("/foo/bar"), File("/foo/baz"), File("/foo/baz/f"))))
+    assertEquals(File("/foo/bar"), getCommonParent(listOf(File("/foo/bar"), File("/foo/bar/baz"), File("/foo/bar/foo2/foo3"))))
   }
 
   fun testStripIdPrefix() {
@@ -348,9 +314,7 @@ class LintUtilsTest : TestCase() {
     xml =
       TestFiles.xml(
         "res/values/strings.xml",
-        "" +
-          "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" +
-          "</resources>\n",
+        "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
       )
     context = createXmlContext(xml.getContents()!!, File(xml.targetPath))
     assertEquals("nb", getLocale(context)!!.language)
@@ -360,9 +324,7 @@ class LintUtilsTest : TestCase() {
     xml =
       TestFiles.xml(
         "res/values-fr-rUS/strings.xml",
-        "" +
-          "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" +
-          "</resources>\n",
+        "" + "<resources tools:locale=\"nb\" xmlns:tools=\"http://schemas.android.com/tools\">\n" + "</resources>\n",
       )
     context = createXmlContext(xml.getContents()!!, File(xml.targetPath))
     assertEquals("fr", getLocale(context)!!.language)
@@ -395,18 +357,9 @@ class LintUtilsTest : TestCase() {
     assertEquals("PrefixName", computeResourceName("prefix", "Name", null))
     assertEquals("PrefixName", computeResourceName("prefix_", "Name", null))
     assertEquals("MyPrefixName", computeResourceName("myPrefix", "Name", null))
-    assertEquals(
-      "my_prefix_name",
-      computeResourceName("myPrefix", "name", ResourceFolderType.LAYOUT),
-    )
-    assertEquals(
-      "UnitTestPrefixContentFrame",
-      computeResourceName("unit_test_prefix_", "ContentFrame", ResourceFolderType.VALUES),
-    )
-    assertEquals(
-      "MyPrefixMyStyle",
-      computeResourceName("myPrefix_", "MyStyle", ResourceFolderType.VALUES),
-    )
+    assertEquals("my_prefix_name", computeResourceName("myPrefix", "name", ResourceFolderType.LAYOUT))
+    assertEquals("UnitTestPrefixContentFrame", computeResourceName("unit_test_prefix_", "ContentFrame", ResourceFolderType.VALUES))
+    assertEquals("MyPrefixMyStyle", computeResourceName("myPrefix_", "MyStyle", ResourceFolderType.VALUES))
   }
 
   fun testIsModelOlderThan() {
@@ -447,10 +400,7 @@ class LintUtilsTest : TestCase() {
   }
 
   fun testGetFormattedParameters() {
-    assertEquals(
-      listOf("foo", "bar"),
-      getFormattedParameters("Prefix %1\$s Divider %2\$s Suffix", "Prefix foo Divider bar Suffix"),
-    )
+    assertEquals(listOf("foo", "bar"), getFormattedParameters("Prefix %1\$s Divider %2\$s Suffix", "Prefix foo Divider bar Suffix"))
   }
 
   fun testEscapePropertyValue() {
@@ -575,19 +525,8 @@ class LintUtilsTest : TestCase() {
   }
 
   fun testGetFileNameWithParent() {
-    assertThat(
-        getFileNameWithParent(
-          TestLintClient(),
-          File("tmp" + separator + "foo" + separator + "bar.baz"),
-        )
-      )
-      .isEqualTo("foo/bar.baz")
-    assertThat(
-        getFileNameWithParent(
-          LintCliClient(CLIENT_UNIT_TESTS),
-          File("tmp" + separator + "foo" + separator + "bar.baz"),
-        )
-      )
+    assertThat(getFileNameWithParent(TestLintClient(), File("tmp" + separator + "foo" + separator + "bar.baz"))).isEqualTo("foo/bar.baz")
+    assertThat(getFileNameWithParent(LintCliClient(CLIENT_UNIT_TESTS), File("tmp" + separator + "foo" + separator + "bar.baz")))
       .isEqualTo("foo/bar.baz")
   }
 
@@ -597,26 +536,15 @@ class LintUtilsTest : TestCase() {
     assertEquals("", resolvePlaceHolders(null, "\${test}", null, ""))
     assertNull(resolvePlaceHolders(null, "\${test}"))
     assertEquals("Test", resolvePlaceHolders(null, "\${test}", mapOf("test" to "Test"), null))
-    assertEquals(
-      "FirstSecond",
-      resolvePlaceHolders(null, "\${abc}\${def}", mapOf("abc" to "First", "def" to "Second"), ""),
-    )
-    assertEquals(
-      " First Second ",
-      resolvePlaceHolders(null, " \${abc} \${def} ", mapOf("abc" to "First", "def" to "Second"), ""),
-    )
+    assertEquals("FirstSecond", resolvePlaceHolders(null, "\${abc}\${def}", mapOf("abc" to "First", "def" to "Second"), ""))
+    assertEquals(" First Second ", resolvePlaceHolders(null, " \${abc} \${def} ", mapOf("abc" to "First", "def" to "Second"), ""))
   }
 
   fun testResolvePlaceholdersInfiniteLoop() {
     // Regression test for infinite loop issue identified in b/416480093
     assertEquals(
       "This is 12345678\${bad} but then thisisfine",
-      resolvePlaceHolders(
-        null,
-        "This is \${bad} but then \${good}",
-        mapOf("bad" to "12345678\${bad}", "good" to "thisisfine"),
-        null,
-      ),
+      resolvePlaceHolders(null, "This is \${bad} but then \${good}", mapOf("bad" to "12345678\${bad}", "good" to "thisisfine"), null),
     )
     // This was previously causing an infinite loop:
     // This is ${bad} but then ${good}
@@ -635,12 +563,7 @@ class LintUtilsTest : TestCase() {
     // miss a subsequent placeholder. This assertion prevents this mistake.
     assertEquals(
       "This is tr",
-      resolvePlaceHolders(
-        null,
-        "This is \${thisisalongstring}\${s}",
-        mapOf("thisisalongstring" to "t", "s" to "r"),
-        null,
-      ),
+      resolvePlaceHolders(null, "This is \${thisisalongstring}\${s}", mapOf("thisisalongstring" to "t", "s" to "r"), null),
     )
   }
 
@@ -699,16 +622,10 @@ class LintUtilsTest : TestCase() {
     }
 
     /**
-     * Given two XML documents and two id's, look up the nodes, then test the matching method
-     * ([matchXmlElement]) to make sure that the match for the first id returns the same element as
-     * the one found by id search.
+     * Given two XML documents and two id's, look up the nodes, then test the matching method ([matchXmlElement]) to make sure that the
+     * match for the first id returns the same element as the one found by id search.
      */
-    fun testMatch(
-      sourceDocument: Document,
-      sourceId: String,
-      targetDocument: Document,
-      targetId: String,
-    ) {
+    fun testMatch(sourceDocument: Document, sourceId: String, targetDocument: Document, targetId: String) {
       val source = findElement(sourceDocument.documentElement, sourceId)!!
       val target = findElement(targetDocument.documentElement, targetId)!!
 
@@ -804,15 +721,7 @@ class LintUtilsTest : TestCase() {
 
       // Norwegian extra vowel characters such as "latin small letter a with ring above"
       val value = "\u00e6\u00d8\u00e5"
-      val expected =
-        ("First line." +
-          lineEnding +
-          "Second line." +
-          lineEnding +
-          "Third line." +
-          lineEnding +
-          value +
-          lineEnding)
+      val expected = ("First line." + lineEnding + "Second line." + lineEnding + "Third line." + lineEnding + value + lineEnding)
       sb.append(expected)
       val file = File.createTempFile("getEncodingTest$encoding$writeBom", ".txt")
       file.deleteOnExit()
@@ -864,10 +773,7 @@ class LintUtilsTest : TestCase() {
     }
 
     @JvmStatic
-    fun parse(
-      @Language("JAVA") javaSource: String,
-      relativePath: File?,
-    ): Pair<JavaContext, Disposable> {
+    fun parse(@Language("JAVA") javaSource: String, relativePath: File?): Pair<JavaContext, Disposable> {
       var path = relativePath
       if (path == null) {
         val className = ClassName(javaSource)
@@ -880,10 +786,7 @@ class LintUtilsTest : TestCase() {
     }
 
     @JvmStatic
-    fun parseKotlin(
-      @Language("Kt") kotlinSource: String,
-      relativePath: File?,
-    ): Pair<JavaContext, Disposable> {
+    fun parseKotlin(@Language("Kt") kotlinSource: String, relativePath: File?): Pair<JavaContext, Disposable> {
       var path = relativePath
       if (path == null) {
         val className = ClassName(kotlinSource)
@@ -952,10 +855,7 @@ class LintUtilsTest : TestCase() {
       return Pair.of(parsed.first, disposable)
     }
 
-    private fun getElementWithNameValue(
-      @Language("XML") xml: String,
-      activityName: String,
-    ): Element {
+    private fun getElementWithNameValue(@Language("XML") xml: String, activityName: String): Element {
       val document = XmlUtils.parseDocumentSilently(xml, true)
       assertNotNull(document)
       val root = document!!.documentElement

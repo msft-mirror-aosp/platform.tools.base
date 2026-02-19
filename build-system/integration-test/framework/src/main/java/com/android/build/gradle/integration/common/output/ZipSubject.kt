@@ -23,80 +23,55 @@ import java.io.File
 import java.nio.file.Path
 import java.util.function.Consumer
 
-/**
- * Generic Zip archive Truth subject
- */
+/** Generic Zip archive Truth subject */
 @SubjectDsl
-class ZipSubject(
-    metadata: FailureMetadata,
-    actual: Zip
-): AbstractZipSubject<ZipSubject, Zip>(metadata, actual) {
+class ZipSubject(metadata: FailureMetadata, actual: Zip) : AbstractZipSubject<ZipSubject, Zip>(metadata, actual) {
 
-    companion object {
+  companion object {
 
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        fun assertThat(path: Path, action: ZipSubject.() -> Unit) {
-            SimpleZip(path).use {
-                action(assertThat(it))
-            }
-        }
-
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        fun assertThat(file: File, action: ZipSubject.() -> Unit) {
-            assertThat(file.toPath(), action)
-        }
-
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        @JvmStatic
-        fun assertThat(path: Path, action: Consumer<ZipSubject>) {
-            assertThat(path) {
-                action.accept(this)
-            }
-        }
-
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        @JvmStatic
-        fun assertThat(file: File, action: Consumer<ZipSubject>) {
-            assertThat(file.toPath(), action)
-        }
-
-        /**
-         * Returns a [ZipSubject]
-         */
-        internal fun assertThat(zip: Zip): ZipSubject {
-            return assertAbout(zips()).that(zip)
-        }
-
-        /**
-         * Creates a [ZipSubject] and configures it with the given action
-         */
-        internal fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
-            action(assertThat(zip))
-        }
-
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun zips(): Factory<ZipSubject, Zip> {
-            return Factory<ZipSubject, Zip> { metadata, actual ->
-                ZipSubject(metadata, actual)
-            }
-        }
+    /** Creates a [ZipSubject] and configures it with the given action */
+    fun assertThat(path: Path, action: ZipSubject.() -> Unit) {
+      SimpleZip(path).use { action(assertThat(it)) }
     }
 
-    /*
-    * Returns a [IterableSubject] of all the Zip entries (as [String]).
-    */
-    fun entries(): IterableSubject {
-        exists()
-        return check("entries()").that(actual().getEntries())
+    /** Creates a [ZipSubject] and configures it with the given action */
+    fun assertThat(file: File, action: ZipSubject.() -> Unit) {
+      assertThat(file.toPath(), action)
     }
+
+    /** Creates a [ZipSubject] and configures it with the given action */
+    @JvmStatic
+    fun assertThat(path: Path, action: Consumer<ZipSubject>) {
+      assertThat(path) { action.accept(this) }
+    }
+
+    /** Creates a [ZipSubject] and configures it with the given action */
+    @JvmStatic
+    fun assertThat(file: File, action: Consumer<ZipSubject>) {
+      assertThat(file.toPath(), action)
+    }
+
+    /** Returns a [ZipSubject] */
+    internal fun assertThat(zip: Zip): ZipSubject {
+      return assertAbout(zips()).that(zip)
+    }
+
+    /** Creates a [ZipSubject] and configures it with the given action */
+    internal fun assertThat(zip: Zip, action: ZipSubject.() -> Unit) {
+      action(assertThat(zip))
+    }
+
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun zips(): Factory<ZipSubject, Zip> {
+      return Factory<ZipSubject, Zip> { metadata, actual -> ZipSubject(metadata, actual) }
+    }
+  }
+
+  /*
+   * Returns a [IterableSubject] of all the Zip entries (as [String]).
+   */
+  fun entries(): IterableSubject {
+    exists()
+    return check("entries()").that(actual().getEntries())
+  }
 }

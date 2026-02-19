@@ -33,209 +33,194 @@ import org.junit.rules.ExpectedException
 
 class RunAlongOtherScopeTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun testSimpleInvocationWorks() = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
+  @Test
+  fun testSimpleInvocationWorks() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
 
-        // Act
-        val foo = runAlongOtherScope(otherScope) {
-            "foo"
-        }
+    // Act
+    val foo = runAlongOtherScope(otherScope) { "foo" }
 
-        // Assert
-        assertEquals("foo", foo)
+    // Assert
+    assertEquals("foo", foo)
 
-        // (Let test scope terminate)
-        otherScope.cancel("Test ended")
+    // (Let test scope terminate)
+    otherScope.cancel("Test ended")
+  }
+
+  @Test
+  fun testSimpleSuspendingInvocationWorks() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    val foo =
+      runAlongOtherScope(otherScope) {
+        delay(10)
+        "foo"
+      }
+    otherScope.cancel("End of test")
+
+    // Assert
+    assertEquals("foo", foo)
+  }
+
+  @Test
+  fun testInvocationIsTransparentToException() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    exceptionRule.expect(Exception::class.java)
+    exceptionRule.expectMessage("foo")
+    runAlongOtherScope(otherScope) { throw Exception("foo") }
+
+    // Assert
+    @Suppress("UNREACHABLE_CODE") Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testInvocationIsTransparentToCancellation() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    exceptionRule.expect(CancellationException::class.java)
+    exceptionRule.expectMessage("foo")
+    runAlongOtherScope(otherScope) { throw CancellationException("foo") }
+
+    // Assert
+    @Suppress("UNREACHABLE_CODE") Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testInvocationIsTransparentToCancel() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    exceptionRule.expect(CancellationException::class.java)
+    exceptionRule.expectMessage("foo")
+    coroutineScope { runAlongOtherScope(otherScope) { cancel("foo") } }
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testInvocationIsCancelledWhenOtherScopeIsCancelledBeforeInvocation() = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    exceptionRule.expect(CancellationException::class.java)
+    exceptionRule.expectMessage("foo")
+    otherScope.cancel("foo")
+    runAlongOtherScope(otherScope) { delay(1_000_000) }
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testInvocationIsCancelledWhenOtherScopeIsCancelledDuringInvocation(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+
+    // Act
+    val started = CompletableDeferred<Unit>()
+    launch {
+      started.await()
+      otherScope.cancel("foo")
+    }
+    exceptionRule.expect(CancellationException::class.java)
+    exceptionRule.expectMessage("foo")
+    runAlongOtherScope(otherScope) {
+      started.complete(Unit)
+      delay(1_000_000)
     }
 
-    @Test
-    fun testSimpleSuspendingInvocationWorks() = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
+    // Assert
+    Assert.fail("Should not reach")
+  }
 
-        // Act
-        val foo = runAlongOtherScope(otherScope) {
-            delay(10)
-            "foo"
-        }
-        otherScope.cancel("End of test")
+  @Test
+  fun testInvocationIsCancelledWhenJobIsCancelled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+    val parentScope = createChildScope()
 
-        // Assert
-        assertEquals("foo", foo)
-    }
-
-    @Test
-    fun testInvocationIsTransparentToException() = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
-
-        // Act
-        exceptionRule.expect(Exception::class.java)
-        exceptionRule.expectMessage("foo")
+    // Act
+    val started = CompletableDeferred<Unit>()
+    var exception: Throwable? = null
+    val job =
+      parentScope.async {
         runAlongOtherScope(otherScope) {
-            throw Exception("foo")
+          try {
+            started.complete(Unit)
+            delay(1_000_000)
+          } catch (t: Throwable) {
+            exception = t
+          }
         }
+      }
 
-        // Assert
-        @Suppress("UNREACHABLE_CODE")
-        Assert.fail("Should not reach")
-    }
+    started.await()
+    job.cancel("foo")
+    yieldUntil { exception != null }
 
-    @Test
-    fun testInvocationIsTransparentToCancellation() = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
+    // Assert
+    val result = kotlin.runCatching { job.await() }
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is CancellationException)
+    assertEquals("foo", result.exceptionOrNull()?.message)
 
-        // Act
-        exceptionRule.expect(CancellationException::class.java)
-        exceptionRule.expectMessage("foo")
+    assertTrue(exception is CancellationException)
+    assertEquals("foo", exception?.message)
+
+    // (Let test scope terminate)
+    parentScope.cancel("Test ended")
+    otherScope.cancel("Test ended")
+  }
+
+  @Test
+  fun testInvocationIsCancelledWhenParentScopeIsCancelled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val otherScope = createChildScope(isSupervisor = true)
+    val parentScope = createChildScope()
+
+    // Act
+    val started = CompletableDeferred<Unit>()
+    var exception: Throwable? = null
+    val job =
+      parentScope.async {
         runAlongOtherScope(otherScope) {
-            throw CancellationException("foo")
+          try {
+            started.complete(Unit)
+            delay(1_000_000)
+          } catch (t: Throwable) {
+            exception = t
+          }
         }
+      }
 
-        // Assert
-        @Suppress("UNREACHABLE_CODE")
-        Assert.fail("Should not reach")
-    }
+    started.await()
+    parentScope.cancel("foo")
+    yieldUntil { exception != null }
 
-    @Test
-    fun testInvocationIsTransparentToCancel() = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
+    // Assert
+    val result = kotlin.runCatching { job.await() }
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull() is CancellationException)
+    assertEquals("foo", result.exceptionOrNull()?.message)
 
-        // Act
-        exceptionRule.expect(CancellationException::class.java)
-        exceptionRule.expectMessage("foo")
-        coroutineScope {
-            runAlongOtherScope(otherScope) {
-                cancel("foo")
-            }
-        }
+    assertTrue(exception is CancellationException)
+    assertEquals("foo", exception?.message)
 
-        // Assert
-        Assert.fail("Should not reach")
-    }
-
-    @Test
-    fun testInvocationIsCancelledWhenOtherScopeIsCancelledBeforeInvocation() =
-        runBlockingWithTimeout {
-            // Prepare
-            val otherScope = createChildScope(isSupervisor = true)
-
-            // Act
-            exceptionRule.expect(CancellationException::class.java)
-            exceptionRule.expectMessage("foo")
-            otherScope.cancel("foo")
-            runAlongOtherScope(otherScope) {
-                delay(1_000_000)
-            }
-
-            // Assert
-            Assert.fail("Should not reach")
-        }
-
-    @Test
-    fun testInvocationIsCancelledWhenOtherScopeIsCancelledDuringInvocation(): Unit =
-        runBlockingWithTimeout {
-            // Prepare
-            val otherScope = createChildScope(isSupervisor = true)
-
-            // Act
-            val started = CompletableDeferred<Unit>()
-            launch {
-                started.await()
-                otherScope.cancel("foo")
-            }
-            exceptionRule.expect(CancellationException::class.java)
-            exceptionRule.expectMessage("foo")
-            runAlongOtherScope(otherScope) {
-                started.complete(Unit)
-                delay(1_000_000)
-            }
-
-            // Assert
-            Assert.fail("Should not reach")
-        }
-
-    @Test
-    fun testInvocationIsCancelledWhenJobIsCancelled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
-        val parentScope = createChildScope()
-
-        // Act
-        val started = CompletableDeferred<Unit>()
-        var exception: Throwable? = null
-        val job = parentScope.async {
-            runAlongOtherScope(otherScope) {
-                try {
-                    started.complete(Unit)
-                    delay(1_000_000)
-                } catch (t: Throwable) {
-                    exception = t
-                }
-            }
-        }
-
-        started.await()
-        job.cancel("foo")
-        yieldUntil { exception != null }
-
-        // Assert
-        val result = kotlin.runCatching { job.await() }
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CancellationException)
-        assertEquals("foo", result.exceptionOrNull()?.message)
-
-        assertTrue(exception is CancellationException)
-        assertEquals("foo", exception?.message)
-
-        // (Let test scope terminate)
-        parentScope.cancel("Test ended")
-        otherScope.cancel("Test ended")
-    }
-
-    @Test
-    fun testInvocationIsCancelledWhenParentScopeIsCancelled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val otherScope = createChildScope(isSupervisor = true)
-        val parentScope = createChildScope()
-
-        // Act
-        val started = CompletableDeferred<Unit>()
-        var exception: Throwable? = null
-        val job = parentScope.async {
-            runAlongOtherScope(otherScope) {
-                try {
-                    started.complete(Unit)
-                    delay(1_000_000)
-                } catch (t: Throwable) {
-                    exception = t
-                }
-            }
-        }
-
-        started.await()
-        parentScope.cancel("foo")
-        yieldUntil { exception != null }
-
-        // Assert
-        val result = kotlin.runCatching { job.await() }
-        assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is CancellationException)
-        assertEquals("foo", result.exceptionOrNull()?.message)
-
-        assertTrue(exception is CancellationException)
-        assertEquals("foo", exception?.message)
-
-        // (Let test scope terminate)
-        parentScope.cancel("Test ended")
-        otherScope.cancel("Test ended")
-    }
+    // (Let test scope terminate)
+    parentScope.cancel("Test ended")
+    otherScope.cancel("Test ended")
+  }
 }

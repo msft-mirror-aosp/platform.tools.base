@@ -112,11 +112,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     val method = usageInfo.referenced as? PsiMethod ?: return
     val returnType = method.returnType ?: return
-    if (
-      returnType == PsiTypes.voidType() ||
-        method.isConstructor ||
-        returnType.canonicalText == "kotlin.Unit"
-    ) {
+    if (returnType == PsiTypes.voidType() || method.isConstructor || returnType.canonicalText == "kotlin.Unit") {
       return
     }
 
@@ -134,8 +130,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (context.evaluator.isSuspend(method)) {
         // For coroutines the suspend methods return context rather than the intended return type,
         // which is encoded in a continuation parameter at the end of the parameter list
-        val classReference =
-          method.parameterList.parameters.lastOrNull()?.type as? PsiClassType ?: return
+        val classReference = method.parameterList.parameters.lastOrNull()?.type as? PsiClassType ?: return
         val wildcard = classReference.parameters.singleOrNull() as? PsiWildcardType ?: return
         val bound = wildcard.bound ?: return
         if (bound == PsiTypes.voidType() || bound.canonicalText == "kotlin.Unit") {
@@ -144,9 +139,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
 
       // Type parameter which resolves to Void?
-      if (
-        element is UExpression && element.getExpressionType()?.canonicalText == "java.lang.Void"
-      ) {
+      if (element is UExpression && element.getExpressionType()?.canonicalText == "java.lang.Void") {
         return
       }
 
@@ -168,9 +161,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       // custom severity in their LintOptions etc) so continue to use that issue
       // (which also has category Security rather than Correctness) for these:
       var issue = CHECK_RESULT
-      if (
-        methodName != null && methodName.startsWith("check") && methodName.contains("Permission")
-      ) {
+      if (methodName != null && methodName.startsWith("check") && methodName.contains("Permission")) {
         issue = CHECK_PERMISSION
       }
 
@@ -178,16 +169,8 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (suggested != null) {
         // TODO: Resolve suggest attribute (e.g. prefix annotation class if it starts
         // with "#" etc?
-        message =
-          String.format(
-            "The result of `%1\$s` is not used; did you mean to call `%2\$s`?",
-            methodName,
-            suggested,
-          )
-      } else if (
-        "intersect" == methodName &&
-          context.evaluator.isMemberInClass(method, "android.graphics.Rect")
-      ) {
+        message = String.format("The result of `%1\$s` is not used; did you mean to call `%2\$s`?", methodName, suggested)
+      } else if ("intersect" == methodName && context.evaluator.isMemberInClass(method, "android.graphics.Rect")) {
         message +=
           ". If the rectangles do not intersect, no change is made and the " +
             "original rectangle is not modified. These methods return false to " +
@@ -208,8 +191,8 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
   companion object {
     /**
-     * In unit tests it's often acceptable to ignore the return value because you're either
-     * describing a mock of checking for exceptions being thrown.
+     * In unit tests it's often acceptable to ignore the return value because you're either describing a mock of checking for exceptions
+     * being thrown.
      */
     fun expectsSideEffect(context: JavaContext, element: UElement): Boolean {
       val containingMethod = element.getParentOfType(UMethod::class.java)
@@ -241,11 +224,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       //noinspection ExternalAnnotations
       val annotations = containingMethod?.uAnnotations
       if (
-        annotations != null &&
-          annotations.any {
-            it.qualifiedName == "org.junit.Test" &&
-              it.findDeclaredAttributeValue("expected") != null
-          }
+        annotations != null && annotations.any { it.qualifiedName == "org.junit.Test" && it.findDeclaredAttributeValue("expected") != null }
       ) {
         return true
       }
@@ -264,8 +243,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
               if (methodName == "assertFails" || methodName == "assertFailsWith") {
                 return true
               }
-              val parameter: PsiParameter? =
-                context.evaluator.computeArgumentMapping(call, resolved)[lambda]
+              val parameter: PsiParameter? = context.evaluator.computeArgumentMapping(call, resolved)[lambda]
               if (parameter != null && isThrowingRunnable(parameter.type.canonicalText)) {
                 return true
               }
@@ -315,8 +293,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
 
     private fun parentIsTryBlock(statement: UElement): Boolean {
       val parent = skipParenthesizedExprUp(statement.uastParent)
-      return parent is UBlockExpression &&
-        skipParenthesizedExprUp(parent.uastParent) is UTryExpression
+      return parent is UBlockExpression && skipParenthesizedExprUp(parent.uastParent) is UTryExpression
     }
 
     private fun isThrowingRunnable(s: String): Boolean {
@@ -470,11 +447,7 @@ class CheckResultDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     const val KEY_SUGGESTION = "suggestion"
 
     private val IMPLEMENTATION =
-      Implementation(
-        CheckResultDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(CheckResultDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES), Scope.JAVA_FILE_SCOPE)
 
     /** Method result should be used. */
     @JvmField

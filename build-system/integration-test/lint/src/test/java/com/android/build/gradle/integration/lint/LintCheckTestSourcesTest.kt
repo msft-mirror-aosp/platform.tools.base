@@ -22,215 +22,206 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
-/**
- * Integration test testing cases when lint should analyze test sources.
- */
+/** Integration test testing cases when lint should analyze test sources. */
 @RunWith(Parameterized::class)
 class LintCheckTestSourcesTest(private val lintAnalysisPerComponent: Boolean) {
 
-    private val app = MinimalSubProject.app("com.example.app")
-    private val lib = MinimalSubProject.lib("com.example.lib")
-    private val javaLib = MinimalSubProject.javaLibrary()
+  private val app = MinimalSubProject.app("com.example.app")
+  private val lib = MinimalSubProject.lib("com.example.lib")
+  private val javaLib = MinimalSubProject.javaLibrary()
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .subproject(":javaLib", javaLib)
-                    .dependency(app, lib)
-                    .dependency(app, javaLib)
-                    .build()
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", lib)
+          .subproject(":javaLib", javaLib)
+          .dependency(app, lib)
+          .dependency(app, javaLib)
+          .build()
+      )
+      .create()
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "lintAnalysisPerComponent_{0}")
-        fun params() = listOf(true, false)
-    }
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "lintAnalysisPerComponent_{0}") fun params() = listOf(true, false)
+  }
 
-    @Before
-    fun before() {
-        project.getSubproject(":app")
-            .buildFile
-            .appendText(
-                """
-                    android {
-                        testBuildType = "release"
-                        lintOptions {
-                            abortOnError = false
-                            enable('StopShip')
-                            textOutput = file("lint-results.txt")
-                            checkDependencies = true
-                        }
-                    }
-                """.trimIndent()
-            )
+  @Before
+  fun before() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android {
+            testBuildType = "release"
+            lintOptions {
+                abortOnError = false
+                enable('StopShip')
+                textOutput = file("lint-results.txt")
+                checkDependencies = true
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-        project.getSubproject(":lib")
-            .buildFile
-            .appendText(
-                """
-                    android {
-                        testBuildType = "release"
-                        lintOptions {
-                            enable('StopShip')
-                        }
-                    }
-                """.trimIndent()
-            )
+    project
+      .getSubproject(":lib")
+      .buildFile
+      .appendText(
+        """
+        android {
+            testBuildType = "release"
+            lintOptions {
+                enable('StopShip')
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-        project.getSubproject(":javaLib")
-            .buildFile
-            .appendText(
-                """
-                    apply plugin: 'com.android.lint'
+    project
+      .getSubproject(":javaLib")
+      .buildFile
+      .appendText(
+        """
+        apply plugin: 'com.android.lint'
 
-                    lintOptions {
-                        enable('StopShip')
-                    }
-                """.trimIndent()
-            )
+        lintOptions {
+            enable('StopShip')
+        }
+        """
+          .trimIndent()
+      )
 
-        // Add a resource which is only used by tests - this should cause a lint warning only if
-        // ignoreTestSources is true.
-        val appStringsSourceFile =
-            project.getSubproject(":app").file("src/main/res/values/strings.xml")
-        appStringsSourceFile.parentFile.mkdirs()
-        appStringsSourceFile.writeText(
-            """
-                <resources>
-                    <string name="foo">Foo</string>
-                </resources>
-            """.trimIndent()
-        )
+    // Add a resource which is only used by tests - this should cause a lint warning only if
+    // ignoreTestSources is true.
+    val appStringsSourceFile = project.getSubproject(":app").file("src/main/res/values/strings.xml")
+    appStringsSourceFile.parentFile.mkdirs()
+    appStringsSourceFile.writeText(
+      """
+      <resources>
+          <string name="foo">Foo</string>
+      </resources>
+      """
+        .trimIndent()
+    )
 
-        val appUnitTestSourceFile =
-            project.getSubproject(":app").file("src/test/java/com/example/foo/AppUnitTest.java")
-        appUnitTestSourceFile.parentFile.mkdirs()
-        appUnitTestSourceFile.writeText(
-            """
-                package com.example.foo;
+    val appUnitTestSourceFile = project.getSubproject(":app").file("src/test/java/com/example/foo/AppUnitTest.java")
+    appUnitTestSourceFile.parentFile.mkdirs()
+    appUnitTestSourceFile.writeText(
+      """
+      package com.example.foo;
 
-                public class AppUnitTest {
-                    // STOPSHIP
-                    int foo = R.string.foo;
-                }
-            """.trimIndent()
-        )
+      public class AppUnitTest {
+          // STOPSHIP
+          int foo = R.string.foo;
+      }
+      """
+        .trimIndent()
+    )
 
-        val appAndroidTestSourceFile =
-            project.getSubproject(":app")
-                .file("src/androidTest/java/com/example/foo/AppAndroidTest.java")
-        appAndroidTestSourceFile.parentFile.mkdirs()
-        appAndroidTestSourceFile.writeText(
-            """
-                package com.example.foo;
+    val appAndroidTestSourceFile = project.getSubproject(":app").file("src/androidTest/java/com/example/foo/AppAndroidTest.java")
+    appAndroidTestSourceFile.parentFile.mkdirs()
+    appAndroidTestSourceFile.writeText(
+      """
+      package com.example.foo;
 
-                public class AppAndroidTest {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
+      public class AppAndroidTest {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
 
-        val libUnitTestSourceFile =
-            project.getSubproject(":lib").file("src/test/java/com/example/foo/LibUnitTest.java")
-        libUnitTestSourceFile.parentFile.mkdirs()
-        libUnitTestSourceFile.writeText(
-            """
-                package com.example.foo;
+    val libUnitTestSourceFile = project.getSubproject(":lib").file("src/test/java/com/example/foo/LibUnitTest.java")
+    libUnitTestSourceFile.parentFile.mkdirs()
+    libUnitTestSourceFile.writeText(
+      """
+      package com.example.foo;
 
-                public class LibUnitTest {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
+      public class LibUnitTest {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
 
-        val libAndroidTestSourceFile =
-            project.getSubproject(":lib")
-                .file("src/androidTest/java/com/example/foo/LibAndroidTest.java")
-        libAndroidTestSourceFile.parentFile.mkdirs()
-        libAndroidTestSourceFile.writeText(
-            """
-                package com.example.foo;
+    val libAndroidTestSourceFile = project.getSubproject(":lib").file("src/androidTest/java/com/example/foo/LibAndroidTest.java")
+    libAndroidTestSourceFile.parentFile.mkdirs()
+    libAndroidTestSourceFile.writeText(
+      """
+      package com.example.foo;
 
-                public class LibAndroidTest {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
+      public class LibAndroidTest {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
 
-        val javaLibUnitTestSourceFile =
-            project.getSubproject(":javaLib")
-                .file("src/test/java/com/example/foo/JavaLibUnitTest.java")
-        javaLibUnitTestSourceFile.parentFile.mkdirs()
-        javaLibUnitTestSourceFile.writeText(
-            """
-                package com.example.foo;
+    val javaLibUnitTestSourceFile = project.getSubproject(":javaLib").file("src/test/java/com/example/foo/JavaLibUnitTest.java")
+    javaLibUnitTestSourceFile.parentFile.mkdirs()
+    javaLibUnitTestSourceFile.writeText(
+      """
+      package com.example.foo;
 
-                public class JavaLibUnitTest {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
-    }
+      public class JavaLibUnitTest {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
+  }
 
-    @Test
-    fun testCheckTestSources() {
-        // check that there are no errors before adding "checkTestSources true"
-        getExecutor().run(":app:lintRelease")
-        val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).doesNotContain("Error: STOPSHIP")
-        // Add "checkTestSources true" to all build files, and then check for errors.
-        project.getSubproject(":app")
-            .buildFile
-            .appendText("\nandroid.lintOptions.checkTestSources = true\n")
-        project.getSubproject(":lib")
-            .buildFile
-            .appendText("\nandroid.lintOptions.checkTestSources = true\n")
-        project.getSubproject(":javaLib")
-            .buildFile
-            .appendText("\nlintOptions.checkTestSources = true\n")
-        getExecutor().run(":app:lintRelease")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).containsAllOf(
-            "AppUnitTest.java:4: Error: STOPSHIP comment found",
-            "AppAndroidTest.java:4: Error: STOPSHIP comment found",
-            "JavaLibUnitTest.java:4: Error: STOPSHIP comment found",
-            "LibUnitTest.java:4: Error: STOPSHIP comment found",
-            "LibAndroidTest.java:4: Error: STOPSHIP comment found",
-        )
-    }
+  @Test
+  fun testCheckTestSources() {
+    // check that there are no errors before adding "checkTestSources true"
+    getExecutor().run(":app:lintRelease")
+    val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
+    assertThat(reportFile).exists()
+    assertThat(reportFile).doesNotContain("Error: STOPSHIP")
+    // Add "checkTestSources true" to all build files, and then check for errors.
+    project.getSubproject(":app").buildFile.appendText("\nandroid.lintOptions.checkTestSources = true\n")
+    project.getSubproject(":lib").buildFile.appendText("\nandroid.lintOptions.checkTestSources = true\n")
+    project.getSubproject(":javaLib").buildFile.appendText("\nlintOptions.checkTestSources = true\n")
+    getExecutor().run(":app:lintRelease")
+    assertThat(reportFile).exists()
+    assertThat(reportFile)
+      .containsAllOf(
+        "AppUnitTest.java:4: Error: STOPSHIP comment found",
+        "AppAndroidTest.java:4: Error: STOPSHIP comment found",
+        "JavaLibUnitTest.java:4: Error: STOPSHIP comment found",
+        "LibUnitTest.java:4: Error: STOPSHIP comment found",
+        "LibAndroidTest.java:4: Error: STOPSHIP comment found",
+      )
+  }
 
-    @Test
-    fun testIgnoreTestSources() {
-        // check that there are no unused resource warnings before adding "ignoreTestSources true"
-        getExecutor().run(":app:lintRelease")
-        val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).doesNotContain(
-            "Warning: The resource R.string.foo appears to be unused"
-        )
-        // Add "ignoreTestSources true" to the app build file, and then check for the warning.
-        project.getSubproject(":app")
-            .buildFile
-            .appendText("\nandroid.lintOptions.ignoreTestSources = true\n")
-        getExecutor().run(":app:lintRelease")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).contains("Warning: The resource R.string.foo appears to be unused")
-    }
+  @Test
+  fun testIgnoreTestSources() {
+    // check that there are no unused resource warnings before adding "ignoreTestSources true"
+    getExecutor().run(":app:lintRelease")
+    val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
+    assertThat(reportFile).exists()
+    assertThat(reportFile).doesNotContain("Warning: The resource R.string.foo appears to be unused")
+    // Add "ignoreTestSources true" to the app build file, and then check for the warning.
+    project.getSubproject(":app").buildFile.appendText("\nandroid.lintOptions.ignoreTestSources = true\n")
+    getExecutor().run(":app:lintRelease")
+    assertThat(reportFile).exists()
+    assertThat(reportFile).contains("Warning: The resource R.string.foo appears to be unused")
+  }
 
-    private fun getExecutor(): GradleTaskExecutor {
-        return project.executor().with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
-    }
+  private fun getExecutor(): GradleTaskExecutor {
+    return project.executor().with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
+  }
 }

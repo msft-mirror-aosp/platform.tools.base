@@ -21,10 +21,6 @@ import org.gradle.api.Incubating
 @Incubating
 interface CodeTransparency {
 
-    /**
-     * Sets the [com.android.build.api.dsl.SigningConfig] with information on how to retrieve
-     * the signing configuration.
-     */
-    @Incubating
-    fun setSigningConfig(signingConfig: com.android.build.api.dsl.SigningConfig)
+  /** Sets the [com.android.build.api.dsl.SigningConfig] with information on how to retrieve the signing configuration. */
+  @Incubating fun setSigningConfig(signingConfig: com.android.build.api.dsl.SigningConfig)
 }

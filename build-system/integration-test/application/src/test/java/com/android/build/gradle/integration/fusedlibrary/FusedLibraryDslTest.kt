@@ -29,27 +29,20 @@ import org.junit.Test
 
 class FusedLibraryDslTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-            androidFusedLibrary {
-                namespace = null
-            }
-        }
-        gradleProperties {
-            add(BooleanOption.FUSED_LIBRARY_SUPPORT, true)
-        }
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      fusedLibrary(":$FUSED_LIB_PROJECT_NAME") { androidFusedLibrary { namespace = null } }
+      gradleProperties { add(BooleanOption.FUSED_LIBRARY_SUPPORT, true) }
+      settings { applyPlugin(PluginType.ANDROID_SETTINGS) }
     }
 
-    @Test
-    fun addingRequiredOptionsToAssemble() {
-        val build = rule.build
-        build.executor.expectFailure().run(":$FUSED_LIB_PROJECT_NAME:assemble").also {
-            it.assertErrorContains(
-                """Namespace is not defined.
+  @Test
+  fun addingRequiredOptionsToAssemble() {
+    val build = rule.build
+    build.executor.expectFailure().run(":$FUSED_LIB_PROJECT_NAME:assemble").also {
+      it.assertErrorContains(
+        """Namespace is not defined.
 
      Please add the `namespace` field to the :fusedLib build file.
 
@@ -59,16 +52,12 @@ class FusedLibraryDslTest {
          namespace = "com.example.mylibrary"
      }
      ```"""
-            )
-        }
-        build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").reconfigure {
-            androidFusedLibrary {
-                namespace = "com.example.myfusedlib"
-            }
-        }
-        build.executor.expectFailure().run(":$FUSED_LIB_PROJECT_NAME:assemble").also {
-            it.assertErrorContains(
-                """Minimum Sdk is not defined.
+      )
+    }
+    build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").reconfigure { androidFusedLibrary { namespace = "com.example.myfusedlib" } }
+    build.executor.expectFailure().run(":$FUSED_LIB_PROJECT_NAME:assemble").also {
+      it.assertErrorContains(
+        """Minimum Sdk is not defined.
 
      Please configure `minSdk` in the `androidFusedLibrary`:fusedLib build file.
 
@@ -80,148 +69,102 @@ class FusedLibraryDslTest {
          }
      }
      ```"""
-            )
-        }
-        build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").reconfigure {
-            androidFusedLibrary {
-                minSdk {
-                    version = release(34)
-                }
-            }
-        }
-        build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
+      )
     }
+    build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").reconfigure { androidFusedLibrary { minSdk { version = release(34) } } }
+    build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
+  }
 
-    @Test
-    fun checkSettingsPluginApplies() {
-        val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
-        val build = rule.build {
-            androidApplication {
-                android {
-                    defaultConfig {
-                        minSdk {
-                            version = release(29)
-                        }
-                    }
-                    dependencies {
-                        implementation(fusedLibraryCoordinates)
-                    }
-                }
-            }
-            fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-                androidFusedLibrary {
-                    namespace =  "com.example.fusedLib"
-                }
-                pluginCallbacks += FusedLibPublicationCallback::class.java
-            }
-            settings {
-                android {
-                    minSdk {
-                        version = release(30)
-                    }
-                }
-                addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
-            }
+  @Test
+  fun checkSettingsPluginApplies() {
+    val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            defaultConfig { minSdk { version = release(29) } }
+            dependencies { implementation(fusedLibraryCoordinates) }
+          }
         }
-
-        build.executor.run("publishReleasePublicationToMyrepoRepository")
-        // Fused Library minSdk (from settings) is higher than the app, so expect a failed build
-        build.executor.expectFailure().run(":app:processReleaseMainManifest")
-            .assertErrorContains("uses-sdk:minSdkVersion 29 cannot be smaller than version 30 declared in library")
-
-        build.reconfigureSettings {
-            android {
-                minSdk {
-                    version = release(29)
-                }
-            }
+        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+          androidFusedLibrary { namespace = "com.example.fusedLib" }
+          pluginCallbacks += FusedLibPublicationCallback::class.java
         }
-
-        build.executor.run("publishReleasePublicationToMyrepoRepository")
-        // Build should pass as fused library minSdk (from settings) is lower than app minSdk
-        build.executor.run(":app:assemble")
-    }
-
-    @Test
-    fun checkAndroidFusedLibraryOverridesSettings() {
-        val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
-        val build = rule.build {
-            androidApplication {
-                android {
-                    defaultConfig {
-                        minSdk {
-                            version = release(29)
-                        }
-                    }
-                    dependencies {
-                        implementation(fusedLibraryCoordinates)
-                    }
-                }
-            }
-            fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-                androidFusedLibrary {
-                    namespace =  "com.example.fusedLib"
-                    minSdk {
-                        version = release(31)
-                    }
-                }
-                pluginCallbacks += FusedLibPublicationCallback::class.java
-            }
-            settings {
-                android {
-                    minSdk {
-                        version = release(30)
-                    }
-                }
-                addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
-            }
+        settings {
+          android { minSdk { version = release(30) } }
+          addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
         }
+      }
 
-        // Finally, check that setting minSdk in androidFusedLibrary overrides settings minSdk
-        build.executor.run("publishReleasePublicationToMyrepoRepository")
-        build.executor.expectFailure().run(":app:processReleaseMainManifest")
-            .assertErrorContains("uses-sdk:minSdkVersion 29 cannot be smaller than version 31 declared in library")
-    }
+    build.executor.run("publishReleasePublicationToMyrepoRepository")
+    // Fused Library minSdk (from settings) is higher than the app, so expect a failed build
+    build.executor
+      .expectFailure()
+      .run(":app:processReleaseMainManifest")
+      .assertErrorContains("uses-sdk:minSdkVersion 29 cannot be smaller than version 30 declared in library")
 
-    @Test
-    fun checkPackagingDsl() {
-        val build = rule.build {
-            fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
-                androidFusedLibrary {
-                    namespace = "com.example.myfusedlib"
-                    minSdk {
-                        version = release(34)
-                    }
-                    packaging {
-                        resources {
-                            excludes += "**/LICENSE.txt"
-                        }
-                    }
-                }
-                dependencies {
-                    include(project(":lib"))
-                }
-            }
-            androidLibrary {
-                android {
-                    namespace = "com.example.lib"
-                }
-                files {
-                    add("src/main/resources/LICENSE.txt", "This is a license file.")
-                }
-            }
+    build.reconfigureSettings { android { minSdk { version = release(29) } } }
+
+    build.executor.run("publishReleasePublicationToMyrepoRepository")
+    // Build should pass as fused library minSdk (from settings) is lower than app minSdk
+    build.executor.run(":app:assemble")
+  }
+
+  @Test
+  fun checkAndroidFusedLibraryOverridesSettings() {
+    val fusedLibraryCoordinates = "$FUSED_LIBRARY_GROUP:$FUSED_LIBRARY_ARTIFACT_NAME:$FUSED_LIBRARY_VERSION"
+    val build =
+      rule.build {
+        androidApplication {
+          android {
+            defaultConfig { minSdk { version = release(29) } }
+            dependencies { implementation(fusedLibraryCoordinates) }
+          }
         }
-        build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
+        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+          androidFusedLibrary {
+            namespace = "com.example.fusedLib"
+            minSdk { version = release(31) }
+          }
+          pluginCallbacks += FusedLibPublicationCallback::class.java
+        }
+        settings {
+          android { minSdk { version = release(30) } }
+          addRepository("$FUSED_LIB_PROJECT_NAME/build/$FUSED_LIBRARY_REPO_NAME")
+        }
+      }
 
-        build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME")
-            .assertAar(AarSelector.NO_BUILD_TYPE) {
-                javaResources {
-                    isEmpty()
-                }
-            }
-    }
+    // Finally, check that setting minSdk in androidFusedLibrary overrides settings minSdk
+    build.executor.run("publishReleasePublicationToMyrepoRepository")
+    build.executor
+      .expectFailure()
+      .run(":app:processReleaseMainManifest")
+      .assertErrorContains("uses-sdk:minSdkVersion 29 cannot be smaller than version 31 declared in library")
+  }
 
-    companion object {
-        const val FUSED_LIB_PROJECT_NAME = "fusedLib"
-    }
+  @Test
+  fun checkPackagingDsl() {
+    val build =
+      rule.build {
+        fusedLibrary(":$FUSED_LIB_PROJECT_NAME") {
+          androidFusedLibrary {
+            namespace = "com.example.myfusedlib"
+            minSdk { version = release(34) }
+            packaging { resources { excludes += "**/LICENSE.txt" } }
+          }
+          dependencies { include(project(":lib")) }
+        }
+        androidLibrary {
+          android { namespace = "com.example.lib" }
+          files { add("src/main/resources/LICENSE.txt", "This is a license file.") }
+        }
+      }
+    build.executor.run(":$FUSED_LIB_PROJECT_NAME:assemble")
+
+    build.fusedLibrary(":$FUSED_LIB_PROJECT_NAME").assertAar(AarSelector.NO_BUILD_TYPE) { javaResources { isEmpty() } }
+  }
+
+  companion object {
+    const val FUSED_LIB_PROJECT_NAME = "fusedLib"
+  }
 }

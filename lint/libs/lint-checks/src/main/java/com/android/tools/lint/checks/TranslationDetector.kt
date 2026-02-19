@@ -83,19 +83,16 @@ import org.w3c.dom.Node
 /**
  * Checks for incomplete translations - e.g. keys that are only present in some locales but not all.
  *
- * TODO <ul> <li> Port to Kotlin before the following changes: <li> Remove all the batch mode
- * handling here; instead of accumulating all strings we can now limit the analysis directly to
- * references from the current strings file being analyzed -- as long as we don't duplicate the
- * work, e.g. we only do the analysis from the base folder config, except for extra-strings. </ul>
+ * TODO <ul> <li> Port to Kotlin before the following changes: <li> Remove all the batch mode handling here; instead of accumulating all
+ * strings we can now limit the analysis directly to references from the current strings file being analyzed -- as long as we don't
+ * duplicate the work, e.g. we only do the analysis from the base folder config, except for extra-strings. </ul>
  */
 class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, BinaryResourceScanner {
   /** The names of resources, for each resource type, defined in the base folder. */
-  private val baseNames: MutableMap<ResourceType, MutableSet<String>> =
-    Maps.newEnumMap(ResourceType::class.java)
+  private val baseNames: MutableMap<ResourceType, MutableSet<String>> = Maps.newEnumMap(ResourceType::class.java)
 
   /** The names of resources, for each resource type, defined in a non-base folder. */
-  private val nonBaseNames: MutableMap<ResourceType, MutableSet<String>> =
-    Maps.newEnumMap(ResourceType::class.java)
+  private val nonBaseNames: MutableMap<ResourceType, MutableSet<String>> = Maps.newEnumMap(ResourceType::class.java)
 
   /** For missing strings, a map from the string name to the set of locales where it's missing. */
   private var missingMap: MutableMap<String, Set<String>>? = null
@@ -113,9 +110,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   private var translations: MutableMap<String, MutableSet<String>>? = null
 
   private fun ignoreFile(context: Context) =
-    context.file.name.startsWith("donottranslate") ||
-      ResourceUsageModel.isAnalyticsFile(context.file) ||
-      !context.project.reportIssues
+    context.file.name.startsWith("donottranslate") || ResourceUsageModel.isAnalyticsFile(context.file) || !context.project.reportIssues
 
   override fun afterCheckRootProject(context: Context) {
     if (context.phase == 2) {
@@ -128,9 +123,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
 
   private fun processMissingTranslations(context: Context) {
     val nameToLocales = translations
-    if (
-      nameToLocales?.isNotEmpty() == true && context.isEnabled(MISSING) && pendingLocales != null
-    ) {
+    if (nameToLocales?.isNotEmpty() == true && context.isEnabled(MISSING) && pendingLocales != null) {
       val allLocales = filterLocalesByResConfigs(context.project, pendingLocales!!)
 
       // TODO: Complain if we have languages that only have region specific folders
@@ -323,15 +316,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
         if (context.driver.scope.contains(Scope.ALL_RESOURCE_FILES)) {
           batchVisitResource(type, folderName, context, name, element, defaultLocale)
         } else {
-          incrementalVisitResource(
-            context,
-            type,
-            name,
-            originalName,
-            element,
-            folderName,
-            defaultLocale,
-          )
+          incrementalVisitResource(context, type, name, originalName, element, folderName, defaultLocale)
         }
       }
     }
@@ -371,20 +356,14 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       client.log(
         Severity.ERROR,
         null,
-        "Resource repository is out-of-date:" +
-          " Could not find resource $originalName of type $type in namespace $namespace",
+        "Resource repository is out-of-date:" + " Could not find resource $originalName of type $type in namespace $namespace",
       )
       return
     }
     val hasDefault = items.filter { isDefaultFolder(it.configuration, null) }.any()
     if (!hasDefault) {
       reportExtraResource(type, name, context, element)
-    } else if (
-      (type == STRING || type == PLURALS) &&
-        !folderName.contains('-') &&
-        element != null &&
-        context is XmlContext
-    ) {
+    } else if ((type == STRING || type == PLURALS) && !folderName.contains('-') && element != null && context is XmlContext) {
       // Incrementally check for missing translations
 
       if (handleNonTranslatable(name, element, context, true)) {
@@ -488,10 +467,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
             return
           }
 
-          val language =
-            getLanguageTagFromFolder(folderName)
-              ?: getLanguageTagFromQualifiers(defaultLocale)
-              ?: ""
+          val language = getLanguageTagFromFolder(folderName) ?: getLanguageTagFromQualifiers(defaultLocale) ?: ""
 
           recordTranslation(name, language)
         }
@@ -512,12 +488,10 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
   }
 
   /**
-   * Determines whether for the sake of this check the given folder is a default folder. Normally
-   * this would mean that it has no resource qualifiers, but (a) we allow density qualifiers (since
-   * the resource system will pick among them and (b) we allow version qualifiers since it's a
-   * common practice to create version specific resources only used from themes (and indirectly
-   * theme drawables) dedicates to a specific platform version, e.g. Material-theme only theme
-   * resources, and we don't want false positives in this area.
+   * Determines whether for the sake of this check the given folder is a default folder. Normally this would mean that it has no resource
+   * qualifiers, but (a) we allow density qualifiers (since the resource system will pick among them and (b) we allow version qualifiers
+   * since it's a common practice to create version specific resources only used from themes (and indirectly theme drawables) dedicates to a
+   * specific platform version, e.g. Material-theme only theme resources, and we don't want false positives in this area.
    */
   private fun isDefaultFolder(configuration: FolderConfiguration?, folderName: String?): Boolean {
     val config: FolderConfiguration =
@@ -564,12 +538,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
     languages.add(language)
   }
 
-  private fun handleNonTranslatable(
-    name: String,
-    element: Element,
-    context: XmlContext,
-    isDefaultFolder: Boolean,
-  ): Boolean {
+  private fun handleNonTranslatable(name: String, element: Element, context: XmlContext, isDefaultFolder: Boolean): Boolean {
     val translatable: Attr? = element.getAttributeNode(ATTR_TRANSLATABLE)
     if (translatable != null && !translatable.value!!.toBoolean()) {
       if (
@@ -593,18 +562,8 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
       //  in other folders
       recordTranslatable(context, name)
       return true
-    } else if (
-      !isDefaultFolder &&
-        nonTranslatable?.contains(name) == true &&
-        getLocaleAndRegion(context.file.parentFile.name) != null
-    ) {
-      reportTranslatedUntranslatable(
-        context,
-        name,
-        element,
-        element.getAttributeNode(ATTR_NAME) ?: element,
-        false,
-      )
+    } else if (!isDefaultFolder && nonTranslatable?.contains(name) == true && getLocaleAndRegion(context.file.parentFile.name) != null) {
+      reportTranslatedUntranslatable(context, name, element, element.getAttributeNode(ATTR_NAME) ?: element, false)
     }
     return false
   }
@@ -637,35 +596,17 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
     val languageDescription = getLanguageDescription(language)
     val message =
       when {
-        name == null ->
-          "This resource folder is marked as non-translatable yet is in a translated resource folder ($languageDescription)"
+        name == null -> "This resource folder is marked as non-translatable yet is in a translated resource folder ($languageDescription)"
         translatableDefinedLocally ->
           "The resource string \"$name\" is marked as translatable=\"false\", but is translated to $languageDescription here"
         else ->
           "The resource string \"$name\" has been marked as translatable=\"false\" elsewhere (usually in the `values` folder), but is translated to $languageDescription here"
       }
-    val fix =
-      fix()
-        .name("Remove translation")
-        .replace()
-        .range(context.getLocation(element))
-        .with("")
-        .build()
-    context.report(
-      TRANSLATED_UNTRANSLATABLE,
-      locationNode,
-      context.getLocation(locationNode),
-      message,
-      fix,
-    )
+    val fix = fix().name("Remove translation").replace().range(context.getLocation(element)).with("").build()
+    context.report(TRANSLATED_UNTRANSLATABLE, locationNode, context.getLocation(locationNode), message, fix)
   }
 
-  private fun reportExtraResource(
-    type: ResourceType,
-    name: String,
-    context: ResourceContext,
-    element: Element?,
-  ) {
+  private fun reportExtraResource(type: ResourceType, name: String, context: ResourceContext, element: Element?) {
     // Found resource in folder that isn't present in the base folder;
     // this can lead to a crash
     val parentFolder = context.file.parentFile.name
@@ -704,9 +645,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
         }
       // Use the ExtraTranslation id for string related problems (historical) and
       // the new MissingDefaultResource for everything else
-      val issue =
-        if (type == STRING || type == ARRAY && element.tagName == TAG_STRING_ARRAY) EXTRA
-        else MISSING_BASE
+      val issue = if (type == STRING || type == ARRAY && element.tagName == TAG_STRING_ARRAY) EXTRA else MISSING_BASE
       val location = context.getElementLocation(element, attribute = ATTR_NAME)
       context.report(issue, element, location, message, fix)
     } else {
@@ -716,12 +655,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
     }
   }
 
-  private fun reportMissingTranslation(
-    name: String,
-    context: XmlContext,
-    element: Element,
-    missingFrom: Set<String>,
-  ) {
+  private fun reportMissingTranslation(name: String, context: XmlContext, element: Element, missingFrom: Set<String>) {
     // Found resource in folder that isn't present in the base folder;
     // this can lead to a crash
     val separator = if (missingFrom.size == 2) " or " else ", "
@@ -816,12 +750,7 @@ class TranslationDetector : Detector(), XmlScanner, ResourceFolderScanner, Binar
     private val IMPLEMENTATION =
       Implementation(
         TranslationDetector::class.java,
-        EnumSet.of(
-          Scope.ALL_RESOURCE_FILES,
-          Scope.RESOURCE_FILE,
-          Scope.RESOURCE_FOLDER,
-          Scope.BINARY_RESOURCE_FILE,
-        ),
+        EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.RESOURCE_FILE, Scope.RESOURCE_FOLDER, Scope.BINARY_RESOURCE_FILE),
         Scope.RESOURCE_FILE_SCOPE,
       )
 

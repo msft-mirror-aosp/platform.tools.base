@@ -37,17 +37,18 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 internal class TestProjectVariantDslInfoImpl(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    dataProvider: ManifestDataProvider,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    private val signingConfigOverride: SigningConfig?,
-    extension: InternalTestExtension
-) : VariantDslInfoImpl(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  dataProvider: ManifestDataProvider,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  private val signingConfigOverride: SigningConfig?,
+  extension: InternalTestExtension,
+) :
+  VariantDslInfoImpl(
     componentIdentity,
     componentType,
     defaultConfig,
@@ -56,58 +57,54 @@ internal class TestProjectVariantDslInfoImpl(
     dataProvider,
     services,
     buildDirectory,
-    extension
-), TestProjectVariantDslInfo {
+    extension,
+  ),
+  TestProjectVariantDslInfo {
 
-    override val applicationId: Property<String> =
-        services.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            initTestApplicationId(productFlavorList, defaultConfig, services)
-        )
+  override val applicationId: Property<String> =
+    services.newPropertyBackingDeprecatedApi(String::class.java, initTestApplicationId(productFlavorList, defaultConfig, services))
 
-    override val isAndroidTestCoverageEnabled: Boolean
-        get() = instrumentedTestDelegate.isAndroidTestCoverageEnabled
+  override val isAndroidTestCoverageEnabled: Boolean
+    get() = instrumentedTestDelegate.isAndroidTestCoverageEnabled
 
-    // TODO: Test project doesn't have isDebuggable dsl in the build type, we should only have
-    //  `debug` variants be debuggable
-    override val isDebuggable: Boolean
-        get() = ProfilingMode.getProfilingModeType(
-            services.projectOptions[StringOption.PROFILING_MODE]
-        ).isDebuggable
-            ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
-            ?: false
+  // TODO: Test project doesn't have isDebuggable dsl in the build type, we should only have
+  //  `debug` variants be debuggable
+  override val isDebuggable: Boolean
+    get() =
+      ProfilingMode.getProfilingModeType(services.projectOptions[StringOption.PROFILING_MODE]).isDebuggable
+        ?: (buildTypeObj as? ApplicationBuildType)?.isDebuggable
+        ?: false
 
-    override val signingConfigResolver: SigningConfigResolver? by lazy {
-        SigningConfigResolver.create(buildTypeObj, mergedFlavor, signingConfigOverride, extension, services)
-    }
+  override val signingConfigResolver: SigningConfigResolver? by lazy {
+    SigningConfigResolver.create(buildTypeObj, mergedFlavor, signingConfigOverride, extension, services)
+  }
 
-    private val instrumentedTestDelegate by lazy {
-        InstrumentedTestDslInfoImpl(
-            buildTypeObj,
-            productFlavorList,
-            defaultConfig,
-            dataProvider,
-            services,
-            mergedFlavor.testInstrumentationRunnerArguments
-        )
-    }
+  private val instrumentedTestDelegate by lazy {
+    InstrumentedTestDslInfoImpl(
+      buildTypeObj,
+      productFlavorList,
+      defaultConfig,
+      dataProvider,
+      services,
+      mergedFlavor.testInstrumentationRunnerArguments,
+    )
+  }
 
-    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
-        return instrumentedTestDelegate.getInstrumentationRunner(dexingType)
-    }
+  override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
+    return instrumentedTestDelegate.getInstrumentationRunner(dexingType)
+  }
 
-    override val instrumentationRunnerArguments: Map<String, String>
-        get() = instrumentedTestDelegate.instrumentationRunnerArguments
-    override val handleProfiling: Provider<Boolean>
-        get() = instrumentedTestDelegate.handleProfiling
-    override val functionalTest: Provider<Boolean>
-        get() = instrumentedTestDelegate.functionalTest
-    override val testLabel: Provider<String>
-        get() = instrumentedTestDelegate.testLabel
+  override val instrumentationRunnerArguments: Map<String, String>
+    get() = instrumentedTestDelegate.instrumentationRunnerArguments
 
-    override val dexingDslInfo: DexingDslInfo by lazy {
-        DexingDslInfoImpl(
-            buildTypeObj, mergedFlavor
-        )
-    }
+  override val handleProfiling: Provider<Boolean>
+    get() = instrumentedTestDelegate.handleProfiling
+
+  override val functionalTest: Provider<Boolean>
+    get() = instrumentedTestDelegate.functionalTest
+
+  override val testLabel: Provider<String>
+    get() = instrumentedTestDelegate.testLabel
+
+  override val dexingDslInfo: DexingDslInfo by lazy { DexingDslInfoImpl(buildTypeObj, mergedFlavor) }
 }

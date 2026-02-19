@@ -19,69 +19,60 @@ package com.android.build.gradle.internal.cxx.build
 import com.android.build.gradle.internal.cxx.gradle.generator.CxxConfigurationModel
 import com.android.build.gradle.internal.cxx.io.synchronizeFile
 import com.android.build.gradle.internal.cxx.json.AndroidBuildGradleJsons.getNativeBuildMiniConfigs
-import com.android.build.gradle.internal.cxx.logging.errorln
 import com.android.build.gradle.internal.cxx.logging.infoln
-import com.android.build.gradle.internal.cxx.logging.lifecycleln
 import com.android.build.gradle.internal.cxx.model.name
-import com.android.build.gradle.internal.cxx.model.toJsonString
-import org.gradle.process.ExecOperations
 import java.io.File
+import org.gradle.process.ExecOperations
 
-/**
- * A CxxBuilder that symlinks (or copies) files from [soFolder] to [soRepublishFolder].
- */
+/** A CxxBuilder that symlinks (or copies) files from [soFolder] to [soRepublishFolder]. */
 class CxxRepublishBuilder(val model: CxxConfigurationModel) : CxxBuilder {
-    // objFolder must be here for legacy reasons but its value was never correct for CMake.
-    // There is no folder that has .o files for the entire variant.
-    val objFolder: File get() =
-        (model.activeAbis + model.unusedAbis).first().intermediatesParentFolder
-    val soFolder: File get() =
-        (model.activeAbis + model.unusedAbis).first().intermediatesParentFolder
-    override fun build(ops: ExecOperations) {
-        infoln("link or copy build outputs to republish point")
-        val abis = model.activeAbis
-        val miniConfigs = getNativeBuildMiniConfigs(abis, null)
-        for (config in miniConfigs) {
-            for (library in config.libraries.values) {
-                val baseOutputLibrary = library.output ?: continue
-                if (baseOutputLibrary.extension != "" && baseOutputLibrary.extension != "so") {
-                    infoln("Not republishing $baseOutputLibrary because it wasn't an executable type")
-                    continue
-                }
-                val abi = abis.single { it.name == library.abi }
+  // objFolder must be here for legacy reasons but its value was never correct for CMake.
+  // There is no folder that has .o files for the entire variant.
+  val objFolder: File
+    get() = (model.activeAbis + model.unusedAbis).first().intermediatesParentFolder
 
-                if (!baseOutputLibrary.canonicalPath.startsWith(abi.soFolder.canonicalPath)) {
-                    infoln("Not republishing $baseOutputLibrary because it wasn't under ${abi.soFolder}")
-                    continue
-                }
-                // Determine the subfolder segment baseOutputLibrary with respect to the
-                // ABI's soFolder.
-                val subfolderSegment = baseOutputLibrary.relativeTo(abi.soFolder)
-                // The file will be republished with the same subfolder segment but now
-                // under soRepublishFolder.
-                val republishOutputLibrary = abi.soRepublishFolder.resolve(subfolderSegment).canonicalFile
+  val soFolder: File
+    get() = (model.activeAbis + model.unusedAbis).first().intermediatesParentFolder
 
-                synchronizeFile(
-                    baseOutputLibrary,
-                    republishOutputLibrary)
-
-                for (runtimeFile in library.runtimeFiles) {
-                    synchronizeFile(
-                        runtimeFile,
-                        abi.soRepublishFolder.resolve(runtimeFile.name))
-                }
-            }
+  override fun build(ops: ExecOperations) {
+    infoln("link or copy build outputs to republish point")
+    val abis = model.activeAbis
+    val miniConfigs = getNativeBuildMiniConfigs(abis, null)
+    for (config in miniConfigs) {
+      for (library in config.libraries.values) {
+        val baseOutputLibrary = library.output ?: continue
+        if (baseOutputLibrary.extension != "" && baseOutputLibrary.extension != "so") {
+          infoln("Not republishing $baseOutputLibrary because it wasn't an executable type")
+          continue
         }
+        val abi = abis.single { it.name == library.abi }
 
-        // Symlink STL .so if any
-        for(abi in model.activeAbis) {
-            if (abi.stlLibraryFile == null) continue
-            if (!abi.stlLibraryFile.isFile) continue
-            if (!abi.soRepublishFolder.isDirectory) continue
-            val objAbi = abi.soRepublishFolder.resolve(abi.stlLibraryFile.name)
-            synchronizeFile(
-                abi.stlLibraryFile,
-                objAbi)
+        if (!baseOutputLibrary.canonicalPath.startsWith(abi.soFolder.canonicalPath)) {
+          infoln("Not republishing $baseOutputLibrary because it wasn't under ${abi.soFolder}")
+          continue
         }
+        // Determine the subfolder segment baseOutputLibrary with respect to the
+        // ABI's soFolder.
+        val subfolderSegment = baseOutputLibrary.relativeTo(abi.soFolder)
+        // The file will be republished with the same subfolder segment but now
+        // under soRepublishFolder.
+        val republishOutputLibrary = abi.soRepublishFolder.resolve(subfolderSegment).canonicalFile
+
+        synchronizeFile(baseOutputLibrary, republishOutputLibrary)
+
+        for (runtimeFile in library.runtimeFiles) {
+          synchronizeFile(runtimeFile, abi.soRepublishFolder.resolve(runtimeFile.name))
+        }
+      }
     }
+
+    // Symlink STL .so if any
+    for (abi in model.activeAbis) {
+      if (abi.stlLibraryFile == null) continue
+      if (!abi.stlLibraryFile.isFile) continue
+      if (!abi.soRepublishFolder.isDirectory) continue
+      val objAbi = abi.soRepublishFolder.resolve(abi.stlLibraryFile.name)
+      synchronizeFile(abi.stlLibraryFile, objAbi)
+    }
+  }
 }

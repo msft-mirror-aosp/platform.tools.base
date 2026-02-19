@@ -19,107 +19,93 @@ package com.android.builder.internal.packaging
 import com.android.builder.packaging.JarFlinger
 import com.android.testutils.truth.ZipFileSubject
 import com.google.common.truth.Truth
+import java.io.File
+import java.util.zip.Deflater
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.util.zip.Deflater
 
 class AabFlingerTest {
 
-    @get:Rule
-    val tmp = TemporaryFolder()
+  @get:Rule val tmp = TemporaryFolder()
 
-    private lateinit var outputFile: File
+  private lateinit var outputFile: File
 
-    @Before
-    fun setUp() {
-        outputFile = tmp.root.resolve("out.aab")
-    }
+  @Before
+  fun setUp() {
+    outputFile = tmp.root.resolve("out.aab")
+  }
 
-    private fun getAabFlinger(outputFile: File): AabFlinger = AabFlinger(
-            outputFile = outputFile,
-            signerName = "test",
-            privateKey = getPrivateKey(),
-            certificates = getCertificates(),
-            minSdkVersion = 18
+  private fun getAabFlinger(outputFile: File): AabFlinger =
+    AabFlinger(
+      outputFile = outputFile,
+      signerName = "test",
+      privateKey = getPrivateKey(),
+      certificates = getCertificates(),
+      minSdkVersion = 18,
     )
 
-    @Test
-    fun writeZip() {
-        val fileInputMap = mapOf ("foo.txt" to "foo", "bar.txt" to "bar", "foo/bar.txt" to "foobar")
-        val jarInput = tmp.root.resolve("foo.jar")
-        JarFlinger(jarInput.toPath()).use { jarFlinger ->
-            fileInputMap.forEach { (path, content) ->
-                val fileInput = tmp.root.resolve(path)
-                fileInput.parentFile.mkdirs()
-                fileInput.writeText(content)
-                jarFlinger.addFile(path, fileInput.toPath())
-            }
-        }
-        getAabFlinger(outputFile).use {
-            it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION)
-        }
-        ZipFileSubject.assertThat(outputFile) {
-            it.exists()
-            fileInputMap.forEach { (path, content) ->
-                it.containsFileWithContent(path, content)
-            }
-        }
+  @Test
+  fun writeZip() {
+    val fileInputMap = mapOf("foo.txt" to "foo", "bar.txt" to "bar", "foo/bar.txt" to "foobar")
+    val jarInput = tmp.root.resolve("foo.jar")
+    JarFlinger(jarInput.toPath()).use { jarFlinger ->
+      fileInputMap.forEach { (path, content) ->
+        val fileInput = tmp.root.resolve(path)
+        fileInput.parentFile.mkdirs()
+        fileInput.writeText(content)
+        jarFlinger.addFile(path, fileInput.toPath())
+      }
+    }
+    getAabFlinger(outputFile).use { it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION) }
+    ZipFileSubject.assertThat(outputFile) {
+      it.exists()
+      fileInputMap.forEach { (path, content) -> it.containsFileWithContent(path, content) }
+    }
+  }
+
+  @Test
+  fun testCompression() {
+    val jarInput = tmp.root.resolve("foo.jar")
+    JarFlinger(jarInput.toPath()).use { jarFlinger ->
+      jarFlinger.setCompressionLevel(Deflater.NO_COMPRESSION)
+      val bigFile = tmp.root.resolve("bigFile.txt")
+      bigFile.writeText("foo".repeat(1000))
+      jarFlinger.addFile("bigFile.txt", bigFile.toPath())
     }
 
-    @Test
-    fun testCompression() {
-        val jarInput = tmp.root.resolve("foo.jar")
-        JarFlinger(jarInput.toPath()).use { jarFlinger ->
-            jarFlinger.setCompressionLevel(Deflater.NO_COMPRESSION)
-            val bigFile = tmp.root.resolve("bigFile.txt")
-            bigFile.writeText("foo".repeat(1000))
-            jarFlinger.addFile("bigFile.txt", bigFile.toPath())
-        }
+    val uncompressedFile = tmp.root.resolve("uncompressed.aab")
 
-        val uncompressedFile = tmp.root.resolve("uncompressed.aab")
+    getAabFlinger(uncompressedFile).use { it.writeZip(jarInput, Deflater.NO_COMPRESSION) }
 
-        getAabFlinger(uncompressedFile).use {
-            it.writeZip(jarInput, Deflater.NO_COMPRESSION)
-        }
+    ZipFileSubject.assertThat(uncompressedFile) { it.exists() }
 
-        ZipFileSubject.assertThat(uncompressedFile) {
-            it.exists()
-        }
+    getAabFlinger(outputFile).use { it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION) }
 
-        getAabFlinger(outputFile).use {
-            it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION)
-        }
+    ZipFileSubject.assertThat(outputFile) { it.exists() }
 
-        ZipFileSubject.assertThat(outputFile) {
-            it.exists()
-        }
+    // check that the compressed file is smaller than the uncompressed file
+    Truth.assertThat(outputFile.length()).isLessThan(uncompressedFile.length())
+  }
 
-        // check that the compressed file is smaller than the uncompressed file
-        Truth.assertThat(outputFile.length()).isLessThan(uncompressedFile.length())
+  @Test
+  fun testSigning() {
+    val fileInputMap = mapOf("foo.txt" to "foo", "bar.txt" to "bar", "foo/bar.txt" to "foobar")
+    val jarInput = tmp.root.resolve("foo.jar")
+    JarFlinger(jarInput.toPath()).use { jarFlinger ->
+      fileInputMap.forEach { (path, content) ->
+        val fileInput = tmp.root.resolve(path)
+        fileInput.parentFile.mkdirs()
+        fileInput.writeText(content)
+        jarFlinger.addFile(path, fileInput.toPath())
+      }
     }
-
-    @Test
-    fun testSigning() {
-        val fileInputMap = mapOf ("foo.txt" to "foo", "bar.txt" to "bar", "foo/bar.txt" to "foobar")
-        val jarInput = tmp.root.resolve("foo.jar")
-        JarFlinger(jarInput.toPath()).use { jarFlinger ->
-            fileInputMap.forEach { (path, content) ->
-                val fileInput = tmp.root.resolve(path)
-                fileInput.parentFile.mkdirs()
-                fileInput.writeText(content)
-                jarFlinger.addFile(path, fileInput.toPath())
-            }
-        }
-        getAabFlinger(outputFile).use {
-            it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION)
-        }
-        ZipFileSubject.assertThat(outputFile) {
-            it.contains("META-INF/MANIFEST.MF")
-            it.contains("META-INF/TEST.RSA")
-            it.contains("META-INF/TEST.SF")
-        }
+    getAabFlinger(outputFile).use { it.writeZip(jarInput, Deflater.DEFAULT_COMPRESSION) }
+    ZipFileSubject.assertThat(outputFile) {
+      it.contains("META-INF/MANIFEST.MF")
+      it.contains("META-INF/TEST.RSA")
+      it.contains("META-INF/TEST.SF")
     }
+  }
 }

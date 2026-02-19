@@ -17,18 +17,14 @@ package com.android.build.gradle.api
 
 import java.io.File
 
-/**
- * An AndroidSourceFile represents a single file input for an Android project.
- */
+/** An AndroidSourceFile represents a single file input for an Android project. */
 @Deprecated("Use  com.android.build.api.dsl.AndroidSourceFile")
-interface AndroidSourceFile: com.android.build.api.dsl.AndroidSourceFile {
-    /**
-     * A concise name for the source directory (typically used to identify it in a collection).
-     */
-    override fun getName(): String
+interface AndroidSourceFile : com.android.build.api.dsl.AndroidSourceFile {
+  /** A concise name for the source directory (typically used to identify it in a collection). */
+  override fun getName(): String
 
-    /** The source file */
-    val srcFile: File
+  /** The source file */
+  val srcFile: File
 
-    override fun srcFile(srcPath: Any): AndroidSourceFile
+  override fun srcFile(srcPath: Any): AndroidSourceFile
 }

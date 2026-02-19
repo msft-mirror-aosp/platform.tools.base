@@ -27,11 +27,10 @@ public class UnitTestingComplexProjectTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("unitTestingComplexProject")
-                    .addGradleProperties(BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Test
-    public void runAllTests() throws Exception {
+    public void runAllTests() {
         project.execute("clean", "test");
     }
 }

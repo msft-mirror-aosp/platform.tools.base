@@ -38,13 +38,10 @@ import com.android.build.gradle.internal.component.features.BuildConfigCreationC
  * ```
  */
 interface BuildConfigTaskCreationAction {
-    val buildConfigCreationConfig: BuildConfigCreationConfig
+  val buildConfigCreationConfig: BuildConfigCreationConfig
 }
 
-class BuildConfigTaskCreationActionImpl(
-    creationConfig: ComponentCreationConfig
-): BuildConfigTaskCreationAction {
+class BuildConfigTaskCreationActionImpl(creationConfig: ComponentCreationConfig) : BuildConfigTaskCreationAction {
 
-    override val buildConfigCreationConfig: BuildConfigCreationConfig =
-        creationConfig.buildConfigCreationConfig!!
+  override val buildConfigCreationConfig: BuildConfigCreationConfig = creationConfig.buildConfigCreationConfig!!
 }

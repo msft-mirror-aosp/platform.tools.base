@@ -51,35 +51,23 @@ class TestRunConfigureActionTest {
 
     project = ProjectBuilder.builder().withName("testProject").withProjectDir(projectPath).build()
 
-    appProject =
-      ProjectBuilder.builder()
-        .withName("app")
-        .withParent(project)
-        .withProjectDir(appProjectPath)
-        .build()
+    appProject = ProjectBuilder.builder().withName("app").withParent(project).withProjectDir(appProjectPath).build()
 
     appProject.gradle.sharedServices.registerIfAbsent(
-      TestLabBuildService.RegistrationAction.getBuildServiceName(
-        TestLabBuildService::class.java,
-        appProject,
-      ),
+      TestLabBuildService.RegistrationAction.getBuildServiceName(TestLabBuildService::class.java, appProject),
       TestLabBuildService::class.java,
     ) { buildServiceSpec ->
       buildServiceSpec.parameters.numUniformShards.set(10)
     }
 
-    appProject.tasks.register(
-      "firebaseUploadExtraDeviceFiles",
-      ExtraDeviceFilesUploadTask::class.java,
-    ) { task ->
+    appProject.tasks.register("firebaseUploadExtraDeviceFiles", ExtraDeviceFilesUploadTask::class.java) { task ->
       task.outputFile.set(appProject.layout.buildDirectory.file("extra_device_files_info"))
     }
   }
 
   fun <T> assertNoModify(property: Property<T>, value: T) {
     val error = assertThrows(IllegalStateException::class.java) { property.set(value) }
-    assertThat(error.message)
-      .isEqualTo("The value for ${property.toString()} cannot be changed any further.")
+    assertThat(error.message).isEqualTo("The value for ${property.toString()} cannot be changed any further.")
   }
 
   @Test
@@ -92,38 +80,27 @@ class TestRunConfigureActionTest {
         locale = "sv_SE"
       }
 
-    TestRunConfigureAction(appProject.objects, appProject.providers, appProject)
-      .configureTaskInput(deviceImpl)
-      .apply {
+    TestRunConfigureAction(appProject.objects, appProject.providers, appProject).configureTaskInput(deviceImpl).apply {
 
-        // The ManagedDevice dsl name is handled via AGP to the task.
-        assertThat(device.get()).isEqualTo("b0q")
-        assertThat(apiLevel.get()).isEqualTo(33)
-        assertThat(orientation.get()).isEqualTo(Orientation.PORTRAIT)
-        assertThat(locale.get()).isEqualTo("sv_SE")
-        assertThat(buildService.get())
-          .isSameInstanceAs(
-            TestLabBuildService.RegistrationAction.getBuildService(appProject).get()
-          )
-        assertThat(numUniformShards.get()).isEqualTo(10)
-        assertThat(extraDeviceUrlsFile.get().asFile)
-          .isEqualTo(appProjectPath.resolve("build/extra_device_files_info"))
+      // The ManagedDevice dsl name is handled via AGP to the task.
+      assertThat(device.get()).isEqualTo("b0q")
+      assertThat(apiLevel.get()).isEqualTo(33)
+      assertThat(orientation.get()).isEqualTo(Orientation.PORTRAIT)
+      assertThat(locale.get()).isEqualTo("sv_SE")
+      assertThat(buildService.get()).isSameInstanceAs(TestLabBuildService.RegistrationAction.getBuildService(appProject).get())
+      assertThat(numUniformShards.get()).isEqualTo(10)
+      assertThat(extraDeviceUrlsFile.get().asFile).isEqualTo(appProjectPath.resolve("build/extra_device_files_info"))
 
-        assertNoModify(device, "Pixel 3")
-        assertNoModify(apiLevel, 15)
-        assertNoModify(orientation, Orientation.DEFAULT)
-        assertNoModify(locale, "en-US")
-        assertNoModify(numUniformShards, 4)
-        assertNoModify(
-          extraDeviceUrlsFile,
-          appProject.layout.buildDirectory.file("somewhere/else").get(),
-        )
-        assertNoModify(
-          buildService,
-          appProject.gradle.sharedServices
-            .registerIfAbsent("newService", TestLabBuildService::class.java) {}
-            .get(),
-        )
-      }
+      assertNoModify(device, "Pixel 3")
+      assertNoModify(apiLevel, 15)
+      assertNoModify(orientation, Orientation.DEFAULT)
+      assertNoModify(locale, "en-US")
+      assertNoModify(numUniformShards, 4)
+      assertNoModify(extraDeviceUrlsFile, appProject.layout.buildDirectory.file("somewhere/else").get())
+      assertNoModify(
+        buildService,
+        appProject.gradle.sharedServices.registerIfAbsent("newService", TestLabBuildService::class.java) {}.get(),
+      )
+    }
   }
 }

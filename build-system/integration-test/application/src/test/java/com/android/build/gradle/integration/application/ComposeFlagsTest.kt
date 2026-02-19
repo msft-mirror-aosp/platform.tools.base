@@ -21,85 +21,80 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import kotlin.test.assertNotNull
 
 class ComposeFlagsTest {
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    private val withCompose = MinimalSubProject.app("com.example.with")
-        .appendToBuild("""
-android {
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "+"
-    }
-}
-        """.trimIndent())
+  private val withCompose =
+    MinimalSubProject.app("com.example.with")
+      .appendToBuild(
+        """
+        android {
+            buildFeatures {
+                compose = true
+            }
+            composeOptions {
+                kotlinCompilerExtensionVersion = "+"
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-    private val withoutCompose = MinimalSubProject.app("com.example.without")
+  private val withoutCompose = MinimalSubProject.app("com.example.without")
 
-    private val explicitWithoutCompose = MinimalSubProject.app("com.example.explicit")
-        .appendToBuild("""
-android {
-    buildFeatures {
-        compose = false
-    }
-}
-        """.trimIndent())
+  private val explicitWithoutCompose =
+    MinimalSubProject.app("com.example.explicit")
+      .appendToBuild(
+        """
+        android {
+            buildFeatures {
+                compose = false
+            }
+        }
+        """
+          .trimIndent()
+      )
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":with", withCompose)
-                .subproject(":without", withoutCompose)
-                .subproject(":explicitWithout", explicitWithoutCompose)
-                .build()
-        )
-        .disableBuiltInKotlin()
-        .create()
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":with", withCompose)
+          .subproject(":without", withoutCompose)
+          .subproject(":explicitWithout", explicitWithoutCompose)
+          .build()
+      )
+      .disableBuiltInKotlin()
+      .create()
 
-    @Test
-    fun verifyFlagInModel() {
-        assertNotNull(project)
-        val modelContainer = project.modelV2().fetchModels().container
+  @Test
+  fun verifyFlagInModel() {
+    assertNotNull(project)
+    val modelContainer = project.modelV2().fetchModels().container
 
-        val withModel = modelContainer.getProject(":with")
-        assertNotNull(withModel)
-        val withAndroidProject = withModel.androidProject
-        assertNotNull(withAndroidProject)
-        assertThat(
-            AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(
-                withAndroidProject.flags
-            )
-        ).isTrue()
+    val withModel = modelContainer.getProject(":with")
+    assertNotNull(withModel)
+    val withAndroidProject = withModel.androidProject
+    assertNotNull(withAndroidProject)
+    assertThat(AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(withAndroidProject.flags)).isTrue()
 
-        val withoutModel = modelContainer.getProject(":without")
-        assertNotNull(withoutModel)
-        val withoutAndroidProject = withoutModel.androidProject
-        assertNotNull(withoutAndroidProject)
-        assertThat(
-            AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(
-                withoutAndroidProject.flags
-            )
-        ).isFalse()
+    val withoutModel = modelContainer.getProject(":without")
+    assertNotNull(withoutModel)
+    val withoutAndroidProject = withoutModel.androidProject
+    assertNotNull(withoutAndroidProject)
+    assertThat(AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(withoutAndroidProject.flags)).isFalse()
 
-        val explicitWithoutModel = modelContainer.getProject((":explicitWithout"))
-        assertNotNull(explicitWithoutModel)
-        val explicitWithoutAndroidProject = explicitWithoutModel.androidProject
-        assertNotNull(explicitWithoutAndroidProject)
-        assertThat(
-            AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(
-                explicitWithoutAndroidProject.flags
-            )
-        ).isFalse()
-    }
+    val explicitWithoutModel = modelContainer.getProject((":explicitWithout"))
+    assertNotNull(explicitWithoutModel)
+    val explicitWithoutAndroidProject = explicitWithoutModel.androidProject
+    assertNotNull(explicitWithoutAndroidProject)
+    assertThat(AndroidGradlePluginProjectFlags.BooleanFlag.JETPACK_COMPOSE.getValue(explicitWithoutAndroidProject.flags)).isFalse()
+  }
 }

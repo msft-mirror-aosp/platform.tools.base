@@ -18,11 +18,11 @@ package com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsAct
 
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.AdFormat
 
-fun stringsXml(
-  adFormat: AdFormat
-): String {
- val formatSpecificBlock = when (adFormat) {
-  AdFormat.Banner -> """
+fun stringsXml(adFormat: AdFormat): String {
+  val formatSpecificBlock =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
     <string name="hello_world">Hello world!</string>
     <!-- -
         This is an ad unit ID for a banner test ad. Replace with your own banner ad unit id.
@@ -30,7 +30,8 @@ fun stringsXml(
     <!- -->
     <string name="banner_ad_unit_id">ca-app-pub-3940256099942544/6300978111</string>
   """
-  AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
     <string name="interstitial_ad_sample">Interstitial Ad Sample</string>
     <string name="start_level">Level 1</string>
     <string name="next_level">Next Level</string>
@@ -40,8 +41,8 @@ fun stringsXml(
     <!- -->
     <string name="interstitial_ad_unit_id">ca-app-pub-3940256099942544/1033173712</string>
   """
- }
- return """
+    }
+  return """
 <resources>
     <string name="action_settings">Settings</string>
 

@@ -18,11 +18,11 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.VcsInfo
 
-abstract class VcsInfoImpl: VcsInfo {
+abstract class VcsInfoImpl : VcsInfo {
 
-    abstract override var include: Boolean?
+  abstract override var include: Boolean?
 
-    fun initWith(that: VcsInfoImpl) {
-        include = that.include
-    }
+  fun initWith(that: VcsInfoImpl) {
+    include = that.include
+  }
 }

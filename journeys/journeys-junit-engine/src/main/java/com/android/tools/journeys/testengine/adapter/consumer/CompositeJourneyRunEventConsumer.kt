@@ -18,14 +18,10 @@ package com.android.tools.journeys.testengine.adapter.consumer
 
 import com.android.tools.journeys.proto.JourneyRunEvent
 
-/**
- * A JourneyRunEventConsumer that delegates events to a list of other consumers.
- */
-class CompositeJourneyRunEventConsumer(
-    private val consumers: List<JourneyRunEventConsumer>
-) : JourneyRunEventConsumer {
+/** A JourneyRunEventConsumer that delegates events to a list of other consumers. */
+class CompositeJourneyRunEventConsumer(private val consumers: List<JourneyRunEventConsumer>) : JourneyRunEventConsumer {
 
-    override fun onEvent(event: JourneyRunEvent) {
-        consumers.forEach { it.onEvent(event) }
-    }
+  override fun onEvent(event: JourneyRunEvent) {
+    consumers.forEach { it.onEvent(event) }
+  }
 }

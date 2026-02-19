@@ -23,64 +23,57 @@ import androidx.window.layout.FoldingFeature
 import androidx.window.layout.WindowLayoutInfo
 import com.android.tools.agent.appinspection.testutils.MainLooperRule
 import com.android.tools.agent.nojarjar.FoldObserverImpl
-import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.runBlocking
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.FoldEvent.FoldOrientation
 import com.android.tools.idea.layoutinspector.view.inspection.LayoutInspectorViewProtocol.FoldEvent.FoldState
-import org.junit.Assume
-import org.junit.Before
+import com.google.common.truth.Truth.assertThat
+import java.util.concurrent.CyclicBarrier
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.CyclicBarrier
 
 // This needs to be run via bazel so the classpath can be set up correctly, for both the
 // androidx.window beta02 and beta03 versions.
 class FoldObserverImplTest {
-    @get:Rule
-    val mainLooperRule = MainLooperRule()
+  @get:Rule val mainLooperRule = MainLooperRule()
 
-    val repoCompanionClass = try {
-        Class.forName("androidx.window.layout.WindowInfoRepository\$Companion")
-    }
-    catch (exception: ClassNotFoundException) {
-        Class.forName("androidx.window.layout.WindowInfoTracker\$Companion")
-    }
-
-    val repoImplClass = try {
-        Class.forName("androidx.window.layout.WindowInfoRepositoryImpl")
-    }
-    catch (exception: ClassNotFoundException) {
-        Class.forName("androidx.window.layout.WindowInfoTrackerImpl")
+  val repoCompanionClass =
+    try {
+      Class.forName("androidx.window.layout.WindowInfoRepository\$Companion")
+    } catch (exception: ClassNotFoundException) {
+      Class.forName("androidx.window.layout.WindowInfoTracker\$Companion")
     }
 
-    @Test
-    fun testObserver() {
-        val channel = Channel<WindowLayoutInfo>()
-        val repoImpl = repoImplClass.getDeclaredConstructor(Flow::class.java).newInstance(channel.consumeAsFlow())
-        repoCompanionClass.getDeclaredField("instance").set(null, repoImpl)
-        val latch = CyclicBarrier(2)
-        val observer = FoldObserverImpl { latch.await() }
-        val activity = Activity()
-        val view = View(activity)
-        val group = ViewGroup(activity).apply { addView(view) }
-        observer.startObservingFoldState(group)
-
-        runBlocking {
-            channel.send(WindowLayoutInfo(listOf(FoldingFeature("HALF_OPENED", "HORIZONTAL"))))
-        }
-        latch.await()
-        assertThat(observer.foldState).isEqualTo(FoldState.HALF_OPEN)
-        assertThat(observer.orientation).isEqualTo(FoldOrientation.HORIZONTAL)
-
-        runBlocking {
-            channel.send(WindowLayoutInfo(listOf(FoldingFeature("FLAT", "VERTICAL"))))
-        }
-        latch.await()
-        assertThat(observer.foldState).isEqualTo(FoldState.FLAT)
-        assertThat(observer.orientation).isEqualTo(FoldOrientation.VERTICAL)
-        observer.shutdown()
+  val repoImplClass =
+    try {
+      Class.forName("androidx.window.layout.WindowInfoRepositoryImpl")
+    } catch (exception: ClassNotFoundException) {
+      Class.forName("androidx.window.layout.WindowInfoTrackerImpl")
     }
+
+  @Test
+  fun testObserver() {
+    val channel = Channel<WindowLayoutInfo>()
+    val repoImpl = repoImplClass.getDeclaredConstructor(Flow::class.java).newInstance(channel.consumeAsFlow())
+    repoCompanionClass.getDeclaredField("instance").set(null, repoImpl)
+    val latch = CyclicBarrier(2)
+    val observer = FoldObserverImpl { latch.await() }
+    val activity = Activity()
+    val view = View(activity)
+    val group = ViewGroup(activity).apply { addView(view) }
+    observer.startObservingFoldState(group)
+
+    runBlocking { channel.send(WindowLayoutInfo(listOf(FoldingFeature("HALF_OPENED", "HORIZONTAL")))) }
+    latch.await()
+    assertThat(observer.foldState).isEqualTo(FoldState.HALF_OPEN)
+    assertThat(observer.orientation).isEqualTo(FoldOrientation.HORIZONTAL)
+
+    runBlocking { channel.send(WindowLayoutInfo(listOf(FoldingFeature("FLAT", "VERTICAL")))) }
+    latch.await()
+    assertThat(observer.foldState).isEqualTo(FoldState.FLAT)
+    assertThat(observer.orientation).isEqualTo(FoldOrientation.VERTICAL)
+    observer.shutdown()
+  }
 }

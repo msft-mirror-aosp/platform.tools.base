@@ -32,10 +32,7 @@ class BackgroundTaskInspectorRule : ExternalResource() {
 
   override fun before() {
     inspector.onReceiveCommand(
-      Command.newBuilder()
-        .setTrackBackgroundTask(TrackBackgroundTaskCommand.getDefaultInstance())
-        .build()
-        .toByteArray(),
+      Command.newBuilder().setTrackBackgroundTask(TrackBackgroundTaskCommand.getDefaultInstance()).build().toByteArray(),
       object : Inspector.CommandCallback {
         override fun reply(response: ByteArray) {}
 

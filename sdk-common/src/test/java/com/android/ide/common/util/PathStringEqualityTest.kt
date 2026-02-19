@@ -18,36 +18,34 @@ package com.android.ide.common.util
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/**
- * Tests that verify the hashcode and equals behavior for [PathString]
- */
+/** Tests that verify the hashcode and equals behavior for [PathString] */
 class PathStringEqualityTest {
-    @Test
-    fun testPathsWithCosmeticDifferencesNotEqual() {
-        assertThat(PathString("/foo")).isNotEqualTo(PathString("\\foo"))
-        assertThat(PathString("/foo/")).isNotEqualTo(PathString("/foo"))
-    }
+  @Test
+  fun testPathsWithCosmeticDifferencesNotEqual() {
+    assertThat(PathString("/foo")).isNotEqualTo(PathString("\\foo"))
+    assertThat(PathString("/foo/")).isNotEqualTo(PathString("/foo"))
+  }
 
-    @Test
-    fun testPathEqualsItself() {
-        val path = PathString("/foo")
-        assertThat(path).isEqualTo(path)
-    }
+  @Test
+  fun testPathEqualsItself() {
+    val path = PathString("/foo")
+    assertThat(path).isEqualTo(path)
+  }
 
-    @Test
-    fun testIdenticalPathsConstructedFromDifferentSubstringsAreEqual() {
-        val fooBarBazBar = PathString("/foo/bar/baz/bar")
-        val fooBarBaz = PathString("/foo/bar/baz")
+  @Test
+  fun testIdenticalPathsConstructedFromDifferentSubstringsAreEqual() {
+    val fooBarBazBar = PathString("/foo/bar/baz/bar")
+    val fooBarBaz = PathString("/foo/bar/baz")
 
-        assertThat(fooBarBazBar.parent).isEqualTo(fooBarBaz)
-        assertThat(fooBarBazBar[1]).isEqualTo(PathString("bar"))
-        assertThat(fooBarBaz.relativize(fooBarBazBar)).isEqualTo(PathString("bar"))
-    }
+    assertThat(fooBarBazBar.parent).isEqualTo(fooBarBaz)
+    assertThat(fooBarBazBar[1]).isEqualTo(PathString("bar"))
+    assertThat(fooBarBaz.relativize(fooBarBazBar)).isEqualTo(PathString("bar"))
+  }
 
-    @Test
-    fun testPathsWithEqualStringsAreEqual() {
-        val path1 = PathString("C:\\Program Files\\My App\\someprogram.exe")
-        val path2 = PathString("C:\\Program Files\\My App\\someprogram.exe")
-        assertThat(path1).isEqualTo(path2)
-    }
+  @Test
+  fun testPathsWithEqualStringsAreEqual() {
+    val path1 = PathString("C:\\Program Files\\My App\\someprogram.exe")
+    val path2 = PathString("C:\\Program Files\\My App\\someprogram.exe")
+    assertThat(path1).isEqualTo(path2)
+  }
 }

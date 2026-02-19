@@ -52,9 +52,8 @@ import org.jetbrains.uast.util.isTypeCast
 /**
  * Detector looking for casts on the result of context.getSystemService which are suspect.
  *
- * TODO: As of O we can start looking for the @SystemService annotation on the target interface
- *   class, and the value attribute will map back to the expected constant. This should let us get
- *   rid of the hardcoded lookup table below.
+ * TODO: As of O we can start looking for the @SystemService annotation on the target interface class, and the value attribute will map back
+ *   to the expected constant. This should let us get rid of the hardcoded lookup table below.
  */
 class ServiceCastDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> = listOf("getSystemService")
@@ -105,10 +104,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Checks that the given call to `Context#getSystemService(WIFI_SERVICE)` is using the application
-   * context
-   */
+  /** Checks that the given call to `Context#getSystemService(WIFI_SERVICE)` is using the application context */
   private fun checkWifiService(context: JavaContext, call: UCallExpression) {
     val evaluator = context.evaluator
     val qualifier = call.receiver
@@ -124,10 +120,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
     if (qualifier == null) {
       // Implicit: check surrounding class
       val currentMethod = call.getParentOfType(UMethod::class.java, true)?.javaPsi
-      if (
-        currentMethod != null &&
-          !evaluator.isMemberInSubClassOf(currentMethod, SdkConstants.CLASS_APPLICATION, true)
-      ) {
+      if (currentMethod != null && !evaluator.isMemberInSubClassOf(currentMethod, SdkConstants.CLASS_APPLICATION, true)) {
         reportWifiServiceLeak(WIFI_MANAGER, context, call)
       }
     } else {
@@ -136,19 +129,14 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a reference to a context, check to see if the context is an application context (in which
-   * case, return quietly), or known to not be an application context (in which case, report an
-   * error), or is of an unknown context type (in which case, report a warning).
+   * Given a reference to a context, check to see if the context is an application context (in which case, return quietly), or known to not
+   * be an application context (in which case, report an error), or is of an unknown context type (in which case, report a warning).
    *
    * @param context the lint analysis context
    * @param element the reference to be checked
    * @param call the original getSystemService call to report an error against
    */
-  private fun checkContextReference(
-    context: JavaContext,
-    element: UElement?,
-    call: UCallExpression,
-  ): Boolean {
+  private fun checkContextReference(context: JavaContext, element: UElement?, call: UCallExpression): Boolean {
     if (element == null) {
       return false
     }
@@ -199,18 +187,12 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a context type (of a parameter or field), check to see if that type implies that the
-   * context is not the application context (for example because it's an Activity rather than a
-   * plain context).
+   * Given a context type (of a parameter or field), check to see if that type implies that the context is not the application context (for
+   * example because it's an Activity rather than a plain context).
    *
    * Returns true if it finds and reports a problem.
    */
-  private fun checkWifiContextType(
-    context: JavaContext,
-    call: UCallExpression,
-    type: PsiType,
-    flagPlainContext: Boolean,
-  ): Boolean {
+  private fun checkWifiContextType(context: JavaContext, call: UCallExpression, type: PsiType, flagPlainContext: Boolean): Boolean {
     val evaluator = context.evaluator
     if (type is PsiClassType) {
       val psiClass = type.resolve()
@@ -236,31 +218,17 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    var message =
-      "The WIFI_SERVICE must be looked up on the " +
-        "Application context or memory will leak on devices < Android N. "
+    var message = "The WIFI_SERVICE must be looked up on the " + "Application context or memory will leak on devices < Android N. "
 
     val fix: LintFix
     if (call.receiver != null) {
       val qualifier = call.receiver!!.asSourceString()
       message += "Try changing `$qualifier` to `$qualifier.getApplicationContext()`"
-      fix =
-        fix()
-          .name("Add getApplicationContext()")
-          .replace()
-          .text(qualifier)
-          .with("$qualifier.getApplicationContext()")
-          .build()
+      fix = fix().name("Add getApplicationContext()").replace().text(qualifier).with("$qualifier.getApplicationContext()").build()
     } else {
       val qualifier = getMethodName(call)
       message += "Try changing `$qualifier` to `getApplicationContext().$qualifier`"
-      fix =
-        fix()
-          .name("Add getApplicationContext()")
-          .replace()
-          .text(qualifier)
-          .with("getApplicationContext().$qualifier")
-          .build()
+      fix = fix().name("Add getApplicationContext()").replace().text(qualifier).with("getApplicationContext().$qualifier").build()
     }
 
     val incident = Incident(issue, call, context.getLocation(call), message, fix)
@@ -274,8 +242,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
   private fun stripPackage(fqcn: String): String = fqcn.substringAfterLast('.')
 
   companion object {
-    val IMPLEMENTATION: Implementation =
-      Implementation(ServiceCastDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    val IMPLEMENTATION: Implementation = Implementation(ServiceCastDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Invalid cast to a type from the service constant */
     @JvmField
@@ -379,8 +346,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
         "DEVICE_POLICY_SERVICE" -> "android.app.admin.DevicePolicyManager"
         "DISPLAY_HASH_SERVICE" -> "android.view.displayhash.DisplayHashManager"
         "DISPLAY_SERVICE" -> "android.hardware.display.DisplayManager"
-        "DOMAIN_VERIFICATION_SERVICE" ->
-          "android.content.pm.verify.domain.DomainVerificationManager"
+        "DOMAIN_VERIFICATION_SERVICE" -> "android.content.pm.verify.domain.DomainVerificationManager"
         "DOWNLOAD_SERVICE" -> "android.app.DownloadManager"
         "DROPBOX_SERVICE" -> "android.os.DropBoxManager"
         "EUICC_SERVICE" -> "android.telephony.euicc.EuiccManager"
@@ -412,8 +378,7 @@ class ServiceCastDetector : Detector(), SourceCodeScanner {
         "OVERLAY_SERVICE" -> "android.content.om.OverlayManager"
         "PEOPLE_SERVICE" -> "android.app.people.PeopleManager"
         "PERFORMANCE_HINT_SERVICE" -> "android.os.PerformanceHintManager"
-        "PERSISTENT_DATA_BLOCK_SERVICE" ->
-          "android.service.persistentdata.PersistentDataBlockManager"
+        "PERSISTENT_DATA_BLOCK_SERVICE" -> "android.service.persistentdata.PersistentDataBlockManager"
         "POWER_SERVICE" -> "android.os.PowerManager"
         "PRINT_SERVICE" -> "android.print.PrintManager"
         "PROFILING_SERVICE" -> "android.os.ProfilingManager"

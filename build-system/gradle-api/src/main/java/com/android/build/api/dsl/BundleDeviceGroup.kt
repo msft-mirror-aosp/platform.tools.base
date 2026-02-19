@@ -25,16 +25,8 @@ import org.gradle.api.Incubating
  */
 @Incubating
 interface BundleDeviceGroup {
-    @get:Incubating
-    @set:Incubating
-    var enableSplit: Boolean?
+  @get:Incubating @set:Incubating var enableSplit: Boolean?
 
-    /**
-     * Specifies the default device group name for the bundle. Used for local-testing and generating
-     * universal APKs.
-     *
-     */
-    @get:Incubating
-    @set:Incubating
-    var defaultGroup: String?
+  /** Specifies the default device group name for the bundle. Used for local-testing and generating universal APKs. */
+  @get:Incubating @set:Incubating var defaultGroup: String?
 }

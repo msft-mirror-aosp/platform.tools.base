@@ -31,47 +31,38 @@ import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledHostTestTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: HostTest = mock()
+  private val delegate: HostTest = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledHostTest by lazy {
-        object: AnalyticsEnabledHostTest(delegate, stats, FakeObjectFactory.factory) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledHostTest by lazy { object : AnalyticsEnabledHostTest(delegate, stats, FakeObjectFactory.factory) {} }
 
-    @Test
-    fun configureTestTask() {
-        val action: (org.gradle.api.tasks.testing.Test) -> Unit = { }
-        proxy.configureTestTask(action)
+  @Test
+  fun configureTestTask() {
+    val action: (org.gradle.api.tasks.testing.Test) -> Unit = {}
+    proxy.configureTestTask(action)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
-        verify(delegate)
-            .configureTestTask(action)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
+    verify(delegate).configureTestTask(action)
+  }
 
-    @Test
-    fun enableCodeCoverage() {
-        proxy.codeCoverageEnabled
+  @Test
+  fun enableCodeCoverage() {
+    proxy.codeCoverageEnabled
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE)
-        verify(delegate)
-            .codeCoverageEnabled
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE)
+    verify(delegate).codeCoverageEnabled
+  }
 
-    @Test
-    fun includeAndroidResources() {
-        proxy.androidResourcesIncluded
+  @Test
+  fun includeAndroidResources() {
+    proxy.androidResourcesIncluded
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE)
-        verify(delegate)
-            .androidResourcesIncluded
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_ANDROID_RESOURCES_ENABLED_VALUE)
+    verify(delegate).androidResourcesIncluded
+  }
 }

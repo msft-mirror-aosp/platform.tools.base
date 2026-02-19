@@ -24,8 +24,7 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 
-abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L>) :
-  Lattice<L> by lattice {
+abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L>) : Lattice<L> by lattice {
   private val pool = buildSet {
     val allInits = (poolInits + lattice.top + lattice.bottom).distinct()
     addAll(allInits)
@@ -45,30 +44,20 @@ abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L
 
   @Test fun `order is reflexive`() = forall { x -> x precedes x }
 
-  @Test
-  fun `order is transitive`() = forall { x, y, z ->
-    (x precedes y && y precedes z) implies { x precedes z }
-  }
+  @Test fun `order is transitive`() = forall { x, y, z -> (x precedes y && y precedes z) implies { x precedes z } }
 
-  @Test
-  fun `order is anti-symmetric`() = forall { x, y ->
-    (x precedes y && y precedes x) implies { x == y }
-  }
+  @Test fun `order is anti-symmetric`() = forall { x, y -> (x precedes y && y precedes x) implies { x == y } }
 
   @Test fun `bottom is least`() = forall { x -> bottom precedes x }
 
   @Test fun `bottom is id of join`() = forall { x -> x join bottom == x && bottom join x == x }
 
-  @Test
-  fun `bottom is annihilator of meet`() = forall { x ->
-    x meet bottom == bottom && bottom meet x == bottom
-  }
+  @Test fun `bottom is annihilator of meet`() = forall { x -> x meet bottom == bottom && bottom meet x == bottom }
 
   @Test
   fun `meet gives greatest common lower bound`() = forall { x, y ->
     val m = x meet y
-    (m precedes x && m precedes y) &&
-      pool.all { l -> (l precedes x && l precedes y) implies { l precedes m } }
+    (m precedes x && m precedes y) && pool.all { l -> (l precedes x && l precedes y) implies { l precedes m } }
   }
 
   @Test fun `top is greatest`() = forall { x -> x precedes top }
@@ -80,8 +69,7 @@ abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L
   @Test
   fun `join gives lowest common upper bound`() = forall { x, y ->
     val j = x join y
-    (x precedes j && y precedes j) &&
-      pool.all { u -> (x precedes u && y precedes u) implies { j precedes u } }
+    (x precedes j && y precedes j) && pool.all { u -> (x precedes u && y precedes u) implies { j precedes u } }
   }
 
   protected fun forall(p: (L) -> Boolean) {
@@ -128,28 +116,16 @@ abstract class LatticeTest<L>(private val lattice: Lattice<L>, poolInits: List<L
 
 class UnitLatticeTest : LatticeTest<Unit>(lattice = UnitLattice, poolInits = listOf())
 
-class ImplicationLatticeTest :
-  LatticeTest<Boolean>(lattice = ImplicationLattice, poolInits = listOf())
+class ImplicationLatticeTest : LatticeTest<Boolean>(lattice = ImplicationLattice, poolInits = listOf())
 
 class DiscreteLatticeTest :
-  LatticeTest<Discrete<Int>>(
-    lattice = DiscreteLattice(),
-    poolInits = listOf(Discrete.Value(1), Discrete.Value(2), Discrete.Value(3)),
-  )
+  LatticeTest<Discrete<Int>>(lattice = DiscreteLattice(), poolInits = listOf(Discrete.Value(1), Discrete.Value(2), Discrete.Value(3)))
 
-class TotalOrderLatticeTest :
-  LatticeTest<Int>(lattice = TotalOrderLattice(7), poolInits = listOf(1, 2, 3))
+class TotalOrderLatticeTest : LatticeTest<Int>(lattice = TotalOrderLattice(7), poolInits = listOf(1, 2, 3))
 
 class Product2LatticeTest :
   LatticeTest<Pair<Boolean, Int>>(
-    lattice =
-      Lattice.product(
-        ::Pair,
-        Pair<Boolean, Int>::first,
-        Pair<Boolean, Int>::second,
-        ImplicationLattice,
-        TotalOrderLattice(3),
-      ),
+    lattice = Lattice.product(::Pair, Pair<Boolean, Int>::first, Pair<Boolean, Int>::second, ImplicationLattice, TotalOrderLattice(3)),
     poolInits = listOf(false to 2, true to 0),
   )
 
@@ -165,12 +141,7 @@ class Product3LatticeTest :
         TotalOrderLattice(4),
         possibilityLattice(),
       ),
-    poolInits =
-      listOf(
-        Triple(true, 3, null),
-        Triple(false, 2, unboundedSetOf("foo")),
-        Triple(true, 0, unboundedSetOf()),
-      ),
+    poolInits = listOf(Triple(true, 3, null), Triple(false, 2, unboundedSetOf("foo")), Triple(true, 0, unboundedSetOf())),
   )
 
 class PointWiseLatticeTest :
@@ -195,8 +166,7 @@ class PointWiseLatticeTest :
   fun `keys of met maps are included in both`() = forall { m1, m2 ->
     when (val m = m1 meet m2) {
       null -> m1 == null && m2 == null
-      else ->
-        (m1 == null || m1.keys.containsAll(m.keys)) && (m2 == null || m2.keys.containsAll(m.keys))
+      else -> (m1 == null || m1.keys.containsAll(m.keys)) && (m2 == null || m2.keys.containsAll(m.keys))
     }
   }
 }
@@ -267,21 +237,18 @@ sealed interface Discrete<out T> {
 }
 
 /**
- * Given a type [T], make a lattice by slapping in distinct elements [Discrete.Top] and
- * [Discrete.Btm], and the order between elements in [T] only comes from equality.
+ * Given a type [T], make a lattice by slapping in distinct elements [Discrete.Top] and [Discrete.Btm], and the order between elements in
+ * [T] only comes from equality.
  */
 class DiscreteLattice<T> : Lattice<Discrete<T>> {
   override val bottom = Discrete.Btm
   override val top = Discrete.Top
 
-  override fun meetOf(first: Discrete<T>, second: Discrete<T>) =
-    combine(id = Discrete.Top, overApprox = Discrete.Btm, first, second)
+  override fun meetOf(first: Discrete<T>, second: Discrete<T>) = combine(id = Discrete.Top, overApprox = Discrete.Btm, first, second)
 
-  override fun joinOf(first: Discrete<T>, second: Discrete<T>) =
-    combine(id = Discrete.Btm, overApprox = Discrete.Top, first, second)
+  override fun joinOf(first: Discrete<T>, second: Discrete<T>) = combine(id = Discrete.Btm, overApprox = Discrete.Top, first, second)
 
-  override fun precede(first: Discrete<T>, second: Discrete<T>) =
-    first is Discrete.Btm || second is Discrete.Top || first == second
+  override fun precede(first: Discrete<T>, second: Discrete<T>) = first is Discrete.Btm || second is Discrete.Top || first == second
 
   private fun combine(id: Discrete<T>, overApprox: Discrete<T>, l: Discrete<T>, r: Discrete<T>) =
     when {

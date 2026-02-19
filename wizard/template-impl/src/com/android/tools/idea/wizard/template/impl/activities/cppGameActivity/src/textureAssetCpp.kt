@@ -16,7 +16,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.src
 
 fun textureAssetCpp(): String {
-    return """
+  return """
 #include <android/imagedecoder.h>
 #include "TextureAsset.h"
 #include "AndroidOut.h"
@@ -101,7 +101,7 @@ TextureAsset::~TextureAsset() {
 }
 
 fun textureAssetH(): String {
-    return """
+  return """
 #ifndef ANDROIDGLINVESTIGATIONS_TEXTUREASSET_H
 #define ANDROIDGLINVESTIGATIONS_TEXTUREASSET_H
 

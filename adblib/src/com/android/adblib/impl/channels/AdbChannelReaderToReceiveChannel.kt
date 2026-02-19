@@ -21,33 +21,30 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.launch
 
-internal class AdbChannelReaderToReceiveChannel(
-    private val scope: CoroutineScope,
-    private val reader: AdbChannelReader,
-) {
+internal class AdbChannelReaderToReceiveChannel(private val scope: CoroutineScope, private val reader: AdbChannelReader) {
 
-    private val channel = Channel<String>()
+  private val channel = Channel<String>()
 
-    fun start(): ReceiveChannel<String> {
-        launchReadLines()
-        return channel
+  fun start(): ReceiveChannel<String> {
+    launchReadLines()
+    return channel
+  }
+
+  private fun launchReadLines() {
+    scope
+      .launch { readLinesWorker() }
+      .invokeOnCompletion { throwable ->
+        // This handles cancellation (both from the parent scope and the launched coroutine)
+        // as well as errors.
+        channel.close(throwable)
+        reader.close()
+      }
+  }
+
+  private suspend fun readLinesWorker() {
+    while (true) {
+      val line = reader.readLine() ?: break
+      channel.send(line)
     }
-
-    private fun launchReadLines() {
-        scope.launch {
-            readLinesWorker()
-        }.invokeOnCompletion { throwable ->
-            // This handles cancellation (both from the parent scope and the launched coroutine)
-            // as well as errors.
-            channel.close(throwable)
-            reader.close()
-        }
-    }
-
-    private suspend fun readLinesWorker() {
-        while (true) {
-            val line = reader.readLine() ?: break
-            channel.send(line)
-        }
-    }
+  }
 }

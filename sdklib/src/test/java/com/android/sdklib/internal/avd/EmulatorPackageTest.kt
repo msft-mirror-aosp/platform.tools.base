@@ -34,10 +34,7 @@ class EmulatorPackageTest {
   @Suppress("PathAsIterable")
   @Test
   fun emulatorBinary() {
-    val binaryPath =
-      emulatorPath.resolve(
-        if (SdkConstants.currentPlatform() == PLATFORM_WINDOWS) "emulator.exe" else "emulator"
-      )
+    val binaryPath = emulatorPath.resolve(if (SdkConstants.currentPlatform() == PLATFORM_WINDOWS) "emulator.exe" else "emulator")
 
     assertThat(emulatorPackage.emulatorBinary).isNull()
     binaryPath.recordExistingFile()
@@ -51,11 +48,11 @@ class EmulatorPackageTest {
       .resolve(SdkConstants.FN_HARDWARE_INI)
       .recordExistingFile(
         """
-            name        = hw.cpu.arch
-            type        = string
-            default     = arm
-            abstract    = CPU Architecture
-            description = The CPU Architecture to emulator
+        name        = hw.cpu.arch
+        type        = string
+        default     = arm
+        abstract    = CPU Architecture
+        description = The CPU Architecture to emulator
         """
           .trimIndent()
       )
@@ -76,9 +73,9 @@ class EmulatorPackageTest {
       .resolve(SdkConstants.FN_ADVANCED_FEATURES)
       .recordExistingFile(
         """
-            RefCountPipe = on
-            ForceSwiftshader = off
-            Wifi = on
+        RefCountPipe = on
+        ForceSwiftshader = off
+        Wifi = on
         """
           .trimIndent()
       )
@@ -93,14 +90,14 @@ class EmulatorPackageTest {
       .resolve(SdkConstants.FN_ADVANCED_FEATURES_CANARY)
       .recordExistingFile(
         """
-            ForceSwiftshader = on
+        ForceSwiftshader = on
         """
           .trimIndent()
       )
 
     emulatorPackage.getEmulatorFeatures(NullLogger(), EmulatorFeaturesChannel.CANARY).let {
-        assertThat(it).contains("ForceSwiftshader")
-        assertThat(it).doesNotContain("RefCountPipe")
+      assertThat(it).contains("ForceSwiftshader")
+      assertThat(it).doesNotContain("RefCountPipe")
     }
   }
 }

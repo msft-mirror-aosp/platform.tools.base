@@ -43,112 +43,80 @@ import org.mockito.stubbing.Answer
 
 internal class SourceDirectoriesImplTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private val variantServices: VariantServices = mock()
+  private val variantServices: VariantServices = mock()
 
-    @Captor
-    lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
+  @Captor lateinit var callableCaptor: ArgumentCaptor<Callable<Any?>>
 
-    private lateinit var project: Project
+  private lateinit var project: Project
 
-    @Before
-    fun setup() {
-        project = ProjectBuilder.builder()
-            .withProjectDir(temporaryFolder.newFolder())
-            .build()
+  @Before
+  fun setup() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.newFolder()).build()
 
-        val projectInfo = mock<ProjectInfo>()
-        whenever(variantServices.projectInfo).thenReturn(projectInfo)
-        whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
-        whenever(projectInfo.buildDirectory).thenReturn(project.layout.buildDirectory)
+    val projectInfo = mock<ProjectInfo>()
+    whenever(variantServices.projectInfo).thenReturn(projectInfo)
+    whenever(projectInfo.projectDirectory).thenReturn(project.layout.projectDirectory)
+    whenever(projectInfo.buildDirectory).thenReturn(project.layout.buildDirectory)
 
-        whenever(variantServices.newListPropertyForInternalUse(DirectoryEntry::class.java))
-            .thenReturn(project.objects.listProperty(DirectoryEntry::class.java))
-        whenever(variantServices.newListPropertyForInternalUse(Directory::class.java))
-            .thenReturn(project.objects.listProperty(Directory::class.java))
+    whenever(variantServices.newListPropertyForInternalUse(DirectoryEntry::class.java))
+      .thenReturn(project.objects.listProperty(DirectoryEntry::class.java))
+    whenever(variantServices.newListPropertyForInternalUse(Directory::class.java))
+      .thenReturn(project.objects.listProperty(Directory::class.java))
+  }
+
+  @Test
+  fun testAsFileTree() {
+    whenever(variantServices.fileTreeFactory()).thenReturn({ project.objects.fileTree() }, { project.objects.fileTree() })
+    val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
+    val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
+    val testTarget = createTestTarget(addedSrcDir)
+    val fileTrees = testTarget.getAsFileTreesForOldVariantAPI().get()
+    Truth.assertThat(fileTrees).hasSize(2)
+    Truth.assertThat(fileTrees.map { it.dir.absolutePath }).containsExactly(addedSourceFromTask.absolutePath, addedSrcDir.absolutePath)
+  }
+
+  @Test
+  fun testVariantSourcesForModel() {
+    whenever(variantServices.fileCollection()).thenReturn(project.objects.fileCollection())
+    val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
+    val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
+    val testTarget = createTestTarget(addedSrcDir)
+    val fileTrees = testTarget.variantSourcesForModel { it.shouldBeAddedToIdeModel }
+    Truth.assertThat(fileTrees).hasSize(2)
+    Truth.assertThat(fileTrees.map { it.absolutePath }).containsExactly(addedSourceFromTask.absolutePath, addedSrcDir.absolutePath)
+  }
+
+  @Test
+  fun testVariantSourcesWithFilteringForModel() {
+    whenever(variantServices.fileCollection()).thenReturn(project.objects.fileCollection())
+    val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
+    val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
+    val testTarget = createTestTarget(addedSrcDir)
+    val fileTrees = testTarget.variantSourcesForModel { entry -> entry.isGenerated }
+    Truth.assertThat(fileTrees).hasSize(1)
+    Truth.assertThat(fileTrees.map { it.absolutePath }).containsExactly(addedSourceFromTask.absolutePath)
+  }
+
+  fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()
+
+  private fun createTestTarget(addedSrcDir: File, patternFilterable: PatternFilterable? = null): FlatSourceDirectoriesImpl {
+
+    val testTarget = FlatSourceDirectoriesImpl("_for_test", variantServices, patternFilterable)
+    abstract class AddingTask : DefaultTask() {
+      @get:OutputFiles abstract val output: DirectoryProperty
     }
 
-    @Test
-    fun testAsFileTree() {
-        whenever(variantServices.fileTreeFactory()).thenReturn(
-            { project.objects.fileTree() },
-            { project.objects.fileTree() },
-        )
-        val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
-        val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
-        val testTarget = createTestTarget(addedSrcDir)
-        val fileTrees = testTarget.getAsFileTreesForOldVariantAPI().get()
-        Truth.assertThat(fileTrees).hasSize(2)
-        Truth.assertThat(fileTrees.map { it.dir.absolutePath }).containsExactly(
-            addedSourceFromTask.absolutePath,
-            addedSrcDir.absolutePath
-        )
-    }
+    val taskProvider = project.tasks.register("srcAddingTask", AddingTask::class.java)
+    whenever(variantServices.provider(capture(callableCaptor))).thenAnswer(Answer() { project.provider(callableCaptor.value) })
 
-    @Test
-    fun testVariantSourcesForModel() {
-        whenever(variantServices.fileCollection())
-            .thenReturn(project.objects.fileCollection())
-        val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
-        val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
-        val testTarget = createTestTarget(addedSrcDir)
-        val fileTrees = testTarget.variantSourcesForModel { it.shouldBeAddedToIdeModel }
-        Truth.assertThat(fileTrees).hasSize(2)
-        Truth.assertThat(fileTrees.map { it.absolutePath }).containsExactly(
-            addedSourceFromTask.absolutePath,
-            addedSrcDir.absolutePath
-        )
-    }
+    testTarget.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
 
-    @Test
-    fun testVariantSourcesWithFilteringForModel() {
-        whenever(variantServices.fileCollection())
-            .thenReturn(project.objects.fileCollection())
-        val addedSourceFromTask = project.layout.buildDirectory.dir("generated/_for_test/srcAddingTask").get().asFile
-        val addedSrcDir = temporaryFolder.newFolder("somewhere/safe")
-        val testTarget = createTestTarget(addedSrcDir)
-        val fileTrees = testTarget.variantSourcesForModel { entry ->
-            entry.isGenerated
-        }
-        Truth.assertThat(fileTrees).hasSize(1)
-        Truth.assertThat(fileTrees.map { it.absolutePath }).containsExactly(
-            addedSourceFromTask.absolutePath,
-        )
-    }
+    testTarget.addStaticSourceDirectory(addedSrcDir.absolutePath)
 
-    fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()
-
-    private fun createTestTarget(
-        addedSrcDir: File,
-        patternFilterable: PatternFilterable? = null,
-    ): FlatSourceDirectoriesImpl {
-
-        val testTarget = FlatSourceDirectoriesImpl(
-            "_for_test",
-            variantServices,
-            patternFilterable,
-        )
-        abstract class AddingTask: DefaultTask() {
-            @get:OutputFiles
-            abstract val output: DirectoryProperty
-        }
-
-        val taskProvider = project.tasks.register("srcAddingTask", AddingTask::class.java)
-        whenever(variantServices.provider(capture(callableCaptor))).thenAnswer(
-            Answer() {
-                project.provider(callableCaptor.value)
-            }
-        )
-
-        testTarget.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
-
-        testTarget.addStaticSourceDirectory(addedSrcDir.absolutePath)
-
-        return testTarget
-    }
+    return testTarget
+  }
 }

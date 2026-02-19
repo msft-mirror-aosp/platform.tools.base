@@ -20,196 +20,187 @@ import com.android.utils.FileUtils
 import com.google.common.jimfs.Configuration
 import com.google.common.jimfs.Jimfs
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.io.IOException
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import java.io.IOException
-import java.nio.file.Path
 
-/**
- * Tests for [com.android.ide.common.resources.RelativeResourceUtils].
- */
+/** Tests for [com.android.ide.common.resources.RelativeResourceUtils]. */
 class RelativeResourcesUtilsTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `test should convert absolute path to relative path format`() {
-        val testAbsolutePath = FileUtils.join(
-                "usr", "a", "b", "myproject", "app", "src", "main",
-                "res", "layout", "activity_map_tv.xml")
-        val testAbsoluteFile = File(testAbsolutePath)
-        val packageName = "com.foobar.myproject.app"
-        val sourceSets = listOf(
-                File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")),
-                File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "debug", "res"))
-        )
-        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
-        val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
-        // Ordinal value is 1 due to invariantPath sorting in getIdentifiedSourceSetMap
-        assertThat(expected)
-                .isEqualTo("com.foobar.myproject.app-main-1:/layout/activity_map_tv.xml")
-    }
+  @Test
+  fun `test should convert absolute path to relative path format`() {
+    val testAbsoluteFile = File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res", "layout", "activity_map_tv.xml"))
+    val packageName = "com.foobar.myproject.app"
+    val sourceSets =
+      listOf(
+        File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")),
+        File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "debug", "res")),
+      )
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+    val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+    // Ordinal value is 1 due to invariantPath sorting in getIdentifiedSourceSetMap
+    assertThat(expected).isEqualTo("com.foobar.myproject.app-main-1:/layout/activity_map_tv.xml")
+  }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `test should throw IllegalArgmentException if file is not contained in source sets`() {
-        val testAbsolutePath = FileUtils.join("myproject", "app", "src", "main",
-                "res", "layout", "activity_map_tv.xml")
-        val testAbsoluteFile = File(testAbsolutePath)
-        val packageName = "com.foobar.myproject.app"
-        val sourceSets = listOf(
-                File(FileUtils.join("myproject", "app", "src", "custom", "res")),
-                File(FileUtils.join("myproject", "app", "src", "debug", "res"))
-        )
-        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, "")
-        val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
-        assertThat(expected).isEqualTo("com.foobar.myproject.app-0:res/layout/activity_map_tv.xml")
-    }
+  @Test
+  fun `test should convert absolute path with spaces in path to relative path format`() {
+    val testAbsoluteFile = File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "foo debug", "res", "layout", "my_layout.xml"))
+    val packageName = "com.foobar.my project.app"
+    val sourceSets =
+      listOf(
+        File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "main", "res")),
+        File(FileUtils.join("usr", "a", "b", "my project", "app", "src", "foo debug", "res")),
+      )
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+    val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+    // Ordinal value is 0 due to invariantPath sorting in getIdentifiedSourceSetMap
+    assertThat(expected).isEqualTo("com.foobar.my_project.app-foo_debug-0:/layout/my_layout.xml")
+  }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `test should cause exception if path does not contains a valid source set`() {
-        val testAbsolutePath = FileUtils.join(
-                "usr", "a", "b", "myproject", "app", "src", "main", "layout", "activity_map_tv.xml")
-        val testAbsoluteFile = File(testAbsolutePath)
+  @Test(expected = IllegalArgumentException::class)
+  fun `test should throw IllegalArgmentException if file is not contained in source sets`() {
+    val testAbsolutePath = FileUtils.join("myproject", "app", "src", "main", "res", "layout", "activity_map_tv.xml")
+    val testAbsoluteFile = File(testAbsolutePath)
+    val packageName = "com.foobar.myproject.app"
+    val sourceSets =
+      listOf(
+        File(FileUtils.join("myproject", "app", "src", "custom", "res")),
+        File(FileUtils.join("myproject", "app", "src", "debug", "res")),
+      )
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, "")
+    val expected = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+    assertThat(expected).isEqualTo("com.foobar.myproject.app-0:res/layout/activity_map_tv.xml")
+  }
 
-        val packageName = "com.foobar.myproject.app"
-        val sourceSets = listOf(
-                    File(FileUtils.join(
-                                    "usr", "a", "b", "myproject", "app", "src", "main", "res"))
-        )
+  @Test(expected = IllegalArgumentException::class)
+  fun `test should cause exception if path does not contains a valid source set`() {
+    val testAbsolutePath = FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "layout", "activity_map_tv.xml")
+    val testAbsoluteFile = File(testAbsolutePath)
 
-        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
-        getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
-    }
+    val packageName = "com.foobar.myproject.app"
+    val sourceSets = listOf(File(FileUtils.join("usr", "a", "b", "myproject", "app", "src", "main", "res")))
 
-    @Test
-    fun `test should accept merged dot dir as a source set`() {
-        val testAbsolutePath = FileUtils.join(
-                "usr", "a", "b", "myproject", "build", "intermediates",
-                "incremental", "mergeDebugResources", "merged.dir", "layout", "activity_map_tv.xml")
-        val testAbsoluteFile = File(testAbsolutePath)
-        val packageName = "com.foobar.myproject.app"
-        val sourceSets = listOf(
-                File(FileUtils.join(
-                        "usr", "a", "b", "myproject", "build", "intermediates",
-                        "incremental", "mergeDebugResources", "merged.dir"))
-        )
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+    getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+  }
 
-        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
-        val relativePath = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
-        assertThat(relativePath).isEqualTo(
-                "com.foobar.myproject.app-mergeDebugResources-0:/layout/activity_map_tv.xml"
-        )
-    }
+  @Test
+  fun `test should accept merged dot dir as a source set`() {
+    val testAbsolutePath =
+      FileUtils.join(
+        "usr",
+        "a",
+        "b",
+        "myproject",
+        "build",
+        "intermediates",
+        "incremental",
+        "mergeDebugResources",
+        "merged.dir",
+        "layout",
+        "activity_map_tv.xml",
+      )
+    val testAbsoluteFile = File(testAbsolutePath)
+    val packageName = "com.foobar.myproject.app"
+    val sourceSets =
+      listOf(
+        File(FileUtils.join("usr", "a", "b", "myproject", "build", "intermediates", "incremental", "mergeDebugResources", "merged.dir"))
+      )
 
-    @Test
-    fun `test should handle generated pngs`() {
-        val testAbsolutePath = FileUtils.join(
-                "usr", "a", "b", "myproject", "build", "generated", "res",
-                "pngs", "debug", "drawable", "a.png")
-        val testAbsoluteFile = File(testAbsolutePath)
-        val sourceSets = listOf(
-                File(FileUtils.join(
-                        "usr", "a", "b", "myproject", "build", "generated", "res",
-                        "pngs", "debug"))
-        )
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+    val relativePath = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+    assertThat(relativePath).isEqualTo("com.foobar.myproject.app-mergeDebugResources-0:/layout/activity_map_tv.xml")
+  }
 
-        val packageName = "com.foobar.myproject.app"
-        val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
-        val result = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
-        assertThat(result).isEqualTo("com.foobar.myproject.app-pngs-0:/drawable/a.png")
-    }
+  @Test
+  fun `test should handle generated pngs`() {
+    val testAbsolutePath = FileUtils.join("usr", "a", "b", "myproject", "build", "generated", "res", "pngs", "debug", "drawable", "a.png")
+    val testAbsoluteFile = File(testAbsolutePath)
+    val sourceSets = listOf(File(FileUtils.join("usr", "a", "b", "myproject", "build", "generated", "res", "pngs", "debug")))
 
-    @Test
-    fun `test should convert relative path format to absolute path format on linux`() {
-        val sourceSetPathMap =
-            mapOf("com.foobar.myproject.app-0" to "/a/b/c/d/myproject/src/main")
-        val testRelativePath = "com.foobar.myproject.app-0:/res/layout/activity_map_tv.xml"
-        val expectedAbsolutePath =
-            "/a/b/c/d/myproject/src/main/res/layout/activity_map_tv.xml"
-        val relativeResourcePathToAbsolutePath = relativeResourcePathToAbsolutePath(
-            testRelativePath,
-            sourceSetPathMap,
-            Jimfs.newFileSystem(Configuration.unix())
-        )
-        assertThat(relativeResourcePathToAbsolutePath).isEqualTo(expectedAbsolutePath)
-    }
+    val packageName = "com.foobar.myproject.app"
+    val identifiedSourceSetMap = getIdentifiedSourceSetMap(sourceSets, packageName, ":app")
+    val result = getRelativeSourceSetPath(testAbsoluteFile, identifiedSourceSetMap)
+    assertThat(result).isEqualTo("com.foobar.myproject.app-pngs-0:/drawable/a.png")
+  }
 
-    @Test
-    fun `test should convert relative path format to absolute path format on windows`() {
-        val sourceSetPathMap =
-            mapOf("com.foobar.myproject.app-0" to "C:\\a\\b\\c\\d\\myproject\\src\\main")
-        val testRelativePath = "com.foobar.myproject.app-0:/res/layout/activity_map_tv.xml"
-        val expectedAbsolutePath =
-            "C:\\a\\b\\c\\d\\myproject\\src\\main\\res\\layout\\activity_map_tv.xml"
-        val relativeResourcePathToAbsolutePath = relativeResourcePathToAbsolutePath(
-            testRelativePath,
-            sourceSetPathMap,
-            Jimfs.newFileSystem(Configuration.windows())
-        )
-        assertThat(relativeResourcePathToAbsolutePath).isEqualTo(expectedAbsolutePath)
-    }
+  @Test
+  fun `test should convert relative path format to absolute path format on linux`() {
+    val sourceSetPathMap = mapOf("com.foobar.myproject.app-0" to "/a/b/c/d/myproject/src/main")
+    val testRelativePath = "com.foobar.myproject.app-0:/res/layout/activity_map_tv.xml"
+    val expectedAbsolutePath = "/a/b/c/d/myproject/src/main/res/layout/activity_map_tv.xml"
+    val relativeResourcePathToAbsolutePath =
+      relativeResourcePathToAbsolutePath(testRelativePath, sourceSetPathMap, Jimfs.newFileSystem(Configuration.unix()))
+    assertThat(relativeResourcePathToAbsolutePath).isEqualTo(expectedAbsolutePath)
+  }
 
-    @Test(expected = IllegalStateException::class)
-    fun `test should throw IllegalStateException if root map contains no paths`() {
-        val testRelativePath = "com.foobar.myproject.app-0:res/layout/activity_map_tv.xml"
-        relativeResourcePathToAbsolutePath(testRelativePath, emptyMap())
-    }
+  @Test
+  fun `test should convert relative path format to absolute path format on windows`() {
+    val sourceSetPathMap = mapOf("com.foobar.myproject.app-0" to "C:\\a\\b\\c\\d\\myproject\\src\\main")
+    val testRelativePath = "com.foobar.myproject.app-0:/res/layout/activity_map_tv.xml"
+    val expectedAbsolutePath = "C:\\a\\b\\c\\d\\myproject\\src\\main\\res\\layout\\activity_map_tv.xml"
+    val relativeResourcePathToAbsolutePath =
+      relativeResourcePathToAbsolutePath(testRelativePath, sourceSetPathMap, Jimfs.newFileSystem(Configuration.windows()))
+    assertThat(relativeResourcePathToAbsolutePath).isEqualTo(expectedAbsolutePath)
+  }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun `test should throw IllegalArgumentException if no colon separator in relative path`() {
-        val sourceSetPathMap =
-                mapOf("com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main/")
-        // Path does not contain ':' separator.
-        val invalidRelativePath = "com.foobar.myproject.app-0res/layout/activity_map_tv.xml"
-        relativeResourcePathToAbsolutePath(invalidRelativePath, sourceSetPathMap)
-    }
+  @Test(expected = IllegalStateException::class)
+  fun `test should throw IllegalStateException if root map contains no paths`() {
+    val testRelativePath = "com.foobar.myproject.app-0:res/layout/activity_map_tv.xml"
+    relativeResourcePathToAbsolutePath(testRelativePath, emptyMap())
+  }
 
-    @Test(expected = NoSuchElementException::class)
-    fun `test should throw NoSuchElementException if there is no matching id to absolute path`() {
-        val sourceSetPathMap =
-                mapOf("com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main/")
-        val invalidRelativePath = "invalid-id:/res/layout/activity_map_tv.xml"
-        relativeResourcePathToAbsolutePath(invalidRelativePath, sourceSetPathMap)
-    }
+  @Test(expected = IllegalArgumentException::class)
+  fun `test should throw IllegalArgumentException if no colon separator in relative path`() {
+    val sourceSetPathMap = mapOf("com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main/")
+    // Path does not contain ':' separator.
+    val invalidRelativePath = "com.foobar.myproject.app-0res/layout/activity_map_tv.xml"
+    relativeResourcePathToAbsolutePath(invalidRelativePath, sourceSetPathMap)
+  }
 
-    @Test
-    fun `test should load source set map file to map`() {
-        val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
-        val sourceSetPathsMapFile = File(sourceSetPathsMapDir, "file-path.txt").also {
-            it.writeText("com.foobar.myproject.app-0 /usr/a/b/c/d/myproject/src/main\n")
-        }
-        val sourceSetPathsMap = readFromSourceSetPathsFile(sourceSetPathsMapFile)
-        assertThat(sourceSetPathsMap)
-                .isEqualTo(
-                        mapOf(
-                                "com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main"
-                        )
-                )
-    }
+  @Test(expected = NoSuchElementException::class)
+  fun `test should throw NoSuchElementException if there is no matching id to absolute path`() {
+    val sourceSetPathMap = mapOf("com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main/")
+    val invalidRelativePath = "invalid-id:/res/layout/activity_map_tv.xml"
+    relativeResourcePathToAbsolutePath(invalidRelativePath, sourceSetPathMap)
+  }
 
-    @Test(expected = IOException::class)
-    fun `test should throw error if mapping file does not exist`() {
-        val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
-        val sourceSetPathsMapFile = File(sourceSetPathsMapDir, "file-path.txt")
-        readFromSourceSetPathsFile(sourceSetPathsMapFile)
-    }
+  @Test
+  fun `test should load source set map file to map`() {
+    val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
+    val sourceSetPathsMapFile =
+      File(sourceSetPathsMapDir, "file-path.txt").also { it.writeText("com.foobar.myproject.app-0 /usr/a/b/c/d/myproject/src/main\n") }
+    val sourceSetPathsMap = readFromSourceSetPathsFile(sourceSetPathsMapFile)
+    assertThat(sourceSetPathsMap).isEqualTo(mapOf("com.foobar.myproject.app-0" to "/usr/a/b/c/d/myproject/src/main"))
+  }
 
-    @Test
-    fun `test can identify relative resource`() {
-        // Standard relative path string
-        assertThat(
-            isRelativeSourceSetResource(
-                "com.foobar.myproject.app-mergeDebugResources-1:/layout/activity_map_tv.xml"
-            )
-        ).isTrue()
-        // Absolute path string
-        assertThat(
-            isRelativeSourceSetResource(
-                "/usr/a/b/c/d/myproject/src/main/res/layout/activity_map_tv.xml")
-        ).isFalse()
-    }
+  @Test
+  fun `test should load source set with space in directory`() {
+    val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
+    val sourceSetPathsMapFile =
+      File(sourceSetPathsMapDir, "file-path.txt").also {
+        it.writeText("com.foobar.myproject.f1Fa_Debug-0 /usr/a/b/c/d/my project/src/f1Fa Debug/res\n")
+      }
+    val sourceSetPathsMap = readFromSourceSetPathsFile(sourceSetPathsMapFile)
+    assertThat(sourceSetPathsMap).isEqualTo(mapOf("com.foobar.myproject.f1Fa_Debug-0" to "/usr/a/b/c/d/my project/src/f1Fa Debug/res"))
+  }
 
+  @Test(expected = IOException::class)
+  fun `test should throw error if mapping file does not exist`() {
+    val sourceSetPathsMapDir = File(temporaryFolder.newFolder(), "test").also { it.mkdir() }
+    val sourceSetPathsMapFile = File(sourceSetPathsMapDir, "file-path.txt")
+    readFromSourceSetPathsFile(sourceSetPathsMapFile)
+  }
+
+  @Test
+  fun `test can identify relative resource`() {
+    // Standard relative path string
+    assertThat(isRelativeSourceSetResource("com.foobar.myproject.app-mergeDebugResources-1:/layout/activity_map_tv.xml")).isTrue()
+    // Absolute path string
+    assertThat(isRelativeSourceSetResource("/usr/a/b/c/d/myproject/src/main/res/layout/activity_map_tv.xml")).isFalse()
+  }
 }

@@ -17,39 +17,36 @@
 package com.android.build.gradle.internal.tasks
 
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 class MergeFileTaskTest {
-    @Rule
-    @JvmField
-    var tmp = TemporaryFolder()
+  @Rule @JvmField var tmp = TemporaryFolder()
 
+  @Test
+  fun testFilesMerged() {
 
-    @Test
-    fun testFilesMerged() {
+    val numFilesToMerge = 3
+    val inputs = mutableSetOf<File>()
+    var totalTxt = ""
 
-        val numFilesToMerge = 3
-        val inputs = mutableSetOf<File>()
-        var totalTxt = ""
+    for (i in 1..numFilesToMerge) {
+      System.err.println(i)
 
-        for (i in 1..numFilesToMerge) {
-            System.err.println(i)
-
-            val file = tmp.newFile("inputfile$i.txt")
-            val txt = "Hello world $i"
-            file.writeText(txt)
-            totalTxt += txt + "\n"
-            inputs.add(file)
-        }
-        totalTxt = totalTxt.trimEnd()
-
-        val output = tmp.root.resolve("output.txt")
-
-        MergeFileTask.mergeFiles(inputs, output)
-
-        Truth.assertThat(output.readText()).matches(totalTxt)
+      val file = tmp.newFile("inputfile$i.txt")
+      val txt = "Hello world $i"
+      file.writeText(txt)
+      totalTxt += txt + "\n"
+      inputs.add(file)
     }
+    totalTxt = totalTxt.trimEnd()
+
+    val output = tmp.root.resolve("output.txt")
+
+    MergeFileTask.mergeFiles(inputs, output)
+
+    Truth.assertThat(output.readText()).matches(totalTxt)
+  }
 }

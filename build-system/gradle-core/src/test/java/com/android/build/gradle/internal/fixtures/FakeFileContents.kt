@@ -16,17 +16,17 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
 import org.gradle.api.file.FileContents
 import org.gradle.api.provider.Provider
-import java.io.File
 
 class FakeFileContents(private val file: File) : FileContents {
 
-    override fun getAsText(): Provider<String> {
-        return FakeGradleProvider(file.readText())
-    }
+  override fun getAsText(): Provider<String> {
+    return FakeGradleProvider(file.readText())
+  }
 
-    override fun getAsBytes(): Provider<ByteArray> {
-        TODO("Not yet implemented")
-    }
+  override fun getAsBytes(): Provider<ByteArray> {
+    TODO("Not yet implemented")
+  }
 }

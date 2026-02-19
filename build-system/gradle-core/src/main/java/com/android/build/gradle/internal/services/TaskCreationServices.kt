@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.services
 
 import com.android.build.gradle.internal.lint.LintFromMaven
+import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.Named
 import org.gradle.api.Task
@@ -35,45 +36,51 @@ import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.api.provider.ValueSourceSpec
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 /**
  * Services for creating Tasks.
  *
  * This contains whatever is needed during task creation
  *
- * This is meant to be used only by TaskManagers and TaskCreation actions. Other stages of the plugin
- * will use different services objects.
+ * This is meant to be used only by TaskManagers and TaskCreation actions. Other stages of the plugin will use different services objects.
  *
  * This is accessed via [com.android.build.gradle.internal.component.ComponentCreationConfig]
  */
-interface TaskCreationServices: BaseServices {
-    fun fileProvider(provider: Provider<File>): Provider<RegularFile>
-    fun files(vararg files: Any?): FileCollection
-    fun directoryProperty(): DirectoryProperty
-    fun regularFileProperty(): RegularFileProperty
-    fun <T> listProperty(type: Class<T>): ListProperty<T>
-    fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V>
-    fun fileCollection(): ConfigurableFileCollection
-    fun fileCollection(vararg files: Any): ConfigurableFileCollection
-    fun initializeAapt2Input(aapt2Input: Aapt2Input, task: Task)
+interface TaskCreationServices : BaseServices {
+  fun fileProvider(provider: Provider<File>): Provider<RegularFile>
 
-    fun <T> provider(callable: () -> T?): Provider<T>
+  fun files(vararg files: Any?): FileCollection
 
-    fun createEmptyTask(name: String): TaskProvider<*>
+  fun directoryProperty(): DirectoryProperty
 
-    @Suppress("UnstableApiUsage")
-    fun <T, P : ValueSourceParameters> providerOf(
-        valueSourceType: Class<out ValueSource<T, P>>,
-        configuration: Action<in ValueSourceSpec<P>>
-    ): Provider<T>
+  fun regularFileProperty(): RegularFileProperty
 
-    fun <T : Named> named(type: Class<T>, name: String): T
+  fun <T> listProperty(type: Class<T>): ListProperty<T>
 
-    val lintFromMaven: LintFromMaven
+  fun <K, V> mapProperty(keyType: Class<K>, valueType: Class<V>): MapProperty<K, V>
 
-    val configurations: ConfigurationContainer
-    val dependencies: DependencyHandler
+  fun fileCollection(): ConfigurableFileCollection
 
-    val extraProperties: ExtraPropertiesExtension
+  fun fileCollection(vararg files: Any): ConfigurableFileCollection
+
+  fun initializeAapt2Input(aapt2Input: Aapt2Input, task: Task)
+
+  fun <T> provider(callable: () -> T?): Provider<T>
+
+  fun createEmptyTask(name: String): TaskProvider<*>
+
+  @Suppress("UnstableApiUsage")
+  fun <T, P : ValueSourceParameters> providerOf(
+    valueSourceType: Class<out ValueSource<T, P>>,
+    configuration: Action<in ValueSourceSpec<P>>,
+  ): Provider<T>
+
+  fun <T : Named> named(type: Class<T>, name: String): T
+
+  val lintFromMaven: LintFromMaven
+
+  val configurations: ConfigurationContainer
+  val dependencies: DependencyHandler
+
+  val extraProperties: ExtraPropertiesExtension
 }

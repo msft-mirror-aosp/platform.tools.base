@@ -94,14 +94,11 @@ class SliceDetector : Detector(), SourceCodeScanner {
     private const val SLICE_PROVIDER_CLASS_2 = "android.app.slice.SliceProvider"
     private const val SLICE_ACTION_CLASS = "androidx.slice.builders.SliceAction"
     private const val LIST_BUILDER_CLASS = "androidx.slice.builders.ListBuilder"
-    private const val LIST_INPUT_RANGE_BUILDER_CLASS =
-      "androidx.slice.builders.ListBuilder.InputRangeBuilder"
+    private const val LIST_INPUT_RANGE_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.InputRangeBuilder"
     private const val LIST_RANGE_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.RangeBuilder"
-    private const val LIST_HEADER_BUILDER_CLASS =
-      "androidx.slice.builders.ListBuilder.HeaderBuilder"
+    private const val LIST_HEADER_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.HeaderBuilder"
     private const val GRID_ROW_BUILDER_CLASS = "androidx.slice.builders.GridRowBuilder"
-    private const val GRID_ROW_CELL_BUILDER_CLASS =
-      "androidx.slice.builders.GridRowBuilder.CellBuilder"
+    private const val GRID_ROW_CELL_BUILDER_CLASS = "androidx.slice.builders.GridRowBuilder.CellBuilder"
     private const val ROW_BUILDER_CLASS = "androidx.slice.builders.ListBuilder.RowBuilder"
 
     private const val CATEGORY_SLICE = "android.app.slice.category.SLICE"
@@ -136,10 +133,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val sliceProvider = declaration.qualifiedName ?: return
 
-    val onMapMethod =
-      declaration.methods.firstOrNull {
-        it.name == "onMapIntentToUri" && it.uastParameters.size == 1
-      }
+    val onMapMethod = declaration.methods.firstOrNull { it.name == "onMapIntentToUri" && it.uastParameters.size == 1 }
 
     if (onMapMethod != null) {
       if (context.driver.isSuppressed(context, ISSUE, onMapMethod as UAnnotated)) {
@@ -185,12 +179,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkManifest(
-    context: Context,
-    sliceProvider: String,
-    onMapMethodLocation: Location?,
-    declarationLocation: Location,
-  ) {
+  private fun checkManifest(context: Context, sliceProvider: String, onMapMethodLocation: Location?, declarationLocation: Location) {
     // Make sure slice provider is registered correctly in the manifest
     // Make sure this actions resource is registered in the manifest
     if (context.mainProject.isLibrary) {
@@ -238,9 +227,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
 
       if (!foundCategory) {
         val location =
-          context.client
-            .findManifestSourceLocation(intentFilter)
-            ?.withSecondary(declarationLocation, "SliceProvider declaration")
+          context.client.findManifestSourceLocation(intentFilter)?.withSecondary(declarationLocation, "SliceProvider declaration")
         if (location != null) {
           context.report(
             ISSUE,
@@ -267,14 +254,11 @@ class SliceDetector : Detector(), SourceCodeScanner {
           "`onMapIntentToUri` will not be called",
       )
     } else if (firstCategory != null && onMapMethodLocation == null) {
-      context.client.findManifestSourceLocation(firstCategory)?.let {
-        declarationLocation.secondary = it
-      }
+      context.client.findManifestSourceLocation(firstCategory)?.let { declarationLocation.secondary = it }
       context.report(
         ISSUE,
         declarationLocation,
-        "Implement `SliceProvider#onMapIntentToUri` to handle the intents " +
-          "defined on your slice `<provider>` in your manifest",
+        "Implement `SliceProvider#onMapIntentToUri` to handle the intents " + "defined on your slice `<provider>` in your manifest",
       )
     }
   }
@@ -291,11 +275,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
     )
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val method = node.getParentOfType(UMethod::class.java, true) ?: return
     val name = constructor.containingClass?.qualifiedName ?: return
     when (name) {
@@ -307,19 +287,10 @@ class SliceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkListBuilder(
-    context: JavaContext,
-    listBuilder: UCallExpression,
-    method: UMethod,
-  ) {
+  private fun checkListBuilder(context: JavaContext, listBuilder: UCallExpression, method: UMethod) {
     val rows = findRows(listBuilder, method)
     if (rows.isEmpty()) {
-      context.report(
-        ISSUE,
-        listBuilder,
-        context.getLocation(listBuilder),
-        "A slice should have at least one row added to it",
-      )
+      context.report(ISSUE, listBuilder, context.getLocation(listBuilder), "A slice should have at least one row added to it")
       return
     }
 
@@ -350,12 +321,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
       }
     )
     if (!primaryAction) {
-      context.report(
-        ISSUE,
-        listBuilder,
-        context.getLocation(listBuilder),
-        "A slice should have a primary action set on one of its rows",
-      )
+      context.report(ISSUE, listBuilder, context.getLocation(listBuilder), "A slice should have a primary action set on one of its rows")
       return
     }
 
@@ -400,23 +366,15 @@ class SliceDetector : Detector(), SourceCodeScanner {
     ensureSingleToggleType(
       endActionItems,
       context,
-      "A mixture of slice actions and icons are not supported on a list, " +
-        "add either actions or icons but not both",
+      "A mixture of slice actions and icons are not supported on a list, " + "add either actions or icons but not both",
     )
   }
 
   private fun isAddRowMethod(methodName: String?): Boolean {
-    return methodName == "addRow" ||
-      methodName == "addInputRange" ||
-      methodName == "addRange" ||
-      methodName == "addGridRow"
+    return methodName == "addRow" || methodName == "addInputRange" || methodName == "addRange" || methodName == "addGridRow"
   }
 
-  private fun ensureSingleToggleType(
-    endActionItems: MutableList<UExpression>,
-    context: JavaContext,
-    message: String,
-  ) {
+  private fun ensureSingleToggleType(endActionItems: MutableList<UExpression>, context: JavaContext, message: String) {
     if (endActionItems.size >= 2) {
       var custom: UExpression? = null
       var default: UExpression? = null
@@ -430,10 +388,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
         }
 
         if (custom != null && default != null) {
-          val location =
-            context
-              .getLocation(custom)
-              .withSecondary(context.getLocation(default), "Conflicting action type here")
+          val location = context.getLocation(custom).withSecondary(context.getLocation(default), "Conflicting action type here")
           context.report(ISSUE, custom, location, message)
           break
         }
@@ -441,10 +396,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Given a list builder construction, returns all the row builder constructor calls initialized
-   * with that list builder.
-   */
+  /** Given a list builder construction, returns all the row builder constructor calls initialized with that list builder. */
   private fun findRows(node: UCallExpression, method: UMethod): List<UCallExpression> {
     val rows = mutableListOf<UCallExpression>()
     method.accept(
@@ -545,12 +497,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkHasContent(
-    qualifiedName: String,
-    context: JavaContext,
-    node: UCallExpression,
-    method: UMethod,
-  ) {
+  private fun checkHasContent(qualifiedName: String, context: JavaContext, node: UCallExpression, method: UMethod) {
     val analyzer =
       object : TargetMethodDataFlowAnalyzer(listOf(node)) {
         override fun isTargetMethodName(name: String): Boolean {
@@ -587,53 +534,36 @@ class SliceDetector : Detector(), SourceCodeScanner {
             val type = first?.getExpressionType()?.canonicalText
             if (arguments.size == 1 && type == TYPE_LONG) {
               if (timestamp != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(context.getLocation(timestamp!!), "Earlier timestamp here")
+                val location = context.getLocation(call).withSecondary(context.getLocation(timestamp!!), "Earlier timestamp here")
                 context.report(
                   ISSUE,
                   call,
                   location,
-                  "`RowBuilder` can only have one timestamp added to it, " +
-                    "remove one of your timestamps",
+                  "`RowBuilder` can only have one timestamp added to it, " + "remove one of your timestamps",
                 )
               } else {
                 timestamp = call
               }
             } else if (type == SLICE_ACTION_CLASS) {
               if (endIconItem != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(context.getLocation(endIconItem!!), "Earlier icon here")
+                val location = context.getLocation(call).withSecondary(context.getLocation(endIconItem!!), "Earlier icon here")
                 context.report(
                   ISSUE,
                   call,
                   location,
-                  "`RowBuilder` cannot have a mixture of icons and slice " +
-                    "actions added to the end items",
+                  "`RowBuilder` cannot have a mixture of icons and slice " + "actions added to the end items",
                 )
               }
               endActionItem = call
               endActionItems.add(first)
-            } else if (
-              type == ICON_CLASS || type == ICON_COMPAT_CLASS_1 || type == ICON_COMPAT_CLASS_2
-            ) {
+            } else if (type == ICON_CLASS || type == ICON_COMPAT_CLASS_1 || type == ICON_COMPAT_CLASS_2) {
               if (endActionItem != null) {
-                val location =
-                  context
-                    .getLocation(call)
-                    .withSecondary(
-                      context.getLocation(endActionItem!!),
-                      "Earlier slice action here",
-                    )
+                val location = context.getLocation(call).withSecondary(context.getLocation(endActionItem!!), "Earlier slice action here")
                 context.report(
                   ISSUE,
                   call,
                   location,
-                  "`RowBuilder` cannot have a mixture of icons and slice " +
-                    "actions added to the end items",
+                  "`RowBuilder` cannot have a mixture of icons and slice " + "actions added to the end items",
                 )
               }
               endIconItem = call
@@ -654,12 +584,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
   }
 
   private fun warnMissingContent(builder: String, context: JavaContext, node: UCallExpression) {
-    context.report(
-      ISSUE,
-      node,
-      context.getLocation(node),
-      "`$builder` should have a piece of content added to it",
-    )
+    context.report(ISSUE, node, context.getLocation(node), "`$builder` should have a piece of content added to it")
   }
 
   private fun isCustomToggle(method: PsiMethod): Boolean {
@@ -677,9 +602,7 @@ class SliceDetector : Detector(), SourceCodeScanner {
           val initializer = resolved.uastInitializer?.skipParenthesizedExprDown() ?: return null
           return findSliceActionConstructor(initializer)
         } else if (resolved is PsiLocalVariable) {
-          val initializer =
-            UastLintUtils.findLastAssignment(resolved, node)?.skipParenthesizedExprDown()
-              ?: return null
+          val initializer = UastLintUtils.findLastAssignment(resolved, node)?.skipParenthesizedExprDown() ?: return null
           return findSliceActionConstructor(initializer)
         }
       }

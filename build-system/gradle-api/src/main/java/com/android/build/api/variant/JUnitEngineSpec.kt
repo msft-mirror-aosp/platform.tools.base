@@ -24,41 +24,28 @@ import org.gradle.api.provider.Provider
 @Incubating
 interface JUnitEngineSpec {
 
-    /**
-     * Returns the final list of included engines for this tes suite.
-     *
-     *  you must use the [AndroidComponentsExtension.beforeVariants] API and access the parameters
-     *  located in [TestSuiteBuilder.junitEngineSpec] to add new engines.
-     */
-    @get:Incubating
-    val includeEngines: MutableSet<String>
+  /**
+   * Returns the final list of included engines for this tes suite.
+   *
+   * you must use the [AndroidComponentsExtension.beforeVariants] API and access the parameters located in
+   * [TestSuiteBuilder.junitEngineSpec] to add new engines.
+   */
+  @get:Incubating val includeEngines: MutableSet<String>
 
-    /**
-     * Adds a new key value pair property to the list of inputs for this test engine.
-     */
-    @Incubating
-    fun addInputProperty(propertyName: String, propertyValue: String)
+  /** Adds a new key value pair property to the list of inputs for this test engine. */
+  @Incubating fun addInputProperty(propertyName: String, propertyValue: String)
 
-    /**
-     * Adds a new key value pair property to the list of inputs of this test engine, the value
-     * will only be resolved at execution time.
-     */
-    fun addInputProperty(propertyName: String, propertyValue: Provider<String>)
+  /** Adds a new key value pair property to the list of inputs of this test engine, the value will only be resolved at execution time. */
+  fun addInputProperty(propertyName: String, propertyValue: Provider<String>)
 
-    /**
-     * Returns the final list of inputs required by the junit engine running the test suite.
-     *
-     * Since these inputs can change the build flow, it is too late to change them here, you must
-     * use the [AndroidComponentsExtension.beforeVariants] API and access the parameters located in
-     * [TestSuiteBuilder.junitEngineSpec]
-     */
-    @get:Incubating
-    val inputs: List<AgpTestSuiteInputParameters>
+  /**
+   * Returns the final list of inputs required by the junit engine running the test suite.
+   *
+   * Since these inputs can change the build flow, it is too late to change them here, you must use the
+   * [AndroidComponentsExtension.beforeVariants] API and access the parameters located in [TestSuiteBuilder.junitEngineSpec]
+   */
+  @get:Incubating val inputs: List<AgpTestSuiteInputParameters>
 
-    /**
-     * Returns a [DependencyCollector] that collects the set of runtime-only dependencies to find
-     * and load configured junit engines.
-     */
-    @get:Incubating
-    val enginesDependencies: DependencyCollector
+  /** Returns a [DependencyCollector] that collects the set of runtime-only dependencies to find and load configured junit engines. */
+  @get:Incubating val enginesDependencies: DependencyCollector
 }

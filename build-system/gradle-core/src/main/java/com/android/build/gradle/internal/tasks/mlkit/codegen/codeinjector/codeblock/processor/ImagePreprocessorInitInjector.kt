@@ -24,50 +24,32 @@ import com.android.build.gradle.internal.tasks.mlkit.codegen.getProcessorName
 import com.android.tools.mlkit.TensorInfo
 import com.squareup.javapoet.MethodSpec
 
-/**
- * Injector to init a image preprocessor, which does image resize, normalization, quantization and
- * cast.
- */
+/** Injector to init a image preprocessor, which does image resize, normalization, quantization and cast. */
 class ImagePreprocessorInitInjector : CodeBlockInjector() {
-    override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
-        methodBuilder.addCode(
-            "\$T.Builder \$L = new \$T.Builder()\n",
-            ClassNames.IMAGE_PROCESSOR,
-            getProcessorBuilderName(tensorInfo),
-            ClassNames.IMAGE_PROCESSOR
-        )
-        methodBuilder.addCode(
-            "  .add(new \$T(\$L, \$L, \$T.NEAREST_NEIGHBOR))\n",
-            ClassNames.RESIZE_OP,
-            tensorInfo.shape[1],
-            tensorInfo.shape[2],
-            ClassNames.RESIZE_METHOD
-        )
-        val normalizationParams = tensorInfo.normalizationParams
-        methodBuilder.addCode(
-            "  .add(new \$T(\$L, \$L))\n",
-            ClassNames.NORMALIZE_OP,
-            getFloatArrayString(normalizationParams.mean),
-            getFloatArrayString(normalizationParams.std)
-        )
-        val quantizationParams =
-            tensorInfo.quantizationParams
-        methodBuilder.addCode(
-            "  .add(new \$T(\$Lf, \$Lf))\n",
-            ClassNames.QUANTIZE_OP,
-            quantizationParams.zeroPoint,
-            quantizationParams.scale
-        )
-        methodBuilder.addCode(
-            "  .add(new \$T(\$T.\$L));\n",
-            ClassNames.CAST_OP,
-            ClassNames.DATA_TYPE,
-            getDataType(tensorInfo.dataType)
-        )
-        methodBuilder.addStatement(
-            "\$L = \$L.build()",
-            getProcessorName(tensorInfo),
-            getProcessorBuilderName(tensorInfo)
-        )
-    }
+  override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
+    methodBuilder.addCode(
+      "\$T.Builder \$L = new \$T.Builder()\n",
+      ClassNames.IMAGE_PROCESSOR,
+      getProcessorBuilderName(tensorInfo),
+      ClassNames.IMAGE_PROCESSOR,
+    )
+    methodBuilder.addCode(
+      "  .add(new \$T(\$L, \$L, \$T.NEAREST_NEIGHBOR))\n",
+      ClassNames.RESIZE_OP,
+      tensorInfo.shape[1],
+      tensorInfo.shape[2],
+      ClassNames.RESIZE_METHOD,
+    )
+    val normalizationParams = tensorInfo.normalizationParams
+    methodBuilder.addCode(
+      "  .add(new \$T(\$L, \$L))\n",
+      ClassNames.NORMALIZE_OP,
+      getFloatArrayString(normalizationParams.mean),
+      getFloatArrayString(normalizationParams.std),
+    )
+    val quantizationParams = tensorInfo.quantizationParams
+    methodBuilder.addCode("  .add(new \$T(\$Lf, \$Lf))\n", ClassNames.QUANTIZE_OP, quantizationParams.zeroPoint, quantizationParams.scale)
+    methodBuilder.addCode("  .add(new \$T(\$T.\$L));\n", ClassNames.CAST_OP, ClassNames.DATA_TYPE, getDataType(tensorInfo.dataType))
+    methodBuilder.addStatement("\$L = \$L.build()", getProcessorName(tensorInfo), getProcessorBuilderName(tensorInfo))
+  }
 }

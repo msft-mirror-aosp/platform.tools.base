@@ -21,22 +21,11 @@ import org.gradle.api.Incubating
 /**
  * DSL object on library build type for configurations of the android test component.
  *
- * android {
- *     buildTypes {
- *         debug {
- *             androidTest {
- *                 enableMinification = ...
- *             }
- *         }
- *     }
- * }
- *
+ * android { buildTypes { debug { androidTest { enableMinification = ... } } } }
  */
 @Incubating
 interface AndroidTest {
 
-    /** Enable minification for the android test component */
-    @get:Incubating
-    @set:Incubating
-    var enableMinification: Boolean
+  /** Enable minification for the android test component */
+  @get:Incubating @set:Incubating var enableMinification: Boolean
 }

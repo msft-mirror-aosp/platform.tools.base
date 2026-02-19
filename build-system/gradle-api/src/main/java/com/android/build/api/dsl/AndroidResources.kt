@@ -16,66 +16,57 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
-
 /**
  * DSL object for configuring Android resource options.
  *
  * This is accessed via [CommonExtension.androidResources]
  */
 interface AndroidResources {
-    /**
-     * Pattern describing assets to be ignored.
-     *
-     * This is [ignoreAssetsPatterns] joined by ':'.
-     */
-    var ignoreAssetsPattern: String?
+  /**
+   * Pattern describing assets to be ignored.
+   *
+   * This is [ignoreAssetsPatterns] joined by ':'.
+   */
+  var ignoreAssetsPattern: String?
 
-    /**
-     * Patterns describing assets to be ignored.
-     *
-     * If empty, defaults to `["!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~"]`
-     */
-    val ignoreAssetsPatterns: MutableCollection<String>
+  /**
+   * Patterns describing assets to be ignored.
+   *
+   * If empty, defaults to `["!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~"]`
+   */
+  val ignoreAssetsPatterns: MutableCollection<String>
 
-    /**
-     * File extensions of Android resources, assets, and Java resources to be stored uncompressed in
-     * the APK. Adding an empty extension (e.g., setting `noCompress ''`) will disable compression
-     * for all Android resources, assets, and Java resources.
-     */
-    val noCompress: MutableCollection<String>
+  /**
+   * File extensions of Android resources, assets, and Java resources to be stored uncompressed in the APK. Adding an empty extension (e.g.,
+   * setting `noCompress ''`) will disable compression for all Android resources, assets, and Java resources.
+   */
+  val noCompress: MutableCollection<String>
 
-    /**
-     * Adds a file extension of Android resources, assets, and Java resources to be stored
-     * uncompressed in the APK. Adding an empty extension (i.e., `noCompress('')`) will disable
-     * compression for all Android resources, assets, and Java resources.
-     */
-    @Deprecated("Replaced with property noCompress")
-    fun noCompress(noCompress: String)
+  /**
+   * Adds a file extension of Android resources, assets, and Java resources to be stored uncompressed in the APK. Adding an empty extension
+   * (i.e., `noCompress('')`) will disable compression for all Android resources, assets, and Java resources.
+   */
+  @Deprecated("Replaced with property noCompress") fun noCompress(noCompress: String)
 
-    /**
-     * Adds file extensions of Android resources, assets, and Java resources to be stored
-     * uncompressed in the APK. Adding an empty extension (e.g., `noCompress('')`) will disable
-     * compression for all Android resources, assets, and Java resources.
-     */
-    @Deprecated("Replaced with property noCompress")
-    fun noCompress(vararg noCompress: String)
+  /**
+   * Adds file extensions of Android resources, assets, and Java resources to be stored uncompressed in the APK. Adding an empty extension
+   * (e.g., `noCompress('')`) will disable compression for all Android resources, assets, and Java resources.
+   */
+  @Deprecated("Replaced with property noCompress") fun noCompress(vararg noCompress: String)
 
-    /**
-     * Forces aapt to return an error if it fails to find an entry for a configuration.
-     *
-     * See `aapt --help`
-     */
-    var failOnMissingConfigEntry: Boolean
+  /**
+   * Forces aapt to return an error if it fails to find an entry for a configuration.
+   *
+   * See `aapt --help`
+   */
+  var failOnMissingConfigEntry: Boolean
 
-    /** List of additional parameters to pass to `aapt`. */
-    val additionalParameters: MutableList<String>
+  /** List of additional parameters to pass to `aapt`. */
+  val additionalParameters: MutableList<String>
 
-    /** Adds additional parameters to be passed to `aapt`. */
-    @Deprecated("Replaced with property additionalParameters")
-    fun additionalParameters(params: String)
+  /** Adds additional parameters to be passed to `aapt`. */
+  @Deprecated("Replaced with property additionalParameters") fun additionalParameters(params: String)
 
-    /** Adds additional parameters to be passed to `aapt`. */
-    @Deprecated("Replaced with property additionalParameters")
-    fun additionalParameters(vararg params: String)
+  /** Adds additional parameters to be passed to `aapt`. */
+  @Deprecated("Replaced with property additionalParameters") fun additionalParameters(vararg params: String)
 }

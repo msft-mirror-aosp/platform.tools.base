@@ -22,10 +22,9 @@ import org.junit.Test
 import org.mockito.Mockito
 
 /**
- * Majority of test cases for picking name logic were moved to sdk-common module along with logic
- * itself to be reused in multiple places.
- * [com.android.ide.common.repository.VersionCatalogNamingUtilTest] now covered all test cases for
- * picking library or variable names. Current class, covers mainly lint wrapper/specific logic.
+ * Majority of test cases for picking name logic were moved to sdk-common module along with logic itself to be reused in multiple places.
+ * [com.android.ide.common.repository.VersionCatalogNamingUtilTest] now covered all test cases for picking library or variable names.
+ * Current class, covers mainly lint wrapper/specific logic.
  *
  * See [com.android.ide.common.repository.VersionCatalogNamingUtilTest].
  */
@@ -45,37 +44,15 @@ class TomlUtilitiesTest {
     libraryName("google-foo", "com.google:foo:1.0")
     GradleDetector.reservedQuickfixNames = mutableMapOf("libraries" to mutableSetOf("foo"))
     libraryName("foo-v10", "com.google:foo:1.0", includeVersions = true)
-    GradleDetector.reservedQuickfixNames =
-      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10"))
+    GradleDetector.reservedQuickfixNames = mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10"))
     libraryName("google-foo", "com.google:foo:1.0")
-    GradleDetector.reservedQuickfixNames =
-      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10"))
+    GradleDetector.reservedQuickfixNames = mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10"))
     libraryName("google-foo-v10", "com.google:foo:1.0", includeVersions = true)
     GradleDetector.reservedQuickfixNames =
-      mutableMapOf(
-        "libraries" to
-          mutableSetOf(
-            "foo",
-            "foo-v10",
-            "google-foo",
-            "google-foo-v10",
-            "com-google-foo",
-            "com-google-foo-v10",
-          )
-      )
+      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10", "google-foo", "google-foo-v10", "com-google-foo", "com-google-foo-v10"))
     libraryName("com-google-foo2", "com.google:foo:1.0")
     GradleDetector.reservedQuickfixNames =
-      mutableMapOf(
-        "libraries" to
-          mutableSetOf(
-            "foo",
-            "foo-v10",
-            "google-foo",
-            "google-foo-v10",
-            "com-google-foo",
-            "com-google-foo-v10",
-          )
-      )
+      mutableMapOf("libraries" to mutableSetOf("foo", "foo-v10", "google-foo", "google-foo-v10", "com-google-foo", "com-google-foo-v10"))
     libraryName("com-google-foo-v10-x2", "com.google:foo:1.0", includeVersions = true)
   }
 
@@ -93,29 +70,16 @@ class TomlUtilitiesTest {
     // If there is a preferred version variable, use it -- unless it exists, or we allow reuse
     versionName("myVariable", "com.google:foo:1.0", versionVariable = "myVariable")
     versionName("foo", "com.google:foo:1.0", "myVariable", versionVariable = "myVariable")
-    versionName(
-      "myVariable",
-      "com.google:foo:1.0",
-      "myVariable",
-      versionVariable = "myVariable",
-      allowExistingVersionVar = true,
-    )
+    versionName("myVariable", "com.google:foo:1.0", "myVariable", versionVariable = "myVariable", allowExistingVersionVar = true)
   }
 
   // Test fixtures below
 
-  private fun libraryName(
-    expected: String,
-    coordinateString: String,
-    vararg variableNames: String,
-    includeVersions: Boolean = false,
-  ) {
+  private fun libraryName(expected: String, coordinateString: String, vararg variableNames: String, includeVersions: Boolean = false) {
     check(
       expected,
       coordinateString,
-      { dependency, libraries, include, _, _ ->
-        pickLibraryVariableName(dependency, libraries, include)
-      },
+      { dependency, libraries, include, _, _ -> pickLibraryVariableName(dependency, libraries, include) },
       includeVersions,
       null,
       false,
@@ -134,9 +98,7 @@ class TomlUtilitiesTest {
     check(
       expected,
       coordinateString,
-      { gc, map, _, _, _ ->
-        pickVersionVariableName(gc, map, versionVariable, allowExistingVersionVar)
-      },
+      { gc, map, _, _, _ -> pickVersionVariableName(gc, map, versionVariable, allowExistingVersionVar) },
       includeVersions,
       versionVariable,
       allowExistingVersionVar,

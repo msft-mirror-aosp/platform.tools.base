@@ -16,18 +16,11 @@
 
 package com.android.build.gradle.internal.ndk
 
-import com.android.build.gradle.internal.core.Abi
 import java.io.File
 
-/**
- * NdkInfo for r21.
- */
+/** NdkInfo for r21. */
 open class NdkR21Info(root: File) : NdkR19Info(root) {
-    override fun getStripExecutable(abi: String) = rootDirectory.resolve(
-        "toolchains/llvm/prebuilt/$hostTag/bin/llvm-strip"
-    )
+  override fun getStripExecutable(abi: String) = rootDirectory.resolve("toolchains/llvm/prebuilt/$hostTag/bin/llvm-strip")
 
-    override fun getObjcopyExecutable(abi: String) = rootDirectory.resolve(
-        "toolchains/llvm/prebuilt/$hostTag/bin/llvm-objcopy"
-    )
+  override fun getObjcopyExecutable(abi: String) = rootDirectory.resolve("toolchains/llvm/prebuilt/$hostTag/bin/llvm-objcopy")
 }

@@ -23,15 +23,13 @@ import org.junit.Test
 
 class BasePluginCallbackTest {
 
-    @JvmField
-    @Rule
-    val project =
-            GradleTestProjectBuilder().fromTestApp(MinimalSubProject.app("com.example")).create()
+  @JvmField @Rule val project = GradleTestProjectBuilder().fromTestApp(MinimalSubProject.app("com.example")).create()
 
-    @Test
-    fun testCallback() {
-        val currentBuildFile = project.buildFile.readText()
-        project.buildFile.writeText("""
+  @Test
+  fun testCallback() {
+    val currentBuildFile = project.buildFile.readText()
+    project.buildFile.writeText(
+      """
             pluginManager.withPlugin("com.android.base") {
                 if (extensions.findByName("android") == null) {
                     throw new RuntimeException("Extension is not initialized yet.")
@@ -39,8 +37,10 @@ class BasePluginCallbackTest {
             }
 
             $currentBuildFile
-        """.trimIndent())
+        """
+        .trimIndent()
+    )
 
-        project.executor().run("help")
-    }
+    project.executor().run("help")
+  }
 }

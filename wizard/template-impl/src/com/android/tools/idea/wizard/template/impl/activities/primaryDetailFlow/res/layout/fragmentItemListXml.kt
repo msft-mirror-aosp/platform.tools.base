@@ -24,8 +24,9 @@ fun fragmentItemListXml(
   itemListLayout: String,
   itemListContentLayout: String,
   packageName: String,
-  useAndroidX: Boolean
-) = """
+  useAndroidX: Boolean,
+) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Adding the same root's ID for view binding as other layout configurations -->
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}

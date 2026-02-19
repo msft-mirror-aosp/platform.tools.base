@@ -32,35 +32,27 @@ import org.mockito.quality.Strictness
 
 class AnalyticsEnabledJUnitEngineSpecBuilderTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: JUnitEngineSpecBuilder = mock()
+  private val delegate: JUnitEngineSpecBuilder = mock()
 
-    private val stats: GradleBuildVariant.Builder = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledJUnitEngineSpecBuilder by lazy {
-        object : AnalyticsEnabledJUnitEngineSpecBuilder(delegate, stats) {}
-    }
+  private val stats: GradleBuildVariant.Builder = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledJUnitEngineSpecBuilder by lazy { object : AnalyticsEnabledJUnitEngineSpecBuilder(delegate, stats) {} }
 
-    @Test
-    fun testInputs() {
-        val inputs = mutableListOf(AgpTestSuiteInputParameters.TEST_CLASSES)
-        Mockito.`when`(delegate.inputs).thenReturn(inputs)
+  @Test
+  fun testInputs() {
+    val inputs = mutableListOf(AgpTestSuiteInputParameters.TEST_CLASSES)
+    Mockito.`when`(delegate.inputs).thenReturn(inputs)
 
-        Truth.assertThat(proxy.inputs).isEqualTo(inputs)
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(proxy.inputs).isEqualTo(inputs)
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
 
-        proxy.inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+    proxy.inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
 
-        Mockito.verify(delegate, times(2)).inputs
+    Mockito.verify(delegate, times(2)).inputs
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(2)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE)
-        Truth.assertThat(proxy.inputs).containsExactly(
-            AgpTestSuiteInputParameters.TEST_CLASSES,
-            AgpTestSuiteInputParameters.ADB_EXECUTABLE
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(2)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.JUNIT_ENGINE_BUILDER_INPUTS_VALUE)
+    Truth.assertThat(proxy.inputs).containsExactly(AgpTestSuiteInputParameters.TEST_CLASSES, AgpTestSuiteInputParameters.ADB_EXECUTABLE)
+  }
 }

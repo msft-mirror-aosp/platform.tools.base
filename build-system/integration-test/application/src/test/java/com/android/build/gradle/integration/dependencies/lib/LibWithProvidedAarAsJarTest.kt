@@ -27,59 +27,52 @@ import org.junit.Test
 
 class LibWithProvidedAarAsJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("library", "library2")
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("library", "library2")
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                dependencies {
-                   compileOnly project(path: ":library2", configuration: "fakeJar")
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      dependencies {
+         compileOnly project(path: ":library2", configuration: "fakeJar")
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library2").buildFile,
-            """
-                configurations {
-                    create("fakeJar")
-                }
-                task makeFakeJar(type: Jar) {
-                    from "src/main/java"
-                }
-                artifacts {
-                    fakeJar makeFakeJar
-                }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("library2").buildFile,
+      """
+      configurations {
+          create("fakeJar")
+      }
+      task makeFakeJar(type: Jar) {
+          from "src/main/java"
+      }
+      artifacts {
+          fakeJar makeFakeJar
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    with(result).compareVariantDependencies(projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies")
+  }
+
+  @Test
+  fun `check project jar is not packaged`() {
+    project.executor().run("clean", ":library:assembleDebug")
+    project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+      // make sure library2/PersonView2 is not in the AAR
+      classes().containsExactly("com/example/android/multiproject/library/PersonView")
     }
-
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies"
-        )
-    }
-
-    @Test
-    fun `check project jar is not packaged`() {
-        project.executor().run("clean", ":library:assembleDebug")
-        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
-            // make sure library2/PersonView2 is not in the AAR
-            classes().containsExactly("com/example/android/multiproject/library/PersonView")
-        }
-    }
+  }
 }

@@ -29,11 +29,7 @@ import com.android.tools.idea.wizard.template.impl.activities.composeActivityMat
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.themeKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
 
-fun RecipeExecutor.aiGlassesActivityRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-) {
+fun RecipeExecutor.aiGlassesActivityRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String) {
   val (_, srcOut, resOut, manifestOut, _, _, _, rootDir) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -65,29 +61,17 @@ fun RecipeExecutor.aiGlassesActivityRecipe(
   // this themes.xml exists just for settings the status bar color.
   // Thus, themeName follows the non-Compose project convention.
   // (E.g. Theme.MyApplication) as opposed to the themeName variable below (E.g. MyApplicationTheme)
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(
     aiGlassesActivityManifestXml(activityClass = glassesActivityClass, packageName = packageName),
     manifestOut.resolve("AndroidManifest.xml"),
   )
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"
-  save(
-    mainActivityKt(activityClass, glassesActivityClass, packageName, themeName),
-    srcOut.resolve("${activityClass}.kt"),
-  )
-  save(
-    glassesActivityKt(glassesActivityClass, packageName),
-    srcOut.resolve("${glassesActivityClass}.kt"),
-  )
+  save(mainActivityKt(activityClass, glassesActivityClass, packageName, themeName), srcOut.resolve("${activityClass}.kt"))
+  save(glassesActivityKt(glassesActivityClass, packageName), srcOut.resolve("${glassesActivityClass}.kt"))
   save(audioInterfaceKt(packageName), srcOut.resolve("audioInterface.kt"))
 
   val uiThemeFolder = "ui/theme"

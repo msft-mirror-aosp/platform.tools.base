@@ -23,35 +23,29 @@ import com.android.builder.model.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
-class DesugaredMethodsModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                defaultConfig.minSdk = 24
-                compileOptions {
-                    isCoreLibraryDesugaringEnabled = true
-                }
+class DesugaredMethodsModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          defaultConfig.minSdk = 24
+          compileOptions { isCoreLibraryDesugaringEnabled = true }
 
-                enableKotlin = false
-            }
-            dependencies {
-                coreLibraryDesugaring(DESUGAR_DEPENDENCY)
-            }
+          enableKotlin = false
         }
+        dependencies { coreLibraryDesugaring(DESUGAR_DEPENDENCY) }
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareAndroidProject(goldenFile = "AndroidProject")
-    }
+    with(result).compareAndroidProject(goldenFile = "AndroidProject")
+  }
 
-    companion object {
-        private const val DESUGAR_DEPENDENCY =
-            "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
-    }
+  companion object {
+    private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
+  }
 }

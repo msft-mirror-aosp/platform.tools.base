@@ -21,25 +21,23 @@ import com.android.build.gradle.integration.BazelIntegrationTestsSuite
 import com.android.testutils.TestUtils
 import java.nio.file.Path
 
-/**
- * Helper for environment related methods
- */
+/** Helper for environment related methods */
 class TestEnvironment {
-    companion object {
-        fun getNdkPath(sdkDir: Path?, version: String?): Path? {
-            return if (version != null) {
-                if (TestUtils.runningFromBazel()) {
-                    BazelIntegrationTestsSuite.NDK_SIDE_BY_SIDE_ROOT.resolve(version)
-                } else {
-                    sdkDir?.resolve("${SdkConstants.FD_NDK_SIDE_BY_SIDE}/$version")
-                }
-            } else {
-                if (TestUtils.runningFromBazel()) {
-                    BazelIntegrationTestsSuite.NDK_IN_TMP
-                } else {
-                    sdkDir?.resolve(SdkConstants.FD_NDK)
-                }
-            }
+  companion object {
+    fun getNdkPath(sdkDir: Path?, version: String?): Path? {
+      return if (version != null) {
+        if (TestUtils.runningFromBazel()) {
+          BazelIntegrationTestsSuite.NDK_SIDE_BY_SIDE_ROOT.resolve(version)
+        } else {
+          sdkDir?.resolve("${SdkConstants.FD_NDK_SIDE_BY_SIDE}/$version")
         }
+      } else {
+        if (TestUtils.runningFromBazel()) {
+          BazelIntegrationTestsSuite.NDK_IN_TMP
+        } else {
+          sdkDir?.resolve(SdkConstants.FD_NDK)
+        }
+      }
     }
+  }
 }

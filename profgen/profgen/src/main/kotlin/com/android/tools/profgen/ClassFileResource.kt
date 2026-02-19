@@ -29,73 +29,69 @@ const val JAR_EXTENSION = ".jar"
 private const val MODULE_INFO_CLASS = "module-info.class"
 
 interface ClassFileResource {
-    fun getByteStream(): InputStream
+  fun getByteStream(): InputStream
 
-    fun getBytes(): ByteArray {
-        getByteStream().use {
-            return it.readBytes()
-        }
+  fun getBytes(): ByteArray {
+    getByteStream().use {
+      return it.readBytes()
     }
+  }
 
-    fun getClassDescriptor(): String
+  fun getClassDescriptor(): String
 }
 
 fun ClassFileResource(classDescriptor: String, classFile: Path): ClassFileResource {
-    return object : ClassFileResource {
-        override fun getByteStream(): InputStream {
-            return classFile.toFile().inputStream()
-        }
-
-        override fun getClassDescriptor(): String {
-            return classDescriptor
-        }
+  return object : ClassFileResource {
+    override fun getByteStream(): InputStream {
+      return classFile.toFile().inputStream()
     }
+
+    override fun getClassDescriptor(): String {
+      return classDescriptor
+    }
+  }
 }
 
-class ArchiveClassFileResourceProvider (
-    private val archive: Path,
-    private var zipFile: ZipFile? = null
-): Closeable {
+class ArchiveClassFileResourceProvider(private val archive: Path, private var zipFile: ZipFile? = null) : Closeable {
 
-    fun getClassFileResources(): Collection<ClassFileResource> {
-        val classFileResources = mutableListOf<ClassFileResource>()
-        val zipFile = zipFile ?: ZipFile(archive.toFile(), StandardCharsets.UTF_8).also {
-            zipFile = it
-        }
-        val zipEntries = zipFile.entries()
-        while (zipEntries.hasMoreElements()) {
-            val zipEntry = zipEntries.nextElement()
-            if (isClassFile(zipEntry)) {
-                val classBinaryName = zipEntry.name.dropLast(CLASS_EXTENSION.length)
-                val classDescriptor = getClassDescriptorFromBinaryName(classBinaryName)
-                val classFileResource = object : ClassFileResource {
-                    override fun getByteStream(): InputStream {
-                        return zipFile.getInputStream(zipEntry)
-                    }
-
-                    override fun getClassDescriptor(): String {
-                        return classDescriptor
-                    }
-                }
-                classFileResources.add(classFileResource)
+  fun getClassFileResources(): Collection<ClassFileResource> {
+    val classFileResources = mutableListOf<ClassFileResource>()
+    val zipFile = zipFile ?: ZipFile(archive.toFile(), StandardCharsets.UTF_8).also { zipFile = it }
+    val zipEntries = zipFile.entries()
+    while (zipEntries.hasMoreElements()) {
+      val zipEntry = zipEntries.nextElement()
+      if (isClassFile(zipEntry)) {
+        val classBinaryName = zipEntry.name.dropLast(CLASS_EXTENSION.length)
+        val classDescriptor = getClassDescriptorFromBinaryName(classBinaryName)
+        val classFileResource =
+          object : ClassFileResource {
+            override fun getByteStream(): InputStream {
+              return zipFile.getInputStream(zipEntry)
             }
-        }
-        return classFileResources
-    }
 
-    override fun close() {
-        zipFile?.close()
+            override fun getClassDescriptor(): String {
+              return classDescriptor
+            }
+          }
+        classFileResources.add(classFileResource)
+      }
     }
+    return classFileResources
+  }
+
+  override fun close() {
+    zipFile?.close()
+  }
 }
 
 fun getClassDescriptorFromBinaryName(classBinaryName: String): String {
-    return "L$classBinaryName;"
+  return "L$classBinaryName;"
 }
 
 private fun isClassFile(zipEntry: ZipEntry): Boolean {
-    val name = zipEntry.name.lowercase(Locale.getDefault())
-    return name.endsWith(CLASS_EXTENSION)
-            && !name.endsWith(MODULE_INFO_CLASS)
-            && !name.startsWith("meta-inf")
-            && !name.startsWith("/meta-inf")
+  val name = zipEntry.name.lowercase(Locale.getDefault())
+  return name.endsWith(CLASS_EXTENSION) &&
+    !name.endsWith(MODULE_INFO_CLASS) &&
+    !name.startsWith("meta-inf") &&
+    !name.startsWith("/meta-inf")
 }

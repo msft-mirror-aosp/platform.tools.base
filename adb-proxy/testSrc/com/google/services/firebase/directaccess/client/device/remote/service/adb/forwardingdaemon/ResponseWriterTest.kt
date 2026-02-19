@@ -32,10 +32,7 @@ class ResponseWriterTest {
 
   @Before
   fun setUp() = runBlockingWithTimeout {
-    testSocket =
-      fakeAdbSession.channelFactory.createServerSocket().also { serverSocket ->
-        serverSocket.bind()
-      }
+    testSocket = fakeAdbSession.channelFactory.createServerSocket().also { serverSocket -> serverSocket.bind() }
     adbChannel = fakeAdbSession.channelFactory.connectSocket(testSocket.localAddress()!!)
     responseWriter = ResponseWriter(adbChannel, true)
   }
@@ -73,14 +70,7 @@ class ResponseWriterTest {
     responseWriter.writeOkayResponse(0, okayPayload)
     testSocket.accept().use { channel ->
       channel.assertCommand(OKAY)
-      channel.assertCommand(
-        WRTE,
-        0,
-        0,
-        20,
-        1215945526,
-        payload = "OKAY${okayPayload.hexLength}$okayPayload",
-      )
+      channel.assertCommand(WRTE, 0, 0, 20, 1215945526, payload = "OKAY${okayPayload.hexLength}$okayPayload")
       channel.assertCommand(CLSE, 0)
     }
   }

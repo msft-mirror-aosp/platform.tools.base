@@ -32,33 +32,34 @@ import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Tests for annotation processor.
- */
+/** Tests for annotation processor. */
 class AnnotationProcessorTest {
 
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                mapOf<String, GradleProject>(
-                    ":app" to app,
-                    ":lib" to AnnotationProcessorLib.createLibrary(),
-                    ":lib-compiler" to AnnotationProcessorLib.createCompiler()
-                )
-            )
-        ).create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf<String, GradleProject>(
+            ":app" to app,
+            ":lib" to AnnotationProcessorLib.createLibrary(),
+            ":lib-compiler" to AnnotationProcessorLib.createCompiler(),
+          )
+        )
+      )
+      .create()
 
-    @Before
-    fun setUp() {
-        val testSupportLibVersion = "\${libs.versions.testSupportLibVersion.get()}"
-        val buildScript = ("""
+  @Before
+  fun setUp() {
+    val testSupportLibVersion = "\${libs.versions.testSupportLibVersion.get()}"
+    val buildScript =
+      ("""
                 apply from: "../../commonHeader.gradle"
                 buildscript { apply from: "../../commonBuildScript.gradle" }
 
@@ -88,196 +89,180 @@ class AnnotationProcessorTest {
                         "com.android.support.test:rules:$testSupportLibVersion"
                     )
                 }
-                """).trimIndent()
-        Files.asCharSink(project.getSubproject(":app")
-            .file("build.gradle"), Charsets.UTF_8)
-            .write(buildScript)
-    }
+                """)
+        .trimIndent()
+    Files.asCharSink(project.getSubproject(":app").file("build.gradle"), Charsets.UTF_8).write(buildScript)
+  }
 
-    @Test
-    fun normalBuild() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
-            dependencies {
-                api project(':lib')
-                annotationProcessor project(':lib-compiler')
-            }
-            """.trimIndent()
+  @Test
+  fun normalBuild() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
+      dependencies {
+          api project(':lib')
+          annotationProcessor project(':lib-compiler')
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run("assembleDebug")
+    val aptOutputFolder = project.getSubproject(":app").file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debug/out")
+    assertThat(File(aptOutputFolder, "com/example/helloworld/HelloWorldStringValue.java")).exists()
+
+    val model = project.modelV2().fetchModels().container.getProject(":app")
+    val debugVariant = model.androidProject!!.getDebugVariant()
+
+    assertThat(debugVariant.mainArtifact.generatedSourceFolders).contains(aptOutputFolder)
+
+    // Ensure that test sources also have their generated sources files sent to the IDE. This
+    // specifically tests for the issue described in
+    // https://issuetracker.google.com/37121918.
+    val testAptOutputFolder = project.getSubproject(":app").file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debugUnitTest/out")
+    val testArtifact = debugVariant.unitTestArtifact
+    Truth.assertWithMessage("unit test artifact").that(testArtifact).isNotNull()
+    assertThat(testArtifact!!.generatedSourceFolders).contains(testAptOutputFolder)
+
+    // Ensure that test projects also have their generated sources files sent to the IDE. This
+    // specifically tests for the issue described in
+    // https://issuetracker.google.com/37121918.
+    val androidTestAptOutputFolder = project.getSubproject(":app").file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debugAndroidTest/out")
+    val androidTest = debugVariant.androidTestArtifact
+    Truth.assertWithMessage("android test artifact").that(androidTest).isNotNull()
+    assertThat(androidTest!!.generatedSourceFolders).contains(androidTestAptOutputFolder)
+
+    // check incrementality.
+    val result = executor().run("assembleDebug")
+    assertThat(result.upToDateTasks).contains(":app:javaPreCompileDebug")
+  }
+
+  @Test
+  fun testBuild() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
+      dependencies {
+          annotationProcessor project(':lib-compiler')
+          testAnnotationProcessor project(':lib-compiler')
+          androidTestAnnotationProcessor project(':lib-compiler')
+          api project(':lib')
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run("assembleDebugAndroidTest", "testDebug")
+    val aptOutputFolder = project.getSubproject(":app").file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER)
+    assertThat(File(aptOutputFolder, "debugAndroidTest/out/com/example/helloworld/HelloWorldAndroidTestStringValue.java")).exists()
+    assertThat(File(aptOutputFolder, "debugUnitTest/out/com/example/helloworld/HelloWorldTestStringValue.java")).exists()
+  }
+
+  @Test
+  fun androidAptPluginFail() {
+    TestFileUtils.appendToFile(project.getSubproject(":app").buildFile, "apply plugin: 'com.neenbedankt.android-apt'\n")
+
+    executor().expectFailure().run("assembleDebug")
+  }
+
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
+
+  companion object {
+
+    private val ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER = "build/generated/ap_generated_sources/"
+    private val app = HelloWorldApp.noBuildFile()
+
+    init {
+      app.replaceFile(
+        TestSourceFile(
+          "src/main/java/com/example/helloworld/HelloWorld.java",
+          """
+          package com.example.helloworld;
+
+          import android.app.Activity;
+          import android.widget.TextView;
+          import android.os.Bundle;
+          import com.example.annotation.ProvideString;
+
+          @ProvideString
+          public class HelloWorld extends Activity {
+              /** Called when the activity is first created. */
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  TextView tv = new TextView(this);
+                  tv.setText(getString());
+                  setContentView(tv);
+              }
+
+                  public static String getString() {
+                      return new com.example.helloworld.HelloWorldStringValue().value;
+                  }
+
+                  public static String getProcessor() {
+                      return new com.example.helloworld.HelloWorldStringValue().processor;
+                  }
+              }
+          """
+            .trimIndent(),
         )
+      )
 
-        executor().run("assembleDebug")
-        val aptOutputFolder = project.getSubproject(":app")
-            .file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debug/out")
-        assertThat(File(aptOutputFolder, "com/example/helloworld/HelloWorldStringValue.java"))
-            .exists()
+      app.removeFileByName("HelloWorldTest.java")
 
-        val model = project.modelV2().fetchModels().container.getProject(":app")
-        val debugVariant = model.androidProject!!.getDebugVariant()
+      app.addFile(
+        TestSourceFile(
+          "src/test/java/com/example/helloworld/HelloWorldTest.java",
+          """
+          package com.example.helloworld;
+          import com.example.annotation.ProvideString;
+          import org.junit.Assert;
+          import org.junit.Test;
 
-        assertThat(debugVariant.mainArtifact.generatedSourceFolders).contains(aptOutputFolder)
+          @ProvideString
+          public class HelloWorldTest {
 
-        // Ensure that test sources also have their generated sources files sent to the IDE. This
-        // specifically tests for the issue described in
-        // https://issuetracker.google.com/37121918.
-        val testAptOutputFolder = project.getSubproject(":app")
-            .file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debugUnitTest/out")
-        val testArtifact = debugVariant.unitTestArtifact
-        Truth.assertWithMessage("unit test artifact").that(testArtifact).isNotNull()
-        assertThat(testArtifact!!.generatedSourceFolders).contains(testAptOutputFolder)
-
-        // Ensure that test projects also have their generated sources files sent to the IDE. This
-        // specifically tests for the issue described in
-        // https://issuetracker.google.com/37121918.
-        val androidTestAptOutputFolder = project.getSubproject(":app")
-            .file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER + "debugAndroidTest/out")
-        val androidTest = debugVariant.androidTestArtifact
-        Truth.assertWithMessage("android test artifact").that(androidTest).isNotNull()
-        assertThat(androidTest!!.generatedSourceFolders).contains(androidTestAptOutputFolder)
-
-        // check incrementality.
-        val result = executor().run("assembleDebug")
-        assertThat(result.upToDateTasks).contains(":app:javaPreCompileDebug")
-    }
-
-    @Test
-    fun testBuild() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
-            dependencies {
-                annotationProcessor project(':lib-compiler')
-                testAnnotationProcessor project(':lib-compiler')
-                androidTestAnnotationProcessor project(':lib-compiler')
-                api project(':lib')
-            }
-            """.trimIndent()
+              @Test
+              public void testStringValue() {
+                  Assert.assertTrue("Hello".equals(HelloWorld.getString()));
+              }
+          }
+          """
+            .trimIndent(),
         )
+      )
 
-        executor().run("assembleDebugAndroidTest", "testDebug")
-        val aptOutputFolder =
-            project.getSubproject(":app").file(ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER)
-        assertThat(
-            File(
-                aptOutputFolder,
-                "debugAndroidTest/out/com/example/helloworld/HelloWorldAndroidTestStringValue.java"
-            )
+      app.addFile(
+        TestSourceFile(
+          "src/androidTest/java/com/example/hellojni/HelloWorldAndroidTest.java",
+          """
+          package com.example.helloworld;
+
+          import android.support.test.runner.AndroidJUnit4;
+          import org.junit.Assert;
+          import org.junit.Test;
+          import org.junit.runner.RunWith;
+          import com.example.annotation.ProvideString;
+
+          @ProvideString
+          @RunWith(AndroidJUnit4.class)
+          public class HelloWorldAndroidTest {
+
+              @Test
+              public void testStringValue() {
+                  Assert.assertTrue("Hello".equals(HelloWorld.getString()));
+              }
+              @Test
+              public void testProcessor() {
+                  Assert.assertTrue("Processor".equals(HelloWorld.getProcessor()));
+              }
+          }
+          """
+            .trimIndent(),
         )
-            .exists()
-        assertThat(
-            File(
-                aptOutputFolder,
-                "debugUnitTest/out/com/example/helloworld/HelloWorldTestStringValue.java"
-            )
-        )
-            .exists()
+      )
     }
-
-    @Test
-    fun androidAptPluginFail() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            "apply plugin: 'com.neenbedankt.android-apt'\n")
-
-        executor().expectFailure().run("assembleDebug")
-    }
-
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-    }
-
-    companion object {
-
-        private val ANNOTATION_PROCESSOR_SOURCES_OUT_FOLDER =
-            "build/generated/ap_generated_sources/"
-        private val app = HelloWorldApp.noBuildFile()
-
-        init {
-            app.replaceFile(
-                TestSourceFile(
-                    "src/main/java/com/example/helloworld/HelloWorld.java",
-                    """
-                    package com.example.helloworld;
-
-                    import android.app.Activity;
-                    import android.widget.TextView;
-                    import android.os.Bundle;
-                    import com.example.annotation.ProvideString;
-
-                    @ProvideString
-                    public class HelloWorld extends Activity {
-                        /** Called when the activity is first created. */
-                        @Override
-                        public void onCreate(Bundle savedInstanceState) {
-                            super.onCreate(savedInstanceState);
-                            TextView tv = new TextView(this);
-                            tv.setText(getString());
-                            setContentView(tv);
-                        }
-
-                            public static String getString() {
-                                return new com.example.helloworld.HelloWorldStringValue().value;
-                            }
-
-                            public static String getProcessor() {
-                                return new com.example.helloworld.HelloWorldStringValue().processor;
-                            }
-                        }
-                        """.trimIndent()
-                )
-            )
-
-            app.removeFileByName("HelloWorldTest.java")
-
-            app.addFile(
-                TestSourceFile(
-                    "src/test/java/com/example/helloworld/HelloWorldTest.java",
-                    """
-                    package com.example.helloworld;
-                    import com.example.annotation.ProvideString;
-                    import org.junit.Assert;
-                    import org.junit.Test;
-
-                    @ProvideString
-                    public class HelloWorldTest {
-
-                        @Test
-                        public void testStringValue() {
-                            Assert.assertTrue("Hello".equals(HelloWorld.getString()));
-                        }
-                    }
-                    """.trimIndent()
-                )
-            )
-
-            app.addFile(
-                TestSourceFile(
-                    "src/androidTest/java/com/example/hellojni/HelloWorldAndroidTest.java",
-                    """
-                    package com.example.helloworld;
-
-                    import android.support.test.runner.AndroidJUnit4;
-                    import org.junit.Assert;
-                    import org.junit.Test;
-                    import org.junit.runner.RunWith;
-                    import com.example.annotation.ProvideString;
-
-                    @ProvideString
-                    @RunWith(AndroidJUnit4.class)
-                    public class HelloWorldAndroidTest {
-
-                        @Test
-                        public void testStringValue() {
-                            Assert.assertTrue("Hello".equals(HelloWorld.getString()));
-                        }
-                        @Test
-                        public void testProcessor() {
-                            Assert.assertTrue("Processor".equals(HelloWorld.getProcessor()));
-                        }
-                    }
-                    """.trimIndent()
-                )
-            )
-        }
-    }
+  }
 }

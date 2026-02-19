@@ -18,6 +18,4 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.variant.ApplicationAndroidResourcesBuilder
 
-class ApplicationAndroidResourcesBuilderImpl(
-    override var generateLocaleConfig: Boolean
-) : ApplicationAndroidResourcesBuilder
+class ApplicationAndroidResourcesBuilderImpl(override var generateLocaleConfig: Boolean) : ApplicationAndroidResourcesBuilder

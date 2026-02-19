@@ -24,12 +24,8 @@ import kotlin.math.min
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UExpression
 
-internal class SizeConstraint
-private constructor(val exact: Long, val min: Long, val max: Long, val multiple: Long) :
-  RangeConstraint() {
-  constructor(
-    range: IntRangeConstraint
-  ) : this(if (range.from == range.to) range.from else -1L, range.from, range.to, 1)
+internal class SizeConstraint private constructor(val exact: Long, val min: Long, val max: Long, val multiple: Long) : RangeConstraint() {
+  constructor(range: IntRangeConstraint) : this(if (range.from == range.to) range.from else -1L, range.from, range.to, 1)
 
   override fun toString(): String {
     return describe(null, null, null)
@@ -51,18 +47,10 @@ private constructor(val exact: Long, val min: Long, val max: Long, val multiple:
   }
 
   @JvmOverloads
-  fun describe(
-    argument: UExpression? = null,
-    unit: String? = null,
-    actualValue: Long? = null,
-    skipPrefix: Boolean = false,
-  ): String {
+  fun describe(argument: UExpression? = null, unit: String? = null, actualValue: Long? = null, skipPrefix: Boolean = false): String {
     val actualUnit =
       unit
-        ?: if (
-          argument?.getExpressionType() != null &&
-            argument.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING
-        ) {
+        ?: if (argument?.getExpressionType() != null && argument.getExpressionType()?.canonicalText == CommonClassNames.JAVA_LANG_STRING) {
           "Length"
         } else {
           "Size"
@@ -129,11 +117,7 @@ private constructor(val exact: Long, val min: Long, val max: Long, val multiple:
     return sb.toString()
   }
 
-  override fun describeDelta(
-    actual: RangeConstraint,
-    actualLabel: String,
-    allowedLabel: String,
-  ): String {
+  override fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String {
     if (actual !is SizeConstraint) {
       return describe()
     } else if (actual.exact != -1L) {
@@ -166,10 +150,7 @@ private constructor(val exact: Long, val min: Long, val max: Long, val multiple:
     sb.append("can be ")
 
     // No overlap? If so just display both ranges
-    if (
-      this.max < actual.min && actual.max != Long.MAX_VALUE ||
-        this.min > actual.max && actual.min != Long.MIN_VALUE
-    ) {
+    if (this.max < actual.min && actual.max != Long.MAX_VALUE || this.min > actual.max && actual.min != Long.MIN_VALUE) {
       sb.append(actual.describe(null, null, null, true))
       return sb.toString()
     }
@@ -207,10 +188,8 @@ private constructor(val exact: Long, val min: Long, val max: Long, val multiple:
         else -> error(other.javaClass.name)
       }
 
-    val start =
-      max(if (exact != -1L) exact else min, if (range.exact != -1L) range.exact else range.min)
-    val end =
-      min(if (exact != -1L) exact else max, if (range.exact != -1L) range.exact else range.max)
+    val start = max(if (exact != -1L) exact else min, if (range.exact != -1L) range.exact else range.min)
+    val end = min(if (exact != -1L) exact else max, if (range.exact != -1L) range.exact else range.max)
     return SizeConstraint(if (start == end) start else -1L, start, end, multiple)
   }
 

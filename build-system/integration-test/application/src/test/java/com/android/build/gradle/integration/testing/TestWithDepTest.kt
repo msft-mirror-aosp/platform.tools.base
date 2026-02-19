@@ -23,17 +23,12 @@ import org.junit.Test
 
 class TestWithDepTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("testWithDep")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("testWithDep").disableBuiltInKotlin().create()
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = project.modelV2()
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

@@ -22,144 +22,143 @@ import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 
 /** A subproject with minimal contents. */
-class MinimalSubProject private constructor(
+class MinimalSubProject
+private constructor(
 
-    /**
-     * Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it
-     * will be normalized to start with ':'.
-     */
-    path: String? = null,
+  /** Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it will be normalized to start with ':'. */
+  path: String? = null,
+  val plugin: String,
+  val addCompileAndSdkVersionToBuildFile: Boolean = false,
+  val addVersionCodeToBuildFile: Boolean = false,
+  val addManifestFile: Boolean = false,
+  val namespace: String?,
+  private val isMultiplatform: Boolean = false,
+  val requiredPlugins: List<String> = listOf(),
+  androidExtension: String = "android",
+) : GradleProject(path) {
 
-    val plugin: String,
-    val addCompileAndSdkVersionToBuildFile: Boolean = false,
-    val addVersionCodeToBuildFile: Boolean = false,
-    val addManifestFile: Boolean = false,
-    val namespace: String?,
-    private val isMultiplatform: Boolean = false,
-    val requiredPlugins: List<String> = listOf(),
-    androidExtension: String = "android",
-) :
-    GradleProject(path) {
-
-    init {
-        var buildScript = "apply plugin: '$plugin'\n"
-        requiredPlugins.forEach {
-            buildScript += "apply plugin: '$it'\n"
-        }
-        if (addCompileAndSdkVersionToBuildFile) {
-            buildScript += if (isMultiplatform) {
-                "kotlin.androidLibrary.compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}\n"
-            } else {
-                "\n$androidExtension.compileSdkVersion ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}" +
-                        "\n$androidExtension.defaultConfig.minSdkVersion $SUPPORT_LIB_MIN_SDK\n"
-            }
-        }
-        if (addVersionCodeToBuildFile) {
-            buildScript += "\n$androidExtension.defaultConfig.versionCode 1\n"
-        }
-        namespace?.let {
-            buildScript += if (isMultiplatform) {
-                "\nkotlin.androidLibrary.namespace = \"$it\"\n"
-            } else {
-                "\n$androidExtension.namespace = \"$it\"\n"
-            }
-        }
-        addFile(TestSourceFile("build.gradle", buildScript))
-
-        if (addManifestFile) {
-            val manifest = """
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                         xmlns:dist="http://schemas.android.com/apk/distribution">
-                    <application />
-                </manifest>""".trimMargin()
-            addFile(TestSourceFile("src/main/AndroidManifest.xml", manifest))
+  init {
+    var buildScript = "apply plugin: '$plugin'\n"
+    requiredPlugins.forEach { buildScript += "apply plugin: '$it'\n" }
+    if (addCompileAndSdkVersionToBuildFile) {
+      buildScript +=
+        if (isMultiplatform) {
+          "kotlin.androidLibrary.compileSdk = ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}\n"
+        } else {
+          "\n$androidExtension.compileSdkVersion ${GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION}" +
+            "\n$androidExtension.defaultConfig.minSdkVersion $SUPPORT_LIB_MIN_SDK\n"
         }
     }
-
-    override fun containsFullBuildScript(): Boolean {
-        return false
+    if (addVersionCodeToBuildFile) {
+      buildScript += "\n$androidExtension.defaultConfig.versionCode 1\n"
     }
-
-    fun withFile(relativePath: String, content: ByteArray): MinimalSubProject {
-        replaceFile(TestSourceFile(relativePath, content))
-        return this
-    }
-
-    fun withFile(relativePath: String, content: String): MinimalSubProject {
-        replaceFile(TestSourceFile(relativePath, content))
-        return this
-    }
-
-    override fun appendToBuild(snippet: String): MinimalSubProject {
-        return super.appendToBuild(snippet) as MinimalSubProject
-    }
-
-    companion object {
-
-        fun buildSrc(): BuildSrcProject {
-            return BuildSrcProject()
-        }
-
-        @JvmOverloads
-        @Deprecated("Use GradleRule instead")
-        fun app(namespace: String = "com.example.app", projectPath: String = "app"): MinimalSubProject {
-            return MinimalSubProject(
-                path = projectPath,
-                plugin = "com.android.application",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = true,
-                addManifestFile = true,
-                namespace = namespace,
-            )
-        }
-
-        @JvmOverloads
-        @Deprecated("Use GradleRule instead")
-        fun lib(namespace: String = "com.example.lib", projectPath: String = "lib"): MinimalSubProject {
-            return MinimalSubProject(
-                path = projectPath,
-                plugin = "com.android.library",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = true,
-                namespace = namespace,
-            )
-        }
-
-        @Deprecated("Use GradleRule instead")
-        fun dynamicFeature(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.dynamic-feature",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = true,
-                namespace = namespace,
-            )
-        }
-
-        @Deprecated("Use GradleRule instead")
-        fun test(namespace: String): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "com.android.test",
-                addCompileAndSdkVersionToBuildFile = true,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = true,
-                namespace = namespace,
-            )
-        }
-
-        @Deprecated("Use GradleRule instead")
-        fun javaLibrary(): MinimalSubProject {
-            return MinimalSubProject(
-                path = null,
-                plugin = "java-library",
-                addCompileAndSdkVersionToBuildFile = false,
-                addVersionCodeToBuildFile = false,
-                addManifestFile = false,
-                namespace = null,
-            )
+    namespace?.let {
+      buildScript +=
+        if (isMultiplatform) {
+          "\nkotlin.androidLibrary.namespace = \"$it\"\n"
+        } else {
+          "\n$androidExtension.namespace = \"$it\"\n"
         }
     }
+    addFile(TestSourceFile("build.gradle", buildScript))
+
+    if (addManifestFile) {
+      val manifest =
+        """
+        |                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        |                         xmlns:dist="http://schemas.android.com/apk/distribution">
+        |                    <application />
+        |                </manifest>
+        """
+          .trimMargin()
+      addFile(TestSourceFile("src/main/AndroidManifest.xml", manifest))
+    }
+  }
+
+  override fun containsFullBuildScript(): Boolean {
+    return false
+  }
+
+  fun withFile(relativePath: String, content: ByteArray): MinimalSubProject {
+    replaceFile(TestSourceFile(relativePath, content))
+    return this
+  }
+
+  fun withFile(relativePath: String, content: String): MinimalSubProject {
+    replaceFile(TestSourceFile(relativePath, content))
+    return this
+  }
+
+  override fun appendToBuild(snippet: String): MinimalSubProject {
+    return super.appendToBuild(snippet) as MinimalSubProject
+  }
+
+  companion object {
+
+    fun buildSrc(): BuildSrcProject {
+      return BuildSrcProject()
+    }
+
+    @JvmOverloads
+    @Deprecated("Use GradleRule instead")
+    fun app(namespace: String = "com.example.app", projectPath: String = "app"): MinimalSubProject {
+      return MinimalSubProject(
+        path = projectPath,
+        plugin = "com.android.application",
+        addCompileAndSdkVersionToBuildFile = true,
+        addVersionCodeToBuildFile = true,
+        addManifestFile = true,
+        namespace = namespace,
+      )
+    }
+
+    @JvmOverloads
+    @Deprecated("Use GradleRule instead")
+    fun lib(namespace: String = "com.example.lib", projectPath: String = "lib"): MinimalSubProject {
+      return MinimalSubProject(
+        path = projectPath,
+        plugin = "com.android.library",
+        addCompileAndSdkVersionToBuildFile = true,
+        addVersionCodeToBuildFile = false,
+        addManifestFile = true,
+        namespace = namespace,
+      )
+    }
+
+    @Deprecated("Use GradleRule instead")
+    fun dynamicFeature(namespace: String): MinimalSubProject {
+      return MinimalSubProject(
+        path = null,
+        plugin = "com.android.dynamic-feature",
+        addCompileAndSdkVersionToBuildFile = true,
+        addVersionCodeToBuildFile = false,
+        addManifestFile = true,
+        namespace = namespace,
+      )
+    }
+
+    @Deprecated("Use GradleRule instead")
+    fun test(namespace: String): MinimalSubProject {
+      return MinimalSubProject(
+        path = null,
+        plugin = "com.android.test",
+        addCompileAndSdkVersionToBuildFile = true,
+        addVersionCodeToBuildFile = false,
+        addManifestFile = true,
+        namespace = namespace,
+      )
+    }
+
+    @Deprecated("Use GradleRule instead")
+    fun javaLibrary(): MinimalSubProject {
+      return MinimalSubProject(
+        path = null,
+        plugin = "java-library",
+        addCompileAndSdkVersionToBuildFile = false,
+        addVersionCodeToBuildFile = false,
+        addManifestFile = false,
+        namespace = null,
+      )
+    }
+  }
 }

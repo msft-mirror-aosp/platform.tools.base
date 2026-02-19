@@ -42,17 +42,11 @@ import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 
 /**
- * Test mode which introduces type aliases for all types to make sure detectors handle presence of
- * type aliases.
+ * Test mode which introduces type aliases for all types to make sure detectors handle presence of type aliases.
  *
  * (See also the [ImportAliasTestMode].)
  */
-class TypeAliasTestMode :
-  UastSourceTransformationTestMode(
-    description = "Type aliases",
-    "TestMode.TYPE_ALIAS",
-    "type-alias",
-  ) {
+class TypeAliasTestMode : UastSourceTransformationTestMode(description = "Type aliases", "TestMode.TYPE_ALIAS", "type-alias") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -76,17 +70,9 @@ class TypeAliasTestMode :
     return file.targetRelativePath.endsWith(DOT_KT)
   }
 
-  class PackageAliases(
-    var nextAliasId: Int = 1,
-    val aliasesPerPackage: MutableMap<String, MutableMap<String, String>> = mutableMapOf(),
-  )
+  class PackageAliases(var nextAliasId: Int = 1, val aliasesPerPackage: MutableMap<String, MutableMap<String, String>> = mutableMapOf())
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
     }
@@ -94,8 +80,7 @@ class TypeAliasTestMode :
 
     val pkg = root.packageName
     val packageAliases =
-      clientData[TYPE_ALIAS.folderName] as? PackageAliases
-        ?: PackageAliases().also { clientData[TYPE_ALIAS.folderName] = it }
+      clientData[TYPE_ALIAS.folderName] as? PackageAliases ?: PackageAliases().also { clientData[TYPE_ALIAS.folderName] = it }
     val aliasesPerPackage = packageAliases.aliasesPerPackage
 
     // aliasesPerPackage keeps track of aliases we've already added to each
@@ -106,9 +91,7 @@ class TypeAliasTestMode :
     root.acceptSourceFile(
       object : FullyQualifyNamesTestMode.TypeVisitor(context, source) {
         private fun getTypeAlias(typeText: String): String {
-          val packageMap =
-            aliasesPerPackage[pkg]
-              ?: linkedMapOf<String, String>().also { aliasesPerPackage[pkg] = it }
+          val packageMap = aliasesPerPackage[pkg] ?: linkedMapOf<String, String>().also { aliasesPerPackage[pkg] = it }
           return packageMap[typeText]
             ?: "TYPE_ALIAS_${packageAliases.nextAliasId++}"
               .also {
@@ -122,12 +105,7 @@ class TypeAliasTestMode :
           return false
         }
 
-        override fun checkTypeReference(
-          node: UElement,
-          cls: PsiClass?,
-          offset: Int,
-          type: PsiType,
-        ) {
+        override fun checkTypeReference(node: UElement, cls: PsiClass?, offset: Int, type: PsiType) {
           if (cls?.containingClass != null) {
             // Don't try to handle containing classes yet; we need to fix references that include
             // the outer class reference first
@@ -162,11 +140,7 @@ class TypeAliasTestMode :
           if (typeText.isBlank() || type is PsiEllipsisType || type.hasTypeParameter()) {
             return
           }
-          if (
-            typeText == "@Composable () -> Unit" ||
-              typeText == "@Composable (() -> Unit)?" ||
-              typeText == "(@Composable () -> Unit)?"
-          ) {
+          if (typeText == "@Composable () -> Unit" || typeText == "@Composable (() -> Unit)?" || typeText == "(@Composable () -> Unit)?") {
             // Common in Compose signatures; users don't  typically typealias these so
             // allow detectors to be sloppy
             return
@@ -178,11 +152,8 @@ class TypeAliasTestMode :
         private fun PsiType.hasTypeParameter(): Boolean {
           return when (this) {
             is PsiPrimitiveType -> false
-            is PsiClassType ->
-              parameters.any { it.hasTypeParameter() } || resolve() is PsiTypeParameter
-            is PsiWildcardType ->
-              isBounded && bound?.hasTypeParameter() == true ||
-                isExtends && extendsBound.hasTypeParameter()
+            is PsiClassType -> parameters.any { it.hasTypeParameter() } || resolve() is PsiTypeParameter
+            is PsiWildcardType -> isBounded && bound?.hasTypeParameter() == true || isExtends && extendsBound.hasTypeParameter()
             is PsiCapturedWildcardType -> upperBound.hasTypeParameter()
             is PsiArrayType -> componentType.hasTypeParameter() // includes PsiEllipsisType
             is PsiIntersectionType -> conjuncts.any { it.hasTypeParameter() }
@@ -191,10 +162,7 @@ class TypeAliasTestMode :
           }
         }
 
-        override fun allowClassReference(
-          node: USimpleNameReferenceExpression,
-          parent: UQualifiedReferenceExpression,
-        ): Boolean {
+        override fun allowClassReference(node: USimpleNameReferenceExpression, parent: UQualifiedReferenceExpression): Boolean {
           val parentResolved = parent.resolve() ?: return false
           return parentResolved is PsiField
         }
@@ -212,8 +180,7 @@ class TypeAliasTestMode :
         }
 
         override fun afterVisitFile(node: UFile) {
-          val aliases =
-            newAliases.map { (type, name) -> "typealias $name = $type" }.joinToString("\n")
+          val aliases = newAliases.map { (type, name) -> "typealias $name = $type" }.joinToString("\n")
           val end = source.length
           editMap[end] = insert(end, "\n$aliases")
         }

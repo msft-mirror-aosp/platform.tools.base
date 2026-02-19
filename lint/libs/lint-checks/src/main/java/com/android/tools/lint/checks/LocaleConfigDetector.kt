@@ -78,15 +78,8 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
         val language = actualLocale.language ?: continue
         if (!configLanguages.contains(language)) {
           val desc = LocaleManager.getLanguageName(language)?.let { "$language ($it)" } ?: language
-          val message =
-            "The language `$desc` is present in this project, but not declared in the `localeConfig` resource"
-          context.report(
-            ISSUE,
-            attribute,
-            context.getValueLocation(attribute),
-            message,
-            createFix(context, path, language),
-          )
+          val message = "The language `$desc` is present in this project, but not declared in the `localeConfig` resource"
+          context.report(ISSUE, attribute, context.getValueLocation(attribute), message, createFix(context, path, language))
         }
       }
     }
@@ -112,10 +105,7 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
     val replacement = "<locale $prefix:name=\"$language\"/>"
     val fix = fix().name("Add $language to ${file.name}").replace()
     if (location == null) {
-      fix
-        .range(parser.getLocation(file, XmlUtils.getSubTags(document.documentElement).last()))
-        .end()
-        .with("\n    $replacement")
+      fix.range(parser.getLocation(file, XmlUtils.getSubTags(document.documentElement).last())).end().with("\n    $replacement")
     } else {
       val start = location.start!!.offset
       var offset = start - 1
@@ -158,11 +148,7 @@ class LocaleConfigDetector : Detector(), XmlScanner, ResourceFolderScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        LocaleConfigDetector::class.java,
-        Scope.MANIFEST_AND_RESOURCE_SCOPE,
-        Scope.RESOURCE_FILE_SCOPE,
-      )
+      Implementation(LocaleConfigDetector::class.java, Scope.MANIFEST_AND_RESOURCE_SCOPE, Scope.RESOURCE_FILE_SCOPE)
 
     /** Are all translations included in the localeConfig? */
     @JvmField

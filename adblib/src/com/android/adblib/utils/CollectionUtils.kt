@@ -18,52 +18,49 @@ package com.android.adblib.utils
 import java.util.Collections
 
 /**
- * Returns a [Map] that can't be modified from both Kotlin and Java consumers,
- * even through casting to mutable interfaces or calling mutating methods.
+ * Returns a [Map] that can't be modified from both Kotlin and Java consumers, even through casting to mutable interfaces or calling
+ * mutating methods.
  *
- * Note: It is harmless to call this multiple times, i.e.
- * `toImmutable(toImmutable(map)) == toImmutable(map)`
+ * Note: It is harmless to call this multiple times, i.e. `toImmutable(toImmutable(map)) == toImmutable(map)`
  */
 fun <K, V> Map<K, V>.toImmutableMap(): Map<K, V> {
-    return if (this is ImmutableMap) {
-        this
-    } else {
-        ImmutableMap(Collections.unmodifiableMap(this))
-    }
+  return if (this is ImmutableMap) {
+    this
+  } else {
+    ImmutableMap(Collections.unmodifiableMap(this))
+  }
 }
 
 private class ImmutableMap<K, V>(val map: Map<K, V>) : Map<K, V> by map
 
 /**
- * Returns a [List] that can't be modified from both Kotlin and Java consumers,
- * even through casting to mutable interfaces or calling mutating methods.
+ * Returns a [List] that can't be modified from both Kotlin and Java consumers, even through casting to mutable interfaces or calling
+ * mutating methods.
  *
- * Note: It is harmless to call this multiple times, i.e.
- * `toImmutableList(toImmutableList(list)) == toImmutableList(list)`
+ * Note: It is harmless to call this multiple times, i.e. `toImmutableList(toImmutableList(list)) == toImmutableList(list)`
  */
 fun <T> Iterable<T>.toImmutableList(): List<T> {
-    return when (this) {
-        is ImmutableList -> this
-        is List -> ImmutableList(this)
-        else -> ImmutableList(this.toList())
-    }
+  return when (this) {
+    is ImmutableList -> this
+    is List -> ImmutableList(this)
+    else -> ImmutableList(this.toList())
+  }
 }
 
 private class ImmutableList<T>(val list: List<T>) : List<T> by list
 
 /**
- * Returns a [Set] that can't be modified from both Kotlin and Java consumers,
- * even through casting to mutable interfaces or calling mutating methods.
+ * Returns a [Set] that can't be modified from both Kotlin and Java consumers, even through casting to mutable interfaces or calling
+ * mutating methods.
  *
- * Note: It is harmless to call this multiple times, i.e.
- * `toImmutableSet(toImmutableSet(list)) == toImmutableSet(list)`
+ * Note: It is harmless to call this multiple times, i.e. `toImmutableSet(toImmutableSet(list)) == toImmutableSet(list)`
  */
 fun <T> Iterable<T>.toImmutableSet(): Set<T> {
-    return when (this) {
-        is ImmutableSet -> this
-        is Set -> ImmutableSet(this)
-        else -> ImmutableSet(this.toSet())
-    }
+  return when (this) {
+    is ImmutableSet -> this
+    is Set -> ImmutableSet(this)
+    else -> ImmutableSet(this.toSet())
+  }
 }
 
 private class ImmutableSet<T>(val set: Set<T>) : Set<T> by set

@@ -34,15 +34,11 @@ class FakeConnection : Connection() {
     }
   }
 
-  fun findHttpEvent(
-    eventType: NetworkInspectorProtocol.HttpConnectionEvent.UnionCase
-  ): NetworkInspectorProtocol.HttpConnectionEvent? {
+  fun findHttpEvent(eventType: NetworkInspectorProtocol.HttpConnectionEvent.UnionCase): NetworkInspectorProtocol.HttpConnectionEvent? {
     return httpData.firstOrNull { it.unionCase == eventType }
   }
 
-  fun findLastHttpEvent(
-    eventType: NetworkInspectorProtocol.HttpConnectionEvent.UnionCase
-  ): NetworkInspectorProtocol.HttpConnectionEvent? {
+  fun findLastHttpEvent(eventType: NetworkInspectorProtocol.HttpConnectionEvent.UnionCase): NetworkInspectorProtocol.HttpConnectionEvent? {
     return httpData.lastOrNull { it.unionCase == eventType }
   }
 }

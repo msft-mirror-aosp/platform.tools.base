@@ -30,100 +30,91 @@ private val LINE_SPLITTER = Splitter.on(System.lineSeparator())
 
 class DependencyFailureHandler {
 
-    private val failures: ListMultimap<String, Throwable> = ArrayListMultimap.create()
+  private val failures: ListMultimap<String, Throwable> = ArrayListMultimap.create()
 
-    fun addErrors(name: String, throwables: Collection<Throwable>): DependencyFailureHandler {
-        throwables.forEach { t ->
-            failures.put(name, t)
-        }
-        return this
-    }
+  fun addErrors(name: String, throwables: Collection<Throwable>): DependencyFailureHandler {
+    throwables.forEach { t -> failures.put(name, t) }
+    return this
+  }
 
-    fun registerIssues(issueReporter: IssueReporter) {
-        for ((key, value) in failures.entries()) {
-            processDependencyThrowable(
-                value,
-                { message -> checkForData(message) },
-                { data, messages ->
-                    if (data != null) {
-                        issueReporter.reportError(
-                            Type.UNRESOLVED_DEPENDENCY,
-                            "Unable to resolve dependency $data",
-                            data)
-                    } else {
-                        issueReporter.reportError(
-                            Type.UNRESOLVED_DEPENDENCY,
-                            "Unable to resolve dependency for '$key': ${messages[0]}",
-                            null,
-                            messages)
-                    }
-                }
-            )
-        }
+  fun registerIssues(issueReporter: IssueReporter) {
+    for ((key, value) in failures.entries()) {
+      processDependencyThrowable(
+        value,
+        { message -> checkForData(message) },
+        { data, messages ->
+          if (data != null) {
+            issueReporter.reportError(Type.UNRESOLVED_DEPENDENCY, "Unable to resolve dependency $data", data)
+          } else {
+            issueReporter.reportError(Type.UNRESOLVED_DEPENDENCY, "Unable to resolve dependency for '$key': ${messages[0]}", null, messages)
+          }
+        },
+      )
     }
+  }
 }
 
 private fun processDependencyThrowable(
-        throwable: Throwable,
-        dataExtractor: (String) -> String?,
-        resultConsumer: (String?, List<String>) -> Unit) {
+  throwable: Throwable,
+  dataExtractor: (String) -> String?,
+  resultConsumer: (String?, List<String>) -> Unit,
+) {
 
-    var cause: Throwable? = throwable
+  var cause: Throwable? = throwable
 
-    // gather all the messages.
-    val messages = mutableListOf<String>()
-    var firstIndent = " > "
-    var allIndent = ""
+  // gather all the messages.
+  val messages = mutableListOf<String>()
+  var firstIndent = " > "
+  var allIndent = ""
 
-    var data: String? = null
+  var data: String? = null
 
-    while (cause != null) {
-        val message = cause.message
-        if (message != null) {
-            val lines = ImmutableList.copyOf<String>(LINE_SPLITTER.split(message))
+  while (cause != null) {
+    val message = cause.message
+    if (message != null) {
+      val lines = ImmutableList.copyOf<String>(LINE_SPLITTER.split(message))
 
-            // check if the first line contains a data we care about
-            data = dataExtractor.invoke(lines[0])
+      // check if the first line contains a data we care about
+      data = dataExtractor.invoke(lines[0])
 
-            if (data != null) {
-                break
-            }
+      if (data != null) {
+        break
+      }
 
-            // add them to the main list
-            var i = 0
-            val count = lines.size
-            while (i < count) {
-                val line = lines[i]
+      // add them to the main list
+      var i = 0
+      val count = lines.size
+      while (i < count) {
+        val line = lines[i]
 
-                when {
-                    allIndent.isEmpty() -> messages.add(line)
-                    i == 0 -> messages.add(firstIndent + line)
-                    else -> messages.add(allIndent + line)
-                }
-                i++
-            }
-
-
-            firstIndent = allIndent + firstIndent
-            allIndent += "   "
+        when {
+          allIndent.isEmpty() -> messages.add(line)
+          i == 0 -> messages.add(firstIndent + line)
+          else -> messages.add(allIndent + line)
         }
+        i++
+      }
 
-        cause = cause.cause
+      firstIndent = allIndent + firstIndent
+      allIndent += "   "
     }
 
-    resultConsumer.invoke(data, messages)
+    cause = cause.cause
+  }
+
+  resultConsumer.invoke(data, messages)
 }
 
 internal fun checkForData(message: String): String? {
-    var m = pattern.matcher(message)
-    if (m.matches()) {
-        return m.group(1)
-    }
+  var m = pattern.matcher(message)
+  if (m.matches()) {
+    return m.group(1)
+  }
 
-    m = pattern2.matcher(message)
-    if (m.matches()) {
-        return m.group(1)
-    }
+  m = pattern2.matcher(message)
+  if (m.matches()) {
+    return m.group(1)
+  }
 
-    return null
+  return null
 }

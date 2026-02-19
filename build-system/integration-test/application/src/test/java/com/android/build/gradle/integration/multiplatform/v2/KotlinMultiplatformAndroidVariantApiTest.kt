@@ -19,229 +19,312 @@ package com.android.build.gradle.integration.multiplatform.v2
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 @Suppress("PathAsIterable")
 class KotlinMultiplatformAndroidVariantApiTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Test
-    fun testRegisteringCustomSourceDirs() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                androidComponents.registerSourceType("stableAidl")
-                androidComponents {
-                    onVariants { variant ->
-                        println(variant.sources.getByName("stableAidl").all.get())
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testRegisteringCustomSourceDirs() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      androidComponents.registerSourceType("stableAidl")
+      androidComponents {
+          onVariants { variant ->
+              println(variant.sources.getByName("stableAidl").all.get())
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        val result = executor().run(":kmpFirstLib:assemble")
+    val result = executor().run(":kmpFirstLib:assemble")
 
-        result.assertOutputContains("kmpFirstLib${File.separator}src${File.separator}androidMain${File.separator}stableAidl")
+    result.assertOutputContains("kmpFirstLib${File.separator}src${File.separator}androidMain${File.separator}stableAidl")
+  }
+
+  @Test
+  fun testAsmInstrumentationVariantApi() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      androidComponents {
+          onVariants { variant ->
+              val testVariant = (variant as? com.android.build.api.variant.HasUnitTest)?.unitTest ?: return@onVariants
+              testVariant.instrumentation.transformClassesWith(
+                  ClassVisitorFactory::class.java,
+                          com.android.build.api.instrumentation.InstrumentationScope.ALL) {}
+
+              testVariant.instrumentation.setAsmFramesComputationMode(com.android.build.api.instrumentation.FramesComputationMode.COMPUTE_FRAMES_FOR_INSTRUMENTED_METHODS)
+          }
+      }
+
+      abstract class ClassVisitorFactory:
+          com.android.build.api.instrumentation.AsmClassVisitorFactory<com.android.build.api.instrumentation.InstrumentationParameters.None> {
+          override fun createClassVisitor(
+              classContext: com.android.build.api.instrumentation.ClassContext,
+              nextClassVisitor: org.objectweb.asm.ClassVisitor
+          ): org.objectweb.asm.ClassVisitor {
+              return object: org.objectweb.asm.ClassVisitor(instrumentationContext.apiVersion.get(), nextClassVisitor) {}
+          }
+
+          override fun isInstrumentable(classData: com.android.build.api.instrumentation.ClassData): Boolean {
+              return true
+          }
+      }
+
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+  }
+
+  @Test
+  fun testHostTestCreationConfigExists() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      androidComponents {
+          onVariants {
+             println(it.name + ":" + it.hostTests.size)
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    val result = executor().run(":kmpFirstLib:assemble")
+
+    result.assertOutputContains("androidMain:1")
+  }
+
+  @Test
+  fun testInstrumentedTestDependencySubstitution() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      androidComponents {
+          onVariants { variant ->
+              variant.nestedComponents.forEach { component ->
+                  println(variant.name + ":" + component.name)
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    val result = executor().run(":kmpFirstLib:assemble")
+
+    result.assertOutputContains("androidMain:androidHostTest")
+    result.assertOutputContains("androidMain:androidDeviceTest")
+  }
+
+  @Test
+  fun testAddGeneratedAssets() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      kotlin.android {
+          androidResources {
+              enable = true
+          }
+      }
+
+      abstract class CreateAssets: DefaultTask() {
+
+          @get:OutputDirectory
+          abstract val outputFolder: DirectoryProperty
+
+          @TaskAction
+          fun taskAction() {
+              val outputFile = File(outputFolder.asFile.get(), "asset.txt")
+              println(outputFile)
+              outputFile.parentFile.mkdirs()
+              outputFile.writeText("foo")
+          }
+      }
+
+      androidComponents {
+          onVariants { variant ->
+              val createAssetsTaskProvider = project.tasks.register<CreateAssets>("${'$'}{variant.name}AddAssets") {
+                  outputFolder.set(
+                      File(project.layout.buildDirectory.asFile.get(), "assets/gen")
+                  )
+              }
+              variant.sources
+                  .assets
+                  ?.addGeneratedSourceDirectory(
+                      createAssetsTaskProvider,
+                      CreateAssets::outputFolder
+                  )
+
+              variant.androidTest?.sources?.assets?.addGeneratedSourceDirectory(
+                  createAssetsTaskProvider,
+                  CreateAssets::outputFolder
+              )
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assembleAndroidMain")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) { assets().containsExactly("asset.txt") }
+
+    executor().run(":kmpFirstLib:assembleDeviceTest")
+
+    project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      assets().containsExactly("asset.txt")
     }
+  }
 
-    @Test
-    fun testHostTestCreationConfigExists() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                androidComponents {
-                    onVariants {
-                       println(it.name + ":" + it.hostTests.size)
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testVariantApkOutput() {
+    TestFileUtils.prependToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      import com.android.build.api.variant.ApkOutput
+      import com.android.build.api.variant.DeviceSpec
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.GradleException
+      import org.gradle.api.tasks.Internal
+      import org.gradle.api.tasks.TaskAction
+      import org.gradle.api.provider.Property
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      abstract class FetchApkTask : DefaultTask() {
 
-        val result = executor().run(":kmpFirstLib:assemble")
+          @get:Internal
+          abstract val apkOutput: Property<ApkOutput>
 
-        result.assertOutputContains("androidMain:1")
+          @TaskAction
+          fun execute() {
+              val apkInstall = apkOutput.get().apkInstallGroups
+              if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
+                  throw GradleException("Unexpected number of apks")
+              }
+              assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
+              assert(apkInstall[0].description.contains("Testing Apk"))
+          }
+      }
+      val taskProvider = tasks.register("fetchApks", FetchApkTask::class.java)
+      androidComponents {
+          onVariants { variant ->
+              variant.androidTest?.let {
+              it.outputProviders.provideApkOutputToTask(
+                  taskProvider,
+                  FetchApkTask::apkOutput,
+                  DeviceSpec.Builder()
+                      .setName("testDevice")
+                      .setApiLevel(34)
+                      .setCodeName("")
+                      .setAbis(listOf())
+                      .build())
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:fetchApks")
+  }
+
+  @Test
+  fun testStaticAssets() {
+    FileUtils.createFile(project.getSubproject("kmpFirstLib").file("src/assets/static.txt"), "foo")
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      kotlin.android {
+          androidResources {
+              enable = true
+          }
+      }
+
+      androidComponents {
+          onVariants { variant ->
+              variant.androidTest?.sources?.assets?.addStaticSourceDirectory("src/assets")
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assembleDeviceTest")
+
+    project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      assets().containsExactly("static.txt", "asset.txt")
     }
+  }
 
-    @Test
-    fun testInstrumentedTestDependencySubstitution() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                androidComponents {
-                    onVariants { variant ->
-                        variant.nestedComponents.forEach { component ->
-                            println(variant.name + ":" + component.name)
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testSettingPropertiesInBeforeVariants() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      kotlin.android {
+          minSdk = 22
+      }
 
-        val result = executor().run(":kmpFirstLib:assemble")
+      androidComponents {
+          beforeVariants { variant ->
+              variant.minSdk = 23
+          }
+          onVariants { variant ->
+              if (variant.minSdk.apiLevel != 23) {
+                  throw RuntimeException("unexpected minSdk version " + variant.minSdk.apiLevel)
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        result.assertOutputContains("androidMain:androidHostTest")
-        result.assertOutputContains("androidMain:androidDeviceTest")
-    }
+    executor().run(":kmpFirstLib:assemble")
+  }
 
-    @Test
-    fun testAddGeneratedAssets() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            // language=kotlin
-            """
-                kotlin.android {
-                    androidResources {
-                        enable = true
-                    }
-                }
+  @Test
+  fun testDisablingVariant() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      // language=kotlin
+      """
+      androidComponents {
+          beforeVariants { variant ->
+              variant.enable = false
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-                abstract class CreateAssets: DefaultTask() {
+    val result = project.executor().expectFailure().run(":kmpFirstLib:assemble")
 
-                    @get:OutputDirectory
-                    abstract val outputFolder: DirectoryProperty
+    ScannerSubject.assertThat(result.stderr)
+      .contains("Android Kotlin multiplatform plugin has a single variant (androidMain). Disabling that variant is not permitted.")
+  }
 
-                    @TaskAction
-                    fun taskAction() {
-                        val outputFile = File(outputFolder.asFile.get(), "asset.txt")
-                        println(outputFile)
-                        outputFile.parentFile.mkdirs()
-                        outputFile.writeText("foo")
-                    }
-                }
-
-                androidComponents {
-                    onVariants { variant ->
-                        val createAssetsTaskProvider = project.tasks.register<CreateAssets>("${'$'}{variant.name}AddAssets") {
-                            outputFolder.set(
-                                File(project.layout.buildDirectory.asFile.get(), "assets/gen")
-                            )
-                        }
-                        variant.sources
-                            .assets
-                            ?.addGeneratedSourceDirectory(
-                                createAssetsTaskProvider,
-                                CreateAssets::outputFolder
-                            )
-
-                        variant.androidTest?.sources?.assets?.addGeneratedSourceDirectory(
-                            createAssetsTaskProvider,
-                            CreateAssets::outputFolder
-                        )
-                    }
-                }
-            """.trimIndent()
-        )
-
-        executor().run(":kmpFirstLib:assembleAndroidMain")
-
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            assets().containsExactly("asset.txt")
-        }
-
-        executor().run(":kmpFirstLib:assembleDeviceTest")
-
-        project.getSubproject("kmpFirstLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
-            assets().containsExactly("asset.txt")
-        }
-    }
-
-    @Test
-    fun testVariantApkOutput() {
-    TestFileUtils.prependToFile(project.getSubproject("kmpFirstLib").ktsBuildFile,
-        //language=kotlin
-            """
-                import com.android.build.api.variant.ApkOutput
-                import com.android.build.api.variant.DeviceSpec
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.GradleException
-                import org.gradle.api.tasks.Internal
-                import org.gradle.api.tasks.TaskAction
-                import org.gradle.api.provider.Property
-            """.trimIndent())
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            // language=kotlin
-            """
-                abstract class FetchApkTask : DefaultTask() {
-
-                    @get:Internal
-                    abstract val apkOutput: Property<ApkOutput>
-
-                    @TaskAction
-                    fun execute() {
-                        val apkInstall = apkOutput.get().apkInstallGroups
-                        if (apkInstall.size != 1 || apkInstall[0].apks.size != 1) {
-                            throw GradleException("Unexpected number of apks")
-                        }
-                        assert(apkInstall[0].apks.first().asFile.name.contains("kmpFirstLib-androidTest.apk"))
-                        assert(apkInstall[0].description.contains("Testing Apk"))
-                    }
-                }
-                val taskProvider = tasks.register("fetchApks", FetchApkTask::class.java)
-                androidComponents {
-                    onVariants { variant ->
-                        variant.androidTest?.let {
-                        it.outputProviders.provideApkOutputToTask(
-                            taskProvider,
-                            FetchApkTask::apkOutput,
-                            DeviceSpec.Builder()
-                                .setName("testDevice")
-                                .setApiLevel(34)
-                                .setCodeName("")
-                                .setAbis(listOf())
-                                .setSupportsPrivacySandbox(false)
-                                .build())
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-
-        executor().run(":kmpFirstLib:fetchApks")
-    }
-
-    @Test
-    fun testStaticAssets() {
-        FileUtils.createFile(
-            project.getSubproject("kmpFirstLib").file("src/assets/static.txt"),
-            "foo"
-        )
-
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            // language=kotlin
-            """
-                kotlin.android {
-                    androidResources {
-                        enable = true
-                    }
-                }
-
-                androidComponents {
-                    onVariants { variant ->
-                        variant.androidTest?.sources?.assets?.addStaticSourceDirectory("src/assets")
-                    }
-                }
-            """.trimIndent()
-        )
-
-        executor().run(":kmpFirstLib:assembleDeviceTest")
-
-        project.getSubproject("kmpFirstLib").assertApk(
-            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
-        ) {
-            assets().containsExactly("static.txt", "asset.txt")
-        }
-    }
-
-
-    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

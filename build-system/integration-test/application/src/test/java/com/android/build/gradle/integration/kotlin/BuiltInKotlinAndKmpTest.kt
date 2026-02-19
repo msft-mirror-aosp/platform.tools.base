@@ -23,40 +23,38 @@ import org.junit.Test
 
 class BuiltInKotlinAndKmpTest() {
 
-    @get:Rule
-    val rule = GradleRule.from {  }
+  @get:Rule val rule = GradleRule.from {}
 
-    @Test
-    fun `fail when built-in Kotlin plugin is applied before kotlin-multiplatform plugin`() {
-        val build = rule.build {
-            androidLibrary {
-                applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-                applyPlugin(PluginType.KOTLIN_MPP)
-            }
+  @Test
+  fun `fail when built-in Kotlin plugin is applied before kotlin-multiplatform plugin`() {
+    val build =
+      rule.build {
+        androidLibrary {
+          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
+          applyPlugin(PluginType.KOTLIN_MPP)
         }
+      }
 
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
+    val result = build.executor.expectFailure().run(":app:assembleDebug")
 
-        // See https://youtrack.jetbrains.com/issue/KT-81117
-        result.assertErrorContains(
-            "Cannot add extension with name 'kotlin', as there is an extension already registered with that name."
-        )
-    }
+    // See https://youtrack.jetbrains.com/issue/KT-81117
+    result.assertErrorContains("Cannot add extension with name 'kotlin', as there is an extension already registered with that name.")
+  }
 
-    @Test
-    fun `fail when built-in Kotlin plugin is applied after kotlin-multiplatform plugin`() {
-        val build = rule.build {
-            androidLibrary {
-                applyPlugin(PluginType.KOTLIN_MPP, applyFirst = true)
-                applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
-            }
+  @Test
+  fun `fail when built-in Kotlin plugin is applied after kotlin-multiplatform plugin`() {
+    val build =
+      rule.build {
+        androidLibrary {
+          applyPlugin(PluginType.KOTLIN_MPP, applyFirst = true)
+          applyPlugin(PluginType.ANDROID_BUILT_IN_KOTLIN)
         }
+      }
 
-        val result = build.executor.expectFailure().run(":app:assembleDebug")
+    val result = build.executor.expectFailure().run(":app:assembleDebug")
 
-        result.assertErrorContains(
-            "The 'com.android.library' (or 'com.android.application') plugin is not compatible with the 'org.jetbrains.kotlin.multiplatform' plugin since AGP 9.0."
-        )
-    }
-
+    result.assertErrorContains(
+      "The 'com.android.library' (or 'com.android.application') plugin is not compatible with the 'org.jetbrains.kotlin.multiplatform' plugin since AGP 9.0."
+    )
+  }
 }

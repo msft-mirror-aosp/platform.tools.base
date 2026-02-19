@@ -32,48 +32,42 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * Task write a [PrefabPublication] with library information added to it to disk.
- */
+/** Task write a [PrefabPublication] with library information added to it to disk. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.NATIVE)
 abstract class PrefabPackageConfigurationTask : NonIncrementalTask() {
 
-    @get:Nested
-    lateinit var publication: PrefabPublication
-        private set
+  @get:Nested
+  lateinit var publication: PrefabPublication
+    private set
 
-    @get:OutputFile
-    abstract val publicationFile: RegularFileProperty
+  @get:OutputFile abstract val publicationFile: RegularFileProperty
 
-    override fun doTaskAction() = Configuration.writePublicationFile(publication)
+  override fun doTaskAction() = Configuration.writePublicationFile(publication)
 
-    class CreationAction(
-        private val publication: PrefabPublication,
-        private val taskName : String,
-        componentProperties: LibraryCreationConfig,
-    ) : VariantTaskCreationAction<PrefabPackageConfigurationTask, LibraryCreationConfig>(
-        componentProperties
-    ) {
-        override val name: String
-            get() = taskName
+  class CreationAction(
+    private val publication: PrefabPublication,
+    private val taskName: String,
+    componentProperties: LibraryCreationConfig,
+  ) : VariantTaskCreationAction<PrefabPackageConfigurationTask, LibraryCreationConfig>(componentProperties) {
+    override val name: String
+      get() = taskName
 
-        override val type: Class<PrefabPackageConfigurationTask>
-            get() = PrefabPackageConfigurationTask::class.java
+    override val type: Class<PrefabPackageConfigurationTask>
+      get() = PrefabPackageConfigurationTask::class.java
 
-        override fun handleProvider(taskProvider: TaskProvider<PrefabPackageConfigurationTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                PrefabPackageConfigurationTask::publicationFile
-            ).withName(PREFAB_PUBLICATION_FILE).on(InternalArtifactType.PREFAB_PACKAGE_CONFIGURATION)
-        }
-
-        override fun configure(task: PrefabPackageConfigurationTask) {
-            super.configure(task)
-            task.description = "Creates a configuration for Prefab package"
-            task.publication= publication
-        }
+    override fun handleProvider(taskProvider: TaskProvider<PrefabPackageConfigurationTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, PrefabPackageConfigurationTask::publicationFile)
+        .withName(PREFAB_PUBLICATION_FILE)
+        .on(InternalArtifactType.PREFAB_PACKAGE_CONFIGURATION)
     }
-}
 
+    override fun configure(task: PrefabPackageConfigurationTask) {
+      super.configure(task)
+      task.description = "Creates a configuration for Prefab package"
+      task.publication = publication
+    }
+  }
+}

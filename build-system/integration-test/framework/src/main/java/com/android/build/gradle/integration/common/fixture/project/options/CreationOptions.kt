@@ -18,31 +18,27 @@ package com.android.build.gradle.integration.common.fixture.project.options
 
 import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType
 
-
 interface CreationOptionsBuilder {
-    var rootFolderName: String
-    var buildFileType: BuildFileType
+  var rootFolderName: String
+  var buildFileType: BuildFileType
 }
 
-data class CreationOptions(
-    val name: String,
-    val buildFileType: BuildFileType
-) {
-    companion object {
-        const val DEFAULT_BUILD_NAME: String = "project"
-    }
+data class CreationOptions(val name: String, val buildFileType: BuildFileType) {
+  companion object {
+    const val DEFAULT_BUILD_NAME: String = "project"
+  }
 }
 
-class CreationOptionsDelegate: CreationOptionsBuilder, MergeableOptions<CreationOptionsDelegate> {
+class CreationOptionsDelegate : CreationOptionsBuilder, MergeableOptions<CreationOptionsDelegate> {
 
-    override var rootFolderName: String = CreationOptions.DEFAULT_BUILD_NAME
-    override var buildFileType: BuildFileType = BuildFileType.GROOVY
+  override var rootFolderName: String = CreationOptions.DEFAULT_BUILD_NAME
+  override var buildFileType: BuildFileType = BuildFileType.GROOVY
 
-    val asCreationOptions: CreationOptions
-        get() = CreationOptions(rootFolderName, buildFileType)
+  val asCreationOptions: CreationOptions
+    get() = CreationOptions(rootFolderName, buildFileType)
 
-    override fun mergeWith(other: CreationOptionsDelegate) {
-        this.rootFolderName = other.rootFolderName
-        this.buildFileType = other.buildFileType
-    }
+  override fun mergeWith(other: CreationOptionsDelegate) {
+    this.rootFolderName = other.rootFolderName
+    this.buildFileType = other.buildFileType
+  }
 }

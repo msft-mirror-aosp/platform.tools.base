@@ -59,5 +59,15 @@ class InterningPoolTest {
     Truth.assertThat(ref.get()).isNull()
   }
 
+  @Ignore("Test relying on gc-ing weak references can be flaky in presubmit")
+  @Test
+  fun `manually interned strings are not retained`() {
+    val ref = WeakReference(InterningPool.string(String(charArrayOf('f', 'o', 'o'))))
+    // 🤞
+    Truth.assertThat(ref.get()).isNotNull()
+    doGc()
+    Truth.assertThat(ref.get()).isNull()
+  }
+
   private fun doGc() = repeat(100) { System.gc() }
 }

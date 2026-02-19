@@ -18,53 +18,43 @@ package com.android.build.gradle.internal.core.dsl.features
 
 import com.android.build.gradle.internal.ProguardFileType
 import com.android.build.gradle.internal.core.PostProcessingOptions
+import java.io.File
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
-import java.io.File
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support shrinking/minification.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support shrinking/minification.
  */
 interface OptimizationDslInfo {
 
-    /**
-     * Returns the component ids of those external library dependencies whose keep rules are ignored
-     * when building the project.
-     */
-    val ignoreFromInKeepRules: Set<String>
+  /** Returns the component ids of those external library dependencies whose keep rules are ignored when building the project. */
+  val ignoreFromInKeepRules: Set<String>
 
-    /**
-     * Returns whether to ignore all keep rules from external library dependencies.
-     */
-    val ignoreFromAllExternalDependenciesInKeepRules: Boolean
+  /** Returns whether to ignore all keep rules from external library dependencies. */
+  val ignoreFromAllExternalDependenciesInKeepRules: Boolean
 
-    /**
-     * Returns the external dependencies to ignore in baseline profiles.
-     */
-    val ignoreFromInBaselineProfile: Set<String>
+  /** Returns the external dependencies to ignore in baseline profiles. */
+  val ignoreFromInBaselineProfile: Set<String>
 
-    /**
-     * Returns whether to ignore all external dependencies in baseline profiles.
-     */
-    val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
+  /** Returns whether to ignore all external dependencies in baseline profiles. */
+  val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
 
-    val postProcessingOptions: PostProcessingOptions
+  val postProcessingOptions: PostProcessingOptions
 
-    /**
-     * Returns true if R8 optimization is on and only for application module
-     */
-    val applicationOptimizationEnabled: Boolean
+  /** Returns true if R8 optimization is on and only for application module */
+  val applicationOptimizationEnabled: Boolean
 
-    /**
-     * Return set of packages
-     * Return empty set for anything than application module
-     */
-    val includePackages: Set<String>
+  /** Return set of packages Return empty set for anything than application module */
+  val includePackages: Set<String>
 
-    val keepRuleFiles: Set<File>
+  /** Returns true if R8 optimization */
+  val optimizationEnabled: Boolean
 
-    fun getProguardFiles(into: ListProperty<RegularFile>) {}
+  val keepRuleFiles: Set<File>
+  val includeDefaultRules: Boolean
 
-    fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>)
+  fun getProguardFiles(into: ListProperty<RegularFile>, newR8ApiInUse: Boolean, includeDefault: Boolean) {}
+
+  fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>)
 }

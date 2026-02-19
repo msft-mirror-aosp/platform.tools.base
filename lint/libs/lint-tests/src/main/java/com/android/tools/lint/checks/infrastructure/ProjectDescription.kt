@@ -63,8 +63,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Names the project; most useful in multi-project tests where the project name will be part of
-   * the error output
+   * Names the project; most useful in multi-project tests where the project name will be part of the error output
    *
    * @param name the name for the project
    * @return this for constructor chaining
@@ -92,10 +91,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
    * @return this for constructor chaining
    */
   @JvmOverloads
-  fun dependsOn(
-    library: ProjectDescription,
-    kind: DependencyKind = DependencyKind.Regular,
-  ): ProjectDescription {
+  fun dependsOn(library: ProjectDescription, kind: DependencyKind = DependencyKind.Regular): ProjectDescription {
     if (library !in dependsOn) {
       dependsOn[library] = kind
       if (library.type == Type.APP) {
@@ -123,8 +119,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Adds the given dependency graph (the output of the Gradle dependency task) to be constructed
-   * when mocking a Gradle model for this project.
+   * Adds the given dependency graph (the output of the Gradle dependency task) to be constructed when mocking a Gradle model for this
+   * project.
    *
    * To generate this, run for example
    *
@@ -153,10 +149,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
     return this
   }
 
-  /**
-   * Places this project in a subdirectory (determined by the project name) of the given [parent]
-   * project.
-   */
+  /** Places this project in a subdirectory (determined by the project name) of the given [parent] project. */
   fun under(parent: ProjectDescription): ProjectDescription {
     this.under = parent
     return this
@@ -174,11 +167,9 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Marks this project as reportable (the default) or non-reportable. Lint projects are usually
-   * reportable, but if they depend on libraries (such as appcompat) those dependencies are marked
-   * as non-reportable. Lint will still analyze those projects (for example, an unused resource
-   * analysis should list resources pulled in from these libraries) but issues found within those
-   * libraries will not be reported.
+   * Marks this project as reportable (the default) or non-reportable. Lint projects are usually reportable, but if they depend on libraries
+   * (such as appcompat) those dependencies are marked as non-reportable. Lint will still analyze those projects (for example, an unused
+   * resource analysis should list resources pulled in from these libraries) but issues found within those libraries will not be reported.
    *
    * @param report whether we should report issues for this project
    * @return this for constructor chaining
@@ -189,9 +180,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Checks that all the files in this project are unique. This catches cases where you've
-   * accidentally specified a target more than once (where only the last will be used by lint since
-   * it will overwrite any earlier occurrences.)
+   * Checks that all the files in this project are unique. This catches cases where you've accidentally specified a target more than once
+   * (where only the last will be used by lint since it will overwrite any earlier occurrences.)
    */
   fun ensureUnique() {
     val targets = mutableSetOf<String>()
@@ -226,8 +216,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
     }
   }
 
-  override fun toString(): String =
-    "$type:${if (name.isNotBlank()) name else ProjectDescription::class.java.simpleName}"
+  override fun toString(): String = "$type:${if (name.isNotBlank()) name else ProjectDescription::class.java.simpleName}"
 
   /** Returns true if this project is nested under (see [under]) the given project. */
   fun isUnder(desc: ProjectDescription): Boolean {
@@ -236,8 +225,8 @@ class ProjectDescription : Comparable<ProjectDescription> {
   }
 
   /**
-   * Compare by dependency order such that dependencies are always listed before their dependents,
-   * and order unrelated projects alphabetically.
+   * Compare by dependency order such that dependencies are always listed before their dependents, and order unrelated projects
+   * alphabetically.
    */
   override fun compareTo(other: ProjectDescription): Int {
     return if (this.dependsOn.contains(other)) {
@@ -275,11 +264,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
       return File(rootDir, relativePath)
     }
 
-    fun TestLintTask.populateProjectDirectory(
-      project: ProjectDescription,
-      projectDir: File,
-      vararg testFiles: TestFile,
-    ) {
+    fun TestLintTask.populateProjectDirectory(project: ProjectDescription, projectDir: File, vararg testFiles: TestFile) {
       if (!projectDir.exists()) {
         val ok = projectDir.mkdirs()
         if (!ok) {
@@ -354,9 +339,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
           continue
         } else if (fp is StubClassFile) {
           fp.task = this
-          if (
-            !allowKotlinClassStubs && fp.stubSources.any { it.targetRelativePath.endsWith(DOT_KT) }
-          ) {
+          if (!allowKotlinClassStubs && fp.stubSources.any { it.targetRelativePath.endsWith(DOT_KT) }) {
             error(
               "You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on\n" +
                 "`lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module\n" +
@@ -381,9 +364,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
           if (ignoreUnknownGradleConstructs) {
             mocker = mocker.withLogger(NullLogger())
           }
-          project.dependencyGraph?.let { dependencyGraph ->
-            mocker = mocker.withDependencyGraph(dependencyGraph)
-          }
+          project.dependencyGraph?.let { dependencyGraph -> mocker = mocker.withDependencyGraph(dependencyGraph) }
           projectMocks[projectDir] = mocker
           mocker.primary = project.primary
           try {
@@ -424,9 +405,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
 
       if (configuredOptions != null) {
         if (testFiles.any { it.targetRelativePath == "lint.xml" }) {
-          fail(
-            "Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead"
-          )
+          fail("Cannot combine lint.xml with `configureOption`; add options as <option> elements in your custom lint.xml instead")
         }
         val sb = StringBuilder()
         sb.append("<lint>\n")
@@ -466,10 +445,7 @@ class ProjectDescription : Comparable<ProjectDescription> {
       }
     }
 
-    /**
-     * All Android projects must have a manifest file; this one creates it if the test file didn't
-     * add an explicit one.
-     */
+    /** All Android projects must have a manifest file; this one creates it if the test file didn't add an explicit one. */
     private fun addManifestFileIfNecessary(manifest: File) {
       // Ensure that there is at least a manifest file there to make it a valid project
       // as far as Lint is concerned:
@@ -481,13 +457,13 @@ class ProjectDescription : Comparable<ProjectDescription> {
         }
         manifest.writeText(
           """
-                    <?xml version="1.0" encoding="utf-8"?>
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                        package="lint.test.pkg"
-                        android:versionCode="1"
-                        android:versionName="1.0" >
-                    </manifest>
-                    """
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="lint.test.pkg"
+              android:versionCode="1"
+              android:versionName="1.0" >
+          </manifest>
+          """
             .trimIndent()
         )
       }

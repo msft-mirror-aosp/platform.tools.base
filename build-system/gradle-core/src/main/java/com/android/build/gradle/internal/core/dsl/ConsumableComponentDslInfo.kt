@@ -23,17 +23,17 @@ import com.android.build.gradle.internal.core.dsl.features.RenderscriptDslInfo
 import com.android.build.gradle.internal.core.dsl.features.ShadersDslInfo
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by consumable components.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * consumable components.
  */
-interface ConsumableComponentDslInfo: ComponentDslInfo {
+interface ConsumableComponentDslInfo : ComponentDslInfo {
 
-    val optimizationDslInfo: OptimizationDslInfo
+  val optimizationDslInfo: OptimizationDslInfo
 
-    // optional features
+  // optional features
 
-    val shadersDslInfo: ShadersDslInfo?
-    val renderscriptDslInfo: RenderscriptDslInfo?
-    val buildConfigDslInfo: BuildConfigDslInfo?
-    val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo?
+  val shadersDslInfo: ShadersDslInfo?
+  val renderscriptDslInfo: RenderscriptDslInfo?
+  val buildConfigDslInfo: BuildConfigDslInfo?
+  val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo?
 }

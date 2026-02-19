@@ -56,22 +56,13 @@ class TestMatrixRunProcessTrackerTest {
     `when`(mockResultStorage.get("resultsUrl")).thenAnswer { resultUri }
   }
 
-  fun createTestMatrix(
-    newState: String,
-    progressMessageList: List<String> = listOf(),
-    showStorage: Boolean = true,
-  ) =
+  fun createTestMatrix(newState: String, progressMessageList: List<String> = listOf(), showStorage: Boolean = true) =
     TestMatrix().apply {
       state = newState
       if (showStorage) {
         resultStorage = mockResultStorage
       }
-      testExecutions =
-        listOf(
-          TestExecution().apply {
-            testDetails = TestDetails().apply { progressMessages = progressMessageList }
-          }
-        )
+      testExecutions = listOf(TestExecution().apply { testDetails = TestDetails().apply { progressMessages = progressMessageList } })
     }
 
   fun getMatrixRunTracker(projectName: String = "project"): TestMatrixRunProcessTracker =
@@ -111,11 +102,7 @@ class TestMatrixRunProcessTrackerTest {
       //                "Firebase Testlab Test for device: Completed results processing. Time taken
       // = 3 (secs)"
       //            )
-      it
-        .verify(logger)
-        .lifecycle(
-          "Test request for device device has been submitted to Firebase TestLab: path/to/the/results/details"
-        )
+      it.verify(logger).lifecycle("Test request for device device has been submitted to Firebase TestLab: path/to/the/results/details")
       it.verify(logger).info("Test execution: FINISHED")
       verifyNoMoreInteractions(logger)
     }
@@ -158,11 +145,7 @@ class TestMatrixRunProcessTrackerTest {
         //                    "Firebase Testlab Test for device: Completed results processing. Time
         // taken = 3 (secs)"
         //                )
-        it
-          .verify(logger)
-          .lifecycle(
-            "Test request for device device has been submitted to Firebase TestLab: results/details"
-          )
+        it.verify(logger).lifecycle("Test request for device device has been submitted to Firebase TestLab: results/details")
         it.verify(logger).info("Test execution: FINISHED")
         verifyNoMoreInteractions(logger)
       }
@@ -236,11 +219,7 @@ class TestMatrixRunProcessTrackerTest {
 
       // first PENDING matrix
       it.verify(logger).lifecycle("Firebase Testlab Test for different: state PENDING")
-      it
-        .verify(logger)
-        .lifecycle(
-          "Test request for device different has been submitted to Firebase TestLab: path/to/the/results/details"
-        )
+      it.verify(logger).lifecycle("Test request for device different has been submitted to Firebase TestLab: path/to/the/results/details")
       it.verify(logger, times(3)).info("Test execution: PENDING")
       // TODO(b/293338525) enable additional check once this bug is resolved
       //            it.verify(logger).lifecycle("Firebase Testlab Test for different: Starting

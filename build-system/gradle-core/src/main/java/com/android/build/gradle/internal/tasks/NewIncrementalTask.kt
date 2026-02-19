@@ -20,49 +20,43 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import org.gradle.work.InputChanges
 
-/**
- * Required API for all incremental task types.
- */
+/** Required API for all incremental task types. */
 interface IncrementalTask {
-    fun doTaskAction(inputChanges: InputChanges)
+  fun doTaskAction(inputChanges: InputChanges)
 }
 
-/**
- * Variant-specific incremental task using the new input details APIs.
- */
+/** Variant-specific incremental task using the new input details APIs. */
 @DisableCachingByDefault
-abstract class NewIncrementalTask: IncrementalTask, AndroidVariantTask() {
+abstract class NewIncrementalTask : IncrementalTask, AndroidVariantTask() {
 
-    abstract override fun doTaskAction(inputChanges: InputChanges)
+  abstract override fun doTaskAction(inputChanges: InputChanges)
 
-    @TaskAction
-    fun taskAction(inputChanges: InputChanges) {
-        recordTaskAction {
-            if (!inputChanges.isIncremental) {
-                // manually remove all outputs (b/169701279)
-                cleanUpTaskOutputs()
-            }
-            doTaskAction(inputChanges)
-        }
+  @TaskAction
+  fun taskAction(inputChanges: InputChanges) {
+    recordTaskAction {
+      if (!inputChanges.isIncremental) {
+        // manually remove all outputs (b/169701279)
+        cleanUpTaskOutputs()
+      }
+      doTaskAction(inputChanges)
     }
+  }
 }
 
-/**
- * Global (non-variant specific) incremental task using the new input details APIs.
- */
+/** Global (non-variant specific) incremental task using the new input details APIs. */
 @DisableCachingByDefault
-abstract class NewIncrementalGlobalTask: IncrementalTask, AndroidGlobalTask() {
+abstract class NewIncrementalGlobalTask : IncrementalTask, AndroidGlobalTask() {
 
-    abstract override fun doTaskAction(inputChanges: InputChanges)
+  abstract override fun doTaskAction(inputChanges: InputChanges)
 
-    @TaskAction
-    fun taskAction(inputChanges: InputChanges) {
-        recordTaskAction {
-            if (!inputChanges.isIncremental) {
-                // manually remove all outputs (b/169701279)
-                cleanUpTaskOutputs()
-            }
-            doTaskAction(inputChanges)
-        }
+  @TaskAction
+  fun taskAction(inputChanges: InputChanges) {
+    recordTaskAction {
+      if (!inputChanges.isIncremental) {
+        // manually remove all outputs (b/169701279)
+        cleanUpTaskOutputs()
+      }
+      doTaskAction(inputChanges)
     }
+  }
 }

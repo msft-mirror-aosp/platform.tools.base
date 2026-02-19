@@ -25,8 +25,10 @@ import org.junit.Test
 
 class UserAddedGeneratedResourcesTest {
 
-    private val buildSrc = MinimalSubProject.buildSrc().also {
-        it.addFile("src/main/java/TestPlugin.java",
+  private val buildSrc =
+    MinimalSubProject.buildSrc().also {
+      it.addFile(
+        "src/main/java/TestPlugin.java",
         // language=java
         """
         import org.gradle.api.Action;
@@ -74,9 +76,12 @@ class UserAddedGeneratedResourcesTest {
                 project.getPlugins().withId("com.android.application", action);
             }
         }
-        """.trimIndent())
+        """
+          .trimIndent(),
+      )
 
-        it.addFile("src/main/java/MyCopy.java",
+      it.addFile(
+        "src/main/java/MyCopy.java",
         // language=java
         """
         import org.gradle.api.DefaultTask;
@@ -109,49 +114,40 @@ class UserAddedGeneratedResourcesTest {
             }
         }
 
-        """.trimIndent())
+        """
+          .trimIndent(),
+      )
     }
 
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile("default/values/ConnectStatus.xml",
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "default/values/ConnectStatus.xml",
         // language=xml
         """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <resources>
-               <string name="connect_status_none">Unknown status.</string>
-            </resources>
-        """.trimIndent())
+        <?xml version="1.0" encoding="UTF-8"?>
+        <resources>
+           <string name="connect_status_none">Unknown status.</string>
+        </resources>
+        """
+          .trimIndent(),
+      )
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .buildSrcProject(buildSrc)
-            .subproject(":app", app)
-            .build()
+  private val testApp = MultiModuleTestProject.builder().buildSrcProject(buildSrc).subproject(":app", app).build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @Test
-    fun testGeneratedResourcesArePresentInMergedResources() {
-        val appProject = project.getSubproject(":app")
-        appProject.buildFile.appendText(
-            "apply plugin: TestPlugin"
-        )
-        project.execute(":app:mergeDebugResources")
+  @Test
+  fun testGeneratedResourcesArePresentInMergedResources() {
+    val appProject = project.getSubproject(":app")
+    appProject.buildFile.appendText("apply plugin: TestPlugin")
+    project.execute(":app:mergeDebugResources")
 
-        val mergedAppValues = appProject.getIntermediateFile(
-            "incremental",
-            "debug",
-            "mergeDebugResources",
-            "merged.dir",
-            "values",
-            "values.xml"
-        )
+    val mergedAppValues =
+      appProject.getIntermediateFile("incremental", "debug", "mergeDebugResources", "merged.dir", "values", "values.xml")
 
-        // Make sure the merged values in app (big merge) contain both overlayable from app and lib,
-        // as well as their content.
-        PathSubject.assertThat(mergedAppValues).containsAllOf(
-            "<string name=\"connect_status_none\">Unknown status.</string>"
-        )
-    }
+    // Make sure the merged values in app (big merge) contain both overlayable from app and lib,
+    // as well as their content.
+    PathSubject.assertThat(mergedAppValues).containsAllOf("<string name=\"connect_status_none\">Unknown status.</string>")
+  }
 }

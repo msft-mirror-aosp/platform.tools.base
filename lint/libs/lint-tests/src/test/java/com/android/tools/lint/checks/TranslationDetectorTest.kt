@@ -164,11 +164,7 @@ class TranslationDetectorTest : AbstractCheckTest() {
   }
 
   fun testPluralTranslation() {
-    lint()
-      .files(valuesStringsPlural, valuesFrStringsPlural)
-      .incremental("res/values/strings.xml")
-      .run()
-      .expectClean()
+    lint().files(valuesStringsPlural, valuesFrStringsPlural).incremental("res/values/strings.xml").run().expectClean()
   }
 
   fun testCaseHandlingInRepositories() {
@@ -472,14 +468,14 @@ class TranslationDetectorTest : AbstractCheckTest() {
     xml(
       "res/values/strings.xml",
       """
-        <?xml version="1.0" encoding="UTF-8"?>
-        <resources xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-            <string name="my_string">My string</string>
-            <plurals name="my_plurals">
-            </plurals>
-        </resources>
-        """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <resources xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+          <string name="my_string">My string</string>
+          <plurals name="my_plurals">
+          </plurals>
+      </resources>
+      """
         .trimIndent(),
     )
 
@@ -487,11 +483,11 @@ class TranslationDetectorTest : AbstractCheckTest() {
     xml(
       "res/values-fr/strings.xml",
       """
-        <resources xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-            <string name="my_string">Ma chaîne</string>
-        </resources>
-        """
+      <resources xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+          <string name="my_string">Ma chaîne</string>
+      </resources>
+      """
         .trimIndent(),
     )
 
@@ -499,13 +495,13 @@ class TranslationDetectorTest : AbstractCheckTest() {
     xml(
       "res/values-fr/strings.xml",
       """
-        <resources xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-            <string name="my_string">Ma chaîne</string>
-            <plurals name="my_plurals">
-            </plurals>
-        </resources>
-        """
+      <resources xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+          <string name="my_string">Ma chaîne</string>
+          <plurals name="my_plurals">
+          </plurals>
+      </resources>
+      """
         .trimIndent(),
     )
 
@@ -1463,10 +1459,7 @@ class TranslationDetectorTest : AbstractCheckTest() {
                     """,
           )
           .indented(),
-        xml(
-            "res/color/ok_color.xml",
-            """<color xmlns:android="http://schemas.android.com/apk/res/android" android:color="#ff0000" />""",
-          )
+        xml("res/color/ok_color.xml", """<color xmlns:android="http://schemas.android.com/apk/res/android" android:color="#ff0000" />""")
           .indented(),
         xml(
             "res/color-port/extra_color.xml",

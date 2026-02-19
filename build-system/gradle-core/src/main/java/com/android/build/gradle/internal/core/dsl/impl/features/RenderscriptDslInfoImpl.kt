@@ -20,23 +20,23 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.gradle.internal.core.MergedFlavor
 import com.android.build.gradle.internal.core.dsl.features.RenderscriptDslInfo
 
-class RenderscriptDslInfoImpl(
-    private val mergedFlavor: MergedFlavor,
-    private val buildTypeObj: BuildType
-): RenderscriptDslInfo {
+class RenderscriptDslInfoImpl(private val mergedFlavor: MergedFlavor, private val buildTypeObj: BuildType) : RenderscriptDslInfo {
 
-    override val renderscriptTarget: Int
-        get() = mergedFlavor.renderscriptTargetApi ?: -1
-    override val renderscriptSupportModeEnabled: Boolean
-        get() = mergedFlavor.renderscriptSupportModeEnabled ?: false
-    override val renderscriptSupportModeBlasEnabled: Boolean
-        get() {
-            val value = mergedFlavor.renderscriptSupportModeBlasEnabled
-            return value ?: false
-        }
-    override val renderscriptNdkModeEnabled: Boolean
-        get() = mergedFlavor.renderscriptNdkModeEnabled ?: false
+  override val renderscriptTarget: Int
+    get() = mergedFlavor.renderscriptTargetApi ?: -1
 
-    override val renderscriptOptimLevel: Int
-        get() = buildTypeObj.renderscriptOptimLevel
+  override val renderscriptSupportModeEnabled: Boolean
+    get() = mergedFlavor.renderscriptSupportModeEnabled ?: false
+
+  override val renderscriptSupportModeBlasEnabled: Boolean
+    get() {
+      val value = mergedFlavor.renderscriptSupportModeBlasEnabled
+      return value ?: false
+    }
+
+  override val renderscriptNdkModeEnabled: Boolean
+    get() = mergedFlavor.renderscriptNdkModeEnabled ?: false
+
+  override val renderscriptOptimLevel: Int
+    get() = buildTypeObj.renderscriptOptimLevel
 }

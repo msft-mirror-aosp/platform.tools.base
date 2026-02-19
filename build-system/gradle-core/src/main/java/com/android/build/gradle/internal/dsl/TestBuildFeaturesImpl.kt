@@ -18,4 +18,4 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.TestBuildFeatures
 
-abstract class TestBuildFeaturesImpl: BuildFeaturesImpl(), TestBuildFeatures
+abstract class TestBuildFeaturesImpl : BuildFeaturesImpl(), TestBuildFeatures

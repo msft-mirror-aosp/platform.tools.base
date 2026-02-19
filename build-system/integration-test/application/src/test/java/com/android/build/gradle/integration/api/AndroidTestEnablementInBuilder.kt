@@ -26,58 +26,50 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Test enabling and disabling device tests through the variant builder APIs.
- */
+/** Test enabling and disabling device tests through the variant builder APIs. */
 class AndroidTestEnablementInBuilder {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                buildTypes {
-                    create("stagingWithTest") {}
-                    create("stagingWithoutTest") {}
-                }
-            }
-            pluginCallbacks += MyAppCallback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          buildTypes {
+            create("stagingWithTest") {}
+            create("stagingWithoutTest") {}
+          }
         }
+        pluginCallbacks += MyAppCallback::class.java
+      }
     }
 
-    // enable or disable the device tests depending on the build type.
-    class MyAppCallback : ApplicationComponentCallback {
+  // enable or disable the device tests depending on the build type.
+  class MyAppCallback : ApplicationComponentCallback {
 
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.beforeVariants(
-                androidComponents.selector().withBuildType("stagingWithTest")
-            ) { variantBuilder ->
-                variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = true
-            }
-            androidComponents.beforeVariants(
-                androidComponents.selector().withBuildType("stagingWithoutTest")
-            ) { variantBuilder ->
-                variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false
-            }
-        }
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.beforeVariants(androidComponents.selector().withBuildType("stagingWithTest")) { variantBuilder ->
+        variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = true
+      }
+      androidComponents.beforeVariants(androidComponents.selector().withBuildType("stagingWithoutTest")) { variantBuilder ->
+        variantBuilder.deviceTests[DeviceTestBuilder.ANDROID_TEST_TYPE]?.enable = false
+      }
     }
+  }
 
-    @Test
-    fun testDeviceTestStatus() {
-        val project = rule.build
-        val result = project.modelBuilder.fetchModels()
-        Truth.assertThat(result).isNotNull()
-        val models = result.container.getProject(":app")
-        // check the device tests are either enabled or disabled depending on the build type.
-        models.basicAndroidProject?.variants?.forEach { variant ->
-            if (variant.buildType == "stagingWithTest") {
-                Truth.assertThat(variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]).isNotNull()
-            }
-            if (variant.buildType == "stagingWithoutTest") {
-                Truth.assertThat(variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]).isNull()
-            }
-        }
+  @Test
+  fun testDeviceTestStatus() {
+    val project = rule.build
+    val result = project.modelBuilder.fetchModels()
+    Truth.assertThat(result).isNotNull()
+    val models = result.container.getProject(":app")
+    // check the device tests are either enabled or disabled depending on the build type.
+    models.basicAndroidProject?.variants?.forEach { variant ->
+      if (variant.buildType == "stagingWithTest") {
+        Truth.assertThat(variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]).isNotNull()
+      }
+      if (variant.buildType == "stagingWithoutTest") {
+        Truth.assertThat(variant.deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]).isNull()
+      }
     }
+  }
 }

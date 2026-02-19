@@ -19,20 +19,11 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/** host:host-features returns list of features supported by the HOST.  */
+/** host:host-features returns list of features supported by the HOST. */
 class HostFeaturesCommandHandler : SimpleHostCommandHandler("host-features") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        writeOkayResponse(
-            responseSocket.getOutputStream(),
-            java.lang.String.join(",", fakeAdbServer.features)
-        )
-        return false /* don't keep running */
-    }
-
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    writeOkayResponse(responseSocket.getOutputStream(), java.lang.String.join(",", fakeAdbServer.features))
+    return false /* don't keep running */
+  }
 }

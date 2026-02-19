@@ -19,6 +19,13 @@ package com.android.tools.render
 import com.android.ide.common.rendering.api.Result
 import com.android.testutils.TestUtils
 import com.intellij.util.concurrency.AppExecutorUtil
+import java.awt.image.BufferedImage
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import javax.imageio.ImageIO
+import kotlin.io.path.absolutePathString
+import kotlin.math.abs
+import kotlin.math.max
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -27,149 +34,125 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.awt.image.BufferedImage
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.TimeUnit
-import javax.imageio.ImageIO
-import kotlin.io.path.absolutePathString
-import kotlin.math.abs
-import kotlin.math.max
 
 class RendererTest {
-    @JvmField @Rule
-    val tmpFolder = TemporaryFolder()
+  @JvmField @Rule val tmpFolder = TemporaryFolder()
 
-    @JvmField @Rule
-    val renderTest = RenderTestRule()
+  @JvmField @Rule val renderTest = RenderTestRule()
 
-    companion object {
-        @AfterClass
-        @JvmStatic
-        fun stopExecutor() {
-            // Make sure the queue is empty
-            AppExecutorUtil.getAppScheduledExecutorService().submit { }.get(60, TimeUnit.SECONDS)
-            AppExecutorUtil.shutdownApplicationScheduledExecutorService()
-        }
-
-        private const val TEST_DATA_DIR = "tools/base/standalone-render/lib/testData/rendered_images"
-        private const val THRESHOLD = 1
+  companion object {
+    @AfterClass
+    @JvmStatic
+    fun stopExecutor() {
+      // Make sure the queue is empty
+      AppExecutorUtil.getAppScheduledExecutorService().submit {}.get(60, TimeUnit.SECONDS)
+      AppExecutorUtil.shutdownApplicationScheduledExecutorService()
     }
 
-    @Test
-    fun testSimpleLayoutRendering() {
-        // language=xml
-        val layout = """
-            <?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" >
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="top"
-                    android:text="Hello!" />
-                <Button
-                    android:layout_width="100dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:text="Press me!" />
-            </LinearLayout>
-        """.trimIndent()
+    private const val TEST_DATA_DIR = "tools/base/standalone-render/lib/testData/rendered_images"
+    private const val THRESHOLD = 1
+  }
 
-        val request = RenderRequest({}) { sequenceOf(layout) }
+  @Test
+  fun testSimpleLayoutRendering() {
+    // language=xml
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="vertical" >
+          <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="top"
+              android:text="Hello!" />
+          <Button
+              android:layout_width="100dp"
+              android:layout_height="wrap_content"
+              android:layout_gravity="end"
+              android:text="Press me!" />
+      </LinearLayout>
+      """
+        .trimIndent()
 
-        val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    val request = RenderRequest({}) { sequenceOf(layout) }
 
-        var outputImage: BufferedImage? = null
-        Renderer(
-            null,
-            null,
-            "",
-            emptyList(),
-            emptyList(),
-            layoutlibPath.absolutePathString(),
-        ).use {
-            val (_, result) = it.render(request).single()
-            assertNull("A single RenderResult is expected", outputImage)
-            outputImage = result.renderedImage.copy
-        }
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
 
-        assertNotNull(outputImage)
-
-        val goldenImagePath = TestUtils.resolveWorkspacePath("$TEST_DATA_DIR/img.png")
-        val goldenImage = ImageIO.read(goldenImagePath.toFile())
-
-        assertEquals(goldenImage.width, outputImage!!.width)
-        assertEquals(goldenImage.height, outputImage!!.height)
-        var lInfDiff = 0
-        (0 until goldenImage.height).forEach {  j ->
-            (0 until goldenImage.width).forEach { i ->
-                val goldenCol = goldenImage.getRGB(i, j)
-                val imgCol = outputImage!!.getRGB(i, j)
-                lInfDiff = max(lInfDiff, abs((goldenCol and 0xFF) - (imgCol and 0xFF)))
-                lInfDiff = max(lInfDiff, abs(((goldenCol shl 8) and 0xFF) - ((imgCol shl 8) and 0xFF)))
-                lInfDiff = max(lInfDiff, abs(((goldenCol shl 16) and 0xFF) - ((imgCol shl 16) and 0xFF)))
-            }
-        }
-        assertTrue("The L-infinity image diff is $lInfDiff, higher than the threshold $THRESHOLD", lInfDiff <= THRESHOLD)
+    var outputImage: BufferedImage? = null
+    Renderer(null, null, "", emptyList(), emptyList(), layoutlibPath.absolutePathString()).use {
+      val (_, result) = it.render(request).single()
+      assertNull("A single RenderResult is expected", outputImage)
+      outputImage = result.renderedImage.copy
     }
 
-    @Test
-    fun testIncorrectLayoutlibPath() {
-        val renderResults = Renderer(
-            null,
-            null,
-            "",
-            emptyList(),
-            emptyList(),
-            "",
-        ).use {
-            val invalidRequest = RenderRequest({}) { sequenceOf("") }
-            it.render(invalidRequest).map { it.second }.toList()
-        }
+    assertNotNull(outputImage)
 
-        assertEquals(1, renderResults.size)
-        val renderResult = renderResults[0]
-        assertEquals(Result.Status.ERROR_RENDER_TASK, renderResult.renderResult.status)
-        assertTrue(renderResult.renderResult.exception is ExecutionException)
+    val goldenImagePath = TestUtils.resolveWorkspacePath("$TEST_DATA_DIR/img.png")
+    val goldenImage = ImageIO.read(goldenImagePath.toFile())
+
+    assertEquals(goldenImage.width, outputImage!!.width)
+    assertEquals(goldenImage.height, outputImage!!.height)
+    var lInfDiff = 0
+    (0 until goldenImage.height).forEach { j ->
+      (0 until goldenImage.width).forEach { i ->
+        val goldenCol = goldenImage.getRGB(i, j)
+        val imgCol = outputImage!!.getRGB(i, j)
+        lInfDiff = max(lInfDiff, abs((goldenCol and 0xFF) - (imgCol and 0xFF)))
+        lInfDiff = max(lInfDiff, abs(((goldenCol shl 8) and 0xFF) - ((imgCol shl 8) and 0xFF)))
+        lInfDiff = max(lInfDiff, abs(((goldenCol shl 16) and 0xFF) - ((imgCol shl 16) and 0xFF)))
+      }
     }
+    assertTrue("The L-infinity image diff is $lInfDiff, higher than the threshold $THRESHOLD", lInfDiff <= THRESHOLD)
+  }
 
-    @Test
-    fun testMissingResource() {
-        // language=xml
-        val layout = """
-            <?xml version="1.0" encoding="utf-8"?>
-            <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" >
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="top"
-                    android:text="@string/hello" />
-            </LinearLayout>
-        """.trimIndent()
+  @Test
+  fun testIncorrectLayoutlibPath() {
+    val renderResults =
+      Renderer(null, null, "", emptyList(), emptyList(), "").use {
+        val invalidRequest = RenderRequest({}) { sequenceOf("") }
+        it.render(invalidRequest).map { it.second }.toList()
+      }
 
-        val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+    assertEquals(1, renderResults.size)
+    val renderResult = renderResults[0]
+    assertEquals(Result.Status.ERROR_RENDER_TASK, renderResult.renderResult.status)
+    assertTrue(renderResult.renderResult.exception is ExecutionException)
+  }
 
-        val renderResults = Renderer(
-            null,
-            null,
-            "",
-            emptyList(),
-            emptyList(),
-            layoutlibPath.absolutePathString(),
-        ).use {
-            it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList()
-        }
+  @Test
+  fun testMissingResource() {
+    // language=xml
+    val layout =
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:orientation="vertical" >
+          <TextView
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="top"
+              android:text="@string/hello" />
+      </LinearLayout>
+      """
+        .trimIndent()
 
-        assertEquals(1, renderResults.size)
-        val renderResult = renderResults[0]
-        assertEquals(Result.Status.SUCCESS, renderResult.renderResult.status)
-        val messages = renderResult.logger.messages
-        assertEquals(1, messages.size)
-        assertEquals("Couldn't resolve resource @string/hello", messages[0].html)
-    }
+    val layoutlibPath = TestUtils.resolveWorkspacePath("prebuilts/studio/layoutlib")
+
+    val renderResults =
+      Renderer(null, null, "", emptyList(), emptyList(), layoutlibPath.absolutePathString()).use {
+        it.render(RenderRequest({}) { sequenceOf(layout) }).map { it.second }.toList()
+      }
+
+    assertEquals(1, renderResults.size)
+    val renderResult = renderResults[0]
+    assertEquals(Result.Status.SUCCESS, renderResult.renderResult.status)
+    val messages = renderResult.logger.messages
+    assertEquals(1, messages.size)
+    assertEquals("Couldn't resolve resource @string/hello", messages[0].html)
+  }
 }

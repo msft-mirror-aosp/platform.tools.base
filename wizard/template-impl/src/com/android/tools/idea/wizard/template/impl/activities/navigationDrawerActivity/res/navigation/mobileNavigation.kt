@@ -15,10 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerActivity.res.navigation
 
-fun mobileNavigation(
-  navGraphName: String,
-  packageName: String
-) = """
+fun mobileNavigation(navGraphName: String, packageName: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

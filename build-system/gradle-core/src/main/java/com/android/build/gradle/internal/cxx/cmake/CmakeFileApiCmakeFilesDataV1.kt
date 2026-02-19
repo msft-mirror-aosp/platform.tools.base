@@ -17,43 +17,15 @@
 package com.android.build.gradle.internal.cxx.cmake
 
 /**
- * Schema of cmakeFiles-v1-{hash).json files
- *  "inputs" : [
- *    { "path" : "CMakeLists.txt" },
- *    { "isCMake" : true,
- *      "isExternal" : true,
- *      "path" : "/cmake/share/cmake-3.17/Modules/CMakeDetermineSystem.cmake"
- *    }
- *  ],
- *  "kind" : "cmakeFiles",
- *  "paths" : {
- *    "build" : "/app/.cxx/cmake/debug/arm64-v8a",
- *    "source" : "/app"
- *  },
- *  "version" : { "major" : 1, "minor" : 0 }
+ * Schema of cmakeFiles-v1-{hash).json files "inputs" :
+ * [ { "path" : "CMakeLists.txt" }, { "isCMake" : true, "isExternal" : true, "path" : "/cmake/share/cmake-3.17/Modules/CMakeDetermineSystem.cmake" } ],
+ * "kind" : "cmakeFiles", "paths" : { "build" : "/app/.cxx/cmake/debug/arm64-v8a", "source" : "/app" }, "version" : { "major" : 1, "minor" :
+ * 0 }
  */
-data class CmakeFileApiCmakeFilesDataV1(
-        val inputs : List<CmakeFilesInputDataV1>,
-        val paths : CmakeFilesPathsDataV1
-)
+data class CmakeFileApiCmakeFilesDataV1(val inputs: List<CmakeFilesInputDataV1>, val paths: CmakeFilesPathsDataV1)
 
-/**
- * "isCMake" : true,
- * "isExternal" : true,
- * "path" : "/cmake/share/cmake-3.17/Modules/CMakeDetermineSystem.cmake"
- */
-data class CmakeFilesInputDataV1(
-        val path: String,
-        val isGenerated: Boolean?,
-        val isCmake: Boolean?,
-        val isExternal: Boolean?
-)
+/** "isCMake" : true, "isExternal" : true, "path" : "/cmake/share/cmake-3.17/Modules/CMakeDetermineSystem.cmake" */
+data class CmakeFilesInputDataV1(val path: String, val isGenerated: Boolean?, val isCmake: Boolean?, val isExternal: Boolean?)
 
-/**
- * "build" : "/projects/dolphin/Source/Android/app/.cxx/cmake/debug/arm64-v8a"
- * "source" : "/projects/dolphin"
- */
-data class CmakeFilesPathsDataV1(
-        val build: String,
-        val source: String
-)
+/** "build" : "/projects/dolphin/Source/Android/app/.cxx/cmake/debug/arm64-v8a" "source" : "/projects/dolphin" */
+data class CmakeFilesPathsDataV1(val build: String, val source: String)

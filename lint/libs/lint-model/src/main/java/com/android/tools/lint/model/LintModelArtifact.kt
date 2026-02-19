@@ -24,21 +24,14 @@ interface LintModelArtifact {
   val type: LintModelArtifactType
 
   /**
-   * Finds the library with the given [mavenName] (group id and artifact id) in any transitive
-   * compile-dependency.
+   * Finds the library with the given [mavenName] (group id and artifact id) in any transitive compile-dependency.
    *
-   * Convenience method for accessing the compile dependencies and then looking up the library
-   * there, since this is a very common operation.
+   * Convenience method for accessing the compile dependencies and then looking up the library there, since this is a very common operation.
    */
-  fun findCompileDependency(mavenName: String): LintModelLibrary? =
-    dependencies.compileDependencies.findLibrary(mavenName, direct = false)
+  fun findCompileDependency(mavenName: String): LintModelLibrary? = dependencies.compileDependencies.findLibrary(mavenName, direct = false)
 
-  /**
-   * Finds the library with the given [groupId] and [artifactId] in any transitive
-   * compile-dependency.
-   */
-  fun findCompileDependency(groupId: String, artifactId: String): LintModelLibrary? =
-    findCompileDependency("$groupId:$artifactId")
+  /** Finds the library with the given [groupId] and [artifactId] in any transitive compile-dependency. */
+  fun findCompileDependency(groupId: String, artifactId: String): LintModelLibrary? = findCompileDependency("$groupId:$artifactId")
 }
 
 interface LintModelJavaArtifact : LintModelArtifact
@@ -57,11 +50,8 @@ open class DefaultLintModelArtifact(
   override val type: LintModelArtifactType,
 ) : LintModelArtifact
 
-class DefaultLintModelJavaArtifact(
-  dependencies: LintModelDependencies,
-  classFolders: List<File>,
-  type: LintModelArtifactType,
-) : DefaultLintModelArtifact(dependencies, classFolders, type), LintModelJavaArtifact
+class DefaultLintModelJavaArtifact(dependencies: LintModelDependencies, classFolders: List<File>, type: LintModelArtifactType) :
+  DefaultLintModelArtifact(dependencies, classFolders, type), LintModelJavaArtifact
 
 class DefaultLintModelAndroidArtifact(
   override val applicationId: String?,

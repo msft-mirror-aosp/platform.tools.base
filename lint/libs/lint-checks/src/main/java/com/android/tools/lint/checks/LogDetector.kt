@@ -122,8 +122,7 @@ class LogDetector : Detector(), SourceCodeScanner {
     const val LOG_CLS = "android.util.Log"
   }
 
-  override fun getApplicableMethodNames(): List<String>? =
-    listOf("d", "e", "i", "v", "w", PRINTLN, IS_LOGGABLE)
+  override fun getApplicableMethodNames(): List<String>? = listOf("d", "e", "i", "v", "w", PRINTLN, IS_LOGGABLE)
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
@@ -132,8 +131,7 @@ class LogDetector : Detector(), SourceCodeScanner {
     }
 
     val name = method.name
-    val withinConditional =
-      IS_LOGGABLE == name || checkWithinConditional(context, node.uastParent, node)
+    val withinConditional = IS_LOGGABLE == name || checkWithinConditional(context, node.uastParent, node)
 
     // See if it's surrounded by an if statement (and it's one of the non-error, spammy
     // log methods (info, verbose, etc))
@@ -159,10 +157,7 @@ class LogDetector : Detector(), SourceCodeScanner {
       val tagArgumentIndex = if (PRINTLN == name) 1 else 0
       val parameterList = method.parameterList
       val argumentList = node.valueArguments
-      if (
-        evaluator.parameterHasType(method, tagArgumentIndex, TYPE_STRING) &&
-          parameterList.parametersCount == argumentList.size
-      ) {
+      if (evaluator.parameterHasType(method, tagArgumentIndex, TYPE_STRING) && parameterList.parametersCount == argumentList.size) {
         val argument = argumentList[tagArgumentIndex]
         val tag = ConstantEvaluator.evaluateString(context, argument, true)
         if (tag != null && tag.length > 23 && context.project.minSdk <= 23) {
@@ -236,11 +231,7 @@ class LogDetector : Detector(), SourceCodeScanner {
     return true
   }
 
-  private fun checkWithinConditional(
-    context: JavaContext,
-    start: UElement?,
-    logCall: UCallExpression,
-  ): Boolean {
+  private fun checkWithinConditional(context: JavaContext, start: UElement?, logCall: UCallExpression): Boolean {
     var curr = start
     while (curr != null) {
       if (curr is UIfExpression) {
@@ -252,11 +243,7 @@ class LogDetector : Detector(), SourceCodeScanner {
         }
         return within
       } else if (
-        curr is UCallExpression ||
-          curr is UMethod ||
-          curr is UClassInitializer ||
-          curr is UField ||
-          curr is UClass
+        curr is UCallExpression || curr is UMethod || curr is UClassInitializer || curr is UField || curr is UClass
       ) { // static block
         break
       }
@@ -265,11 +252,7 @@ class LogDetector : Detector(), SourceCodeScanner {
     return false
   }
 
-  private fun checkLoggingCondition(
-    expression: UExpression,
-    context: JavaContext,
-    logCall: UCallExpression,
-  ): Boolean {
+  private fun checkLoggingCondition(expression: UExpression, context: JavaContext, logCall: UCallExpression): Boolean {
     val condition = expression.findSelector()
     if (condition is UCallExpression) {
       if (IS_LOGGABLE == condition.methodName) {
@@ -286,11 +269,7 @@ class LogDetector : Detector(), SourceCodeScanner {
   }
 
   /** Checks that the tag passed to Log.s and Log.isLoggable match. */
-  private fun checkTagConsistent(
-    context: JavaContext,
-    logCall: UCallExpression,
-    isLoggableCall: UCallExpression,
-  ) {
+  private fun checkTagConsistent(context: JavaContext, logCall: UCallExpression, isLoggableCall: UCallExpression) {
     val isLoggableArguments = isLoggableCall.valueArguments
     val logArguments = logCall.valueArguments
     if (isLoggableArguments.isEmpty() || logArguments.isEmpty()) {
@@ -306,24 +285,16 @@ class LogDetector : Detector(), SourceCodeScanner {
     }
 
     if (logTag != null) {
-      if (
-        !areLiteralsEqual(isLoggableTag, logTag) &&
-          !UastLintUtils.areIdentifiersEqual(isLoggableTag, logTag)
-      ) {
+      if (!areLiteralsEqual(isLoggableTag, logTag) && !UastLintUtils.areIdentifiersEqual(isLoggableTag, logTag)) {
         val resolved1 = isLoggableTag.tryResolveNamed()
         val resolved2 = logTag.tryResolveNamed()
-        if (
-          (resolved1 == null || resolved2 == null || resolved1 != resolved2) &&
-            context.isEnabled(WRONG_TAG)
-        ) {
+        if ((resolved1 == null || resolved2 == null || resolved1 != resolved2) && context.isEnabled(WRONG_TAG)) {
           val location = context.getLocation(logTag)
           val alternate = context.getLocation(isLoggableTag)
           alternate.message = "Conflicting tag"
           location.secondary = alternate
-          val isLoggableDescription =
-            if (resolved1 != null) resolved1.name else isLoggableTag.asRenderString()
-          val logCallDescription =
-            if (resolved2 != null) resolved2.name else logTag.asRenderString()
+          val isLoggableDescription = if (resolved1 != null) resolved1.name else isLoggableTag.asRenderString()
+          val logCallDescription = if (resolved2 != null) resolved2.name else logTag.asRenderString()
           val message =
             String.format(
               "Mismatched tags: the `%1\$s()` and `isLoggable()` calls typically should pass the same tag: `%2\$s` versus `%3\$s`",

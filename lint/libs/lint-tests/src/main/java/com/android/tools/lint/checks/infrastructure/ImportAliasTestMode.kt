@@ -40,17 +40,11 @@ import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.skipParenthesizedExprUp
 
 /**
- * Test mode which introduces import aliases for all imported types to make sure detectors handle
- * presence of import aliases.
+ * Test mode which introduces import aliases for all imported types to make sure detectors handle presence of import aliases.
  *
  * (See also the [TypeAliasTestMode].)
  */
-class ImportAliasTestMode :
-  UastSourceTransformationTestMode(
-    description = "Import aliases",
-    "TestMode.IMPORT_ALIAS",
-    "import-alias",
-  ) {
+class ImportAliasTestMode : UastSourceTransformationTestMode(description = "Import aliases", "TestMode.IMPORT_ALIAS", "import-alias") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -74,12 +68,7 @@ class ImportAliasTestMode :
     return file.targetRelativePath.endsWith(DOT_KT)
   }
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     if (!isKotlin(root.lang)) {
       return mutableListOf()
     }
@@ -91,9 +80,7 @@ class ImportAliasTestMode :
       object : FullyQualifyNamesTestMode.TypeVisitor(context, source) {
         override fun visitImportStatement(node: UImportStatement): Boolean {
           val ktImportDirective = node.sourcePsi as? KtImportDirective
-          if (
-            ktImportDirective != null && !node.isOnDemand && ktImportDirective.aliasName == null
-          ) {
+          if (ktImportDirective != null && !node.isOnDemand && ktImportDirective.aliasName == null) {
             val resolved = node.resolve()
             val reference = node.importReference
             val text = reference?.sourcePsi?.text
@@ -145,12 +132,7 @@ class ImportAliasTestMode :
           }
         }
 
-        override fun checkTypeReference(
-          node: UElement,
-          cls: PsiClass?,
-          offset: Int,
-          type: PsiType,
-        ) {
+        override fun checkTypeReference(node: UElement, cls: PsiClass?, offset: Int, type: PsiType) {
           val typeText = node.sourcePsi?.text?.substringBefore('<') ?: return
           if (typeText.isBlank()) {
             return
@@ -168,8 +150,7 @@ class ImportAliasTestMode :
                 replace(
                   range.startOffset,
                   min(range.endOffset, range.startOffset + typeText.length),
-                  if (typeText.endsWith("?")) "$aliasName?"
-                  else if (typeText.endsWith("!!")) "$aliasName!!" else aliasName,
+                  if (typeText.endsWith("?")) "$aliasName?" else if (typeText.endsWith("!!")) "$aliasName!!" else aliasName,
                 )
             }
           }
@@ -186,8 +167,7 @@ class ImportAliasTestMode :
                   source.indexOf('\n', end) + 1
                 }
 
-            val aliases =
-              aliasNames.map { (type, name) -> "import $type as $name" }.joinToString("\n")
+            val aliases = aliasNames.map { (type, name) -> "import $type as $name" }.joinToString("\n")
             editMap[start] = insert(start, "\n$aliases")
           }
           super.afterVisitFile(node)

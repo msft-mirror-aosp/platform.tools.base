@@ -17,16 +17,16 @@ package com.android.adblib.tools
 
 import com.android.adblib.AdbLogger
 
-internal class StdLogger : AdbLogger(){
-    override val minLevel: Level
-        get() = Level.INFO
+internal class StdLogger : AdbLogger() {
+  override val minLevel: Level
+    get() = Level.INFO
 
-    override fun log(level: Level, message: String) {
-        println(message)
-    }
+  override fun log(level: Level, message: String) {
+    println(message)
+  }
 
-    override fun log(level: Level, exception: Throwable?, message: String) {
-        println(message)
-        exception?.printStackTrace(System.out)
-    }
+  override fun log(level: Level, exception: Throwable?, message: String) {
+    println(message)
+    exception?.printStackTrace(System.out)
+  }
 }

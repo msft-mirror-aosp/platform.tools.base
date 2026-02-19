@@ -60,10 +60,7 @@ class ExtraDeviceFilesUploadTaskTest {
     projectPath = temporaryFolderRule.newFolder("project")
     project = ProjectBuilder.builder().withProjectDir(projectPath).build()
 
-    task =
-      project.tasks
-        .register("firebaseUploadExtraDeviceFiles", ExtraDeviceFilesUploadTask::class.java)
-        .get()
+    task = project.tasks.register("firebaseUploadExtraDeviceFiles", ExtraDeviceFilesUploadTask::class.java).get()
 
     outputFile = temporaryFolderRule.newFile("output")
 
@@ -86,9 +83,7 @@ class ExtraDeviceFilesUploadTaskTest {
   @Test
   fun taskAction_SimpleExtraFiles() {
     val testFile = temporaryFolderRule.newFile("testFile")
-    task.extraFiles.set(
-      mapOf("devicePath1" to testFile.path, "devicePath2" to "gs://bucket/testPath")
-    )
+    task.extraFiles.set(mapOf("devicePath1" to testFile.path, "devicePath2" to "gs://bucket/testPath"))
 
     val localUploadedStorageObject: StorageObject =
       mock<StorageObject>().apply {
@@ -103,17 +98,10 @@ class ExtraDeviceFilesUploadTaskTest {
         `when`(this.md5Hash).thenReturn("ddeeff")
       }
 
-    `when`(
-        mockBuildService.uploadSharedFile(
-          eq("my_gradle_module"),
-          argThat { file -> file.path == testFile.path },
-          any(),
-        )
-      )
+    `when`(mockBuildService.uploadSharedFile(eq("my_gradle_module"), argThat { file -> file.path == testFile.path }, any()))
       .thenReturn(localUploadedStorageObject)
 
-    `when`(mockBuildService.getStorageObject(eq("gs://bucket/testPath")))
-      .thenReturn(cloudStorageObject)
+    `when`(mockBuildService.getStorageObject(eq("gs://bucket/testPath"))).thenReturn(cloudStorageObject)
 
     task.validateOrUploadExtraFiles()
 
@@ -127,9 +115,7 @@ class ExtraDeviceFilesUploadTaskTest {
     assertThat(outputFile.readText(StandardCharsets.UTF_8)).isEqualTo(expectedResult)
 
     // file order should not affect output.
-    task.extraFiles.set(
-      mapOf("devicePath2" to "gs://bucket/testPath", "devicePath1" to testFile.path)
-    )
+    task.extraFiles.set(mapOf("devicePath2" to "gs://bucket/testPath", "devicePath1" to testFile.path))
 
     task.validateOrUploadExtraFiles()
 
@@ -140,16 +126,9 @@ class ExtraDeviceFilesUploadTaskTest {
   fun taskAction_testFailures() {
     val folder = temporaryFolderRule.newFolder("folder-to-upload")
 
-    task.extraFiles.set(
-      mapOf(
-        "devicePath1" to folder.path,
-        "devicePath2" to "not/a/file",
-        "devicePath3" to "gs://bucket/testPath",
-      )
-    )
+    task.extraFiles.set(mapOf("devicePath1" to folder.path, "devicePath2" to "not/a/file", "devicePath3" to "gs://bucket/testPath"))
 
-    val error =
-      assertThrows(IllegalStateException::class.java) { task.validateOrUploadExtraFiles() }
+    val error = assertThrows(IllegalStateException::class.java) { task.validateOrUploadExtraFiles() }
 
     assertThat(error.message)
       .isEqualTo(

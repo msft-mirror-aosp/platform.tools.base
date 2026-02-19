@@ -16,86 +16,89 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.builder.model.SyncIssue
 import com.android.builder.model.v2.ide.Variant
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
 
 class ModelSyncFilesTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
-
-    @Test
-    fun testApplicationIdNotSetByTask() {
-        val (variant, syncIssues) = getAppVariant()
-        assertThat(syncIssues.map { it.message }).isEmpty()
-        assertThat(variant.mainArtifact.applicationId).isEqualTo("com.example.helloworld")
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { namespace = "com.example.hello_world" }
+        pluginCallbacks += ModelSyncFilesTestCallback::class.java
+      }
     }
 
-    @Test
-    fun testAppIdListModelWithCustomizedAppId() {
-        addCustomizationToBuildFile()
-        val (variant, syncIssues) = getAppVariant()
-        assertThat(syncIssues.map { it.message }).containsExactly(APPLICATION_ID_FROM_TASK_UNSUPPORTED)
-        assertThat(variant.mainArtifact.applicationId).isEqualTo("")
-    }
+  @Test
+  fun testApplicationIdNotSetByTask() {
+    val (variant, _) = getAppVariant("release")
+    assertThat(variant.mainArtifact.applicationId).isEqualTo("com.example.hello_world")
+  }
 
-    private fun addCustomizationToBuildFile() {
-        project.buildFile.appendText("""
-        abstract class ApplicationIdProducerTask extends DefaultTask {
+  @Test
+  fun testAppIdListModelWithCustomizedAppId() {
+    val (variant, syncIssues) = getAppVariant("debug")
+    assertThat(syncIssues.map { it.message }).containsExactly(APPLICATION_ID_FROM_TASK_UNSUPPORTED)
+    assertThat(variant.mainArtifact.applicationId).isEqualTo("")
+  }
 
-            @OutputFile
-            abstract RegularFileProperty getOutputFile()
+  private fun getAppVariant(variantName: String): Pair<Variant, Collection<com.android.builder.model.v2.ide.SyncIssue>> {
+    val projectModel = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels().container.getProject(":app")
+    val variant =
+      (projectModel.androidProject?.variants?.first { variant -> variant.name == variantName }
+        ?: throw RuntimeException("could not find $variantName AndroidProject model"))
+    val syncIssues = projectModel.issues?.syncIssues ?: emptySet()
+    return variant to syncIssues
+  }
 
-            @TaskAction
-            void taskAction() {
-                getOutputFile().get().getAsFile().write("set.from.task." + name)
-            }
+  companion object {
+    private val APPLICATION_ID_FROM_TASK_UNSUPPORTED =
+      """
+      Failed to read applicationId for debug.
+      Setting the application ID to the output of a task in the variant api is not supported
+      """
+        .trimIndent()
+  }
+}
+
+abstract class ModelSyncFilesApplicationIdProducerTask : DefaultTask() {
+
+  @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @TaskAction
+  fun taskAction() {
+    outputFile.get().asFile.writeText("set.from.task.$name")
+  }
+}
+
+class ModelSyncFilesTestCallback : ApplicationComponentCallback {
+
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    // b/176931684
+    // disable androidTest for all variants as it forces the applicationId resolution
+    androidComponents.beforeVariants { variantBuilder -> variantBuilder.enableAndroidTest = false }
+    // only register the applicationId in the debug variant, leave release unchanged.
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      val appIdProducer =
+        project.tasks.register(variant.name + "AppIdProducerTask", ModelSyncFilesApplicationIdProducerTask::class.java) { task ->
+          val outputDir = File(project.layout.buildDirectory.asFile.get(), task.name)
+          outputDir.mkdirs()
+          task.outputFile.set(File(outputDir, "appId.txt"))
         }
-
-        androidComponents {
-            // b/176931684
-            // disable androidTest as it forces the applicationId resolution
-            beforeVariants(selector().withBuildType("debug")) { variantBuilder ->
-                variantBuilder.enableAndroidTest = false
-            }
-            onVariants(selector().withBuildType("debug")) { variant ->
-                TaskProvider appIdProducer = tasks.register(variant.name + "AppIdProducerTask", ApplicationIdProducerTask.class) { task ->
-                    File outputDir = new File(getBuildDir(), task.name)
-                    outputDir.mkdirs()
-                    task.getOutputFile().set(new File(outputDir, "appId.txt"))
-
-                }
-                variant.setApplicationId(appIdProducer.flatMap { task ->
-                        task.getOutputFile().map { it.getAsFile().text }
-                })
-            }
-        }""")
+      variant.applicationId.set(appIdProducer.flatMap { task -> task.outputFile.map { it.asFile.readText() } })
     }
-
-    private fun getAppVariant(): Pair<Variant, Collection<com.android.builder.model.v2.ide.SyncIssue>> {
-        val projectModel = project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels()
-                .container
-                .getProject()
-        val variant = (projectModel
-                .androidProject
-                ?.variants
-                ?.first { variant -> variant.name == "debug" }
-                ?: throw RuntimeException("could not find AndroidProject model"))
-        val syncIssues = projectModel.issues?.syncIssues ?: emptySet()
-        return variant to syncIssues
-    }
-
-    companion object {
-        private val APPLICATION_ID_FROM_TASK_UNSUPPORTED = """
-            Failed to read applicationId for debug.
-            Setting the application ID to the output of a task in the variant api is not supported
-            """.trimIndent()
-    }
+  }
 }

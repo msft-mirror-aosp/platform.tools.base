@@ -22,52 +22,49 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.initMocks
 import org.mockito.kotlin.mock
 
-/**
- * Unit test for [DdmlibAndroidDeviceFinder].
- */
+/** Unit test for [DdmlibAndroidDeviceFinder]. */
 class DdmlibAndroidDeviceFinderTest {
 
-    @Mock
-    private lateinit var mockAdb: AndroidDebugBridge
+  @Mock private lateinit var mockAdb: AndroidDebugBridge
 
-    private lateinit var finder: DdmlibAndroidDeviceFinder
+  private lateinit var finder: DdmlibAndroidDeviceFinder
 
-    @Before
-    fun setUp() {
-        initMocks(this)
-        `when`(mockAdb.devices).thenReturn(emptyArray())
+  @Before
+  fun setUp() {
+    initMocks(this)
+    `when`(mockAdb.devices).thenReturn(emptyArray())
 
-        finder = DdmlibAndroidDeviceFinder(mockAdb)
-    }
+    finder = DdmlibAndroidDeviceFinder(mockAdb)
+  }
 
-    private fun createMockDevice(serialNumber: String): IDevice {
-        val device = mock<IDevice>()
-        `when`(device.serialNumber).thenReturn(serialNumber)
-        return device
-    }
+  private fun createMockDevice(serialNumber: String): IDevice {
+    val device = mock<IDevice>()
+    `when`(device.serialNumber).thenReturn(serialNumber)
+    return device
+  }
 
-    @Test
-    fun deviceFound() {
-        val finder = DdmlibAndroidDeviceFinder(mockAdb)
+  @Test
+  fun deviceFound() {
+    val finder = DdmlibAndroidDeviceFinder(mockAdb)
 
-        val device = createMockDevice("12345")
-        `when`(mockAdb.devices).thenReturn(arrayOf(device))
+    val device = createMockDevice("12345")
+    `when`(mockAdb.devices).thenReturn(arrayOf(device))
 
-        assertThat(finder.findDevice("12345", maxRetry = 1, maxBackoffSeconds = 0)).isNotNull()
-    }
+    assertThat(finder.findDevice("12345", maxRetry = 1, maxBackoffSeconds = 0)).isNotNull()
+  }
 
-    @Test
-    fun deviceNotFound() {
-        val finder = DdmlibAndroidDeviceFinder(mockAdb)
+  @Test
+  fun deviceNotFound() {
+    val finder = DdmlibAndroidDeviceFinder(mockAdb)
 
-        assertThat(finder.findDevice("12345", maxRetry = 3, maxBackoffSeconds = 0)).isNull()
+    assertThat(finder.findDevice("12345", maxRetry = 3, maxBackoffSeconds = 0)).isNull()
 
-        verify(mockAdb, times(3)).devices
-    }
+    verify(mockAdb, times(3)).devices
+  }
 }

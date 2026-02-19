@@ -19,7 +19,6 @@ package com.android.build.api.variant
 /**
  * Interface for ndk-build per-variant info.
  *
- * see [com.android.build.api.dsl.NdkBuildFlags] for expanded documentation
- * on each of these fields.
+ * see [com.android.build.api.dsl.NdkBuildFlags] for expanded documentation on each of these fields.
  */
-interface ExternalNdkBuild: ExternalNativeBuild
+interface ExternalNdkBuild : ExternalNativeBuild

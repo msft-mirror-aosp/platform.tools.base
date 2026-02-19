@@ -21,21 +21,17 @@ import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 
-class FakeArtifactCollection(
-    private val resolvedArtifacts: MutableSet<ResolvedArtifactResult>) : ArtifactCollection {
-    override fun getFailures(): MutableCollection<Throwable> {
-        TODO("not implemented")
-    }
+class FakeArtifactCollection(private val resolvedArtifacts: MutableSet<ResolvedArtifactResult>) : ArtifactCollection {
+  override fun getFailures(): MutableCollection<Throwable> {
+    TODO("not implemented")
+  }
 
-    override fun iterator(): MutableIterator<ResolvedArtifactResult> =
-        resolvedArtifacts.iterator()
+  override fun iterator(): MutableIterator<ResolvedArtifactResult> = resolvedArtifacts.iterator()
 
-    override fun getArtifactFiles(): FileCollection =
-        FakeFileCollection(resolvedArtifacts.map { it.file })
+  override fun getArtifactFiles(): FileCollection = FakeFileCollection(resolvedArtifacts.map { it.file })
 
-    override fun getArtifacts(): MutableSet<ResolvedArtifactResult> = resolvedArtifacts
+  override fun getArtifacts(): MutableSet<ResolvedArtifactResult> = resolvedArtifacts
 
-    @Suppress("UnstableApiUsage")
-    override fun getResolvedArtifacts(): Provider<Set<ResolvedArtifactResult>> =
-        FakeProviderFactory.factory.provider { resolvedArtifacts }
+  @Suppress("UnstableApiUsage")
+  override fun getResolvedArtifacts(): Provider<Set<ResolvedArtifactResult>> = FakeProviderFactory.factory.provider { resolvedArtifacts }
 }

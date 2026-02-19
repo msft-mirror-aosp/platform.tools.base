@@ -56,8 +56,7 @@ import org.jetbrains.uast.UMethod
 class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
   companion object Issues {
 
-    private val IMPLEMENTATION =
-      Implementation(WrongCommentTypeDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WrongCommentTypeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -88,8 +87,7 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableUastTypes(): List<Class<out UElement>> =
-    listOf(UMethod::class.java, UClass::class.java, UField::class.java)
+  override fun getApplicableUastTypes(): List<Class<out UElement>> = listOf(UMethod::class.java, UClass::class.java, UField::class.java)
 
   override fun createUastHandler(context: JavaContext): UElementHandler =
     object : UElementHandler() {
@@ -110,7 +108,8 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
               //    " /* @test Test */\nclass Test" =>
               //         KtImportList PsiWhiteSpace PsiComment PsiWhiteSpace PsiClass
               //                                                                |
-              //                                                         LeafPsiElement("class") ...
+              //                                                         LeafPsiElement("class")
+              // ...
               //    "/* @test Test */\nclass Test" =>
               //          KtImportList         PsiClass
               //                            /      |        \
@@ -211,13 +210,7 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
           comment,
           location,
           "This block comment looks like it was intended to be a $commentType comment",
-          fix()
-            .replace()
-            .text("/*")
-            .with("/**")
-            .range(context.getLocation(comment))
-            .autoFix()
-            .build(),
+          fix().replace().text("/*").with("/**").range(context.getLocation(comment)).autoFix().build(),
         )
       }
 
@@ -227,9 +220,7 @@ class WrongCommentTypeDetector : Detector(), SourceCodeScanner {
         }
         val content =
           "/**\n" +
-            comment.removeSurrounding("/*", "*/").split("\n").joinToString("\n") {
-              "* ${it.trim().removePrefix("*").trim()}"
-            } +
+            comment.removeSurrounding("/*", "*/").split("\n").joinToString("\n") { "* ${it.trim().removePrefix("*").trim()}" } +
             "*/"
 
         try {

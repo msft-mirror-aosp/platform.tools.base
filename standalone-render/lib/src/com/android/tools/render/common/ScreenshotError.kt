@@ -18,36 +18,20 @@ package com.android.tools.render.common
 
 import java.io.Serializable
 
-/**
- * Data class that provider information about the problems happened during a single screenshot
- * creation.
- */
+/** Data class that provider information about the problems happened during a single screenshot creation. */
 data class ScreenshotError(
-    val status: String,
-    val message: String,
-    val stackTrace: String,
-    val problems: List<RenderProblem>,
-    val brokenClasses: List<BrokenClass>,
-    val missingClasses: List<String>
-): Serializable {
-    constructor(t: Throwable) : this(
-        "",
-        t.message ?: "",
-        t.stackTraceToString(),
-        emptyList(),
-        emptyList(),
-        emptyList()
-    )
+  val status: String,
+  val message: String,
+  val stackTrace: String,
+  val problems: List<RenderProblem>,
+  val brokenClasses: List<BrokenClass>,
+  val missingClasses: List<String>,
+) : Serializable {
+  constructor(t: Throwable) : this("", t.message ?: "", t.stackTraceToString(), emptyList(), emptyList(), emptyList())
 }
 
 /** Serializable representation of a rendering problem. */
-data class RenderProblem(
-    val html: String,
-    val stackTrace: String?,
-): Serializable
+data class RenderProblem(val html: String, val stackTrace: String?) : Serializable
 
 /** Serializable representation of a broken class found during rendering. */
-data class BrokenClass(
-    val className: String,
-    val stackTrace: String,
-): Serializable
+data class BrokenClass(val className: String, val stackTrace: String) : Serializable

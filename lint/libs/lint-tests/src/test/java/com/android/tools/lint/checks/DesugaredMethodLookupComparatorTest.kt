@@ -21,13 +21,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class DesugaredMethodLookupComparatorTest(
-  val owner: String,
-  val name: String,
-  val desc: String,
-  val combined: String,
-  val result: Int,
-) {
+class DesugaredMethodLookupComparatorTest(val owner: String, val name: String, val desc: String, val combined: String, val result: Int) {
   companion object {
     val lookup = DesugaredMethodLookup(arrayOf())
 
@@ -40,13 +34,7 @@ class DesugaredMethodLookupComparatorTest(
         // Make sure we don't treat fields and methods on the same class as equivalent
         arrayOf("java.util.Collection", "stream", "", "java/util/Collection#stream()", 1),
         arrayOf("java.util.Collection", "stream", "()", "java/util/Collection#stream", 1),
-        arrayOf(
-          "java.util.Collection",
-          "stream",
-          "()",
-          "java/util/Collection#stream()Ljava/util/stream/Stream;",
-          0,
-        ),
+        arrayOf("java.util.Collection", "stream", "()", "java/util/Collection#stream()Ljava/util/stream/Stream;", 0),
         arrayOf(
           "javax/util/Comparator",
           "thenComparing",
@@ -54,34 +42,10 @@ class DesugaredMethodLookupComparatorTest(
           "java/util/Comparator#thenComparing(Ljava/util/function/Function;)Ljava/util/Comparator;",
           -1,
         ),
-        arrayOf(
-          "java/util/Collections",
-          "spliterator",
-          "()",
-          "java/util/Collection#spliterator()Ljava/util/Spliterator;",
-          -1,
-        ),
-        arrayOf(
-          "java/util/List",
-          "of",
-          "(Ljava/lang/Object;)",
-          "java/util/List#of()Ljava/util/List;",
-          -1,
-        ),
-        arrayOf(
-          "java/util/Collection",
-          "spliterators",
-          "()",
-          "java/util/Collection#spliterator()Ljava/util/Spliterator;",
-          -1,
-        ),
-        arrayOf(
-          "java.lang.Long",
-          "toUnsignedString",
-          "(JI)",
-          "java/lang/Long#toUnsignedString(J)Ljava/lang/String;",
-          -1,
-        ),
+        arrayOf("java/util/Collections", "spliterator", "()", "java/util/Collection#spliterator()Ljava/util/Spliterator;", -1),
+        arrayOf("java/util/List", "of", "(Ljava/lang/Object;)", "java/util/List#of()Ljava/util/List;", -1),
+        arrayOf("java/util/Collection", "spliterators", "()", "java/util/Collection#spliterator()Ljava/util/Spliterator;", -1),
+        arrayOf("java.lang.Long", "toUnsignedString", "(JI)", "java/lang/Long#toUnsignedString(J)Ljava/lang/String;", -1),
         arrayOf(
           "java/util/Comparator",
           "thenComparing",
@@ -89,27 +53,9 @@ class DesugaredMethodLookupComparatorTest(
           "javax/util/Comparator#thenComparing(Ljava/util/function/Function;)Ljava/util/Comparator;",
           1,
         ),
-        arrayOf(
-          "java/util/Collection",
-          "spliterator",
-          "()",
-          "java/util/Collections#spliterator()Ljava/util/Spliterator;",
-          1,
-        ),
-        arrayOf(
-          "java/util/List",
-          "of",
-          "()",
-          "java/util/List#of(Ljava/lang/Object;)Ljava/util/List;",
-          1,
-        ),
-        arrayOf(
-          "java/util/Collection",
-          "spliterator",
-          "()",
-          "java/util/Collection#spliterators()Ljava/util/Spliterator;",
-          1,
-        ),
+        arrayOf("java/util/Collection", "spliterator", "()", "java/util/Collections#spliterator()Ljava/util/Spliterator;", 1),
+        arrayOf("java/util/List", "of", "()", "java/util/List#of(Ljava/lang/Object;)Ljava/util/List;", 1),
+        arrayOf("java/util/Collection", "spliterator", "()", "java/util/Collection#spliterators()Ljava/util/Spliterator;", 1),
       )
     }
   }
@@ -117,9 +63,7 @@ class DesugaredMethodLookupComparatorTest(
   @Test
   fun testComparatorEquals() {
     assertThat(Integer.signum(lookup.compare(owner, name, desc, combined)))
-      .named(
-        """DesugaredMethodLookupTest.lookup.compare("$owner", "$name", "$desc", "$combined")"""
-      )
+      .named("""DesugaredMethodLookupTest.lookup.compare("$owner", "$name", "$desc", "$combined")""")
       .isEqualTo(result)
   }
 }

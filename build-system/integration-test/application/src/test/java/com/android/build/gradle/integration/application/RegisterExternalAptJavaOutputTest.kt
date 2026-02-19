@@ -21,52 +21,38 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
+import java.io.File
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class RegisterExternalAptJavaOutputTest {
 
-    @get:Rule
-    val rule =
-        GradleRule.configure()
-            .disableBrokenNewDslOptOutChecks()
-            .from {
-                androidApplication {
-                    pluginCallbacks += MyAppLegacyCallBack::class.java
-                }
-                gradleProperties {
-                    add(BooleanOption.USE_NEW_DSL, false)
-                }
-            }
-
-    /**
-     * Regression test for http://b/135780031. Test correctness if we configure Java compile task
-     * before invoking Variant API.
-     */
-    @Test
-    fun testAddingGenSourcesAfterJavaCompileConfigured() {
-        rule.build.executor.run("assembleDebug")
-        rule.build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().subPackage("test").contains("Data")
-        }
+  @get:Rule
+  val rule =
+    GradleRule.configure().disableBrokenNewDslOptOutChecks().from {
+      androidApplication { pluginCallbacks += MyAppLegacyCallBack::class.java }
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
 
-    class MyAppLegacyCallBack: LegacyApplicationCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: BaseAppModuleExtension
-        ) {
-            extension.applicationVariants.all { variant ->
-                val genSrcDir = File(project.projectDir, "externally_generated")
-                val testSrc = File(genSrcDir, "test/Data.java")
-                testSrc.parentFile.mkdirs()
-                testSrc.writeText("package test;\n public class Data {}")
+  /** Regression test for http://b/135780031. Test correctness if we configure Java compile task before invoking Variant API. */
+  @Test
+  fun testAddingGenSourcesAfterJavaCompileConfigured() {
+    rule.build.executor.run("assembleDebug")
+    rule.build.androidApplication().assertApk(ApkSelector.DEBUG) { classes().subPackage("test").contains("Data") }
+  }
 
-                variant.getJavaCompileProvider().get()
-                variant.registerExternalAptJavaOutput(project.fileTree(genSrcDir))
-            }
-        }
+  class MyAppLegacyCallBack : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      extension.applicationVariants.all { variant ->
+        val genSrcDir = File(project.projectDir, "externally_generated")
+        val testSrc = File(genSrcDir, "test/Data.java")
+        testSrc.parentFile.mkdirs()
+        testSrc.writeText("package test;\n public class Data {}")
+
+        variant.getJavaCompileProvider().get()
+        variant.registerExternalAptJavaOutput(project.fileTree(genSrcDir))
+      }
     }
+  }
 }

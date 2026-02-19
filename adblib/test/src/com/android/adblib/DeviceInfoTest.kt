@@ -22,92 +22,90 @@ import org.junit.Test
 
 class DeviceInfoTest {
 
-    @Test
-    fun fromParserValuesWorks() {
-        // Act
-        val deviceInfo = DeviceInfo.fromParserValues("1234", "device")
+  @Test
+  fun fromParserValuesWorks() {
+    // Act
+    val deviceInfo = DeviceInfo.fromParserValues("1234", "device")
 
-        // Assert
-        assertEquals("1234", deviceInfo.serialNumber)
-        assertEquals(DeviceState.ONLINE, deviceInfo.deviceState)
-        assertEquals("device", deviceInfo.deviceStateString)
-        assertNull(deviceInfo.product)
-        assertNull(deviceInfo.model)
-        assertNull(deviceInfo.device)
-        assertNull(deviceInfo.transportId)
-    }
+    // Assert
+    assertEquals("1234", deviceInfo.serialNumber)
+    assertEquals(DeviceState.ONLINE, deviceInfo.deviceState)
+    assertEquals("device", deviceInfo.deviceStateString)
+    assertNull(deviceInfo.product)
+    assertNull(deviceInfo.model)
+    assertNull(deviceInfo.device)
+    assertNull(deviceInfo.transportId)
+  }
 
-    @Test
-    fun fromParserValuesMaintainsRawString() {
-        // Act
-        val deviceInfo = DeviceInfo.fromParserValues("1234", "device-foo")
+  @Test
+  fun fromParserValuesMaintainsRawString() {
+    // Act
+    val deviceInfo = DeviceInfo.fromParserValues("1234", "device-foo")
 
-        // Assert
-        assertEquals("1234", deviceInfo.serialNumber)
-        assertEquals(DeviceState.UNKNOWN, deviceInfo.deviceState)
-        assertEquals("device-foo", deviceInfo.deviceStateString)
-        assertNull(deviceInfo.product)
-        assertNull(deviceInfo.model)
-        assertNull(deviceInfo.device)
-        assertNull(deviceInfo.transportId)
-    }
+    // Assert
+    assertEquals("1234", deviceInfo.serialNumber)
+    assertEquals(DeviceState.UNKNOWN, deviceInfo.deviceState)
+    assertEquals("device-foo", deviceInfo.deviceStateString)
+    assertNull(deviceInfo.product)
+    assertNull(deviceInfo.model)
+    assertNull(deviceInfo.device)
+    assertNull(deviceInfo.transportId)
+  }
 
-    @Test
-    fun equalsWorks() {
-        // Act
-        val deviceInfo = DeviceInfo("1234", DeviceState.OFFLINE)
-        val deviceInfo2 = DeviceInfo("1234", DeviceState.OFFLINE)
-        val deviceInfo3 = DeviceInfo("1234", DeviceState.OFFLINE,
-                                     additionalFields = mapOf(Pair("foo", "bar")))
-        val deviceInfo4 = DeviceInfo("1234", DeviceState.OFFLINE,
-                                     additionalFields = mapOf(Pair("foo", "bar")))
+  @Test
+  fun equalsWorks() {
+    // Act
+    val deviceInfo = DeviceInfo("1234", DeviceState.OFFLINE)
+    val deviceInfo2 = DeviceInfo("1234", DeviceState.OFFLINE)
+    val deviceInfo3 = DeviceInfo("1234", DeviceState.OFFLINE, additionalFields = mapOf(Pair("foo", "bar")))
+    val deviceInfo4 = DeviceInfo("1234", DeviceState.OFFLINE, additionalFields = mapOf(Pair("foo", "bar")))
 
-        // Assert
-        assertEquals(deviceInfo, deviceInfo2)
-        assertNotEquals(deviceInfo, deviceInfo3)
-        assertNotEquals(deviceInfo, deviceInfo3)
+    // Assert
+    assertEquals(deviceInfo, deviceInfo2)
+    assertNotEquals(deviceInfo, deviceInfo3)
+    assertNotEquals(deviceInfo, deviceInfo3)
 
-        assertNotEquals(deviceInfo2, deviceInfo3)
-        assertNotEquals(deviceInfo2, deviceInfo4)
+    assertNotEquals(deviceInfo2, deviceInfo3)
+    assertNotEquals(deviceInfo2, deviceInfo4)
 
-        assertEquals(deviceInfo3, deviceInfo4)
-    }
+    assertEquals(deviceInfo3, deviceInfo4)
+  }
 
-    @Test
-    fun copyWorks() {
-        // Prepare
-        val deviceInfo = DeviceInfo("1234", DeviceState.OFFLINE)
+  @Test
+  fun copyWorks() {
+    // Prepare
+    val deviceInfo = DeviceInfo("1234", DeviceState.OFFLINE)
 
-        // Act
-        val deviceInfo2 = deviceInfo.copy(deviceState = DeviceState.ONLINE)
+    // Act
+    val deviceInfo2 = deviceInfo.copy(deviceState = DeviceState.ONLINE)
 
-        // Assert
-        assertNotEquals(deviceInfo, deviceInfo2)
-        assertEquals("1234", deviceInfo2.serialNumber)
-        assertEquals(DeviceState.ONLINE, deviceInfo2.deviceState)
-        assertEquals("device", deviceInfo2.deviceStateString)
-        assertNull(deviceInfo.product)
-        assertNull(deviceInfo.model)
-        assertNull(deviceInfo.device)
-        assertNull(deviceInfo.transportId)
-    }
+    // Assert
+    assertNotEquals(deviceInfo, deviceInfo2)
+    assertEquals("1234", deviceInfo2.serialNumber)
+    assertEquals(DeviceState.ONLINE, deviceInfo2.deviceState)
+    assertEquals("device", deviceInfo2.deviceStateString)
+    assertNull(deviceInfo.product)
+    assertNull(deviceInfo.model)
+    assertNull(deviceInfo.device)
+    assertNull(deviceInfo.transportId)
+  }
 
-    @Test
-    fun copyRetainsDeviceStateString() {
-        // Prepare
-        val deviceInfo = DeviceInfo.fromParserValues("1234", "test-string")
+  @Test
+  fun copyRetainsDeviceStateString() {
+    // Prepare
+    val deviceInfo = DeviceInfo.fromParserValues("1234", "test-string")
 
-        // Act
-        val deviceInfo2 = deviceInfo.copy(deviceState = DeviceState.ONLINE)
+    // Act
+    val deviceInfo2 = deviceInfo.copy(deviceState = DeviceState.ONLINE)
 
-        // Assert
-        assertNotEquals(deviceInfo, deviceInfo2)
-        assertEquals("1234", deviceInfo2.serialNumber)
-        assertEquals(DeviceState.ONLINE, deviceInfo2.deviceState)
-        assertEquals("test-string", deviceInfo2.deviceStateString)
-        assertNull(deviceInfo.product)
-        assertNull(deviceInfo.model)
-        assertNull(deviceInfo.device)
-        assertNull(deviceInfo.transportId)
-    }
+    // Assert
+    assertNotEquals(deviceInfo, deviceInfo2)
+    assertEquals("1234", deviceInfo2.serialNumber)
+    assertEquals(DeviceState.ONLINE, deviceInfo2.deviceState)
+    assertEquals("test-string", deviceInfo2.deviceStateString)
+    assertNull(deviceInfo.product)
+    assertNull(deviceInfo.model)
+    assertNull(deviceInfo.device)
+    assertNull(deviceInfo.transportId)
+  }
 }

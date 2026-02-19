@@ -16,32 +16,33 @@
 
 package com.android.tools.apk.analyzer;
 
-import static org.junit.Assert.assertEquals;
-
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
-import java.nio.ByteBuffer;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import org.junit.Test;
+
+import java.nio.ByteBuffer;
+
+import static org.junit.Assert.assertEquals;
 
 public class BinaryXmlParserTest {
     @Test
     public void testFormatFloatValue() {
-        BinaryResourceValue value42 =
-                BinaryResourceValue.create(
+        ResourceValue value42 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FLOAT.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FLOAT.code()
                                         },
                                         Ints.toByteArray(Float.floatToIntBits(42.0f)))));
 
-        BinaryResourceValue value425 =
-                BinaryResourceValue.create(
+        ResourceValue value425 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FLOAT.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FLOAT.code()
                                         },
                                         Ints.toByteArray(Float.floatToIntBits(42.5f)))));
 
@@ -51,21 +52,21 @@ public class BinaryXmlParserTest {
 
     @Test
     public void testFormatDimensionValue() {
-        BinaryResourceValue value1 =
-                BinaryResourceValue.create(
+        ResourceValue value1 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.DIMENSION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.DIMENSION.code()
                                         },
                                         Ints.toByteArray((384 << 8) + 1))));
 
-        BinaryResourceValue value2 =
-                BinaryResourceValue.create(
+        ResourceValue value2 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.DIMENSION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.DIMENSION.code()
                                         },
                                         Ints.toByteArray(0x11400024))));
 
@@ -75,39 +76,39 @@ public class BinaryXmlParserTest {
 
     @Test
     public void testFormatFractionValue() {
-        BinaryResourceValue value1 =
-                BinaryResourceValue.create(
+        ResourceValue value1 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FRACTION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FRACTION.code()
                                         },
                                         Ints.toByteArray(0x01000030))));
 
-        BinaryResourceValue value2 =
-                BinaryResourceValue.create(
+        ResourceValue value2 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FRACTION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FRACTION.code()
                                         },
                                         Ints.toByteArray(0x20000030))));
 
-        BinaryResourceValue value3 =
-                BinaryResourceValue.create(
+        ResourceValue value3 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FRACTION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FRACTION.code()
                                         },
                                         Ints.toByteArray(0x40000030))));
 
-        BinaryResourceValue value4 =
-                BinaryResourceValue.create(
+        ResourceValue value4 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.FRACTION.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.FRACTION.code()
                                         },
                                         Ints.toByteArray(0x40000031))));
 
@@ -119,51 +120,51 @@ public class BinaryXmlParserTest {
 
     @Test
     public void testFormatColorValue() {
-        BinaryResourceValue value1 =
-                BinaryResourceValue.create(
+        ResourceValue value1 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
                                             0x0,
                                             0x8,
                                             0x0,
-                                            BinaryResourceValue.Type.INT_COLOR_ARGB8.code()
+                                            ResourceValue.Type.INT_COLOR_ARGB8.code()
                                         },
                                         Ints.toByteArray(0xFF556677))));
 
-        BinaryResourceValue value2 =
-                BinaryResourceValue.create(
+        ResourceValue value2 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
                                             0x0,
                                             0x8,
                                             0x0,
-                                            BinaryResourceValue.Type.INT_COLOR_RGB8.code()
+                                            ResourceValue.Type.INT_COLOR_RGB8.code()
                                         },
                                         Ints.toByteArray(0xFF556677))));
 
-        BinaryResourceValue value3 =
-                BinaryResourceValue.create(
+        ResourceValue value3 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
                                             0x0,
                                             0x8,
                                             0x0,
-                                            BinaryResourceValue.Type.INT_COLOR_ARGB4.code()
+                                            ResourceValue.Type.INT_COLOR_ARGB4.code()
                                         },
                                         Ints.toByteArray(0x1234F567))));
 
-        BinaryResourceValue value4 =
-                BinaryResourceValue.create(
+        ResourceValue value4 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
                                             0x0,
                                             0x8,
                                             0x0,
-                                            BinaryResourceValue.Type.INT_COLOR_RGB4.code()
+                                            ResourceValue.Type.INT_COLOR_RGB4.code()
                                         },
                                         Ints.toByteArray(0x1234F567))));
 
@@ -184,12 +185,12 @@ public class BinaryXmlParserTest {
                     }
                 };
 
-        BinaryResourceValue value1 =
-                BinaryResourceValue.create(
+        ResourceValue value1 =
+                ResourceValue.create(
                         ByteBuffer.wrap(
                                 Bytes.concat(
                                         new byte[] {
-                                            0x0, 0x8, 0x0, BinaryResourceValue.Type.REFERENCE.code()
+                                            0x0, 0x8, 0x0, ResourceValue.Type.REFERENCE.code()
                                         },
                                         Ints.toByteArray(0x12345678))));
 

@@ -17,9 +17,9 @@ package com.android.adblib.utils
 
 import kotlinx.coroutines.CancellationException
 
-internal inline fun Throwable.rethrowCancellation(block: (CancellationException) -> Unit = { }) {
-    if (this is CancellationException) {
-        block(this)
-        throw this
-    }
+internal inline fun Throwable.rethrowCancellation(block: (CancellationException) -> Unit = {}) {
+  if (this is CancellationException) {
+    block(this)
+    throw this
+  }
 }

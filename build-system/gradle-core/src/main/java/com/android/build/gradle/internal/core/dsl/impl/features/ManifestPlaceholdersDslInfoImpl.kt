@@ -20,20 +20,14 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.gradle.internal.core.MergedFlavor
 import com.android.build.gradle.internal.core.dsl.features.ManifestPlaceholdersDslInfo
 
-class ManifestPlaceholdersDslInfoImpl(
-    private val mergedFlavor: MergedFlavor,
-    private val buildTypeObj: BuildType
-): ManifestPlaceholdersDslInfo {
+class ManifestPlaceholdersDslInfoImpl(private val mergedFlavor: MergedFlavor, private val buildTypeObj: BuildType) :
+  ManifestPlaceholdersDslInfo {
 
-    override val placeholders: Map<String, String> by lazy {
-        val mergedFlavorsPlaceholders: MutableMap<String, String> = mutableMapOf()
-        mergedFlavor.manifestPlaceholders.forEach { (key, value) ->
-            mergedFlavorsPlaceholders[key] = value.toString()
-        }
-        // so far, blindly override the build type placeholders
-        buildTypeObj.manifestPlaceholders.forEach { (key, value) ->
-            mergedFlavorsPlaceholders[key] = value.toString()
-        }
-        mergedFlavorsPlaceholders
-    }
+  override val placeholders: Map<String, String> by lazy {
+    val mergedFlavorsPlaceholders: MutableMap<String, String> = mutableMapOf()
+    mergedFlavor.manifestPlaceholders.forEach { (key, value) -> mergedFlavorsPlaceholders[key] = value.toString() }
+    // so far, blindly override the build type placeholders
+    buildTypeObj.manifestPlaceholders.forEach { (key, value) -> mergedFlavorsPlaceholders[key] = value.toString() }
+    mergedFlavorsPlaceholders
+  }
 }

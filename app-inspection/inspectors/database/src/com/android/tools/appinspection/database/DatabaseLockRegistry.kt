@@ -46,9 +46,8 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
     }
 
   /**
-   * Locks a database identified by the provided database id. If a lock on the database is already
-   * in place, an existing lock will be issued. Locks keep count of simultaneous requests, so that
-   * the database is only unlocked once all callers release their issued locks.
+   * Locks a database identified by the provided database id. If a lock on the database is already in place, an existing lock will be
+   * issued. Locks keep count of simultaneous requests, so that the database is only unlocked once all callers release their issued locks.
    */
   fun acquireLock(databaseId: Int, database: Database): Int {
     synchronized(guard) {
@@ -65,14 +64,12 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
   }
 
   /**
-   * Releases a lock on a database identified by the provided lock id. If the same lock has been
-   * provided multiple times (for lock requests on an already locked database), the lock needs to be
-   * released by all previous requestors for the database to get unlocked.
+   * Releases a lock on a database identified by the provided lock id. If the same lock has been provided multiple times (for lock requests
+   * on an already locked database), the lock needs to be released by all previous requestors for the database to get unlocked.
    */
   fun releaseLock(lockId: Int) {
     synchronized(guard) {
-      val lock =
-        lockIdToLockMap[lockId] ?: throw IllegalArgumentException("No lock with id: $lockId")
+      val lock = lockIdToLockMap[lockId] ?: throw IllegalArgumentException("No lock with id: $lockId")
       if (--lock.count == 0) {
         try {
           lock.unlockDatabase()
@@ -96,10 +93,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
     latch.await()
   }
 
-  /**
-   * @return `null` if the database is not locked; the database and the executor that locked the
-   *   database otherwise
-   */
+  /** @return `null` if the database is not locked; the database and the executor that locked the database otherwise */
   fun getConnection(databaseId: Int): DatabaseConnection? {
     synchronized(guard) {
       val lock = databaseIdToLockMap[databaseId] ?: return null
@@ -108,8 +102,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
   }
 
   /**
-   * Starts a database transaction and acquires an extra database reference to keep the database
-   * open while the lock is in place.
+   * Starts a database transaction and acquires an extra database reference to keep the database open while the lock is in place.
    *
    * TODO(aalbert): Use coroutines
    */
@@ -142,8 +135,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
   }
 
   /**
-   * Ends the database transaction and releases the extra database reference that kept the database
-   * open while the lock was in place.
+   * Ends the database transaction and releases the extra database reference that kept the database open while the lock was in place.
    *
    * TODO(aalbert): Use coroutines
    */
@@ -177,12 +169,7 @@ internal class DatabaseLockRegistry(private val databaseRegistry: DatabaseRegist
     }
   }
 
-  private class Lock(
-    val lockId: Int,
-    val databaseId: Int,
-    val database: Database,
-    val latch: CountDownLatch = CountDownLatch(1),
-  ) {
+  private class Lock(val lockId: Int, val databaseId: Int, val database: Database, val latch: CountDownLatch = CountDownLatch(1)) {
     var count: Int = 0 // number of simultaneous locks secured on the database
   }
 

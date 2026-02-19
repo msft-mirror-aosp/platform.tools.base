@@ -25,10 +25,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Element
 
-/**
- * Check which looks for potential errors in declarations of BottomAppBar, such as having the wrong
- * parent.
- */
+/** Check which looks for potential errors in declarations of BottomAppBar, such as having the wrong parent. */
 class BottomAppBarDetector : LayoutDetector() {
   override fun getApplicableElements(): Collection<String> {
     return listOf(OLD_BOTTOM_APP_BAR, NEW_BOTTOM_APP_BAR)
@@ -53,8 +50,7 @@ class BottomAppBarDetector : LayoutDetector() {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(BottomAppBarDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(BottomAppBarDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** Wrong parent etc. */
     @JvmField

@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.XmlNode.NodeKey;
+
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,16 +29,21 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.testutils.MockLog;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import java.io.IOException;
-import java.util.List;
-import javax.xml.parsers.ParserConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.List;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for {@link Actions} class
@@ -275,6 +281,98 @@ public class ActionsTest extends TestCase {
             }
 
         }
+    }
+
+    public void testBlameWithInjectedAttribute()
+            throws ParserConfigurationException, SAXException, IOException {
+        String xml =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example\">\n"
+                        + "    <application android:label=\"app\" />\n"
+                        + "</manifest>";
+
+        XmlDocument xmlDocument =
+                TestUtils.xmlDocumentFromString(new SourceFile("AndroidManifest.xml"), xml, mModel);
+
+        java.util.Optional<XmlElement> application =
+                xmlDocument
+                        .getRootNode()
+                        .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
+        assertTrue(application.isPresent());
+        NodeKey appKey = application.get().getId();
+
+        ImmutableMap.Builder<NodeKey, DecisionTreeRecord> records = ImmutableMap.builder();
+        DecisionTreeRecord decisionTreeRecord = new DecisionTreeRecord();
+
+        // Node record
+        decisionTreeRecord.addNodeRecord(
+                new Actions.NodeRecord(
+                        Actions.ActionType.ADDED,
+                        new SourceFilePosition(
+                                new SourceFile("AndroidManifest.xml"),
+                                new SourcePosition(3, 4, -1)),
+                        appKey,
+                        null,
+                        NodeOperationType.MERGE));
+
+        // Attribute record - INJECTED
+        XmlNode.NodeName labelName = XmlNode.fromXmlName("android:label");
+        decisionTreeRecord.mAttributeRecords.put(
+                labelName,
+                ImmutableList.of(
+                        new Actions.AttributeRecord(
+                                Actions.ActionType.INJECTED,
+                                new SourceFilePosition(
+                                        new SourceFile("injector"), SourcePosition.UNKNOWN),
+                                appKey,
+                                "injection",
+                                AttributeOperationType.STRICT)));
+
+        records.put(appKey, decisionTreeRecord);
+        Actions actions = new Actions(records.build());
+
+        String blame = actions.blame(xmlDocument);
+        // Verify that we see -->INJECTED
+        assertTrue("Blame should contain INJECTED marker", blame.contains("-->INJECTED"));
+    }
+
+    public void testBlameWithInjectedNode()
+            throws ParserConfigurationException, SAXException, IOException {
+        String xml =
+                ""
+                        + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example\">\n"
+                        + "    <uses-sdk android:minSdkVersion=\"21\" />\n"
+                        + "</manifest>";
+
+        XmlDocument xmlDocument =
+                TestUtils.xmlDocumentFromString(new SourceFile("AndroidManifest.xml"), xml, mModel);
+
+        java.util.Optional<XmlElement> usesSdk =
+                xmlDocument
+                        .getRootNode()
+                        .getNodeByTypeAndKey(ManifestModel.NodeTypes.USES_SDK, null);
+        assertTrue(usesSdk.isPresent());
+        NodeKey key = usesSdk.get().getId();
+
+        ImmutableMap.Builder<NodeKey, DecisionTreeRecord> records = ImmutableMap.builder();
+        DecisionTreeRecord decisionTreeRecord = new DecisionTreeRecord();
+
+        // Node record - INJECTED
+        decisionTreeRecord.addNodeRecord(
+                new Actions.NodeRecord(
+                        Actions.ActionType.INJECTED,
+                        new SourceFilePosition(new SourceFile("injector"), SourcePosition.UNKNOWN),
+                        key,
+                        "injection",
+                        NodeOperationType.MERGE));
+
+        records.put(key, decisionTreeRecord);
+        Actions actions = new Actions(records.build());
+
+        String blame = actions.blame(xmlDocument);
+        assertTrue("Blame should contain INJECTED marker for node", blame.contains("-->INJECTED"));
     }
 
     private static boolean findNodeRecordInList(

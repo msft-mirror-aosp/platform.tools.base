@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.tasks.databinding
 
 import android.databinding.tool.DataBindingBuilder
 import android.databinding.tool.store.FeatureInfoList
-import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.component.VariantCreationConfig
+import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
@@ -28,6 +28,8 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.featuresplit.FeatureSplitDeclaration
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
+import java.io.File
+import java.io.FileNotFoundException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.SetProperty
@@ -38,99 +40,83 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.tooling.BuildException
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
-import java.io.FileNotFoundException
 
 /**
- * This task collects the feature information and exports their namespaces into a file which can be
- * read by the DataBindingAnnotationProcessor.
+ * This task collects the feature information and exports their namespaces into a file which can be read by the
+ * DataBindingAnnotationProcessor.
  *
- * Caching disabled by default for this task because the task does very little work.
- * The task reads a small number of files, parses the contents as JSON, and writes a new JSON file
- * containing some of the same data.
- * Calculating cache hit/miss and fetching results is likely more expensive than
- * simply executing the task.
+ * Caching disabled by default for this task because the task does very little work. The task reads a small number of files, parses the
+ * contents as JSON, and writes a new JSON file containing some of the same data. Calculating cache hit/miss and fetching results is likely
+ * more expensive than simply executing the task.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.DATA_BINDING)
 abstract class DataBindingExportFeatureNamespacesTask : NonIncrementalTask() {
-    // where to keep the log of the task
-    @get:OutputDirectory abstract val packageListOutFolder: DirectoryProperty
+  // where to keep the log of the task
+  @get:OutputDirectory abstract val packageListOutFolder: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    lateinit var featureDeclarations: FileCollection
-        private set
+  @get:InputFiles
+  @get:PathSensitive(PathSensitivity.NONE)
+  lateinit var featureDeclarations: FileCollection
+    private set
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(ExportNamespacesRunnable::class.java) {
-            it.initializeFromBaseTask(this)
-            it.featureDeclarations.set(featureDeclarations.asFileTree.files)
-            it.packageListOutFolder.set(packageListOutFolder.get().asFile)
-        }
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(ExportNamespacesRunnable::class.java) {
+      it.initializeFromBaseTask(this)
+      it.featureDeclarations.set(featureDeclarations.asFileTree.files)
+      it.packageListOutFolder.set(packageListOutFolder.get().asFile)
+    }
+  }
+
+  class CreationAction(creationConfig: VariantCreationConfig) :
+    VariantTaskCreationAction<DataBindingExportFeatureNamespacesTask, VariantCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("dataBindingExportFeatureNamespaces")
+
+    override val type: Class<DataBindingExportFeatureNamespacesTask>
+      get() = DataBindingExportFeatureNamespacesTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<DataBindingExportFeatureNamespacesTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, DataBindingExportFeatureNamespacesTask::packageListOutFolder)
+        .on(InternalArtifactType.FEATURE_DATA_BINDING_BASE_FEATURE_INFO)
     }
 
-    class CreationAction(
-        creationConfig: VariantCreationConfig
-    ) :
-        VariantTaskCreationAction<DataBindingExportFeatureNamespacesTask, VariantCreationConfig>(
-            creationConfig
-        ) {
+    override fun configure(task: DataBindingExportFeatureNamespacesTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("dataBindingExportFeatureNamespaces")
-        override val type: Class<DataBindingExportFeatureNamespacesTask>
-            get() = DataBindingExportFeatureNamespacesTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<DataBindingExportFeatureNamespacesTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                DataBindingExportFeatureNamespacesTask::packageListOutFolder
-            ).on(InternalArtifactType.FEATURE_DATA_BINDING_BASE_FEATURE_INFO)
-        }
-
-        override fun configure(
-            task: DataBindingExportFeatureNamespacesTask
-        ) {
-            super.configure(task)
-
-            task.featureDeclarations = creationConfig.variantDependencies.getArtifactFileCollection(
-                    AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
-                    AndroidArtifacts.ArtifactScope.PROJECT,
-                    AndroidArtifacts.ArtifactType.REVERSE_METADATA_FEATURE_DECLARATION
-            )
-        }
+      task.featureDeclarations =
+        creationConfig.variantDependencies.getArtifactFileCollection(
+          AndroidArtifacts.ConsumedConfigType.REVERSE_METADATA_VALUES,
+          AndroidArtifacts.ArtifactScope.PROJECT,
+          AndroidArtifacts.ArtifactType.REVERSE_METADATA_FEATURE_DECLARATION,
+        )
     }
+  }
 }
 
 abstract class ExportNamespacesParams : ProfileAwareWorkAction.Parameters() {
-    abstract val featureDeclarations: SetProperty<File>
-    abstract val packageListOutFolder: DirectoryProperty
+  abstract val featureDeclarations: SetProperty<File>
+  abstract val packageListOutFolder: DirectoryProperty
 }
 
-abstract class ExportNamespacesRunnable: ProfileAwareWorkAction<ExportNamespacesParams>() {
-    override fun run() {
-        val packages = mutableSetOf<String>()
-        for (featureSplitDeclaration in parameters.featureDeclarations.get()) {
-            try {
-                val loaded = FeatureSplitDeclaration.load(featureSplitDeclaration)
-                packages.add(loaded.namespace)
-            } catch (e: FileNotFoundException) {
-                throw BuildException("Cannot read features split declaration file", e)
-            }
-        }
-        val outputFolder = parameters.packageListOutFolder.get().asFile
-        FileUtils.cleanOutputDir(outputFolder)
-        outputFolder.mkdirs()
-        // save the list.
-        FeatureInfoList(packages).serialize(
-                File(
-                    outputFolder,
-                    DataBindingBuilder.FEATURE_PACKAGE_LIST_FILE_NAME
-                )
-        )
+abstract class ExportNamespacesRunnable : ProfileAwareWorkAction<ExportNamespacesParams>() {
+  override fun run() {
+    val packages = mutableSetOf<String>()
+    for (featureSplitDeclaration in parameters.featureDeclarations.get()) {
+      try {
+        val loaded = FeatureSplitDeclaration.load(featureSplitDeclaration)
+        packages.add(loaded.namespace)
+      } catch (e: FileNotFoundException) {
+        throw BuildException("Cannot read features split declaration file", e)
+      }
     }
+    val outputFolder = parameters.packageListOutFolder.get().asFile
+    FileUtils.cleanOutputDir(outputFolder)
+    outputFolder.mkdirs()
+    // save the list.
+    FeatureInfoList(packages).serialize(File(outputFolder, DataBindingBuilder.FEATURE_PACKAGE_LIST_FILE_NAME))
+  }
 }

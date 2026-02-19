@@ -36,11 +36,9 @@ import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Attr
 
 /**
- * Check which looks at the children of ScrollViews and ensures that they fill/match the parent
- * width instead of setting wrap_content.
+ * Check which looks at the children of ScrollViews and ensures that they fill/match the parent width instead of setting wrap_content.
  *
- * TODO: Consider looking at the localization="suggested" attribute in the platform attrs.xml to
- *   catch future recommended attributes.
+ * TODO: Consider looking at the localization="suggested" attribute in the platform attrs.xml to catch future recommended attributes.
  */
 class HardcodedValuesDetector : LayoutDetector() {
 
@@ -64,9 +62,7 @@ class HardcodedValuesDetector : LayoutDetector() {
   }
 
   override fun appliesTo(folderType: ResourceFolderType): Boolean {
-    return (folderType == ResourceFolderType.LAYOUT ||
-      folderType == ResourceFolderType.MENU ||
-      folderType == ResourceFolderType.XML)
+    return (folderType == ResourceFolderType.LAYOUT || folderType == ResourceFolderType.MENU || folderType == ResourceFolderType.XML)
   }
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
@@ -89,8 +85,7 @@ class HardcodedValuesDetector : LayoutDetector() {
         value == "Large Text" ||
           value == "Medium Text" ||
           value == "Small Text" ||
-          value.startsWith("New ") &&
-            (value == "New Text" || value == "New " + attribute.ownerElement.tagName)
+          value.startsWith("New ") && (value == "New Text" || value == "New " + attribute.ownerElement.tagName)
       ) {
         // The layout editor initially places the label "New Button", "New TextView",
         // etc on widgets dropped on the layout editor. Again, users are unlikely
@@ -143,8 +138,7 @@ class HardcodedValuesDetector : LayoutDetector() {
         category = Category.I18N,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(HardcodedValuesDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(HardcodedValuesDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 }

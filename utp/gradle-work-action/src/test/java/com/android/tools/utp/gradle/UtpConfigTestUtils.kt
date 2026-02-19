@@ -31,48 +31,49 @@ import com.google.testing.platform.proto.api.config.LocalAndroidDeviceProviderPr
 import com.google.testing.platform.proto.api.config.RunnerConfigProto
 import com.google.testing.platform.proto.api.core.PathProto
 
-private val protoPrinter: ProtoPrinter = ProtoPrinter(listOf(
-    AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig::class.java,
-    AndroidApkInstallerConfigProto.AndroidApkInstallerConfig::class.java,
-    AndroidDevicePluginProto.AndroidDevicePlugin::class.java,
-    AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig::class.java,
-    AndroidInstrumentationDriverProto.AndroidInstrumentationDriver::class.java,
-    AndroidTestCoverageConfigProto.AndroidTestCoverageConfig::class.java,
-    AndroidTestLogcatConfigProto.AndroidTestLogcatConfig::class.java,
-    GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig::class.java,
-    EmulatorControlPluginProto.EmulatorControlPlugin::class.java,
-    LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider::class.java,
-    PathProto.Path::class.java,
-))
+private val protoPrinter: ProtoPrinter =
+  ProtoPrinter(
+    listOf(
+      AndroidAdditionalTestOutputConfigProto.AndroidAdditionalTestOutputConfig::class.java,
+      AndroidApkInstallerConfigProto.AndroidApkInstallerConfig::class.java,
+      AndroidDevicePluginProto.AndroidDevicePlugin::class.java,
+      AndroidDeviceProviderDdmlibConfigProto.DdmlibAndroidDeviceProviderConfig::class.java,
+      AndroidInstrumentationDriverProto.AndroidInstrumentationDriver::class.java,
+      AndroidTestCoverageConfigProto.AndroidTestCoverageConfig::class.java,
+      AndroidTestLogcatConfigProto.AndroidTestLogcatConfig::class.java,
+      GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig::class.java,
+      EmulatorControlPluginProto.EmulatorControlPlugin::class.java,
+      LocalAndroidDeviceProviderProto.LocalAndroidDeviceProvider::class.java,
+      PathProto.Path::class.java,
+    )
+  )
 
-fun printProto(runnerConfig: RunnerConfigProto.RunnerConfig) : String{
-    return protoPrinter.printToString(runnerConfig)
+fun printProto(runnerConfig: RunnerConfigProto.RunnerConfig): String {
+  return protoPrinter.printToString(runnerConfig)
 }
 
-
-/**
- * Asserts that a given [runnerConfig] matches to a given list of configurations.
- */
+/** Asserts that a given [runnerConfig] matches to a given list of configurations. */
 fun assertRunnerConfigProto(
-    runnerConfig: RunnerConfigProto.RunnerConfig,
-    deviceSerial: String = "emulator-mockDeviceSerialNumber",
-    useOrchestrator: Boolean = false,
-    forceCompilation: Boolean = false,
-    useTestStorageService: Boolean = false,
-    noWindowAnimation: Boolean = false,
-    instrumentationArgs: Map<String, String> = mapOf(),
-    emulatorControlConfig: String = "",
-    isForceReinstallBeforeTest: Boolean = false,
-    testCoverageConfig: String = "",
-    additionalTestOutputConfig: String = "",
-    shardingConfig: String = "",
-    uninstallIncompatibleApks: Boolean = false,
-    installApkTimeout: Int? = null,
-    isSplitApk: Boolean = false,
-    isDependencyApkSplit: Boolean = false,
-    isUninstallAfterTest: Boolean = false,
+  runnerConfig: RunnerConfigProto.RunnerConfig,
+  deviceSerial: String = "emulator-mockDeviceSerialNumber",
+  useOrchestrator: Boolean = false,
+  forceCompilation: Boolean = false,
+  useTestStorageService: Boolean = false,
+  noWindowAnimation: Boolean = false,
+  instrumentationArgs: Map<String, String> = mapOf(),
+  emulatorControlConfig: String = "",
+  isForceReinstallBeforeTest: Boolean = false,
+  testCoverageConfig: String = "",
+  additionalTestOutputConfig: String = "",
+  shardingConfig: String = "",
+  uninstallIncompatibleApks: Boolean = false,
+  installApkTimeout: Int? = null,
+  isSplitApk: Boolean = false,
+  isDependencyApkSplit: Boolean = false,
+  isUninstallAfterTest: Boolean = false,
 ) {
-    val deviceProviderProto = """
+  val deviceProviderProto =
+    """
         label {
           label: "ANDROID_DEVICE_PROVIDER_DDMLIB"
         }
@@ -95,7 +96,9 @@ fun assertRunnerConfigProto(
         use_single_class_loader: true
         """
 
-    val testCoveragePluginProto = if (testCoverageConfig.isNotBlank()) { """
+  val testCoveragePluginProto =
+    if (testCoverageConfig.isNotBlank()) {
+      """
         host_plugin {
           label {
             label: "ANDROID_TEST_COVERAGE_PLUGIN"
@@ -114,10 +117,12 @@ fun assertRunnerConfigProto(
         }
         """
     } else {
-        ""
+      ""
     }
 
-    val emulatorAccessPluginProto = if (emulatorControlConfig.isNotBlank()) { """
+  val emulatorAccessPluginProto =
+    if (emulatorControlConfig.isNotBlank()) {
+      """
         host_plugin {
           label {
             label: "ANDROID_TEST_PLUGIN_HOST_EMULATOR_CONTROL"
@@ -136,10 +141,12 @@ fun assertRunnerConfigProto(
         }
         """
     } else {
-        ""
+      ""
     }
 
-    val additionalTestOutputConfigProto = if (additionalTestOutputConfig.isNotBlank()) { """
+  val additionalTestOutputConfigProto =
+    if (additionalTestOutputConfig.isNotBlank()) {
+      """
         host_plugin {
           label {
             label: "ANDROID_TEST_ADDITIONAL_TEST_OUTPUT_PLUGIN"
@@ -158,35 +165,43 @@ fun assertRunnerConfigProto(
         }
         """
     } else {
-        ""
+      ""
     }
 
-    val shardingConfigProto = if (shardingConfig.isNotBlank()) { """
+  val shardingConfigProto =
+    if (shardingConfig.isNotBlank()) {
+      """
         sharding_config {
           ${"\n" + shardingConfig.trimIndent().prependIndent(" ".repeat(10))}
         }
     """
     } else {
-        ""
+      ""
     }
 
-    val installApkTimeoutString = if (installApkTimeout != null) "install_apk_timeout: ${installApkTimeout}" else ""
-    val forceCompilationString = if (forceCompilation) {
-        "force_compilation: ${ForceCompilation.FULL_COMPILATION.name}"
+  val installApkTimeoutString = if (installApkTimeout != null) "install_apk_timeout: ${installApkTimeout}" else ""
+  val forceCompilationString =
+    if (forceCompilation) {
+      "force_compilation: ${ForceCompilation.FULL_COMPILATION.name}"
     } else {
-        ""
+      ""
     }
-    val uninstallAfterTest = if (isUninstallAfterTest) "uninstall_after_test: true" else ""
-    val installAsSplitApk = if (isSplitApk) "install_as_split_apk: true" else ""
-    val dependencyApkPath = if (isDependencyApkSplit) """
+  val uninstallAfterTest = if (isUninstallAfterTest) "uninstall_after_test: true" else ""
+  val installAsSplitApk = if (isSplitApk) "install_as_split_apk: true" else ""
+  val dependencyApkPath =
+    if (isDependencyApkSplit)
+      """
         apk_paths: "mockDependencyApkPath1"
         apk_paths: "mockDependencyApkPath2"
-    """ else """
+    """
+    else
+      """
         apk_paths: "mockDependencyApkPath"
     """
-    val forceReinstallBeforeTest = if(isForceReinstallBeforeTest) "force_reinstall_before_test: true" else ""
+  val forceReinstallBeforeTest = if (isForceReinstallBeforeTest) "force_reinstall_before_test: true" else ""
 
-    val testApkInstallerConfigProto = """
+  val testApkInstallerConfigProto =
+    """
         host_plugin {
           label {
             label: "ANDROID_TEST_PLUGIN_APK_INSTALLER"
@@ -247,9 +262,12 @@ fun assertRunnerConfigProto(
           }
           use_single_class_loader: true
         }
-    """.trimIndent()
+    """
+      .trimIndent()
 
-    assertThat(protoPrinter.printToString(runnerConfig)).isEqualTo("""
+  assertThat(protoPrinter.printToString(runnerConfig))
+    .isEqualTo(
+      """
         device {
           device_id {
             id: "${deviceSerial}"
@@ -381,11 +399,14 @@ fun assertRunnerConfigProto(
           config {
             type_url: "type.googleapis.com/com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfig"
             value {
-              resultListenerServerPort: 1234
-              resultListenerClientCertFilePath: "clientCert"
-              resultListenerClientPrivateKeyFilePath: "clientKey"
-              trustCertCollectionFilePath: "serverCert"
               deviceId: "mockDeviceID"
+              deviceName: "deviceName"
+              deviceShardName: "deviceShardName"
+              gradleProjectPath: "projectPath"
+              variantName: "variantName"
+              enableUtpTestReportingForAndroidStudio: true
+              xmlTestReportOutputDirectoryPath: "xmlTestReportOutputDirectory"
+              utpResultProtoOutputFilePath: "utpResultProtoOutputFile"
             }
           }
           use_single_class_loader: true
@@ -406,5 +427,10 @@ fun assertRunnerConfigProto(
           executor_cancellation_timeout_ms: 1000
           executor_cancellation_abort_ms: 1000
         }
-        """.trimIndent().lines().filter(String::isNotBlank).joinToString("\n"))
+        """
+        .trimIndent()
+        .lines()
+        .filter(String::isNotBlank)
+        .joinToString("\n")
+    )
 }

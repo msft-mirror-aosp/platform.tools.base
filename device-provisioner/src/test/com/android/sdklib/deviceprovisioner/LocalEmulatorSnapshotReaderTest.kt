@@ -26,8 +26,7 @@ import org.junit.Test
 
 class LocalEmulatorSnapshotReaderTest {
   private val fileSystem = createInMemoryFileSystem()
-  private val snapshotReader =
-    LocalEmulatorSnapshotReader(JdkLoggerFactory.JdkLogger("LocalEmulatorSnapshotReaderTest"))
+  private val snapshotReader = LocalEmulatorSnapshotReader(JdkLoggerFactory.JdkLogger("LocalEmulatorSnapshotReaderTest"))
 
   private val avdPath = fileSystem.someRoot.resolve("avds").resolve("Pixel_4.avd")
   private val snapshotsPath = avdPath.resolve("snapshots")
@@ -37,8 +36,7 @@ class LocalEmulatorSnapshotReaderTest {
     val snapshotPath = snapshotsPath.resolve("snap1")
     createNormalSnapshot(snapshotPath)
 
-    assertThat(snapshotReader.readSnapshot(snapshotPath))
-      .isEqualTo(LocalEmulatorSnapshot("Bug-567", snapshotPath))
+    assertThat(snapshotReader.readSnapshot(snapshotPath)).isEqualTo(LocalEmulatorSnapshot("Bug-567", snapshotPath))
   }
 
   @Test
@@ -46,8 +44,7 @@ class LocalEmulatorSnapshotReaderTest {
     val snapshotPath = snapshotsPath.resolve("snap1")
     createAnonymousSnapshot(snapshotPath)
 
-    assertThat(snapshotReader.readSnapshot(snapshotPath))
-      .isEqualTo(LocalEmulatorSnapshot(snapshotPath))
+    assertThat(snapshotReader.readSnapshot(snapshotPath)).isEqualTo(LocalEmulatorSnapshot(snapshotPath))
   }
 
   @Test
@@ -71,10 +68,7 @@ class LocalEmulatorSnapshotReaderTest {
     createSnapshotWithoutImages(snapshot3Path)
 
     assertThat(snapshotReader.readSnapshots(snapshotsPath))
-      .containsExactly(
-        LocalEmulatorSnapshot("Bug-567", snapshot1Path),
-        LocalEmulatorSnapshot(snapshot2Path),
-      )
+      .containsExactly(LocalEmulatorSnapshot("Bug-567", snapshot1Path), LocalEmulatorSnapshot(snapshot2Path))
       .inOrder()
   }
 }
@@ -93,10 +87,7 @@ fun createNormalSnapshot(path: Path) {
 fun createAnonymousSnapshot(path: Path) {
   Files.createDirectories(path)
   Files.newOutputStream(path.resolve("snapshot.pb")).use {
-    SnapshotOuterClass.Snapshot.newBuilder()
-      .addImages(SnapshotOuterClass.Image.getDefaultInstance())
-      .build()
-      .writeTo(it)
+    SnapshotOuterClass.Snapshot.newBuilder().addImages(SnapshotOuterClass.Image.getDefaultInstance()).build().writeTo(it)
   }
 }
 

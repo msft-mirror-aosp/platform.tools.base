@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.transforms.testdata
 
-@YetAnotherClass
-class SomeClass(enum : EnumClass): Animal, CarbonForm, SomeInterface<Dog, List<Cat>>
+@YetAnotherClass class SomeClass(enum: EnumClass) : Animal, CarbonForm, SomeInterface<Dog, List<Cat>>
 
 val someValue = "This is a String."

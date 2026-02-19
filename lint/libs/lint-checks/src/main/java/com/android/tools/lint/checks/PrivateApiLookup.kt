@@ -23,9 +23,7 @@ import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.net.URL
 
-class PrivateApiLookup
-private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCreator) :
-  ApiDatabase() {
+class PrivateApiLookup private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCreator) : ApiDatabase() {
 
   init {
     readData(client, binaryFile, cacheCreator, PRIVATE_API_BINARY_FORMAT_VERSION)
@@ -206,10 +204,7 @@ private constructor(client: LintClient, binaryFile: File, cacheCreator: CacheCre
       val cache = cacheCreator(stream)
 
       if (DEBUG_FORCE_REGENERATE_BINARY) {
-        System.err.println(
-          "\nTemporarily regenerating binary data unconditionally \n" +
-            "from $stream\nto $binaryData"
-        )
+        System.err.println("\nTemporarily regenerating binary data unconditionally \n" + "from $stream\nto $binaryData")
         if (!cache.create(client, binaryData)) {
           return null
         }

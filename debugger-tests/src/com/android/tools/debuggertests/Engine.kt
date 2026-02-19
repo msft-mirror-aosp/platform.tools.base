@@ -34,8 +34,7 @@ internal abstract class Engine(val vmName: String) {
    * 3. Resumes the program each time it hits a breakpoint
    * 4. On each breakpoint, calls provided callback with a [StackFrame]
    *
-   * Note that we can't just return a list of frames because some of the methods in StackFrame
-   * require a live VM behind the scene.
+   * Note that we can't just return a list of frames because some of the methods in StackFrame require a live VM behind the scene.
    */
   suspend fun runTest(mainClass: String, listener: FrameListener) {
     return startDebugger(mainClass).use { debugger ->

@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,15 +20,13 @@ import android.app.Activity
 import kotlinx.coroutines.flow.Flow
 
 interface WindowInfoTracker {
-    companion object {
-        lateinit var instance: WindowInfoTracker
+  companion object {
+    lateinit var instance: WindowInfoTracker
 
-        fun getOrCreate(activity: Activity) : WindowInfoTracker = instance
-    }
+    fun getOrCreate(activity: Activity): WindowInfoTracker = instance
+  }
 
-    val windowLayoutInfo: Flow<WindowLayoutInfo>
+  val windowLayoutInfo: Flow<WindowLayoutInfo>
 }
 
-class WindowInfoTrackerImpl(
-    override val windowLayoutInfo: Flow<WindowLayoutInfo>
-): WindowInfoTracker
+class WindowInfoTrackerImpl(override val windowLayoutInfo: Flow<WindowLayoutInfo>) : WindowInfoTracker

@@ -19,8 +19,7 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 
 /**
- * DSL object for per-variant CMake and ndk-build configurations, such as toolchain arguments and
- * compiler flags.
+ * DSL object for per-variant CMake and ndk-build configurations, such as toolchain arguments and compiler flags.
  *
  * ```
  * android {
@@ -55,45 +54,38 @@ import org.gradle.api.Incubating
  */
 @Incubating
 interface ExternalNativeBuildFlags {
-    /**
-     * Encapsulates per-variant ndk-build configurations, such as compiler flags and toolchain
-     * arguments.
-     *
-     * To enable external native builds and set the path to your `Android.mk` script, use
-     * [android.externalNativeBuild.ndkBuild.path][NdkBuild.path].
-     */
-    val ndkBuild: NdkBuildFlags
+  /**
+   * Encapsulates per-variant ndk-build configurations, such as compiler flags and toolchain arguments.
+   *
+   * To enable external native builds and set the path to your `Android.mk` script, use
+   * [android.externalNativeBuild.ndkBuild.path][NdkBuild.path].
+   */
+  val ndkBuild: NdkBuildFlags
 
-    /**
-     * Encapsulates per-variant ndk-build configurations, such as compiler flags and toolchain
-     * arguments.
-     *
-     * To enable external native builds and set the path to your `Android.mk` script, use
-     * [android.externalNativeBuild.ndkBuild.path][NdkBuild.path].
-     */
-    fun ndkBuild(action: NdkBuildFlags.() -> Unit)
+  /**
+   * Encapsulates per-variant ndk-build configurations, such as compiler flags and toolchain arguments.
+   *
+   * To enable external native builds and set the path to your `Android.mk` script, use
+   * [android.externalNativeBuild.ndkBuild.path][NdkBuild.path].
+   */
+  fun ndkBuild(action: NdkBuildFlags.() -> Unit)
 
-    /**
-     * Encapsulates per-variant CMake configurations, such as compiler flags and toolchain
-     * arguments.
-     *
-     * To enable external native builds and set the path to your `CMakeLists.txt` script, use
-     * [android.externalNativeBuild.cmake.path][Cmake.path].
-     */
-    val cmake: CmakeFlags
+  /**
+   * Encapsulates per-variant CMake configurations, such as compiler flags and toolchain arguments.
+   *
+   * To enable external native builds and set the path to your `CMakeLists.txt` script, use
+   * [android.externalNativeBuild.cmake.path][Cmake.path].
+   */
+  val cmake: CmakeFlags
 
-    /**
-     * Encapsulates per-variant CMake configurations, such as compiler flags and toolchain
-     * arguments.
-     *
-     * To enable external native builds and set the path to your `CMakeLists.txt` script, use
-     * [android.externalNativeBuild.cmake.path][Cmake.path].
-     */
-    fun cmake(action: CmakeFlags.() -> Unit)
+  /**
+   * Encapsulates per-variant CMake configurations, such as compiler flags and toolchain arguments.
+   *
+   * To enable external native builds and set the path to your `CMakeLists.txt` script, use
+   * [android.externalNativeBuild.cmake.path][Cmake.path].
+   */
+  fun cmake(action: CmakeFlags.() -> Unit)
 
-    /**
-     * Additional per-variant experimental properties for C and C++.
-     */
-    @get:Incubating
-    val experimentalProperties: MutableMap<String, Any>
+  /** Additional per-variant experimental properties for C and C++. */
+  @get:Incubating val experimentalProperties: MutableMap<String, Any>
 }

@@ -75,16 +75,8 @@ class CustomRuleTest {
       .files(
         classpath(),
         manifest().minSdk(1),
-        gradle(
-            "" +
-              "apply plugin: 'com.android.library'\n" +
-              "dependencies {\n" +
-              "    compile 'my.test.group:artifact:1.0'\n" +
-              "}\n"
-          )
-          .withMockerConfigurator { mocker ->
-            mocker.withLibraryLintJar("my.test.group:artifact:1.0", lintJar.path)
-          },
+        gradle("" + "apply plugin: 'com.android.library'\n" + "dependencies {\n" + "    compile 'my.test.group:artifact:1.0'\n" + "}\n")
+          .withMockerConfigurator { mocker -> mocker.withLibraryLintJar("my.test.group:artifact:1.0", lintJar.path) },
         appCompatTestSource,
         appCompatTestClass,
       )
@@ -103,13 +95,7 @@ class CustomRuleTest {
       .files(
         classpath(),
         manifest().minSdk(1),
-        gradle(
-          "" +
-            "apply plugin: 'com.android.library'\n" +
-            "dependencies {\n" +
-            "    compile 'my.test.group:artifact:1.0'\n" +
-            "}\n"
-        ),
+        gradle("" + "apply plugin: 'com.android.library'\n" + "dependencies {\n" + "    compile 'my.test.group:artifact:1.0'\n" + "}\n"),
         xml("lint.xml", "<lint lintJars=\"" + lintJar.path + "\" />"),
         appCompatTestSource,
         appCompatTestClass,
@@ -129,13 +115,7 @@ class CustomRuleTest {
       .files(
         classpath(),
         manifest().minSdk(1),
-        gradle(
-            "" +
-              "apply plugin: 'com.android.library'\n" +
-              "dependencies {\n" +
-              "    compile 'my.test.group:artifact:1.0'\n" +
-              "}\n"
-          )
+        gradle("" + "apply plugin: 'com.android.library'\n" + "dependencies {\n" + "    compile 'my.test.group:artifact:1.0'\n" + "}\n")
           .withMockerConfigurator { mocker -> mocker.withLintRuleJar(lintJar.path) },
         appCompatTestSource,
         appCompatTestClass,
@@ -188,11 +168,7 @@ class CustomRuleTest {
       .skipTestModes(TestMode.PARTIAL)
       .run()
       .check({
-        assertThat(it)
-          .contains(
-            "lint2.jar: Warning: Lint found one or more custom " +
-              "checks that could not be loaded."
-          )
+        assertThat(it).contains("lint2.jar: Warning: Lint found one or more custom " + "checks that could not be loaded.")
         assertThat(it)
           .contains(
             "The most likely reason for this is that it is using " +
@@ -200,11 +176,7 @@ class CustomRuleTest {
               "lint checks are updated to the new APIs."
           )
         assertThat(it).contains("The issue registry class is " + "googleio.demo.MyIssueRegistry.")
-        assertThat(it)
-          .contains(
-            "The class loading issue is " +
-              "com/android/tools/lint/detector/api/Detector＄JavaScanner:"
-          )
+        assertThat(it).contains("The class loading issue is " + "com/android/tools/lint/detector/api/Detector＄JavaScanner:")
         assertThat(it).contains("ClassLoader.defineClass1(")
         assertThat(it).contains("0 errors, 1 warning")
       })
@@ -236,24 +208,15 @@ class CustomRuleTest {
       .skipTestModes(TestMode.PARTIAL)
       .run()
       .check({
-        assertThat(it)
-          .contains(
-            "lint3.jar: Warning: Lint found one or more custom " +
-              "checks that could not be loaded."
-          )
+        assertThat(it).contains("lint3.jar: Warning: Lint found one or more custom " + "checks that could not be loaded.")
         assertThat(it)
           .contains(
             "The most likely reason for this is that it is using " +
               "an older, incompatible or unsupported API in lint. Make sure these " +
               "lint checks are updated to the new APIs."
           )
-        assertThat(it)
-          .contains("The issue registry class is " + "com.example.google.lint.MyIssueRegistry.")
-        assertThat(it)
-          .contains(
-            "The class loading issue is " +
-              "com/android/tools/lint/detector/api/Detector＄JavaPsiScanner:"
-          )
+        assertThat(it).contains("The issue registry class is " + "com.example.google.lint.MyIssueRegistry.")
+        assertThat(it).contains("The class loading issue is " + "com/android/tools/lint/detector/api/Detector＄JavaPsiScanner:")
         assertThat(it).contains("ClassLoader.defineClass1(")
         assertThat(it).contains("0 errors, 1 warning")
       })
@@ -322,13 +285,7 @@ class CustomRuleTest {
     //       0: getstatic     #6                  // Field ALL:Ljava/util/List;
     //       3: areturn
     lint()
-      .files(
-        manifest().minSdk(1),
-        xml(
-          "res/values/strings.xml",
-          "<resources>\n" + "<string name='test'>Test</string>\n" + "</resources>",
-        ),
-      )
+      .files(manifest().minSdk(1), xml("res/values/strings.xml", "<resources>\n" + "<string name='test'>Test</string>\n" + "</resources>"))
       .clientFactory { createGlobalLintJarClient(lintXmlScannerAll30) }
       .issueIds("ShortUniqueId")
       .allowMissingSdk()
@@ -894,17 +851,12 @@ class CustomRuleTest {
     }
 
     private val lintJar: File = base64gzip("lint1.jar", LINT_JAR_BASE64_GZIP).createFile(temp.root)
-    private val oldLintJar: File =
-      base64gzip("lint2.jar", LOMBOK_LINT_JAR_BASE64_GZIP).createFile(temp.root)
-    private val psiLintJar: File =
-      base64gzip("lint3.jar", PSI_LINT_JAR_BASE64_GZIP).createFile(temp.root)
-    private val lintJarWithServiceRegistry: File =
-      base64gzip("lint4.jar", LINT_JAR_SERVICE_REGISTRY_BASE64_GZIP).createFile(temp.root)
+    private val oldLintJar: File = base64gzip("lint2.jar", LOMBOK_LINT_JAR_BASE64_GZIP).createFile(temp.root)
+    private val psiLintJar: File = base64gzip("lint3.jar", PSI_LINT_JAR_BASE64_GZIP).createFile(temp.root)
+    private val lintJarWithServiceRegistry: File = base64gzip("lint4.jar", LINT_JAR_SERVICE_REGISTRY_BASE64_GZIP).createFile(temp.root)
     private val lintApiLevel0: File = base64gzip("lint5.jar", LINT5_JAR).createFile(temp.root)
     private val lintApiLevel1000: File = base64gzip("lint6.jar", LINT6_JAR).createFile(temp.root)
-    private val lintApiLevel1000min1: File =
-      base64gzip("lint7.jar", LINT7_JAR).createFile(temp.root)
-    private val lintXmlScannerAll30: File =
-      base64gzip("lint8.jar", LINT_XML_SCANNER_ALL_30).createFile(temp.root)
+    private val lintApiLevel1000min1: File = base64gzip("lint7.jar", LINT7_JAR).createFile(temp.root)
+    private val lintXmlScannerAll30: File = base64gzip("lint8.jar", LINT_XML_SCANNER_ALL_30).createFile(temp.root)
   }
 }

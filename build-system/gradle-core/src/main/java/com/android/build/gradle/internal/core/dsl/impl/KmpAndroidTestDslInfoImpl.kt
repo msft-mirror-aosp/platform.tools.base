@@ -42,126 +42,119 @@ import com.android.builder.core.DefaultVectorDrawablesOptions
 import com.android.builder.dexing.DexingType
 import com.android.builder.model.VectorDrawablesOptions
 import com.google.common.collect.ImmutableSet
-import org.gradle.api.provider.Provider
 import java.io.File
+import org.gradle.api.provider.Provider
 
 class KmpAndroidTestDslInfoImpl(
-    extension: KotlinMultiplatformAndroidLibraryExtension,
-    services: VariantServices,
-    private val dataProvider: ManifestDataProvider,
-    override val mainVariantDslInfo: KmpVariantDslInfo,
-    signingConfigOverride: SigningConfig?,
-    dslServices: DslServices,
-    withJava: Boolean,
-): KmpComponentDslInfoImpl(
-    extension, services, withJava
-), AndroidTestComponentDslInfo, KmpComponentDslInfo {
+  extension: KotlinMultiplatformAndroidLibraryExtension,
+  services: VariantServices,
+  private val dataProvider: ManifestDataProvider,
+  override val mainVariantDslInfo: KmpVariantDslInfo,
+  signingConfigOverride: SigningConfig?,
+  dslServices: DslServices,
+  withJava: Boolean,
+) : KmpComponentDslInfoImpl(extension, services, withJava), AndroidTestComponentDslInfo, KmpComponentDslInfo {
 
-    private val testOnDeviceConfig = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions!!
-    override val componentType = ComponentTypeImpl.ANDROID_TEST
-    override val componentIdentity = ComponentIdentityImpl(
-        (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceBuilder!!.compilationName.getNamePrefixedWithAndroidTarget()
+  private val testOnDeviceConfig = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions!!
+  override val componentType = ComponentTypeImpl.ANDROID_TEST
+  override val componentIdentity =
+    ComponentIdentityImpl(
+      (extension as KotlinMultiplatformAndroidLibraryExtensionImpl)
+        .androidTestOnDeviceBuilder!!
+        .compilationName
+        .getNamePrefixedWithAndroidTarget()
     )
 
-    override val namespace: Provider<String> by lazy {
-        extension.testNamespace?.let { services.provider { it } }
-            ?: extension.namespace?.let { services.provider {"$it.test" } }
-            ?: mainVariantDslInfo.namespace.map { testedVariantNamespace ->
-                "$testedVariantNamespace.test"
-            }
-    }
+  override val namespace: Provider<String> by lazy {
+    extension.testNamespace?.let { services.provider { it } }
+      ?: extension.namespace?.let { services.provider { "$it.test" } }
+      ?: mainVariantDslInfo.namespace.map { testedVariantNamespace -> "$testedVariantNamespace.test" }
+  }
 
-    override val isDebuggable: Boolean
-        get() = true
+  override val isDebuggable: Boolean
+    get() = true
 
-    override val signingConfigResolver: SigningConfigResolver? by lazy {
-        val dslSigningConfig = testOnDeviceConfig.signing
-        val overrideConfig = signingConfigOverride?.let {
-            // use enableV1 and enableV2 from the DSL if the override values are null
-            if (it.enableV1Signing == null) {
-                it.enableV1Signing = dslSigningConfig.enableV1Signing
-            }
-            if (it.enableV2Signing == null) {
-                it.enableV2Signing = dslSigningConfig.enableV2Signing
-            }
-            // use enableV3 and enableV4 from the DSL because they're not injectable
-            it.enableV3Signing = dslSigningConfig.enableV3Signing
-            it.enableV4Signing = dslSigningConfig.enableV4Signing
-            it
+  override val signingConfigResolver: SigningConfigResolver? by lazy {
+    val dslSigningConfig = testOnDeviceConfig.signing
+    val overrideConfig =
+      signingConfigOverride?.let {
+        // use enableV1 and enableV2 from the DSL if the override values are null
+        if (it.enableV1Signing == null) {
+          it.enableV1Signing = dslSigningConfig.enableV1Signing
         }
-
-        SigningConfigResolver(dslSigningConfig, overrideConfig, null, services)
-    }
-
-    override val androidResourcesDsl = object: AndroidResourcesDslInfo {
-        override val androidResources = extension.androidResources
-        override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
-        override val vectorDrawables: VectorDrawablesOptions = DefaultVectorDrawablesOptions()
-        override val isPseudoLocalesEnabled: Boolean = false
-        override val isCrunchPngs: Boolean = false
-        override val isCrunchPngsDefault: Boolean = false
-
-        override fun getResValues(): Map<ResValue.Key, ResValue> {
-            return emptyMap()
+        if (it.enableV2Signing == null) {
+          it.enableV2Signing = dslSigningConfig.enableV2Signing
         }
+        // use enableV3 and enableV4 from the DSL because they're not injectable
+        it.enableV3Signing = dslSigningConfig.enableV3Signing
+        it.enableV4Signing = dslSigningConfig.enableV4Signing
+        it
+      }
+
+    SigningConfigResolver(dslSigningConfig, overrideConfig, null, services)
+  }
+
+  override val androidResourcesDsl =
+    object : AndroidResourcesDslInfo {
+      override val androidResources = extension.androidResources
+      override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
+      override val vectorDrawables: VectorDrawablesOptions = DefaultVectorDrawablesOptions()
+      override val isPseudoLocalesEnabled: Boolean = false
+      override val isCrunchPngs: Boolean = false
+      override val isCrunchPngsDefault: Boolean = false
+
+      override fun getResValues(): Map<ResValue.Key, ResValue> {
+        return emptyMap()
+      }
     }
-    override val optimizationDslInfo: OptimizationDslInfo
-        get() = mainVariantDslInfo.optimizationDslInfo
+  override val optimizationDslInfo: OptimizationDslInfo
+    get() = mainVariantDslInfo.optimizationDslInfo
 
-    override val dexingDslInfo = object: DexingDslInfo {
-        override val isMultiDexEnabled =
-            testOnDeviceConfig.multidex.enable.takeIf { testOnDeviceConfig.multidex.enableSet }
-        override val multiDexKeepProguard: File? =
-            testOnDeviceConfig.multidex.mainDexKeepRules.files.getOrNull(0)
-        override val multiDexKeepFile: File? = null
+  override val dexingDslInfo =
+    object : DexingDslInfo {
+      override val isMultiDexEnabled = testOnDeviceConfig.multidex.enable.takeIf { testOnDeviceConfig.multidex.enableSet }
+      override val multiDexKeepProguard: File? = testOnDeviceConfig.multidex.mainDexKeepRules.files.getOrNull(0)
+      override val multiDexKeepFile: File? = null
     }
 
-    override val isAndroidTestCoverageEnabled: Boolean
-        get() = testOnDeviceConfig.enableCoverage
+  override val isAndroidTestCoverageEnabled: Boolean
+    get() = testOnDeviceConfig.enableCoverage
 
-    override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
-        // first check whether the DSL has the info
-        return testOnDeviceConfig.instrumentationRunner?.let {
-            services.provider { it }
-        } // else return the value from the Manifest
-            ?:  computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
+  override fun getInstrumentationRunner(dexingType: DexingType): Provider<String> {
+    // first check whether the DSL has the info
+    return testOnDeviceConfig.instrumentationRunner?.let { services.provider { it } } // else return the value from the Manifest
+    ?: computeInstrumentationTestRunner(dataProvider.manifestData, services, dexingType)
+  }
+
+  override val instrumentationRunnerArguments: Map<String, String>
+    get() = testOnDeviceConfig.instrumentationRunnerArguments
+
+  override val handleProfiling: Provider<Boolean>
+    get() =
+      // first check whether the DSL has the info
+      testOnDeviceConfig.handleProfiling?.let { services.provider { it } } // else return the value from the Manifest
+      ?: dataProvider.manifestData.map { it.handleProfiling ?: DEFAULT_HANDLE_PROFILING }
+
+  override val functionalTest: Provider<Boolean>
+    get() =
+      // first check whether the DSL has the info
+      testOnDeviceConfig.functionalTest?.let { services.provider { it } } // else return the value from the Manifest
+      ?: dataProvider.manifestData.map { it.functionalTest ?: DEFAULT_FUNCTIONAL_TEST }
+
+  override val testLabel: Provider<String>
+    get() {
+      // there is actually no DSL value for this.
+      return dataProvider.manifestData.map { it.testLabel ?: "" }
     }
 
-    override val instrumentationRunnerArguments: Map<String, String>
-        get() = testOnDeviceConfig.instrumentationRunnerArguments
-    override val handleProfiling: Provider<Boolean>
-        get() =
-            // first check whether the DSL has the info
-            testOnDeviceConfig.handleProfiling?.let {
-                services.provider { it }
-            } // else return the value from the Manifest
-                ?: dataProvider.manifestData.map { it.handleProfiling ?: DEFAULT_HANDLE_PROFILING }
-
-    override val functionalTest: Provider<Boolean>
-        get() =
-            // first check whether the DSL has the info
-            testOnDeviceConfig.functionalTest?.let {
-                services.provider { it }
-            } // else return the value from the Manifest
-                ?: dataProvider.manifestData.map { it.functionalTest ?: DEFAULT_FUNCTIONAL_TEST }
-
-    override val testLabel: Provider<String>
-        get() {
-            // there is actually no DSL value for this.
-            return dataProvider.manifestData.map {
-                it.testLabel ?: ""
-            }
-        }
-
-    // Unsupported features
-    // TODO(b/243387425): Figure out if we should have a full instrumented test component similar
-    //  to libs
-    override val shadersDslInfo: ShadersDslInfo? = null
-    override val buildConfigDslInfo: BuildConfigDslInfo? = null
-    override val renderscriptDslInfo: RenderscriptDslInfo? = null
-    override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? = null
-    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> = listOf()
-    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> = listOf()
-    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo> = listOf()
-
+  // Unsupported features
+  // TODO(b/243387425): Figure out if we should have a full instrumented test component similar
+  //  to libs
+  override val shadersDslInfo: ShadersDslInfo? = null
+  override val buildConfigDslInfo: BuildConfigDslInfo? = null
+  override val renderscriptDslInfo: RenderscriptDslInfo? = null
+  override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? = null
+  override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest> = listOf()
+  override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> = listOf()
+  override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo> = listOf()
 }

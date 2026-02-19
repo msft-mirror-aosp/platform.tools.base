@@ -18,6 +18,7 @@ package com.android.builder.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
@@ -47,7 +48,9 @@ public interface AndroidProject {
     String PROPERTY_BUILD_MODEL_ONLY_VERSIONED = "android.injected.build.model.only.versioned";
     // Sent by Studio 2.4+. Additional model feature trigger on a case by case basis
     // Value is simply true to enable.
-    String PROPERTY_BUILD_MODEL_FEATURE_FULL_DEPENDENCIES = "android.injected.build.model.feature.full.dependencies";
+    String PROPERTY_BUILD_MODEL_FEATURE_FULL_DEPENDENCIES =
+            "android.injected.build.model.feature.full.dependencies";
+
     /**
      * Was a property to disable source download during model sync, which is no longer done by AGP.
      *
@@ -62,7 +65,7 @@ public interface AndroidProject {
     // build/sync, see b/280831521.
     String PROPERTY_ANDROID_STUDIO_VERSION = "android.studio.version";
 
-    // deprecated. Kept here so that newew Studio can still inject it for older plugin
+    // deprecated. Kept here so that newer Studio can still inject it for older plugin
     // but newer plugin don't do anything different based on this property.
     @SuppressWarnings("unused")
     String PROPERTY_GENERATE_SOURCES_ONLY = "android.injected.generateSourcesOnly";
@@ -189,17 +192,6 @@ public interface AndroidProject {
     Collection<ProductFlavorContainer> getProductFlavors();
 
     /**
-     * Returns a list of all the variants.
-     *
-     * This does not include test variant. Test variants are additional artifacts in their
-     * respective variant info.
-     *
-     * @return a list of the variants.
-     */
-    @NonNull
-    Collection<Variant> getVariants();
-
-    /**
      * Returns a list of all the variant names.
      *
      * <p>This does not include test variant. Test variants are additional artifacts in their
@@ -261,14 +253,6 @@ public interface AndroidProject {
      */
     @NonNull
     Collection<File> getFrameworkSources();
-
-    /**
-     * Returns the collection of toolchains used to create any native libraries.
-     *
-     * @return collection of toolchains.
-     */
-    @NonNull
-    Collection<NativeToolchain> getNativeToolchains();
 
     /**
      * Returns a list of {@link SigningConfig}.

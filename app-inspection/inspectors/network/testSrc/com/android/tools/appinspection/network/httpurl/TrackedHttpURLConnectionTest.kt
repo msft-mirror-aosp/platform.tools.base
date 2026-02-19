@@ -23,9 +23,7 @@ import studio.network.inspection.NetworkInspectorProtocol
 class TrackedHttpURLConnectionTest {
   @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule())
 
-  private val fakeTrackerFactory: (String, String) -> HttpConnectionTracker = { _, _ ->
-    FakeHttpConnectionTracker()
-  }
+  private val fakeTrackerFactory: (String, String) -> HttpConnectionTracker = { _, _ -> FakeHttpConnectionTracker() }
   private val fakeRuleService = FakeInterceptionRuleService()
   private val fakeConnection =
     object : FakeHttpUrlConnection(URL("http://fake.com")) {
@@ -36,8 +34,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContentEncoding_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.contentEncoding
 
@@ -46,8 +43,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getHeaderFieldInt_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.getHeaderField(0)
 
@@ -56,8 +52,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getHeaderFieldString_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.getHeaderField("")
 
@@ -66,8 +61,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getHeaderFieldKey_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.getHeaderFieldKey(0)
 
@@ -76,8 +70,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContent_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.content
 
@@ -86,8 +79,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContentClass_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.getContent(arrayOf(String::class.java))
 
@@ -96,8 +88,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContentLength_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.contentLength
 
@@ -106,8 +97,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContentLengthLong_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.contentLengthLong
 
@@ -116,8 +106,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getContentType_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.contentType
 
@@ -126,8 +115,7 @@ class TrackedHttpURLConnectionTest {
 
   @Test
   fun getHeaderFields_startsTracking() {
-    val trackedConnection =
-      TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
+    val trackedConnection = TrackedHttpURLConnection(fakeConnection, "stack", fakeTrackerFactory, fakeRuleService)
 
     trackedConnection.headerFields
 

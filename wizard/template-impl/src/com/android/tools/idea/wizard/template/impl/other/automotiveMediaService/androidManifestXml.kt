@@ -22,10 +22,11 @@ fun androidManifestXml(
   customThemeName: String,
   mediaBrowserServiceName: String,
   sharedPackageName: String,
-  useCustomTheme: Boolean
+  useCustomTheme: Boolean,
 ): String {
-  val customThemeBlock = renderIf(useCustomTheme) {
-    """
+  val customThemeBlock =
+    renderIf(useCustomTheme) {
+      """
         <!--
              Use this meta data to override the theme from which Android Auto will
              look for colors. If you don"t set this, Android Auto will look
@@ -35,7 +36,7 @@ fun androidManifestXml(
             android:name="com.google.android.gms.car.application.theme"
             android:resource="@style/${customThemeName}" />
   """
-  }
+    }
 
   return """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">

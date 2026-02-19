@@ -19,21 +19,19 @@ _BASE_TARGETS = [
 
 
 _EXTRA_TARGETS = [
-    '//tools/adt/idea/studio:android-studio.linux.zip',
-    '//tools/adt/idea/studio:android-studio.mac.zip',
-    '//tools/adt/idea/studio:android-studio.mac_arm.zip',
-    '//tools/adt/idea/studio:android-studio.win.zip',
+    '//tools/adt/idea/studio:android-studio.stable.linux.zip',
+    '//tools/adt/idea/studio:android-studio.stable.mac.zip',
+    '//tools/adt/idea/studio:android-studio.stable.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.stable.win.zip',
+    '//tools/adt/idea/studio:android-studio.stable_build_manifest.textproto',
+    '//tools/adt/idea/studio:android-studio.stable_update_message.html',
+    '//tools/adt/idea/studio:android-studio.canary.linux.zip',
+    '//tools/adt/idea/studio:android-studio.canary.mac.zip',
+    '//tools/adt/idea/studio:android-studio.canary.mac_arm.zip',
+    '//tools/adt/idea/studio:android-studio.canary.win.zip',
+    '//tools/adt/idea/studio:android-studio.canary_build_manifest.textproto',
+    '//tools/adt/idea/studio:android-studio.canary_update_message.html',
     '//tools/adt/idea/studio:updater_deploy.jar',
-    # TODO(xinruiy): remove the old artifacts after changing our release process.
-    '//tools/vendor/google/aswb:aswb.linux.zip',
-    '//tools/vendor/google/aswb:aswb.mac.zip',
-    '//tools/vendor/google/aswb:aswb.mac_arm.zip',
-    '//tools/vendor/google/aswb:aswb.canary.linux.zip',
-    '//tools/vendor/google/aswb:aswb.stable.linux.zip',
-    '//tools/vendor/google/aswb:aswb.canary.mac.zip',
-    '//tools/vendor/google/aswb:aswb.stable.mac.zip',
-    '//tools/vendor/google/aswb:aswb.canary.mac_arm.zip',
-    '//tools/vendor/google/aswb:aswb.stable.mac_arm.zip',
     '//tools/adt/idea/native/installer:android-studio-bundle-data',
     '//tools/base/profiler/native/trace_processor_daemon',
     '//tools/base/profiler/native/sherlock:sherlock_trace_processor',
@@ -62,32 +60,37 @@ _EXTRA_TARGETS = [
 
 
 _ARTIFACTS = [
-    ('tools/adt/idea/studio/android-studio.linux.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.win.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.mac.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio.mac_arm.zip', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio_build_manifest.textproto', 'artifacts'),
-    ('tools/adt/idea/studio/android-studio_update_message.html', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.linux.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.win.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.mac.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable.mac_arm.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable_build_manifest.textproto', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.stable_update_message.html', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.linux.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.win.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.mac.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary.mac_arm.zip', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary_build_manifest.textproto', 'artifacts'),
+    ('tools/adt/idea/studio/android-studio.canary_update_message.html', 'artifacts'),
     ('tools/adt/idea/studio/android-studio-metadata.json', 'artifacts'),
     ('tools/adt/idea/studio/updater_deploy.jar', 'artifacts/android-studio-updater.jar'),
     ('tools/adt/idea/native/installer/android-studio-bundle-data.zip', 'artifacts'),
-    ('tools/profiler/sherlock-plugin/sherlock_linux.tar.gz', 'artifacts'),
+    ('tools/profiler/sherlock-plugin/sherlock_linux.zip', 'artifacts'),
     ('tools/profiler/sherlock-plugin/sherlock_windows.zip', 'artifacts'),
     ('tools/profiler/sherlock-plugin/sherlock_darwin.zip', 'artifacts'),
     ('tools/vendor/google/adrt/android-studio-cros-skeleton.zip', 'artifacts'),
     ('tools/vendor/google/adrt/android-studio-nsis-prebuilt.zip', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp_build_manifest.textproto', 'artifacts'),
     ('tools/vendor/google/asfp/studio/asfp.deb', 'artifacts'),
-    # TODO(xinruiy): remove the old artifacts after changing our release process.
-    ('tools/vendor/google/aswb/android-studio-with-blaze-channel.deb', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze.mac.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/android-studio-with-blaze.mac_arm.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-canary.deb', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-canary.mac_arm.zip', 'artifacts'),
     ('tools/vendor/google/aswb/android-studio-with-blaze-stable.deb', 'artifacts'),
-    ('tools/vendor/google/aswb/aswb.canary.mac.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/aswb.stable.mac.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/aswb.canary.mac_arm.zip', 'artifacts'),
-    ('tools/vendor/google/aswb/aswb.stable.mac_arm.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-stable.mac_arm.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.deb', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/android-studio-with-blaze-qa.mac_arm.zip', 'artifacts'),
     ('tools/vendor/google/skia/skiaparser.zip', 'artifacts'),
     ('tools/vendor/google/skia/skia_test_support.zip', 'artifacts'),
     ('tools/vendor/google/ml/aiplugin*.zip', 'artifacts'),
@@ -196,27 +199,6 @@ def studio_linux_very_flaky(build_env: bazel.BuildEnv) -> None:
 
   result = studio.run_tests(build_env, flags, _BASE_TARGETS + _EXTRA_TARGETS)
   if studio.is_build_successful(result):
-    return
-
-  raise studio.BazelTestError(exit_code=result.exit_code)
-
-
-def studio_linux_k2(build_env: bazel.BuildEnv) -> None:
-  """Runs studio-linux-k2 target."""
-  # Despite its name, the studio-linux-k2 target now runs tests in K1 mode,
-  # since Studio has switched to K2 mode by default (b/373746515).
-  flags = build_flags(
-      build_env,
-      test_tag_filters='-noci:studio-linux,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k1,-kotlin-plugin-k1',
-  )
-  flags.extend([
-      '--bes_keywords=k1',
-      '--jvmopt=-Didea.kotlin.plugin.use.k2=false',
-      "--jvmopt=-Dlint.use.fir.uast=false",
-  ])
-  result = studio.run_tests(build_env, flags, _BASE_TARGETS)
-  copy_agp_supported_versions(build_env)
-  if studio.is_build_successful(result) and result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:
     return
 
   raise studio.BazelTestError(exit_code=result.exit_code)

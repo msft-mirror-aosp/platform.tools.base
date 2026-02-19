@@ -113,8 +113,9 @@ message Event {
     // LeakCanary Prefix = 800
     LEAKCANARY_ANALYSIS = 801;
     LEAKCANARY_ANALYSIS_STATUS = 802;
-    LEAKCANARY_HOST_ANALYSIS_TRIGGER = 803;
+    LEAKCANARY_OBJECT_COUNT = 803;
     LEAKCANARY_PRESENCE_CHECK = 804;
+    LEAKCANARY_THRESHOLD = 805;
 
     // group_id: session id
     LIVE_VIEW_STATUS = 901;
@@ -232,7 +233,9 @@ message Event {
     // LeakCanary Prefix = 800
     LeakCanaryAnalysisData leakcanary_analysis = 801;
     LeakCanaryAnalysisStatus leakCanary_analysis_status = 802;
+    LeakCanaryObjectCountData leakcanary_object_count = 803;
     LeakCanaryPresenceCheck leakcanary_presence_check = 804;
+    LeakCanaryThresholdData leakcanary_threshold = 805;
 
     // Echo Event Prefix = 1000
     echo.EchoData echo = 1000;
@@ -505,4 +508,12 @@ message CommonConfig {
 
 message LeakCanaryPresenceCheck {
     bool is_present = 1;
+}
+
+message LeakCanaryObjectCountData {
+  int32 count = 1;
+}
+
+message LeakCanaryThresholdData {
+  int32 threshold = 1;
 }

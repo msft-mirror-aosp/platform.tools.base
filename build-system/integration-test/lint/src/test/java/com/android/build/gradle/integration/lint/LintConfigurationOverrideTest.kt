@@ -25,110 +25,84 @@ import org.junit.rules.TemporaryFolder
 
 class LintConfigurationOverrideTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-            GradleTestProject.builder()
-                    .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-                    .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @get:Rule
-    val temporaryFolder: TemporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
-    private val lintTaskName = ":lintDebug"
-    private val lintReportTaskName = ":lintReportDebug"
-    private val lintAnalyzeTaskName = ":lintAnalyzeDebug"
+  private val lintTaskName = ":lintDebug"
+  private val lintReportTaskName = ":lintReportDebug"
+  private val lintAnalyzeTaskName = ":lintAnalyzeDebug"
 
-    // Test that specifying a lint configuration override via a system property affects lint task
-    // UP-TO-DATE checking as expected.
-    @Test
-    fun testLintConfigurationOverrideFromSystemProperty() {
-        val lintXml1 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
-        val lintXml2 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
-        val nonexistentFile =
-            temporaryFolder.newFolder()
-                .resolve("nonexistent")
-                .also { assertThat(it).doesNotExist() }
+  // Test that specifying a lint configuration override via a system property affects lint task
+  // UP-TO-DATE checking as expected.
+  @Test
+  fun testLintConfigurationOverrideFromSystemProperty() {
+    val lintXml1 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
+    val lintXml2 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
+    val nonexistentFile = temporaryFolder.newFolder().resolve("nonexistent").also { assertThat(it).doesNotExist() }
 
-        // Use a nonexistent lint configuration file initially as a check that the build doesn't
-        // fail in this case.
-        project.executor()
-            .withArgument("-Dlint.configuration.override=${nonexistentFile.absolutePath}")
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
-        // lint tasks should run again if we specify a lint.configuration.override system property.
-        project.executor().withArgument("-Dlint.configuration.override=${lintXml1.absolutePath}")
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
-        // lint tasks should be up-to-date if we set a different lint configuration file with the
-        // same contents
-        project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}")
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).wasUpToDate()
-                assertTask(lintAnalyzeTaskName).wasUpToDate()
-            }
-        // lint tasks should run again if we modify the contents of the lint configuration file.
-        lintXml2.appendText("bar")
-        project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}")
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
+    // Use a nonexistent lint configuration file initially as a check that the build doesn't
+    // fail in this case.
+    project.executor().withArgument("-Dlint.configuration.override=${nonexistentFile.absolutePath}").run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
     }
-
-    // Test that specifying a lint configuration override via an environment variable affects lint
-    // task UP-TO-DATE checking as expected.
-    @Test
-    fun testLintConfigurationOverrideFromEnvironmentVariable() {
-        val lintXml1 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
-        val lintXml2 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
-        val nonexistentFile =
-            temporaryFolder.newFolder()
-                .resolve("nonexistent")
-                .also { assertThat(it).doesNotExist() }
-
-        // Use a nonexistent lint configuration file initially as a check that the build doesn't
-        // fail in this case.
-        project.executor()
-            .withEnvironmentVariables(
-                mapOf("LINT_OVERRIDE_CONFIGURATION" to nonexistentFile.absolutePath)
-            )
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
-        // lint tasks should run again if we specify a LINT_OVERRIDE_CONFIGURATION environment
-        // variable.
-        project.executor()
-            .withEnvironmentVariables(
-                mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml1.absolutePath)
-            )
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
-        // lint tasks should be up-to-date if we set a different lint configuration file with the
-        // same contents
-        project.executor()
-            .withEnvironmentVariables(
-                mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)
-            )
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).wasUpToDate()
-                assertTask(lintAnalyzeTaskName).wasUpToDate()
-            }
-        // lint tasks should run again if we modify the contents of the lint configuration file.
-        lintXml2.appendText("bar")
-        project.executor()
-            .withEnvironmentVariables(
-                mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)
-            )
-            .run(lintTaskName).apply {
-                assertTask(lintReportTaskName).didWork()
-                assertTask(lintAnalyzeTaskName).didWork()
-            }
+    // lint tasks should run again if we specify a lint.configuration.override system property.
+    project.executor().withArgument("-Dlint.configuration.override=${lintXml1.absolutePath}").run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
     }
+    // lint tasks should be up-to-date if we set a different lint configuration file with the
+    // same contents
+    project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskName).apply {
+      assertTask(lintReportTaskName).wasUpToDate()
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
+    }
+    // lint tasks should run again if we modify the contents of the lint configuration file.
+    lintXml2.appendText("bar")
+    project.executor().withArgument("-Dlint.configuration.override=${lintXml2.absolutePath}").run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
+    }
+  }
+
+  // Test that specifying a lint configuration override via an environment variable affects lint
+  // task UP-TO-DATE checking as expected.
+  @Test
+  fun testLintConfigurationOverrideFromEnvironmentVariable() {
+    val lintXml1 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
+    val lintXml2 = temporaryFolder.newFolder().resolve("lint.xml").also { it.writeText("foo") }
+    val nonexistentFile = temporaryFolder.newFolder().resolve("nonexistent").also { assertThat(it).doesNotExist() }
+
+    // Use a nonexistent lint configuration file initially as a check that the build doesn't
+    // fail in this case.
+    project
+      .executor()
+      .withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to nonexistentFile.absolutePath))
+      .run(lintTaskName)
+      .apply {
+        assertTask(lintReportTaskName).didWork()
+        assertTask(lintAnalyzeTaskName).didWork()
+      }
+    // lint tasks should run again if we specify a LINT_OVERRIDE_CONFIGURATION environment
+    // variable.
+    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml1.absolutePath)).run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
+    }
+    // lint tasks should be up-to-date if we set a different lint configuration file with the
+    // same contents
+    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskName).apply {
+      assertTask(lintReportTaskName).wasUpToDate()
+      assertTask(lintAnalyzeTaskName).wasUpToDate()
+    }
+    // lint tasks should run again if we modify the contents of the lint configuration file.
+    lintXml2.appendText("bar")
+    project.executor().withEnvironmentVariables(mapOf("LINT_OVERRIDE_CONFIGURATION" to lintXml2.absolutePath)).run(lintTaskName).apply {
+      assertTask(lintReportTaskName).didWork()
+      assertTask(lintAnalyzeTaskName).didWork()
+    }
+  }
 }

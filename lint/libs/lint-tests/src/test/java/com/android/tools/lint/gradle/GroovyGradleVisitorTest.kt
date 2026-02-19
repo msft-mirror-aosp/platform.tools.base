@@ -313,7 +313,8 @@ class GroovyGradleVisitorTest {
         testFiles =
           arrayOf(
             java(
-                // just here to give us a way to construct contexts and projects using the test
+                // just here to give us a way to construct contexts and projects using
+                // the test
                 // infrastructure
                 """
                 package foo;
@@ -374,13 +375,7 @@ class GroovyGradleVisitorTest {
       valueCookie: Any,
       statementCookie: Any,
     ) {
-      log(
-        "checkDslPropertyAssignment",
-        "property" to property,
-        "value" to value,
-        "parent" to parent,
-        "parentParent" to parentParent,
-      )
+      log("checkDslPropertyAssignment", "property" to property, "value" to value, "parent" to parent, "parentParent" to parentParent)
     }
 
     override fun checkMethodCall(

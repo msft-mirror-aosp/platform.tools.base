@@ -23,32 +23,26 @@ import org.junit.Test
 
 class LocalJarsTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("localJars")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("localJars").disableBuiltInKotlin().create()
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = project.modelV2()
-            .fetchModels(variantName = "release")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().fetchModels(variantName = "release")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":baseLibrary") }, goldenFile = "baseLibrary_VariantDependencies")
+  }
 
-    @Test
-    fun lint() {
-        project.executor().run("lint")
-    }
+  @Test
+  fun lint() {
+    project.executor().run("lint")
+  }
 
-    @Test
-    fun checkBuildResult() {
-        project.executor()
-            .run("clean", "assembleDebug")
-            .assertTask(":baseLibrary:noop")
-            .ranBefore(":baseLibrary:copyDebugJniLibsProjectAndLocalJars")
-    }
+  @Test
+  fun checkBuildResult() {
+    project
+      .executor()
+      .run("clean", "assembleDebug")
+      .assertTask(":baseLibrary:noop")
+      .ranBefore(":baseLibrary:copyDebugJniLibsProjectAndLocalJars")
+  }
 }

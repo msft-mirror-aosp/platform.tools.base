@@ -19,14 +19,12 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.Device
 import com.android.build.api.dsl.DeviceGroup
 import com.android.build.gradle.internal.services.DslServices
-import org.gradle.api.DomainObjectSet
 import javax.inject.Inject
+import org.gradle.api.DomainObjectSet
 
-open class DeviceGroup @Inject constructor(dslServices: DslServices, private val name: String):
-    DeviceGroup {
+open class DeviceGroup @Inject constructor(dslServices: DslServices, private val name: String) : DeviceGroup {
 
-    override fun getName(): String = name
+  override fun getName(): String = name
 
-    override val targetDevices: DomainObjectSet<Device> =
-        dslServices.domainObjectSet(Device::class.java)
+  override val targetDevices: DomainObjectSet<Device> = dslServices.domainObjectSet(Device::class.java)
 }

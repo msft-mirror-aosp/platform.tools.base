@@ -9,104 +9,67 @@ class XmlStringBuilderTest {
     // XmlStringBuilder is aware of removing spaces on the ends of the build string when the string
     // has no spans. Thus we need to add spans to shift the xml string.
     val stringBuilder = XmlStringBuilder()
-    var spanString = stringBuilder
-      .startSpan("hi")
-      .append("    hey guys ")
-      .append(" this is so cool ")
-      .endSpan()
-      .getFlattenedXml()
+    var spanString = stringBuilder.startSpan("hi").append("    hey guys ").append(" this is so cool ").endSpan().getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(spanString.styleString.str).isEqualTo(" hey guys this is so cool ")
 
     stringBuilder.clear()
-    spanString = stringBuilder
-      .startSpan("hi")
-      .append(" \" wow,  so many \t")
-      .append("spaces. \"what?  ")
-      .endSpan()
-      .getFlattenedXml()
+    spanString = stringBuilder.startSpan("hi").append(" \" wow,  so many \t").append("spaces. \"what?  ").endSpan().getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(spanString.styleString.str)
-      .isEqualTo("  wow,  so many \tspaces. what? ")
+    Truth.assertThat(spanString.styleString.str).isEqualTo("  wow,  so many \tspaces. what? ")
 
     stringBuilder.clear()
-    spanString = stringBuilder
-      .startSpan("hi")
-      .append("  where \t ")
-      .append(" \nis the pie?")
-      .endSpan()
-      .getFlattenedXml()
+    spanString = stringBuilder.startSpan("hi").append("  where \t ").append(" \nis the pie?").endSpan().getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(spanString.styleString.str).isEqualTo(" where is the pie?")
 
     // If the string has no spans then the spaces at the end are trimmed. (up to the first/last
     // quotation).
     stringBuilder.clear()
-    var basicString = stringBuilder
-      .append("   \tOh   where")
-      .append(" is \t  my   hairbrush?\n \t")
-      .getFlattenedXml()
+    var basicString = stringBuilder.append("   \tOh   where").append(" is \t  my   hairbrush?\n \t").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(basicString.styleString.str).isEqualTo("Oh where is my hairbrush?")
 
     stringBuilder.clear()
-    basicString = stringBuilder
-      .append(" \" \tHey there.  \"  ")
-      .getFlattenedXml()
+    basicString = stringBuilder.append(" \" \tHey there.  \"  ").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(basicString.styleString.str).isEqualTo(" \tHey there.  ")
 
     stringBuilder.clear()
-    basicString =
-      stringBuilder.append("""   before Quote " inside quote " after Quote   """).getFlattenedXml()
+    basicString = stringBuilder.append("""   before Quote " inside quote " after Quote   """).getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo(" before Quote  inside quote  after Quote ")
+    Truth.assertThat(basicString.styleString.str).isEqualTo(" before Quote  inside quote  after Quote ")
 
     stringBuilder.clear()
-    basicString =
-      stringBuilder.append("""a"b"c""").getFlattenedXml()
+    basicString = stringBuilder.append("""a"b"c""").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo("abc")
+    Truth.assertThat(basicString.styleString.str).isEqualTo("abc")
 
     stringBuilder.clear()
-    basicString =
-      stringBuilder.append("""a"bc""").getFlattenedXml()
+    basicString = stringBuilder.append("""a"bc""").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo("abc")
+    Truth.assertThat(basicString.styleString.str).isEqualTo("abc")
 
     stringBuilder.clear()
-    basicString =
-      stringBuilder.append("""ab"c""").getFlattenedXml()
+    basicString = stringBuilder.append("""ab"c""").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo("abc")
+    Truth.assertThat(basicString.styleString.str).isEqualTo("abc")
 
     stringBuilder.clear()
-    basicString =
-      stringBuilder.append("""""""").getFlattenedXml()
+    basicString = stringBuilder.append("""""""").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo("")
+    Truth.assertThat(basicString.styleString.str).isEqualTo("")
   }
 
   @Test
   fun testStringBuilderEscaping() {
     val stringBuilder = XmlStringBuilder()
-    var basicString = stringBuilder
-      .append("hey guys\\n ")
-      .append(" this \\t is so\\\\ cool")
-      .getFlattenedXml()
+    var basicString = stringBuilder.append("hey guys\\n ").append(" this \\t is so\\\\ cool").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(basicString.styleString.str)
-      .isEqualTo("hey guys\n this \t is so\\ cool")
+    Truth.assertThat(basicString.styleString.str).isEqualTo("hey guys\n this \t is so\\ cool")
 
     stringBuilder.clear()
-    basicString = stringBuilder
-      .append("\\@\\?\\#\\\\\\'")
-      .getFlattenedXml()
+    basicString = stringBuilder.append("\\@\\?\\#\\\\\\'").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(basicString.styleString.str).isEqualTo("@?#\\\'")
   }
@@ -146,13 +109,7 @@ class XmlStringBuilderTest {
     Truth.assertThat(spanAttempt.success).isFalse()
 
     stringBuilder.clear()
-    val spanAttempt2 = stringBuilder
-      .startSpan("b")
-      .append("how ")
-      .startSpan("i")
-      .append("are you?")
-      .endSpan()
-      .getFlattenedXml()
+    val spanAttempt2 = stringBuilder.startSpan("b").append("how ").startSpan("i").append("are you?").endSpan().getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isNotEmpty()
     Truth.assertThat(spanAttempt2.success).isFalse()
   }
@@ -168,12 +125,7 @@ class XmlStringBuilderTest {
   @Test
   fun testSpanCreated() {
     val stringBuilder = XmlStringBuilder(false)
-    val spanAttempt = stringBuilder
-      .append("Hello, ")
-      .startSpan("b")
-      .append("my name is Bob.")
-      .endSpan()
-      .getFlattenedXml()
+    val spanAttempt = stringBuilder.append("Hello, ").startSpan("b").append("my name is Bob.").endSpan().getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(spanAttempt.styleString.str).isEqualTo("Hello, my name is Bob.")
     val spans = spanAttempt.styleString.spans
@@ -184,18 +136,18 @@ class XmlStringBuilderTest {
     Truth.assertThat(spans[0].lastChar).isEqualTo(21)
 
     stringBuilder.clear()
-    val spanAttempt2 = stringBuilder
-      .startSpan("i")
-      .append("I\\'m running out of things ")
-      .startSpan("b")
-      .append("to type!")
-      .endSpan()
-      .append("...")
-      .endSpan()
-      .getFlattenedXml()
+    val spanAttempt2 =
+      stringBuilder
+        .startSpan("i")
+        .append("I\\'m running out of things ")
+        .startSpan("b")
+        .append("to type!")
+        .endSpan()
+        .append("...")
+        .endSpan()
+        .getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
-    Truth.assertThat(spanAttempt2.styleString.str)
-      .isEqualTo("I'm running out of things to type!...")
+    Truth.assertThat(spanAttempt2.styleString.str).isEqualTo("I'm running out of things to type!...")
     val spans2 = spanAttempt2.styleString.spans
     Truth.assertThat(spans2).hasSize(2)
     val firstSpan = spans2[0]
@@ -211,18 +163,19 @@ class XmlStringBuilderTest {
   @Test
   fun testUntranslatableSectionsCannotBeNested() {
     val stringBuilder = XmlStringBuilder(false)
-    val untranslatableAttempt = stringBuilder
-      .startUntranslatable()
-      .append("This ")
-      .startUntranslatable()
-      .append("is ")
-      .endUntranslatable()
-      .endUntranslatable()
-      .append("an ")
-      .startUntranslatable()
-      .append("attempt")
-      .endUntranslatable()
-      .getFlattenedXml()
+    val untranslatableAttempt =
+      stringBuilder
+        .startUntranslatable()
+        .append("This ")
+        .startUntranslatable()
+        .append("is ")
+        .endUntranslatable()
+        .endUntranslatable()
+        .append("an ")
+        .startUntranslatable()
+        .append("attempt")
+        .endUntranslatable()
+        .getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isNotEmpty()
     Truth.assertThat(untranslatableAttempt.success).isFalse()
   }
@@ -230,10 +183,7 @@ class XmlStringBuilderTest {
   @Test
   fun testUnfinishedUntranslatableSections() {
     val stringBuilder = XmlStringBuilder(false)
-    val untranslatableAttempt = stringBuilder
-      .startUntranslatable()
-      .append("Well, how about this?")
-      .getFlattenedXml()
+    val untranslatableAttempt = stringBuilder.startUntranslatable().append("Well, how about this?").getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isNotEmpty()
     Truth.assertThat(untranslatableAttempt.success).isFalse()
   }
@@ -241,16 +191,17 @@ class XmlStringBuilderTest {
   @Test
   fun testUntranslatableSections() {
     val stringBuilder = XmlStringBuilder(false)
-    val untranslatableAttempt = stringBuilder
-      .append("This ")
-      .startUntranslatable()
-      .append("is ")
-      .endUntranslatable()
-      .append("an ")
-      .startUntranslatable()
-      .append("attempt.")
-      .endUntranslatable()
-      .getFlattenedXml()
+    val untranslatableAttempt =
+      stringBuilder
+        .append("This ")
+        .startUntranslatable()
+        .append("is ")
+        .endUntranslatable()
+        .append("an ")
+        .startUntranslatable()
+        .append("attempt.")
+        .endUntranslatable()
+        .getFlattenedXml()
     Truth.assertThat(stringBuilder.error).isEmpty()
     Truth.assertThat(untranslatableAttempt.styleString.str).isEqualTo("This is an attempt.")
     val untranslatables = untranslatableAttempt.untranslatableSections
@@ -262,14 +213,12 @@ class XmlStringBuilderTest {
     Truth.assertThat(untranslatables[1].endIndex).isEqualTo(19)
   }
 
-    @Test
-    fun testHandleEscapeQuotationsBetweenTextChunks() {
-        val stringBuilder = XmlStringBuilder(false)
-        val flattendSample = stringBuilder
-            .append("[[198745]] You\\")
-            .append("'ve blocked. Tap to report and share more details.")
-        Truth.assertThat(stringBuilder.error).isEmpty()
-        Truth.assertThat(flattendSample.getFlattenedXml().styleString.str)
-            .isEqualTo("[[198745]] You've blocked. Tap to report and share more details.")
-    }
+  @Test
+  fun testHandleEscapeQuotationsBetweenTextChunks() {
+    val stringBuilder = XmlStringBuilder(false)
+    val flattendSample = stringBuilder.append("[[198745]] You\\").append("'ve blocked. Tap to report and share more details.")
+    Truth.assertThat(stringBuilder.error).isEmpty()
+    Truth.assertThat(flattendSample.getFlattenedXml().styleString.str)
+      .isEqualTo("[[198745]] You've blocked. Tap to report and share more details.")
+  }
 }

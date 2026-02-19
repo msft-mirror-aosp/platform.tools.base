@@ -25,97 +25,88 @@ import java.io.ByteArrayOutputStream
 /**
  * A [SimpleShellHandler] that supports the following behaviors.
  *
- * If there are no arguments to the "cat" command then it outputs all characters received from `stdin` back to `stdout`,
- * one line at a time, i.e. characters are written back to `stdout` only when a newline ("\n")
- * character is received from `stdin`.
+ * If there are no arguments to the "cat" command then it outputs all characters received from `stdin` back to `stdout`, one line at a time,
+ * i.e. characters are written back to `stdout` only when a newline ("\n") character is received from `stdin`.
  *
- * If "cat" argument is in the form of "/proc/{pid}/cmdline then it returns a command line
- * which started the process.
+ * If "cat" argument is in the form of "/proc/{pid}/cmdline then it returns a command line which started the process.
  */
-class CatCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType,
-    "cat"
-) {
+class CatCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "cat") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-        if (shellCommandArgs.isNullOrEmpty()) {
-            forwardStdinAsStdout(shellCommandOutput)
-            return
-        }
-
-        if (tryHandleCatProcPidCmdline(shellCommandOutput, device, shellCommandArgs)) {
-            return
-        }
-
-        catRegularFiles(shellCommandOutput, device, shellCommandArgs)
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+    if (shellCommandArgs.isNullOrEmpty()) {
+      forwardStdinAsStdout(shellCommandOutput)
+      return
     }
 
-    /** Outputs all characters received from `stdin` back to `stdout`, one
-     * line at a time, i.e. characters are written back to `stdout` only when a newline ("\n")
-     * character is received from `stdin`.
-     **/
-    private fun forwardStdinAsStdout(shellCommandOutput: ShellCommandOutput) {
-        val stdoutStream = ByteArrayOutputStream()
-        val buffer = ByteArray(1)
-        while (true) {
-            val numRead = shellCommandOutput.readStdin(buffer, 0, buffer.size)
-            if (numRead < 0) {
-                shellCommandOutput.writeStdout(stdoutStream.toByteArray())
-                shellCommandOutput.writeExitCode(0)
-                break
-            }
-            val ch = buffer[0].toInt()
-            stdoutStream.write(ch)
-            if (ch == '\n'.code) {
-                shellCommandOutput.writeStdout(stdoutStream.toByteArray())
-                stdoutStream.reset()
-            }
-        }
+    if (tryHandleCatProcPidCmdline(shellCommandOutput, device, shellCommandArgs)) {
+      return
     }
 
-    private fun tryHandleCatProcPidCmdline(
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        args: String
-    ): Boolean {
-        val procIdRegex = Regex("/proc/(\\d+)/cmdline")
-        val matchResult = procIdRegex.find(args) ?: return false
-        val pid = matchResult.groups[1]!!.value.toInt()
-        if (device.getClient(pid) != null) {
-            throw NotImplementedError("client with a pid $pid not found")
-        }
+    catRegularFiles(shellCommandOutput, device, shellCommandArgs)
+  }
 
-        val profileableClient = device.getProfileableProcess(pid)
-        if (profileableClient == null) {
-            shellCommandOutput.writeStderr("profileableClient with a pid $pid not found")
-            return true
-        }
-
-        shellCommandOutput.writeStdout(profileableClient.commandLine)
+  /**
+   * Outputs all characters received from `stdin` back to `stdout`, one line at a time, i.e. characters are written back to `stdout` only
+   * when a newline ("\n") character is received from `stdin`.
+   */
+  private fun forwardStdinAsStdout(shellCommandOutput: ShellCommandOutput) {
+    val stdoutStream = ByteArrayOutputStream()
+    val buffer = ByteArray(1)
+    while (true) {
+      val numRead = shellCommandOutput.readStdin(buffer, 0, buffer.size)
+      if (numRead < 0) {
+        shellCommandOutput.writeStdout(stdoutStream.toByteArray())
         shellCommandOutput.writeExitCode(0)
-        return true
+        break
+      }
+      val ch = buffer[0].toInt()
+      stdoutStream.write(ch)
+      if (ch == '\n'.code) {
+        shellCommandOutput.writeStdout(stdoutStream.toByteArray())
+        stdoutStream.reset()
+      }
+    }
+  }
+
+  private fun tryHandleCatProcPidCmdline(shellCommandOutput: ShellCommandOutput, device: DeviceState, args: String): Boolean {
+    val procIdRegex = Regex("/proc/(\\d+)/cmdline")
+    val matchResult = procIdRegex.find(args) ?: return false
+    val pid = matchResult.groups[1]!!.value.toInt()
+    if (device.getClient(pid) != null) {
+      throw NotImplementedError("client with a pid $pid not found")
     }
 
-    private fun catRegularFiles(shellCommandOutput: ShellCommandOutput, device: DeviceState, args: String) {
-        val fileName = args.trim()
-        if (fileName.contains("\\s+")) {
-            throw NotImplementedError("Multiple files or file names with spaces are not implemented")
-        }
-
-        val file = device.getFile(fileName)
-        if (file == null) {
-            shellCommandOutput.writeStderr("No such file or directory\n")
-            shellCommandOutput.writeExitCode(1)
-        } else {
-            shellCommandOutput.writeStdout(file.bytes)
-        }
+    val profileableClient = device.getProfileableProcess(pid)
+    if (profileableClient == null) {
+      shellCommandOutput.writeStderr("profileableClient with a pid $pid not found")
+      return true
     }
+
+    shellCommandOutput.writeStdout(profileableClient.commandLine)
+    shellCommandOutput.writeExitCode(0)
+    return true
+  }
+
+  private fun catRegularFiles(shellCommandOutput: ShellCommandOutput, device: DeviceState, args: String) {
+    val fileName = args.trim()
+    if (fileName.contains("\\s+")) {
+      throw NotImplementedError("Multiple files or file names with spaces are not implemented")
+    }
+
+    val file = device.getFile(fileName)
+    if (file == null) {
+      shellCommandOutput.writeStderr("No such file or directory\n")
+      shellCommandOutput.writeExitCode(1)
+    } else {
+      shellCommandOutput.writeStdout(file.bytes)
+    }
+  }
 }

@@ -19,22 +19,19 @@ import com.android.adblib.tools.debugging.JdwpProcess
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Base class of internal implementations of [JdwpProcess], defining additional functions
- * to ensure proper behavior required for sharing [JdwpProcess] instances.
+ * Base class of internal implementations of [JdwpProcess], defining additional functions to ensure proper behavior required for sharing
+ * [JdwpProcess] instances.
  *
  * Concrete instances should be obtained through [JdwpProcessManager].
  */
 internal abstract class AbstractJdwpProcess : JdwpProcess, AutoCloseable {
 
-    /**
-     * The # of currently active calls to [withJdwpSession]
-     */
-    abstract val jdwpSessionActivationCount: StateFlow<Int>
+  /** The # of currently active calls to [withJdwpSession] */
+  abstract val jdwpSessionActivationCount: StateFlow<Int>
 
-    /**
-     * Waits until this [process][AbstractJdwpProcess] is ready to be [closed][close].
-     * This allows shutting down the process "cleanly" in the absence of forcible
-     * cancellation.
-     */
-    abstract suspend fun awaitReadyToClose()
+  /**
+   * Waits until this [process][AbstractJdwpProcess] is ready to be [closed][close]. This allows shutting down the process "cleanly" in the
+   * absence of forcible cancellation.
+   */
+  abstract suspend fun awaitReadyToClose()
 }

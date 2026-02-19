@@ -17,6 +17,6 @@
 package com.android.tools.leakcanarylib.data
 
 enum class LeakType {
-    APPLICATION_LEAKS,
-    LIBRARY_LEAKS
+  APPLICATION_LEAKS,
+  LIBRARY_LEAKS,
 }

@@ -27,14 +27,17 @@ fun appWidgetConfigureActivityJava(
   className: String,
   layoutName: String,
   packageName: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val layout = "${layoutName}_configure"
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layout)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layout);"
+  """
+    else "setContentView(R.layout.$layout);"
 
   return """
 package ${packageName};
@@ -79,11 +82,11 @@ ${renderIf(isViewBindingSupported) {"""
         mAppWidgetText = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "appwidget_text")};
+          id = "appwidget_text",)};
         ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "add_button")}.setOnClickListener(mOnClickListener);
+          id = "add_button",)}.setOnClickListener(mOnClickListener);
 
         // Find the widget id from the intent.
         Intent intent = getIntent();

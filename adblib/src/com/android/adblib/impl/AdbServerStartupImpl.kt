@@ -15,55 +15,55 @@
  */
 package com.android.adblib.impl
 
+import com.android.adblib.AdbServerConfiguration
+import com.android.adblib.AdbServerController
 import com.android.adblib.AdbServerStartup
 import com.android.adblib.AdbSessionHost
-import kotlinx.coroutines.runInterruptible
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withContext
 
 internal class AdbServerStartupImpl(private val host: AdbSessionHost) : AdbServerStartup {
 
-    override suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int {
-        host.logger.debug { "Starting ADB server on port $port." }
-        host.timeProvider.withErrorTimeout(timeout, unit) {
-            runInterruptible(host.blockingIoDispatcher) {
-                val processBuilder = ProcessBuilder(getAdbLaunchCommand(port))
-                val process = processBuilder.start()
-                val exitCode = process.waitFor()
-                if (exitCode != 0) {
-                    throw IOException("adb start-server failed. Exit code: $exitCode")
-                }
-            }
-        }
-        // We only attempt to spin up the Adb Server on the requested port
-        return port
-    }
+  private val adbServerConfiguration =
+    MutableStateFlow(
+      AdbServerConfiguration(adbPath = null, serverPort = null, isUserManaged = false, isUnitTest = false, envVars = emptyMap())
+    )
 
-    private fun getAdbLaunchCommand(port: Int): List<String> {
-        return listOf(getAdbFile(), "-P", port.toString(), "start-server")
-    }
+  private val serverController = AdbServerController.createServerController(host, adbServerConfiguration)
 
-    private fun getAdbFile(): String {
-        val os = System.getProperty("os.name")
-        val adbExecutableName = if (os.startsWith("Windows")) "adb.exe" else "adb"
-        return findOnPath(adbExecutableName)
-            ?: throw IOException("Couldn't locate '$adbExecutableName' on PATH")
+  override suspend fun start(port: Int, timeout: Long, unit: TimeUnit): Int {
+    host.logger.debug { "Starting ADB server on port $port." }
+    host.timeProvider.withErrorTimeout(timeout, unit) {
+      val adbPath = withContext(host.blockingIoDispatcher) { getAdbFile() }
+      adbServerConfiguration.update { configuration -> configuration.copy(adbPath = adbPath, serverPort = port) }
+      serverController.start()
     }
+    // We only attempt to spin up the Adb Server on the requested port
+    return port
+  }
 
-    private fun findOnPath(executableName: String): String? {
-        System.getenv().forEach { (k, v) -> System.err.println("$k=$v") }
-        val pathEnvVariable =
-            System.getenv("PATH")
-                ?: throw IOException("No PATH environmental variable is defined")
-        for (binDir in pathEnvVariable.split(File.pathSeparator)) {
-            val file = Paths.get(binDir).resolve(executableName).toFile()
-            if (file.isFile) {
-                return file.path
-            }
-        }
-        host.logger.debug { "$executableName could not be located in any of the $pathEnvVariable folders" }
-        return null
+  private fun getAdbFile(): Path {
+    val os = System.getProperty("os.name")
+    val adbExecutableName = if (os.startsWith("Windows")) "adb.exe" else "adb"
+    return findOnPath(adbExecutableName) ?: throw IOException("Couldn't locate '$adbExecutableName' on PATH")
+  }
+
+  private fun findOnPath(executableName: String): Path? {
+    val pathEnvVariable = System.getenv("PATH") ?: throw IOException("No PATH environmental variable is defined")
+    for (binDir in pathEnvVariable.split(File.pathSeparator)) {
+      val file = Paths.get(binDir).resolve(executableName)
+      if (Files.isRegularFile(file)) {
+        return file
+      }
     }
+    host.logger.debug { "$executableName could not be located in any of the $pathEnvVariable folders" }
+    return null
+  }
 }

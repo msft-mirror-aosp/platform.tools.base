@@ -24,26 +24,14 @@ import org.junit.Test
 class AndroidVersionUtilTest {
   @Test
   fun testFromProperties() {
-    assertStrictlyEqual(
-      androidVersionFromDeviceProperties(
-        mapOf(
-          "ro.build.version.sdk" to "24",
-        )
-      ),
-      AndroidVersion(24, null, null, true)
-    )
+    assertStrictlyEqual(androidVersionFromDeviceProperties(mapOf("ro.build.version.sdk" to "24")), AndroidVersion(24, null, null, true))
   }
 
   @Test
   fun testFromProperties_r() {
     assertStrictlyEqual(
-      androidVersionFromDeviceProperties(
-        mapOf(
-          "ro.build.version.sdk" to "30",
-          "build.version.extensions.r" to "0",
-        )
-      ),
-      AndroidVersion(30, null, null, true)
+      androidVersionFromDeviceProperties(mapOf("ro.build.version.sdk" to "30", "build.version.extensions.r" to "0")),
+      AndroidVersion(30, null, null, true),
     )
   }
 
@@ -58,7 +46,7 @@ class AndroidVersionUtilTest {
           "build.version.extensions.t" to "3",
         )
       ),
-      AndroidVersion(33, null, 3, true)
+      AndroidVersion(33, null, 3, true),
     )
   }
 
@@ -73,7 +61,7 @@ class AndroidVersionUtilTest {
           "build.version.extensions.t" to "4",
         )
       ),
-      AndroidVersion(33, null, 4, false)
+      AndroidVersion(33, null, 4, false),
     )
   }
 
@@ -89,7 +77,7 @@ class AndroidVersionUtilTest {
           "build.version.extensions.t" to "5",
         )
       ),
-      AndroidVersion(33, "UpsideDownCake", 5, true)
+      AndroidVersion(33, "UpsideDownCake", 5, true),
     )
   }
 
@@ -107,7 +95,7 @@ class AndroidVersionUtilTest {
           "build.version.extensions.ad_services" to "10",
         )
       ),
-      AndroidVersion(34, null, 10, false)
+      AndroidVersion(34, null, 10, false),
     )
   }
 
@@ -126,7 +114,7 @@ class AndroidVersionUtilTest {
           "build.version.extensions.ad_services" to "15",
         )
       ),
-      AndroidVersion(36, 1, "Baklava", 15, true)
+      AndroidVersion(36, 1, "Baklava", 15, true),
     )
   }
 
@@ -137,42 +125,25 @@ class AndroidVersionUtilTest {
 
   @Test
   fun testFromProperties_badSdk() {
-    assertThat(
-        androidVersionFromDeviceProperties(
-          mapOf(
-            "ro.build.version.sdk" to "NaN",
-          )
-        )
-      )
-      .isNull()
+    assertThat(androidVersionFromDeviceProperties(mapOf("ro.build.version.sdk" to "NaN"))).isNull()
   }
 
   @Test
   fun testFromProperties_badExtension() {
     assertStrictlyEqual(
-      androidVersionFromDeviceProperties(
-        mapOf(
-          "ro.build.version.sdk" to "33",
-          "build.version.extensions.r" to "NaN",
-        )
-      ),
-      AndroidVersion(33, null, null, true)
+      androidVersionFromDeviceProperties(mapOf("ro.build.version.sdk" to "33", "build.version.extensions.r" to "NaN")),
+      AndroidVersion(33, null, null, true),
     )
   }
 }
 
 /**
- * AndroidVersion.equals() is a bit loose: it ignores isBaseExtension if the extensionLevels are
- * equal. Here, we want to know that we read the AndroidVersion exactly as expected, not just
- * equivalent.
+ * AndroidVersion.equals() is a bit loose: it ignores isBaseExtension if the extensionLevels are equal. Here, we want to know that we read
+ * the AndroidVersion exactly as expected, not just equivalent.
  */
 private fun assertStrictlyEqual(actual: AndroidVersion?, expected: AndroidVersion) {
   checkNotNull(actual)
   assertThat(actual).isEqualTo(expected)
-  assertWithMessage("AndroidVersion.isBaseExtension")
-    .that(actual.isBaseExtension)
-    .isEqualTo(expected.isBaseExtension)
-  assertWithMessage("AndroidVersion.extensionLevel")
-    .that(actual.extensionLevel)
-    .isEqualTo(expected.extensionLevel)
+  assertWithMessage("AndroidVersion.isBaseExtension").that(actual.isBaseExtension).isEqualTo(expected.isBaseExtension)
+  assertWithMessage("AndroidVersion.extensionLevel").that(actual.extensionLevel).isEqualTo(expected.extensionLevel)
 }

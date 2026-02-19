@@ -17,8 +17,8 @@
 package com.android.build.gradle.integration.common.fixture
 
 enum class VariantApiTestType {
-    // tests using the old variant API
-    OLD,
-    // tests using the new variant API.
-    NEW
+  // tests using the old variant API
+  OLD,
+  // tests using the new variant API.
+  NEW,
 }

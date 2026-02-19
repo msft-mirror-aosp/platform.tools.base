@@ -20,6 +20,7 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.serialNumber
 import com.android.adblib.testing.FakeAdbLoggerFactory
+import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState.DeviceStatus.ONLINE
@@ -30,6 +31,7 @@ import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.testutils.toChannel
 import com.android.sdklib.AndroidApiLevel
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -43,150 +45,149 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
-import java.time.Duration
 
-/**
- * Tests for [JdwpProcessTracker]
- */
+/** Tests for [JdwpProcessTracker] */
 @Suppress("OPT_IN_IS_NOT_ENABLED")
 @OptIn(ExperimentalCoroutinesApi::class) // runTest is experimental (replaced runTestTest)
 class JdwpProcessTrackerTest {
 
-    @get:Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @get:Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    private val adbSession get() = fakeAdbRule.adbSession
-    private val logger = FakeAdbLoggerFactory().logger
+  private val adbSession
+    get() = fakeAdbRule.adbSession
 
-    @Test
-    fun trackProcesses_addProcesses_appProcessFlow(): Unit = runBlocking {
-        val device = setupDevice("device1", 33)
-        val connectedDevice = adbSession.waitForDevice("device1")
-        val tracker = JdwpProcessTracker(connectedDevice, logger)
+  private val logger = FakeAdbLoggerFactory().logger
 
+  @Test
+  fun trackProcesses_addProcesses_appProcessFlow(): Unit = runBlocking {
+    val device = setupDevice("device1", 33)
+    val connectedDevice = adbSession.waitForDevice("device1")
+    val tracker = JdwpProcessTracker(connectedDevice, logger)
+
+    device.startClient(101, 1, "processName1", "packageName1", false)
+    device.startClient(102, 1, "processName2", "packageName2", false)
+    device.startClient(103, 1, "processName3", "packageName3", false)
+    val events = tracker.trackProcesses().take(3).toList()
+
+    assertThat(events)
+      .containsExactly(
+        ProcessAdded(pid = 101, "packageName1", "processName1"),
+        ProcessAdded(pid = 102, "packageName2", "processName2"),
+        ProcessAdded(pid = 103, "packageName3", "processName3"),
+      )
+  }
+
+  @Test
+  fun trackProcesses_addAndThenRemove_appProcessFlow() =
+    runTest(dispatchTimeoutMs = 5_000) {
+      val device = setupDevice("device2", 33)
+      val connectedDevice = adbSession.waitForDevice("device2")
+      val tracker = JdwpProcessTracker(connectedDevice, logger)
+
+      tracker.trackProcesses().toChannel(this).use { channel ->
         device.startClient(101, 1, "processName1", "packageName1", false)
         device.startClient(102, 1, "processName2", "packageName2", false)
-        device.startClient(103, 1, "processName3", "packageName3", false)
-        val events = tracker.trackProcesses().take(3).toList()
+        val addedEvents = channel.take(2)
+        device.stopClient(101)
+        device.stopClient(102)
+        val removedEvents = channel.take(2)
 
-        assertThat(events).containsExactly(
-            ProcessAdded(pid = 101, "packageName1", "processName1"),
-            ProcessAdded(pid = 102, "packageName2", "processName2"),
-            ProcessAdded(pid = 103, "packageName3", "processName3"),
-        )
+        assertThat(addedEvents)
+          .containsExactly(ProcessAdded(pid = 101, "packageName1", "processName1"), ProcessAdded(pid = 102, "packageName2", "processName2"))
+        assertThat(removedEvents).containsExactly(ProcessRemoved(pid = 102), ProcessRemoved(pid = 101))
+      }
     }
 
-    @Test
-    fun trackProcesses_addAndThenRemove_appProcessFlow() = runTest(dispatchTimeoutMs = 5_000) {
-        val device = setupDevice("device2", 33)
-        val connectedDevice = adbSession.waitForDevice("device2")
-        val tracker = JdwpProcessTracker(connectedDevice, logger)
+  @Test
+  fun trackProcesses_addProcesses_jdwpProcessFlow(): Unit = runBlocking {
+    val device = setupDevice("device1", 30)
+    val connectedDevice = adbSession.waitForDevice("device1")
+    val tracker = JdwpProcessTracker(connectedDevice, logger)
 
-        tracker.trackProcesses().toChannel(this).use { channel ->
-            device.startClient(101, 1, "processName1", "packageName1", false)
-            device.startClient(102, 1, "processName2", "packageName2", false)
-            val addedEvents = channel.take(2)
-            device.stopClient(101)
-            device.stopClient(102)
-            val removedEvents = channel.take(2)
+    device.startClient(101, 1, "processName1", "packageName1", false)
+    device.startClient(102, 1, "processName2", "packageName2", false)
+    device.startClient(103, 1, "processName3", "packageName3", false)
+    val events = tracker.trackProcesses().take(3).toList()
 
-            assertThat(addedEvents).containsExactly(
-                ProcessAdded(pid = 101, "packageName1", "processName1"),
-                ProcessAdded(pid = 102, "packageName2", "processName2"),
-            )
-            assertThat(removedEvents).containsExactly(
-                ProcessRemoved(pid = 102),
-                ProcessRemoved(pid = 101),
-            )
-        }
-    }
+    assertThat(events)
+      .containsExactly(
+        ProcessAdded(pid = 101, "packageName1", "processName1"),
+        ProcessAdded(pid = 102, "packageName2", "processName2"),
+        ProcessAdded(pid = 103, "packageName3", "processName3"),
+      )
+  }
 
-    @Test
-    fun trackProcesses_addProcesses_jdwpProcessFlow(): Unit = runBlocking {
-        val device = setupDevice("device1", 30)
-        val connectedDevice = adbSession.waitForDevice("device1")
-        val tracker = JdwpProcessTracker(connectedDevice, logger)
+  @Test
+  fun trackProcesses_addAndThenRemove_jdwpProcessFlow() =
+    runTest(dispatchTimeoutMs = 5_000) {
+      val device = setupDevice("device2", 30)
+      val connectedDevice = adbSession.waitForDevice("device2")
+      val tracker = JdwpProcessTracker(connectedDevice, logger)
 
+      tracker.trackProcesses().toChannel(this).use { channel ->
         device.startClient(101, 1, "processName1", "packageName1", false)
         device.startClient(102, 1, "processName2", "packageName2", false)
-        device.startClient(103, 1, "processName3", "packageName3", false)
-        val events = tracker.trackProcesses().take(3).toList()
+        val addedEvents = channel.take(2)
+        device.stopClient(101)
+        device.stopClient(102)
+        val removedEvents = channel.take(2)
 
-        assertThat(events).containsExactly(
-            ProcessAdded(pid = 101, "packageName1", "processName1"),
-            ProcessAdded(pid = 102, "packageName2", "processName2"),
-            ProcessAdded(pid = 103, "packageName3", "processName3"),
-        )
+        assertThat(addedEvents)
+          .containsExactly(ProcessAdded(pid = 101, "packageName1", "processName1"), ProcessAdded(pid = 102, "packageName2", "processName2"))
+        assertThat(removedEvents).containsExactly(ProcessRemoved(pid = 102), ProcessRemoved(pid = 101))
+      }
     }
 
-    @Test
-    fun trackProcesses_addAndThenRemove_jdwpProcessFlow() = runTest(dispatchTimeoutMs = 5_000) {
-        val device = setupDevice("device2", 30)
-        val connectedDevice = adbSession.waitForDevice("device2")
-        val tracker = JdwpProcessTracker(connectedDevice, logger)
+  @Test
+  fun trackProcesses_sendsOneAndOnlyOneProcessAddedEvent(): Unit = runBlocking {
+    // Setup
+    val device = setupDevice("device1", 33)
+    val connectedDevice = adbSession.waitForDevice("device1")
+    val tracker = JdwpProcessTracker(connectedDevice, logger)
 
-        tracker.trackProcesses().toChannel(this).use { channel ->
-            device.startClient(101, 1, "processName1", "packageName1", false)
-            device.startClient(102, 1, "processName2", "packageName2", false)
-            val addedEvents = channel.take(2)
-            device.stopClient(101)
-            device.stopClient(102)
-            val removedEvents = channel.take(2)
+    val clientState = device.startClient(101, 1, "processName1", "packageName1", false)
+    // Sending a `Wait` command will result in another process update.
+    // This test is about making sure that this update does not result
+    // in additional `ProcessAdded` event being emitted.
+    clientState.sendWaitCommandAfterHelo = Duration.ofMillis(100)
 
-            assertThat(addedEvents).containsExactly(
-                ProcessAdded(pid = 101, "packageName1", "processName1"),
-                ProcessAdded(pid = 102, "packageName2", "processName2"),
-            )
-            assertThat(removedEvents).containsExactly(
-                ProcessRemoved(pid = 102),
-                ProcessRemoved(pid = 101),
-            )
-        }
+    // Act
+    val allEvents = mutableListOf<ProcessEvent>()
+    val job = launch { tracker.trackProcesses().collect { allEvents.add(it) } }
+
+    // Wait a little longer after getting the first process event
+    yieldUntil { allEvents.size >= 1 }
+    delay(200)
+    job.cancelAndJoin()
+
+    assertThat(allEvents).containsExactly(ProcessAdded(pid = 101, "packageName1", "processName1"))
+  }
+
+  @Test
+  fun trackProcesses_throwsEOFException_whenDeviceDisconnects() = runBlockingWithTimeout {
+    val device = setupDevice("device1", 33)
+    val connectedDevice = adbSession.waitForDevice("device1")
+    val tracker = JdwpProcessTracker(connectedDevice, logger)
+
+    device.startClient(101, 1, "processName1", "packageName1", false)
+
+    val result = runCatching {
+      tracker.trackProcesses().collect {
+        // We disconnect the device from the flow collector, so that we know the
+        // flow is active.
+        fakeAdbRule.fakeAdb.disconnectDevice(device.deviceId)
+      }
     }
 
-    @Test
-    fun trackProcesses_sendsOneAndOnlyOneProcessAddedEvent(): Unit = runBlocking {
-        // Setup
-        val device = setupDevice("device1", 33)
-        val connectedDevice = adbSession.waitForDevice("device1")
-        val tracker = JdwpProcessTracker(connectedDevice, logger)
+    assertThat(result.exceptionOrNull()).isInstanceOf(java.io.EOFException::class.java)
+  }
 
-        val clientState =
-            device.startClient(101, 1, "processName1", "packageName1", false)
-        // Sending a `Wait` command will result in another process update.
-        // This test is about making sure that this update does not result
-        // in additional `ProcessAdded` event being emitted.
-        clientState.sendWaitCommandAfterHelo = Duration.ofMillis(100)
+  private fun setupDevice(serialNumber: String, sdk: Int) =
+    fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(sdk), USB).apply { deviceStatus = ONLINE }
 
-        // Act
-        val allEvents = mutableListOf<ProcessEvent>()
-        val job = launch {
-            tracker.trackProcesses().collect {
-                allEvents.add(it)
-            }
-        }
-
-        // Wait a little longer after getting the first process event
-        yieldUntil { allEvents.size >= 1 }
-        delay(200)
-        job.cancelAndJoin()
-
-        assertThat(allEvents).containsExactly(
-            ProcessAdded(pid = 101, "packageName1", "processName1"),
-        )
-    }
-
-    private fun setupDevice(serialNumber: String, sdk: Int) =
-        fakeAdbRule.fakeAdb.connectDevice(serialNumber, "", "", "13", AndroidApiLevel(sdk), USB).apply {
-            deviceStatus = ONLINE
-        }
-
-    private suspend fun AdbSession.waitForDevice(serialNumber: String): ConnectedDevice {
-        return connectedDevicesTracker.connectedDevices.map { it.findDevice(serialNumber) }
-            .filterNotNull()
-            .first()
-    }
+  private suspend fun AdbSession.waitForDevice(serialNumber: String): ConnectedDevice {
+    return connectedDevicesTracker.connectedDevices.map { it.findDevice(serialNumber) }.filterNotNull().first()
+  }
 }
 
-private fun List<ConnectedDevice>.findDevice(serialNumber: String) =
-    firstOrNull { it.serialNumber == serialNumber }
+private fun List<ConnectedDevice>.findDevice(serialNumber: String) = firstOrNull { it.serialNumber == serialNumber }

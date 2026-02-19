@@ -18,6 +18,8 @@ package com.android.compose.screenshot.layoutlibExtractor
 
 import com.android.utils.FileUtils
 import com.google.common.io.ByteStreams
+import java.nio.file.Files
+import java.util.zip.ZipInputStream
 import org.gradle.api.Project
 import org.gradle.api.artifacts.transform.InputArtifact
 import org.gradle.api.artifacts.transform.TransformAction
@@ -30,85 +32,63 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
-import java.nio.file.Files
-import java.util.zip.ZipInputStream
 
 class LayoutlibDataFromMaven(val layoutlibDataDirectory: FileCollection) {
-    companion object {
-        private const val MAVEN_GROUP = "com.android.tools.layoutlib"
-        private const val MAVEN_ARTIFACT = "layoutlib-runtime"
-        private const val TYPE_EXTRACTED_LAYOUTLIB_DATA = "_internal-android-extracted-layoutlib-data"
+  companion object {
+    private const val MAVEN_GROUP = "com.android.tools.layoutlib"
+    private const val MAVEN_ARTIFACT = "layoutlib-runtime"
+    private const val TYPE_EXTRACTED_LAYOUTLIB_DATA = "_internal-android-extracted-layoutlib-data"
 
-        /**
-         * Extract layoutlib data from maven for this project.
-         */
-        @JvmStatic
-        fun create(
-            project: Project,
-            version: String,
-            frameworkResJar: FileCollection
-        ): LayoutlibDataFromMaven {
-            // Use single-string notation to avoid a Gradle deprecation that will be an error in Gradle 10.
-            val configuration = project.configurations.detachedConfiguration(
-                project.dependencies.create("$MAVEN_GROUP:$MAVEN_ARTIFACT:$version")
-            )
-            configuration.isCanBeConsumed = false
-            configuration.isCanBeResolved = true
+    /** Extract layoutlib data from maven for this project. */
+    @JvmStatic
+    fun create(project: Project, version: String, frameworkResJar: FileCollection): LayoutlibDataFromMaven {
+      // Use single-string notation to avoid a Gradle deprecation that will be an error in Gradle
+      // 10.
+      val configuration = project.configurations.detachedConfiguration(project.dependencies.create("$MAVEN_GROUP:$MAVEN_ARTIFACT:$version"))
+      configuration.isCanBeConsumed = false
+      configuration.isCanBeResolved = true
 
-            project.dependencies.registerTransform(LayoutLibDataExtractor::class.java) {
-                it.from.attribute(
-                    ARTIFACT_TYPE_ATTRIBUTE,
-                    ArtifactTypeDefinition.JAR_TYPE
-                )
-                it.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA)
-                it.parameters.apply {
-                    frameworkRes.setFrom(frameworkResJar)
-                }
-            }
+      project.dependencies.registerTransform(LayoutLibDataExtractor::class.java) {
+        it.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, ArtifactTypeDefinition.JAR_TYPE)
+        it.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA)
+        it.parameters.apply { frameworkRes.setFrom(frameworkResJar) }
+      }
 
-            val layoutlibDataDirectory = configuration.incoming.artifactView { config ->
-                config.attributes {
-                    it.attribute(
-                        ARTIFACT_TYPE_ATTRIBUTE,
-                        TYPE_EXTRACTED_LAYOUTLIB_DATA
-                    )
-                }
-            }.artifacts.artifactFiles
-            return LayoutlibDataFromMaven(layoutlibDataDirectory)
-        }
+      val layoutlibDataDirectory =
+        configuration.incoming
+          .artifactView { config -> config.attributes { it.attribute(ARTIFACT_TYPE_ATTRIBUTE, TYPE_EXTRACTED_LAYOUTLIB_DATA) } }
+          .artifacts
+          .artifactFiles
+      return LayoutlibDataFromMaven(layoutlibDataDirectory)
+    }
+  }
+
+  abstract class LayoutLibDataExtractor : TransformAction<LayoutLibDataExtractor.Parameters> {
+
+    abstract class Parameters : TransformParameters {
+
+      @get:Classpath abstract val frameworkRes: ConfigurableFileCollection
     }
 
-    abstract class LayoutLibDataExtractor : TransformAction<LayoutLibDataExtractor.Parameters> {
+    @get:Classpath @get:InputArtifact abstract val inputArtifact: Provider<FileSystemLocation>
 
-        abstract class Parameters: TransformParameters {
-
-            @get:Classpath
-            abstract val frameworkRes: ConfigurableFileCollection
+    override fun transform(transformOutputs: TransformOutputs) {
+      val input = inputArtifact.get().asFile
+      val outDir = transformOutputs.dir("layoutlib").toPath()
+      Files.createDirectories(outDir)
+      ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
+        while (true) {
+          val entry = zipInputStream.nextEntry ?: break
+          if (entry.name.contains("../") || entry.isDirectory) {
+            continue
+          }
+          val destinationFile = outDir.resolve(entry.name)
+          Files.createDirectories(destinationFile.parent)
+          Files.newOutputStream(destinationFile).buffered().use { output -> ByteStreams.copy(zipInputStream, output) }
         }
-
-        @get:Classpath
-        @get:InputArtifact
-        abstract val inputArtifact: Provider<FileSystemLocation>
-
-        override fun transform(transformOutputs: TransformOutputs) {
-            val input = inputArtifact.get().asFile
-            val outDir = transformOutputs.dir("layoutlib").toPath()
-            Files.createDirectories(outDir)
-            ZipInputStream(input.inputStream().buffered()).use { zipInputStream ->
-                while (true) {
-                    val entry = zipInputStream.nextEntry ?: break
-                    if (entry.name.contains("../") || entry.isDirectory) {
-                        continue
-                    }
-                    val destinationFile = outDir.resolve(entry.name)
-                    Files.createDirectories(destinationFile.parent)
-                    Files.newOutputStream(destinationFile).buffered().use { output ->
-                        ByteStreams.copy(zipInputStream, output)
-                    }
-                }
-            }
-            val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
-            FileUtils.copyFile(parameters.frameworkRes.singleFile, resJar)
-        }
+      }
+      val resJar = outDir.resolve("data").resolve("framework_res.jar").toFile()
+      FileUtils.copyFile(parameters.frameworkRes.singleFile, resJar)
     }
+  }
 }

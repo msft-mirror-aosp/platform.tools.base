@@ -154,9 +154,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
     private val MAX_CALL_DEPTH = if (LintClient.isStudio) 1 else 2
     /** Maximum depth of the AST tree it will search */
     private val MAX_RECURSION_DEPTH = if (LintClient.isStudio) 5 else 10
-    /**
-     * When analyzing a block such as a method, the maximum number of statements it will consider
-     */
+    /** When analyzing a block such as a method, the maximum number of statements it will consider */
     private val MAX_STATEMENT_COUNT = if (LintClient.isStudio) 8 else 20
   }
 
@@ -169,9 +167,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
       override fun visitCallExpression(node: UCallExpression) {
         if (node.sourcePsi is PsiAssertStatement) {
           val condition = (node.sourcePsi as PsiAssertStatement).assertCondition ?: return
-          UastFacade.convertElement(condition, node, UExpression::class.java)?.let {
-            checkSideEffect(context, it as UExpression)
-          }
+          UastFacade.convertElement(condition, node, UExpression::class.java)?.let { checkSideEffect(context, it as UExpression) }
         }
       }
     }
@@ -188,10 +184,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
     }
 
     val containingClass = method.containingClass?.qualifiedName ?: return
-    if (
-      containingClass != "kotlin.PreconditionsKt__AssertionsJVMKt" &&
-        containingClass != "kotlin.PreconditionsKt"
-    ) {
+    if (containingClass != "kotlin.PreconditionsKt__AssertionsJVMKt" && containingClass != "kotlin.PreconditionsKt") {
       return
     }
 
@@ -208,11 +201,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
     checkSideEffect(context, condition)
   }
 
-  private fun checkKotlinAssertion(
-    context: JavaContext,
-    assertion: UCallExpression,
-    condition: UExpression,
-  ) {
+  private fun checkKotlinAssertion(context: JavaContext, assertion: UCallExpression, condition: UExpression) {
     if (context.isEnabled(EXPENSIVE) && warnAboutWork(assertion, condition)) {
       val location = context.getLocation(condition)
       var message = "Kotlin assertion arguments are always evaluated, even when assertions are off"
@@ -220,8 +209,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
       val cls = assertion.getParentOfType(UClass::class.java, true)
       if (cls?.sourcePsi != null) { // sourcePsi == null: top level functions
         fix = createKotlinAssertionStatusFix(context, assertion)
-        message +=
-          ". Consider surrounding assertion with `if (javaClass.desiredAssertionStatus()) { assert(...) }`"
+        message += ". Consider surrounding assertion with `if (javaClass.desiredAssertionStatus()) { assert(...) }`"
       } else {
         fix = null
       }
@@ -243,11 +231,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
   }
 
   /** Looks for side effects, up to 2 calls deep and up to 5 statements in each method. */
-  private fun getSideEffect(
-    node: UExpression?,
-    depth: Int,
-    callDepth: Int,
-  ): Pair<UExpression, String>? {
+  private fun getSideEffect(node: UExpression?, depth: Int, callDepth: Int): Pair<UExpression, String>? {
     node ?: return null
     if (depth == MAX_RECURSION_DEPTH) {
       return null
@@ -271,9 +255,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
       }
       is UPolyadicExpression -> {
         if (
-          node is UBinaryExpression &&
-            node.operator is UastBinaryOperator.AssignOperator &&
-            (callDepth == 0 || !isLocal(node.leftOperand))
+          node is UBinaryExpression && node.operator is UastBinaryOperator.AssignOperator && (callDepth == 0 || !isLocal(node.leftOperand))
         ) {
           return Pair(node, node.sourcePsi?.text ?: node.operator.text)
         }
@@ -304,10 +286,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
               }
               is KaFunctionSymbol -> {
                 val callableId = functionSymbol.callableId ?: return null
-                if (
-                  !callableId.packageName.startsWith(FqName("kotlin")) &&
-                    mayHaveSideEffects(callableId.callableName.identifier)
-                ) {
+                if (!callableId.packageName.startsWith(FqName("kotlin")) && mayHaveSideEffects(callableId.callableName.identifier)) {
                   return Pair(node, sourcePsi.text)
                 }
               }
@@ -378,10 +357,7 @@ class AssertDetector : Detector(), SourceCodeScanner {
     return resolved is PsiLocalVariable || resolved is PsiParameter
   }
 
-  private fun createKotlinAssertionStatusFix(
-    context: JavaContext,
-    assertCall: UCallExpression,
-  ): LintFix {
+  private fun createKotlinAssertionStatusFix(context: JavaContext, assertCall: UCallExpression): LintFix {
     return fix()
       .name("Surround with desiredAssertionStatus() check")
       .replace()
@@ -393,8 +369,8 @@ class AssertDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Returns true if the given assert call is performing computation in its condition without
-   * explicitly checking for whether assertions are enabled.
+   * Returns true if the given assert call is performing computation in its condition without explicitly checking for whether assertions are
+   * enabled.
    */
   private fun warnAboutWork(assertCall: UCallExpression, condition: UExpression): Boolean {
     return isExpensive(condition, 0) && !isWithinAssertionStatusCheck(assertCall)
@@ -423,13 +399,9 @@ class AssertDetector : Detector(), SourceCodeScanner {
       }
       return false
     } else if (argument is UParenthesizedExpression) {
-      return isExpensive(
-        argument.expression,
-        depth,
-      ) // not +1: cheap and want to allow parenthesis mode tests
+      return isExpensive(argument.expression, depth) // not +1: cheap and want to allow parenthesis mode tests
     } else if (argument is UBinaryExpression) {
-      return isExpensive(argument.leftOperand, depth + 1) ||
-        isExpensive(argument.rightOperand, depth + 1)
+      return isExpensive(argument.leftOperand, depth + 1) || isExpensive(argument.rightOperand, depth + 1)
     } else if (argument is UUnaryExpression) {
       return isExpensive(argument.operand, depth + 1)
     } else if (argument is USimpleNameReferenceExpression) {

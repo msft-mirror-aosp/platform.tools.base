@@ -21,14 +21,8 @@ import org.gradle.api.provider.Property
 /** DSL object to configure a model dependency for an AI pack. */
 @Incubating
 interface ModelDependency {
-    /**
-     * The package name of the app that contains this model dependency.
-     */
-    @get:Incubating
-    val aiModelPackageName: Property<String>
-    /**
-     * The name of the AI model dependency.
-     */
-    @get:Incubating
-    val aiModelName: Property<String>
+  /** The package name of the app that contains this model dependency. */
+  @get:Incubating val aiModelPackageName: Property<String>
+  /** The name of the AI model dependency. */
+  @get:Incubating val aiModelName: Property<String>
 }

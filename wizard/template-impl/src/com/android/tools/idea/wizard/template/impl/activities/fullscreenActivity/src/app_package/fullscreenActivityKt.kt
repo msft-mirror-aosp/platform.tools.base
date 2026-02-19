@@ -29,13 +29,16 @@ fun fullscreenActivityKt(
   layoutName: String,
   packageName: String,
   superClassFqcn: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val applicationPackageBlock = renderIf(applicationPackage != null) {"import ${escapeKotlinIdentifier(applicationPackage!!)}.R"}
-  val contentViewBlock = if (isViewBindingSupported) """
+  val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${escapeKotlinIdentifier(applicationPackage!!)}.R" }
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """package ${escapeKotlinIdentifier(packageName)}
 
@@ -122,13 +125,13 @@ ${renderIf(isViewBindingSupported) {"""
         fullscreenContent = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fullscreen_content")}
+          id = "fullscreen_content",)}
         fullscreenContent.setOnClickListener { toggle() }
 
         fullscreenContentControls = ${findViewById(
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fullscreen_content_controls")}
+          id = "fullscreen_content_controls",)}
 
         // Upon interacting with UI controls, delay any scheduled hide()
         // operations to prevent the jarring behavior of controls going away
@@ -137,7 +140,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
           id = "dummy_button",
-          className = "Button")}.setOnTouchListener(delayHideTouchListener)
+          className = "Button",)}.setOnTouchListener(delayHideTouchListener)
     }
 
     override fun onPostCreate(savedInstanceState: Bundle?) {

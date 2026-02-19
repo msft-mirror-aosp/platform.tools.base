@@ -20,23 +20,23 @@ import com.android.builder.model.v2.AndroidModel
 import com.android.builder.model.v2.ide.ArtifactDependenciesFlatList
 import com.android.builder.model.v2.ide.Library
 
-interface VariantDependenciesFlatList: AndroidModel {
-    /**
-     * Returns the name of the variant. It is made up of the build type and flavors (if applicable)
-     *
-     * @return the name of the variant.
-     */
-    val name: String
+interface VariantDependenciesFlatList : AndroidModel {
+  /**
+   * Returns the name of the variant. It is made up of the build type and flavors (if applicable)
+   *
+   * @return the name of the variant.
+   */
+  val name: String
 
-    val mainArtifact: ArtifactDependenciesFlatList
-    val deviceTestArtifacts: Map<String, ArtifactDependenciesFlatList>
-    val hostTestArtifacts: Map<String, ArtifactDependenciesFlatList>
-    val testFixturesArtifact: ArtifactDependenciesFlatList?
+  val mainArtifact: ArtifactDependenciesFlatList
+  val deviceTestArtifacts: Map<String, ArtifactDependenciesFlatList>
+  val hostTestArtifacts: Map<String, ArtifactDependenciesFlatList>
+  val testFixturesArtifact: ArtifactDependenciesFlatList?
 
-    /**
-     * The list of external libraries used by all the variants in the module.
-     *
-     * The key for the map entries is the keys used in [ArtifactDependenciesFlatList]
-     */
-    val libraries: Map<String, Library>
+  /**
+   * The list of external libraries used by all the variants in the module.
+   *
+   * The key for the map entries is the keys used in [ArtifactDependenciesFlatList]
+   */
+  val libraries: Map<String, Library>
 }

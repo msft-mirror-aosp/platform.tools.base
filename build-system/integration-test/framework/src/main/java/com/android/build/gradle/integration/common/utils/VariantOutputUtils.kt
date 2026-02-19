@@ -15,12 +15,11 @@
  */
 
 @file:JvmName("VariantOutputUtils")
+
 package com.android.build.gradle.integration.common.utils
 
 import com.android.build.api.variant.BuiltArtifact
 import com.android.build.api.variant.FilterConfiguration
 
 fun BuiltArtifact.getFilter(filterType: FilterConfiguration.FilterType): String? =
-    filters.firstOrNull { it.filterType == filterType }?.identifier
-
-
+  filters.firstOrNull { it.filterType == filterType }?.identifier

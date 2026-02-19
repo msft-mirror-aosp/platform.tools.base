@@ -42,12 +42,7 @@ internal class GrpcTracker(private val connection: Connection) {
 
   private var lastThread: AtomicReference<Thread?> = AtomicReference()
 
-  fun trackGrpcCallStarted(
-    service: String,
-    method: String,
-    requestHeaders: Metadata,
-    trace: String,
-  ) {
+  fun trackGrpcCallStarted(service: String, method: String, requestHeaders: Metadata, trace: String) {
     try {
       connection.reportGrpcEvent(
         GrpcEvent.newBuilder()
@@ -67,10 +62,7 @@ internal class GrpcTracker(private val connection: Connection) {
   fun <T> trackGrpcMessageSent(message: T, marshaller: Marshaller<T>) {
     try {
       connection.reportGrpcEvent(
-        GrpcEvent.newBuilder()
-          .setGrpcMessageSent(
-            GrpcMessageSent.newBuilder().setPayload(marshaller.createGrpcPayload(message))
-          )
+        GrpcEvent.newBuilder().setGrpcMessageSent(GrpcMessageSent.newBuilder().setPayload(marshaller.createGrpcPayload(message)))
       )
     } catch (t: Throwable) {
       Logger.error("Failed to report a GrpcEvent", t)
@@ -81,11 +73,7 @@ internal class GrpcTracker(private val connection: Connection) {
     try {
       connection.reportGrpcEvent(
         GrpcEvent.newBuilder()
-          .setGrpcStreamCreated(
-            GrpcStreamCreated.newBuilder()
-              .setAddress(address)
-              .addAllRequestHeaders(requestHeaders.toGrpcMetadata())
-          )
+          .setGrpcStreamCreated(GrpcStreamCreated.newBuilder().setAddress(address).addAllRequestHeaders(requestHeaders.toGrpcMetadata()))
       )
     } catch (t: Throwable) {
       Logger.error("Failed to report a GrpcEvent", t)
@@ -96,9 +84,7 @@ internal class GrpcTracker(private val connection: Connection) {
     try {
       connection.reportGrpcEvent(
         GrpcEvent.newBuilder()
-          .setGrpcResponseHeaders(
-            GrpcResponseHeaders.newBuilder().addAllResponseHeaders(responseHeaders.toGrpcMetadata())
-          )
+          .setGrpcResponseHeaders(GrpcResponseHeaders.newBuilder().addAllResponseHeaders(responseHeaders.toGrpcMetadata()))
       )
     } catch (t: Throwable) {
       Logger.error("Failed to report a GrpcEvent", t)
@@ -108,10 +94,7 @@ internal class GrpcTracker(private val connection: Connection) {
   fun <T> trackGrpcMessageReceived(message: T, marshaller: Marshaller<T>) {
     try {
       connection.reportGrpcEvent(
-        GrpcEvent.newBuilder()
-          .setGrpcMessageReceived(
-            GrpcMessageReceived.newBuilder().setPayload(marshaller.createGrpcPayload(message))
-          )
+        GrpcEvent.newBuilder().setGrpcMessageReceived(GrpcMessageReceived.newBuilder().setPayload(marshaller.createGrpcPayload(message)))
       )
     } catch (t: Throwable) {
       Logger.error("Failed to report a GrpcEvent", t)
@@ -120,10 +103,7 @@ internal class GrpcTracker(private val connection: Connection) {
 
   fun trackGrpcCallEnded(status: Status, trailers: Metadata) {
     try {
-      val callEnded =
-        GrpcCallEnded.newBuilder()
-          .setStatus(status.code.toString())
-          .addAllTrailers(trailers.toGrpcMetadata())
+      val callEnded = GrpcCallEnded.newBuilder().setStatus(status.code.toString()).addAllTrailers(trailers.toGrpcMetadata())
       if (status.cause != null) {
         callEnded.setError(status.cause?.stackTraceToString())
       }
@@ -142,10 +122,7 @@ internal class GrpcTracker(private val connection: Connection) {
     val thread = Thread.currentThread()
     val last = lastThread.getAndSet(thread)
     if (thread !== last) {
-      sendGrpcEvent(
-        GrpcEvent.newBuilder()
-          .setGrpcThread(ThreadData.newBuilder().setThreadId(thread.id).setThreadName(thread.name))
-      )
+      sendGrpcEvent(GrpcEvent.newBuilder().setGrpcThread(ThreadData.newBuilder().setThreadId(thread.id).setThreadName(thread.name)))
     }
   }
 
@@ -180,10 +157,7 @@ private fun <T> Marshaller<T>.createGrpcPayload(message: T): GrpcPayload.Builder
       message.isProto() -> message.toProtoText()
       else -> message.toString()
     }
-  return GrpcPayload.newBuilder()
-    .setBytes(ByteString.copyFrom(stream(message).readAllBytes()))
-    .setType(className)
-    .setText(text)
+  return GrpcPayload.newBuilder().setBytes(ByteString.copyFrom(stream(message).readAllBytes())).setType(className).setText(text)
 }
 
 private fun Any.toProtoText() = "# proto-message: ${this::class.java.simpleName}\n\n$this"

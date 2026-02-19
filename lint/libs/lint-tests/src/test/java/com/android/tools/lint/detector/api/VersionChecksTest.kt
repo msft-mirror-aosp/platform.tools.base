@@ -3946,7 +3946,7 @@ class VersionChecksTest : AbstractCheckTest() {
                     var actionBar = getActionBar(); // ok
                 }
             }
-          """
+            """
               .trimIndent()
           )
           .indented(),

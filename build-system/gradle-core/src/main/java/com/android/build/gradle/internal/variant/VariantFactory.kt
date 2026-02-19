@@ -26,15 +26,15 @@ import com.android.build.api.variant.impl.GlobalVariantBuilderConfig
 import com.android.build.api.variant.impl.HostTestBuilderImpl
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
-import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.TestFixturesCreationConfig
+import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
+import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
-import com.android.build.gradle.internal.core.dsl.TestFixturesComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.HostTestComponentDslInfo
+import com.android.build.gradle.internal.core.dsl.TestFixturesComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.VariantDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.BuildType
@@ -55,156 +55,147 @@ import org.gradle.api.Project
 /**
  * Interface for Variant Factory.
  *
- *
- * While VariantManager is the general variant management, implementation of this interface
- * provides variant type (app, lib) specific implementation.
+ * While VariantManager is the general variant management, implementation of this interface provides variant type (app, lib) specific
+ * implementation.
  */
-interface VariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT: VariantDslInfo, VariantT : VariantCreationConfig> {
+interface VariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT : VariantDslInfo, VariantT : VariantCreationConfig> {
 
-    fun createVariantBuilder(
-        globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-        componentIdentity: ComponentIdentity,
-        variantDslInfo: VariantDslInfoT,
-        variantBuilderServices: VariantBuilderServices
-    ): VariantBuilderT
+  fun createVariantBuilder(
+    globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+    componentIdentity: ComponentIdentity,
+    variantDslInfo: VariantDslInfoT,
+    variantBuilderServices: VariantBuilderServices,
+  ): VariantBuilderT
 
-    fun createVariant(
-        variantBuilder: VariantBuilderT,
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        variantDslInfo: VariantDslInfoT,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: BaseVariantData,
-        taskContainer: MutableTaskContainer,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-    ): VariantT
+  fun createVariant(
+    variantBuilder: VariantBuilderT,
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    variantDslInfo: VariantDslInfoT,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: BaseVariantData,
+    taskContainer: MutableTaskContainer,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+  ): VariantT
 
-    fun createTestFixtures(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: TestFixturesComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        taskContainer: MutableTaskContainer,
-        mainVariant: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig
-    ): TestFixturesCreationConfig
+  fun createTestFixtures(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: TestFixturesComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    taskContainer: MutableTaskContainer,
+    mainVariant: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+  ): TestFixturesCreationConfig
 
-    fun createUnitTest(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: HostTestComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: TestVariantData,
-        taskContainer: MutableTaskContainer,
-        testedVariantProperties: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-        hostTestBuilder: HostTestBuilderImpl,
-    ): HostTestCreationConfig
+  fun createUnitTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: HostTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    hostTestBuilder: HostTestBuilderImpl,
+  ): HostTestCreationConfig
 
-    fun createHostTest(
-            componentIdentity: ComponentIdentity,
-            buildFeatures: BuildFeatureValues,
-            dslInfo: HostTestComponentDslInfo,
-            variantDependencies: VariantDependencies,
-            variantSources: VariantSources,
-            paths: VariantPathHelper,
-            artifacts: ArtifactsImpl,
-            variantData: TestVariantData,
-            taskContainer: MutableTaskContainer,
-            testedVariantProperties: VariantCreationConfig,
-            variantServices: VariantServices,
-            taskCreationServices: TaskCreationServices,
-            globalConfig: GlobalTaskCreationConfig,
-            hostTestBuilder: HostTestBuilderImpl,
-        ): HostTestCreationConfig
+  fun createHostTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: HostTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    hostTestBuilder: HostTestBuilderImpl,
+  ): HostTestCreationConfig
 
-    fun createAndroidTest(
-        componentIdentity: ComponentIdentity,
-        buildFeatures: BuildFeatureValues,
-        dslInfo: AndroidTestComponentDslInfo,
-        variantDependencies: VariantDependencies,
-        variantSources: VariantSources,
-        paths: VariantPathHelper,
-        artifacts: ArtifactsImpl,
-        variantData: TestVariantData,
-        taskContainer: MutableTaskContainer,
-        testedVariantProperties: VariantCreationConfig,
-        variantServices: VariantServices,
-        taskCreationServices: TaskCreationServices,
-        globalConfig: GlobalTaskCreationConfig,
-        deviceTestBuilder: DeviceTestBuilderImpl,
-        ): DeviceTestCreationConfig
+  fun createAndroidTest(
+    componentIdentity: ComponentIdentity,
+    buildFeatures: BuildFeatureValues,
+    dslInfo: AndroidTestComponentDslInfo,
+    variantDependencies: VariantDependencies,
+    variantSources: VariantSources,
+    paths: VariantPathHelper,
+    artifacts: ArtifactsImpl,
+    variantData: TestVariantData,
+    taskContainer: MutableTaskContainer,
+    testedVariantProperties: VariantCreationConfig,
+    variantServices: VariantServices,
+    taskCreationServices: TaskCreationServices,
+    globalConfig: GlobalTaskCreationConfig,
+    deviceTestBuilder: DeviceTestBuilderImpl,
+  ): DeviceTestCreationConfig
 
-    fun createVariantData(
-        componentIdentity: ComponentIdentity,
-        artifacts: ArtifactsImpl,
-        services: VariantServices
-    ): BaseVariantData
+  fun createVariantData(componentIdentity: ComponentIdentity, artifacts: ArtifactsImpl, services: VariantServices): BaseVariantData
 
-    fun createBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        projectServices: ProjectServices,
-    ): BuildFeatureValues
+  fun createBuildFeatureValues(buildFeatures: BuildFeatures, projectServices: ProjectServices): BuildFeatureValues
 
-    fun createTestFixturesBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        projectServices: ProjectServices,
-        androidResourcesEnabled: Boolean
-    ): BuildFeatureValues
+  fun createTestFixturesBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    projectServices: ProjectServices,
+    androidResourcesEnabled: Boolean,
+  ): BuildFeatureValues
 
-    fun createHostTestBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        dataBinding: DataBinding,
-        projectServices: ProjectServices,
-        includeAndroidResources: Boolean,
-        hostTestComponentType: ComponentType
-    ): BuildFeatureValues
+  fun createHostTestBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    dataBinding: DataBinding,
+    projectServices: ProjectServices,
+    includeAndroidResources: Boolean,
+    hostTestComponentType: ComponentType,
+  ): BuildFeatureValues
 
-    fun createAndroidTestBuildFeatureValues(
-        buildFeatures: BuildFeatures,
-        dataBinding: DataBinding,
-        projectServices: ProjectServices,
-    ): BuildFeatureValues
+  fun createAndroidTestBuildFeatureValues(
+    buildFeatures: BuildFeatures,
+    dataBinding: DataBinding,
+    projectServices: ProjectServices,
+  ): BuildFeatureValues
 
-    val variantImplementationClass: Class<out BaseVariantImpl?>
+  val variantImplementationClass: Class<out BaseVariantImpl?>
 
-    fun createVariantApi(
-            component: ComponentCreationConfig,
-            variantData: BaseVariantData,
-            readOnlyObjectProvider: ReadOnlyObjectProvider): BaseVariantImpl?
+  fun createVariantApi(
+    component: ComponentCreationConfig,
+    variantData: BaseVariantData,
+    readOnlyObjectProvider: ReadOnlyObjectProvider,
+  ): BaseVariantImpl?
 
-    val componentType: ComponentType
+  val componentType: ComponentType
 
-    /**
-     * Callback before variant creation to allow extra work or validation
-     *
-     * @param project the Project
-     * @param dslExtension the Extension
-     * @param model the non-null model to validate, as implemented by the VariantManager.
+  /**
+   * Callback before variant creation to allow extra work or validation
+   *
+   * @param project the Project
+   * @param dslExtension the Extension
+   * @param model the non-null model to validate, as implemented by the VariantManager.
+   * @throws org.gradle.api.GradleException in case of failed validation
+   */
+  fun preVariantCallback(
+    project: Project,
+    dslExtension: CommonExtension,
+    model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>,
+  )
 
-     * @throws org.gradle.api.GradleException in case of failed validation
-     */
-    fun preVariantCallback(
-        project: Project,
-        dslExtension: CommonExtension,
-        model: VariantInputModel<DefaultConfig, BuildType, ProductFlavor, SigningConfig>
-    )
-
-    fun createDefaultComponents(
-            dslContainers: DslContainerProvider<DefaultConfig, BuildType, ProductFlavor, SigningConfig>)
+  fun createDefaultComponents(dslContainers: DslContainerProvider<DefaultConfig, BuildType, ProductFlavor, SigningConfig>)
 }

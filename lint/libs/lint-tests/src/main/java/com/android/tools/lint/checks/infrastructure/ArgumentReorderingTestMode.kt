@@ -33,16 +33,9 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UFile
 
-/**
- * Test mode which reorders the argument order in Kotlin files to make sure that detectors are
- * properly computing the argument map.
- */
+/** Test mode which reorders the argument order in Kotlin files to make sure that detectors are properly computing the argument map. */
 class ArgumentReorderingTestMode :
-  UastSourceTransformationTestMode(
-    description = "Reordered Named Arguments",
-    "TestMode.REORDER_ARGUMENTS",
-    "reorder-arguments",
-  ) {
+  UastSourceTransformationTestMode(description = "Reordered Named Arguments", "TestMode.REORDER_ARGUMENTS", "reorder-arguments") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -68,12 +61,7 @@ class ArgumentReorderingTestMode :
     return file.targetRelativePath.endsWith(DOT_KT)
   }
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     val edits = mutableListOf<Edit>()
     root.acceptSourceFile(
       object : EditVisitor() {
@@ -98,12 +86,14 @@ class ArgumentReorderingTestMode :
               val parameter = argumentMapping[argument]
               val ktParameter =
                 (parameter as? KtLightElement<*, *>)?.kotlinOrigin as? KtParameter
-                  // We can't just reorder some and not all so if any are not found, skip this call
+                  // We can't just reorder some and not all so if any are not found, skip this
+                  // call
                   ?: return
               if (ktParameter.isVarArg) {
                 // Currently, we're not trying to reorder varags. This is a bit more complicated
                 // since the parameter mapping we're getting has a number of repeats and we
-                // have to figure out how to construct an array from the individual elements -- e.g.
+                // have to figure out how to construct an array from the individual elements --
+                // e.g.
                 // if we have foo(true, 1,2,3) this would need to turn into
                 //  foo(name=true, arrays=intArrayOf(1,2,3)), and son.
                 return

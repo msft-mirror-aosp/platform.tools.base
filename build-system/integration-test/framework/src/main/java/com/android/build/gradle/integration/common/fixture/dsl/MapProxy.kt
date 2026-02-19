@@ -16,55 +16,56 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-internal class MapProxy<K, V>(
-    private val dslRecorder: DslRecorder
-): MutableMap<K, V> {
+internal class MapProxy<K, V>(private val dslRecorder: DslRecorder) : MutableMap<K, V> {
 
-    override fun put(key: K, value: V): V? {
-        key ?: throw RuntimeException("null key value")
-        dslRecorder.mapPut(key, value)
-        return value
-    }
+  override fun put(key: K, value: V): V? {
+    key ?: throw RuntimeException("null key value")
+    dslRecorder.mapPut(key, value)
+    return value
+  }
 
-    override fun clear() {
-        dslRecorder.call("clear", listOf(), isVarArgs = false)
-    }
+  override fun clear() {
+    dslRecorder.call("clear", listOf(), isVarArgs = false)
+  }
 
-    override fun remove(key: K): V? {
-        dslRecorder.call("remove", listOf(key), isVarArgs = false)
-        return null // we cannot return the actual value. Don't rely on this!
-    }
+  override fun remove(key: K): V? {
+    dslRecorder.call("remove", listOf(key), isVarArgs = false)
+    return null // we cannot return the actual value. Don't rely on this!
+  }
 
-    override fun putAll(from: Map<out K, V>) {
-        dslRecorder.mapPutAll(from)
-    }
+  override fun putAll(from: Map<out K, V>) {
+    dslRecorder.mapPutAll(from)
+  }
 
-    // ----------
-    // below here are all the method not related to adding/removing and are therefore
-    // not supported by the proxy.
+  // ----------
+  // below here are all the method not related to adding/removing and are therefore
+  // not supported by the proxy.
 
-    override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
-        get() = throw RuntimeException("Not yet implemented")
-    override val keys: MutableSet<K>
-        get() = throw RuntimeException("Not yet implemented")
-    override val size: Int
-        get() = throw RuntimeException("Not yet implemented")
-    override val values: MutableCollection<V>
-        get() = throw RuntimeException("Not yet implemented")
+  override val entries: MutableSet<MutableMap.MutableEntry<K, V>>
+    get() = throw RuntimeException("Not yet implemented")
 
-    override fun isEmpty(): Boolean {
-        throw RuntimeException("Not yet implemented")
-    }
+  override val keys: MutableSet<K>
+    get() = throw RuntimeException("Not yet implemented")
 
-    override fun get(key: K): V? {
-        throw RuntimeException("Not yet implemented")
-    }
+  override val size: Int
+    get() = throw RuntimeException("Not yet implemented")
 
-    override fun containsValue(value: V): Boolean {
-        throw RuntimeException("Not yet implemented")
-    }
+  override val values: MutableCollection<V>
+    get() = throw RuntimeException("Not yet implemented")
 
-    override fun containsKey(key: K): Boolean {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun isEmpty(): Boolean {
+    throw RuntimeException("Not yet implemented")
+  }
+
+  override fun get(key: K): V? {
+    throw RuntimeException("Not yet implemented")
+  }
+
+  override fun containsValue(value: V): Boolean {
+    throw RuntimeException("Not yet implemented")
+  }
+
+  override fun containsKey(key: K): Boolean {
+    throw RuntimeException("Not yet implemented")
+  }
 }

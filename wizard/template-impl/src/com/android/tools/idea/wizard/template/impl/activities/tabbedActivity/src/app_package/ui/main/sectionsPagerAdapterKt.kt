@@ -19,10 +19,7 @@ package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.sr
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun sectionsPagerAdapterKt(
-  packageName: String,
-  useAndroidX: Boolean) =
-
+fun sectionsPagerAdapterKt(packageName: String, useAndroidX: Boolean) =
   """package ${escapeKotlinIdentifier(packageName)}.ui.main
 
 import android.content.Context

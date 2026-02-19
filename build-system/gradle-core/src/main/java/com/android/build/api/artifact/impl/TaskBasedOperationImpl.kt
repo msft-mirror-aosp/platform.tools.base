@@ -26,65 +26,55 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.FileSystemLocationProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.TaskProvider
 
-class TaskBasedOperationImpl<TaskT: Task>(
-    override val artifacts: ArtifactsImpl,
-    val taskProvider: TaskProvider<TaskT>
-): TaskBasedOperation<TaskT>, ArtifactOperationRequest {
+class TaskBasedOperationImpl<TaskT : Task>(override val artifacts: ArtifactsImpl, val taskProvider: TaskProvider<TaskT>) :
+  TaskBasedOperation<TaskT>, ArtifactOperationRequest {
 
-    override fun <FileTypeT : FileSystemLocation> wiredWith(
-        taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
-    ): OutOperationRequest<FileTypeT> =
-        OutOperationRequestImpl(artifacts, taskProvider, taskOutput).also {
-            artifacts.addRequest(it)
-            closeRequest()
-        }
+  override fun <FileTypeT : FileSystemLocation> wiredWith(
+    taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
+  ): OutOperationRequest<FileTypeT> =
+    OutOperationRequestImpl(artifacts, taskProvider, taskOutput).also {
+      artifacts.addRequest(it)
+      closeRequest()
+    }
 
-    override fun <FileTypeT : FileSystemLocation> wiredWithMultiple(
-        taskInput: (TaskT) -> ListProperty<FileTypeT>
-    ): MultipleArtifactTypeOutOperationRequest<FileTypeT> =
-        MultipleArtifactTypeOutOperationRequestImpl(artifacts, taskProvider, taskInput).also {
-            artifacts.addRequest(it)
-            closeRequest()
-        }
+  override fun <FileTypeT : FileSystemLocation> wiredWithMultiple(
+    taskInput: (TaskT) -> ListProperty<FileTypeT>
+  ): MultipleArtifactTypeOutOperationRequest<FileTypeT> =
+    MultipleArtifactTypeOutOperationRequestImpl(artifacts, taskProvider, taskInput).also {
+      artifacts.addRequest(it)
+      closeRequest()
+    }
 
+  override fun wiredWithFiles(
+    taskInput: (TaskT) -> RegularFileProperty,
+    taskOutput: (TaskT) -> RegularFileProperty,
+  ): InAndOutFileOperationRequest =
+    InAndOutFileOperationRequestImpl(artifacts, taskProvider, taskInput, taskOutput).also {
+      artifacts.addRequest(it)
+      closeRequest()
+    }
 
-    override fun wiredWithFiles(
-        taskInput: (TaskT) -> RegularFileProperty,
-        taskOutput: (TaskT) -> RegularFileProperty
-    ): InAndOutFileOperationRequest =
-        InAndOutFileOperationRequestImpl(
-            artifacts,
-            taskProvider,
-            taskInput,
-            taskOutput
-        ).also {
-            artifacts.addRequest(it)
-            closeRequest()
-        }
+  override fun <FileTypeT : FileSystemLocation> wiredWith(
+    taskInput: (TaskT) -> ListProperty<FileTypeT>,
+    taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>,
+  ): CombiningOperationRequest<FileTypeT> =
+    CombiningOperationRequestImpl(artifacts, taskProvider, taskInput, taskOutput).also {
+      artifacts.addRequest(it)
+      closeRequest()
+    }
 
-    override fun <FileTypeT : FileSystemLocation> wiredWith(
-        taskInput: (TaskT) -> ListProperty<FileTypeT>,
-        taskOutput: (TaskT) -> FileSystemLocationProperty<FileTypeT>
-    ): CombiningOperationRequest<FileTypeT> =
-        CombiningOperationRequestImpl(artifacts, taskProvider, taskInput, taskOutput).also {
-            artifacts.addRequest(it)
-            closeRequest()
-        }
+  override fun wiredWithDirectories(
+    taskInput: (TaskT) -> DirectoryProperty,
+    taskOutput: (TaskT) -> DirectoryProperty,
+  ): InAndOutDirectoryOperationRequestImpl<TaskT> =
+    InAndOutDirectoryOperationRequestImpl(artifacts, taskProvider, taskInput, taskOutput).also {
+      artifacts.addRequest(it)
+      closeRequest()
+    }
 
-    override fun wiredWithDirectories(
-        taskInput: (TaskT) -> DirectoryProperty,
-        taskOutput: (TaskT) -> DirectoryProperty
-    ): InAndOutDirectoryOperationRequestImpl<TaskT> =
-        InAndOutDirectoryOperationRequestImpl(artifacts, taskProvider, taskInput, taskOutput).also {
-            artifacts.addRequest(it)
-            closeRequest()
-        }
-
-    override val description: String
-        get() = "Task ${taskProvider.name} was passed to Artifacts::use method without wiring any " +
-            "input and/or output to an artifact."
+  override val description: String
+    get() = "Task ${taskProvider.name} was passed to Artifacts::use method without wiring any " + "input and/or output to an artifact."
 }

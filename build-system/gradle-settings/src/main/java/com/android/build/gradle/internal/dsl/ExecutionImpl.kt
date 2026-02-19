@@ -18,25 +18,22 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.Execution
 import com.android.build.api.dsl.ExecutionProfile
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-internal open class ExecutionImpl @Inject constructor(objectFactory: ObjectFactory): Execution {
-    override val profiles: NamedDomainObjectContainer<ExecutionProfile> =
-        objectFactory.domainObjectContainer(
-            ExecutionProfile::class.java,
-            ExecutionProfileFactory(objectFactory)
-        )
+internal open class ExecutionImpl @Inject constructor(objectFactory: ObjectFactory) : Execution {
+  override val profiles: NamedDomainObjectContainer<ExecutionProfile> =
+    objectFactory.domainObjectContainer(ExecutionProfile::class.java, ExecutionProfileFactory(objectFactory))
 
-    fun profiles(action: Action<NamedDomainObjectContainer<ExecutionProfile>>) {
-        action.execute(profiles)
-    }
+  fun profiles(action: Action<NamedDomainObjectContainer<ExecutionProfile>>) {
+    action.execute(profiles)
+  }
 
-    override fun profiles(action: NamedDomainObjectContainer<ExecutionProfile>.() -> Unit) {
-        action.invoke(profiles)
-    }
+  override fun profiles(action: NamedDomainObjectContainer<ExecutionProfile>.() -> Unit) {
+    action.invoke(profiles)
+  }
 
-    override var defaultProfile: String? = null
+  override var defaultProfile: String? = null
 }

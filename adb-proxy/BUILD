@@ -41,6 +41,7 @@ kotlin_library(
         "src/**/*.kt",
     ]),
     visibility = [
+        "//tools/adt/idea/as-driver:__subpackages__",
         "//tools/vendor/google/directaccess-client:__subpackages__",
     ],
     deps = [

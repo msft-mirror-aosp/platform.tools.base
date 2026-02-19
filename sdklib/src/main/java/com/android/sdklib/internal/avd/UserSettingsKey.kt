@@ -15,14 +15,11 @@
  */
 package com.android.sdklib.internal.avd
 
-/**
- * Keys to config entries in an AVD's user-settings.ini file (which resides within the AVD's data
- * folder).
- */
+/** Keys to config entries in an AVD's user-settings.ini file (which resides within the AVD's data folder). */
 object UserSettingsKey {
   /**
-   * The ABI that applications should be built with for this device. (This allows testing an app
-   * using alternative ABIs via binary translation, rather than the native ABI of the device.)
+   * The ABI that applications should be built with for this device. (This allows testing an app using alternative ABIs via binary
+   * translation, rather than the native ABI of the device.)
    */
   const val PREFERRED_ABI = "abi.type.preferred"
 

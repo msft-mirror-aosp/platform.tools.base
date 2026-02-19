@@ -16,20 +16,20 @@
 
 package com.android.build.api.dsl
 
-import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.gradle.api.NamedDomainObjectContainer
 import org.jetbrains.kotlin.gradle.dsl.HasConfigurableKotlinCompilerOptions
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompilerOptions
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 
-interface KotlinMultiplatformAndroidLibraryTarget:
-    KotlinTarget,
-    KotlinMultiplatformAndroidLibraryExtension,
-    HasConfigurableKotlinCompilerOptions<KotlinJvmCompilerOptions> {
+interface KotlinMultiplatformAndroidLibraryTarget :
+  KotlinTarget, KotlinMultiplatformAndroidLibraryExtension, HasConfigurableKotlinCompilerOptions<KotlinJvmCompilerOptions> {
 
-    override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation>
+  override val compilations: NamedDomainObjectContainer<KotlinMultiplatformAndroidCompilation>
 
-    /**
-     * Enables compilation of java sources.
-     */
-    fun withJava()
+  /** Enables compilation of java sources. */
+  fun withJava()
 }
+
+/** @suppress */
+@Deprecated(message = "The 'androidLibrary' block is deprecated. Please use 'android' instead.", replaceWith = ReplaceWith("android"))
+interface DeprecatedKotlinMultiplatformAndroidLibraryTarget : KotlinMultiplatformAndroidLibraryTarget

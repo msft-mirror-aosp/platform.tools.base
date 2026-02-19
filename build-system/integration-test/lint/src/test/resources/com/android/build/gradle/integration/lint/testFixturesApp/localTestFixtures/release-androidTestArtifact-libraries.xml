@@ -1,12 +1,20 @@
 <libraries>
   <library
+      name=":@@:lib::release"
+      project=":lib"
+      provided="true"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:2.2.10"/>
+  <library
       name=":@@:javaLib"
       jars="${projectDir}/javaLib/build/libs/javaLib.jar"
       resolved="::"/>
   <library
-      name=":@@:lib::release"
-      project=":lib"
-      provided="true"/>
+      name="org.jetbrains:annotations:13.0@jar"
+      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+      resolved="org.jetbrains:annotations:13.0"/>
   <library
       name=":@@:app::release::testFixtures"
       jars="${gradleCacheDir}/<digest>/transformed/out-test-fixtures/jars/classes.jar"
@@ -24,10 +32,6 @@
       name=":@@:app::release"
       project=":app"/>
   <library
-      name=":@@:javaLib::testFixtures"
-      jars="${projectDir}/javaLib/build/libs/javaLib-test-fixtures.jar"
-      resolved="::"/>
-  <library
       name=":@@:lib::release::testFixtures"
       jars="${gradleCacheDir}/<digest>/transformed/out-test-fixtures/jars/classes.jar:${gradleCacheDir}/<digest>/transformed/out-test-fixtures/jars/libs/R.jar"
       resolved="testFixturesApp:lib:unspecified"
@@ -40,6 +44,10 @@
       symbolFile="R.txt"
       externalAnnotations="annotations.zip"
       proguardRules="proguard.txt"/>
+  <library
+      name=":@@:javaLib::testFixtures"
+      jars="${projectDir}/javaLib/build/libs/javaLib-test-fixtures.jar"
+      resolved="::"/>
   <library
       name="com.google.truth:truth:0.44@jar"
       jars="${mavenRepo}/com/google/truth/truth/0.44/truth-0.44.jar"

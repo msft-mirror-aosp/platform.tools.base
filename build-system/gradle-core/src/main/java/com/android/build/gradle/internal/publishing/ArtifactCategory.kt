@@ -22,13 +22,9 @@ import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.VerificationType
 
 /**
- * Indicates that an artifact should be published/consumed with [categoryName] as the category
- * attribute, and using [secondaryAttribute] to distinguish between the different artifacts in the
- * same category.
+ * Indicates that an artifact should be published/consumed with [categoryName] as the category attribute, and using [secondaryAttribute] to
+ * distinguish between the different artifacts in the same category.
  */
-enum class ArtifactCategory(
-    val categoryName: String,
-    val secondaryAttribute: Attribute<out Named>
-) {
-    VERIFICATION(Category.VERIFICATION, VerificationType.VERIFICATION_TYPE_ATTRIBUTE),
+enum class ArtifactCategory(val categoryName: String, val secondaryAttribute: Attribute<out Named>) {
+  VERIFICATION(Category.VERIFICATION, VerificationType.VERIFICATION_TYPE_ATTRIBUTE)
 }

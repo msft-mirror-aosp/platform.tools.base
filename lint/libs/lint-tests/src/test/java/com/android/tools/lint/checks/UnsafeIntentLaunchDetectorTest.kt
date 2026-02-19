@@ -120,9 +120,7 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
       )
   }
 
-  /**
-   * Activity that does not declare export attribute but with intentFilter is considered exported.
-   */
+  /** Activity that does not declare export attribute but with intentFilter is considered exported. */
   fun testUnparceledIntentLaunchFromActivityWithFilter() {
     lint()
       .files(
@@ -349,10 +347,7 @@ class UnsafeIntentLaunchDetectorTest : AbstractCheckTest() {
       .expectClean()
   }
 
-  /**
-   * Activity that does not declare export attribute and without intentFilter is considered not
-   * exported.
-   */
+  /** Activity that does not declare export attribute and without intentFilter is considered not exported. */
   fun testUnparcelIntentLaunchFromActivityWithoutFilter() {
     lint()
       .files(

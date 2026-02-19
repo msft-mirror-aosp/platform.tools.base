@@ -19,20 +19,12 @@ package com.android.tools.idea.wizard.template.impl.activities.composeWearActivi
 import com.android.tools.idea.wizard.template.activityToLayout
 import com.android.tools.idea.wizard.template.renderIf
 
-
-fun stringsXml(
-  activityClass: String,
-  isNewModule: Boolean
-): String {
-  val nameBlock = renderIf(!isNewModule) {"<string name=\"title_${activityToLayout(activityClass)}\">${activityClass}</string>"}
+fun stringsXml(activityClass: String, isNewModule: Boolean): String {
+  val nameBlock = renderIf(!isNewModule) { "<string name=\"title_${activityToLayout(activityClass)}\">${activityClass}</string>" }
   return """
 <resources>
     $nameBlock
-    <!--
-    This string is used for square devices and overridden by hello_world in
-    values-round/strings.xml for round devices.
-    -->
-    <string name="hello_world">From the Square world,\nHello, %1${'$'}s!</string>
+    <string name="hello_world">Hello, %1${'$'}s!</string>
 </resources>
 """
 }

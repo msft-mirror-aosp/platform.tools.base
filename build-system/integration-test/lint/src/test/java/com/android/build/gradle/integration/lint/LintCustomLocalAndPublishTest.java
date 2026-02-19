@@ -48,7 +48,6 @@ public class LintCustomLocalAndPublishTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintCustomLocalAndPublishRules")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Test
@@ -128,7 +127,7 @@ public class LintCustomLocalAndPublishTest {
                         + File.separator
                         + "AndroidManifest.xml:10: Error: Should not specify <activity>."
                         + " [UnitTestLintCheck from com.example.google.lintpublish]\n"
-                        + "        <activity android:name=\".MainActivity\">\n"
+                        + "        <activity android:name=\".MainActivity\" android:exported=\"true\">\n"
                         + "        ^\n"
                         + "\n"
                         + "   Explanation for issues of type \"UnitTestLintCheck\":\n"

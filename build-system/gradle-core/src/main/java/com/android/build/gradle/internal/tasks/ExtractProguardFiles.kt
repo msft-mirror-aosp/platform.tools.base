@@ -33,43 +33,36 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
 abstract class ExtractProguardFiles : NonIncrementalGlobalTask() {
 
-    @get:Internal("only for task execution")
-    abstract val buildDirectory: DirectoryProperty
+  @get:Internal("only for task execution") abstract val buildDirectory: DirectoryProperty
 
-    @get:OutputDirectory
-    abstract val proguardFilesDir: DirectoryProperty
+  @get:OutputDirectory abstract val proguardFilesDir: DirectoryProperty
 
-    override fun doTaskAction() {
-        for (name in ProguardFiles.KNOWN_FILE_NAMES) {
-            val defaultProguardFile = ProguardFiles.getDefaultProguardFile(name, buildDirectory)
-            if (!defaultProguardFile.isFile) {
-                ProguardFiles.createProguardFile(name, defaultProguardFile)
-            }
-        }
+  override fun doTaskAction() {
+    for (name in ProguardFiles.KNOWN_FILE_NAMES) {
+      val defaultProguardFile = ProguardFiles.getDefaultProguardFile(name, buildDirectory)
+      if (!defaultProguardFile.isFile) {
+        ProguardFiles.createProguardFile(name, defaultProguardFile)
+      }
+    }
+  }
+
+  class CreationAction(private val creationConfig: GlobalTaskCreationConfig) : GlobalTaskCreationAction<ExtractProguardFiles>() {
+
+    override val name = "extractProguardFiles"
+    override val type = ExtractProguardFiles::class.java
+
+    override fun configure(task: ExtractProguardFiles) {
+      super.configure(task)
+      task.buildDirectory.setDisallowChanges(creationConfig.services.projectInfo.buildDirectory)
     }
 
-    class CreationAction(
-        private val creationConfig: GlobalTaskCreationConfig
-    ) : GlobalTaskCreationAction<ExtractProguardFiles>() {
+    override fun handleProvider(taskProvider: TaskProvider<ExtractProguardFiles>) {
+      super.handleProvider(taskProvider)
 
-        override val name = "extractProguardFiles"
-        override val type = ExtractProguardFiles::class.java
-
-        override fun configure(task: ExtractProguardFiles) {
-            super.configure(task)
-            task.buildDirectory.setDisallowChanges(creationConfig.services.projectInfo.buildDirectory)
-        }
-
-        override fun handleProvider(taskProvider: TaskProvider<ExtractProguardFiles>) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.globalArtifacts
-                .setInitialProvider(taskProvider, ExtractProguardFiles::proguardFilesDir)
-                .atLocation (
-                    ProguardFiles
-                        .getDefaultProguardFileDirectory(creationConfig.services.projectInfo.buildDirectory)
-                )
-                .on(InternalArtifactType.DEFAULT_PROGUARD_FILES)
-        }
+      creationConfig.globalArtifacts
+        .setInitialProvider(taskProvider, ExtractProguardFiles::proguardFilesDir)
+        .atLocation(ProguardFiles.getDefaultProguardFileDirectory(creationConfig.services.projectInfo.buildDirectory))
+        .on(InternalArtifactType.DEFAULT_PROGUARD_FILES)
     }
+  }
 }

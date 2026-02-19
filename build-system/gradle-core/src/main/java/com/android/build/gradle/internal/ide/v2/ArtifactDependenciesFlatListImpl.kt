@@ -21,16 +21,13 @@ import com.android.builder.model.v2.ide.UnresolvedDependency
 import java.io.Serializable
 
 data class ArtifactDependenciesFlatListImpl(
-    override val compileDependencies: List<String>,
-    override val runtimeDependencies: List<String>?,
-    override val unresolvedDependencies: List<UnresolvedDependency>
+  override val compileDependencies: List<String>,
+  override val runtimeDependencies: List<String>?,
+  override val unresolvedDependencies: List<UnresolvedDependency>,
 ) : ArtifactDependenciesFlatList, Serializable {
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }
-
-

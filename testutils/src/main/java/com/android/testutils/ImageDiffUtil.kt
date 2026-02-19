@@ -18,7 +18,6 @@ package com.android.testutils
 import com.android.SdkConstants
 import com.android.io.readImage
 import com.android.io.writeImage
-import org.junit.Assert
 import java.awt.Color
 import java.awt.Image
 import java.awt.image.BufferedImage
@@ -30,176 +29,171 @@ import java.nio.file.Path
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
+import org.junit.Assert
 
 object ImageDiffUtil {
-    /**
-     * Converts a BufferedImage type to [TYPE_INT_ARGB],
-     * which is the only type accepted by [ImageDiffUtil.assertImageSimilar].
-     */
-    @JvmStatic
-    fun convertToARGB(inputImg: Image): BufferedImage {
-        if (inputImg is BufferedImage && inputImg.type == TYPE_INT_ARGB) {
-            return inputImg // Early return in case the image has already the correct type
-        }
-        val outputImg =
-            BufferedImage(inputImg.getWidth(null), inputImg.getHeight(null), TYPE_INT_ARGB)
-        val g2d = outputImg.createGraphics()
-        g2d.drawImage(inputImg, 0, 0, null)
-        g2d.dispose()
-        return outputImg
+  /** Converts a BufferedImage type to [TYPE_INT_ARGB], which is the only type accepted by [ImageDiffUtil.assertImageSimilar]. */
+  @JvmStatic
+  fun convertToARGB(inputImg: Image): BufferedImage {
+    if (inputImg is BufferedImage && inputImg.type == TYPE_INT_ARGB) {
+      return inputImg // Early return in case the image has already the correct type
     }
+    val outputImg = BufferedImage(inputImg.getWidth(null), inputImg.getHeight(null), TYPE_INT_ARGB)
+    val g2d = outputImg.createGraphics()
+    g2d.drawImage(inputImg, 0, 0, null)
+    g2d.dispose()
+    return outputImg
+  }
 
-    /**
-     * Asserts that the given image is similar to a golden file for the current OS platform.
-     * If the golden image file does not exist, it is created and the test fails.
-     */
-    fun assertImageSimilarPerPlatform(
-        testDataPath: Path,
-        fileNameBase: String,
-        actual: BufferedImage,
-        maxPercentDifferent: Double
-    ) {
-        val os = when (val platform = SdkConstants.currentPlatform()) {
-            SdkConstants.PLATFORM_LINUX -> "linux"
-            SdkConstants.PLATFORM_DARWIN -> "mac"
-            SdkConstants.PLATFORM_WINDOWS -> "windows"
-            else -> throw IllegalArgumentException("unknown platform $platform")
-        }
-        val goldenFile = testDataPath.resolve("$fileNameBase-$os.png")
-        assertImageSimilar(goldenFile, actual, maxPercentDifferent)
+  /**
+   * Asserts that the given image is similar to a golden file for the current OS platform. If the golden image file does not exist, it is
+   * created and the test fails.
+   */
+  fun assertImageSimilarPerPlatform(testDataPath: Path, fileNameBase: String, actual: BufferedImage, maxPercentDifferent: Double) {
+    val os =
+      when (val platform = SdkConstants.currentPlatform()) {
+        SdkConstants.PLATFORM_LINUX -> "linux"
+        SdkConstants.PLATFORM_DARWIN -> "mac"
+        SdkConstants.PLATFORM_WINDOWS -> "windows"
+        else -> throw IllegalArgumentException("unknown platform $platform")
+      }
+    val goldenFile = testDataPath.resolve("$fileNameBase-$os.png")
+    assertImageSimilar(goldenFile, actual, maxPercentDifferent)
+  }
+
+  /**
+   * Asserts that the given image is similar to the golden one contained in the given file. If the golden image file does not exist, it is
+   * created and AssertionError is thrown unless [ignoreMissingGoldenFile] is true, in which case the method simply returns.
+   */
+  @Throws(IOException::class)
+  @JvmStatic
+  @JvmOverloads
+  fun assertImageSimilar(
+    goldenFile: Path,
+    actual: BufferedImage,
+    maxPercentDifferent: Double = 0.0,
+    maxSizeDifference: Int = 0,
+    ignoreMissingGoldenFile: Boolean = false,
+  ) {
+    if (Files.notExists(goldenFile)) {
+      if (ignoreMissingGoldenFile) {
+        return
+      }
+      val converted = convertToARGB(actual)
+      Files.createDirectories(goldenFile.parent)
+      val outFile = TestUtils.getTestOutputDir().resolve(goldenFile.fileName.toString())
+      // This will show up in undeclared outputs when running on a test server
+      converted.writeImage("PNG", outFile)
+      // This will copy the file to its designated location. Useful when running locally.
+      converted.writeImage("PNG", goldenFile)
+      throw AssertionError("File did not exist, created here: $goldenFile and in undeclared outputs")
     }
+    val goldenImage = goldenFile.readImage()
+    assertImageSimilar(goldenFile.fileName.toString(), goldenImage, actual, maxPercentDifferent, maxSizeDifference)
+  }
 
-    /**
-     * Asserts that the given image is similar to the golden one contained in the given file.
-     * If the golden image file does not exist, it is created and AssertionError is thrown unless
-     * [ignoreMissingGoldenFile] is true, in which case the method simply returns.
-     */
-    @Throws(IOException::class)
-    @JvmStatic
-    @JvmOverloads
-    fun assertImageSimilar(goldenFile: Path, actual: BufferedImage,
-            maxPercentDifferent: Double = 0.0, maxSizeDifference: Int = 0,
-            ignoreMissingGoldenFile: Boolean = false) {
-        if (Files.notExists(goldenFile)) {
-            if (ignoreMissingGoldenFile) {
-                return
-            }
-            val converted = convertToARGB(actual)
-            Files.createDirectories(goldenFile.parent)
-            val outFile = TestUtils.getTestOutputDir().resolve(goldenFile.fileName.toString())
-            // This will show up in undeclared outputs when running on a test server
-            converted.writeImage("PNG", outFile)
-            // This will copy the file to its designated location. Useful when running locally.
-            converted.writeImage("PNG", goldenFile)
-            throw AssertionError("File did not exist, created here: $goldenFile and in undeclared outputs")
-        }
-        val goldenImage = goldenFile.readImage()
-        assertImageSimilar(goldenFile.fileName.toString(), goldenImage, actual, maxPercentDifferent,
-                           maxSizeDifference)
+  @Throws(IOException::class)
+  @JvmStatic
+  @JvmOverloads
+  fun assertImageSimilar(
+    imageName: String,
+    goldenImage: BufferedImage,
+    image: Image,
+    maxPercentDifferent: Double = 0.0,
+    maxSizeDifference: Int = 0,
+  ) {
+    // If we get exactly the same object, there is no need to check.
+    if (goldenImage === image) {
+      return
     }
+    val bufferedImage = convertToARGB(image)
+    val imageWidth = min(goldenImage.width, bufferedImage.width)
+    val imageHeight = min(goldenImage.height, bufferedImage.height)
 
-    @Throws(IOException::class)
-    @JvmStatic
-    @JvmOverloads
-    fun assertImageSimilar(
-        imageName: String,
-        goldenImage: BufferedImage,
-        image: Image,
-        maxPercentDifferent: Double = 0.0,
-        maxSizeDifference: Int = 0
-    ) {
-        // If we get exactly the same object, there is no need to check.
-        if (goldenImage === image) {
-            return
+    val width = 3 * imageWidth
+    val height = imageHeight // makes code more readable
+    val deltaImage = BufferedImage(width, height, TYPE_INT_ARGB)
+    val g = deltaImage.graphics
+
+    // Compute delta map
+    var delta = 0.0
+    for (y in 0 until imageHeight) {
+      for (x in 0 until imageWidth) {
+        val goldenRgb = goldenImage.getRGB(x, y)
+        val rgb = bufferedImage.getRGB(x, y)
+        if (goldenRgb == rgb) {
+          deltaImage.setRGB(imageWidth + x, y, 0x00808080)
+          continue
         }
-        val bufferedImage = convertToARGB(image)
-        val imageWidth = min(goldenImage.width, bufferedImage.width)
-        val imageHeight = min(goldenImage.height, bufferedImage.height)
 
-        val width = 3 * imageWidth
-        val height = imageHeight // makes code more readable
-        val deltaImage = BufferedImage(width, height, TYPE_INT_ARGB)
-        val g = deltaImage.graphics
-
-        // Compute delta map
-        var delta = 0.0
-        for (y in 0 until imageHeight) {
-            for (x in 0 until imageWidth) {
-                val goldenRgb = goldenImage.getRGB(x, y)
-                val rgb = bufferedImage.getRGB(x, y)
-                if (goldenRgb == rgb) {
-                    deltaImage.setRGB(imageWidth + x, y, 0x00808080)
-                    continue
-                }
-
-                // If the pixels have no opacity, don't delta colors at all.
-                if (goldenRgb and -0x1000000 == 0 && rgb and -0x1000000 == 0) {
-                    deltaImage.setRGB(imageWidth + x, y, 0x00808080)
-                    continue
-                }
-                val deltaA = (rgb and -0x1000000 ushr 24) - (goldenRgb and -0x1000000 ushr 24)
-                val newA = 128 + deltaA and 0xFF
-                val deltaR = (rgb and 0xFF0000 ushr 16) - (goldenRgb and 0xFF0000 ushr 16)
-                val newR = 128 + deltaR and 0xFF
-                val deltaG = (rgb and 0x00FF00 ushr 8) - (goldenRgb and 0x00FF00 ushr 8)
-                val newG = 128 + deltaG and 0xFF
-                val deltaB = (rgb and 0x0000FF) - (goldenRgb and 0x0000FF)
-                val newB = 128 + deltaB and 0xFF
-                val newRGB = newA shl 24 or (newR shl 16) or (newG shl 8) or newB
-                deltaImage.setRGB(imageWidth + x, y, newRGB)
-                val dA = deltaA / 255.0
-                val dR = deltaR / 255.0
-                val dG = deltaG / 255.0
-                val dB = deltaB / 255.0
-                // Notice that maximum difference per pixel is 1, which is realized for completely
-                // opaque black and white colors.
-                delta += sqrt((dA * dA + dR * dR + dG * dG + dB * dB) / 4.0)
-            }
+        // If the pixels have no opacity, don't delta colors at all.
+        if (goldenRgb and -0x1000000 == 0 && rgb and -0x1000000 == 0) {
+          deltaImage.setRGB(imageWidth + x, y, 0x00808080)
+          continue
         }
-        val maxDiff = imageHeight * imageWidth.toDouble()
-        val percentDifference = delta / maxDiff * 100
-        var error: String? = null
-        when {
-            abs(goldenImage.width - bufferedImage.width) > maxSizeDifference -> {
-                error =
-                    "Widths differ too much for $imageName: " +
-                            "${goldenImage.width}x${goldenImage.height} vs " +
-                            "${bufferedImage.width}x${bufferedImage.height}"
-            }
-            abs(goldenImage.height - bufferedImage.height) > maxSizeDifference -> {
-                error =
-                    "Heights differ too much for $imageName: " +
-                            "${goldenImage.width}x${goldenImage.height} vs " +
-                            "${bufferedImage.width}x${bufferedImage.height}"
-            }
-            percentDifference > maxPercentDifferent -> {
-                error = String.format("Images differ (by %.3g%%)", percentDifference)
-            }
-        }
-        if (error != null) {
-            // Expected on the left
-            // Golden on the right
-            g.drawImage(goldenImage, 0, 0, null)
-            g.drawImage(bufferedImage, 2 * imageWidth, 0, null)
-
-            // Labels
-            if (imageWidth > 80) {
-                g.color = Color.RED
-                g.drawString("Expected", 10, 20)
-                g.drawString("Actual", 2 * imageWidth + 10, 20)
-            }
-
-            // Write actual image & image diff to undeclared outputs dir for ResultStore archives.
-            val outputDir = TestUtils.getTestOutputDir()
-            val outFile = outputDir.resolve(imageName)
-            val diffFile = outputDir.resolve("delta-" + imageName.replace(File.separatorChar, '_'))
-            Files.createDirectories(outFile.parent)
-            bufferedImage.writeImage("PNG", outFile)
-            deltaImage.writeImage("PNG", diffFile)
-            error += " - see details in archived file $outFile"
-            println(error)
-            Assert.fail(error)
-        }
-        g.dispose()
+        val deltaA = (rgb and -0x1000000 ushr 24) - (goldenRgb and -0x1000000 ushr 24)
+        val newA = 128 + deltaA and 0xFF
+        val deltaR = (rgb and 0xFF0000 ushr 16) - (goldenRgb and 0xFF0000 ushr 16)
+        val newR = 128 + deltaR and 0xFF
+        val deltaG = (rgb and 0x00FF00 ushr 8) - (goldenRgb and 0x00FF00 ushr 8)
+        val newG = 128 + deltaG and 0xFF
+        val deltaB = (rgb and 0x0000FF) - (goldenRgb and 0x0000FF)
+        val newB = 128 + deltaB and 0xFF
+        val newRGB = newA shl 24 or (newR shl 16) or (newG shl 8) or newB
+        deltaImage.setRGB(imageWidth + x, y, newRGB)
+        val dA = deltaA / 255.0
+        val dR = deltaR / 255.0
+        val dG = deltaG / 255.0
+        val dB = deltaB / 255.0
+        // Notice that maximum difference per pixel is 1, which is realized for completely
+        // opaque black and white colors.
+        delta += sqrt((dA * dA + dR * dR + dG * dG + dB * dB) / 4.0)
+      }
     }
+    val maxDiff = imageHeight * imageWidth.toDouble()
+    val percentDifference = delta / maxDiff * 100
+    var error: String? = null
+    when {
+      abs(goldenImage.width - bufferedImage.width) > maxSizeDifference -> {
+        error =
+          "Widths differ too much for $imageName: " +
+            "${goldenImage.width}x${goldenImage.height} vs " +
+            "${bufferedImage.width}x${bufferedImage.height}"
+      }
+      abs(goldenImage.height - bufferedImage.height) > maxSizeDifference -> {
+        error =
+          "Heights differ too much for $imageName: " +
+            "${goldenImage.width}x${goldenImage.height} vs " +
+            "${bufferedImage.width}x${bufferedImage.height}"
+      }
+      percentDifference > maxPercentDifferent -> {
+        error = String.format("Images differ (by %.3g%%)", percentDifference)
+      }
+    }
+    if (error != null) {
+      // Expected on the left
+      // Golden on the right
+      g.drawImage(goldenImage, 0, 0, null)
+      g.drawImage(bufferedImage, 2 * imageWidth, 0, null)
+
+      // Labels
+      if (imageWidth > 80) {
+        g.color = Color.RED
+        g.drawString("Expected", 10, 20)
+        g.drawString("Actual", 2 * imageWidth + 10, 20)
+      }
+
+      // Write actual image & image diff to undeclared outputs dir for ResultStore archives.
+      val outputDir = TestUtils.getTestOutputDir()
+      val outFile = outputDir.resolve(imageName)
+      val diffFile = outputDir.resolve("delta-" + imageName.replace(File.separatorChar, '_'))
+      Files.createDirectories(outFile.parent)
+      bufferedImage.writeImage("PNG", outFile)
+      deltaImage.writeImage("PNG", diffFile)
+      error += " - see details in archived file $outFile"
+      println(error)
+      Assert.fail(error)
+    }
+    g.dispose()
+  }
 }

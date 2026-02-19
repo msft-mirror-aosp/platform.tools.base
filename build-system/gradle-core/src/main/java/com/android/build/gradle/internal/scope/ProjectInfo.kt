@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.scope
 
 import com.android.SdkConstants
 import com.android.builder.core.BuilderConstants
+import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.capabilities.Capability
@@ -28,97 +29,85 @@ import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.provider.Provider
 import org.gradle.api.resources.TextResource
 import org.gradle.internal.component.external.model.DefaultImmutableCapability
-import java.io.File
 
-/**
- * A class that provides data about the Gradle project object without exposing the Project itself
- */
+/** A class that provides data about the Gradle project object without exposing the Project itself */
 class ProjectInfo(private val project: Project) {
 
-    companion object {
-        @JvmStatic
-        fun Project.getBaseName(): Provider<String> =
-            this.extensions.getByType(BasePluginExtension::class.java).archivesName
-    }
+  companion object {
+    @JvmStatic fun Project.getBaseName(): Provider<String> = this.extensions.getByType(BasePluginExtension::class.java).archivesName
+  }
 
-    fun getProjectBaseName(): Provider<String> = project.getBaseName()
+  fun getProjectBaseName(): Provider<String> = project.getBaseName()
 
-    val path: String
-        get() = project.path
+  val path: String
+    get() = project.path
 
-    val name: String
-        get() = project.name
+  val name: String
+    get() = project.name
 
-    val group: String
-        get() = project.group.toString()
+  val group: String
+    get() = project.group.toString()
 
-    val version: String
-        get() = project.version.toString()
+  val version: String
+    get() = project.version.toString()
 
-    val defaultProjectCapability: Capability
-        get() = DefaultImmutableCapability(project.group.toString(), project.name, "unspecified")
+  val defaultProjectCapability: Capability
+    get() = DefaultImmutableCapability(project.group.toString(), project.name, "unspecified")
 
-    val projectDirectory: Directory
-        get() = project.layout.projectDirectory
+  val projectDirectory: Directory
+    get() = project.layout.projectDirectory
 
-    val buildFile: File
-        get() = project.buildFile
+  val buildFile: File
+    get() = project.buildFile
 
-    val buildDirectory: DirectoryProperty
-        get() = project.layout.buildDirectory
+  val buildDirectory: DirectoryProperty
+    get() = project.layout.buildDirectory
 
-    val rootDir: File
-        get() = project.rootDir
+  val rootDir: File
+    get() = project.rootDir
 
-    val rootBuildDirectory: DirectoryProperty
-        get() = project.rootProject.layout.buildDirectory
+  val rootProjectName: String
+    get() = project.rootProject.name
 
-    val gradleUserHomeDir: File
-            get() = project.gradle.gradleUserHomeDir
+  val rootBuildDirectory: DirectoryProperty
+    get() = project.rootProject.layout.buildDirectory
 
-    val intermediatesDirectory: Provider<Directory>
-        get() = buildDirectory.dir(SdkConstants.FD_INTERMEDIATES)
+  val gradleUserHomeDir: File
+    get() = project.gradle.gradleUserHomeDir
 
-    fun intermediatesDirectory(path: String): Provider<Directory> =
-        buildDirectory.dir(SdkConstants.FD_INTERMEDIATES).map {
-            it.dir(path)
-        }
+  val intermediatesDirectory: Provider<Directory>
+    get() = buildDirectory.dir(SdkConstants.FD_INTERMEDIATES)
 
-    fun intermediatesFile(path: String): Provider<RegularFile> =
-        buildDirectory.dir(SdkConstants.FD_INTERMEDIATES).map {
-            it.file(path)
-        }
+  fun intermediatesDirectory(path: String): Provider<Directory> = buildDirectory.dir(SdkConstants.FD_INTERMEDIATES).map { it.dir(path) }
 
-    @Deprecated("DO NOT USE - Only use the new Gradle Property objects")
-    fun createTestResources(value: String): TextResource = project.resources.text.fromString(value)
+  fun intermediatesFile(path: String): Provider<RegularFile> = buildDirectory.dir(SdkConstants.FD_INTERMEDIATES).map { it.file(path) }
 
-    fun hasPlugin(plugin: String): Boolean = project.plugins.hasPlugin(plugin)
+  @Deprecated("DO NOT USE - Only use the new Gradle Property objects")
+  fun createTestResources(value: String): TextResource = project.resources.text.fromString(value)
 
-    fun <T : Plugin<*>> hasPlugin(pluginClass: Class<T>): Boolean =
-        project.plugins.hasPlugin(pluginClass)
+  fun hasPlugin(plugin: String): Boolean = project.plugins.hasPlugin(plugin)
 
-    fun <T : Plugin<*>> getPlugin(pluginClass: Class<T>): T =
-        project.plugins.getPlugin(pluginClass)
+  fun <T : Plugin<*>> hasPlugin(pluginClass: Class<T>): Boolean = project.plugins.hasPlugin(pluginClass)
 
-    fun <T> getExtension(extensionType: Class<T>): T =
-        project.extensions.getByType<T>(extensionType)
+  fun <T : Plugin<*>> getPlugin(pluginClass: Class<T>): T = project.plugins.getPlugin(pluginClass)
 
-    fun <T> findExtension(extensionType: Class<T>): T? =
-        project.extensions.findByType(extensionType)
+  fun <T> getExtension(extensionType: Class<T>): T = project.extensions.getByType<T>(extensionType)
 
-    fun getTestResultsFolder(): Provider<Directory> {
-        return buildDirectory.dir("test-results")
-    }
+  fun <T> findExtension(extensionType: Class<T>): T? = project.extensions.findByType(extensionType)
 
-    fun getReportsDir(): Provider<Directory> {
-        return buildDirectory.dir(BuilderConstants.FD_REPORTS)
-    }
+  fun getTestResultsFolder(): Provider<Directory> {
+    return buildDirectory.dir("test-results")
+  }
 
-    fun getTestReportFolder(): Provider<Directory> {
-        return buildDirectory.dir("reports/tests")
-    }
+  fun getReportsDir(): Provider<Directory> {
+    return buildDirectory.dir(BuilderConstants.FD_REPORTS)
+  }
 
-    fun getOutputsDir(): Provider<Directory> {
-        return buildDirectory.dir(SdkConstants.FD_OUTPUTS)
-    }
+  fun getTestReportFolder(): Provider<Directory> {
+    return buildDirectory.dir("reports/tests")
+  }
+
+  fun getOutputsDir(): Provider<Directory> {
+    return buildDirectory.dir(SdkConstants.FD_OUTPUTS)
+  }
 }

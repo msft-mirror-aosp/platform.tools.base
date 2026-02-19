@@ -27,200 +27,183 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Andro
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.tasks.GenerateTestConfig.Companion.TEST_CONFIG_FILE
 import com.android.testutils.truth.PathSubject.assertThat
-import com.google.common.truth.Truth
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
-import kotlin.io.path.readText
 
 class GenerateTestConfigTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android.testOptions.unitTests.isIncludeAndroidResources = true
+  @get:Rule val rule = GradleRule.from { androidApplication { android.testOptions.unitTests.isIncludeAndroidResources = true } }
+
+  private val executor: GradleTaskExecutor
+    get() = rule.build.executor.withEnableInfoLogging(false)
+
+  // Regression test for b/293547829
+  @Test
+  fun testAbiSplitEnabledWithIncludeAndroidResource() {
+    rule.build.androidApplication().reconfigure {
+      android {
+        splits {
+          abi {
+            isEnable = true
+            reset()
+            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
+          }
         }
+      }
+    }
+    executor.run(":app:generateDebugUnitTestConfig")
+  }
+
+  @Test
+  fun testAbiSplitEnabledWithIncludeAndroidResourceWithSingeAbi() {
+    rule.build.androidApplication().reconfigure {
+      android {
+        splits {
+          abi {
+            isEnable = true
+            reset()
+            include("x86")
+          }
+        }
+      }
+    }
+    executor.run(":app:generateDebugUnitTestConfig")
+  }
+
+  // Regression test for b/293547829
+  @Test
+  fun testAbiSplitDisabledWithIncludeAndroidResource() {
+    rule.build.androidApplication().reconfigure {
+      android {
+        splits {
+          abi {
+            isEnable = false
+            reset()
+            include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
+          }
+        }
+      }
+    }
+    executor.run(":app:generateDebugUnitTestConfig")
+  }
+
+  // Regression test for b/127986458
+  @Test
+  fun testAndroidManifestFromUnitTestIsMergedForAppModule() {
+    rule.build { androidApplication { addTestManifests() } }
+    verifyMergedManifest(DEFAULT_APP_PATH)
+  }
+
+  // Regression test for b/127986458
+  @Test
+  fun testAndroidManifestFromUnitTestIsMergedForLibraryModule() {
+    rule.build { androidLibrary { addTestManifests() } }
+    verifyMergedManifest(DEFAULT_LIB_PATH)
+  }
+
+  // Regression test for b/436878535
+  @Test
+  fun `overrideLibrary from app manifest should be respected`() {
+    rule.build {
+      androidApplication {
+        android.defaultConfig.minSdk = 28
+        android.testOptions.unitTests.isIncludeAndroidResources = true
+        dependencies { implementation(project(":lib")) }
+        files {
+          update("src/main/AndroidManifest.xml")
+            .replaceWith(
+              // language=xml
+              """
+              <?xml version="1.0" encoding="utf-8"?>
+              <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                  xmlns:tools="http://schemas.android.com/tools">
+                  <uses-sdk tools:overrideLibrary="pkg.name.lib" />
+              </manifest>
+              """
+                .trimIndent()
+            )
+        }
+      }
+      androidLibrary {
+        // Library's min sdk level is higher than app's manifest.
+        // This should cause the manifest merger failure, however the app's manifest has an
+        // overrideLibrary,
+        // so this incompatibility should be ignored.
+        android.defaultConfig.minSdk = 31
+      }
     }
 
-    private val executor: GradleTaskExecutor
-        get() = rule.build.executor.withEnableInfoLogging(false)
+    executor.run(":app:generateDebugUnitTestConfig")
+  }
 
-    // Regression test for b/293547829
-    @Test
-    fun testAbiSplitEnabledWithIncludeAndroidResource() {
-        rule.build.androidApplication().reconfigure {
-            android {
-                splits {
-                    abi {
-                        isEnable = true
-                        reset()
-                        include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
-                    }
-                }
-            }
-        }
-        executor.run(":app:generateDebugUnitTestConfig")
+  // Regression test for b/436878535
+  @Test
+  fun `manifest merger should fail when min sdk version is smaller than the library's min sdk without override`() {
+    rule.build {
+      androidApplication {
+        android.defaultConfig.minSdk = 28
+        android.testOptions.unitTests.isIncludeAndroidResources = true
+        dependencies { implementation(project(":lib")) }
+      }
+      androidLibrary {
+        // Library's min sdk level is higher than app's manifest.
+        // This should cause the manifest merger failure.
+        android.defaultConfig.minSdk = 31
+      }
     }
 
-    @Test
-    fun testAbiSplitEnabledWithIncludeAndroidResourceWithSingeAbi() {
-        rule.build.androidApplication().reconfigure {
-            android {
-                splits {
-                    abi {
-                        isEnable = true
-                        reset()
-                        include("x86")
-                    }
-                }
-            }
-        }
-        executor.run(":app:generateDebugUnitTestConfig")
-    }
+    val result = executor.expectFailure().run(":app:generateDebugUnitTestConfig")
 
-    // Regression test for b/293547829
-    @Test
-    fun testAbiSplitDisabledWithIncludeAndroidResource() {
-        rule.build.androidApplication().reconfigure {
-            android {
-                splits {
-                    abi {
-                        isEnable = false
-                        reset()
-                        include("x86", "x86_64", "armeabi-v7a", "arm64-v8a")
-                    }
-                }
-            }
-        }
-        executor.run(":app:generateDebugUnitTestConfig")
-    }
+    result.assertErrorContains("uses-sdk:minSdkVersion 28 cannot be smaller than version 31 declared in library [:lib]")
+  }
 
-    // Regression test for b/127986458
-    @Test
-    fun testAndroidManifestFromUnitTestIsMergedForAppModule() {
-        rule.build {
-            androidApplication {
-                addTestManifests()
-            }
-        }
-        verifyMergedManifest(DEFAULT_APP_PATH)
-    }
+  private fun verifyMergedManifest(path: String) {
+    val result = executor.run("$path:generateDebugUnitTestConfig")
 
-    // Regression test for b/127986458
-    @Test
-    fun testAndroidManifestFromUnitTestIsMergedForLibraryModule() {
-        rule.build {
-            androidLibrary {
-                addTestManifests()
-            }
-        }
-        verifyMergedManifest(DEFAULT_LIB_PATH)
-    }
+    result.assertOutputDoesNotContain(
+      "Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported"
+    )
 
-    // Regression test for b/436878535
-    @Test
-    fun `overrideLibrary from app manifest should be respected`() {
-        rule.build {
-            androidApplication {
-                android.defaultConfig.minSdk = 28
-                android.testOptions.unitTests.isIncludeAndroidResources = true
-                dependencies {
-                    implementation(project(":lib"))
-                }
-                files {
-                    update("src/main/AndroidManifest.xml").replaceWith(
-                        //language=xml
-                        """
-                        <?xml version="1.0" encoding="utf-8"?>
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                            xmlns:tools="http://schemas.android.com/tools">
-                            <uses-sdk tools:overrideLibrary="pkg.name.lib" />
-                        </manifest>
-                        """.trimIndent()
-                    )
-                }
-            }
-            androidLibrary {
-                // Library's min sdk level is higher than app's manifest.
-                // This should cause the manifest merger failure, however the app's manifest has an overrideLibrary,
-                // so this incompatibility should be ignored.
-                android.defaultConfig.minSdk = 31
-            }
-        }
+    val project = rule.build.subProject(path) as AndroidProject
+    val testConfigFile =
+      project.intermediatesDir.resolve("unit_test_config_directory/debugUnitTest/generateDebugUnitTestConfig/out/$TEST_CONFIG_FILE")
 
-        executor.run(":app:generateDebugUnitTestConfig")
-    }
+    val mergedAndroidManifestRelativePath = "packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml"
 
-    // Regression test for b/436878535
-    @Test
-    fun `manifest merger should fail when min sdk version is smaller than the library's min sdk without override`() {
-        rule.build {
-            androidApplication {
-                android.defaultConfig.minSdk = 28
-                android.testOptions.unitTests.isIncludeAndroidResources = true
-                dependencies {
-                    implementation(project(":lib"))
-                }
-            }
-            androidLibrary {
-                // Library's min sdk level is higher than app's manifest.
-                // This should cause the manifest merger failure.
-                android.defaultConfig.minSdk = 31
-            }
-        }
+    val mergedAssetsRelativePath =
+      if (project is AndroidLibraryProject) {
+        "assets/debugUnitTest/mergeDebugUnitTestAssets"
+      } else {
+        "assets/debug/mergeDebugAssets"
+      }
 
-        val result = executor.expectFailure().run(":app:generateDebugUnitTestConfig")
+    // Properties.store escapes \ to \\, so this escape is necessary for Windows.
+    val mergedAssetsPath = "build/intermediates/${mergedAssetsRelativePath}".replace('/', File.separatorChar).replace("\\", "\\\\")
+    val mergedManifestPath = "build/intermediates/$mergedAndroidManifestRelativePath".replace('/', File.separatorChar).replace("\\", "\\\\")
+    val resourceApkPath =
+      "build/intermediates/apk_for_local_test/debugUnitTest/packageDebugUnitTestForUnitTest/apk-for-local-test.ap_"
+        .replace('/', File.separatorChar)
+        .replace("\\", "\\\\")
 
-        result.assertErrorContains(
-            "uses-sdk:minSdkVersion 28 cannot be smaller than version 31 declared in library [:lib]")
-    }
-
-    private fun verifyMergedManifest(path: String) {
-        val result = executor.run("$path:generateDebugUnitTestConfig")
-
-        result.assertOutputDoesNotContain(
-            "Setting the namespace via the package attribute in the source AndroidManifest.xml is no longer supported")
-
-        val project = rule.build.subProject(path) as AndroidProject
-        val testConfigFile = project.intermediatesDir.resolve(
-            "unit_test_config_directory/debugUnitTest/generateDebugUnitTestConfig/out/$TEST_CONFIG_FILE"
-        )
-
-        val mergedAndroidManifestRelativePath =
-            "packaged_manifests/debugUnitTest/processDebugUnitTestManifest/AndroidManifest.xml"
-
-        val mergedAssetsRelativePath = if (project is AndroidLibraryProject) {
-            "assets/debugUnitTest/mergeDebugUnitTestAssets"
-        } else {
-            "assets/debug/mergeDebugAssets"
-        }
-
-        // Properties.store escapes \ to \\, so this escape is necessary for Windows.
-        val mergedAssetsPath = "build/intermediates/${mergedAssetsRelativePath}"
-            .replace('/', File.separatorChar)
-            .replace("\\", "\\\\")
-        val mergedManifestPath = "build/intermediates/$mergedAndroidManifestRelativePath"
-            .replace('/', File.separatorChar)
-            .replace("\\", "\\\\")
-        val resourceApkPath = "build/intermediates/apk_for_local_test/debugUnitTest/packageDebugUnitTestForUnitTest/apk-for-local-test.ap_"
-            .replace('/', File.separatorChar)
-            .replace("\\", "\\\\")
-
-        assertThat(testConfigFile).hasContents("""
+    assertThat(testConfigFile)
+      .hasContents(
+        """
             #Generated by the Android Gradle plugin
             android_custom_package=${project.namespace}
             android_merged_assets=$mergedAssetsPath
             android_merged_manifest=$mergedManifestPath
             android_resource_apk=$resourceApkPath
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        val mergedAndroidManifest = project.intermediatesDir.resolve(
-            mergedAndroidManifestRelativePath
-        )
+    val mergedAndroidManifest = project.intermediatesDir.resolve(mergedAndroidManifestRelativePath)
 
-        val expectedManifestContent = if (project is AndroidLibraryProject) {
-            //language=xml
-            """
+    val expectedManifestContent =
+      if (project is AndroidLibraryProject) {
+        // language=xml
+        """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                 package="pkg.name.lib.test" >
@@ -254,12 +237,14 @@ class GenerateTestConfigTest {
                 </application>
 
             </manifest>
-            """.trimIndent()
-        } else {
-            //language=xml
             """
+          .trimIndent()
+      } else {
+        // language=xml
+        """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:dist="http://schemas.android.com/apk/distribution"
                 package="pkg.name.app" >
 
                 <uses-sdk
@@ -282,56 +267,60 @@ class GenerateTestConfigTest {
                 </application>
 
             </manifest>
-            """.trimIndent()
-        }
-        assertThat(mergedAndroidManifest).hasContents(expectedManifestContent)
-    }
+            """
+          .trimIndent()
+      }
+    assertThat(mergedAndroidManifest).hasContents(expectedManifestContent)
+  }
 
-    private fun AndroidProjectDefinition<out CommonExtension>.addTestManifests() {
-        android.testOptions.unitTests.isIncludeAndroidResources = true
-        files {
-            add(
-                "src/debug/AndroidManifest.xml",
-                //language=xml
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools">
-                    <application>
-                        <meta-data android:name="meta_data_from_debug_manifest" android:value="value" />
-                        <meta-data android:name="meta_data_value_override" android:value="value_from_debug" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
-            add(
-                "src/test/AndroidManifest.xml",
-                //language=xml
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools">
-                    <application>
-                        <meta-data android:name="meta_data_from_unit_test_manifest" android:value="value" />
-                        <meta-data android:name="meta_data_value_override" android:value="value_from_test" tools:node="replace" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
-            add(
-                "src/testDebug/AndroidManifest.xml",
-                //language=xml
-                """
-                <?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    xmlns:tools="http://schemas.android.com/tools">
-                    <application>
-                        <meta-data android:name="meta_data_from_unit_test_debug_manifest" android:value="value" />
-                        <meta-data android:name="meta_data_value_override" android:value="value_from_test_debug" tools:node="replace" />
-                    </application>
-                </manifest>
-                """.trimIndent()
-            )
-        }
+  private fun AndroidProjectDefinition<out CommonExtension>.addTestManifests() {
+    android.testOptions.unitTests.isIncludeAndroidResources = true
+    files {
+      add(
+        "src/debug/AndroidManifest.xml",
+        // language=xml
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+            <application>
+                <meta-data android:name="meta_data_from_debug_manifest" android:value="value" />
+                <meta-data android:name="meta_data_value_override" android:value="value_from_debug" />
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+      add(
+        "src/test/AndroidManifest.xml",
+        // language=xml
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+            <application>
+                <meta-data android:name="meta_data_from_unit_test_manifest" android:value="value" />
+                <meta-data android:name="meta_data_value_override" android:value="value_from_test" tools:node="replace" />
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+      add(
+        "src/testDebug/AndroidManifest.xml",
+        // language=xml
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+            <application>
+                <meta-data android:name="meta_data_from_unit_test_debug_manifest" android:value="value" />
+                <meta-data android:name="meta_data_value_override" android:value="value_from_test_debug" tools:node="replace" />
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
     }
+  }
 }

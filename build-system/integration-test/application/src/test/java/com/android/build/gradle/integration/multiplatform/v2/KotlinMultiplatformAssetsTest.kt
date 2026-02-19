@@ -22,137 +22,132 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth
+import kotlin.io.path.readText
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.io.path.readText
 
 class KotlinMultiplatformAssetsTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.androidLibrary {
-                    androidResources {
-                        enable = true
-                    }
-                }
-            """.trimIndent()
-        )
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary {
+          androidResources {
+              enable = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        FileUtils.writeToFile(
-            project.getSubproject("kmpFirstLib").file("src/androidMain/assets/something.json"),
-            """
-                {
-                  "id": 123,
-                  "name": "Example Item",
-                  "value": 42.5
-                }
-            """.trimIndent()
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/androidMain/assets/something.json"),
+      """
+      {
+        "id": 123,
+        "name": "Example Item",
+        "value": 42.5
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testKmpLibraryAssetPackageTasksNotExecutedWhenResourcesDisabled() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.android {
+          androidResources {
+              enable = false
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    val result = executor().run(":kmpFirstLib:assemble")
+    Truth.assertThat(result.didWorkTasks).doesNotContain(listOf(":kmpFirstLib:mergeAndroidMainAssets"))
+  }
+
+  @Test
+  fun testKmpLibraryAssetPackageTasksExecuted() {
+    val result = executor().run(":kmpFirstLib:assemble")
+    Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:mergeAndroidMainAssets"))
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      assets()
+        .resourceAsText("something.json")
+        .isEqualTo(
+          """
+          {
+            "id": 123,
+            "name": "Example Item",
+            "value": 42.5
+          }
+          """
+            .trimIndent()
         )
     }
+  }
 
-    @Test
-    fun testKmpLibraryAssetPackageTasksNotExecutedWhenResourcesDisabled() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.android {
-                    androidResources {
-                        enable = false
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testKmpLibraryAssetPackageTasksExecuted_enabledInLegacyWay() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.android {
+          androidResources {
+              enable = false
+          }
+          experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+      }
+      """
+        .trimIndent(),
+    )
 
-        val result = executor().run(":kmpFirstLib:assemble")
-        Truth.assertThat(result.didWorkTasks).doesNotContain(
-            listOf(
-                ":kmpFirstLib:mergeAndroidMainAssets"
-            )
+    val result = executor().run(":kmpFirstLib:assemble")
+    Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(listOf(":kmpFirstLib:mergeAndroidMainAssets"))
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      assets()
+        .resourceAsText("something.json")
+        .isEqualTo(
+          """
+          {
+            "id": 123,
+            "name": "Example Item",
+            "value": 42.5
+          }
+          """
+            .trimIndent()
         )
     }
+  }
 
-    @Test
-    fun testKmpLibraryAssetPackageTasksExecuted() {
-        val result = executor().run(":kmpFirstLib:assemble")
-        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
-            listOf(
-                ":kmpFirstLib:mergeAndroidMainAssets"
-            )
+  @Test
+  fun testAppConsumingKmpLibrary() {
+    executor().run(":app:assembleDebug")
+
+    project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      Truth.assertThat(apk.getEntry("assets/something.json").readText())
+        .isEqualTo(
+          """
+          {
+            "id": 123,
+            "name": "Example Item",
+            "value": 42.5
+          }
+          """
+            .trimIndent()
         )
-
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            assets().resourceAsText("something.json").isEqualTo(
-                """
-                   {
-                     "id": 123,
-                     "name": "Example Item",
-                     "value": 42.5
-                   }
-                """.trimIndent()
-            )
-        }
     }
+  }
 
-    @Test
-    fun testKmpLibraryAssetPackageTasksExecuted_enabledInLegacyWay() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-                kotlin.android {
-                    androidResources {
-                        enable = false
-                    }
-                    experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
-                }
-            """.trimIndent()
-        )
-
-        val result = executor().run(":kmpFirstLib:assemble")
-        Truth.assertThat(result.didWorkTasks).containsAtLeastElementsIn(
-            listOf(
-                ":kmpFirstLib:mergeAndroidMainAssets"
-            )
-        )
-
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            assets().resourceAsText("something.json").isEqualTo(
-                """
-                   {
-                     "id": 123,
-                     "name": "Example Item",
-                     "value": 42.5
-                   }
-                """.trimIndent()
-            )
-        }
-    }
-
-    @Test
-    fun testAppConsumingKmpLibrary() {
-        executor().run(":app:assembleDebug")
-
-        project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            Truth.assertThat(apk.getEntry("assets/something.json").readText()).isEqualTo(
-                """
-                   {
-                     "id": 123,
-                     "name": "Example Item",
-                     "value": 42.5
-                   }
-                """.trimIndent()
-            )
-        }
-    }
-
-
-    private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
+  private fun executor() = project.executor().withFailOnWarning(false) // b/455891987
 }

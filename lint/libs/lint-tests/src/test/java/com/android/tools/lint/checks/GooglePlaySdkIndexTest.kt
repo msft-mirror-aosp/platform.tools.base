@@ -41,22 +41,12 @@ class GooglePlaySdkIndexTest {
             .addLibraries(
               Library.newBuilder()
                 .setLibraryId(
-                  LibraryIdentifier.newBuilder()
-                    .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("log4j")
-                        .setArtifactId("log4j")
-                        .build()
-                    )
+                  LibraryIdentifier.newBuilder().setMavenId(MavenIdentifier.newBuilder().setGroupId("log4j").setArtifactId("log4j").build())
                 )
                 // Ok, latest, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true))
                 // Ok, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false))
                 // Critical (with description)
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -65,8 +55,7 @@ class GooglePlaySdkIndexTest {
                     .setVersionLabels(
                       LibraryVersionLabels.newBuilder()
                         .setCriticalIssueInfo(
-                          LibraryVersionLabels.CriticalIssueInfo.newBuilder()
-                            .setDescription("This is a custom message from sdk developer.")
+                          LibraryVersionLabels.CriticalIssueInfo.newBuilder().setDescription("This is a custom message from sdk developer.")
                         )
                     )
                 )
@@ -76,8 +65,7 @@ class GooglePlaySdkIndexTest {
                     .setVersionString("1.2.15")
                     .setIsLatestVersion(false)
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
                     )
                 )
                 // Policy (deprecated label)
@@ -86,8 +74,7 @@ class GooglePlaySdkIndexTest {
                     .setVersionString("1.2.14")
                     .setIsLatestVersion(false)
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
                     )
                 )
                 // Critical (without description)
@@ -96,8 +83,7 @@ class GooglePlaySdkIndexTest {
                     .setVersionString("1.2.13")
                     .setIsLatestVersion(false)
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
                     )
                 )
             )
@@ -111,25 +97,14 @@ class GooglePlaySdkIndexTest {
               Library.newBuilder()
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
-                    .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("com.example.ads.third.party")
-                        .setArtifactId("example")
-                        .build()
-                    )
+                    .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.ads.third.party").setArtifactId("example").build())
                 )
                 // Ok, latest
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true))
                 // Ok
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false))
                 // Ok
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false))
                 // Outdated & non compliant (user data) & Critical & Vulnerability
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -140,31 +115,18 @@ class GooglePlaySdkIndexTest {
                         .setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
                         .setOutdatedIssueInfo(
                           LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("8.0.0")
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("7.2.1")
-                                .setUpperBound("7.3.0")
-                            )
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("8.0.0"))
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("7.2.1").setUpperBound("7.3.0"))
                         )
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("7.2.1")
-                                .setUpperBound("7.3.0")
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("7.2.1").setUpperBound("7.3.0"))
                         )
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_TRUST_MANAGER
                             )
                         )
@@ -179,9 +141,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                     )
@@ -195,10 +155,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                .SDK_POLICY_DEVICE_AND_NETWORK_ABUSE
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DEVICE_AND_NETWORK_ABUSE)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                     )
@@ -212,10 +169,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                .SDK_POLICY_DECEPTIVE_BEHAVIOR
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DECEPTIVE_BEHAVIOR)
                         )
                     )
                 )
@@ -228,9 +182,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                     )
@@ -244,9 +196,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                     )
@@ -260,10 +210,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                .SDK_POLICY_MOBILE_UNWANTED_SOFTWARE
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MOBILE_UNWANTED_SOFTWARE)
                         )
                     )
                 )
@@ -276,9 +223,7 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                     )
@@ -292,15 +237,9 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                            )
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                            )
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                         )
                         .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                     )
@@ -314,25 +253,11 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                            )
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("7.1.9")
-                                .setUpperBound("7.1.9")
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("7.2.1")
-                                .setUpperBound("7.3.0")
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("8.0.0")
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("7.1.9").setUpperBound("7.1.9"))
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("7.2.1").setUpperBound("7.3.0"))
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("8.0.0"))
                         )
                         .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                     )
@@ -346,12 +271,8 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                         )
                     )
                 )
@@ -364,11 +285,10 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            // Use very large numbers that will probably never be used by real
+                            // Use very large numbers that will probably
+                            // never be used by real
                             // violation types
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                             .addViolatedSdkPoliciesValue(1234567)
                             .addViolatedSdkPoliciesValue(2345678)
                         )
@@ -384,8 +304,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_HOSTNAME_VERIFIER
                             )
                         )
@@ -402,8 +321,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_SSL_ERROR_HANDLER
                             )
                         )
@@ -420,8 +338,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_ZIP_PATH_TRAVERSAL
                             )
                         )
@@ -437,8 +354,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_WEBVIEW_OAUTH
                             )
                         )
@@ -455,8 +371,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_CIPHER_MODE
                             )
                         )
@@ -473,8 +388,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_ENCRYPTION
                             )
                         )
@@ -490,8 +404,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_PENDING_INTENT
                             )
                         )
@@ -508,8 +421,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_INTERNAL_INTENT
                             )
                         )
@@ -526,8 +438,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_CROSS_APP_SCRIPTING
                             )
                         )
@@ -543,8 +454,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_FILE_BASED_XSS
                             )
                         )
@@ -561,8 +471,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_SCHEME_HIJACKING
                             )
                         )
@@ -579,8 +488,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_JS_INTERFACE_INJECTION
                             )
                         )
@@ -596,8 +504,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_REDIRECTION
                             )
                         )
@@ -614,8 +521,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_FRAGMENT_INJECTION
                             )
                         )
@@ -632,8 +538,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_PATH_TRAVERSAL
                             )
                         )
@@ -649,8 +554,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_SQL_INJECTION
                             )
                         )
@@ -667,8 +571,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_LEAKED_GCP_KEYS
                             )
                         )
@@ -685,8 +588,7 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_VULNERABLE_LIBS
                             )
                         )
@@ -702,18 +604,15 @@ class GooglePlaySdkIndexTest {
                         .setSecurityVulnerabilitiesInfo(
                           LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_FILE_BASED_XSS
                             )
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_SQL_INJECTION
                             )
                             .addVulnerabilities(
-                              LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                .SdkSecurityVulnerabilityType
+                              LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                 .SDK_SECURITY_VULNERABILITY_TYPE_VULNERABLE_LIBS
                             )
                         )
@@ -727,9 +626,7 @@ class GooglePlaySdkIndexTest {
                     .setIsLatestVersion(false)
                     .setVersionLabels(
                       LibraryVersionLabels.newBuilder()
-                        .setSecurityVulnerabilitiesInfo(
-                          LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
-                        )
+                        .setSecurityVulnerabilitiesInfo(LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder())
                         .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                     )
                 )
@@ -743,17 +640,10 @@ class GooglePlaySdkIndexTest {
               Library.newBuilder()
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
-                    .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("no.url.group")
-                        .setArtifactId("no.url.artifact")
-                        .build()
-                    )
+                    .setMavenId(MavenIdentifier.newBuilder().setGroupId("no.url.group").setArtifactId("no.url.artifact").build())
                 )
                 // Ok, latest, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                 // Policy issues
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -763,20 +653,14 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                         )
                     )
                 )
                 // Ok, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("1.0.2").setIsLatestVersion(false)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("1.0.2").setIsLatestVersion(false))
                 // Ok, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("1.0.1").setIsLatestVersion(false)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("1.0.1").setIsLatestVersion(false))
                 // Outdated
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -787,20 +671,10 @@ class GooglePlaySdkIndexTest {
                         .setOutdatedIssueInfo(
                           LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
                             // A closed range
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("1.0.1")
-                                .setUpperBound("1.0.2")
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("1.0.4")
-                                .setUpperBound("1.0.4")
-                            )
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.0.1").setUpperBound("1.0.2"))
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.0.4").setUpperBound("1.0.4"))
                             // An open range
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("2.0.0")
-                            )
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("2.0.0"))
                         )
                     )
                 )
@@ -815,17 +689,10 @@ class GooglePlaySdkIndexTest {
               Library.newBuilder()
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
-                    .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("not.in.sdk.index.url")
-                        .setArtifactId("not.in.sdk")
-                        .build()
-                    )
+                    .setMavenId(MavenIdentifier.newBuilder().setGroupId("not.in.sdk.index.url").setArtifactId("not.in.sdk").build())
                 )
                 // Ok, latest, no issues
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("3.0.4").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("3.0.4").setIsLatestVersion(true))
                 // Policy issues with version range
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -835,19 +702,11 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                             // A closed range
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder()
-                                .setLowerBound("2.0.0")
-                                .setUpperBound("3.0.1")
-                            )
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("2.0.0").setUpperBound("3.0.1"))
                             // An open range
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("3.0.4")
-                            )
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("3.0.4"))
                         )
                     )
                 )
@@ -862,12 +721,7 @@ class GooglePlaySdkIndexTest {
               Library.newBuilder()
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
-                    .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("android.arch.core")
-                        .setArtifactId("common")
-                        .build()
-                    )
+                    .setMavenId(MavenIdentifier.newBuilder().setGroupId("android.arch.core").setArtifactId("common").build())
                 )
                 .addVersions(
                   LibraryVersion.newBuilder()
@@ -877,19 +731,14 @@ class GooglePlaySdkIndexTest {
                       LibraryVersionLabels.newBuilder()
                         .setOutdatedIssueInfo(
                           LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                            // Add recommended version to make sure the note is not added
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("1.1.2")
-                            )
+                            // Add recommended version to make sure the note
+                            // is not added
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.1.2"))
                         )
                         .setPolicyIssuesInfo(
                           LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                            .addViolatedSdkPolicies(
-                              LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS
-                            )
-                            .addRecommendedVersions(
-                              LibraryVersionRange.newBuilder().setLowerBound("1.1.3")
-                            )
+                            .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
+                            .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.1.3"))
                         )
                     )
                 )
@@ -907,10 +756,7 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("deprecated.library.named")
-                        .setArtifactId("with.alternatives")
-                        .build()
+                      MavenIdentifier.newBuilder().setGroupId("deprecated.library.named").setArtifactId("with.alternatives").build()
                     )
                 )
                 // Multiple version to make sure all versions are reported as deprecated
@@ -923,8 +769,7 @@ class GooglePlaySdkIndexTest {
                   LibraryVersion.newBuilder()
                     .setVersionString("1.9.0")
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
                     )
                 )
                 .addVersions(
@@ -932,8 +777,7 @@ class GooglePlaySdkIndexTest {
                   LibraryVersion.newBuilder()
                     .setVersionString("1.8.0")
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setCriticalIssueInfo(LibraryVersionLabels.CriticalIssueInfo.newBuilder())
                     )
                 )
                 .addVersions(
@@ -941,8 +785,7 @@ class GooglePlaySdkIndexTest {
                   LibraryVersion.newBuilder()
                     .setVersionString("1.7.0")
                     .setVersionLabels(
-                      LibraryVersionLabels.newBuilder()
-                        .setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
+                      LibraryVersionLabels.newBuilder().setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
                     )
                 )
                 .addVersions(
@@ -951,9 +794,7 @@ class GooglePlaySdkIndexTest {
                     .setVersionString("1.6.0")
                     .setVersionLabels(
                       LibraryVersionLabels.newBuilder()
-                        .setSecurityVulnerabilitiesInfo(
-                          LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
-                        )
+                        .setSecurityVulnerabilitiesInfo(LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder())
                     )
                 )
                 .setLibraryDeprecation(
@@ -964,15 +805,10 @@ class GooglePlaySdkIndexTest {
                     .addAlternativeLibraries(
                       AlternativeLibrary.newBuilder()
                         .setSdkName("Full name")
-                        .setMavenSdkId(
-                          MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name")
-                        )
+                        .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name"))
                     )
                     .addAlternativeLibraries(
-                      AlternativeLibrary.newBuilder()
-                        .setMavenSdkId(
-                          MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name")
-                        )
+                      AlternativeLibrary.newBuilder().setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name"))
                     )
                 )
             )
@@ -982,15 +818,10 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("deprecated.library.named")
-                        .setArtifactId("no.alternatives")
-                        .build()
+                      MavenIdentifier.newBuilder().setGroupId("deprecated.library.named").setArtifactId("no.alternatives").build()
                     )
                 )
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                 .setLibraryDeprecation(
                   LibraryDeprecation.newBuilder()
                     .setDeprecationTimestampSeconds(
@@ -1010,15 +841,10 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("deprecated.library.no.name")
-                        .setArtifactId("with.alternatives")
-                        .build()
+                      MavenIdentifier.newBuilder().setGroupId("deprecated.library.no.name").setArtifactId("with.alternatives").build()
                     )
                 )
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                 .setLibraryDeprecation(
                   LibraryDeprecation.newBuilder()
                     .setDeprecationTimestampSeconds(
@@ -1027,15 +853,10 @@ class GooglePlaySdkIndexTest {
                     .addAlternativeLibraries(
                       AlternativeLibrary.newBuilder()
                         .setSdkName("Full name")
-                        .setMavenSdkId(
-                          MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name")
-                        )
+                        .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("full").setArtifactId("name"))
                     )
                     .addAlternativeLibraries(
-                      AlternativeLibrary.newBuilder()
-                        .setMavenSdkId(
-                          MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name")
-                        )
+                      AlternativeLibrary.newBuilder().setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("no").setArtifactId("name"))
                     )
                 )
             )
@@ -1045,15 +866,10 @@ class GooglePlaySdkIndexTest {
                 .setLibraryId(
                   LibraryIdentifier.newBuilder()
                     .setMavenId(
-                      MavenIdentifier.newBuilder()
-                        .setGroupId("deprecated.library.no.name")
-                        .setArtifactId("no.alternatives")
-                        .build()
+                      MavenIdentifier.newBuilder().setGroupId("deprecated.library.no.name").setArtifactId("no.alternatives").build()
                     )
                 )
-                .addVersions(
-                  LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                )
+                .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                 .setLibraryDeprecation(
                   LibraryDeprecation.newBuilder()
                     .setDeprecationTimestampSeconds(
@@ -1125,13 +941,7 @@ class GooglePlaySdkIndexTest {
       for (library in sdk.librariesList) {
         val group = library.libraryId.mavenId.groupId
         val artifact = library.libraryId.mavenId.artifactId
-        val lintLink =
-          index.generateSdkLinkLintFix(
-            group,
-            artifact,
-            versionString = "noVersion",
-            buildFile = null,
-          )
+        val lintLink = index.generateSdkLinkLintFix(group, artifact, versionString = "noVersion", buildFile = null)
         if (expectedUrl.isNullOrBlank()) {
           assertThat(lintLink).isNull()
         } else {
@@ -1147,8 +957,7 @@ class GooglePlaySdkIndexTest {
   fun `offline snapshot can be used correctly`() {
     val offlineIndex =
       object : GooglePlaySdkIndex() {
-        override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
-          ReadUrlDataResult(null, true)
+        override fun readUrlData(url: String, timeout: Int, lastModified: Long) = ReadUrlDataResult(null, true)
 
         override fun error(throwable: Throwable, message: String?) {}
       }
@@ -1160,9 +969,7 @@ class GooglePlaySdkIndexTest {
   @Test
   fun `No violation type policy issue message`() {
     assertThat(index.generatePolicyMessage("logj4", "logj4", "1.2.14"))
-      .isEqualTo(
-        "logj4:logj4 version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future"
-      )
+      .isEqualTo("logj4:logj4 version 1.2.14 has policy issues that will block publishing of your app to Play Console in the future")
   }
 
   @Test
@@ -1215,10 +1022,7 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `multiple policy types issue message`() {
-    verifyPolicyMessages(
-      "7.1.7",
-      listOf("User Data policy", "Malware policy", "Permissions policy"),
-    )
+    verifyPolicyMessages("7.1.7", listOf("User Data policy", "Malware policy", "Permissions policy"))
   }
 
   @Test
@@ -1240,11 +1044,7 @@ class GooglePlaySdkIndexTest {
   @Test
   fun `multiple policy types issue message with recommended versions but flag not set`() {
     index.showRecommendedVersions = false
-    verifyPolicyMessages(
-      "7.1.8",
-      listOf("User Data policy", "Malware policy"),
-      recommendedVersions = "",
-    )
+    verifyPolicyMessages("7.1.8", listOf("User Data policy", "Malware policy"), recommendedVersions = "")
   }
 
   @Test
@@ -1255,12 +1055,7 @@ class GooglePlaySdkIndexTest {
   @Test
   fun `no quickfix for null indexUrl`() {
     val lintLink =
-      index.generateSdkLinkLintFix(
-        "not.existing.group",
-        "not.existing.artifact",
-        versionString = "noVersion",
-        buildFile = null,
-      )
+      index.generateSdkLinkLintFix("not.existing.group", "not.existing.artifact", versionString = "noVersion", buildFile = null)
     assertThat(lintLink).isNull()
   }
 
@@ -1269,8 +1064,7 @@ class GooglePlaySdkIndexTest {
     index.showNotesFromDeveloper = true
     val expectedMessage =
       "**[Prevents app release in Google Play Console]** log4j:log4j version 1.2.16 has been reported as problematic by its author and will block publishing of your app to Play Console.\n**Note:** This is a custom message from sdk developer."
-    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.16"))
-      .isEqualTo(expectedMessage)
+    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.16")).isEqualTo(expectedMessage)
   }
 
   @Test
@@ -1293,8 +1087,7 @@ class GooglePlaySdkIndexTest {
     index.showNotesFromDeveloper = false
     val expectedMessage =
       "**[Prevents app release in Google Play Console]** log4j:log4j version 1.2.16 has been reported as problematic by its author and will block publishing of your app to Play Console"
-    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.16"))
-      .isEqualTo(expectedMessage)
+    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.16")).isEqualTo(expectedMessage)
   }
 
   @Test
@@ -1302,8 +1095,7 @@ class GooglePlaySdkIndexTest {
     index.showNotesFromDeveloper = true
     val expectedMessage =
       "**[Prevents app release in Google Play Console]** log4j:log4j version 1.2.13 has been reported as problematic by its author and will block publishing of your app to Play Console"
-    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.13"))
-      .isEqualTo(expectedMessage)
+    assertThat(index.generateBlockingCriticalMessage("log4j", "log4j", "1.2.13")).isEqualTo(expectedMessage)
   }
 
   @Test
@@ -1324,17 +1116,14 @@ class GooglePlaySdkIndexTest {
         "  - 2.0.0 or higher\n" +
         "These versions have not been reviewed by Google Play. They could contain vulnerabilities or policy violations. " +
         "Carefully evaluate any third-party SDKs before integrating them into your app."
-    assertThat(index.generateOutdatedMessage("no.url.group", "no.url.artifact", "1.0.0"))
-      .isEqualTo(expectedMessage)
+    assertThat(index.generateOutdatedMessage("no.url.group", "no.url.artifact", "1.0.0")).isEqualTo(expectedMessage)
   }
 
   @Test
   fun `Outdated issue with recommended versions but flag not set`() {
     index.showRecommendedVersions = false
-    val expectedMessage =
-      "no.url.group:no.url.artifact version 1.0.0 has been reported as outdated by its author"
-    assertThat(index.generateOutdatedMessage("no.url.group", "no.url.artifact", "1.0.0"))
-      .isEqualTo(expectedMessage)
+    val expectedMessage = "no.url.group:no.url.artifact version 1.0.0 has been reported as outdated by its author"
+    assertThat(index.generateOutdatedMessage("no.url.group", "no.url.artifact", "1.0.0")).isEqualTo(expectedMessage)
   }
 
   @Test
@@ -1343,8 +1132,7 @@ class GooglePlaySdkIndexTest {
       "android.arch.core:common version 1.1.1 has been reported as outdated by its author.\n" +
         "The library author recommends using versions:\n" +
         "  - 1.1.2 or higher\n"
-    assertThat(index.generateOutdatedMessage("android.arch.core", "common", "1.1.1"))
-      .isEqualTo(expectedMessage)
+    assertThat(index.generateOutdatedMessage("android.arch.core", "common", "1.1.1")).isEqualTo(expectedMessage)
   }
 
   @Test
@@ -1353,42 +1141,31 @@ class GooglePlaySdkIndexTest {
       "android.arch.core:common version 1.1.1 has Permissions policy issues that will block publishing of your app to Play Console in the future.\n" +
         "The library author recommends using versions:\n" +
         "  - 1.1.3 or higher\n"
-    assertThat(index.generatePolicyMessage("android.arch.core", "common", "1.1.1"))
-      .isEqualTo(expectedMessages)
+    assertThat(index.generatePolicyMessage("android.arch.core", "common", "1.1.1")).isEqualTo(expectedMessages)
   }
 
   @Test
   fun `No vulnerability type policy issue message`() {
-    assertThat(
-        index.generateVulnerabilityMessages("logj4", "logj4", "1.2.14").map { it.description }
-      )
+    assertThat(index.generateVulnerabilityMessages("logj4", "logj4", "1.2.14").map { it.description })
       .isEqualTo(listOf("logj4:logj4 version 1.2.14 has unspecified vulnerability issues."))
   }
 
   @Test
   fun `vulnerability with other issues message`() {
-    verifyVulnerabilityMessages(
-      "7.2.0",
-      listOf("contains an unsafe implementation of the X509TrustManager interface"),
-    )
+    verifyVulnerabilityMessages("7.2.0", listOf("contains an unsafe implementation of the X509TrustManager interface"))
   }
 
   @Test
   fun `UNSAFE_HOSTNAME_VERIFIER vulnerability issue message`() {
     verifyVulnerabilityMessages(
       "7.1.11",
-      listOf(
-        "contains an unsafe implementation of the interfaces HostnameVerifier or X509HostnameVerifier"
-      ),
+      listOf("contains an unsafe implementation of the interfaces HostnameVerifier or X509HostnameVerifier"),
     )
   }
 
   @Test
   fun `SSL_ERROR_HANDLER vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.12",
-      listOf("contains an unsafe implementation of the onReceivedSslError handler"),
-    )
+    verifyVulnerabilityMessages("7.1.12", listOf("contains an unsafe implementation of the onReceivedSslError handler"))
   }
 
   @Test
@@ -1398,18 +1175,12 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `UNSAFE_WEBVIEW_OAUTH vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.14",
-      listOf("uses WebView for authentication, which is not recommended"),
-    )
+    verifyVulnerabilityMessages("7.1.14", listOf("uses WebView for authentication, which is not recommended"))
   }
 
   @Test
   fun `UNSAFE_CIPHER_MODE vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.15",
-      listOf("contains encryption employing the less secure mode AES/ECB"),
-    )
+    verifyVulnerabilityMessages("7.1.15", listOf("contains encryption employing the less secure mode AES/ECB"))
   }
 
   @Test
@@ -1429,18 +1200,12 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `CROSS_APP_SCRIPTING vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.19",
-      listOf("may be vulnerable to WebView Cross-App Scripting"),
-    )
+    verifyVulnerabilityMessages("7.1.19", listOf("may be vulnerable to WebView Cross-App Scripting"))
   }
 
   @Test
   fun `FILE_BASED_XSS vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.20",
-      listOf("may be vulnerable to File-based Cross-Site Scripting"),
-    )
+    verifyVulnerabilityMessages("7.1.20", listOf("may be vulnerable to File-based Cross-Site Scripting"))
   }
 
   @Test
@@ -1450,10 +1215,7 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `JS_INTERFACE_INJECTION vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.22",
-      listOf("may be vulnerable to JavaScript Interface Injection"),
-    )
+    verifyVulnerabilityMessages("7.1.22", listOf("may be vulnerable to JavaScript Interface Injection"))
   }
 
   @Test
@@ -1465,42 +1227,28 @@ class GooglePlaySdkIndexTest {
   fun `FRAGMENT_INJECTION vulnerability issue message`() {
     verifyVulnerabilityMessages(
       "7.1.24",
-      listOf(
-        "contains an unsafe PreferenceActivity implementation that may be vulnerable to Fragment Injection"
-      ),
+      listOf("contains an unsafe PreferenceActivity implementation that may be vulnerable to Fragment Injection"),
     )
   }
 
   @Test
   fun `PATH_TRAVERSAL vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.25",
-      listOf("may be vulnerable to ContentProvider Path Traversal"),
-    )
+    verifyVulnerabilityMessages("7.1.25", listOf("may be vulnerable to ContentProvider Path Traversal"))
   }
 
   @Test
   fun `SQL_INJECTION vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.26",
-      listOf("may be vulnerable to ContentProvider SQL Injection"),
-    )
+    verifyVulnerabilityMessages("7.1.26", listOf("may be vulnerable to ContentProvider SQL Injection"))
   }
 
   @Test
   fun `LEAKED_GCP_KEYS vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.27",
-      listOf("contains exposed Google Cloud Platform (GCP) API key(s)"),
-    )
+    verifyVulnerabilityMessages("7.1.27", listOf("contains exposed Google Cloud Platform (GCP) API key(s)"))
   }
 
   @Test
   fun `VULNERABLE_LIBS vulnerability issue message`() {
-    verifyVulnerabilityMessages(
-      "7.1.28",
-      listOf("contains one or more JavaScript libraries with known security issues"),
-    )
+    verifyVulnerabilityMessages("7.1.28", listOf("contains one or more JavaScript libraries with known security issues"))
   }
 
   @Test
@@ -1522,8 +1270,7 @@ class GooglePlaySdkIndexTest {
 
   @Test
   fun `No recommended versions generates empty list`() {
-    val recommendedVersions =
-      index.recommendedVersions("com.example.ads.third.party", "example", "8.0.0")
+    val recommendedVersions = index.recommendedVersions("com.example.ads.third.party", "example", "8.0.0")
     assertThat(recommendedVersions).isNotNull()
     assertThat(recommendedVersions).isEmpty()
   }
@@ -1531,13 +1278,9 @@ class GooglePlaySdkIndexTest {
   @Test
   fun `Recommended versions generated from all types without repeated ranges`() {
     val expectedVersions = listOf("7.2.1 to 7.3.0", "8.0.0 to <null>")
-    val recommendedVersions =
-      index.recommendedVersions("com.example.ads.third.party", "example", "7.2.0")
+    val recommendedVersions = index.recommendedVersions("com.example.ads.third.party", "example", "7.2.0")
     assertThat(recommendedVersions).isNotNull()
-    val asText =
-      recommendedVersions.map {
-        "${it.lowerBound} to ${if (it.upperBound.isNullOrBlank()) "<null>" else it.upperBound}"
-      }
+    val asText = recommendedVersions.map { "${it.lowerBound} to ${if (it.upperBound.isNullOrBlank()) "<null>" else it.upperBound}" }
     assertThat(asText).containsAllIn(expectedVersions)
   }
 
@@ -1555,31 +1298,21 @@ class GooglePlaySdkIndexTest {
           }
         }
         if (latestInProto.size > 1) {
-          failures.add(
-            "Test proto is incorrect for $group:$artifact. $latestInProto are flagged as latest"
-          )
+          failures.add("Test proto is incorrect for $group:$artifact. $latestInProto are flagged as latest")
         } else {
           val latestFromIndex = index.getLatestVersion(group, artifact)
           if (latestInProto.isEmpty()) {
             if (latestFromIndex != null) {
-              failures.add(
-                "No $group:$artifact versions are flagged as latest but $latestFromIndex is returned as latest"
-              )
+              failures.add("No $group:$artifact versions are flagged as latest but $latestFromIndex is returned as latest")
             }
           } else {
             if (latestFromIndex != latestInProto.first())
-              failures.add(
-                "$group:$artifact latest version should be $latestInProto but $latestFromIndex is returned"
-              )
+              failures.add("$group:$artifact latest version should be $latestInProto but $latestFromIndex is returned")
           }
         }
       }
     }
-    assertWithMessage(
-        "There were issues with latest versions:\n${failures.joinToString(separator = "\n") { it }}"
-      )
-      .that(failures)
-      .isEmpty()
+    assertWithMessage("There were issues with latest versions:\n${failures.joinToString(separator = "\n") { it }}").that(failures).isEmpty()
   }
 
   @Test
@@ -1688,8 +1421,7 @@ class GooglePlaySdkIndexTest {
         val artifact = library.libraryId.mavenId.artifactId
         for (version in library.versionsList) {
           if (index.hasLibraryVulnerabilityIssues(group, artifact, version.versionString, null)) {
-            result +=
-              index.generateVulnerabilityMessages(group, artifact, version.versionString).size
+            result += index.generateVulnerabilityMessages(group, artifact, version.versionString).size
           }
         }
       }
@@ -1729,40 +1461,23 @@ class GooglePlaySdkIndexTest {
     return result
   }
 
-  private fun verifyPolicyMessages(
-    version: String,
-    policyTypes: List<String>,
-    recommendedVersions: String = "",
-  ) {
+  private fun verifyPolicyMessages(version: String, policyTypes: List<String>, recommendedVersions: String = "") {
     val labels = policyTypes.sorted().joinToString(", ")
     val expectedBlockingMessages =
       "**[Prevents app release in Google Play Console]** com.example.ads.third.party:example version $version has $labels issues that" +
         " will block publishing of your app to Play Console$recommendedVersions"
-    assertThat(
-        index.generateBlockingPolicyMessage("com.example.ads.third.party", "example", version)
-      )
-      .isEqualTo(expectedBlockingMessages)
+    assertThat(index.generateBlockingPolicyMessage("com.example.ads.third.party", "example", version)).isEqualTo(expectedBlockingMessages)
 
     val expectedNonBlockingMessages =
       "com.example.ads.third.party:example version $version has $labels issues that will block publishing of your app to Play Console in" +
         " the future$recommendedVersions"
-    assertThat(index.generatePolicyMessage("com.example.ads.third.party", "example", version))
-      .isEqualTo(expectedNonBlockingMessages)
+    assertThat(index.generatePolicyMessage("com.example.ads.third.party", "example", version)).isEqualTo(expectedNonBlockingMessages)
   }
 
-  private fun verifyVulnerabilityMessages(
-    version: String,
-    vulnerabilityDescriptions: List<String>,
-  ) {
+  private fun verifyVulnerabilityMessages(version: String, vulnerabilityDescriptions: List<String>) {
     val expectedNonBlockingMessages =
-      vulnerabilityDescriptions.map { description ->
-        "com.example.ads.third.party:example version $version $description."
-      }
-    assertThat(
-        index.generateVulnerabilityMessages("com.example.ads.third.party", "example", version).map {
-          it.description
-        }
-      )
+      vulnerabilityDescriptions.map { description -> "com.example.ads.third.party:example version $version $description." }
+    assertThat(index.generateVulnerabilityMessages("com.example.ads.third.party", "example", version).map { it.description })
       .isEqualTo(expectedNonBlockingMessages)
   }
 }

@@ -20,13 +20,13 @@ import com.android.ide.common.resources.usage.ResourceUsageModel
 import com.android.ide.common.resources.usage.ResourceUsageModel.Resource
 import com.android.ide.common.resources.usage.ResourceUsageModel.ResourceReachableOrigin
 import com.android.ide.common.util.PathString
-import com.android.resources.ResourceType;
+import com.android.resources.ResourceType
 import com.google.common.truth.Truth.assertThat
+import java.awt.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.awt.Color
 
 class ResourcesUtilTest {
   @Test
@@ -41,8 +41,7 @@ class ResourcesUtilTest {
 
   @Test
   fun testToFileResourcePathString() {
-    assertThat(toFileResourcePathString("apk:///foo.apk!/bar.baz"))
-        .isEqualTo(PathString("apk", "/foo.apk!/bar.baz"))
+    assertThat(toFileResourcePathString("apk:///foo.apk!/bar.baz")).isEqualTo(PathString("apk", "/foo.apk!/bar.baz"))
   }
 
   @Test
@@ -80,12 +79,9 @@ class ResourcesUtilTest {
   @Test
   fun testReachableOrigin() {
     val store = ResourceStore(supportMultipackages = false)
-    val hello =
-        store.addResource(Resource("test.pkg", ResourceType.STRING, "hello_world", 0x7f010000))
-    val layout =
-        store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_main", 0x7f020000))
-    val secondLayout =
-        store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_other", 0x7f020001))
+    val hello = store.addResource(Resource("test.pkg", ResourceType.STRING, "hello_world", 0x7f010000))
+    val layout = store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_main", 0x7f020000))
+    val secondLayout = store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_other", 0x7f020001))
     layout.addReference(hello)
     secondLayout.addReference(hello)
     val usageModel = ResourceUsageModel(store)
@@ -98,21 +94,17 @@ class ResourcesUtilTest {
     val parents = hello.reachableParents
     assertEquals(2, parents.size)
     for (parent in parents) {
-        val rootOrigin = parent.parents.stream().findFirst().get();
-        assertTrue(
-            rootOrigin.equals(resourceReachableOrigin)
-                    || rootOrigin.equals(secondResourceReachableOrigin))
+      val rootOrigin = parent.parents.stream().findFirst().get()
+      assertTrue(rootOrigin.equals(resourceReachableOrigin) || rootOrigin.equals(secondResourceReachableOrigin))
     }
   }
 
   @Test
   fun testNoReachableOriginOnNoRootOrigin() {
     val store = ResourceStore(supportMultipackages = false)
-    val hello =
-        store.addResource(Resource("test.pkg", ResourceType.STRING, "hello_world", 0x7f010000))
-    val layout =
-        store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_main", 0x7f020000))
-    layout.addReference(hello);
+    val hello = store.addResource(Resource("test.pkg", ResourceType.STRING, "hello_world", 0x7f010000))
+    val layout = store.addResource(Resource("test.pkg", ResourceType.LAYOUT, "activity_main", 0x7f020000))
+    layout.addReference(hello)
     val usageModel = ResourceUsageModel(store)
     // Ensure that when we don't set an origin on the roots we also don't get origins on the
     // transitively reachable resources.

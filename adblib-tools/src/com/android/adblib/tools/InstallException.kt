@@ -16,13 +16,13 @@
 package com.android.adblib.tools
 
 class InstallException internal constructor(installResult: InstallResult) :
-    RuntimeException("Error code: '${installResult.errorCode}', message='${installResult.errorMessage}'") {
+  RuntimeException("Error code: '${installResult.errorCode}', message='${installResult.errorMessage}'") {
 
-    val errorMessage: String
-    val errorCode: String
+  val errorMessage: String
+  val errorCode: String
 
-    init {
-        errorCode = installResult.errorCode
-        errorMessage = installResult.errorMessage
-    }
+  init {
+    errorCode = installResult.errorCode
+    errorMessage = installResult.errorMessage
+  }
 }

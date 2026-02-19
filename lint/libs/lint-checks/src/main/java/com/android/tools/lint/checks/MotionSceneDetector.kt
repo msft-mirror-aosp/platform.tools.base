@@ -128,12 +128,7 @@ class MotionSceneDetector : ResourceXmlDetector() {
         element,
         context.getNameLocation(element),
         "The custom attribute `$name` was specified multiple times",
-        fix()
-          .name("Delete this custom attribute")
-          .replace()
-          .with("")
-          .range(context.getLocation(element))
-          .build(),
+        fix().name("Delete this custom attribute").replace().with("").range(context.getLocation(element)).build(),
       )
     }
   }
@@ -159,12 +154,7 @@ class MotionSceneDetector : ResourceXmlDetector() {
           onClickElement,
           context.getNameLocation(onClickElement),
           "Can only have one `$ON_CLICK` per `$TRANSITION`",
-          fix()
-            .name("Delete additional $ON_CLICK")
-            .replace()
-            .with("")
-            .range(context.getLocation(onClickElement))
-            .build(),
+          fix().name("Delete additional $ON_CLICK").replace().with("").range(context.getLocation(onClickElement)).build(),
         )
       }
   }
@@ -251,19 +241,13 @@ class MotionSceneDetector : ResourceXmlDetector() {
         subTag,
         context.getNameLocation(subTag),
         "`${element.tagName}` can not have any child tags",
-        fix()
-          .name("Delete ${subTag.tagName}")
-          .replace()
-          .with("")
-          .range(context.getLocation(subTag))
-          .build(),
+        fix().name("Delete ${subTag.tagName}").replace().with("").range(context.getLocation(subTag)).build(),
       )
     }
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(MotionSceneDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(MotionSceneDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val MOTION_SCENE_FILE_VALIDATION_ERROR =

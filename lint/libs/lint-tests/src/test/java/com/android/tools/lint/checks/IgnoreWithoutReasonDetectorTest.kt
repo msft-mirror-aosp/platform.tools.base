@@ -317,11 +317,11 @@ class IgnoreWithoutReasonDetectorTest {
       .run()
       .expect(
         """
-                src/test/pkg/MyKotlinTest.kt:24: Warning: Test is ignored without giving any explanation [IgnoreWithoutReason]
-                  @Ignore
-                  ~~~~~~~
-                0 errors, 1 warnings
-                """
+        src/test/pkg/MyKotlinTest.kt:24: Warning: Test is ignored without giving any explanation [IgnoreWithoutReason]
+          @Ignore
+          ~~~~~~~
+        0 errors, 1 warnings
+        """
           .trimIndent()
       )
   }

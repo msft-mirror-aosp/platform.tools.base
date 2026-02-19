@@ -18,26 +18,17 @@ package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 
-/**
- * A set of [GradleBuild] configuration that are out of the box usable test projects
- */
+/** A set of [GradleBuild] configuration that are out of the box usable test projects */
 class BasicBuilds {
-    companion object {
-        val HELLO_WORLD_APP: GradleBuildDefinition.() -> Unit = {
-            androidJavaApplication {
-            }
-        }
+  companion object {
+    val HELLO_WORLD_APP: GradleBuildDefinition.() -> Unit = { androidJavaApplication {} }
 
-        val HELLO_WORLD_LIBRARY: GradleBuildDefinition.() -> Unit = {
-            androidLibrary {
-                HelloWorldAndroid.setupJava(files)
-            }
-        }
+    val HELLO_WORLD_LIBRARY: GradleBuildDefinition.() -> Unit = { androidLibrary { HelloWorldAndroid.setupJava(files) } }
 
-        val COMPOSE_APP: GradleBuildDefinition.() -> Unit = {
-            androidApplication {
-                // TODO
-            }
-        }
+    val COMPOSE_APP: GradleBuildDefinition.() -> Unit = {
+      androidApplication {
+        // TODO
+      }
     }
+  }
 }

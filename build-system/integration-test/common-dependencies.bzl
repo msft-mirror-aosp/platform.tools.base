@@ -5,7 +5,7 @@ and can be combined together
 
 # KGP version used in AGP tests
 # when editing this consider making a copy below so that our recipe tests can use any versions of Kotlin
-KGP_VERSION_FOR_TESTS = "2.3.0-RC2"
+KGP_VERSION_FOR_TESTS = "2.3.20-Beta1"
 
 # Kotlin Gradle plugin version that AGP depends on
 BUILT_IN_KOTLIN_VERSION = "2.2.10"
@@ -41,6 +41,7 @@ KGP_2_1_20 = [
     "@maven//:org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.1.20",
+    "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-android-extensions-runtime_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.1.20",
     "@maven//:org.jetbrains.kotlin.kotlin-compiler_2.1.20",

@@ -16,37 +16,37 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
-import java.io.File
 
 class FakeProjectLayout : ProjectLayout {
 
-    override fun getProjectDirectory(): Directory {
-        TODO("Not yet implemented")
-    }
+  override fun getProjectDirectory(): Directory {
+    TODO("Not yet implemented")
+  }
 
-    override fun getBuildDirectory(): DirectoryProperty {
-        TODO("Not yet implemented")
-    }
+  override fun getBuildDirectory(): DirectoryProperty {
+    TODO("Not yet implemented")
+  }
 
-    override fun getSettingsDirectory(): Directory {
-        TODO("Not yet implemented")
-    }
+  override fun getSettingsDirectory(): Directory {
+    TODO("Not yet implemented")
+  }
 
-    override fun file(file: Provider<File>): Provider<RegularFile> {
-        return FakeGradleProvider(FakeGradleRegularFile(file.get()))
-    }
+  override fun file(file: Provider<File>): Provider<RegularFile> {
+    return FakeGradleProvider(FakeGradleRegularFile(file.get()))
+  }
 
-    override fun dir(file: Provider<File>): Provider<Directory> {
-        TODO("Not yet implemented")
-    }
+  override fun dir(file: Provider<File>): Provider<Directory> {
+    TODO("Not yet implemented")
+  }
 
-    override fun files(vararg paths: Any?): FileCollection {
-        TODO("Not yet implemented")
-    }
+  override fun files(vararg paths: Any?): FileCollection {
+    TODO("Not yet implemented")
+  }
 }

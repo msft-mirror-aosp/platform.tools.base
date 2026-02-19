@@ -38,10 +38,7 @@ open class ManagedDeviceImpl @Inject constructor(private val name: String) : Man
         try {
           Orientation.valueOf(value.uppercase())
         } catch (_: IllegalArgumentException) {
-          error(
-            "$value is invalid. Available options are " +
-              "[${Orientation.values().joinToString(", ")}]."
-          )
+          error("$value is invalid. Available options are " + "[${Orientation.values().joinToString(", ")}].")
         }
     }
     get() {

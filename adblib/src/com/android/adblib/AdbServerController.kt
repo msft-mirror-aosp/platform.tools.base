@@ -15,70 +15,63 @@
  */
 package com.android.adblib
 
-import kotlinx.coroutines.flow.StateFlow
 import java.net.InetSocketAddress
 import java.nio.file.Path
+import kotlinx.coroutines.flow.StateFlow
 
 /**
  * Controller that can manage starting/stopping adb server.
  *
- * For manually managed ADB servers, this controller focuses solely on channel creation, leaving
- * server startup and shutdown to the user.
+ * For manually managed ADB servers, this controller focuses solely on channel creation, leaving server startup and shutdown to the user.
  *
- * It provides a [AdbServerChannelProvider] that can restart adb server when it crashed or was
- * killed by an external user action.
+ * It provides a [AdbServerChannelProvider] that can restart adb server when it crashed or was killed by an external user action.
  */
 interface AdbServerController : AutoCloseable {
 
-    /**
-     * The [AdbServerChannelProvider] this [AdbServerController] implements. The behavior of the
-     * channel provider is determined by the [start] and [stop] methods, as well as the current
-     * [AdbServerConfiguration]
-     */
-    val channelProvider: AdbServerChannelProvider
+  /**
+   * The [AdbServerChannelProvider] this [AdbServerController] implements. The behavior of the channel provider is determined by the [start]
+   * and [stop] methods, as well as the current [AdbServerConfiguration]
+   */
+  val channelProvider: AdbServerChannelProvider
 
-    /**
-     * Returns `true` if `start` has been called and was successful. Returns
-     * `false` if `start` has not been called or `stop` has been called and was
-     * successful.
-     */
-    val isStarted: Boolean
+  /**
+   * Returns `true` if `start` has been called and was successful. Returns `false` if `start` has not been called or `stop` has been called
+   * and was successful.
+   */
+  val isStarted: Boolean
 
-    /** Start if not started, no-op otherwise */
-    suspend fun start()
+  /** Start if not started, no-op otherwise */
+  suspend fun start()
 
-    /** Stop if started, no-op otherwise */
-    suspend fun stop()
+  /** Stop if started, no-op otherwise */
+  suspend fun stop()
 
-    /** Wait until the controller is started */
-    suspend fun waitIsStarted()
+  /** Wait until the controller is started */
+  suspend fun waitIsStarted()
 
-    /**
-     * Returns the remote address of a channel created by `channelProvider`.
-     * This value is reset to `null` when controller's [stop] method is called.
-     */
-    val lastKnownRemoteAddress: InetSocketAddress?
+  /**
+   * Returns the remote address of a channel created by `channelProvider`. This value is reset to `null` when controller's [stop] method is
+   * called.
+   */
+  val lastKnownRemoteAddress: InetSocketAddress?
 
-    companion object {
+  companion object {
 
-        fun createServerController(
-            host: AdbSessionHost,
-            configurationFlow: StateFlow<AdbServerConfiguration>,
-        ): AdbServerController {
-            return AdbServerControllerImpl(host, configurationFlow)
-        }
+    fun createServerController(host: AdbSessionHost, configurationFlow: StateFlow<AdbServerConfiguration>): AdbServerController {
+      return AdbServerControllerImpl(host, configurationFlow)
     }
+  }
 }
 
 data class AdbServerConfiguration(
-    val adbPath: Path?,
-    val serverPort: Int?,
-    val isUserManaged: Boolean,
-    val isUnitTest: Boolean,
-    val envVars: Map<String, String>,
+  val adbPath: Path?,
+  val serverPort: Int?,
+  val isUserManaged: Boolean,
+  val isUnitTest: Boolean,
+  val envVars: Map<String, String>,
 ) {
 
-    init {
-        require(serverPort == null || serverPort > 0) { "If provided, a port value should be positive" }
-    }
+  init {
+    require(serverPort == null || serverPort > 0) { "If provided, a port value should be positive" }
+  }
 }

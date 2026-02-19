@@ -22,68 +22,73 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class WithFallbackAnnotationAttributesProviderTest {
-    @Test
-    fun testAttributesProviderReturnsDelegateAttributesIfNotNull() {
-        val delegateAttributesProvider = annotationAttributesProvider(
-            intAttribute = 1,
-            floatAttribute = 2f,
-            booleanAttribute = true,
-            stringAttribute = "delegate string attribute",
-            className = "delegate class name"
-        )
+  @Test
+  fun testAttributesProviderReturnsDelegateAttributesIfNotNull() {
+    val delegateAttributesProvider =
+      annotationAttributesProvider(
+        intAttribute = 1,
+        floatAttribute = 2f,
+        booleanAttribute = true,
+        stringAttribute = "delegate string attribute",
+        className = "delegate class name",
+      )
 
-        val fallbackAttributesProvider = annotationAttributesProvider(
-            intAttribute = 3,
-            floatAttribute = 4f,
-            booleanAttribute = false,
-            stringAttribute = "fallback string attribute",
-            className = "fallback class name"
-        )
+    val fallbackAttributesProvider =
+      annotationAttributesProvider(
+        intAttribute = 3,
+        floatAttribute = 4f,
+        booleanAttribute = false,
+        stringAttribute = "fallback string attribute",
+        className = "fallback class name",
+      )
 
-        val attributesProvider = delegateAttributesProvider.withFallback(fallbackAttributesProvider)
+    val attributesProvider = delegateAttributesProvider.withFallback(fallbackAttributesProvider)
 
-        assertEquals("delegate string attribute", attributesProvider.getStringAttribute("string"))
-        assertEquals(2f, attributesProvider.getFloatAttribute("float"))
-        assertEquals(1, attributesProvider.getIntAttribute("int"))
-        assertEquals(true, attributesProvider.getBooleanAttribute("boolean"))
-        assertEquals("delegate class name", attributesProvider.findClassNameValue("className"))
-    }
+    assertEquals("delegate string attribute", attributesProvider.getStringAttribute("string"))
+    assertEquals(2f, attributesProvider.getFloatAttribute("float"))
+    assertEquals(1, attributesProvider.getIntAttribute("int"))
+    assertEquals(true, attributesProvider.getBooleanAttribute("boolean"))
+    assertEquals("delegate class name", attributesProvider.findClassNameValue("className"))
+  }
 
-    @Test
-    fun testAttributesProviderReturnsFallbackAttributesWhenDelegateReturnsNull() {
-        val delegateAttributesProvider = annotationAttributesProvider(
-            intAttribute = null,
-            floatAttribute = null,
-            booleanAttribute = null,
-            stringAttribute = null,
-            className = null
-        )
+  @Test
+  fun testAttributesProviderReturnsFallbackAttributesWhenDelegateReturnsNull() {
+    val delegateAttributesProvider =
+      annotationAttributesProvider(
+        intAttribute = null,
+        floatAttribute = null,
+        booleanAttribute = null,
+        stringAttribute = null,
+        className = null,
+      )
 
-        val fallbackAttributesProvider = annotationAttributesProvider(
-            intAttribute = 3,
-            floatAttribute = 4f,
-            booleanAttribute = false,
-            stringAttribute = "fallback string attribute",
-            className = "fallback class name"
-        )
+    val fallbackAttributesProvider =
+      annotationAttributesProvider(
+        intAttribute = 3,
+        floatAttribute = 4f,
+        booleanAttribute = false,
+        stringAttribute = "fallback string attribute",
+        className = "fallback class name",
+      )
 
-        val attributesProvider = delegateAttributesProvider.withFallback(fallbackAttributesProvider)
+    val attributesProvider = delegateAttributesProvider.withFallback(fallbackAttributesProvider)
 
-        assertEquals("fallback string attribute", attributesProvider.getStringAttribute("string"))
-        assertEquals(4f, attributesProvider.getFloatAttribute("float"))
-        assertEquals(3, attributesProvider.getIntAttribute("int"))
-        assertEquals(false, attributesProvider.getBooleanAttribute("boolean"))
-        assertEquals("fallback class name", attributesProvider.findClassNameValue("className"))
-    }
+    assertEquals("fallback string attribute", attributesProvider.getStringAttribute("string"))
+    assertEquals(4f, attributesProvider.getFloatAttribute("float"))
+    assertEquals(3, attributesProvider.getIntAttribute("int"))
+    assertEquals(false, attributesProvider.getBooleanAttribute("boolean"))
+    assertEquals("fallback class name", attributesProvider.findClassNameValue("className"))
+  }
 }
 
 private fun annotationAttributesProvider(
-    intAttribute: Int?,
-    floatAttribute: Float?,
-    booleanAttribute: Boolean?,
-    stringAttribute: String?,
-    className: String?,
-) = object : AnnotationAttributesProvider {
+  intAttribute: Int?,
+  floatAttribute: Float?,
+  booleanAttribute: Boolean?,
+  stringAttribute: String?,
+  className: String?,
+) =
+  object : AnnotationAttributesProvider {
     override fun <T> getAttributeValue(attributeName: String) = null
 
     override fun getIntAttribute(attributeName: String) = intAttribute
@@ -97,5 +102,4 @@ private fun annotationAttributesProvider(
     override fun <T> getDeclaredAttributeValue(attributeName: String) = null
 
     override fun findClassNameValue(name: String) = className
-}
-
+  }

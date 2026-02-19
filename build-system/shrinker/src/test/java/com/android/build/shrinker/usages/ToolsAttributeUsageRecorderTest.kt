@@ -27,73 +27,76 @@ import org.junit.rules.TemporaryFolder
 
 class ToolsAttributeUsageRecorderTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun `record tools_keep tools_discard attributes from xml files`() {
-        // Regression test for issue 235863809, where adding a byte order marker caused XML parsing
-        //to fail.
-        val byteOrderMarker = '\uFEFF'
-        writeToFile(
-            File(temporaryFolder.root, "keep.xml"),
-            """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
+  @Test
+  fun `record tools_keep tools_discard attributes from xml files`() {
+    // Regression test for issue 235863809, where adding a byte order marker caused XML parsing
+    // to fail.
+    val byteOrderMarker = '\uFEFF'
+    writeToFile(
+      File(temporaryFolder.root, "keep.xml"),
+      """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
                     tools:keep="layout/a,string/*" />
-            """.trimIndent()
-        )
-        writeToFile(
-            File(temporaryFolder.root, "keep2.xml"),
-            """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
+            """
+        .trimIndent(),
+    )
+    writeToFile(
+      File(temporaryFolder.root, "keep2.xml"),
+      """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
                     tools:keep="layout/b" />
-            """.trimIndent()
-        )
-        writeToFile(
-            File(temporaryFolder.root, "discard_shrinkMode.XML"),
-            """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
+            """
+        .trimIndent(),
+    )
+    writeToFile(
+      File(temporaryFolder.root, "discard_shrinkMode.XML"),
+      """$byteOrderMarker<resources xmlns:tools="http://schemas.android.com/tools"
                     tools:discard="drawable/hello" tools:shrinkMode="strict" />
-            """.trimIndent()
-        )
-
-        val model = ResourceShrinkerModel(NoDebugReporter, false)
-        ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
-
-        assertThat(model.resourceStore.keepAttributes)
-            .containsExactly("layout/a", "string/*", "layout/b")
-        assertThat(model.resourceStore.discardAttributes).containsExactly("drawable/hello")
-        assertThat(model.resourceStore.safeMode).isFalse()
-    }
-
-    @Test
-    fun `do not record tools attributes from inner element`() {
-        writeToFile(
-            File(temporaryFolder.root, "keep.xml"),
             """
-                <root>
-                  <resources xmlns:tools="http://schemas.android.com/tools"
-                      tools:keep="layout/a,string/*" />
-                </root>
-            """.trimIndent()
-        )
+        .trimIndent(),
+    )
 
-        val model = ResourceShrinkerModel(NoDebugReporter, false)
-        ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
+    val model = ResourceShrinkerModel(NoDebugReporter, false)
+    ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
 
-        assertThat(model.resourceStore.keepAttributes).isEmpty()
-    }
+    assertThat(model.resourceStore.keepAttributes).containsExactly("layout/a", "string/*", "layout/b")
+    assertThat(model.resourceStore.discardAttributes).containsExactly("drawable/hello")
+    assertThat(model.resourceStore.safeMode).isFalse()
+  }
 
-    @Test
-    fun `do not record tools attributes from wrong namespace`() {
-        writeToFile(
-            File(temporaryFolder.root, "keep.xml"),
-            """
-                <resources xmlns:tools="http://noschemas.com/tools"
-                    tools:keep="layout/a,string/*" />
-            """.trimIndent()
-        )
+  @Test
+  fun `do not record tools attributes from inner element`() {
+    writeToFile(
+      File(temporaryFolder.root, "keep.xml"),
+      """
+      <root>
+        <resources xmlns:tools="http://schemas.android.com/tools"
+            tools:keep="layout/a,string/*" />
+      </root>
+      """
+        .trimIndent(),
+    )
 
-        val model = ResourceShrinkerModel(NoDebugReporter, false)
-        ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
+    val model = ResourceShrinkerModel(NoDebugReporter, false)
+    ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
 
-        assertThat(model.resourceStore.keepAttributes).isEmpty()
-    }
+    assertThat(model.resourceStore.keepAttributes).isEmpty()
+  }
+
+  @Test
+  fun `do not record tools attributes from wrong namespace`() {
+    writeToFile(
+      File(temporaryFolder.root, "keep.xml"),
+      """
+      <resources xmlns:tools="http://noschemas.com/tools"
+          tools:keep="layout/a,string/*" />
+      """
+        .trimIndent(),
+    )
+
+    val model = ResourceShrinkerModel(NoDebugReporter, false)
+    ToolsAttributeUsageRecorder(temporaryFolder.root.toPath()).recordUsages(model)
+
+    assertThat(model.resourceStore.keepAttributes).isEmpty()
+  }
 }

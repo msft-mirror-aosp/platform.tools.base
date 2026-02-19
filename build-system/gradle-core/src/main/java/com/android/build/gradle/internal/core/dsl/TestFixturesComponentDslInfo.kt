@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.core.dsl
 
 /**
- * Represents the dsl info for a test fixtures component, initialized from the DSL object model
- * (extension, default config, build type, flavors)
+ * Represents the dsl info for a test fixtures component, initialized from the DSL object model (extension, default config, build type,
+ * flavors)
  *
  * This class allows querying for the values set via the DSL model.
  *
@@ -26,7 +26,6 @@ package com.android.build.gradle.internal.core.dsl
  *
  * @see [com.android.build.gradle.internal.component.TestFixturesCreationConfig]
  */
-interface TestFixturesComponentDslInfo
-    : NestedComponentDslInfo, AarProducingComponentDslInfo, PublishableComponentDslInfo {
-    val testFixturesAndroidResourcesEnabled: Boolean
+interface TestFixturesComponentDslInfo : NestedComponentDslInfo, AarProducingComponentDslInfo, PublishableComponentDslInfo {
+  val testFixturesAndroidResourcesEnabled: Boolean
 }

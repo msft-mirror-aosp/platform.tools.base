@@ -37,36 +37,32 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
  * @return a set of languages and region in the LA-rRG format, or an empty set for pre-21 devices.
  */
 @JvmOverloads
-@Throws(
-    TimeoutException::class,
-    AdbCommandRejectedException::class,
-    ShellCommandUnresponsiveException::class,
-    IOException::class
-)
+@Throws(TimeoutException::class, AdbCommandRejectedException::class, ShellCommandUnresponsiveException::class, IOException::class)
 fun IDevice.getLanguages(timeOut: Duration = Duration.ZERO): Set<String> {
-    if (this.version.apiLevel < 21) {
-        return emptySet()
-    }
+  if (this.version.apiLevel < 21) {
+    return emptySet()
+  }
 
-    val receiver = Receiver()
-    this.executeShellCommand("am get-config", receiver, timeOut.toMillis(), MILLISECONDS)
+  val receiver = Receiver()
+  this.executeShellCommand("am get-config", receiver, timeOut.toMillis(), MILLISECONDS)
 
-    return receiver.lines.asSequence()
-        .filter { it.trim().startsWith("config:") }
-        .map { FolderConfiguration.getLanguageConfigFromQualifiers(it.substring("config:".length).trim()) }
-        .flatMap { it.asSequence() }
-        .toSet()
+  return receiver.lines
+    .asSequence()
+    .filter { it.trim().startsWith("config:") }
+    .map { FolderConfiguration.getLanguageConfigFromQualifiers(it.substring("config:".length).trim()) }
+    .flatMap { it.asSequence() }
+    .toSet()
 }
 
 private class Receiver : MultiLineReceiver() {
 
-    val lines = mutableListOf<String>()
+  val lines = mutableListOf<String>()
 
-    override fun processNewLines(lines: Array<out String>) {
-        this.lines.addAll(lines)
-    }
+  override fun processNewLines(lines: Array<out String>) {
+    this.lines.addAll(lines)
+  }
 
-    override fun isCancelled() = false
+  override fun isCancelled() = false
 }
 
 private val MDNS_AUTO_CONNECT_TLS_REGEX = Regex("adb-(.*)-.*\\._adb-tls-connect\\._tcp\\.?")
@@ -80,8 +76,8 @@ private const val MDNS_UNENCRYPTED_SUFFIX = "_adb._tcp"
  *
  * See [ADB_MDNS_AUTO_CONNECT](https://android.googlesource.com/platform/system/core/+/master/adb/client/commandline.cpp#244)
  */
-val IDevice.isMdnsAutoConnectTls : Boolean
-    get() = isMdnsAutoConnectTls(this.serialNumber)
+val IDevice.isMdnsAutoConnectTls: Boolean
+  get() = isMdnsAutoConnectTls(this.serialNumber)
 
 /**
  * Returns `true` is the device is using mDNS auto-connect clear.
@@ -89,44 +85,42 @@ val IDevice.isMdnsAutoConnectTls : Boolean
  * Example: `adb-xxxxxxxx-vWgJpq._adb._tcp.`
  *
  * See [ADB_MDNS_AUTO_CONNECT](https://android.googlesource.com/platform/system/core/+/master/adb/client/commandline.cpp#244)
- *
  */
-val IDevice.isMdnsAutoConnectUnencrypted : Boolean
-    get() = isMdnsAutoConnectUnencrypted(this.serialNumber)
+val IDevice.isMdnsAutoConnectUnencrypted: Boolean
+  get() = isMdnsAutoConnectUnencrypted(this.serialNumber)
 
 /**
- * If this device is identified with 86UX00F4R, returns true for an argument like
- * adb-86UX00F4R-cYuns7._adb-tls-connect._tcp and vice versa
+ * If this device is identified with 86UX00F4R, returns true for an argument like adb-86UX00F4R-cYuns7._adb-tls-connect._tcp and vice versa
  */
 fun IDevice.isSameAsDeviceWith(key: String): Boolean {
-    if (serialNumber == key) {
-        return true
+  if (serialNumber == key) {
+    return true
+  }
+
+  if (isMdnsAutoConnectTls(key)) {
+    if (isMdnsAutoConnectTls(serialNumber)) {
+      return false
     }
 
-    if (isMdnsAutoConnectTls(key)) {
-        if (isMdnsAutoConnectTls(serialNumber)) {
-            return false
-        }
+    return areForSameDevice(key, serialNumber)
+  }
 
-        return areForSameDevice(key, serialNumber)
-    }
+  if (!isMdnsAutoConnectTls(serialNumber)) {
+    return false
+  }
 
-    if (!isMdnsAutoConnectTls(serialNumber)) {
-        return false
-    }
-
-    return areForSameDevice(serialNumber, key)
+  return areForSameDevice(serialNumber, key)
 }
 
 fun areForSameDevice(domainName: String, serialNumber: String): Boolean {
-    assert(isMdnsAutoConnectTls(domainName))
-    return MDNS_AUTO_CONNECT_TLS_REGEX.find(domainName)!!.groupValues[1] == serialNumber
+  assert(isMdnsAutoConnectTls(domainName))
+  return MDNS_AUTO_CONNECT_TLS_REGEX.find(domainName)!!.groupValues[1] == serialNumber
 }
 
 fun isMdnsAutoConnectTls(serialNumber: String): Boolean {
-    return MDNS_AUTO_CONNECT_TLS_REGEX.matches(serialNumber)
+  return MDNS_AUTO_CONNECT_TLS_REGEX.matches(serialNumber)
 }
 
 fun isMdnsAutoConnectUnencrypted(serialNumber: String): Boolean {
-    return serialNumber.endsWith(MDNS_UNENCRYPTED_SUFFIX)
+  return serialNumber.endsWith(MDNS_UNENCRYPTED_SUFFIX)
 }

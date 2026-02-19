@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.apk.Apk;
 
 import org.junit.Rule;
@@ -45,7 +46,11 @@ public class ApkOutputFileChangeTest {
     @Test
     public void testOutputFileNameChange() throws Exception {
         // Run the first build
-        GradleBuildResult result = project.executor().run("assembleDebug");
+        GradleBuildResult result = project.executor()
+                // although we don't need USE_NEW_DSL here for correctness, having the same options
+                // might be important in terms of testing the regression in b/64703619 linked below.
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("assembleDebug");
         result.assertTask(":packageDebug").didWork();
         assertCorrectApk(project.getApk(GradleTestProject.ApkType.DEBUG));
 
@@ -62,7 +67,9 @@ public class ApkOutputFileChangeTest {
 
         // Run the second build, check that the new APK is generated correctly (regression test for
         // https://issuetracker.google.com/issues/64703619)
-        result = project.executor().run("assembleDebug");
+        result = project.executor()
+                .with(BooleanOption.USE_NEW_DSL, false)
+                .run("assembleDebug");
         result.assertTask(":packageDebug").didWork();
         assertCorrectApk(project.getApkByFileName(GradleTestProject.ApkType.DEBUG, "foo.apk"));
     }

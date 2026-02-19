@@ -30,47 +30,32 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(FilterableParameterized::class)
-class StoreArchivePackageBundleTaskTest(
-    private val storeArchiveEnabled: Boolean?
-) {
+class StoreArchivePackageBundleTaskTest(private val storeArchiveEnabled: Boolean?) {
 
-    private val app = MinimalSubProject.app("com.example.test")
+  private val app = MinimalSubProject.app("com.example.test")
 
-    companion object {
-        @Parameterized.Parameters(name = "storeArchiveEnabled_{0}")
-        @JvmStatic
-        fun params() = listOf(true, false, null)
+  companion object {
+    @Parameterized.Parameters(name = "storeArchiveEnabled_{0}") @JvmStatic fun params() = listOf(true, false, null)
+  }
+
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
+
+  @Test
+  fun testStoreArchiveFlag() {
+    storeArchiveEnabled?.let { project.getSubproject(":app").buildFile.appendText("\nandroid.bundle.storeArchive.enable = $it\n") }
+    project.executor().run(":app:bundleDebug")
+
+    val bundleFile = project.locateBundleFileViaModel("debug", ":app")
+
+    PathSubject.assertThat(bundleFile).isNotNull()
+    PathSubject.assertThat(bundleFile).exists()
+    ZipFile(bundleFile).use { zip ->
+      val appBundle = AppBundle.buildFromZip(zip)
+      if (storeArchiveEnabled == null) {
+        Truth.assertThat(appBundle.bundleConfig.optimizations.hasStoreArchive()).isTrue()
+      } else {
+        Truth.assertThat(appBundle.bundleConfig.optimizations.storeArchive.enabled).isEqualTo(storeArchiveEnabled)
+      }
     }
-
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build())
-            .create()
-
-    @Test
-    fun testStoreArchiveFlag() {
-        storeArchiveEnabled?.let {
-            project.getSubproject(":app")
-                .buildFile.appendText(
-                    "\nandroid.bundle.storeArchive.enable = $it\n"
-                )
-        }
-        project.executor().run(":app:bundleDebug")
-
-        val bundleFile = project.locateBundleFileViaModel("debug", ":app")
-
-        PathSubject.assertThat(bundleFile).isNotNull()
-        PathSubject.assertThat(bundleFile).exists()
-        ZipFile(bundleFile).use { zip ->
-            val appBundle = AppBundle.buildFromZip(zip)
-            if (storeArchiveEnabled == null) {
-                Truth.assertThat(appBundle.bundleConfig.optimizations.hasStoreArchive())
-                    .isTrue()
-            } else {
-                Truth.assertThat(appBundle.bundleConfig.optimizations.storeArchive.enabled)
-                    .isEqualTo(storeArchiveEnabled)
-            }
-        }
-    }
+  }
 }

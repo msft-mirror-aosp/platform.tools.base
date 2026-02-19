@@ -28,9 +28,7 @@ import org.junit.Test
 /**
  * Test for the standalone lint plugin.
  *
- *
  * <p>Tip: To execute just this test run:
- *
  * <pre>
  *     $ cd tools
  *     $ ./gradlew :base:build-system:integration-test:lint:test --tests=LintStandaloneCustomRuleTest
@@ -38,76 +36,71 @@ import org.junit.Test
  */
 class LintStandaloneCustomRuleTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder().fromTestProject("lintStandaloneCustomRules").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("lintStandaloneCustomRules").create()
 
-    @Test
-    @Throws(Exception::class)
-    fun checkStandaloneLint() {
-        // Run twice to catch issues with configuration caching
-        executor().run(":library:clean", ":library:lint")
-        executor().run(":library:clean", ":library:lint")
-        project.buildResult.assertConfigurationCacheHit()
+  @Test
+  @Throws(Exception::class)
+  fun checkStandaloneLint() {
+    // Run twice to catch issues with configuration caching
+    executor().run(":library:clean", ":library:lint")
+    executor().run(":library:clean", ":library:lint")
+    project.buildResult.assertConfigurationCacheHit()
 
-        val file = project.getSubproject("library").file("lint-results.txt")
-        assertThat(file).exists()
-        assertThat(file).contains("MyClass.java:3: Error: Do not implement java.util.List directly [UnitTestLintCheck2 from com.example.google.lint]")
-        assertThat(file).contains("1 error")
-    }
+    val file = project.getSubproject("library").file("lint-results.txt")
+    assertThat(file).exists()
+    assertThat(file)
+      .contains("MyClass.java:3: Error: Do not implement java.util.List directly [UnitTestLintCheck2 from com.example.google.lint]")
+    assertThat(file).contains("1 error")
+  }
 
-    @Test
-    fun checkPublishing() {
-        executor().run(":library:publishAllPublicationsToMavenRepository")
+  @Test
+  fun checkPublishing() {
+    executor().run(":library:publishAllPublicationsToMavenRepository")
 
-        val publishDir = project.file("repo/org/example/sample/library/0.1")
-        val publishedFiles = publishDir.list()?.filter { !isCheckSum(it) }
-        assertThat(publishedFiles)
-            .containsExactly("library-0.1.jar", "library-0.1.module", "library-0.1.pom")
-    }
+    val publishDir = project.file("repo/org/example/sample/library/0.1")
+    val publishedFiles = publishDir.list()?.filter { !isCheckSum(it) }
+    assertThat(publishedFiles).containsExactly("library-0.1.jar", "library-0.1.module", "library-0.1.pom")
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun checkFiltering() {
-        // Make sure we properly filter issues based on the reporting type.
-        // In the report for the non-Android project (:library:lint) we include
-        // issues like lint detector warnings; these are *not* included in the
-        // Android report. Conversely, there are Android issues in the lint module
-        // (/sdcard references) which are not included in that report, but *are*
-        // included in the Android app report.
-        executor().run(":app:clean", ":lint:lint", ":app:lint")
-        val result = executor().run(":app:clean", ":lint:lint", ":app:lint")
+  @Test
+  @Throws(Exception::class)
+  fun checkFiltering() {
+    // Make sure we properly filter issues based on the reporting type.
+    // In the report for the non-Android project (:library:lint) we include
+    // issues like lint detector warnings; these are *not* included in the
+    // Android report. Conversely, there are Android issues in the lint module
+    // (/sdcard references) which are not included in that report, but *are*
+    // included in the Android app report.
+    executor().run(":app:clean", ":lint:lint", ":app:lint")
+    val result = executor().run(":app:clean", ":lint:lint", ":app:lint")
 
-        val lintReport = project.getSubproject("lint").file("lint-results.txt")
-        val appReport = project.getSubproject("app").file("lint-report.txt")
-        assertThat(lintReport).exists()
-        assertThat(appReport).exists()
+    val lintReport = project.getSubproject("lint").file("lint-results.txt")
+    val appReport = project.getSubproject("app").file("lint-report.txt")
+    assertThat(lintReport).exists()
+    assertThat(appReport).exists()
 
-        // Incident in lint/ project which is Android specific and isn't reported there
+    // Incident in lint/ project which is Android specific and isn't reported there
 
-        val androidSpecific = "MyDetector.java:65: Warning: Do not hardcode \"/sdcard/\";"
-        assertThat(appReport).contains(androidSpecific)
-        assertThat(lintReport).doesNotContain(androidSpecific)
+    val androidSpecific = "MyDetector.java:65: Warning: Do not hardcode \"/sdcard/\";"
+    assertThat(appReport).contains(androidSpecific)
+    assertThat(lintReport).doesNotContain(androidSpecific)
 
-        val jdkSpecific =
-            "MyDetector.java:38: Warning: New lint checks should be implemented in Kotlin to take advantage of a lot of Kotlin-specific mechanisms in the Lint API"
-        assertThat(lintReport).contains(jdkSpecific)
-        assertThat(appReport).doesNotContain(jdkSpecific)
+    val jdkSpecific =
+      "MyDetector.java:38: Warning: New lint checks should be implemented in Kotlin to take advantage of a lot of Kotlin-specific mechanisms in the Lint API"
+    assertThat(lintReport).contains(jdkSpecific)
+    assertThat(appReport).doesNotContain(jdkSpecific)
 
-        // This is also regression test for b/204552946: without the fix but with the additional
-        // attribute as applied in app/build.gradle the above issues would be missing and the below
-        // warning would be present.
-        ScannerSubject.assertThat(result.stdout).doesNotContain("Apply the 'com.android.lint' plugin")
-    }
+    // This is also regression test for b/204552946: without the fix but with the additional
+    // attribute as applied in app/build.gradle the above issues would be missing and the below
+    // warning would be present.
+    ScannerSubject.assertThat(result.stdout).doesNotContain("Apply the 'com.android.lint' plugin")
+  }
 
-    private fun isCheckSum(fileName: String): Boolean {
-        return fileName.endsWith("md5") ||
-            fileName.endsWith("sha1") ||
-            fileName.endsWith("sha256") ||
-            fileName.endsWith("sha512")
-    }
+  private fun isCheckSum(fileName: String): Boolean {
+    return fileName.endsWith("md5") || fileName.endsWith("sha1") || fileName.endsWith("sha256") || fileName.endsWith("sha512")
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+  }
 }

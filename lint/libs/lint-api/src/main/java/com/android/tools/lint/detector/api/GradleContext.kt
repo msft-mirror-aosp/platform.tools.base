@@ -40,9 +40,8 @@ open class GradleContext(
   project: Project,
 
   /**
-   * The main project if this project is a library project, or null if this is not a library
-   * project. The main project is the root project of all library projects, not necessarily the
-   * directly including project.
+   * The main project if this project is a library project, or null if this is not a library project. The main project is the root project
+   * of all library projects, not necessarily the directly including project.
    */
   main: Project?,
 
@@ -64,34 +63,30 @@ open class GradleContext(
   fun findElementByRange(cookie: Any, startOffset: Int, endOffset: Int): Any? =
     gradleVisitor.findElementByRange(this, cookie, startOffset, endOffset)
 
-  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie"))
-  fun getPropertyKeyCookie(cookie: Any): Any = cookie
+  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie")) fun getPropertyKeyCookie(cookie: Any): Any = cookie
 
-  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie"))
-  fun getPropertyPairCookie(cookie: Any): Any = cookie
+  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie")) fun getPropertyPairCookie(cookie: Any): Any = cookie
 
   /**
-   * Looks up the associated TOML value known to Gradle. This is typically used with
-   * gradle/libs.versions.toml from the root directory to specify collections of libraries.
+   * Looks up the associated TOML value known to Gradle. This is typically used with gradle/libs.versions.toml from the root directory to
+   * specify collections of libraries.
    *
-   * The [key] is the (potentially dotted) path of keys into tables. This will return a pair of
-   * value and [Location] for that key-value pair, or null if not found. If [source] is false, the
-   * value returned will be the actual value of the key (which for example will resolve references,
-   * and will return for example a Boolean if the value is true); if not (which is the default), it
-   * will return the source text of the TOML value.
+   * The [key] is the (potentially dotted) path of keys into tables. This will return a pair of value and [Location] for that key-value
+   * pair, or null if not found. If [source] is false, the value returned will be the actual value of the key (which for example will
+   * resolve references, and will return for example a Boolean if the value is true); if not (which is the default), it will return the
+   * source text of the TOML value.
    */
   open fun getTomlValue(key: String, source: Boolean = true): LintTomlValue? = null
 
   open fun getTomlValue(key: List<String>, source: Boolean = true): LintTomlValue? = null
 
   /**
-   * Reports an issue applicable to a given source location. The source location is used as the
-   * scope to check for suppress lint annotations.
+   * Reports an issue applicable to a given source location. The source location is used as the scope to check for suppress lint
+   * annotations.
    *
    * @param issue the issue to report
-   * @param cookie the node scope the error applies to. The lint infrastructure will check whether
-   *   there are suppress annotations on this node (or its enclosing nodes) and if so suppress the
-   *   warning without involving the client.
+   * @param cookie the node scope the error applies to. The lint infrastructure will check whether there are suppress annotations on this
+   *   node (or its enclosing nodes) and if so suppress the warning without involving the client.
    * @param location the location of the issue, or null if not known
    * @param message the message for this warning
    * @param fix optional data to pass to the IDE for use by a quickfix.
@@ -102,7 +97,7 @@ open class GradleContext(
   }
 
   companion object {
-    fun getStringLiteralValue(value: String, valueCookie: Any): String? {
+    fun getStringLiteralValue(value: String, valueCookie: Any?): String? {
       if (value.length > 2) {
         if (value.startsWith('\'') && value.endsWith('\'')) { // Groovy strings
           return value.removeSurrounding("'")
@@ -128,23 +123,19 @@ open class GradleContext(
     }
 
     /**
-     * Given a Kotlin AST node which represents a string, returns the string value as best it can,
-     * and tries to format it as substitution strings (e.g. `"group:artifact:" + version` is
-     * returned as `"group:artifact:${version}"`. It will also change raw strings into templated
-     * strings.
+     * Given a Kotlin AST node which represents a string, returns the string value as best it can, and tries to format it as substitution
+     * strings (e.g. `"group:artifact:" + version` is returned as `"group:artifact:${version}"`. It will also change raw strings into
+     * templated strings.
      */
     private fun getKotlinStringLiteralValue(expression: UExpression): String {
-      val sourcePsi =
-        expression.sourcePsi ?: return expression.asSourceString().removeSurrounding("\"")
+      val sourcePsi = expression.sourcePsi ?: return expression.asSourceString().removeSurrounding("\"")
       val text = sourcePsi.text
       if (expression is ULiteralExpression) {
         val value = expression.value
         if (value is String) {
           return value
         }
-      } else if (
-        expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS
-      ) {
+      } else if (expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS) {
         val sb = StringBuilder()
         for (part in expression.operands) {
           appendIntoKotlinString(sb, part)
@@ -158,9 +149,7 @@ open class GradleContext(
     private fun appendIntoKotlinString(sb: StringBuilder, expression: UExpression) {
       if (expression is ULiteralExpression && expression.value is String) {
         sb.append(expression.value as String)
-      } else if (
-        expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS
-      ) {
+      } else if (expression is UPolyadicExpression && expression.operator == UastBinaryOperator.PLUS) {
         for (part in expression.operands) {
           appendIntoKotlinString(sb, part)
         }
@@ -193,8 +182,7 @@ open class GradleContext(
     }
 
     fun isStringLiteral(token: String): Boolean {
-      return token.startsWith("\"") && token.endsWith("\"") ||
-        token.startsWith("'") && token.endsWith("'")
+      return token.startsWith("\"") && token.endsWith("\"") || token.startsWith("'") && token.endsWith("'")
     }
   }
 }

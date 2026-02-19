@@ -19,23 +19,20 @@ package com.android.tools.utp.gradle.api
 import org.gradle.api.provider.ProviderFactory
 
 /**
- * Defines the public API and entry point for executing the Unified Test Platform (UTP)
- * logic within an isolated Gradle Work Action.
+ * Defines the public API and entry point for executing the Unified Test Platform (UTP) logic within an isolated Gradle Work Action.
  *
- * This interface is designed to be loaded using [java.util.ServiceLoader] from the
- * `:utp:gradle-work-action` module, while being called from `:gradle-core`.
- * This separation enables strict class loader isolation for the UTP execution,
- * preventing classpath conflicts with the main Gradle plugin.
+ * This interface is designed to be loaded using [java.util.ServiceLoader] from the `:utp:gradle-work-action` module, while being called
+ * from `:gradle-core`. This separation enables strict class loader isolation for the UTP execution, preventing classpath conflicts with the
+ * main Gradle plugin.
  */
 interface UtpAction {
-    /**
-     * Executes the main UTP test logic.
-     *
-     * @param parameters The [RunUtpWorkParameters] containing all configuration
-     * for the UTP execution, such as device details, test APKs, and SDK paths.
-     * @param provider A [ProviderFactory] instance injected in the calling WorkAction,
-     * used to access Gradle properties (like feature flags) from within the
-     * isolated action.
-     */
-    fun run(parameters: RunUtpWorkParameters, provider: ProviderFactory)
+  /**
+   * Executes the main UTP test logic.
+   *
+   * @param parameters The [RunUtpWorkParameters] containing all configuration for the UTP execution, such as device details, test APKs, and
+   *   SDK paths.
+   * @param provider A [ProviderFactory] instance injected in the calling WorkAction, used to access Gradle properties (like feature flags)
+   *   from within the isolated action.
+   */
+  fun run(parameters: RunUtpWorkParameters, provider: ProviderFactory)
 }

@@ -21,17 +21,16 @@ import com.android.build.gradle.internal.services.DslServices
 import com.google.common.collect.Iterables
 import javax.inject.Inject
 
-abstract class ApplicationAndroidResourcesImpl @Inject constructor(
-    dslServices: DslServices
-) : ApplicationAndroidResources, AaptOptions(dslServices) {
+abstract class ApplicationAndroidResourcesImpl @Inject constructor(dslServices: DslServices) :
+  ApplicationAndroidResources, AaptOptions(dslServices) {
 
-    // TODO (b/269504885): set to true after testing the feature, add AUA details
-    override var generateLocaleConfig: Boolean = false
-    override val localeFilters: MutableSet<String> = mutableSetOf()
+  // TODO (b/269504885): set to true after testing the feature, add AUA details
+  override var generateLocaleConfig: Boolean = false
+  override val localeFilters: MutableSet<String> = mutableSetOf()
 
-    fun setLocaleFilters(newContents: Iterable<String>) {
-        val newArray = Iterables.toArray(newContents, String::class.java)
-        localeFilters.clear()
-        localeFilters.addAll(newArray)
-    }
+  fun setLocaleFilters(newContents: Iterable<String>) {
+    val newArray = Iterables.toArray(newContents, String::class.java)
+    localeFilters.clear()
+    localeFilters.addAll(newArray)
+  }
 }

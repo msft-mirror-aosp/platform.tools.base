@@ -27,113 +27,96 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderConvertible
 
-class DependencyCollectorProxy(
-    private val dslRecorder: DslRecorder
-): DependencyCollector {
+class DependencyCollectorProxy(private val dslRecorder: DslRecorder) : DependencyCollector {
 
-    override fun add(dependencyNotation: CharSequence) {
-        dslRecorder.call("add", listOf(dependencyNotation), isVarArgs = false)
-    }
+  override fun add(dependencyNotation: CharSequence) {
+    dslRecorder.call("add", listOf(dependencyNotation), isVarArgs = false)
+  }
 
-    override fun add(
-        dependencyNotation: CharSequence,
-        configuration: Action<in ExternalModuleDependency>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(dependencyNotation: CharSequence, configuration: Action<in ExternalModuleDependency>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(files: FileCollection) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(files: FileCollection) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(files: FileCollection, configuration: Action<in FileCollectionDependency>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(files: FileCollection, configuration: Action<in FileCollectionDependency>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(externalModule: ProviderConvertible<out MinimalExternalModuleDependency>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(externalModule: ProviderConvertible<out MinimalExternalModuleDependency>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(
-        externalModule: ProviderConvertible<out MinimalExternalModuleDependency>,
-        configuration: Action<in ExternalModuleDependency>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(
+    externalModule: ProviderConvertible<out MinimalExternalModuleDependency>,
+    configuration: Action<in ExternalModuleDependency>,
+  ) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(dependency: Dependency) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(dependency: Dependency) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> add(dependency: D, configuration: Action<in D>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> add(dependency: D, configuration: Action<in D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun add(dependency: Provider<out Dependency>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun add(dependency: Provider<out Dependency>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> add(dependency: Provider<out D>, configuration: Action<in D>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> add(dependency: Provider<out D>, configuration: Action<in D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun addConstraint(dependencyConstraint: DependencyConstraint) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun addConstraint(dependencyConstraint: DependencyConstraint) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun addConstraint(
-        dependencyConstraint: DependencyConstraint,
-        configuration: Action<in DependencyConstraint>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun addConstraint(dependencyConstraint: DependencyConstraint, configuration: Action<in DependencyConstraint>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun addConstraint(dependencyConstraint: Provider<out DependencyConstraint>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun addConstraint(dependencyConstraint: Provider<out DependencyConstraint>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun addConstraint(
-        dependencyConstraint: Provider<out DependencyConstraint>,
-        configuration: Action<in DependencyConstraint>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun addConstraint(dependencyConstraint: Provider<out DependencyConstraint>, configuration: Action<in DependencyConstraint>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(bundle: MutableIterable<D>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: MutableIterable<D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(bundle: MutableIterable<D>, configuration: Action<in D>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: MutableIterable<D>, configuration: Action<in D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(bundle: Provider<out MutableIterable<D>>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: Provider<out MutableIterable<D>>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(
-        bundle: Provider<out MutableIterable<D>>,
-        configuration: Action<in D>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: Provider<out MutableIterable<D>>, configuration: Action<in D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(bundle: ProviderConvertible<out MutableIterable<D>>) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: ProviderConvertible<out MutableIterable<D>>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun <D : Dependency?> bundle(
-        bundle: ProviderConvertible<out MutableIterable<D>>,
-        configuration: Action<in D>
-    ) {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun <D : Dependency?> bundle(bundle: ProviderConvertible<out MutableIterable<D>>, configuration: Action<in D>) {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun getDependencies(): Provider<MutableSet<Dependency>> {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun getDependencies(): Provider<MutableSet<Dependency>> {
+    throw RuntimeException("Implement as needed")
+  }
 
-    override fun getDependencyConstraints(): Provider<MutableSet<DependencyConstraint>> {
-        throw RuntimeException("Implement as needed")
-    }
+  override fun getDependencyConstraints(): Provider<MutableSet<DependencyConstraint>> {
+    throw RuntimeException("Implement as needed")
+  }
 }

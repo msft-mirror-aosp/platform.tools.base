@@ -23,54 +23,32 @@ import com.android.adblib.tools.debugging.handleDdmsDumpViewHierarchy
 import com.android.adblib.tools.debugging.handleDdmsListViewRoots
 import com.android.adblib.tools.debugging.packets.ddms.withPayload
 
-internal class JdwpProcessViewHierarchyImpl(
-    override val process: JdwpProcess
-) : JdwpProcessViewHierarchy {
+internal class JdwpProcessViewHierarchyImpl(override val process: JdwpProcess) : JdwpProcessViewHierarchy {
 
-    override suspend fun <R> listViewRoots(
-        payloadProcessor: suspend (AdbInputChannel, Int) -> R
-    ): R {
-        return process.withJdwpSession {
-            handleDdmsListViewRoots { chunkReply ->
-                chunkReply.withPayload {
-                    payloadProcessor(it, chunkReply.length)
-                }
-            }
-        }
+  override suspend fun <R> listViewRoots(payloadProcessor: suspend (AdbInputChannel, Int) -> R): R {
+    return process.withJdwpSession {
+      handleDdmsListViewRoots { chunkReply -> chunkReply.withPayload { payloadProcessor(it, chunkReply.length) } }
     }
+  }
 
-    override suspend fun <R> dumpViewHierarchy(
-        viewRoot: String,
-        skipChildren: Boolean,
-        includeProperties: Boolean,
-        useV2: Boolean,
-        payloadProcessor: suspend (payload: AdbInputChannel, payloadLength: Int) -> R
-    ): R {
-        return process.withJdwpSession {
-            handleDdmsDumpViewHierarchy(
-                viewRoot = viewRoot,
-                skipChildren = skipChildren,
-                includeProperties = includeProperties,
-                useV2 = useV2
-            ) { chunkReply ->
-                chunkReply.withPayload {
-                    payloadProcessor(it, chunkReply.length)
-                }
-            }
-        }
+  override suspend fun <R> dumpViewHierarchy(
+    viewRoot: String,
+    skipChildren: Boolean,
+    includeProperties: Boolean,
+    useV2: Boolean,
+    payloadProcessor: suspend (payload: AdbInputChannel, payloadLength: Int) -> R,
+  ): R {
+    return process.withJdwpSession {
+      handleDdmsDumpViewHierarchy(viewRoot = viewRoot, skipChildren = skipChildren, includeProperties = includeProperties, useV2 = useV2) {
+        chunkReply ->
+        chunkReply.withPayload { payloadProcessor(it, chunkReply.length) }
+      }
     }
+  }
 
-    override suspend fun <R> captureView(
-        viewRoot: String,
-        view: String,
-        payloadProcessor: suspend (AdbInputChannel, Int) -> R
-    ): R {
-        return process.withJdwpSession {
-            handleDdmsCaptureView(viewRoot, view) { chunkReply ->
-                chunkReply.withPayload {
-                    payloadProcessor(it, chunkReply.length)
-                }
-            }
-        }
+  override suspend fun <R> captureView(viewRoot: String, view: String, payloadProcessor: suspend (AdbInputChannel, Int) -> R): R {
+    return process.withJdwpSession {
+      handleDdmsCaptureView(viewRoot, view) { chunkReply -> chunkReply.withPayload { payloadProcessor(it, chunkReply.length) } }
     }
+  }
 }

@@ -25,19 +25,30 @@ option java_outer_classname = 'GradleAndroidTestResultListenerConfigProto';
 
 // A configuration of GradleAndroidTestResultListener plugin.
 message GradleAndroidTestResultListenerConfig {
-    // Test Result Listener gRPC server port number.
-    int32 resultListenerServerPort = 1;
-
-    // A file path to the cert of the gRPC client.
-    string resultListenerClientCertFilePath = 2;
-
-    // A file path to the private key of the gRPC client.
-    // This private key is used to enable mutual TLS.
-    string resultListenerClientPrivateKeyFilePath = 3;
-
-    // A file path to the trusted cert chain.
-    string trustCertCollectionFilePath = 4;
-
     // A device ID to listen to for test results.
     string deviceId = 5;
+
+    // A device name, used in the XML test report.
+    string deviceName = 6;
+
+    // A unique name for this test shard, used as the test suite name in the XML report.
+    string deviceShardName = 7;
+
+    // A project path, used in the XML test report.
+    string gradleProjectPath = 8;
+
+    // A variant name, used in the XML test report.
+    string variantName = 9;
+
+    // When enabled, it prints out base64 encoded test events to standard output.
+    bool enableUtpTestReportingForAndroidStudio = 10;
+
+    // A directory where XML test reports should be generated.
+    string xmlTestReportOutputDirectoryPath = 11;
+
+    // An output file where the binary test-result.pb for this run should be written.
+    string utpResultProtoOutputFilePath = 12;
+
+    // Obsolete fields.
+    reserved 1, 2, 3, 4;
 }

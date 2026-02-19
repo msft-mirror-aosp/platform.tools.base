@@ -22,19 +22,17 @@ import com.android.tools.lint.client.api.LintDriver
 import java.io.File
 
 /**
- * A [com.android.tools.lint.detector.api.Context] used when checking resource files (both bitmaps
- * and XML files; for XML files a subclass of this context is used:
- * [com.android.tools.lint.detector.api.XmlContext].)
+ * A [com.android.tools.lint.detector.api.Context] used when checking resource files (both bitmaps and XML files; for XML files a subclass
+ * of this context is used: [com.android.tools.lint.detector.api.XmlContext].)
  *
  * @param driver the driver running through the checks
  * @param project the project containing the file being checked
- * @param main the main project if this project is a library project, or null if this is not a
- *   library project. The main project is the root project of all library projects, not necessarily
- *   the directly including project.
+ * @param main the main project if this project is a library project, or null if this is not a library project. The main project is the root
+ *   project of all library projects, not necessarily the directly including project.
  * @param file the file being checked
- * @constructor Constructs a new [ResourceContext] <p> **NOTE: This is not a public or final API; if
- *   you rely on this be prepared to adjust your code for the next tools release.**
  * @property resourceFolderType the [com.android.resources.ResourceFolderType] of this file, if any
+ * @constructor Constructs a new [ResourceContext] <p> **NOTE: This is not a public or final API; if you rely on this be prepared to adjust
+ *   your code for the next tools release.**
  */
 open class ResourceContext(
   driver: LintDriver,

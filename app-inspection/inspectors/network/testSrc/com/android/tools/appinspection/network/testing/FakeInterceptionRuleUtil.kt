@@ -44,9 +44,7 @@ fun createFakeRuleAddedEvent(url: URL): NetworkInspectorProtocol.InterceptRuleAd
         }
         addTransformation(
           NetworkInspectorProtocol.Transformation.newBuilder().apply {
-            bodyReplacedBuilder.apply {
-              body = ByteString.copyFrom("InterceptedBody1".toByteArray())
-            }
+            bodyReplacedBuilder.apply { body = ByteString.copyFrom("InterceptedBody1".toByteArray()) }
           }
         )
         addTransformation(
@@ -72,14 +70,9 @@ fun createFakeRuleAddedEvent(url: URL): NetworkInspectorProtocol.InterceptRuleAd
     }
     .build()
 
-internal fun NetworkInspector.receiveInterceptCommand(
-  interceptCommand: NetworkInspectorProtocol.InterceptCommand
-) {
+internal fun NetworkInspector.receiveInterceptCommand(interceptCommand: NetworkInspectorProtocol.InterceptCommand) {
   onReceiveCommand(
-    NetworkInspectorProtocol.Command.newBuilder()
-      .apply { this.interceptCommand = interceptCommand }
-      .build()
-      .toByteArray(),
+    NetworkInspectorProtocol.Command.newBuilder().apply { this.interceptCommand = interceptCommand }.build().toByteArray(),
     object : Inspector.CommandCallback {
       override fun reply(response: ByteArray) {}
 

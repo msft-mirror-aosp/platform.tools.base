@@ -30,8 +30,7 @@ import org.jetbrains.uast.UCallExpression
 class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ForkJoinPoolDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ForkJoinPoolDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val COMMON_FJ_POOL =
@@ -91,11 +90,7 @@ class ForkJoinPoolDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableConstructorTypes() = listOf("java.util.concurrent.ForkJoinPool")
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     // Called constructor directly
     // TODO: ForkJoinTask
     context.report(

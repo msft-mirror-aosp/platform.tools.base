@@ -35,12 +35,8 @@ private val BOOT_CLASSPATH_JARS =
     "okhttp-hostdex.jar",
   )
 
-class FakeAndroidDriver(
-  private val address: String,
-  debuggerPort: Int,
-  extraArtFlag: String?,
-  env: Array<String>,
-) : ProcessRunner(getArgs(debuggerPort, extraArtFlag), env) {
+class FakeAndroidDriver(private val address: String, debuggerPort: Int, extraArtFlag: String?, env: Array<String>) :
+  ProcessRunner(getArgs(debuggerPort, extraArtFlag), env) {
   var communicationPort: Int = 0
     private set
 
@@ -100,10 +96,7 @@ class FakeAndroidDriver(
     private const val APP_LISTENING = "Test Framework Server Listening: "
     private val ART_PATH = getProcessPath("art.location")
 
-    /**
-     * Given a property which evaluates to zero or more relative paths to files (separated by ':'),
-     * return the absolute paths in a list.
-     */
+    /** Given a property which evaluates to zero or more relative paths to files (separated by ':'), return the absolute paths in a list. */
     @Suppress("SameParameterValue")
     private fun resolvePropertyPaths(propertyKey: String): List<String> {
       val relativePaths = System.getProperty(propertyKey) ?: return emptyList()

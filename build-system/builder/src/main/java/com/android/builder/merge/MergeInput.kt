@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package com.android.builder.merge;
+package com.android.builder.merge
 
-import java.io.InputStream;
+import java.io.InputStream
 
 data class MergeInput(val stream: InputStream, val name: String)

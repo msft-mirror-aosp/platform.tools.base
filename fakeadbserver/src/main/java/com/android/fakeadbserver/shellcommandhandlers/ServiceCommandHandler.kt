@@ -18,42 +18,36 @@ package com.android.fakeadbserver.shellcommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
-import com.android.fakeadbserver.services.PackageManager
 import com.android.fakeadbserver.services.ShellCommandOutput
-import com.android.fakeadbserver.services.ServiceManager
 import com.android.fakeadbserver.services.StatusWriter
 
 /*
  * A [ShellHandler] thar writes 'Service <argument>: found' to stdout.
  */
-class ServiceCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType,
-    "service"
-) {
+class ServiceCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "service") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        serviceOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    serviceOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
 
-        when (shellCommandArgs?.substringBefore(" ")) {
-            "list" -> {
-                val serviceManager = device.serviceManager
-                val services = serviceManager.services()
-                var i = 0
-                val output = "Found ${services.size} services:\n" + services.entries.joinToString {
-                    "${i++}       ${it.key}: [${it.value ?: ""}]\n"
-                }
-                serviceOutput.writeStdout(output)
-            }
-            else -> {
-                serviceOutput.writeStderr("Invalid arguments")
-            }
-        }
+    when (shellCommandArgs?.substringBefore(" ")) {
+      "list" -> {
+        val serviceManager = device.serviceManager
+        val services = serviceManager.services()
+        var i = 0
+        val output =
+          "Found ${services.size} services:\n" + services.entries.joinToString { "${i++}       ${it.key}: [${it.value ?: ""}]\n" }
+        serviceOutput.writeStdout(output)
+      }
+      else -> {
+        serviceOutput.writeStderr("Invalid arguments")
+      }
     }
+  }
 }

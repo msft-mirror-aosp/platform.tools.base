@@ -18,20 +18,20 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetAarTest: VariantApiBaseTest(TestType.Script) {
+class GetAarTest : VariantApiBaseTest(TestType.Script) {
 
-    @Test
-    fun getAarTest() {
-        given {
-            tasksToInvoke.add(":lib:debugAarUpload")
-            addModule(":lib") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+  @Test
+  fun getAarTest() {
+    given {
+      tasksToInvoke.add(":lib:debugAarUpload")
+      addModule(":lib") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.library")
                     kotlin("android")
@@ -66,29 +66,31 @@ class GetAarTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# artifacts.get in Kotlin
-
-This sample shows how to obtain the aar from the AGP.
-The [onVariants] block will wire the [AarUploadTask] input property (apkFolder) by using
-the [Artifacts.get] call with the right [SingleArtifact.
-`aar.set(artifacts.get(SingleArtifact.AAR))`
-## To Run
-./gradlew debugAarUpload
-expected result : "Uploading .... to a fantasy server...s" message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Uploading")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+
+        This sample shows how to obtain the aar from the AGP.
+        The [onVariants] block will wire the [AarUploadTask] input property (apkFolder) by using
+        the [Artifacts.get] call with the right [SingleArtifact.
+        `aar.set(artifacts.get(SingleArtifact.AAR))`
+        ## To Run
+        ./gradlew debugAarUpload
+        expected result : "Uploading .... to a fantasy server...s" message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Uploading")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

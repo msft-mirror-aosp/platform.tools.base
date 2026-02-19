@@ -18,25 +18,14 @@ package com.android.tools.backup
 
 import org.junit.platform.commons.annotation.Testable
 
-/**
- * Annotation to identify instrumentation test classes that generate a backup file and restore
- * from it.
- */
+/** Annotation to identify instrumentation test classes that generate a backup file and restore from it. */
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
 @Testable
-annotation class BackupAndRestoreTest(
-    vararg val backupTypes: TestBackupType,
-    val restoreBeforeEveryTest: Boolean = false,
-)
+annotation class BackupAndRestoreTest(vararg val backupTypes: TestBackupType, val restoreBeforeEveryTest: Boolean = false)
 
-/**
- * Annotation to identify instrumentation test classes that restore from an existing backup file.
- */
+/** Annotation to identify instrumentation test classes that restore from an existing backup file. */
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.CLASS)
 @Testable
-annotation class RestoreTest(
-    vararg val backupFilePaths: String,
-    val restoreBeforeEveryTest: Boolean = false,
-)
+annotation class RestoreTest(vararg val backupFilePaths: String, val restoreBeforeEveryTest: Boolean = false)

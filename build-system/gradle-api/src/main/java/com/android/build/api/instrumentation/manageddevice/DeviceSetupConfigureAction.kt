@@ -18,18 +18,17 @@ package com.android.build.api.instrumentation.manageddevice
 
 import com.android.build.api.dsl.Device
 import org.gradle.api.Incubating
-import org.gradle.api.model.ObjectFactory
 
 /**
  * Action for configuring the necessary [inputs][DeviceSetupInput] for optional Device Setup
  *
- * This class is used to take the [managed device DSL][Device] create a group of
- * [setup inputs][DeviceSetupInput].
+ * This class is used to take the [managed device DSL][Device] create a group of [setup inputs][DeviceSetupInput].
  *
- * This interface can be implemented for use with a Custom Managed Device Registration,
- * as device setup is optional for Custom Managed Devices.
+ * This interface can be implemented for use with a Custom Managed Device Registration, as device setup is optional for Custom Managed
+ * Devices.
  *
  * Example [DeviceSetupInput] and [Device] implementation for Configuration Action
+ *
  * ```
  * abstract class CustomSetupInput: DeviceSetupInput {
  *     /** name of device from DSL, used for error reporting */
@@ -66,25 +65,19 @@ import org.gradle.api.model.ObjectFactory
  * ```
  *
  * @param DeviceT: The interface of the Custom Managed Device this configure action corresponds to.
- * @param SetupInputT: The specialized [DeviceSetupInput] this configuration action generates for the
- * instrumentation test task.
- *
- * @suppress Do not use from production code. All properties in this interface are exposed for
- * prototype.
+ * @param SetupInputT: The specialized [DeviceSetupInput] this configuration action generates for the instrumentation test task.
+ * @suppress Do not use from production code. All properties in this interface are exposed for prototype.
  */
 @Incubating
-interface DeviceSetupConfigureAction <DeviceT : Device, SetupInputT: DeviceSetupInput> {
+interface DeviceSetupConfigureAction<DeviceT : Device, SetupInputT : DeviceSetupInput> {
 
-    /**
-     * Generates the inputs into the test setup task to be consumed by the setup task action.
-     *
-     * @param deviceDSL The DSL for the individual managed device being setup.
-     *
-     * @return The inputs for the Setup Task. This will be consumed as part of the
-     * setup action. As specified by the ManagedDeviceSetupFactory.
-     *
-     * @suppress Do not use from production code. This API is exposed for prototype.
-     */
-    @Incubating
-    fun configureTaskInput(deviceDSL: DeviceT): SetupInputT
+  /**
+   * Generates the inputs into the test setup task to be consumed by the setup task action.
+   *
+   * @param deviceDSL The DSL for the individual managed device being setup.
+   * @return The inputs for the Setup Task. This will be consumed as part of the setup action. As specified by the
+   *   ManagedDeviceSetupFactory.
+   * @suppress Do not use from production code. This API is exposed for prototype.
+   */
+  @Incubating fun configureTaskInput(deviceDSL: DeviceT): SetupInputT
 }

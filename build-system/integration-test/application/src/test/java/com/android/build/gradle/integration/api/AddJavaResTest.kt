@@ -36,145 +36,109 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import shadow.bundletool.com.android.tools.r8.internal.za
 
 @RunWith(Parameterized::class)
-class AddJavaResTest(
-    private val callbackType: Class<out PluginCallback>,
-) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "callbackType_{0}")
-        fun params() = listOf(
-            AddJavaResourcesWithScopedApiCallback::class.java,
-            AddJavaResourcesWithSourceApiCallback::class.java,
-            AddJavaResourcesWithBothApisCallback::class.java,
+class AddJavaResTest(private val callbackType: Class<out PluginCallback>) {
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "callbackType_{0}")
+    fun params() =
+      listOf(
+        AddJavaResourcesWithScopedApiCallback::class.java,
+        AddJavaResourcesWithSourceApiCallback::class.java,
+        AddJavaResourcesWithBothApisCallback::class.java,
+      )
+  }
+
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.java_res"
+          defaultConfig.applicationId = "com.example.api.java_res"
+        }
+        pluginCallbacks += callbackType
+      }
+    }
+
+  @Test
+  fun ensureGeneratedJavaResTasksAreRunning() {
+    val builtProject = rule.build
+    val result = builtProject.executor.run(":app:mergeDebugJavaResource")
+    Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResources")
+
+    // additional checks when both APIs are used.
+    if (callbackType == AddJavaResourcesWithBothApisCallback::class.java) {
+      Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResourcesWithArtifacts")
+      builtProject.executor.run(":app:assembleDebug")
+      builtProject.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+        zipEntry("foo.txt").hasCompressionMethod(0)
+        zipEntry("bar.txt").hasCompressionMethod(0)
+      }
+    }
+  }
+}
+
+abstract class AddJavaResourcesTestWriter : DefaultTask() {
+
+  @get:Input abstract val resName: Property<String>
+
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+  @TaskAction
+  fun execute() {
+    outputDir.get().asFile.mkdirs()
+    outputDir.file(resName).get().asFile.writeText("foo")
+  }
+
+  companion object {
+    fun createTask(project: Project, taskName: String = "writeDebugJavaResources"): TaskProvider<AddJavaResourcesTestWriter> =
+      project.tasks.register(taskName, AddJavaResourcesTestWriter::class.java).also { it.configure { task -> task.resName.set("foo.txt") } }
+  }
+}
+
+class AddJavaResourcesWithScopedApiCallback : ApplicationComponentCallback {
+
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      variant.artifacts
+        .forScope(ScopedArtifacts.Scope.PROJECT)
+        .use(AddJavaResourcesTestWriter.createTask(project))
+        .toAppend(ScopedArtifact.JAVA_RES, AddJavaResourcesTestWriter::outputDir)
+    }
+  }
+}
+
+class AddJavaResourcesWithSourceApiCallback : ApplicationComponentCallback {
+
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      variant.sources.resources?.addGeneratedSourceDirectory(
+        AddJavaResourcesTestWriter.createTask(project),
+        AddJavaResourcesTestWriter::outputDir,
+      )
+    }
+  }
+}
+
+class AddJavaResourcesWithBothApisCallback : ApplicationComponentCallback {
+
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      variant.sources.resources?.addGeneratedSourceDirectory(
+        AddJavaResourcesTestWriter.createTask(project),
+        AddJavaResourcesTestWriter::outputDir,
+      )
+
+      variant.artifacts
+        .forScope(ScopedArtifacts.Scope.PROJECT)
+        .use(
+          AddJavaResourcesTestWriter.createTask(project, "writeDebugJavaResourcesWithArtifacts").also {
+            it.configure { task -> task.resName.set("bar.txt") }
+          }
         )
+        .toAppend(ScopedArtifact.JAVA_RES, AddJavaResourcesTestWriter::outputDir)
     }
-
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                namespace = "com.example.api.java_res"
-                defaultConfig.applicationId = "com.example.api.java_res"
-            }
-            pluginCallbacks += callbackType
-        }
-    }
-
-    @Test
-    fun ensureGeneratedJavaResTasksAreRunning() {
-        val builtProject = rule.build
-        val result = builtProject.executor
-            .run(":app:mergeDebugJavaResource")
-        Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResources")
-
-        // additional checks when both APIs are used.
-        if (callbackType == AddJavaResourcesWithBothApisCallback::class.java) {
-            Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResourcesWithArtifacts")
-            builtProject.executor
-                .run(":app:assembleDebug")
-            builtProject.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-                zipEntry("foo.txt").hasCompressionMethod(0)
-                zipEntry("bar.txt").hasCompressionMethod(0)
-            }
-        }
-    }
-}
-
-abstract class AddJavaResourcesTestWriter: DefaultTask() {
-
-    @get:Input
-    abstract val resName: Property<String>
-
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
-
-    @TaskAction
-    fun execute() {
-        outputDir.get().asFile.mkdirs()
-        outputDir.file(resName).get().asFile.writeText("foo")
-    }
-
-    companion object {
-        fun createTask(
-            project: Project,
-            taskName: String = "writeDebugJavaResources"
-        ): TaskProvider<AddJavaResourcesTestWriter> =
-            project.tasks.register(
-                taskName,
-                AddJavaResourcesTestWriter::class.java
-            ).also {
-                it.configure { task ->
-                    task.resName.set("foo.txt")
-                }
-            }
-    }
-}
-
-class AddJavaResourcesWithScopedApiCallback: ApplicationComponentCallback {
-
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants(
-            androidComponents.selector().withBuildType("debug")
-        ) { variant ->
-            variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-                .use(AddJavaResourcesTestWriter.createTask(project))
-                .toAppend(
-                    ScopedArtifact.JAVA_RES,
-                    AddJavaResourcesTestWriter::outputDir
-                )
-        }
-    }
-}
-
-class AddJavaResourcesWithSourceApiCallback: ApplicationComponentCallback {
-
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants(
-            androidComponents.selector().withBuildType("debug")
-        ) { variant ->
-            variant.sources.resources?.addGeneratedSourceDirectory(
-                AddJavaResourcesTestWriter.createTask(project),
-                AddJavaResourcesTestWriter::outputDir
-            )
-        }
-    }
-}
-
-class AddJavaResourcesWithBothApisCallback: ApplicationComponentCallback {
-
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants(
-            androidComponents.selector().withBuildType("debug")
-        ) { variant ->
-
-            variant.sources.resources?.addGeneratedSourceDirectory(
-                AddJavaResourcesTestWriter.createTask(project),
-                AddJavaResourcesTestWriter::outputDir
-            )
-
-            variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-                .use(AddJavaResourcesTestWriter.createTask(
-                    project,
-                    "writeDebugJavaResourcesWithArtifacts").also {
-                        it.configure { task -> task.resName.set("bar.txt") }
-                    }
-                )
-                .toAppend(
-                    ScopedArtifact.JAVA_RES,
-                    AddJavaResourcesTestWriter::outputDir
-                )
-        }
-    }
+  }
 }

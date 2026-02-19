@@ -19,64 +19,62 @@ package com.android.build.gradle.internal.cxx.cmake
 /**
  * Parses the linkLibraries field of the CMake server response into a list of individual items.
  *
- * The linkLibraries field in the CMake server response is a whitespace delimited string rather
- * than a list of items. Elements may be paths, and if the path contains spaces the item will be
- * quoted.
+ * The linkLibraries field in the CMake server response is a whitespace delimited string rather than a list of items. Elements may be paths,
+ * and if the path contains spaces the item will be quoted.
  *
  * @property linkLibraries The linkLibraries field in the CMake server response.
  */
 private class LinkLibrariesParser(private val linkLibraries: String) {
-    private val items = mutableListOf<String>()
-    private val stringBuilder = StringBuilder()
-    private val iterator = linkLibraries.iterator()
+  private val items = mutableListOf<String>()
+  private val stringBuilder = StringBuilder()
+  private val iterator = linkLibraries.iterator()
 
-    private fun parseQuoted() {
-        require(stringBuilder.isEmpty()) { "expected quoted string to be the start of a new item" }
-        while (true) {
-            val c = try {
-                iterator.next()
-            } catch (ex: StringIndexOutOfBoundsException) {
-                throw IllegalArgumentException(ex)
-            }
-            when (c) {
-                '"' -> {
-                    finishItem()
-                    return
-                }
-                else -> stringBuilder.append(c)
-            }
+  private fun parseQuoted() {
+    require(stringBuilder.isEmpty()) { "expected quoted string to be the start of a new item" }
+    while (true) {
+      val c =
+        try {
+          iterator.next()
+        } catch (ex: StringIndexOutOfBoundsException) {
+          throw IllegalArgumentException(ex)
         }
+      when (c) {
+        '"' -> {
+          finishItem()
+          return
+        }
+        else -> stringBuilder.append(c)
+      }
+    }
+  }
+
+  private fun finishItem() {
+    if (stringBuilder.isNotEmpty()) {
+      items.add(stringBuilder.toString())
+      stringBuilder.setLength(0)
+    }
+  }
+
+  fun parse(): List<String> {
+    while (iterator.hasNext()) {
+      when (val c = iterator.next()) {
+        '"' -> parseQuoted()
+        ' ' -> finishItem()
+        else -> stringBuilder.append(c)
+      }
     }
 
-    private fun finishItem() {
-        if (stringBuilder.isNotEmpty()) {
-            items.add(stringBuilder.toString())
-            stringBuilder.setLength(0)
-        }
-    }
-
-    fun parse(): List<String> {
-        while (iterator.hasNext()) {
-            when (val c = iterator.next()) {
-                '"' -> parseQuoted()
-                ' ' -> finishItem()
-                else -> stringBuilder.append(c)
-            }
-        }
-
-        finishItem()
-        return items
-    }
+    finishItem()
+    return items
+  }
 }
 
 /**
  * Parses the linkLibraries field of the CMake server response into a list of individual items.
  *
- * The linkLibraries field in the CMake server response is a whitespace delimited string rather
- * than a list of items. Elements may be paths, and if the path contains spaces the item will be
- * quoted.
+ * The linkLibraries field in the CMake server response is a whitespace delimited string rather than a list of items. Elements may be paths,
+ * and if the path contains spaces the item will be quoted.
  *
  * @param linkLibraries The linkLibraries field in the CMake server response.
  */
-fun parseLinkLibraries(linkLibraries: String): List<String> =
-    LinkLibrariesParser(linkLibraries).parse()
+fun parseLinkLibraries(linkLibraries: String): List<String> = LinkLibrariesParser(linkLibraries).parse()

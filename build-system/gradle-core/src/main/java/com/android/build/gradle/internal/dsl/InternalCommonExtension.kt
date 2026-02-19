@@ -16,22 +16,20 @@
 
 package com.android.build.gradle.internal.dsl
 
-
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.CompileSdkSpec
 import org.gradle.api.Action
-import com.android.build.gradle.internal.CompileOptions as CompileOptionsImpl
 
 /**
- * Internal extension of the DSL interface that overrides the properties to use the implementation
- * types, in order to enable the use of kotlin delegation from the original DSL classes
- * to the new implementations.
+ * Internal extension of the DSL interface that overrides the properties to use the implementation types, in order to enable the use of
+ * kotlin delegation from the original DSL classes to the new implementations.
  */
-interface InternalCommonExtension: CommonExtension, Lockable {
+interface InternalCommonExtension : CommonExtension, Lockable {
 
-    var compileSdkVersion: String?
+  var compileSdkVersion: String?
 
-    // See GroovyExtensionsTest
-    fun setFlavorDimensions(flavorDimensions: List<String>)
-    fun compileSdk(action: Action<CompileSdkSpec>)
+  // See GroovyExtensionsTest
+  fun setFlavorDimensions(flavorDimensions: List<String>)
+
+  fun compileSdk(action: Action<CompileSdkSpec>)
 }

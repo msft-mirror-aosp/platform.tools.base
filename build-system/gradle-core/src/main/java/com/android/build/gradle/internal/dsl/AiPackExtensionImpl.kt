@@ -19,29 +19,28 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AiPackExtension
 import com.android.build.api.dsl.DynamicDelivery
 import com.android.build.api.dsl.ModelDependency
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-abstract class AiPackExtensionImpl @Inject constructor(objectFactory: ObjectFactory) : AiPackExtension{
-    override val dynamicDelivery: DynamicDelivery = objectFactory.newInstance(
-        DynamicDeliveryImpl::class.java)
+abstract class AiPackExtensionImpl @Inject constructor(objectFactory: ObjectFactory) : AiPackExtension {
+  override val dynamicDelivery: DynamicDelivery = objectFactory.newInstance(DynamicDeliveryImpl::class.java)
 
-    override fun dynamicDelivery(action: DynamicDelivery.() -> Unit) {
-        action.invoke(dynamicDelivery)
-    }
+  override fun dynamicDelivery(action: DynamicDelivery.() -> Unit) {
+    action.invoke(dynamicDelivery)
+  }
 
-    fun dynamicDelivery(action: Action<DynamicDelivery>) {
-        action.execute(dynamicDelivery)
-    }
+  fun dynamicDelivery(action: Action<DynamicDelivery>) {
+    action.execute(dynamicDelivery)
+  }
 
-    override val modelDependency: ModelDependency = objectFactory.newInstance(ModelDependencyImpl::class.java)
+  override val modelDependency: ModelDependency = objectFactory.newInstance(ModelDependencyImpl::class.java)
 
-    override fun modelDependency(action: ModelDependency.() -> Unit) {
-        action.invoke(modelDependency)
-    }
+  override fun modelDependency(action: ModelDependency.() -> Unit) {
+    action.invoke(modelDependency)
+  }
 
-    fun modelDependency(action: Action<ModelDependency>) {
-        action.execute(modelDependency)
-    }
+  fun modelDependency(action: Action<ModelDependency>) {
+    action.execute(modelDependency)
+  }
 }

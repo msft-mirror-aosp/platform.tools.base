@@ -20,10 +20,8 @@ class PluralExamplesLookup {
 
   init {
     val lines =
-      PluralExamplesLookup::class.java.getResourceAsStream(filename)?.buffered()?.reader()?.use {
-        stream ->
-        stream.readLines()
-      } ?: error("Could not load plural-examples.txt")
+      PluralExamplesLookup::class.java.getResourceAsStream(filename)?.buffered()?.reader()?.use { stream -> stream.readLines() }
+        ?: error("Could not load plural-examples.txt")
     exampleMap = lines.map(Companion::parseLine).associate { it }
   }
 
@@ -35,8 +33,7 @@ class PluralExamplesLookup {
     private const val filename = "/plural-examples.txt"
     private var instance: PluralExamplesLookup? = null
 
-    fun getInstance(): PluralExamplesLookup =
-      instance ?: PluralExamplesLookup().also { instance = it }
+    fun getInstance(): PluralExamplesLookup = instance ?: PluralExamplesLookup().also { instance = it }
 
     private fun parseLine(line: String): Pair<String, Map<String, PluralExample>> {
       val lineParts = line.split('/')
@@ -57,12 +54,7 @@ class PluralExamplesLookup {
   }
 }
 
-data class PluralExample(
-  val language: String,
-  val keyword: String,
-  val number: String,
-  val example: String?,
-) {
+data class PluralExample(val language: String, val keyword: String, val number: String, val example: String?) {
   fun formattedWithNumber() = example?.replace("{0}", number) ?: number
 }
 

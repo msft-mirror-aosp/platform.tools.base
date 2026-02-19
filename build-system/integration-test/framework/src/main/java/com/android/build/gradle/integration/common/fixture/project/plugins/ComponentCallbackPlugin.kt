@@ -17,43 +17,32 @@
 package com.android.build.gradle.integration.common.fixture.project.plugins
 
 import com.android.build.api.variant.AndroidComponentsExtension
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
 /**
- * A Custom plugin to be used with [GenericComponentCallback] in projects created
- * by [GradleRule].
+ * A Custom plugin to be used with [GenericComponentCallback] in projects created by [GradleRule].
  *
- * Do not extend this. Instead, implement [GenericComponentCallback] and register the implementation
- * class to [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
+ * Do not extend this. Instead, implement [GenericComponentCallback] and register the implementation class to
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleProjectDefinition.pluginCallbacks]
  *
  * This class is automatically decorated to call the callback at runtime.
  */
-abstract class GenericComponentCallbackPlugin: Plugin<Project> {
+abstract class GenericComponentCallbackPlugin : Plugin<Project> {
 
-    override fun apply(target: Project) {
-        target.plugins.withType(BasePlugin::class.java) {
-            val componentsExtension = target.extensions.getByType(AndroidComponentsExtension::class.java)
-            handleExtension(target, componentsExtension)
-        }
+  override fun apply(target: Project) {
+    target.plugins.withType(BasePlugin::class.java) {
+      val componentsExtension = target.extensions.getByType(AndroidComponentsExtension::class.java)
+      handleExtension(target, componentsExtension)
     }
+  }
 
-    abstract fun handleExtension(
-        project: Project,
-        componentsExtension: AndroidComponentsExtension<*, *, *>
-    )
+  abstract fun handleExtension(project: Project, componentsExtension: AndroidComponentsExtension<*, *, *>)
 }
 
-/**
- * interface to implement to provide custom plugin logic to a [GradleRule] project
- */
-interface GenericComponentCallback: PluginCallback {
-    fun handleExtension(
-        project: Project,
-        androidComponents: AndroidComponentsExtension<*, *, *>,
-    )
+/** interface to implement to provide custom plugin logic to a [GradleRule] project */
+interface GenericComponentCallback : PluginCallback {
+  fun handleExtension(project: Project, androidComponents: AndroidComponentsExtension<*, *, *>)
 }

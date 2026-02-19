@@ -23,7 +23,6 @@ import com.android.tools.idea.wizard.template.impl.activities.common.importViewB
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
 import com.android.tools.idea.wizard.template.renderIf
 
-
 fun firstFragmentKt(
   packageName: String,
   applicationPackage: String?,
@@ -31,17 +30,20 @@ fun firstFragmentKt(
   navFragmentPrefix: String,
   navViewModelClass: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val viewModelInitializationBlock = if (useAndroidX) "ViewModelProvider(this).get(${navViewModelClass}::class.java)"
-  else "ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(${navViewModelClass}::class.java)"
+  val viewModelInitializationBlock =
+    if (useAndroidX) "ViewModelProvider(this).get(${navViewModelClass}::class.java)"
+    else "ViewModelProvider(this, ViewModelProvider.NewInstanceFactory()).get(${navViewModelClass}::class.java)"
 
   val layoutName = "fragment_${navFragmentPrefix}"
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
     _binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false)
     val root: View = binding.root
   """
-  else "View root = inflater.inflate(R.layout.$layoutName, container, false);"
+    else "View root = inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
@@ -77,7 +79,7 @@ ${renderIf(isViewBindingSupported) {"""
       isViewBindingSupported = isViewBindingSupported,
       id = "text_${navFragmentPrefix}",
       className = "TextView",
-      parentView = "root")}
+      parentView = "root",)}
     ${navFragmentPrefix}ViewModel.text.observe(viewLifecycleOwner) {
       textView.text = it
     }

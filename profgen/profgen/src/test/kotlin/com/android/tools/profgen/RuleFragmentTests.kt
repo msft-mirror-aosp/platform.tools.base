@@ -16,46 +16,56 @@
 
 package com.android.tools.profgen
 
-import org.junit.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.junit.Test
 
 class RuleFragmentTests {
-    @Test
-    fun testFoo() {
-        assertMatch("foo", "foo")
-        assertMatch("foo", "*")
-        assertNoMatch("foo", "?")
-        assertMatch("x", "?")
-        assertNoMatch("/", "?")
-        assertNoMatch("foo", "?")
-        assertNoMatch("foo/", "foo", "?")
-        assertMatch("foox", "foo", "?")
-        assertNoMatch("foo/bar", "*")
-        assertMatch("foo/bar", "**")
-        assertMatch("Lcom/foo/Bar;", "**")
-        assertMatch("<init>", "*")
-        assertMatch("lambda-0", "*")
-        assertMatch("foo-bar", "*")
-        assertMatch("foo-bar", "**")
-        assertNoMatch("foo(bar)", "**")
-        assertMatch("foo/anything/bar", "foo/", "*", "/bar")
-        assertNoMatch("foo/a/b/bar", "foo/", "*", "/bar")
-        assertMatch("foo/a/b/bar", "foo/", "**", "/bar")
-        assertMatch("foo/a/b/bar", "fo", "?", "/", "**", "/bar")
-        assertMatch("fox/a/b/bar", "fo", "?", "/", "**", "/bar")
-        assertNoMatch("fo/a/b/bar", "fo", "?", "/", "**", "/bar")
-    }
+  @Test
+  fun testFoo() {
+    assertMatch("foo", "foo")
+    assertMatch("foo", "*")
+    assertNoMatch("foo", "?")
+    assertMatch("x", "?")
+    assertNoMatch("/", "?")
+    assertNoMatch("foo", "?")
+    assertNoMatch("foo/", "foo", "?")
+    assertMatch("foox", "foo", "?")
+    assertNoMatch("foo/bar", "*")
+    assertMatch("foo/bar", "**")
+    assertMatch("Lcom/foo/Bar;", "**")
+    assertMatch("<init>", "*")
+    assertMatch("lambda-0", "*")
+    assertMatch("foo-bar", "*")
+    assertMatch("foo-bar", "**")
+    assertNoMatch("foo(bar)", "**")
+    assertMatch("foo/anything/bar", "foo/", "*", "/bar")
+    assertNoMatch("foo/a/b/bar", "foo/", "*", "/bar")
+    assertMatch("foo/a/b/bar", "foo/", "**", "/bar")
+    assertMatch("foo/a/b/bar", "fo", "?", "/", "**", "/bar")
+    assertMatch("fox/a/b/bar", "fo", "?", "/", "**", "/bar")
+    assertNoMatch("fo/a/b/bar", "fo", "?", "/", "**", "/bar")
+  }
 
-    fun assertMatch(value: String, vararg parts: String) = assertTrue(fragment(*parts).matches(value), "Expected '$value' to match '${parts.joinToString("")}'")
-    fun assertNoMatch(value: String, vararg parts: String) = assertFalse(fragment(*parts).matches(value), "Expected '$value' to not match '${parts.joinToString("")}'")
-    private fun fragment(vararg parts: String): RuleFragment = RuleFragmentParser(0, parts.map {
+  fun assertMatch(value: String, vararg parts: String) =
+    assertTrue(fragment(*parts).matches(value), "Expected '$value' to match '${parts.joinToString("")}'")
+
+  fun assertNoMatch(value: String, vararg parts: String) =
+    assertFalse(fragment(*parts).matches(value), "Expected '$value' to not match '${parts.joinToString("")}'")
+
+  private fun fragment(vararg parts: String): RuleFragment =
+    RuleFragmentParser(
+        0,
+        parts
+          .map {
             when (it) {
-                "*" -> Part.WildPart
-                "?" -> Part.WildChar
-                "**" -> Part.WildParts
-                else -> Part.Exact(it)
+              "*" -> Part.WildPart
+              "?" -> Part.WildChar
+              "**" -> Part.WildParts
+              else -> Part.Exact(it)
             }
-        }.toMutableList()
-    ).build()
+          }
+          .toMutableList(),
+      )
+      .build()
 }

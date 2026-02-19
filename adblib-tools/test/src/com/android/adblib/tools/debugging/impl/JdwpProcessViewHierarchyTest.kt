@@ -25,108 +25,95 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.nio.ByteBuffer
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.nio.ByteBuffer
 
 class JdwpProcessViewHierarchyTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun listViewRootsWorks() = runBlockingWithTimeout { // Prepare
-        val windowName = "root1"
-        val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
-        fakeAdb.device("1234").client(10).viewsState.addViewRoot(windowName)
+  @Test
+  fun listViewRootsWorks() = runBlockingWithTimeout { // Prepare
+    val windowName = "root1"
+    val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
+    fakeAdb.device("1234").client(10).viewsState.addViewRoot(windowName)
 
-        // Act / Assert
-        viewHierarchy.listViewRoots { payload, size ->
-            val data = payload.toByteBuffer(size)
-            val windowsCount = data.int
-            assertEquals(1, windowsCount)
-            val windowNameLength = data.int
-            assertEquals(windowName.length, windowNameLength)
-            assertEquals(windowName, getString(data, windowNameLength))
-        }
+    // Act / Assert
+    viewHierarchy.listViewRoots { payload, size ->
+      val data = payload.toByteBuffer(size)
+      val windowsCount = data.int
+      assertEquals(1, windowsCount)
+      val windowNameLength = data.int
+      assertEquals(windowName.length, windowNameLength)
+      assertEquals(windowName, getString(data, windowNameLength))
     }
+  }
 
-    @Test
-    fun dumpViewHierarchyWorks() = runBlockingWithTimeout { // Prepare
-        val windowName = "root1"
-        val otherWindowName = "otherWindow"
-        val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
-        val clientState = fakeAdb.device("1234").client(10)
-        val data1 = createFakeViewData(windowName, 100)
-        val data2 = createFakeViewData(otherWindowName, 200)
-        clientState.viewsState.addViewHierarchy(
-            windowName, skipChildren = false, includeProperties = true, useV2 = true, data = data1
-        )
-        clientState.viewsState.addViewHierarchy(
-            otherWindowName, skipChildren = false, includeProperties = true, useV2 = true, data = data2
-        )
+  @Test
+  fun dumpViewHierarchyWorks() = runBlockingWithTimeout { // Prepare
+    val windowName = "root1"
+    val otherWindowName = "otherWindow"
+    val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
+    val clientState = fakeAdb.device("1234").client(10)
+    val data1 = createFakeViewData(windowName, 100)
+    val data2 = createFakeViewData(otherWindowName, 200)
+    clientState.viewsState.addViewHierarchy(windowName, skipChildren = false, includeProperties = true, useV2 = true, data = data1)
+    clientState.viewsState.addViewHierarchy(otherWindowName, skipChildren = false, includeProperties = true, useV2 = true, data = data2)
 
-        // Act / Assert
-        viewHierarchy.dumpViewHierarchy(
-            windowName, skipChildren = false, includeProperties = true, useV2 = true
-        ) { payload, size ->
-            val dumpViewData = payload.toByteBuffer(size)
-            assertEquals(data1, dumpViewData)
-        }
+    // Act / Assert
+    viewHierarchy.dumpViewHierarchy(windowName, skipChildren = false, includeProperties = true, useV2 = true) { payload, size ->
+      val dumpViewData = payload.toByteBuffer(size)
+      assertEquals(data1, dumpViewData)
     }
+  }
 
-    @Test
-    fun captureViewWorks() = runBlockingWithTimeout { // Prepare
-        val windowName = "root1"
-        val viewName = "view1"
-        val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
-        val clientState = fakeAdb.device("1234").client(10)
-        val data = createFakeViewData(windowName, 100)
-        clientState.viewsState.addViewCapture(windowName, viewName, data)
+  @Test
+  fun captureViewWorks() = runBlockingWithTimeout { // Prepare
+    val windowName = "root1"
+    val viewName = "view1"
+    val viewHierarchy = createJdwpProcessViewHierarchy(fakeAdb)
+    val clientState = fakeAdb.device("1234").client(10)
+    val data = createFakeViewData(windowName, 100)
+    clientState.viewsState.addViewCapture(windowName, viewName, data)
 
-        // Act / Assert
-        viewHierarchy.captureView(
-            windowName, viewName
-        ) { payload, size ->
-            val dumpViewData = payload.toByteBuffer(size)
-            assertEquals(data, dumpViewData)
-        }
+    // Act / Assert
+    viewHierarchy.captureView(windowName, viewName) { payload, size ->
+      val dumpViewData = payload.toByteBuffer(size)
+      assertEquals(data, dumpViewData)
     }
+  }
 
-    private suspend fun createJdwpProcessViewHierarchy(fakeAdb: FakeAdbServerProvider): JdwpProcessViewHierarchy {
-        val deviceID = "1234"
-        val fakeDevice = fakeAdb.connectDevice(
-            deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        fakeDevice.startClient(10, 0, "a.b.c", false)
-        val process = connectedDevice.jdwpProcessManager.getProcess(10)
-        return JdwpProcessViewHierarchyImpl(process)
-    }
+  private suspend fun createJdwpProcessViewHierarchy(fakeAdb: FakeAdbServerProvider): JdwpProcessViewHierarchy {
+    val deviceID = "1234"
+    val fakeDevice = fakeAdb.connectDevice(deviceID, "test1", "test2", "model", AndroidApiLevel(30), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    fakeDevice.startClient(10, 0, "a.b.c", false)
+    val process = connectedDevice.jdwpProcessManager.getProcess(10)
+    return JdwpProcessViewHierarchyImpl(process)
+  }
 
-    private fun createFakeViewData(view: String, size: Int): ByteBuffer {
-        val result = ByteBuffer.allocate(4 + 2 * view.length + size)
-        result.putInt(view.length)
-        view.forEach { result.putChar(it) }
-        repeat(size) {
-            result.put(5)
-        }
-        result.flip()
-        return result
-    }
+  private fun createFakeViewData(view: String, size: Int): ByteBuffer {
+    val result = ByteBuffer.allocate(4 + 2 * view.length + size)
+    result.putInt(view.length)
+    view.forEach { result.putChar(it) }
+    repeat(size) { result.put(5) }
+    result.flip()
+    return result
+  }
 
-    private fun DeviceState.client(pid: Int): ClientState {
-        return getClient(pid)
-            ?: throw IllegalArgumentException("Client $pid does not exist on device ${this.deviceId}")
-    }
+  private fun DeviceState.client(pid: Int): ClientState {
+    return getClient(pid) ?: throw IllegalArgumentException("Client $pid does not exist on device ${this.deviceId}")
+  }
 
-    private fun JdwpProcessManager.getProcess(pid: Int): JdwpProcess {
-        return this.addProcesses(setOf(pid))[pid]!!
-    }
+  private fun JdwpProcessManager.getProcess(pid: Int): JdwpProcess {
+    return this.addProcesses(setOf(pid))[pid]!!
+  }
 
-    private fun getString(buffer: ByteBuffer, size: Int): String {
-        val data = CharArray(size)
-        for (i in 0 until size) {
-            data[i] = buffer.char
-        }
-        return String(data)
+  private fun getString(buffer: ByteBuffer, size: Int): String {
+    val data = CharArray(size)
+    for (i in 0 until size) {
+      data[i] = buffer.char
     }
+    return String(data)
+  }
 }

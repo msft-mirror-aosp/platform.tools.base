@@ -19,6 +19,7 @@ package com.android.sdklib.devices;
 import com.android.dvlib.DeviceSchemaTest;
 
 import com.google.common.collect.Table;
+
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;
@@ -86,6 +87,22 @@ public class DeviceWriterTest extends TestCase {
         DeviceWriter.writeToXml(baos, devices.values());
         Table<String, String, Device> writtenDevices = DeviceParser.parse(
                 new ByteArrayInputStream(baos.toString().getBytes()));
+        assertEquals(devices, writtenDevices);
+    }
+
+    public void testApiMinorBound() throws Exception {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("name", "Generic Device");
+        replacements.put("manufacturer", "Generic Manufacturer");
+        replacements.put("api-level", "36.1-");
+        InputStream stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+        Table<String, String, Device> devices = DeviceParser.parse(stream);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DeviceWriter.writeToXml(baos, devices.values());
+        String written = baos.toString();
+        assertTrue(written.contains("<d:api-level>36.1-</d:api-level>"));
+        Table<String, String, Device> writtenDevices =
+                DeviceParser.parse(new ByteArrayInputStream(written.getBytes()));
         assertEquals(devices, writtenDevices);
     }
 

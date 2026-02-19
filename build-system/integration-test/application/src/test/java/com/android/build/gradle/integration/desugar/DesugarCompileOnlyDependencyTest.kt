@@ -28,95 +28,79 @@ import org.junit.Test
 /** Tests desugaring for libraries that have compileOnly dependencies (see bug 230454566). */
 class DesugarCompileOnlyDependencyTest {
 
-    private val app = MinimalSubProject.app().apply {
-        appendToBuild(
-            """
-            android.defaultConfig.minSdkVersion = 21
-            dependencies {
-                implementation 'com.example:lib1:1'
-                implementation 'com.example:lib2:1'
-            }
-            """.trimIndent()
-        )
+  private val app =
+    MinimalSubProject.app().apply {
+      appendToBuild(
+        """
+        android.defaultConfig.minSdkVersion = 21
+        dependencies {
+            implementation 'com.example:lib1:1'
+            implementation 'com.example:lib2:1'
+        }
+        """
+          .trimIndent()
+      )
     }
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            // lib1 has a compileOnly dependency on lib2
-            MavenRepoGenerator.Library(
-                "com.example:lib1:1",
-                jarWithClasses(listOf(ImplOfInterfaceWithDefaultMethod::class.java))
-            ),
-            MavenRepoGenerator.Library(
-                "com.example:lib2:1",
-                jarWithClasses(listOf(InterfaceWithDefaultMethod::class.java))
-            )
-        )
+  private val mavenRepo =
+    MavenRepoGenerator(
+      listOf(
+        // lib1 has a compileOnly dependency on lib2
+        MavenRepoGenerator.Library("com.example:lib1:1", jarWithClasses(listOf(ImplOfInterfaceWithDefaultMethod::class.java))),
+        MavenRepoGenerator.Library("com.example:lib2:1", jarWithClasses(listOf(InterfaceWithDefaultMethod::class.java))),
+      )
     )
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(app)
-        .withAdditionalMavenRepo(mavenRepo)
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(app).withAdditionalMavenRepo(mavenRepo).create()
 
-    /** Regression test for bug 230454566. */
-    @Test
-    fun `desugar library having compileOnly dependency`() {
-        project.executor()
-            .with(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM, true)
-            .run("assembleDebug")
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk)
-                .hasClass(ImplOfInterfaceWithDefaultMethod::class.java)
-                .that()
-                .hasMethod("myDefaultMethod")
-        }
+  /** Regression test for bug 230454566. */
+  @Test
+  fun `desugar library having compileOnly dependency`() {
+    project.executor().with(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM, true).run("assembleDebug")
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      assertThat(apk).hasClass(ImplOfInterfaceWithDefaultMethod::class.java).that().hasMethod("myDefaultMethod")
     }
+  }
 
-    /** Regression test for bug 335449140. */
-    @Test
-    fun `desugar library having compileOnly dependency with ASM instrumentation enabled`() {
-        project.buildFile.appendText("\n" +
-            """
-            import com.android.build.api.instrumentation.*
-            import org.objectweb.asm.ClassVisitor
+  /** Regression test for bug 335449140. */
+  @Test
+  fun `desugar library having compileOnly dependency with ASM instrumentation enabled`() {
+    project.buildFile.appendText(
+      "\n" +
+        """
+        import com.android.build.api.instrumentation.*
+        import org.objectweb.asm.ClassVisitor
 
-            abstract class AsmClassVisitorFactoryImpl implements AsmClassVisitorFactory<InstrumentationParameters> {
+        abstract class AsmClassVisitorFactoryImpl implements AsmClassVisitorFactory<InstrumentationParameters> {
 
-                ClassVisitor createClassVisitor(ClassContext classContext, ClassVisitor nextClassVisitor) {
-                    TODO("Not yet implemented")
-                }
-
-                boolean isInstrumentable(ClassData classData) {
-                    return false
-                }
+            ClassVisitor createClassVisitor(ClassContext classContext, ClassVisitor nextClassVisitor) {
+                TODO("Not yet implemented")
             }
 
-            androidComponents {
-                onVariants(selector().all(), {
-                    it.instrumentation.transformClassesWith(AsmClassVisitorFactoryImpl.class, InstrumentationScope.ALL) {}
-                    it.instrumentation.setAsmFramesComputationMode(FramesComputationMode.COPY_FRAMES)
-                })
+            boolean isInstrumentable(ClassData classData) {
+                return false
             }
-            """.trimIndent()
-        )
-        project.executor()
-            .with(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM, true)
-            .run("assembleDebug")
-        project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
-            assertThat(apk)
-                .hasClass(ImplOfInterfaceWithDefaultMethod::class.java)
-                .that()
-                .hasMethod("myDefaultMethod")
         }
-    }
 
+        androidComponents {
+            onVariants(selector().all(), {
+                it.instrumentation.transformClassesWith(AsmClassVisitorFactoryImpl.class, InstrumentationScope.ALL) {}
+                it.instrumentation.setAsmFramesComputationMode(FramesComputationMode.COPY_FRAMES)
+            })
+        }
+        """
+          .trimIndent()
+    )
+    project.executor().with(BooleanOption.USE_FULL_CLASSPATH_FOR_DEXING_TRANSFORM, true).run("assembleDebug")
+    project.getApk(GradleTestProject.ApkType.DEBUG).use { apk ->
+      assertThat(apk).hasClass(ImplOfInterfaceWithDefaultMethod::class.java).that().hasMethod("myDefaultMethod")
+    }
+  }
 }
 
 @Suppress("unused") // Used in this test
 private interface InterfaceWithDefaultMethod {
-    fun myDefaultMethod() {}
+  fun myDefaultMethod() {}
 }
 
 private class ImplOfInterfaceWithDefaultMethod : InterfaceWithDefaultMethod

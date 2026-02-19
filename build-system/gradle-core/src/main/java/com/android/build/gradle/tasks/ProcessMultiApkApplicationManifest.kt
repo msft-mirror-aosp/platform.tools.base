@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.manifmerger.ManifestMerger2
 import com.android.utils.FileUtils
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -47,156 +48,125 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 /**
- * Task that consumes [SingleArtifact.MERGED_MANIFEST] single merged manifest and create several
- * versions that are each suitable for all [VariantOutputImpl] for this variant.
+ * Task that consumes [SingleArtifact.MERGED_MANIFEST] single merged manifest and create several versions that are each suitable for all
+ * [VariantOutputImpl] for this variant.
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST)
-abstract class ProcessMultiApkApplicationManifest: ManifestProcessorTask() {
+abstract class ProcessMultiApkApplicationManifest : ManifestProcessorTask() {
 
-    @get:Nested
-    abstract val outputsHandler: Property<MultiOutputHandler>
+  @get:Nested abstract val outputsHandler: Property<MultiOutputHandler>
 
-    @get:Input
-    abstract val applicationId: Property<String>
+  @get:Input abstract val applicationId: Property<String>
 
-    @get:Input
-    abstract val namespace: Property<String>
+  @get:Input abstract val namespace: Property<String>
 
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    @get:InputFile
-    abstract val mainMergedManifest: RegularFileProperty
+  @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:InputFile abstract val mainMergedManifest: RegularFileProperty
 
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    @get:InputFiles
-    abstract val compatibleScreensManifest: DirectoryProperty
+  @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional @get:InputFiles abstract val compatibleScreensManifest: DirectoryProperty
 
-    /** The merged Manifests files folder.  */
-    @get:OutputDirectory
-    abstract val multiApkManifestOutputDirectory: DirectoryProperty
+  /** The merged Manifests files folder. */
+  @get:OutputDirectory abstract val multiApkManifestOutputDirectory: DirectoryProperty
 
-    override fun doTaskAction() {
-        // read the output of the compatible screen manifest.
-        val compatibleScreenManifests =
-            BuiltArtifactsLoaderImpl().load(compatibleScreensManifest)
-                ?: throw RuntimeException(
-                    "Cannot find generated compatible screen manifests, file a bug"
-                )
+  override fun doTaskAction() {
+    // read the output of the compatible screen manifest.
+    val compatibleScreenManifests =
+      BuiltArtifactsLoaderImpl().load(compatibleScreensManifest)
+        ?: throw RuntimeException("Cannot find generated compatible screen manifests, file a bug")
 
-        val multiApkManifestOutputs = mutableListOf<BuiltArtifactImpl>()
+    val multiApkManifestOutputs = mutableListOf<BuiltArtifactImpl>()
 
-        for (variantOutput in outputsHandler.get().getOutputs { true }) {
-            val compatibleScreenManifestForSplit =
-                compatibleScreenManifests.getBuiltArtifact(variantOutput.variantOutputConfiguration)
+    for (variantOutput in outputsHandler.get().getOutputs { true }) {
+      val compatibleScreenManifestForSplit = compatibleScreenManifests.getBuiltArtifact(variantOutput.variantOutputConfiguration)
 
-            val mergedManifestOutputFile =
-                processVariantOutput(compatibleScreenManifestForSplit?.outputFile, variantOutput)
+      val mergedManifestOutputFile = processVariantOutput(compatibleScreenManifestForSplit?.outputFile, variantOutput)
 
-            multiApkManifestOutputs.add(variantOutput.toBuiltArtifact(mergedManifestOutputFile))
-        }
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.MERGED_MANIFESTS,
-            applicationId = applicationId.get(),
-            variantName = variantName,
-            elements = multiApkManifestOutputs,
-        ).save(multiApkManifestOutputDirectory.get())
+      multiApkManifestOutputs.add(variantOutput.toBuiltArtifact(mergedManifestOutputFile))
     }
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.MERGED_MANIFESTS,
+        applicationId = applicationId.get(),
+        variantName = variantName,
+        elements = multiApkManifestOutputs,
+      )
+      .save(multiApkManifestOutputDirectory.get())
+  }
 
-    private fun processVariantOutput(
-        compatibleScreensManifestFilePath: String?,
-        variantOutput: VariantOutputImpl.SerializedForm,
-    ): File {
-        val dirName = variantOutput.variantOutputConfiguration.dirName()
+  private fun processVariantOutput(compatibleScreensManifestFilePath: String?, variantOutput: VariantOutputImpl.SerializedForm): File {
+    val dirName = variantOutput.variantOutputConfiguration.dirName()
 
-        val mergedManifestOutputFile = File(
-            multiApkManifestOutputDirectory.get().asFile,
-            FileUtils.join(
-                dirName,
-                SdkConstants.ANDROID_MANIFEST_XML
-            )
-        )
+    val mergedManifestOutputFile =
+      File(multiApkManifestOutputDirectory.get().asFile, FileUtils.join(dirName, SdkConstants.ANDROID_MANIFEST_XML))
 
-        if (compatibleScreensManifestFilePath == null) {
-            if (variantOutput.versionCode == outputsHandler.get().mainVersionCode
-                && variantOutput.versionName == outputsHandler.get().mainVersionName) {
+    if (compatibleScreensManifestFilePath == null) {
+      if (
+        variantOutput.versionCode == outputsHandler.get().mainVersionCode &&
+          variantOutput.versionName == outputsHandler.get().mainVersionName
+      ) {
 
-                mainMergedManifest.get().asFile.copyTo(mergedManifestOutputFile, overwrite = true)
-                return mergedManifestOutputFile
-            }
-        }
-        mergeManifests(
-            mainMergedManifest.get().asFile,
-            if (compatibleScreensManifestFilePath != null)
-                listOf(File(compatibleScreensManifestFilePath))
-            else listOf(),
-            listOf(),
-            listOf(),
-            null,
-            packageOverride = null,
-            namespace = namespace.get(),
-            false,
-            variantOutput.versionCode,
-            variantOutput.versionName,
-            null,
-            null,
-            null,
-            testOnly = false,
-            extractNativeLibs = null,
-            mergedManifestOutputFile.absolutePath /* aaptFriendlyManifestOutputFile */,
-            null,
-            ManifestMerger2.MergeType.APPLICATION,
-            mapOf(),
-            listOf(),
-            listOf(),
-            generatedLocaleConfigAttribute = null,
-            null,
-            LoggerWrapper.getLogger(ProcessApplicationManifest::class.java),
-            checkIfPackageInMainManifest = false
-        )
+        mainMergedManifest.get().asFile.copyTo(mergedManifestOutputFile, overwrite = true)
         return mergedManifestOutputFile
+      }
+    }
+    mergeManifests(
+      mainMergedManifest.get().asFile,
+      if (compatibleScreensManifestFilePath != null) listOf(File(compatibleScreensManifestFilePath)) else listOf(),
+      listOf(),
+      listOf(),
+      null,
+      packageOverride = null,
+      namespace = namespace.get(),
+      false,
+      variantOutput.versionCode,
+      variantOutput.versionName,
+      null,
+      null,
+      null,
+      testOnly = false,
+      extractNativeLibs = null,
+      mergedManifestOutputFile.absolutePath /* aaptFriendlyManifestOutputFile */,
+      null,
+      ManifestMerger2.MergeType.APPLICATION,
+      mapOf(),
+      listOf(),
+      listOf(),
+      generatedLocaleConfigAttribute = null,
+      null,
+      LoggerWrapper.getLogger(ProcessApplicationManifest::class.java),
+      checkIfPackageInMainManifest = false,
+    )
+    return mergedManifestOutputFile
+  }
+
+  class CreationAction(creationConfig: ApplicationCreationConfig) :
+    VariantTaskCreationAction<ProcessMultiApkApplicationManifest, ApplicationCreationConfig>(creationConfig) {
+    override val name: String
+      get() = computeTaskName("process", "Manifest")
+
+    override val type: Class<ProcessMultiApkApplicationManifest>
+      get() = ProcessMultiApkApplicationManifest::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ProcessMultiApkApplicationManifest>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.processManifestTask = taskProvider
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ProcessMultiApkApplicationManifest::multiApkManifestOutputDirectory)
+        .on(InternalArtifactType.MERGED_MANIFESTS)
     }
 
-    class CreationAction(
-        creationConfig: ApplicationCreationConfig
-    ) : VariantTaskCreationAction<ProcessMultiApkApplicationManifest, ApplicationCreationConfig>(creationConfig) {
-        override val name: String
-            get() = computeTaskName("process", "Manifest")
-        override val type: Class<ProcessMultiApkApplicationManifest>
-            get() = ProcessMultiApkApplicationManifest::class.java
+    override fun configure(task: ProcessMultiApkApplicationManifest) {
+      super.configure(task)
 
-        override fun handleProvider(taskProvider: TaskProvider<ProcessMultiApkApplicationManifest>) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.processManifestTask = taskProvider
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ProcessMultiApkApplicationManifest::multiApkManifestOutputDirectory
-            ).on(InternalArtifactType.MERGED_MANIFESTS)
-        }
+      task.outputsHandler.setDisallowChanges(MultiOutputHandler.create(creationConfig))
 
-        override fun configure(task: ProcessMultiApkApplicationManifest) {
-            super.configure(task)
+      task.compatibleScreensManifest.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST))
 
-            task.outputsHandler.setDisallowChanges(
-                MultiOutputHandler.create(creationConfig)
-            )
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.MERGED_MANIFEST, task.mainMergedManifest)
 
-            task.compatibleScreensManifest.setDisallowChanges(
-                creationConfig.artifacts.get(InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST)
-            )
-
-            creationConfig
-                .artifacts
-                .setTaskInputToFinalProduct(
-                    SingleArtifact.MERGED_MANIFEST,
-                    task.mainMergedManifest
-                )
-
-            task.applicationId.setDisallowChanges(creationConfig.applicationId)
-            task.namespace.setDisallowChanges(creationConfig.namespace)
-        }
+      task.applicationId.setDisallowChanges(creationConfig.applicationId)
+      task.namespace.setDisallowChanges(creationConfig.namespace)
     }
+  }
 }

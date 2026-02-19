@@ -34,21 +34,24 @@ import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.utils.appendCapitalized
 import javax.inject.Inject
 
-abstract class TestComponentImpl<DslInfoT: TestComponentDslInfo> @Inject constructor(
-    componentIdentity: ComponentIdentity,
-    buildFeatureValues: BuildFeatureValues,
-    dslInfo: DslInfoT,
-    variantDependencies: VariantDependencies,
-    variantSources: VariantSources,
-    paths: VariantPathHelper,
-    artifacts: ArtifactsImpl,
-    variantData: BaseVariantData,
-    taskContainer: MutableTaskContainer,
-    final override val mainVariant: VariantCreationConfig,
-    variantServices: VariantServices,
-    taskCreationServices: TaskCreationServices,
-    global: GlobalTaskCreationConfig,
-) : ComponentImpl<DslInfoT>(
+abstract class TestComponentImpl<DslInfoT : TestComponentDslInfo>
+@Inject
+constructor(
+  componentIdentity: ComponentIdentity,
+  buildFeatureValues: BuildFeatureValues,
+  dslInfo: DslInfoT,
+  variantDependencies: VariantDependencies,
+  variantSources: VariantSources,
+  paths: VariantPathHelper,
+  artifacts: ArtifactsImpl,
+  variantData: BaseVariantData,
+  taskContainer: MutableTaskContainer,
+  final override val mainVariant: VariantCreationConfig,
+  variantServices: VariantServices,
+  taskCreationServices: TaskCreationServices,
+  global: GlobalTaskCreationConfig,
+) :
+  ComponentImpl<DslInfoT>(
     componentIdentity,
     buildFeatureValues,
     dslInfo,
@@ -60,38 +63,41 @@ abstract class TestComponentImpl<DslInfoT: TestComponentDslInfo> @Inject constru
     taskContainer,
     variantServices,
     taskCreationServices,
-    global
-), TestComponent, TestComponentCreationConfig {
+    global,
+  ),
+  TestComponent,
+  TestComponentCreationConfig {
 
-    override val description: String
-        get() {
-            val componentType = dslInfo.componentType
+  override val description: String
+    get() {
+      val componentType = dslInfo.componentType
 
-            val prefix = if (componentType.isApk) {
-                "android (on device) tests"
-            } else {
-                "unit tests"
-            }
-
-            return if (componentIdentity.productFlavors.isNotEmpty()) {
-                val sb = StringBuilder(50)
-                sb.append(prefix)
-                sb.append(" for the ")
-                componentIdentity.flavorName?.let { sb.appendCapitalized(it) }
-                componentIdentity.buildType?.let { sb.appendCapitalized(it) }
-                sb.append(" build")
-                sb.toString()
-            } else {
-                val sb = StringBuilder(50)
-                sb.append(prefix)
-                sb.append(" for the ")
-                sb.appendCapitalized(componentIdentity.buildType!!)
-                sb.append(" build")
-                sb.toString()
-            }
+      val prefix =
+        if (componentType.isApk) {
+          "android (on device) tests"
+        } else {
+          "unit tests"
         }
 
-    override fun <T> onTestedVariant(action: (VariantCreationConfig) -> T): T {
-        return action(mainVariant)
+      return if (componentIdentity.productFlavors.isNotEmpty()) {
+        val sb = StringBuilder(50)
+        sb.append(prefix)
+        sb.append(" for the ")
+        componentIdentity.flavorName?.let { sb.appendCapitalized(it) }
+        componentIdentity.buildType?.let { sb.appendCapitalized(it) }
+        sb.append(" build")
+        sb.toString()
+      } else {
+        val sb = StringBuilder(50)
+        sb.append(prefix)
+        sb.append(" for the ")
+        sb.appendCapitalized(componentIdentity.buildType!!)
+        sb.append(" build")
+        sb.toString()
+      }
     }
+
+  override fun <T> onTestedVariant(action: (VariantCreationConfig) -> T): T {
+    return action(mainVariant)
+  }
 }

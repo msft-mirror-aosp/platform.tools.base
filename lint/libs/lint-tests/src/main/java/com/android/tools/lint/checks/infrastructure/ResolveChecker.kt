@@ -58,15 +58,14 @@ import org.jetbrains.uast.util.isMethodCall
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
- * Checks file [root] to see if relevant Kotlin/Java references fail to "resolve" such that the
- * visitX methods of Detectors might unexpectedly not get called.
+ * Checks file [root] to see if relevant Kotlin/Java references fail to "resolve" such that the visitX methods of Detectors might
+ * unexpectedly not get called.
  *
- * When writing Lint unit tests, if the Kotlin/Java code ends up containing method calls or other
- * references that do not "resolve" then the detector's visitX method might not get called. Tests
- * that expect no lint warnings might then vacuously pass.
+ * When writing Lint unit tests, if the Kotlin/Java code ends up containing method calls or other references that do not "resolve" then the
+ * detector's visitX method might not get called. Tests that expect no lint warnings might then vacuously pass.
  *
- * This function checks that certain elements resolve. It only checks elements that appear to be
- * relevant to the detectors based on certain Detector.getApplicableX methods.
+ * This function checks that certain elements resolve. It only checks elements that appear to be relevant to the detectors based on certain
+ * Detector.getApplicableX methods.
  */
 fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = false) {
   root ?: error("Failure processing source ${project.getRelativePath(file)}: No UAST AST created")
@@ -89,20 +88,13 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
   }
 
   val detectors =
-    task.issues
-      ?.asSequence()
-      ?.map { it.implementation.detectorClass }
-      ?.distinct()
-      ?.map { it.getDeclaredConstructor().newInstance() }
+    task.issues?.asSequence()?.map { it.implementation.detectorClass }?.distinct()?.map { it.getDeclaredConstructor().newInstance() }
       ?: task.detector?.let { sequenceOf(it) }
       ?: emptySequence()
 
-  val applicableCalls: Set<String> =
-    detectors.mapNotNull { it.getApplicableMethodNames() }.flatten().toSet()
-  val applicableReferences: Set<String> =
-    detectors.mapNotNull { it.getApplicableReferenceNames() }.flatten().toSet()
-  val applicableConstructorTypes: Set<String> =
-    detectors.mapNotNull { it.getApplicableConstructorTypes() }.flatten().toSet()
+  val applicableCalls: Set<String> = detectors.mapNotNull { it.getApplicableMethodNames() }.flatten().toSet()
+  val applicableReferences: Set<String> = detectors.mapNotNull { it.getApplicableReferenceNames() }.flatten().toSet()
+  val applicableConstructorTypes: Set<String> = detectors.mapNotNull { it.getApplicableConstructorTypes() }.flatten().toSet()
 
   // Check resolve issues
   root.acceptSourceFile(
@@ -140,9 +132,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
       override fun visitImportStatement(node: UImportStatement): Boolean {
         val sourcePsi = node.sourcePsi
         val importReference = node.importReference
-        if (
-          node.isOnDemand || node.resolve() != null || sourcePsi == null || importReference == null
-        ) {
+        if (node.isOnDemand || node.resolve() != null || sourcePsi == null || importReference == null) {
           return super.visitImportStatement(node)
         }
 
@@ -164,8 +154,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
             val className = fqn.substring(0, index)
             val name = fqn.substring(index + 1)
             val facade = JavaPsiFacadeEx.getInstance(importReferencePsi.project)
-            val psiClass =
-              facade.findClass(className, GlobalSearchScope.allScope(importReferencePsi.project))
+            val psiClass = facade.findClass(className, GlobalSearchScope.allScope(importReferencePsi.project))
             if (psiClass != null && psiClass.hasStaticMemberNamed(name)) {
               return true
             }
@@ -182,7 +171,8 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
               return super.visitImportStatement(node)
             }
 
-            // If it's a top level function, the left hand side is the package, not the class name.
+            // If it's a top level function, the left hand side is the package, not the class
+            // name.
             // There are a number of possible classes that can contain that package, so search
             // through them:
             val facade = JavaPsiFacadeEx.getInstance(importReferencePsi.project)
@@ -196,9 +186,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
             // e.g., inline w/ reified parameter
             // Last resort: Analysis API.
             analyze(qualifiedExpression) {
-              val reference =
-                (qualifiedExpression.selectorExpression as? KtNameReferenceExpression)
-                  ?.mainReference
+              val reference = (qualifiedExpression.selectorExpression as? KtNameReferenceExpression)?.mainReference
               // Note that, without call arguments, reference may not be resolved to a single
               // target. Thus, we should try [resolveToSymbols], not [resolveToSymbol].
               reference
@@ -215,14 +203,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
 
         if (!ignoredImport(s)) {
           val context: JavaContext = this@checkFile
-          reportResolveProblem(
-            context,
-            importReference,
-            name = "",
-            symbolType = "import",
-            nameMethod = "",
-            visitMethod = "",
-          )
+          reportResolveProblem(context, importReference, name = "", symbolType = "import", nameMethod = "", visitMethod = "")
         }
         return super.visitImportStatement(node)
       }
@@ -230,12 +211,8 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
       fun PsiClass.hasStaticMemberNamed(name: String?): Boolean {
         return methods.any {
           it.name == name &&
-            (it.modifierList.hasModifierProperty(PsiModifier.STATIC) ||
-              it.modifierList.hasModifierProperty(PsiModifier.DEFAULT))
-        } ||
-          fields.any {
-            it.name == name && it.modifierList?.hasModifierProperty(PsiModifier.STATIC) == true
-          }
+            (it.modifierList.hasModifierProperty(PsiModifier.STATIC) || it.modifierList.hasModifierProperty(PsiModifier.DEFAULT))
+        } || fields.any { it.name == name && it.modifierList?.hasModifierProperty(PsiModifier.STATIC) == true }
       }
 
       override fun visitMethod(node: UMethod): Boolean {
@@ -260,21 +237,9 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
 
       private fun visitMethodCallExpression(node: UCallExpression) {
         val name = node.methodName ?: node.methodIdentifier?.name
-        if (
-          name != null &&
-            applicableCalls.contains(name) &&
-            node.resolve() == null &&
-            node.sourcePsi !is PsiAssertStatement
-        ) {
+        if (name != null && applicableCalls.contains(name) && node.resolve() == null && node.sourcePsi !is PsiAssertStatement) {
           val context: JavaContext = this@checkFile
-          reportResolveProblem(
-            context,
-            node,
-            name,
-            "call",
-            "getApplicableMethodNames",
-            "visitMethodCall",
-          )
+          reportResolveProblem(context, node, name, "call", "getApplicableMethodNames", "visitMethodCall")
         }
       }
 
@@ -282,20 +247,11 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
         val fqc = node.classReference.getQualifiedName() ?: return
         if (applicableConstructorTypes.contains(fqc) && node.resolve() == null) {
           val context: JavaContext = this@checkFile
-          reportResolveProblem(
-            context,
-            node,
-            fqc,
-            "constructor call",
-            "getApplicableConstructorTypes",
-            "visitConstructor",
-          )
+          reportResolveProblem(context, node, fqc, "constructor call", "getApplicableConstructorTypes", "visitConstructor")
         }
       }
 
-      override fun visitSimpleNameReferenceExpression(
-        node: USimpleNameReferenceExpression
-      ): Boolean {
+      override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
         val name = node.resolvedName ?: node.identifier
         if (applicableReferences.contains(name) && node.resolve() == null) {
           val sourcePsi = node.sourcePsi
@@ -311,14 +267,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
             }
           }
           val context: JavaContext = this@checkFile
-          reportResolveProblem(
-            context,
-            node,
-            name,
-            "reference",
-            "getApplicableReferenceNames",
-            "visitReference",
-          )
+          reportResolveProblem(context, node, name, "reference", "getApplicableReferenceNames", "visitReference")
         }
         return super.visitSimpleNameReferenceExpression(node)
       }
@@ -332,8 +281,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
         visitMethod: String,
       ): Nothing {
         val isImport = name.isEmpty()
-        val message =
-          StringBuilder(createErrorMessage(context, node, "Couldn't resolve this $symbolType"))
+        val message = StringBuilder(createErrorMessage(context, node, "Couldn't resolve this $symbolType"))
 
         if (!isImport) {
           message.append(
@@ -350,10 +298,10 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
         if (isStub) {
           message.append(
             """
-                    This means one of the APIs in the stub are referencing APIs which need
-                    to be provided via the `compileOnly=` list of test files.
+            This means one of the APIs in the stub are referencing APIs which need
+            to be provided via the `compileOnly=` list of test files.
 
-                    """
+            """
               .trimIndent()
           )
         } else {
@@ -375,11 +323,11 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
           message.append(
             """
 
-                    (This check only enforces import references, not all references, so if
-                    it doesn't matter to the detector, you can just remove the import but
-                    leave references to the class in the code.)
+            (This check only enforces import references, not all references, so if
+            it doesn't matter to the detector, you can just remove the import but
+            leave references to the class in the code.)
 
-                    """
+            """
               .trimIndent()
           )
         }
@@ -387,23 +335,18 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
         message.append(
           """
 
-                    For more information, see the "Library Dependencies and Stubs" section in
-                    https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
-                """
+          For more information, see the "Library Dependencies and Stubs" section in
+          https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:lint/docs/api-guide/unit-testing.md.html
+          """
             .trimIndent()
         )
 
         if (task.runner.currentTestMode is UastSourceTransformationTestMode) {
           val files =
-            context.project.dir
-              .walk()
-              .filter { it.isFile && (it.path.endsWith(DOT_KT) || it.path.endsWith(DOT_JAVA)) }
-              .sortedBy { it.path }
+            context.project.dir.walk().filter { it.isFile && (it.path.endsWith(DOT_KT) || it.path.endsWith(DOT_JAVA)) }.sortedBy { it.path }
           val file = node.sourcePsi?.containingFile?.virtualFile?.let(VfsUtilCore::virtualToIoFile)
           if (file != null) {
-            message.append(
-              "\n\nThis occurred when running in test mode ${task.runner.currentTestMode.fieldName}.\n"
-            )
+            message.append("\n\nThis occurred when running in test mode ${task.runner.currentTestMode.fieldName}.\n")
             message.append("The modified source files are:\n\n")
             val line = "${"//".repeat(35)}\n"
             for (f in files) {
@@ -419,14 +362,10 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
       }
 
       /**
-       * Given a location node and an error message, uses the text reporter to create an
-       * error-string with source content and range underlines to pinpoint the problem
+       * Given a location node and an error message, uses the text reporter to create an error-string with source content and range
+       * underlines to pinpoint the problem
        */
-      private fun createErrorMessage(
-        context: JavaContext,
-        locationNode: UElement,
-        message: String,
-      ): String {
+      private fun createErrorMessage(context: JavaContext, locationNode: UElement, message: String): String {
         val writer = StringWriter()
         writer.write("\n")
         val flags = LintCliFlags()
@@ -434,12 +373,7 @@ fun JavaContext.checkFile(root: UFile?, task: TestLintTask, isStub: Boolean = fa
         val reporter = Reporter.createTextReporter(TestLintClient(), flags, null, writer, false)
         reporter.setWriteStats(false)
         val location = getLocation(locationNode)
-        val incidents =
-          listOf(
-            Incident(IssueRegistry.LINT_ERROR, "\n" + message, location).apply {
-              project = context.project
-            }
-          )
+        val incidents = listOf(Incident(IssueRegistry.LINT_ERROR, "\n" + message, location).apply { project = context.project })
         reporter.write(LintStats(1, 0), incidents, driver.registry)
         var output: String = writer.toString()
         for ((dir, desc) in task.dirToProjectDescription) {

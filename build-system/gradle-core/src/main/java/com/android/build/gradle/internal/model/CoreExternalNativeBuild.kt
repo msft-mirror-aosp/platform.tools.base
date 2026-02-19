@@ -17,6 +17,6 @@ package com.android.build.gradle.internal.model
 
 @Deprecated("Use {@link ExternalNativeBuild} ")
 interface CoreExternalNativeBuild {
-    val ndkBuild: CoreNdkBuildOptions
-    val cmake: CoreCmakeOptions
+  val ndkBuild: CoreNdkBuildOptions
+  val cmake: CoreCmakeOptions
 }

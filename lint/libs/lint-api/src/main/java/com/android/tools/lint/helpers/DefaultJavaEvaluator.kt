@@ -62,10 +62,8 @@ import org.jetbrains.uast.UastFacade
 import org.jetbrains.uast.getContainingUFile
 import org.jetbrains.uast.kotlin.psi.UastFakeLightMethodBase
 
-open class DefaultJavaEvaluator(
-  private val myProject: com.intellij.openapi.project.Project?,
-  private val myLintProject: Project?,
-) : JavaEvaluator() {
+open class DefaultJavaEvaluator(private val myProject: com.intellij.openapi.project.Project?, private val myLintProject: Project?) :
+  JavaEvaluator() {
   // cache of package name to package-info.class.
   private val packageInfoCache = mutableMapOf<String, PsiPackage>()
 
@@ -99,16 +97,13 @@ open class DefaultJavaEvaluator(
   override fun findClass(qualifiedName: String): PsiClass? {
     myProject ?: return null
     try {
-      return JavaPsiFacade.getInstance(myProject)
-        .findClass(qualifiedName, GlobalSearchScope.allScope(myProject))
+      return JavaPsiFacade.getInstance(myProject).findClass(qualifiedName, GlobalSearchScope.allScope(myProject))
     } catch (ex: Exception) {
       // For example, ProcessCanceledException.
       if (ex is ControlFlowException) throw ex
 
       if (LintClient.isUnitTest) {
-        myLintProject
-          ?.client
-          ?.log(Severity.ERROR, ex, "Exception thrown for qualified class name: $qualifiedName")
+        myLintProject?.client?.log(Severity.ERROR, ex, "Exception thrown for qualified class name: $qualifiedName")
       }
 
       return null
@@ -116,9 +111,7 @@ open class DefaultJavaEvaluator(
   }
 
   override fun getClassType(psiClass: PsiClass?): PsiClassType? {
-    return if (myProject != null && psiClass != null)
-      JavaPsiFacade.getElementFactory(myProject).createType(psiClass)
-    else null
+    return if (myProject != null && psiClass != null) JavaPsiFacade.getElementFactory(myProject).createType(psiClass) else null
   }
 
   override fun getTypeClass(psiType: PsiType?): PsiClass? {
@@ -141,8 +134,7 @@ open class DefaultJavaEvaluator(
         } else {
           owner.uAnnotations
         }
-      val mergeAnnotations =
-        getAnnotations(owner.javaPsi as? PsiModifierListOwner, inHierarchy, owner)
+      val mergeAnnotations = getAnnotations(owner.javaPsi as? PsiModifierListOwner, inHierarchy, owner)
       if (annotations.isNotEmpty()) {
         if (mergeAnnotations.isEmpty()) {
           return annotations
@@ -175,10 +167,7 @@ open class DefaultJavaEvaluator(
   }
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
-  override fun getAllAnnotations(
-    owner: PsiModifierListOwner,
-    inHierarchy: Boolean,
-  ): Array<PsiAnnotation> {
+  override fun getAllAnnotations(owner: PsiModifierListOwner, inHierarchy: Boolean): Array<PsiAnnotation> {
     if (owner is UDeclaration) {
       // Work around bug: Passing in a UAST node to this method generates a
       // "class JavaUParameter not found among parameters: [PsiParameter:something]" error
@@ -191,11 +180,7 @@ open class DefaultJavaEvaluator(
     return AnnotationUtil.getAllAnnotations(owner, inHierarchy, null, false)
   }
 
-  override fun getAnnotations(
-    owner: PsiModifierListOwner?,
-    inHierarchy: Boolean,
-    parent: UElement?,
-  ): List<UAnnotation> {
+  override fun getAnnotations(owner: PsiModifierListOwner?, inHierarchy: Boolean, parent: UElement?): List<UAnnotation> {
     owner ?: return emptyList()
 
     if (owner is UDeclaration) {
@@ -220,16 +205,12 @@ open class DefaultJavaEvaluator(
         else -> AnnotationUtil.getAllAnnotations(owner, inHierarchy, null, withInferred)
       }
     return psiAnnotations.mapNotNull { psi ->
-      UastFacade.convertElement(psi, if (inHierarchy) null else parent, UAnnotation::class.java)
-        as? UAnnotation
+      UastFacade.convertElement(psi, if (inHierarchy) null else parent, UAnnotation::class.java) as? UAnnotation
     }
   }
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
-  override fun findAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
-  ): PsiAnnotation? {
+  override fun findAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): PsiAnnotation? {
     if (listOwner is UDeclaration) {
       // Work around UAST bug
       val psi = listOwner.javaPsi as? PsiModifierListOwner ?: return null
@@ -238,10 +219,7 @@ open class DefaultJavaEvaluator(
     return AnnotationUtil.findAnnotationInHierarchy(listOwner, Sets.newHashSet(*annotationNames))
   }
 
-  override fun getAnnotationInHierarchy(
-    listOwner: PsiModifierListOwner,
-    vararg annotationNames: String,
-  ): UAnnotation? {
+  override fun getAnnotationInHierarchy(listOwner: PsiModifierListOwner, vararg annotationNames: String): UAnnotation? {
     @Suppress("DEPRECATION")
     return findAnnotationInHierarchy(listOwner, *annotationNames)?.let { psi ->
       UastFacade.convertElement(psi, listOwner as? UElement) as? UAnnotation
@@ -249,10 +227,7 @@ open class DefaultJavaEvaluator(
   }
 
   @Suppress("DEPRECATION", "OverridingDeprecatedMember")
-  override fun findAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
-  ): PsiAnnotation? {
+  override fun findAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): PsiAnnotation? {
     if (listOwner is UDeclaration) {
       // Work around UAST bug
       val psi = listOwner.javaPsi as? PsiModifierListOwner ?: return null
@@ -261,10 +236,7 @@ open class DefaultJavaEvaluator(
     return AnnotationUtil.findAnnotation(listOwner, false, *annotationNames)
   }
 
-  override fun getAnnotation(
-    listOwner: PsiModifierListOwner?,
-    vararg annotationNames: String,
-  ): UAnnotation? {
+  override fun getAnnotation(listOwner: PsiModifierListOwner?, vararg annotationNames: String): UAnnotation? {
     @Suppress("DEPRECATION")
     return findAnnotation(listOwner, *annotationNames)?.let { psi ->
       UastFacade.convertElement(psi, listOwner as? UElement) as? UAnnotation
@@ -300,7 +272,8 @@ open class DefaultJavaEvaluator(
 
   override fun findJarPath(element: PsiElement): String? {
     val containingFile = element.containingFile
-    @Suppress("USELESS_CAST") return findJarPath(containingFile as PsiFile?)
+    @Suppress("USELESS_CAST")
+    return findJarPath(containingFile as PsiFile?)
   }
 
   override fun findJarPath(element: UElement): String? {
@@ -399,8 +372,7 @@ open class DefaultJavaEvaluator(
   @Suppress("OverridingDeprecatedMember", "DEPRECATION")
   override fun getInternalName(psiClassType: PsiClassType): String? {
     val erased = erasure(psiClassType)
-    return if (erased is PsiClassType) super.getInternalName(erased)
-    else super.getInternalName(psiClassType)
+    return if (erased is PsiClassType) super.getInternalName(erased) else super.getInternalName(psiClassType)
   }
 
   @Suppress("OverridingDeprecatedMember")
@@ -412,10 +384,7 @@ open class DefaultJavaEvaluator(
     return TypeConversionUtil.erasure(type)
   }
 
-  override fun computeArgumentMapping(
-    call: UCallExpression,
-    method: PsiMethod,
-  ): Map<UExpression, PsiParameter> {
+  override fun computeArgumentMapping(call: UCallExpression, method: PsiMethod): Map<UExpression, PsiParameter> {
     val parameterList = method.parameterList
     if (parameterList.parametersCount == 0) {
       return emptyMap()
@@ -433,10 +402,7 @@ open class DefaultJavaEvaluator(
     var j = 0
     val first = parameters.firstOrNull()?.name
     // check if "$self" for UltraLightParameter
-    if (
-      (first?.startsWith("\$this") == true || first?.startsWith("\$self") == true) &&
-        isKotlin(call.lang)
-    ) {
+    if ((first?.startsWith("\$this") == true || first?.startsWith("\$self") == true) && isKotlin(call.lang)) {
       // Kotlin extension method.
       j++
     }

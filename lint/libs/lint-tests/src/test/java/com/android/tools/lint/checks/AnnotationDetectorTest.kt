@@ -505,6 +505,40 @@ class AnnotationDetectorTest : AbstractCheckTest() {
                                 break;
                         }
                     }
+
+                    public static void testDefaultOk(@Duration int duration) {
+                        switch (duration) { // ok
+                          case LENGTH_SHORT -> {
+                            System.out.println("Short!");
+                          }
+                          default -> {
+                            System.out.println("Default!");
+                          }
+                        }
+                    }
+
+                    public static int testSwitchExprDefaultOk(@Duration int duration) {
+                        return switch (duration) { // ok
+                          case LENGTH_SHORT -> 1;
+                          case LENGTH_INDEFINITE -> 3;
+                          case LENGTH_LONG -> 2;
+                          default -> throw new IllegalStateException("Unreachable");
+                        };
+                    }
+
+                    public static int testSwitchExprDefaultAlsoOk(@Duration int duration) {
+                        return switch (duration) { // ok
+                          case LENGTH_SHORT -> 1;
+                          default -> 2;
+                        };
+                    }
+
+                    public static int testSwitchExprDefaultNotOk(@Duration int duration) {
+                        return switch(duration) { // not ok
+                          case LENGTH_SHORT -> 1;
+                          default -> throw new IllegalStateException("Unreachable");
+                        };
+                    }
                 }
                 """,
           )
@@ -535,7 +569,10 @@ class AnnotationDetectorTest : AbstractCheckTest() {
             src/test/pkg/X.java:95: Warning: Switch statement on an int with known associated constant missing case X.LENGTH_SHORT [SwitchIntDef]
                         switch (X.getDuration()) {
                         ~~~~~~
-            0 errors, 7 warnings
+            src/test/pkg/X.java:158: Warning: Switch statement on an int with known associated constant missing case LENGTH_INDEFINITE, LENGTH_LONG [SwitchIntDef]
+                    return switch(duration) { // not ok
+                           ^
+            0 errors, 8 warnings
             """
       )
   }

@@ -582,6 +582,9 @@ public class DeviceManager {
     public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<>();
+        if (hw.getScreen().getScreenType().equals(ScreenType.NOTOUCH)) {
+            props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+        }
         props.put(
                 HardwareProperties.HW_MAINKEYS,
                 getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));
@@ -622,6 +625,16 @@ public class DeviceManager {
                 HardwareProperties.HW_LCD_WIDTH, Integer.toString(hw.getScreen().getXDimension()));
         props.put(
                 HardwareProperties.HW_LCD_HEIGHT, Integer.toString(hw.getScreen().getYDimension()));
+
+        Touchpad touchpad = hw.getTouchpad();
+
+        if (touchpad != null) {
+            props.put(HardwareProperties.HW_TOUCHPAD0, getBooleanVal(true));
+            props.put(HardwareProperties.HW_TOUCHPAD0_WIDTH, Integer.toString(touchpad.getWidth()));
+            props.put(
+                    HardwareProperties.HW_TOUCHPAD0_HEIGHT, Integer.toString(touchpad.getHeight()));
+        }
+
         props.put(
                 HardwareProperties.HW_PROXIMITY_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.PROXIMITY_SENSOR)));
@@ -686,6 +699,13 @@ public class DeviceManager {
             props.put(
                     ConfigKey.HINGE_ANGLES_POSTURE_DEFINITIONS,
                     hinge.getHingeAnglePostureDefinitions());
+        }
+
+        for (Camera camera : hw.getCameras()) {
+            if (!camera.isSensorOrientationDefault()) {
+                props.put(ConfigKey.cameraSensorOrientation(camera.getLocation()),
+                        Integer.toString(camera.getSensorOrientation()));
+            }
         }
         return props;
     }

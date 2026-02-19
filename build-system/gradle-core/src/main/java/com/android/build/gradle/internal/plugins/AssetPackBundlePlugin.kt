@@ -51,244 +51,196 @@ import com.android.build.gradle.options.ProjectOptionService
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.errors.IssueReporter
+import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.configuration.BuildFeatures
 import org.gradle.build.event.BuildEventsListenerRegistry
-import javax.inject.Inject
 
 /**
  * Plugin that allows to build asset-pack bundles.
  *
  * <p>Asset-pack bundle is supported by Google Play only.
  *
- * <p>Asset-pack bundle is a special kind of Android App Bundle that contains only subset of
- * on-demand / fast-follow asset-packs. This bundle can be used as a patch to a regular bundle and
- * allows to update asset-packs without requirement to release a new app version. This is mainly
- * valuable for game developers who whom updating assets (new levels, new textures) is more
- * frequent than code updates.
+ * <p>Asset-pack bundle is a special kind of Android App Bundle that contains only subset of on-demand / fast-follow asset-packs. This
+ * bundle can be used as a patch to a regular bundle and allows to update asset-packs without requirement to release a new app version. This
+ * is mainly valuable for game developers who whom updating assets (new levels, new textures) is more frequent than code updates.
  */
 abstract class AssetPackBundlePlugin : Plugin<Project> {
 
-    @Suppress("UnstableApiUsage")
-    @get:Inject
-    abstract val listenerRegistry: BuildEventsListenerRegistry
+  @Suppress("UnstableApiUsage") @get:Inject abstract val listenerRegistry: BuildEventsListenerRegistry
 
-    @get:Inject
-    abstract val buildFeatures: BuildFeatures
+  @get:Inject abstract val buildFeatures: BuildFeatures
 
-    override fun apply(project: Project) {
-        val projectOptions = ProjectOptionService.RegistrationAction(project)
-            .execute()
-            .get()
-            .projectOptions
+  override fun apply(project: Project) {
+    val projectOptions = ProjectOptionService.RegistrationAction(project).execute().get().projectOptions
 
-        val androidProblemsReporter = AndroidProblemReporterProvider
-            .RegistrationAction(project, projectOptions)
-            .execute()
-            .get()
-            .reporter()
+    val androidProblemsReporter = AndroidProblemReporterProvider.RegistrationAction(project, projectOptions).execute().get().reporter()
 
-        val syncIssueHandler = SyncIssueReporterImpl(
-            SyncOptions.getModelQueryMode(projectOptions),
-            SyncOptions.getErrorFormatMode(projectOptions),
-            project.logger,
-            androidProblemsReporter
+    val syncIssueHandler =
+      SyncIssueReporterImpl(
+        SyncOptions.getModelQueryMode(projectOptions),
+        SyncOptions.getErrorFormatMode(projectOptions),
+        project.logger,
+        androidProblemsReporter,
+        SyncOptions.getSyncWarningSuppression(projectOptions),
+      )
+
+    val deprecationReporter = DeprecationReporterImpl(syncIssueHandler, projectOptions, project.path)
+
+    val projectServices =
+      ProjectServices(
+        syncIssueHandler,
+        deprecationReporter,
+        project.objects,
+        project.logger,
+        project.providers,
+        project.layout,
+        projectOptions,
+        project.gradle.sharedServices,
+        LintFromMaven.from(project, projectOptions, syncIssueHandler),
+        create(project, projectOptions::get),
+        project.gradle.startParameter.maxWorkerCount,
+        ProjectInfo(project),
+        project::file,
+        project.configurations,
+        project.dependencies,
+        project.extensions.extraProperties,
+        { name -> project.tasks.register(name) },
+        project.pluginManager,
+      )
+    registerServices(project, projectOptions)
+
+    val dslServices = DslServicesImpl(projectServices, sdkComponents = projectServices.providerFactory.provider { null }, null)
+    val extension = dslServices.newDecoratedInstance(AssetPackBundleExtension::class.java, dslServices)
+    project.extensions.add(AssetPackBundleExtension::class.java, "bundle", extension)
+
+    project.afterEvaluate {
+      validateInput(projectServices.issueReporter, extension)
+      createTasks(project, projectServices, extension)
+    }
+  }
+
+  private fun registerServices(project: Project, projectOptions: ProjectOptions) {
+    if (projectOptions.isAnalyticsEnabled) {
+      val configuratorService = AnalyticsConfiguratorService.RegistrationAction(project).execute().get()
+      AnalyticsService.RegistrationAction(
+          project,
+          configuratorService,
+          listenerRegistry,
+          buildFeatures.configurationCacheActive(),
+          buildFeatures.projectIsolationActive(),
         )
+        .execute()
+    } else {
+      NoOpAnalyticsService.RegistrationAction(project).execute()
+    }
+    Aapt2ThreadPoolBuildService.RegistrationAction(project, projectOptions).execute()
+    Aapt2DaemonBuildService.RegistrationAction(project, projectOptions).execute()
+    SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
+        project,
+        SyncOptions.getModelQueryMode(projectOptions),
+        SyncOptions.getErrorFormatMode(projectOptions),
+        AndroidProblemReporterProvider.RegistrationAction(project, projectOptions).execute(),
+        SyncOptions.getSyncWarningSuppression(projectOptions),
+      )
+      .execute()
+    AndroidLocationsBuildService.RegistrationAction(project).execute()
+    SdkComponentsBuildService.RegistrationAction(project, projectOptions).execute()
+  }
 
-        val deprecationReporter =
-            DeprecationReporterImpl(syncIssueHandler, projectOptions, project.path)
-
-        val projectServices = ProjectServices(
-            syncIssueHandler,
-            deprecationReporter,
-            project.objects,
-            project.logger,
-            project.providers,
-            project.layout,
-            projectOptions,
-            project.gradle.sharedServices,
-            LintFromMaven.from(project, projectOptions, syncIssueHandler),
-            create(project, projectOptions::get),
-            project.gradle.startParameter.maxWorkerCount,
-            ProjectInfo(project),
-            project::file,
-            project.configurations,
-            project.dependencies,
-            project.extensions.extraProperties,
-            { name -> project.tasks.register(name) },
-            project.pluginManager,
-        )
-        registerServices(project, projectOptions)
-
-        val dslServices = DslServicesImpl(
-            projectServices,
-            sdkComponents = projectServices.providerFactory.provider { null },
-            null
-        )
-        val extension =
-            dslServices.newDecoratedInstance(AssetPackBundleExtension::class.java, dslServices)
-        project.extensions.add(AssetPackBundleExtension::class.java, "bundle", extension)
-
-        project.afterEvaluate {
-            validateInput(projectServices.issueReporter, extension)
-            createTasks(project, projectServices, extension)
-        }
+  private fun validateInput(issueReporter: IssueReporter, extension: AssetPackBundleExtension) {
+    val errors = arrayListOf<String>()
+    if (extension.applicationId.isEmpty()) {
+      errors.add("'applicationId' must be specified for asset pack bundle.")
+    }
+    if (extension.versionTag.isEmpty()) {
+      errors.add("'versionTag' must be specified for asset pack bundle.")
+    }
+    if (extension.versionCodes.isEmpty()) {
+      errors.add("Asset pack bundle must target at least one version code.")
+    }
+    if (extension.assetPacks.isEmpty()) {
+      errors.add("Asset pack bundle must contain at least one asset pack.")
     }
 
-    private fun registerServices(project: Project, projectOptions: ProjectOptions) {
-        if (projectOptions.isAnalyticsEnabled) {
-            val configuratorService =
-                AnalyticsConfiguratorService.RegistrationAction(project).execute().get()
-            AnalyticsService.RegistrationAction(
-                project,
-                configuratorService,
-                listenerRegistry,
-                buildFeatures.configurationCacheActive(),
-                buildFeatures.projectIsolationActive()
-            ).execute()
-        } else {
-            NoOpAnalyticsService.RegistrationAction(project).execute()
-        }
-        Aapt2ThreadPoolBuildService.RegistrationAction(project, projectOptions).execute()
-        Aapt2DaemonBuildService.RegistrationAction(project, projectOptions).execute()
-        SyncIssueReporterImpl.GlobalSyncIssueService.RegistrationAction(
-            project,
-            SyncOptions.getModelQueryMode(projectOptions),
-            SyncOptions.getErrorFormatMode(projectOptions),
-            AndroidProblemReporterProvider.RegistrationAction(project, projectOptions)
-                .execute()
+    val signingConfig = extension.signingConfig
+    if (signingConfig.isPresent()) {
+      if (
+        signingConfig.storeFile == null ||
+          signingConfig.storePassword == null ||
+          signingConfig.keyAlias == null ||
+          signingConfig.keyPassword == null
+      ) {
+        errors.add(
+          "Signing config is specified but incomplete. To make it complete " +
+            "'storeFile', 'storePassword', 'keyAlias', 'keyPassword' must be specified."
         )
-            .execute()
-        AndroidLocationsBuildService.RegistrationAction(project).execute()
-        SdkComponentsBuildService.RegistrationAction(project, projectOptions).execute()
+      }
     }
 
-    private fun validateInput(issueReporter: IssueReporter, extension: AssetPackBundleExtension) {
-        val errors = arrayListOf<String>()
-        if (extension.applicationId.isEmpty()) {
-            errors.add("'applicationId' must be specified for asset pack bundle.")
-        }
-        if (extension.versionTag.isEmpty()) {
-            errors.add("'versionTag' must be specified for asset pack bundle.")
-        }
-        if (extension.versionCodes.isEmpty()) {
-            errors.add("Asset pack bundle must target at least one version code.")
-        }
-        if (extension.assetPacks.isEmpty()) {
-            errors.add("Asset pack bundle must contain at least one asset pack.")
-        }
+    if (errors.isNotEmpty()) {
+      issueReporter.reportWarning(IssueReporter.Type.GENERIC, errors.joinToString(separator = "\n"), multilineMsg = errors)
+    }
+  }
 
-        val signingConfig = extension.signingConfig
-        if (signingConfig.isPresent()) {
-            if (signingConfig.storeFile == null ||
-                signingConfig.storePassword == null ||
-                signingConfig.keyAlias == null ||
-                signingConfig.keyPassword == null) {
-                errors.add(
-                    "Signing config is specified but incomplete. To make it complete " +
-                        "'storeFile', 'storePassword', 'keyAlias', 'keyPassword' must be specified."
-                )
-            }
-        }
+  private fun createTasks(project: Project, projectServices: ProjectServices, extension: AssetPackBundleExtension) {
+    val assetPackFilesConfiguration = project.configurations.maybeCreate("assetPackFiles")
+    val assetPackManifestConfiguration = project.configurations.maybeCreate("assetPackManifest")
+    populateAssetPacksConfigurations(
+      project,
+      projectServices.issueReporter,
+      extension.assetPacks,
+      assetPackFilesConfiguration,
+      assetPackManifestConfiguration,
+    )
 
-        if (errors.isNotEmpty()) {
-            issueReporter.reportWarning(
-                IssueReporter.Type.GENERIC,
-                errors.joinToString(separator = "\n"),
-                multilineMsg = errors
-            )
-        }
+    val tasks = TaskFactoryImpl(project.tasks)
+    val artifacts = ArtifactsImpl(project, "global")
+
+    tasks.register(AppMetadataTask.CreationForAssetPackBundleAction(artifacts, projectServices.projectOptions))
+
+    tasks.register(
+      ProcessAssetPackManifestTask.CreationForAssetPackBundleAction(
+        artifacts,
+        extension.applicationId,
+        assetPackManifestConfiguration.incoming.artifacts,
+      )
+    )
+
+    tasks.register(LinkManifestForAssetPackTask.CreationForAssetPackBundleAction(artifacts, projectServices, extension.compileSdk))
+
+    tasks.register(AssetPackPreBundleTask.CreationForAssetPackBundleAction(artifacts, assetPackFilesConfiguration))
+
+    tasks.register(PackageBundleTask.CreationForAssetPackBundleAction(projectServices, artifacts, extension))
+
+    if (extension.signingConfig.isPresent()) {
+      tasks.register(ValidateSigningTask.CreationForAssetPackBundleAction(artifacts, extension.signingConfig))
     }
 
-    private fun createTasks(
-        project: Project,
-        projectServices: ProjectServices,
-        extension: AssetPackBundleExtension
-    ) {
-        val assetPackFilesConfiguration =
-            project.configurations.maybeCreate("assetPackFiles")
-        val assetPackManifestConfiguration =
-            project.configurations.maybeCreate("assetPackManifest")
-        populateAssetPacksConfigurations(
-            project,
-            projectServices.issueReporter,
-            extension.assetPacks,
-            assetPackFilesConfiguration,
-            assetPackManifestConfiguration
-        )
+    tasks.register(
+      FinalizeBundleTask.CreationForAssetPackBundleAction(
+        projectServices,
+        artifacts,
+        extension.signingConfig,
+        extension.signingConfig.isPresent(),
+      )
+    )
 
-        val tasks = TaskFactoryImpl(project.tasks)
-        val artifacts = ArtifactsImpl(project, "global")
-
-        tasks.register(AppMetadataTask.CreationForAssetPackBundleAction(artifacts, projectServices.projectOptions))
-
-        tasks.register(
-            ProcessAssetPackManifestTask.CreationForAssetPackBundleAction(
-                artifacts,
-                extension.applicationId,
-                assetPackManifestConfiguration.incoming.artifacts
-            )
-        )
-
-        tasks.register(
-            LinkManifestForAssetPackTask.CreationForAssetPackBundleAction(
-                artifacts,
-                projectServices,
-                extension.compileSdk
-            )
-        )
-
-        tasks.register(
-            AssetPackPreBundleTask.CreationForAssetPackBundleAction(
-                artifacts,
-                assetPackFilesConfiguration
-            )
-        )
-
-        tasks.register(
-            PackageBundleTask.CreationForAssetPackBundleAction(
-                projectServices,
-                artifacts,
-                extension
-            )
-        )
-
-        if (extension.signingConfig.isPresent()) {
-            tasks.register(
-                ValidateSigningTask.CreationForAssetPackBundleAction(
-                    artifacts,
-                    extension.signingConfig
-                )
-            )
+    tasks.register(
+      "bundle",
+      null,
+      object : TaskConfigAction<Task> {
+        override fun configure(task: Task) {
+          task.description = "Assembles asset pack bundle for asset only updates"
+          task.dependsOn(artifacts.get(SingleArtifact.BUNDLE))
         }
-
-        tasks.register(
-            FinalizeBundleTask.CreationForAssetPackBundleAction(
-                projectServices,
-                artifacts,
-                extension.signingConfig,
-                extension.signingConfig.isPresent()
-            )
-        )
-
-        tasks.register(
-            "bundle",
-            null,
-            object : TaskConfigAction<Task> {
-                override fun configure(task: Task) {
-                    task.description = "Assembles asset pack bundle for asset only updates"
-                    task.dependsOn(artifacts.get(SingleArtifact.BUNDLE))
-                }
-            }
-        )
-    }
+      },
+    )
+  }
 }
 
 private fun SigningConfig.isPresent(): Boolean {
-    return this.storeFile != null ||
-            this.storePassword != null ||
-            this.keyAlias != null ||
-            this.keyPassword != null
+  return this.storeFile != null || this.storePassword != null || this.keyAlias != null || this.keyPassword != null
 }

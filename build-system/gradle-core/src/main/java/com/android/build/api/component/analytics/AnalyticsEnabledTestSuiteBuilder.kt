@@ -23,37 +23,28 @@ import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.tools.build.gradle.internal.profile.VariantMethodType
 
 open class AnalyticsEnabledTestSuiteBuilder(
-    private val delegate: TestSuiteBuilder,
-    val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
-): TestSuiteBuilder {
+  private val delegate: TestSuiteBuilder,
+  val stats: com.google.wireless.android.sdk.stats.GradleBuildVariant.Builder,
+) : TestSuiteBuilder {
 
-    override var enable: Boolean
-        get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.UNIT_TEST_ENABLED_VALUE
-            delegate.enable = value
-        }
+  override var enable: Boolean
+    get() = throw PropertyAccessNotAllowedException("enable", "HostTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.UNIT_TEST_ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    override val junitEngineSpec: JUnitEngineSpecBuilder
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE
-            return AnalyticsEnabledJUnitEngineSpecBuilder(
-                delegate.junitEngineSpec,
-                stats)
-        }
+  override val junitEngineSpec: JUnitEngineSpecBuilder
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.JUNIT_ENGINE_SPEC_BUILDER_VALUE
+      return AnalyticsEnabledJUnitEngineSpecBuilder(delegate.junitEngineSpec, stats)
+    }
 
-    override fun getName(): String = delegate.name
+  override fun getName(): String = delegate.name
 
-    override val targets: Map<String, TestSuiteTargetBuilder>
-        get() {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE
-            return delegate.targets.mapValues { target ->
-                AnalyticsEnabledTestSuiteTargetBuilder(
-                    target.value,
-                    stats)
-            }
-        }
+  override val targets: Map<String, TestSuiteTargetBuilder>
+    get() {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TEST_SUITE_BUILDER_TARGETS_VALUE
+      return delegate.targets.mapValues { target -> AnalyticsEnabledTestSuiteTargetBuilder(target.value, stats) }
+    }
 }

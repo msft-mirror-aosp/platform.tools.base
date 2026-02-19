@@ -18,6 +18,7 @@ package com.android.ide.common.rendering.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+
 import java.util.Objects;
 
 /** A {@link ResourceValue} intended for text nodes where we need access to the raw XML text. */
@@ -71,7 +72,7 @@ public class TextResourceValueImpl extends ResourceValueImpl implements TextReso
         if (renderingValue != null) {
             return renderingValue;
         }
-        return super.getValue();
+        return super.getRenderingValue();
     }
 
     public void setRenderingValue(@Nullable String value) {

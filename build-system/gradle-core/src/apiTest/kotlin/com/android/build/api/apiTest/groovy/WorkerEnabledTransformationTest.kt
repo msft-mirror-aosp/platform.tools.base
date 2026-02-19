@@ -19,19 +19,20 @@ package com.android.build.api.apiTest.groovy
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.google.common.truth.Truth
-import org.gradle.testkit.runner.TaskOutcome
-import org.junit.Test
 import java.io.File
 import kotlin.test.assertNotNull
+import org.gradle.testkit.runner.TaskOutcome
+import org.junit.Test
 
-class WorkerEnabledTransformationTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+class WorkerEnabledTransformationTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
 
-    @Test
-    fun workerEnabledTransformation() {
-        given {
-            tasksToInvoke.add(":app:copyDebugApks")
-            addModule(":app") {
-                buildFile = """
+  @Test
+  fun workerEnabledTransformation() {
+    given {
+      tasksToInvoke.add(":app:copyDebugApks")
+      addModule(":app") {
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -75,33 +76,34 @@ class WorkerEnabledTransformationTest: VariantApiBaseTest(TestType.Script, Scrip
                     }
                 })
             }
-            """.trimIndent()
-                testingElements.addManifest(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                    """
-# Test TransformationRequest
-
-This sample shows how to transform the artifact.
-It copies the build apk to the specified directory.
-
-## To Run
-./gradlew copydebugApks
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            val task = task(":app:copydebugApks")
-            assertNotNull(task)
-            Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/apk/copydebugApks")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-        }
+            """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Test TransformationRequest
+
+        This sample shows how to transform the artifact.
+        It copies the build apk to the specified directory.
+
+        ## To Run
+        ./gradlew copydebugApks
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      val task = task(":app:copydebugApks")
+      assertNotNull(task)
+      Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/intermediates/apk/copydebugApks")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+    }
+  }
 }

@@ -20,5 +20,4 @@ import com.android.builder.model.v2.models.ndk.NativeAbi
 import com.android.builder.model.v2.models.ndk.NativeVariant
 import java.io.Serializable
 
-data class NativeVariantImpl(override val name: String, override val abis: List<NativeAbi>) :
-    NativeVariant, Serializable
+data class NativeVariantImpl(override val name: String, override val abis: List<NativeAbi>) : NativeVariant, Serializable

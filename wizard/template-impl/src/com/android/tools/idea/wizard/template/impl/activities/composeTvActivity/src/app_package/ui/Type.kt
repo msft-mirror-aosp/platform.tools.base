@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.composeTvActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun typeKt(
-  packageName: String
-) = """
+fun typeKt(packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.ui.theme
 
 import androidx.compose.ui.text.TextStyle

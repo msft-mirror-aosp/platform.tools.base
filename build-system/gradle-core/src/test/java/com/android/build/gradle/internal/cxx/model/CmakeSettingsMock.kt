@@ -30,32 +30,26 @@ const val DIFFERENT_MOCK_CMAKE_SETTINGS_CONFIGURATION = "different-mock-cmake-se
 const val NO_ABI_IN_BUILD_ROOT_MOCK_CMAKE_SETTINGS_CONFIGURATION = "no-abi-in-build-root-mock-cmake-settings-configuration"
 const val NO_VARIANT_IN_BUILD_ROOT_MOCK_CMAKE_SETTINGS_CONFIGURATION = "no-variant-in-build-root-mock-cmake-settings-configuration"
 
-/**
- * Set up a basic environment that will result in a CMake [CxxModuleModel]
- */
+/** Set up a basic environment that will result in a CMake [CxxModuleModel] */
 class CmakeSettingsMock : BasicModuleModelMock() {
 
-    val module by lazy {
-        createCxxModuleModel(
-            sdkComponents,
-            configurationParameters,
-        )
-    }
-    val variant by lazy { createCxxVariantModel(configurationParameters, module) }
-    val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
+  val module by lazy { createCxxModuleModel(sdkComponents, configurationParameters) }
+  val variant by lazy { createCxxVariantModel(configurationParameters, module) }
+  val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
 
-    init {
-//        doReturn(externalNativeCmakeOptions).whenever(coreExternalNativeBuildOptions).externalNativeCmakeOptions
-        doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
-        doReturn(makeListProperty(listOf("-DCMAKE_ARG=1"))).whenever(variantExternalNativeBuild).arguments
-        doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
-        doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
-        doReturn(makeSetProperty(setOf<String>())).whenever(variantExternalNativeBuild).targets
-        val makefile = join(allPlatformsProjectRootDir, "CMakeLists.txt")
-        val cmakeSettingsJson = join(allPlatformsProjectRootDir, "CMakeSettings.json")
-        cmakeSettingsJson.parentFile.mkdirs()
-        cmakeSettingsJson.writeText(
-            """
+  init {
+    //
+    // doReturn(externalNativeCmakeOptions).whenever(coreExternalNativeBuildOptions).externalNativeCmakeOptions
+    doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
+    doReturn(makeListProperty(listOf("-DCMAKE_ARG=1"))).whenever(variantExternalNativeBuild).arguments
+    doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
+    doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
+    doReturn(makeSetProperty(setOf<String>())).whenever(variantExternalNativeBuild).targets
+    val makefile = join(allPlatformsProjectRootDir, "CMakeLists.txt")
+    val cmakeSettingsJson = join(allPlatformsProjectRootDir, "CMakeSettings.json")
+    cmakeSettingsJson.parentFile.mkdirs()
+    cmakeSettingsJson.writeText(
+      """
             {
                 "configurations": [{
                     "name": "$DIFFERENT_MOCK_CMAKE_SETTINGS_CONFIGURATION",
@@ -90,20 +84,16 @@ class CmakeSettingsMock : BasicModuleModelMock() {
                     "inheritEnvironments": ["ndk"],
                     "buildRoot": "project-build-root/${Macro.NDK_ABI.ref}"
                 } ]
-            }""".trimIndent())
-        fileContents = FakeFileContents(cmakeSettingsJson)
-        doReturn(makefile).whenever(cmake).path
-        projectRootDir.mkdirs()
-        makefile.writeText("# written by ${BasicCmakeMock::class}")
-    }
+            }"""
+        .trimIndent()
+    )
+    fileContents = FakeFileContents(cmakeSettingsJson)
+    doReturn(makefile).whenever(cmake).path
+    projectRootDir.mkdirs()
+    makefile.writeText("# written by ${BasicCmakeMock::class}")
+  }
 
-    private fun makeListProperty(values: List<String>): ListProperty<*> =
-            mock<ListProperty<*>>().also {
-                doReturn(values).whenever(it).get()
-            }
+  private fun makeListProperty(values: List<String>): ListProperty<*> = mock<ListProperty<*>>().also { doReturn(values).whenever(it).get() }
 
-    private fun makeSetProperty(values: Set<String>): SetProperty<*> =
-            mock<SetProperty<*>>().also {
-                doReturn(values).whenever(it).get()
-            }
+  private fun makeSetProperty(values: Set<String>): SetProperty<*> = mock<SetProperty<*>>().also { doReturn(values).whenever(it).get() }
 }

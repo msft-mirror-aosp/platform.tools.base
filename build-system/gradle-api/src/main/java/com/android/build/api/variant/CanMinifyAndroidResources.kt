@@ -18,17 +18,13 @@ package com.android.build.api.variant
 
 import org.gradle.api.Incubating
 
-/**
- * Build-time properties for [Component] that can minify Android resources.
- */
+/** Build-time properties for [Component] that can minify Android resources. */
 @Incubating
 interface CanMinifyAndroidResources {
 
-    /**
-     * Specifies whether resources will be shrinked.
-     * At this point the value is final. You can change it via
-     * [AndroidComponentsExtension.beforeVariants] and
-     * [CanMinifyAndroidResourcesBuilder.shrinkResources]
-     */
-    val shrinkResources: Boolean
+  /**
+   * Specifies whether resources will be shrinked. At this point the value is final. You can change it via
+   * [AndroidComponentsExtension.beforeVariants] and [CanMinifyAndroidResourcesBuilder.shrinkResources]
+   */
+  val shrinkResources: Boolean
 }

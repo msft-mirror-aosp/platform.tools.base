@@ -21,74 +21,64 @@ import com.android.build.gradle.integration.common.runner.FilterableParameterize
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
 
 /** Integration test for running lint analysis per component. */
 @RunWith(FilterableParameterized::class)
 class LintAnalysisPerComponentTest(private val checkDependencies: Boolean) {
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "checkDependencies_{0}")
-        fun parameters() = listOf(true, false)
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "checkDependencies_{0}") fun parameters() = listOf(true, false)
+  }
+
+  @get:Rule val project: GradleTestProject = createGradleTestProject("project")
+
+  @Before
+  fun before() {
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "\n${BooleanOption.LINT_ANALYSIS_PER_COMPONENT.propertyName}=true\n")
+    if (!checkDependencies) {
+      TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "checkDependencies = true", "checkDependencies = false")
     }
+  }
 
-    @get:Rule
-    val project: GradleTestProject = createGradleTestProject("project")
+  private val slash = File.separator
 
-    @Before
-    fun before() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "\n${BooleanOption.LINT_ANALYSIS_PER_COMPONENT.propertyName}=true\n"
-        )
-        if (!checkDependencies) {
-            TestFileUtils.searchAndReplace(
-                project.getSubproject(":app").buildFile,
-                "checkDependencies = true",
-                "checkDependencies = false",
-            )
-        }
+  @Test
+  fun testLintAnalysisPerComponent() {
+    project.executor().run(":app:clean", ":app:lintDebug")
+
+    val lintReport = project.file("app/lint-report.txt")
+
+    assertThat(lintReport).contains("app${slash}src${slash}main")
+    assertThat(lintReport).contains("app${slash}src${slash}test")
+    assertThat(lintReport).contains("app${slash}src${slash}androidTest")
+    assertThat(lintReport).contains("app${slash}src${slash}testFixtures")
+
+    assertThat(lintReport).contains("feature${slash}src${slash}main")
+    assertThat(lintReport).contains("feature${slash}src${slash}test")
+    assertThat(lintReport).contains("feature${slash}src${slash}androidTest")
+
+    if (checkDependencies) {
+      assertThat(lintReport).contains("${slash}lib${slash}src${slash}main")
+      assertThat(lintReport).contains("${slash}lib${slash}src${slash}test")
+      assertThat(lintReport).contains("${slash}lib${slash}src${slash}androidTest")
+      assertThat(lintReport).contains("${slash}lib${slash}src${slash}testFixtures")
+
+      assertThat(lintReport).contains("java-lib${slash}src${slash}main")
+      assertThat(lintReport).contains("java-lib${slash}src${slash}test")
+    } else {
+      assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}main")
+      assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}test")
+      assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}androidTest")
+      assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}testFixtures")
+
+      assertThat(lintReport).doesNotContain("java-lib${slash}src${slash}main")
+      assertThat(lintReport).doesNotContain("java-lib${slash}src${slash}test")
     }
-
-    private val slash = File.separator
-
-    @Test
-    fun testLintAnalysisPerComponent() {
-        project.executor().run(":app:clean", ":app:lintDebug")
-
-        val lintReport = project.file("app/lint-report.txt")
-
-        assertThat(lintReport).contains("app${slash}src${slash}main")
-        assertThat(lintReport).contains("app${slash}src${slash}test")
-        assertThat(lintReport).contains("app${slash}src${slash}androidTest")
-        assertThat(lintReport).contains("app${slash}src${slash}testFixtures")
-
-        assertThat(lintReport).contains("feature${slash}src${slash}main")
-        assertThat(lintReport).contains("feature${slash}src${slash}test")
-        assertThat(lintReport).contains("feature${slash}src${slash}androidTest")
-
-        if (checkDependencies) {
-            assertThat(lintReport).contains("${slash}lib${slash}src${slash}main")
-            assertThat(lintReport).contains("${slash}lib${slash}src${slash}test")
-            assertThat(lintReport).contains("${slash}lib${slash}src${slash}androidTest")
-            assertThat(lintReport).contains("${slash}lib${slash}src${slash}testFixtures")
-
-            assertThat(lintReport).contains("java-lib${slash}src${slash}main")
-            assertThat(lintReport).contains("java-lib${slash}src${slash}test")
-        } else {
-            assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}main")
-            assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}test")
-            assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}androidTest")
-            assertThat(lintReport).doesNotContain("${slash}lib${slash}src${slash}testFixtures")
-
-            assertThat(lintReport).doesNotContain("java-lib${slash}src${slash}main")
-            assertThat(lintReport).doesNotContain("java-lib${slash}src${slash}test")
-        }
-    }
+  }
 }

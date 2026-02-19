@@ -24,6 +24,11 @@ import com.android.buildanalyzer.common.AndroidGradlePluginAttributionData.JavaI
 import com.android.buildanalyzer.common.AndroidGradlePluginAttributionData.TaskInfo
 import com.android.buildanalyzer.common.TaskCategoryIssue
 import com.android.builder.utils.SynchronizedFile
+import java.io.BufferedWriter
+import java.io.File
+import java.io.FileWriter
+import java.lang.management.ManagementFactory
+import java.util.Collections
 import org.gradle.api.Project
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -34,157 +39,126 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.tooling.events.FinishEvent
 import org.gradle.tooling.events.OperationCompletionListener
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileWriter
-import java.lang.management.ManagementFactory
-import java.util.Collections
 
 /**
  * Collects information for Build Analyzer in the IDE.
  *
- * DO NOT instantiate eagerly, this build service relies on
- * [org.gradle.api.execution.TaskExecutionGraph.whenReady] to configure itself.
+ * DO NOT instantiate eagerly, this build service relies on [org.gradle.api.execution.TaskExecutionGraph.whenReady] to configure itself.
  */
-abstract class BuildAnalyzerService : BuildService<BuildAnalyzerService.Parameters>,
-        OperationCompletionListener,
-        AutoCloseable {
+abstract class BuildAnalyzerService : BuildService<BuildAnalyzerService.Parameters>, OperationCompletionListener, AutoCloseable {
 
-    companion object {
+  companion object {
 
-        private fun saveAttributionData(
-            outputDir: File,
-            attributionData: () -> AndroidGradlePluginAttributionData
-        ) {
-            val file = AndroidGradlePluginAttributionData.getAttributionFile(outputDir)
-            file.parentFile.mkdirs()
-            // In case of having different classloaders for different projects when the classpaths
-            // are different (b/154388196), multiple instances of BuildAttributionService will try
-            // to save the attribution data to the same output file. The data produced by the
-            // different services should be identical.
-            // Here we try to acquire an exclusive lock on the output file and write the attribution
-            // data to it. If another BuildAttributionService did already write to the file and
-            // released the lock, we will rewrite the data again which should be identical to the
-            // previously written.
-            SynchronizedFile.getInstanceWithMultiProcessLocking(file).write {
-                BufferedWriter(FileWriter(file)).use {
-                    it.write(
-                        AndroidGradlePluginAttributionData.AttributionDataAdapter.toJson(
-                            attributionData.invoke()
-                        )
-                    )
-                }
-            }
+    private fun saveAttributionData(outputDir: File, attributionData: () -> AndroidGradlePluginAttributionData) {
+      val file = AndroidGradlePluginAttributionData.getAttributionFile(outputDir)
+      file.parentFile.mkdirs()
+      // In case of having different classloaders for different projects when the classpaths
+      // are different (b/154388196), multiple instances of BuildAttributionService will try
+      // to save the attribution data to the same output file. The data produced by the
+      // different services should be identical.
+      // Here we try to acquire an exclusive lock on the output file and write the attribution
+      // data to it. If another BuildAttributionService did already write to the file and
+      // released the lock, we will rewrite the data again which should be identical to the
+      // previously written.
+      SynchronizedFile.getInstanceWithMultiProcessLocking(file).write {
+        BufferedWriter(FileWriter(file)).use {
+          it.write(AndroidGradlePluginAttributionData.AttributionDataAdapter.toJson(attributionData.invoke()))
         }
+      }
+    }
+  }
 
+  private val initialGarbageCollectionData: Map<String, Long> =
+    ManagementFactory.getGarbageCollectorMXBeans().associate { it.name to it.collectionTime }
 
+  private val executionTimeTaskCategoryIssues = Collections.synchronizedSet(mutableSetOf<TaskCategoryIssue>())
+
+  fun reportBuildAnalyzerIssue(issue: TaskCategoryIssue) {
+    executionTimeTaskCategoryIssues.add(issue)
+  }
+
+  override fun close() {
+    if (!parameters.attributionFileLocation.isPresent) {
+      // There were no tasks in this build, so avoid recording info
+      return
     }
 
-    private val initialGarbageCollectionData: Map<String, Long> =
-        ManagementFactory.getGarbageCollectorMXBeans().associate { it.name to it.collectionTime }
+    val gcData =
+      ManagementFactory.getGarbageCollectorMXBeans()
+        .map { it.name to it.collectionTime - initialGarbageCollectionData.getOrDefault(it.name, 0) }
+        .filter { it.second > 0L }
+        .toMap()
 
-    private val executionTimeTaskCategoryIssues = Collections.synchronizedSet(mutableSetOf<TaskCategoryIssue>())
+    saveAttributionData(File(parameters.attributionFileLocation.get())) {
+      val taskCategoryIssues = executionTimeTaskCategoryIssues + parameters.taskCategoryIssues.get()
+      val partialResults = BuildAnalyzerPartialResult(taskCategoryIssues)
 
-    fun reportBuildAnalyzerIssue(issue: TaskCategoryIssue) {
-        executionTimeTaskCategoryIssues.add(issue)
+      val partialResultsOutputDir = AndroidGradlePluginAttributionData.getPartialResultsDir(File(parameters.attributionFileLocation.get()))
+
+      // This will be invoked under a file lock, and so it's safe to read the output of other
+      // build services at this point
+      BuildAnalyzerPartialResult.getAllPartialResults(partialResultsOutputDir).forEach { partialResults.combineWith(it) }
+
+      partialResults.saveToDir(partialResultsOutputDir)
+
+      AndroidGradlePluginAttributionData(
+        tasksSharingOutput = parameters.tasksSharingOutputs.get(),
+        garbageCollectionData = gcData,
+        buildSrcPlugins = getBuildSrcPlugins(this.javaClass.classLoader),
+        javaInfo = parameters.javaInfo.get(),
+        buildscriptDependenciesInfo = parameters.buildscriptDependenciesInfo.get(),
+        buildInfo = parameters.buildInfo.get(),
+        taskNameToTaskInfoMap = parameters.taskNameToTaskInfoMap.get(),
+        taskCategoryIssues = partialResults.issues.toList(),
+      )
     }
+  }
 
-    override fun close() {
-        if (!parameters.attributionFileLocation.isPresent) {
-            // There were no tasks in this build, so avoid recording info
-            return
-        }
+  override fun onFinish(p0: FinishEvent?) {
+    // Nothing to be done.
+    // This is a workaround to make Gradle always start the service, specifically needed when
+    // configuration caching is enabled where the service can't be started on configuration.
+  }
 
-        val gcData =
-                ManagementFactory.getGarbageCollectorMXBeans().map {
-                    it.name to it.collectionTime - initialGarbageCollectionData.getOrDefault(
-                            it.name,
-                            0
-                    )
-                }.filter { it.second > 0L }.toMap()
+  interface Parameters : BuildServiceParameters {
 
-        saveAttributionData(
-            File(parameters.attributionFileLocation.get()),
-        ) {
-            val taskCategoryIssues =
-                executionTimeTaskCategoryIssues + parameters.taskCategoryIssues.get()
-            val partialResults = BuildAnalyzerPartialResult(taskCategoryIssues)
+    val attributionFileLocation: Property<String>
 
-            val partialResultsOutputDir = AndroidGradlePluginAttributionData.getPartialResultsDir(
-                File(parameters.attributionFileLocation.get())
-            )
+    val tasksSharingOutputs: MapProperty<String, List<String>>
 
-            // This will be invoked under a file lock, and so it's safe to read the output of other
-            // build services at this point
-            BuildAnalyzerPartialResult.getAllPartialResults(
-                partialResultsOutputDir
-            ).forEach { partialResults.combineWith(it) }
+    val javaInfo: Property<JavaInfo>
 
-            partialResults.saveToDir(partialResultsOutputDir)
+    val buildscriptDependenciesInfo: SetProperty<String>
 
-            AndroidGradlePluginAttributionData(
-                tasksSharingOutput = parameters.tasksSharingOutputs.get(),
-                garbageCollectionData = gcData,
-                buildSrcPlugins = getBuildSrcPlugins(this.javaClass.classLoader),
-                javaInfo = parameters.javaInfo.get(),
-                buildscriptDependenciesInfo = parameters.buildscriptDependenciesInfo.get(),
-                buildInfo = parameters.buildInfo.get(),
-                taskNameToTaskInfoMap = parameters.taskNameToTaskInfoMap.get(),
-                taskCategoryIssues = partialResults.issues.toList()
-            )
-        }
-    }
+    val buildInfo: Property<BuildInfo>
 
-    override fun onFinish(p0: FinishEvent?) {
-        // Nothing to be done.
-        // This is a workaround to make Gradle always start the service, specifically needed when
-        // configuration caching is enabled where the service can't be started on configuration.
-    }
+    val taskNameToTaskInfoMap: MapProperty<String, TaskInfo>
 
-    interface Parameters : BuildServiceParameters {
+    val taskCategoryIssues: SetProperty<TaskCategoryIssue>
+  }
 
-        val attributionFileLocation: Property<String>
+  @Suppress("UnstableApiUsage")
+  class RegistrationAction(
+    project: Project,
+    private val attributionFileLocation: String,
+    private val listenersRegistry: BuildEventsListenerRegistry,
+    private val buildAnalyzerConfiguratorService: BuildAnalyzerConfiguratorService,
+    private val isConfigurationCacheActive: Boolean,
+    private val isProjectIsolationActive: Boolean,
+  ) : ServiceRegistrationAction<BuildAnalyzerService, Parameters>(project, BuildAnalyzerService::class.java) {
 
-        val tasksSharingOutputs: MapProperty<String, List<String>>
-
-        val javaInfo: Property<JavaInfo>
-
-        val buildscriptDependenciesInfo: SetProperty<String>
-
-        val buildInfo: Property<BuildInfo>
-
-        val taskNameToTaskInfoMap: MapProperty<String, TaskInfo>
-
-        val taskCategoryIssues: SetProperty<TaskCategoryIssue>
-    }
-
-    @Suppress("UnstableApiUsage")
-    class RegistrationAction(
-        project: Project,
-        private val attributionFileLocation: String,
-        private val listenersRegistry: BuildEventsListenerRegistry,
-        private val buildAnalyzerConfiguratorService: BuildAnalyzerConfiguratorService,
-        private val isConfigurationCacheActive: Boolean,
-        private val isProjectIsolationActive: Boolean,
-    ) : ServiceRegistrationAction<BuildAnalyzerService, Parameters>(
+    override fun configure(parameters: Parameters) {
+      buildAnalyzerConfiguratorService.initBuildAnalyzerService(
         project,
-        BuildAnalyzerService::class.java
-    ) {
-
-        override fun configure(parameters: Parameters) {
-            buildAnalyzerConfiguratorService.initBuildAnalyzerService(
-                project,
-                attributionFileLocation,
-                parameters,
-                isConfigurationCacheActive,
-                isProjectIsolationActive,
-            )
-        }
-
-        override fun execute(): Provider<BuildAnalyzerService> {
-            return super.execute().also {
-                listenersRegistry.onTaskCompletion(it)
-            }
-        }
+        attributionFileLocation,
+        parameters,
+        isConfigurationCacheActive,
+        isProjectIsolationActive,
+      )
     }
+
+    override fun execute(): Provider<BuildAnalyzerService> {
+      return super.execute().also { listenersRegistry.onTaskCompletion(it) }
+    }
+  }
 }

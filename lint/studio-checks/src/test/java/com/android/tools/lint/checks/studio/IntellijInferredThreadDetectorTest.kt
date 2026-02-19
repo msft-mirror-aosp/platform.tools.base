@@ -453,11 +453,7 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
       )
   }
 
-  private fun TestLintTask.setUp() =
-    issues(
-      IntellijInferredThreadDetector.THREAD,
-      IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT,
-    )
+  private fun TestLintTask.setUp() = issues(IntellijInferredThreadDetector.THREAD, IntellijInferredThreadDetector.UNSATISFIABLE_CONSTRAINT)
 
   private val annotationDefinitions =
     arrayOf(
@@ -577,7 +573,7 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
             public interface Consumer<T> {
                 void accept(T t);
             }
-          """
+            """
               .trimIndent()
           )
           .indented(),
@@ -589,7 +585,7 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
             public interface Stream<T> {
                 void forEach(Consumer<? super T> action);
             }
-          """
+            """
               .trimIndent()
           )
           .indented(),
@@ -598,13 +594,13 @@ src/test/pkg/Test.java:118: Error: Call must be from @{Slow,WorkerThread}, but a
       .run()
       .expect(
         """
-          src/test/pkg/Test.java:12: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
-                  app.invokeLater(() -> slow());
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~
-          src/test/pkg/Test.java:17: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
-                  s.forEach((x) -> slow());
-                    ~~~~~~~~~~~~~~~~~~~~~~
-          2 errors
+        src/test/pkg/Test.java:12: Error: Argument at x₀ must allow calling run() from @UiThread, but that call is requiring @{Slow,WorkerThread}. [WrongThread]
+                app.invokeLater(() -> slow());
+                    ~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/Test.java:17: Error: Call must be from @{Slow,WorkerThread}, but context is allowing @UiThread [WrongThread]
+                s.forEach((x) -> slow());
+                  ~~~~~~~~~~~~~~~~~~~~~~
+        2 errors
         """
           .trimIndent()
       )

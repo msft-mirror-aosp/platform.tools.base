@@ -32,128 +32,129 @@ import com.android.testutils.apk.Dex
 import com.android.testutils.generateAarWithContent
 import com.android.testutils.truth.DexSubject
 import com.android.utils.FileUtils
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
 import java.time.LocalTime
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.fail
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 
 class CoreLibraryDesugarDynamicFeatureTest {
 
-    private val streamClass = "Lj$/util/stream/Stream;"
-    private val monthClass = "Lj$/time/Month;"
-    private val yearClass = "Lj$/time/Year;"
-    private val localTimeClass = "Lj$/time/LocalTime;"
+  private val streamClass = "Lj$/util/stream/Stream;"
+  private val monthClass = "Lj$/time/Month;"
+  private val yearClass = "Lj$/time/Year;"
+  private val localTimeClass = "Lj$/time/LocalTime;"
 
-    private lateinit var app: GradleTestProject
-    private lateinit var feature: GradleTestProject
+  private lateinit var app: GradleTestProject
+  private lateinit var feature: GradleTestProject
 
-    private val aar = generateAarWithContent(
-        packageName = "com.example.myaar",
-        mainJar = TestInputsGenerator.jarWithClasses(listOf(LocalTimeClass::class.java))
+  private val aar =
+    generateAarWithContent(
+      packageName = "com.example.myaar",
+      mainJar = TestInputsGenerator.jarWithClasses(listOf(LocalTimeClass::class.java)),
     )
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            MavenRepoGenerator.Library("com.example:myaar:1", "aar", aar)
-        )
+  private val mavenRepo = MavenRepoGenerator(listOf(MavenRepoGenerator.Library("com.example:myaar:1", "aar", aar)))
+
+  @get:Rule val project = GradleTestProject.builder().withAdditionalMavenRepo(mavenRepo).fromTestApp(setUpTestProject()).create()
+
+  private fun setUpTestProject(): TestProject {
+    return MultiModuleTestProject.builder()
+      .subproject(APP_MODULE, HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", 21))
+      .subproject(DYNAMIC_FEATURE, setUpDynamicFeatureModule())
+      .build()
+  }
+
+  @Before
+  fun setUp() {
+    app = project.getSubproject(APP_MODULE)
+    feature = project.getSubproject(DYNAMIC_FEATURE)
+    setUpBaseModule()
+  }
+
+  @Test
+  fun testNoDesugarLibDexInFeatureModule() {
+    project.executor().run("assembleDebug")
+    val appApk = app.getApk(GradleTestProject.ApkType.DEBUG)
+    val featureApk = feature.getApk(GradleTestProject.ApkType.DEBUG)
+    assertNotNull(getDexWithSpecificClass(streamClass, appApk.allDexes))
+    assertNull(getDexWithSpecificClass(streamClass, featureApk.allDexes))
+  }
+
+  @Test
+  fun testKeepRulePublicationFromFeatureModule() {
+    project.executor().run(":app:assembleRelease")
+    val appApk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.RELEASE)
+    val desugarLibDex = getDexWithSpecificClass(streamClass, appApk.allDexes) ?: fail("Failed to find the dex with class name $streamClass")
+    DexSubject.assertThat(desugarLibDex).containsClasses(monthClass)
+    DexSubject.assertThat(desugarLibDex).doesNotContainClasses(yearClass)
+  }
+
+  @Test
+  fun testKeepRuleConsumptionForMinifyBuild() {
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      "// onCreate",
+      "useStreamInBase(); useMonthInDynamicFeature();",
+    )
+    app.buildFile.appendText(
+      """
+
+      android.buildTypes.debug.minifyEnabled = true
+      android.buildTypes.release.minifyEnabled = true
+      """
+        .trimIndent()
+    )
+    project.executor().run(":app:assembleDebug")
+    var appApk = app.getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(appApk.allDexes.size).isAtLeast(2)
+    project.executor().run("clean", ":app:assembleRelease")
+    appApk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.RELEASE)
+    assertThat(appApk.allDexes.size).isAtLeast(2)
+  }
+
+  // regression test for b/304082728
+  @Test
+  fun minifyAndroidTestSmokeTest() {
+    app.buildFile.appendText(
+      """
+
+      android.buildTypes.debug.minifyEnabled = true
+      """
+        .trimIndent()
+    )
+    project.executor().run(":app:packageDebugAndroidTest")
+  }
+
+  @Test
+  fun testKeepRuleFromDynamicFeatureExternalLib() {
+    feature.buildFile.appendText(
+      """
+
+      dependencies {
+          implementation 'com.example:myaar:1'
+      }
+      """
+        .trimIndent()
     )
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .withAdditionalMavenRepo(mavenRepo)
-        .fromTestApp(setUpTestProject())
-        .create()
+    project.executor().run("assembleRelease")
+    val appApk = app.getApk(GradleTestProject.ApkType.RELEASE)
+    assertNotNull(getDexWithSpecificClass(localTimeClass, appApk.allDexes))
+  }
 
-    private fun setUpTestProject(): TestProject {
-        return MultiModuleTestProject.builder()
-            .subproject(APP_MODULE, HelloWorldApp.forPluginWithMinSdkVersion("com.android.application",21))
-            .subproject(DYNAMIC_FEATURE, setUpDynamicFeatureModule())
-            .build()
+  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? =
+    dexes.find {
+      AndroidArchive.checkValidClassName(className)
+      it.classes.keys.contains(className)
     }
 
-    @Before
-    fun setUp() {
-        app = project.getSubproject(APP_MODULE)
-        feature = project.getSubproject(DYNAMIC_FEATURE)
-        setUpBaseModule()
-    }
-
-    @Test
-    fun testNoDesugarLibDexInFeatureModule() {
-        project.executor().run("assembleDebug")
-        val appApk = app.getApk(GradleTestProject.ApkType.DEBUG)
-        val featureApk = feature.getApk(GradleTestProject.ApkType.DEBUG)
-        assertNotNull(getDexWithSpecificClass(streamClass, appApk.allDexes))
-        assertNull(getDexWithSpecificClass(streamClass, featureApk.allDexes))
-    }
-
-    @Test
-    fun testKeepRulePublicationFromFeatureModule() {
-        project.executor().run(":app:assembleRelease")
-        val appApk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.RELEASE)
-        val desugarLibDex = getDexWithSpecificClass(streamClass, appApk.allDexes)
-            ?: fail("Failed to find the dex with class name $streamClass")
-        DexSubject.assertThat(desugarLibDex).containsClasses(monthClass)
-        DexSubject.assertThat(desugarLibDex).doesNotContainClasses(yearClass)
-    }
-
-    @Test
-    fun testKeepRuleConsumptionForMinifyBuild() {
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
-            "// onCreate",
-            "useStreamInBase(); useMonthInDynamicFeature();"
-        )
-        app.buildFile.appendText("""
-
-            android.buildTypes.debug.minifyEnabled = true
-            android.buildTypes.release.minifyEnabled = true
-        """.trimIndent())
-        project.executor().run(":app:assembleDebug")
-        var appApk = app.getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(appApk.allDexes.size).isAtLeast(2)
-        project.executor().run("clean", ":app:assembleRelease")
-        appApk = project.getSubproject(":app").getApk(GradleTestProject.ApkType.RELEASE)
-        assertThat(appApk.allDexes.size).isAtLeast(2)
-    }
-
-    //regression test for b/304082728
-    @Test
-    fun minifyAndroidTestSmokeTest() {
-        app.buildFile.appendText("""
-
-            android.buildTypes.debug.minifyEnabled = true
-        """.trimIndent())
-        project.executor().run(":app:packageDebugAndroidTest")
-    }
-
-    @Test
-    fun testKeepRuleFromDynamicFeatureExternalLib() {
-        feature.buildFile.appendText("""
-
-            dependencies {
-                implementation 'com.example:myaar:1'
-            }
-        """.trimIndent())
-
-        project.executor().run("assembleRelease")
-        val appApk = app.getApk(GradleTestProject.ApkType.RELEASE)
-        assertNotNull(getDexWithSpecificClass(localTimeClass, appApk.allDexes))
-    }
-
-    private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>) : Dex? =
-        dexes.find {
-            AndroidArchive.checkValidClassName(className)
-            it.classes.keys.contains(className)
-        }
-
-    private fun setUpBaseModule() {
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
+  private fun setUpBaseModule() {
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
                 android {
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
@@ -166,44 +167,52 @@ class CoreLibraryDesugarDynamicFeatureTest {
                 dependencies {
                     coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                 }
-            """.trimIndent())
-
-        TestFileUtils.addMethod(
-            FileUtils.join(app.mainSrcDir,"com/example/helloworld/HelloWorld.java"),
             """
-                /** A method uses Java Stream API and always returns "first" */
-                public static String useStreamInBase() {
-                    java.util.Collection<String> collection
-                    = java.util.Arrays.asList("first", "second", "third");
-                    java.util.stream.Stream<String> streamOfCollection = collection.stream();
-                    return streamOfCollection.findFirst().get();
-                }
-            """.trimIndent())
-        TestFileUtils.appendToFile(
-            FileUtils.join(app.mainSrcDir, "com/example/helloworld/Clock.java"),
-            """
-                package com.example.helloworld;
+        .trimIndent(),
+    )
 
-                public interface Clock {
-                    public void checkTime();
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.addMethod(
-            FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
-            """
-                /** A method uses service loader to access function of dynamic feature module */
-                public void useMonthInDynamicFeature() {
-                    java.util.ServiceLoader<com.example.helloworld.Clock> loader =
-                    java.util.ServiceLoader.load(com.example.helloworld.Clock.class, com.example.helloworld.Clock.class.getClassLoader());
-                    loader.iterator().next().checkTime();
-                }
-            """.trimIndent()
-        )
-    }
+    TestFileUtils.addMethod(
+      FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      /** A method uses Java Stream API and always returns "first" */
+      public static String useStreamInBase() {
+          java.util.Collection<String> collection
+          = java.util.Arrays.asList("first", "second", "third");
+          java.util.stream.Stream<String> streamOfCollection = collection.stream();
+          return streamOfCollection.findFirst().get();
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      FileUtils.join(app.mainSrcDir, "com/example/helloworld/Clock.java"),
+      """
+      package com.example.helloworld;
 
-    private fun setUpDynamicFeatureModule() = MinimalSubProject.dynamicFeature(DYNAMIC_FEATURE_PKG)
-        .appendToBuild("""
+      public interface Clock {
+          public void checkTime();
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.addMethod(
+      FileUtils.join(app.mainSrcDir, "com/example/helloworld/HelloWorld.java"),
+      """
+      /** A method uses service loader to access function of dynamic feature module */
+      public void useMonthInDynamicFeature() {
+          java.util.ServiceLoader<com.example.helloworld.Clock> loader =
+          java.util.ServiceLoader.load(com.example.helloworld.Clock.class, com.example.helloworld.Clock.class.getClassLoader());
+          loader.iterator().next().checkTime();
+      }
+      """
+        .trimIndent(),
+    )
+  }
+
+  private fun setUpDynamicFeatureModule() =
+    MinimalSubProject.dynamicFeature(DYNAMIC_FEATURE_PKG)
+      .appendToBuild(
+        """
                     android {
                         defaultConfig {
                             minSdkVersion 21
@@ -219,38 +228,56 @@ class CoreLibraryDesugarDynamicFeatureTest {
                         coreLibraryDesugaring "$DESUGAR_DEPENDENCY"
                         implementation project('::app')
                     }
-            """.trimIndent())
-        .apply { replaceFile(TestSourceFile("src/main/AndroidManifest.xml",
-            // language=XML
-            """<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                    |        xmlns:dist="http://schemas.android.com/apk/distribution">
-                    |    <dist:module dist:onDemand="true">
-                    |        <dist:fusing dist:include="true" />
-                    |    </dist:module>
-                    |    <application />
-                    |</manifest>""".trimMargin()))}
-        .withFile("src/main/java/com/example/dynamic/feature/ClockImpl.java",
-            """package com.example.dynamic.feature;
-                    |import java.time.Month;
-                    |import com.example.helloworld.Clock;
-                    |
-                    |public class ClockImpl implements Clock {
-                    |    public void checkTime() { Month month = Month.JUNE; }
-                    |}""".trimMargin())
-        .withFile("src/main/resources//META-INF/services/com.example.helloworld.Clock",
             """
-                com.example.dynamic.feature.ClockImpl
-            """.trimIndent())
+          .trimIndent()
+      )
+      .apply {
+        replaceFile(
+          TestSourceFile(
+            "src/main/AndroidManifest.xml",
+            // language=XML
+            """
+            |<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            |        xmlns:dist="http://schemas.android.com/apk/distribution">
+            |    <dist:module dist:onDemand="true">
+            |        <dist:fusing dist:include="true" />
+            |    </dist:module>
+            |    <application />
+            |</manifest>
+            """
+              .trimMargin(),
+          )
+        )
+      }
+      .withFile(
+        "src/main/java/com/example/dynamic/feature/ClockImpl.java",
+        """
+        |package com.example.dynamic.feature;
+        |import java.time.Month;
+        |import com.example.helloworld.Clock;
+        |
+        |public class ClockImpl implements Clock {
+        |    public void checkTime() { Month month = Month.JUNE; }
+        |}
+        """
+          .trimMargin(),
+      )
+      .withFile(
+        "src/main/resources//META-INF/services/com.example.helloworld.Clock",
+        """
+        com.example.dynamic.feature.ClockImpl
+        """
+          .trimIndent(),
+      )
 
-    companion object {
-        private const val APP_MODULE = ":app"
-        private const val DYNAMIC_FEATURE = ":dynamicFeature"
-        private const val DYNAMIC_FEATURE_PKG = "com.example.app.dynamic.feature"
-        private const val DESUGAR_DEPENDENCY
-                = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
-    }
+  companion object {
+    private const val APP_MODULE = ":app"
+    private const val DYNAMIC_FEATURE = ":dynamicFeature"
+    private const val DYNAMIC_FEATURE_PKG = "com.example.app.dynamic.feature"
+    private const val DESUGAR_DEPENDENCY = "com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION"
+  }
 }
 
 class LocalTimeClass {
-    val time: LocalTime = LocalTime.MIDNIGHT
+  val time: LocalTime = LocalTime.MIDNIGHT
 }

@@ -35,6 +35,16 @@ mkdir -p "${temp_mutation_testing_dir}"
 # Bazel configuration for CI builds
 readonly config_options="--config=ci --config=remote-exec"
 
+# Common Functions
+print_file_as_escaped_string() {
+  if [[ -f "$1" ]]; then
+    awk '{printf "%s\\n", $0}' "$1"
+  else
+    echo "Error: File not found: $1" >&2
+    return 1
+  fi
+}
+
 # --- Generate Starting Hashes ---
 readonly empty_file="${TMP_DIR}/empty.txt"
 echo "" > "${empty_file}"
@@ -112,20 +122,25 @@ echo "Running impacted Android Studio targets..."
  --test_tag_filters="-noci:studio-linux" \
  --build_metadata="ab_build_id=${BUILD_NUMBER}" \
  --build_metadata="ab_target=studio-mutation-tests" \
+ --build_metadata="mutated_file=$(print_file_as_escaped_string "${mutated_files_filepath}")" \
+ --build_metadata="mutated_file_metadata=$(print_file_as_escaped_string "${mutated_file_metadata_path}")" \
  --flaky_test_attempts=3 \
  --nocache_test_results \
  --bes_keywords=ab-postsubmit \
- --target_pattern_file="${impacted_targets_filepath}"
+ --target_pattern_file="${impacted_targets_filepath}" \
+ --bes_keywords="cinder_autopush" \
+ --build_metadata="cinder_pipelines=mutation-testing"
 
 readonly bazel_test_status=$?
 readonly BAZEL_EXITCODE_TEST_FAILURES=3
 
 if [[ ${bazel_test_status} -eq ${BAZEL_EXITCODE_TEST_FAILURES} ]]; then
-  echo "Success: Tests failed, so marking Mutation testing as passed"
+  # Mutation-testing plugin documentation: go/adt-cinder/plugins/mutation_testing.md
+  echo "Tests failed, mutation-testing cinder plugin will process failed target logs."
   exit 0
 elif [[ ${bazel_test_status} -eq 0 ]]; then
-  echo "FAILURE: All tests passed, mutation was not caught by any test. Marking Mutation Testing as failed"
-  exit 1
+  echo "Mutation testing failed: All tests passed, mutation was not caught by any test. Mutation-testing cinder plugin will handle post-processing"
+  exit 0
 else
   echo "ERROR: Bazel exited with an unexpected status: ${bazel_test_status}."
   exit ${bazel_test_status}

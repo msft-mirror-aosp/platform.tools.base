@@ -18,26 +18,22 @@ package com.android.build.api.artifact.impl
 
 import com.android.build.api.variant.ScopedArtifacts
 
-/**
- * [ScopedArtifacts] that are private to the AGP.
- */
-interface InternalScopedArtifacts: ScopedArtifacts {
+/** [ScopedArtifacts] that are private to the AGP. */
+interface InternalScopedArtifacts : ScopedArtifacts {
 
-    /**
-     * AGP Private scopes.
-     */
-    enum class InternalScope {
-        // modules imported by this project
-        SUB_PROJECTS,
-        // external library dependencies including local file dependencies (including transitive).
-        EXTERNAL_LIBS,
-        // local jar files present in the project.
-        LOCAL_DEPS,
-        // features dependencies
-        FEATURES,
-        // compile-only dependencies, will not be packaged in the resulting APK/Bundle
-        COMPILE_ONLY,
-        // for test related modules, references the code being tested.
-        TESTED_CODE,
-    }
+  /** AGP Private scopes. */
+  enum class InternalScope {
+    // modules imported by this project
+    SUB_PROJECTS,
+    // external library dependencies including local file dependencies (including transitive).
+    EXTERNAL_LIBS,
+    // local jar files present in the project.
+    LOCAL_DEPS,
+    // features dependencies
+    FEATURES,
+    // compile-only dependencies, will not be packaged in the resulting APK/Bundle
+    COMPILE_ONLY,
+    // for test related modules, references the code being tested.
+    TESTED_CODE,
+  }
 }

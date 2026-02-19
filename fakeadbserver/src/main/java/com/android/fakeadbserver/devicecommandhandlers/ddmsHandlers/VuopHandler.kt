@@ -19,45 +19,43 @@ import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.createResponse
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.encodeChunkType
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
 class VuopHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        // We only support "capture" view, which is
-        // Opcode: 4 bytes
-        // view root: length prefixed UTF16 string
-        // view: length prefixed UTF16 string
-        val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
-        val opCode = payload.readInt()
-        if (opCode != VUOP_CAPTURE_VIEW) {
-            replyDdmFail(jdwpHandlerOutput, packet.id)
-            return true // Keep JDWP connection open
-        }
-        val viewRoot = payload.readLengthPrefixedString()
-        val view = payload.readLengthPrefixedString()
-
-        client.viewsState.captureViewData(viewRoot, view)?.also {
-            val responsePacket = createResponse(packet.id, CHUNK_TYPE, it.array())
-            responsePacket.write(jdwpHandlerOutput)
-        } ?: run {
-            replyDdmFail(jdwpHandlerOutput, packet.id)
-        }
-
-        return true // Keep JDWP connection open
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    // We only support "capture" view, which is
+    // Opcode: 4 bytes
+    // view root: length prefixed UTF16 string
+    // view: length prefixed UTF16 string
+    val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
+    val opCode = payload.readInt()
+    if (opCode != VUOP_CAPTURE_VIEW) {
+      replyDdmFail(jdwpHandlerOutput, packet.id)
+      return true // Keep JDWP connection open
     }
+    val viewRoot = payload.readLengthPrefixedString()
+    val view = payload.readLengthPrefixedString()
 
-    companion object {
-        val CHUNK_TYPE = encodeChunkType("VUOP")
+    client.viewsState.captureViewData(viewRoot, view)?.also {
+      val responsePacket = createResponse(packet.id, CHUNK_TYPE, it.array())
+      responsePacket.write(jdwpHandlerOutput)
+    } ?: run { replyDdmFail(jdwpHandlerOutput, packet.id) }
 
-        const val VUOP_CAPTURE_VIEW = 1
-    }
+    return true // Keep JDWP connection open
+  }
+
+  companion object {
+    val CHUNK_TYPE = encodeChunkType("VUOP")
+
+    const val VUOP_CAPTURE_VIEW = 1
+  }
 }

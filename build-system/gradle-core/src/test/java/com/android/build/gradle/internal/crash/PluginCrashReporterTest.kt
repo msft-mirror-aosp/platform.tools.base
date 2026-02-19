@@ -16,57 +16,54 @@
 
 package com.android.build.gradle.internal.crash
 
+import com.android.build.gradle.internal.crash.PluginCrashReporter.maybeReportExceptionForTest as reportForTest
 import com.android.tools.analytics.AnalyticsSettings
 import com.android.tools.analytics.AnalyticsSettingsData
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
-import com.android.build.gradle.internal.crash.PluginCrashReporter.maybeReportExceptionForTest as reportForTest
 
 class PluginCrashReporterTest {
-    @Test
-    fun testUserOptOut() {
-        val settings = AnalyticsSettingsData()
-        AnalyticsSettings.setInstanceForTest(settings)
-        settings.optedIn = false
-        assertThat(reportForTest(NullPointerException())).isFalse()
-    }
+  @Test
+  fun testUserOptOut() {
+    val settings = AnalyticsSettingsData()
+    AnalyticsSettings.setInstanceForTest(settings)
+    settings.optedIn = false
+    assertThat(reportForTest(NullPointerException())).isFalse()
+  }
 
-    @Test
-    fun testReportingUsefulException() {
-        val settings = AnalyticsSettingsData()
-        AnalyticsSettings.setInstanceForTest(settings)
-        settings.optedIn = true
+  @Test
+  fun testReportingUsefulException() {
+    val settings = AnalyticsSettingsData()
+    AnalyticsSettings.setInstanceForTest(settings)
+    settings.optedIn = true
 
-        assertThat(reportForTest(NullPointerException())).isTrue()
-        assertThat(reportForTest(RuntimeException(NullPointerException())))
-            .isTrue()
-        assertThat(
-            reportForTest(RuntimeException(RuntimeException(NullPointerException())))
-        ).isTrue()
-    }
+    assertThat(reportForTest(NullPointerException())).isTrue()
+    assertThat(reportForTest(RuntimeException(NullPointerException()))).isTrue()
+    assertThat(reportForTest(RuntimeException(RuntimeException(NullPointerException())))).isTrue()
+  }
 
-    @Test
-    fun testReportingNonUsefulException() {
-        val settings = AnalyticsSettingsData()
-        AnalyticsSettings.setInstanceForTest(settings)
-        settings.optedIn = true
+  @Test
+  fun testReportingNonUsefulException() {
+    val settings = AnalyticsSettingsData()
+    AnalyticsSettings.setInstanceForTest(settings)
+    settings.optedIn = true
 
-        assertThat(reportForTest(RuntimeException())).isFalse()
-        assertThat(reportForTest(IllegalStateException(RuntimeException()))).isFalse()
-    }
+    assertThat(reportForTest(RuntimeException())).isFalse()
+    assertThat(reportForTest(IllegalStateException(RuntimeException()))).isFalse()
+  }
 
-    @Test
-    fun testExternalApiUsageException() {
-        val settings = AnalyticsSettingsData()
-        AnalyticsSettings.setInstanceForTest(settings)
-        settings.optedIn = true
+  @Test
+  fun testExternalApiUsageException() {
+    val settings = AnalyticsSettingsData()
+    AnalyticsSettings.setInstanceForTest(settings)
+    settings.optedIn = true
 
-        assertThat(reportForTest(ExternalApiUsageException(RuntimeException()))).isFalse()
-    }
+    assertThat(reportForTest(ExternalApiUsageException(RuntimeException()))).isFalse()
+  }
 
-    @Test
-    fun testReportingInitializesAnalyticsSettings() {
-        assertThat(reportForTest(NullPointerException())).isTrue()
-        assertThat(AnalyticsSettings.initialized).isTrue()
-    }
+  @Test
+  fun testReportingInitializesAnalyticsSettings() {
+    assertThat(reportForTest(NullPointerException())).isTrue()
+    assertThat(AnalyticsSettings.initialized).isTrue()
+  }
 }

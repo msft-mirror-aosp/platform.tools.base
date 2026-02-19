@@ -17,11 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.responsiveActivit
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun transformViewModelKt(
-  packageName: String,
-  navFragmentPrefix: String,
-  navViewModelClass: String
-) = """
+fun transformViewModelKt(packageName: String, navFragmentPrefix: String, navViewModelClass: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.ui.${navFragmentPrefix}
 
 import androidx.lifecycle.LiveData

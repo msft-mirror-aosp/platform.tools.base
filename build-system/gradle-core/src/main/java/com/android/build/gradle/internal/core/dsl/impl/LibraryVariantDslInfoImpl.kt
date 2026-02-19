@@ -32,18 +32,20 @@ import com.android.build.gradle.options.StringOption
 import com.android.builder.core.ComponentType
 import org.gradle.api.file.DirectoryProperty
 
-internal class LibraryVariantDslInfoImpl internal constructor(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    dataProvider: ManifestDataProvider,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    override val publishInfo: VariantPublishingInfo,
-    extension: InternalLibraryExtension
-) : TestedVariantDslInfoImpl(
+internal class LibraryVariantDslInfoImpl
+internal constructor(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  dataProvider: ManifestDataProvider,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  override val publishInfo: VariantPublishingInfo,
+  extension: InternalLibraryExtension,
+) :
+  TestedVariantDslInfoImpl(
     componentIdentity,
     componentType,
     defaultConfig,
@@ -52,46 +54,46 @@ internal class LibraryVariantDslInfoImpl internal constructor(
     dataProvider,
     services,
     buildDirectory,
-    extension
-), LibraryVariantDslInfo {
+    extension,
+  ),
+  LibraryVariantDslInfo {
 
-    override val aarMetadata = MergedAarMetadata()
+  override val aarMetadata = MergedAarMetadata()
 
-    init {
-        mergeOptions()
+  init {
+    mergeOptions()
+  }
+
+  private fun mergeOptions() {
+    computeMergedOptions(
+      defaultConfig,
+      buildTypeObj,
+      productFlavorList,
+      aarMetadata,
+      { (this as LibraryVariantDimension).aarMetadata },
+      { (this as LibraryVariantDimension).aarMetadata },
+    )
+  }
+
+  // TODO: Library variant doesn't have isDebuggable dsl in the build type, we should only have
+  //  `debug` variants be debuggable
+  override val isDebuggable: Boolean
+    get() =
+      ProfilingMode.getProfilingModeType(services.projectOptions[StringOption.PROFILING_MODE]).isDebuggable
+        ?: (buildTypeObj as? com.android.build.gradle.internal.dsl.BuildType)?.isDebuggable
+        ?: false
+
+  override val isAndroidTestMultiDexEnabled: Boolean? by lazy {
+    var multiDexEnabled: Boolean? = null
+    computeMergedOptions(
+      defaultConfig,
+      buildTypeObj,
+      productFlavorList,
+      { (this as LibraryVariantDimension).multiDexEnabled },
+      { (this as LibraryVariantDimension).multiDexEnabled },
+    ) { coreOption: Boolean ->
+      multiDexEnabled = coreOption
     }
-
-    private fun mergeOptions() {
-        computeMergedOptions(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            aarMetadata,
-            { (this as LibraryVariantDimension).aarMetadata },
-            { (this as LibraryVariantDimension).aarMetadata }
-        )
-    }
-
-    // TODO: Library variant doesn't have isDebuggable dsl in the build type, we should only have
-    //  `debug` variants be debuggable
-    override val isDebuggable: Boolean
-        get() = ProfilingMode.getProfilingModeType(
-            services.projectOptions[StringOption.PROFILING_MODE]
-        ).isDebuggable
-            ?: (buildTypeObj as? com.android.build.gradle.internal.dsl.BuildType)?.isDebuggable
-            ?: false
-
-    override val isAndroidTestMultiDexEnabled: Boolean? by lazy {
-        var multiDexEnabled: Boolean? = null
-        computeMergedOptions(
-                defaultConfig,
-                buildTypeObj,
-                productFlavorList,
-                { (this as LibraryVariantDimension).multiDexEnabled },
-                { (this as LibraryVariantDimension).multiDexEnabled }
-        ) { coreOption: Boolean ->
-            multiDexEnabled = coreOption
-        }
-        multiDexEnabled
-    }
+    multiDexEnabled
+  }
 }

@@ -45,10 +45,7 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UQualifiedReferenceExpression
 import org.jetbrains.uast.isNullLiteral
 
-/**
- * Detector that identifies `registerReceiver()` calls which are missing the `RECEIVER_EXPORTED` or
- * `RECEIVER_NOT_EXPORTED` flags.
- */
+/** Detector that identifies `registerReceiver()` calls which are missing the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flags. */
 class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames() = BROADCAST_RECEIVER_METHOD_NAMES
@@ -64,8 +61,7 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
     if (receiverArg.isNullLiteral()) return
     val filterArg = findArgument(node, CLASS_INTENT_FILTER) ?: return
 
-    val (isProtected, unprotectedActionsList) =
-      checkIsProtectedReceiverAndReturnUnprotectedActions(filterArg, node, context.evaluator)
+    val (isProtected, unprotectedActionsList) = checkIsProtectedReceiverAndReturnUnprotectedActions(filterArg, node, context.evaluator)
     if (isProtected) return
 
     val actionsList = unprotectedActionsList.joinToString(", ", "", "", -1, "")
@@ -77,26 +73,14 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
         .trimMargin()
     val lintMap = map().put(HAS_UNPROTECTED_KEY, unprotectedActionsList.isNotEmpty())
 
-    context.report(
-      Incident(
-        RECEIVER_EXPORTED_FLAG,
-        node,
-        context.getLocation(node),
-        message,
-        buildAlternativesFix(context, node),
-      ),
-      lintMap,
-    )
+    context.report(Incident(RECEIVER_EXPORTED_FLAG, node, context.getLocation(node), message, buildAlternativesFix(context, node)), lintMap)
   }
 
   override fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     // We are only sure an app will crash if:
     // 1. the app is targeting U+ AND
     // 2. we found unprotected actions
-    if (
-      context.mainProject.targetSdk < UPSIDE_DOWN_CAKE ||
-        map.getBoolean(HAS_UNPROTECTED_KEY) != true
-    ) {
+    if (context.mainProject.targetSdk < UPSIDE_DOWN_CAKE || map.getBoolean(HAS_UNPROTECTED_KEY) != true) {
       incident.overrideSeverity(Severity.WARNING)
     }
     return true
@@ -105,15 +89,12 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
   companion object {
     private const val RECEIVER_EXPORTED = 0x2
     private const val RECEIVER_NOT_EXPORTED = 0x4
-    private const val RECEIVER_EXPORTED_FLAG_PRESENT_MASK =
-      RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED
+    private const val RECEIVER_EXPORTED_FLAG_PRESENT_MASK = RECEIVER_EXPORTED or RECEIVER_NOT_EXPORTED
 
     private const val CLASS_HANDLER = "android.os.Handler"
     private const val FLAG_EXPORTED_STR = "androidx.core.content.ContextCompat.RECEIVER_EXPORTED"
-    private const val FLAG_NOT_EXPORTED_STR =
-      "androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED"
-    private const val METHOD_REGISTER_RECEIVER_ANDROIDX =
-      "androidx.core.content.ContextCompat.registerReceiver"
+    private const val FLAG_NOT_EXPORTED_STR = "androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED"
+    private const val METHOD_REGISTER_RECEIVER_ANDROIDX = "androidx.core.content.ContextCompat.registerReceiver"
 
     private const val HAS_UNPROTECTED_KEY = "hasUnprotected"
 
@@ -140,11 +121,7 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
         priority = 5,
         severity = Severity.ERROR,
         androidSpecific = true,
-        implementation =
-          Implementation(
-            RegisterReceiverFlagDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-          ),
+        implementation = Implementation(RegisterReceiverFlagDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES)),
       )
 
     private fun isReceiverExportedFlagPresent(node: UCallExpression): Boolean {
@@ -155,29 +132,15 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
       return (flags and RECEIVER_EXPORTED_FLAG_PRESENT_MASK) != 0
     }
 
-    private fun buildAlternativesFix(
-      context: JavaContext,
-      registerReceiverCallNode: UCallExpression,
-    ): LintFix =
+    private fun buildAlternativesFix(context: JavaContext, registerReceiverCallNode: UCallExpression): LintFix =
       LintFix.create()
-        .alternatives(
-          buildFlagFix(context, registerReceiverCallNode),
-          buildFlagFix(context, registerReceiverCallNode, exported = true),
-        )
+        .alternatives(buildFlagFix(context, registerReceiverCallNode), buildFlagFix(context, registerReceiverCallNode, exported = true))
 
-    private fun buildFlagFix(
-      context: JavaContext,
-      registerReceiverCallNode: UCallExpression,
-      exported: Boolean = false,
-    ): LintFix? {
+    private fun buildFlagFix(context: JavaContext, registerReceiverCallNode: UCallExpression, exported: Boolean = false): LintFix? {
       val contextArgumentText =
-        (registerReceiverCallNode.uastParent as? UQualifiedReferenceExpression)?.receiver?.let {
-          retrieveUElementText(it)
-        } ?: return null
-      val broadcastReceiverText =
-        retrieveArgumentText(registerReceiverCallNode, CLASS_BROADCASTRECEIVER) ?: return null
-      val intentFilterText =
-        retrieveArgumentText(registerReceiverCallNode, CLASS_INTENT_FILTER) ?: return null
+        (registerReceiverCallNode.uastParent as? UQualifiedReferenceExpression)?.receiver?.let { retrieveUElementText(it) } ?: return null
+      val broadcastReceiverText = retrieveArgumentText(registerReceiverCallNode, CLASS_BROADCASTRECEIVER) ?: return null
+      val intentFilterText = retrieveArgumentText(registerReceiverCallNode, CLASS_INTENT_FILTER) ?: return null
 
       val originalFlagArg = retrieveArgumentText(registerReceiverCallNode, TYPE_INT) ?: ""
       val addFlagText = if (exported) FLAG_EXPORTED_STR else FLAG_NOT_EXPORTED_STR
@@ -199,8 +162,7 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
           "$METHOD_REGISTER_RECEIVER_ANDROIDX($contextArgumentText, $broadcastReceiverText," +
             " $intentFilterText, $broadcastPermissionText, $schedulerText, $flagsText)"
         } else {
-          "$METHOD_REGISTER_RECEIVER_ANDROIDX($contextArgumentText, $broadcastReceiverText," +
-            " $intentFilterText, $flagsText)"
+          "$METHOD_REGISTER_RECEIVER_ANDROIDX($contextArgumentText, $broadcastReceiverText," + " $intentFilterText, $flagsText)"
         }
       val name = if (exported) "Add RECEIVER_EXPORTED" else "Add RECEIVER_NOT_EXPORTED (preferred)"
 
@@ -219,7 +181,6 @@ class RegisterReceiverFlagDetector : Detector(), SourceCodeScanner {
     private fun retrieveArgumentText(call: UCallExpression, argumentType: String) =
       findArgument(call, argumentType)?.let { retrieveUElementText(it) }
 
-    private fun retrieveUElementText(element: UElement) =
-      element.sourcePsi?.text ?: element.asSourceString()
+    private fun retrieveUElementText(element: UElement) = element.sourcePsi?.text ?: element.asSourceString()
   }
 }

@@ -17,15 +17,16 @@
 package com.android.build.api.variant.impl
 
 enum class SourceType(val folder: String) {
-    AIDL("aidl"),
-    ASSETS("assets"),
-    KOTLIN("kotlin"),
-    JAVA("java"),
-    JNI_LIBS("jniLibs"),
-    ML_MODELS("mlModels"),
-    RENDERSCRIPT("renderscript"),
-    RES("res"),
-    SHADERS("shaders"),
-    JAVA_RESOURCES("resources"),
-    BASELINE_PROFILES("baselineProfiles"),
+  AIDL("aidl"),
+  ASSETS("assets"),
+  KOTLIN("kotlin"),
+  JAVA("java"),
+  JNI_LIBS("jniLibs"),
+  ML_MODELS("mlModels"),
+  RENDERSCRIPT("renderscript"),
+  RES("res"),
+  SHADERS("shaders"),
+  JAVA_RESOURCES("resources"),
+  BASELINE_PROFILES("baselineProfiles"),
+  KEEP_RULES("keepRules"),
 }

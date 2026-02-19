@@ -32,17 +32,15 @@ import org.junit.Test
 
 class NdkRiscvBuildTest {
 
-    @Rule
-    @JvmField
-    val project = builder()
-        .fromTestApp(HelloWorldJniApp.builder().withCmake().build())
-        .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
-        .create()
+  @Rule
+  @JvmField
+  val project =
+    builder().fromTestApp(HelloWorldJniApp.builder().withCmake().build()).setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION).create()
 
-    private fun setupBuildFile(isLibrary: Boolean = false) {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """apply plugin: ${if (isLibrary) "\"com.android.library\"" else "\"com.android.application\""}
+  private fun setupBuildFile(isLibrary: Boolean = false) {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """apply plugin: ${if (isLibrary) "\"com.android.library\"" else "\"com.android.application\""}
                 android {
                     namespace = "com.example.hellojni"
                     compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
@@ -70,49 +68,37 @@ class NdkRiscvBuildTest {
                         }
                     }
                 }
-            """.trimMargin())
+            """
+        .trimMargin(),
+    )
+  }
+
+  @Test
+  fun checkMultiApkBuild() {
+    AssumeUtil.assumeIsLinux()
+    setupBuildFile()
+    project.execute("clean", "assembleDebug")
+    project.assertApk(ApkSelector.DEBUG.withFilter("riscv64")) { jniLibs().containsExactly("riscv64/libhello-jni.so") }
+    project.assertApk(ApkSelector.DEBUG.withFilter("universal")) {
+      jniLibs().containsExactly("x86/libhello-jni.so", "riscv64/libhello-jni.so")
     }
+  }
 
-    @Test
-    fun checkMultiApkBuild() {
-        AssumeUtil.assumeIsLinux()
-        setupBuildFile()
-        project.execute("clean", "assembleDebug")
-        project.assertApk(ApkSelector.DEBUG.withFilter("riscv64")) {
-            jniLibs().containsExactly("riscv64/libhello-jni.so")
-        }
-        project.assertApk(ApkSelector.DEBUG.withFilter("universal")) {
-            jniLibs().containsExactly(
-                "x86/libhello-jni.so",
-                "riscv64/libhello-jni.so"
-            )
-        }
-    }
+  @Test
+  fun checkLibraryBuild() {
+    AssumeUtil.assumeIsLinux()
+    setupBuildFile(isLibrary = true)
+    project.execute("clean", "assembleDebug")
+    project.assertAar(AarSelector.DEBUG) { jniLibs().containsExactly("x86/libhello-jni.so", "riscv64/libhello-jni.so") }
+  }
 
-    @Test
-    fun checkLibraryBuild() {
-        AssumeUtil.assumeIsLinux()
-        setupBuildFile(isLibrary = true)
-        project.execute("clean", "assembleDebug")
-        project.assertAar(AarSelector.DEBUG) {
-            jniLibs().containsExactly(
-                "x86/libhello-jni.so",
-                "riscv64/libhello-jni.so"
-            )
-        }
-     }
-
-    @Test
-    fun checkBundleBuild() {
-        AssumeUtil.assumeIsLinux()
-        setupBuildFile()
-        project.execute("clean", "bundleDebug")
-        val bundleFile = project.getBundle(GradleTestProject.ApkType.DEBUG).file.toFile()
-        TruthHelper.assertThat(bundleFile.exists()).isTrue()
-        Zip(bundleFile).use { zip ->
-            Truth.assertThat(zip.entries.map { it.toString() })
-                    .contains("/base/lib/riscv64/libhello-jni.so")
-        }
-    }
-
+  @Test
+  fun checkBundleBuild() {
+    AssumeUtil.assumeIsLinux()
+    setupBuildFile()
+    project.execute("clean", "bundleDebug")
+    val bundleFile = project.getBundle(GradleTestProject.ApkType.DEBUG).file.toFile()
+    TruthHelper.assertThat(bundleFile.exists()).isTrue()
+    Zip(bundleFile).use { zip -> Truth.assertThat(zip.entries.map { it.toString() }).contains("/base/lib/riscv64/libhello-jni.so") }
+  }
 }

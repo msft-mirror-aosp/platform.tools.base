@@ -110,19 +110,12 @@ class NotificationPermissionDetectorTest : AbstractCheckTest() {
 
   fun testClassFileUsageFromAndroidX() {
     // Just depending on AndroidX doesn't mean you're using notifications
-    lint()
-      .files(manifestTarget33LocationPermission, bytecodeUsageInAndroidX, *notificationStubs)
-      .run()
-      .expectClean()
+    lint().files(manifestTarget33LocationPermission, bytecodeUsageInAndroidX, *notificationStubs).run().expectClean()
   }
 
   fun testSuppressedViaRequiresPermission() {
     lint()
-      .files(
-        manifestTarget33LocationPermission,
-        notificationUsageWithRequiresPermissionAnnotation,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
+      .files(manifestTarget33LocationPermission, notificationUsageWithRequiresPermissionAnnotation, SUPPORT_ANNOTATIONS_JAR)
       .skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
       .run()
       .expectClean()
@@ -160,12 +153,7 @@ class NotificationPermissionDetectorTest : AbstractCheckTest() {
   fun testClassAndSourceFileUsage() {
     // When we also have source file usages, only flag the source file usage, not the bytecode usage
     lint()
-      .files(
-        manifestTarget33LocationPermission,
-        bytecodeUsage,
-        javaNotificationUsage,
-        *notificationStubs,
-      )
+      .files(manifestTarget33LocationPermission, bytecodeUsage, javaNotificationUsage, *notificationStubs)
       .run()
       .expect(
         """
@@ -222,19 +210,13 @@ class NotificationPermissionDetectorTest : AbstractCheckTest() {
   }
 
   fun testNotificationInLibrary() {
-    val library =
-      project()
-        .files(manifest().minSdk(29).targetSdk(33), javaNotificationUsage, *notificationStubs)
-        .type(LIBRARY)
+    val library = project().files(manifest().minSdk(29).targetSdk(33), javaNotificationUsage, *notificationStubs).type(LIBRARY)
 
     lint().projects(library).testModes(TestMode.PARTIAL).run().expectClean()
   }
 
   fun testNotificationViaBytecodeInLibrary() {
-    val library =
-      project()
-        .files(manifest().minSdk(29).targetSdk(33), bytecodeUsage, *notificationStubs)
-        .type(LIBRARY)
+    val library = project().files(manifest().minSdk(29).targetSdk(33), bytecodeUsage, *notificationStubs).type(LIBRARY)
 
     lint().projects(library).run().expectClean()
   }

@@ -243,9 +243,7 @@ class XmlReporterTest {
       .stripRoot(false)
       .run()
       .checkXmlReport(
-        TestResultChecker { xml ->
-          assertEquals(xmlPrologue + expected.trimIndent() + "\n", xml.dos2unix())
-        },
+        TestResultChecker { xml -> assertEquals(xmlPrologue + expected.trimIndent() + "\n", xml.dos2unix()) },
         fullPaths = true,
         reportType = if (describeSuggestions) XmlFileType.REPORT_WITH_FIXES else XmlFileType.REPORT,
       )

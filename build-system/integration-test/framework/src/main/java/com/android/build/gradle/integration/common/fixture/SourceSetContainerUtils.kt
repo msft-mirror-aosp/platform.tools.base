@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("SourceSetContainerUtils")
+
 package com.android.build.gradle.integration.common.fixture
 
 import com.android.build.gradle.integration.common.utils.searchForExistingItem
@@ -23,11 +24,9 @@ import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 
 fun BuildTypeContainer.getExtraSourceProviderContainer(name: String): SourceProviderContainer {
-    return searchForExistingItem(
-            extraSourceProviders, name, SourceProviderContainer::getArtifactName, "SourceProviderContainer")
+  return searchForExistingItem(extraSourceProviders, name, SourceProviderContainer::getArtifactName, "SourceProviderContainer")
 }
 
 fun ProductFlavorContainer.getExtraSourceProviderContainer(name: String): SourceProviderContainer {
-    return searchForExistingItem(
-            extraSourceProviders, name, SourceProviderContainer::getArtifactName, "SourceProviderContainer")
+  return searchForExistingItem(extraSourceProviders, name, SourceProviderContainer::getArtifactName, "SourceProviderContainer")
 }

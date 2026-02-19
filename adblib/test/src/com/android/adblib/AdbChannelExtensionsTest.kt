@@ -17,179 +17,166 @@ package com.android.adblib
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.utils.ResizableBuffer
+import java.nio.ByteBuffer
+import java.util.UUID
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.nio.ByteBuffer
-import java.util.UUID
 
 class AdbChannelExtensionsTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun adbInputChannel_readRemaining_ReadsAllBytes() = runBlockingWithTimeout {
-        // Prepare
-        val inputBuffer = createTestBuffer(200)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+  @Test
+  fun adbInputChannel_readRemaining_ReadsAllBytes() = runBlockingWithTimeout {
+    // Prepare
+    val inputBuffer = createTestBuffer(200)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
 
-        // Act
-        val resizableBuffer = ResizableBuffer()
-        val count = inputChannel.readRemaining(resizableBuffer, 12)
+    // Act
+    val resizableBuffer = ResizableBuffer()
+    val count = inputChannel.readRemaining(resizableBuffer, 12)
 
-        // Assert
-        assertEquals(200, count)
-        assertEquals(200, inputBuffer.position())
-        assertEquals(200, inputBuffer.limit())
-        assertEquals(200, inputBuffer.capacity())
-        assertEquals(inputBuffer.limit(), resizableBuffer.position)
-        assertBufferEquals(inputBuffer, 0, resizableBuffer, 0, 200)
+    // Assert
+    assertEquals(200, count)
+    assertEquals(200, inputBuffer.position())
+    assertEquals(200, inputBuffer.limit())
+    assertEquals(200, inputBuffer.capacity())
+    assertEquals(inputBuffer.limit(), resizableBuffer.position)
+    assertBufferEquals(inputBuffer, 0, resizableBuffer, 0, 200)
+  }
+
+  @Test
+  fun adbInputChannel_readRemaining_AppendsToEndOfBuffer() = runBlockingWithTimeout {
+    // Prepare
+    val inputLimit = 100
+    val inputPosition = 20
+    val inputBuffer = createTestBuffer(inputLimit)
+    inputBuffer.position(inputPosition)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+    // Act
+    val resizableBuffer = ResizableBuffer()
+    resizableBuffer.appendBytes(ByteArray(10))
+    val count = inputChannel.readRemaining(resizableBuffer, 12)
+
+    // Assert
+    assertEquals(inputLimit - inputPosition, count)
+    assertEquals(inputLimit, inputBuffer.position())
+    assertEquals(inputLimit, inputBuffer.limit())
+    assertEquals(inputLimit, inputBuffer.capacity())
+    assertEquals(inputBuffer.limit(), resizableBuffer.position - 10 + inputPosition)
+    assertBufferEquals(inputBuffer, inputPosition, resizableBuffer, 10, inputLimit - inputPosition)
+  }
+
+  @Test
+  fun adbInputChannel_skipRemaining_SkipsAllBytes() = runBlockingWithTimeout {
+    // Prepare
+    val inputBuffer = createTestBuffer(200)
+    inputBuffer.position(10)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+    // Act
+    val count = inputChannel.skipRemaining(bufferSize = 12)
+
+    // Assert
+    assertEquals(190, count)
+    assertEquals(200, inputBuffer.position())
+    assertEquals(200, inputBuffer.limit())
+    assertEquals(200, inputBuffer.capacity())
+  }
+
+  @Test
+  fun adbInputChannel_forwardTo_ForwardsAllBytes() = runBlockingWithTimeout {
+    // Prepare
+    val inputBuffer = createTestBuffer(200)
+    inputBuffer.position(20)
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+    val outputBuffer = ResizableBuffer()
+    val outputChannel = ByteBufferAdbOutputChannel(outputBuffer)
+
+    // Act
+    val count = inputChannel.forwardTo(outputChannel, bufferSize = 15)
+
+    // Assert
+    assertEquals(180, count)
+    assertEquals(200, inputBuffer.position())
+    assertEquals(200, inputBuffer.limit())
+    assertEquals(200, inputBuffer.capacity())
+    assertEquals(inputBuffer.limit() - 20, outputBuffer.position)
+    assertBufferEquals(inputBuffer, 20, outputBuffer, 0, 180)
+  }
+
+  @Test
+  fun adbInputChannel_readText_emptyChannel_ReadsNothing() = runBlockingWithTimeout {
+    // Prepare
+    val bufferSize = 12
+    val inputChannel = EmptyAdbInputChannel()
+
+    // Act
+    val actual = inputChannel.readText(bufferSize)
+
+    // Assert
+    assertTrue(actual.isEmpty())
+  }
+
+  @Test
+  fun adbInputChannel_readText_singleRead_ReadsAllText() = runBlockingWithTimeout {
+    // Prepare
+    val expected = UUID.randomUUID().toString()
+    val bufferSize = expected.length
+    val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+    // Act
+    val actual = inputChannel.readText(bufferSize)
+
+    // Assert
+    assertEquals(expected, actual)
+  }
+
+  @Test
+  fun adbInputChannel_readText_multipleReads_ReadsAllText() = runBlockingWithTimeout {
+    // Prepare
+    val randomString = UUID.randomUUID().toString()
+    val expected = randomString.repeat(3)
+    val bufferSize = randomString.length
+    val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
+    val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+
+    // Act
+    val actual = inputChannel.readText(bufferSize)
+
+    // Assert
+    assertEquals(expected, actual)
+  }
+
+  /** Creates a [ByteBuffer] where position = 0, limit = [size], capacity =[size] */
+  private fun createTestBuffer(size: Int): ByteBuffer {
+    val buffer = ByteBuffer.allocate(size)
+    buffer.clear()
+    for (i in 0 until size) {
+      buffer.put((i % 127).toByte())
     }
+    buffer.position(0)
 
-    @Test
-    fun adbInputChannel_readRemaining_AppendsToEndOfBuffer() = runBlockingWithTimeout {
-        // Prepare
-        val inputLimit = 100
-        val inputPosition = 20
-        val inputBuffer = createTestBuffer(inputLimit)
-        inputBuffer.position(inputPosition)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
+    assert(buffer.position() == 0)
+    assert(buffer.limit() == size)
+    assert(buffer.capacity() == size)
+    return buffer
+  }
 
-        // Act
-        val resizableBuffer = ResizableBuffer()
-        resizableBuffer.appendBytes(ByteArray(10))
-        val count = inputChannel.readRemaining(resizableBuffer, 12)
-
-        // Assert
-        assertEquals(inputLimit - inputPosition, count)
-        assertEquals(inputLimit, inputBuffer.position())
-        assertEquals(inputLimit, inputBuffer.limit())
-        assertEquals(inputLimit, inputBuffer.capacity())
-        assertEquals(inputBuffer.limit(), resizableBuffer.position - 10 + inputPosition)
-        assertBufferEquals(
-            inputBuffer,
-            inputPosition,
-            resizableBuffer,
-            10,
-            inputLimit - inputPosition
-        )
+  private fun assertBufferEquals(
+    inputBuffer: ByteBuffer,
+    inputBufferPosition: Int,
+    resizableBuffer: ResizableBuffer,
+    resizableBufferPosition: Int,
+    count: Int,
+  ) {
+    for (i in 0 until count) {
+      assertEquals(inputBuffer[inputBufferPosition + i], resizableBuffer[resizableBufferPosition + i])
     }
-
-    @Test
-    fun adbInputChannel_skipRemaining_SkipsAllBytes() = runBlockingWithTimeout {
-        // Prepare
-        val inputBuffer = createTestBuffer(200)
-        inputBuffer.position(10)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
-
-        // Act
-        val count = inputChannel.skipRemaining(bufferSize = 12)
-
-        // Assert
-        assertEquals(190, count)
-        assertEquals(200, inputBuffer.position())
-        assertEquals(200, inputBuffer.limit())
-        assertEquals(200, inputBuffer.capacity())
-    }
-
-    @Test
-    fun adbInputChannel_forwardTo_ForwardsAllBytes() = runBlockingWithTimeout {
-        // Prepare
-        val inputBuffer = createTestBuffer(200)
-        inputBuffer.position(20)
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
-        val outputBuffer = ResizableBuffer()
-        val outputChannel = ByteBufferAdbOutputChannel(outputBuffer)
-
-        // Act
-        val count = inputChannel.forwardTo(outputChannel, bufferSize = 15)
-
-        // Assert
-        assertEquals(180, count)
-        assertEquals(200, inputBuffer.position())
-        assertEquals(200, inputBuffer.limit())
-        assertEquals(200, inputBuffer.capacity())
-        assertEquals(inputBuffer.limit() - 20, outputBuffer.position)
-        assertBufferEquals(inputBuffer, 20, outputBuffer, 0, 180)
-    }
-
-    @Test
-    fun adbInputChannel_readText_emptyChannel_ReadsNothing() = runBlockingWithTimeout {
-        // Prepare
-        val bufferSize = 12
-        val inputChannel = EmptyAdbInputChannel()
-
-        // Act
-        val actual = inputChannel.readText(bufferSize)
-
-        // Assert
-        assertTrue(actual.isEmpty())
-    }
-
-    @Test
-    fun adbInputChannel_readText_singleRead_ReadsAllText() = runBlockingWithTimeout {
-        // Prepare
-        val expected = UUID.randomUUID().toString()
-        val bufferSize = expected.length
-        val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
-
-        // Act
-        val actual = inputChannel.readText(bufferSize)
-
-        // Assert
-        assertEquals(expected, actual)
-    }
-
-    @Test
-    fun adbInputChannel_readText_multipleReads_ReadsAllText() = runBlockingWithTimeout {
-        // Prepare
-        val randomString = UUID.randomUUID().toString()
-        val expected = randomString.repeat(3)
-        val bufferSize = randomString.length
-        val inputBuffer = ByteBuffer.wrap(expected.toByteArray())
-        val inputChannel = ByteBufferAdbInputChannel(inputBuffer)
-
-        // Act
-        val actual = inputChannel.readText(bufferSize)
-
-        // Assert
-        assertEquals(expected, actual)
-    }
-
-    /**
-     * Creates a [ByteBuffer] where position = 0, limit = [size], capacity =[size]
-     */
-    private fun createTestBuffer(size: Int): ByteBuffer {
-        val buffer = ByteBuffer.allocate(size)
-        buffer.clear()
-        for (i in 0 until size) {
-            buffer.put((i % 127).toByte())
-        }
-        buffer.position(0)
-
-        assert(buffer.position() == 0)
-        assert(buffer.limit() == size)
-        assert(buffer.capacity() == size)
-        return buffer
-    }
-
-    private fun assertBufferEquals(
-        inputBuffer: ByteBuffer,
-        inputBufferPosition: Int,
-        resizableBuffer: ResizableBuffer,
-        resizableBufferPosition: Int,
-        count: Int
-    ) {
-        for (i in 0 until count) {
-            assertEquals(
-                inputBuffer[inputBufferPosition + i],
-                resizableBuffer[resizableBufferPosition + i]
-            )
-        }
-    }
+  }
 }

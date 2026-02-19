@@ -40,12 +40,7 @@ import org.jetbrains.kotlin.psi.KtStringTemplateExpression
 import org.jetbrains.uast.UFile
 
 /** Test mode which inserts unnecessary whitespace characters into the source code */
-class WhitespaceTestMode :
-  UastSourceTransformationTestMode(
-    description = "Extra whitespace added",
-    "TestMode.WHITESPACE",
-    "whitespace",
-  ) {
+class WhitespaceTestMode : UastSourceTransformationTestMode(description = "Extra whitespace added", "TestMode.WHITESPACE", "whitespace") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -64,12 +59,7 @@ class WhitespaceTestMode :
         """
       .trimIndent()
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     var ordinal = 0
 
     val editMap = mutableMapOf<Int, Edit>()
@@ -111,17 +101,9 @@ class WhitespaceTestMode :
             is PsiPackageStatement,
             is KtPackageDirective -> return
             is KtPrefixExpression -> // Don't split "-1" into "- 1"
-            if (
-                element.operationToken == KtTokens.MINUS &&
-                  element.baseExpression is KtConstantExpression
-              )
-                return
+            if (element.operationToken == KtTokens.MINUS && element.baseExpression is KtConstantExpression) return
             is PsiPrefixExpression -> // Don't split "-1" into "- 1"
-            if (
-                element.operationTokenType == JavaTokenType.MINUS &&
-                  element.operand is PsiLiteralExpression
-              )
-                return
+            if (element.operationTokenType == JavaTokenType.MINUS && element.operand is PsiLiteralExpression) return
           }
 
           super.visitElement(element)

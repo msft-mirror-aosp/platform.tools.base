@@ -35,101 +35,70 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class SetSourceGeneratingLocationTest(
-    callbackType: Class<out PluginCallback>,
-) {
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "callbackType_{0}")
-        fun params() = listOf(
-            AddRelocatedJavaResourcesWithScopedApiCallback::class.java,
-            AddRelocatedJavaResourcesWithSourceApiCallback::class.java,
-        )
-    }
+class SetSourceGeneratingLocationTest(callbackType: Class<out PluginCallback>) {
+  companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "callbackType_{0}")
+    fun params() =
+      listOf(AddRelocatedJavaResourcesWithScopedApiCallback::class.java, AddRelocatedJavaResourcesWithSourceApiCallback::class.java)
+  }
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                namespace = "com.example.api.java_res"
-                defaultConfig.applicationId = "com.example.api.java_res"
-            }
-            pluginCallbacks += callbackType
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.api.java_res"
+          defaultConfig.applicationId = "com.example.api.java_res"
         }
+        pluginCallbacks += callbackType
+      }
     }
 
-    @Test
-    fun ensureGeneratedJavaResTasksAreRunning() {
-        val result = rule.build.executor
-            .run(":app:mergeDebugJavaResource")
-        Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResources")
-        Truth.assertThat(
-                rule.build.androidApplication(":app")
-                    .buildDir.resolve("_special_/foo.txt").toFile().exists()).isTrue()
-    }
+  @Test
+  fun ensureGeneratedJavaResTasksAreRunning() {
+    val result = rule.build.executor.run(":app:mergeDebugJavaResource")
+    Truth.assertThat(result.didWorkTasks).contains(":app:writeDebugJavaResources")
+    Truth.assertThat(rule.build.androidApplication(":app").buildDir.resolve("_special_/foo.txt").toFile().exists()).isTrue()
+  }
 }
 
-abstract class AddJavaResourcesAtLocationWriter: DefaultTask() {
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+abstract class AddJavaResourcesAtLocationWriter : DefaultTask() {
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-    @TaskAction
-    fun execute() {
-        outputDir.get().asFile.mkdirs()
-        outputDir.file("foo.txt").get().asFile.writeText("foo")
-    }
+  @TaskAction
+  fun execute() {
+    outputDir.get().asFile.mkdirs()
+    outputDir.file("foo.txt").get().asFile.writeText("foo")
+  }
 
-    companion object {
-        fun createTask(
-            project: Project,
-        ): TaskProvider<AddJavaResourcesAtLocationWriter> =
-            project.tasks.register(
-                "writeDebugJavaResources",
-                AddJavaResourcesAtLocationWriter::class.java
-            )
-    }
+  companion object {
+    fun createTask(project: Project): TaskProvider<AddJavaResourcesAtLocationWriter> =
+      project.tasks.register("writeDebugJavaResources", AddJavaResourcesAtLocationWriter::class.java)
+  }
 }
 
-class AddRelocatedJavaResourcesWithScopedApiCallback: ApplicationComponentCallback {
+class AddRelocatedJavaResourcesWithScopedApiCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants(
-            androidComponents.selector().withBuildType("debug")
-        ) { variant ->
-            val taskProvider = AddJavaResourcesAtLocationWriter.createTask(project)
-            variant.artifacts.forScope(ScopedArtifacts.Scope.PROJECT)
-                .use(taskProvider)
-                .toAppend(
-                    ScopedArtifact.JAVA_RES,
-                    AddJavaResourcesAtLocationWriter::outputDir
-                )
-            taskProvider.configure { task ->
-                task.outputDir.set(project.layout.buildDirectory.dir("_special_"))
-            }
-        }
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      val taskProvider = AddJavaResourcesAtLocationWriter.createTask(project)
+      variant.artifacts
+        .forScope(ScopedArtifacts.Scope.PROJECT)
+        .use(taskProvider)
+        .toAppend(ScopedArtifact.JAVA_RES, AddJavaResourcesAtLocationWriter::outputDir)
+      taskProvider.configure { task -> task.outputDir.set(project.layout.buildDirectory.dir("_special_")) }
     }
+  }
 }
 
-class AddRelocatedJavaResourcesWithSourceApiCallback: ApplicationComponentCallback {
+class AddRelocatedJavaResourcesWithSourceApiCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants(
-            androidComponents.selector().withBuildType("debug")
-        ) { variant ->
-            val taskProvider = AddJavaResourcesAtLocationWriter.createTask(project)
-            variant.sources.resources?.addGeneratedSourceDirectory(
-                taskProvider,
-                AddJavaResourcesAtLocationWriter::outputDir
-            )
-            taskProvider.configure { task ->
-                task.outputDir.set(project.layout.buildDirectory.dir("_special_"))
-            }
-        }
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+      val taskProvider = AddJavaResourcesAtLocationWriter.createTask(project)
+      variant.sources.resources?.addGeneratedSourceDirectory(taskProvider, AddJavaResourcesAtLocationWriter::outputDir)
+      taskProvider.configure { task -> task.outputDir.set(project.layout.buildDirectory.dir("_special_")) }
     }
+  }
 }

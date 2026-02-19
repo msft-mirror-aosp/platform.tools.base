@@ -16,28 +16,28 @@
 package com.android.tools.deploy.liveedit
 
 class InspectorLambdas {
-    val lambdas = mutableListOf<Any>()
+  val lambdas = mutableListOf<Any>()
 
-    fun run() {
-        gather { it + 2 }
-        gather(::compute)
-        gather {
-            var x = it
-            x = addOne(x)
-            x += 1
-            x += 1
-            x += 1
-            x
-        }
+  fun run() {
+    gather { it + 2 }
+    gather(::compute)
+    gather {
+      var x = it
+      x = addOne(x)
+      x += 1
+      x += 1
+      x += 1
+      x
     }
+  }
 
-    private fun gather(l1: (Int) -> Int) {
-        lambdas.add(l1)
-    }
+  private fun gather(l1: (Int) -> Int) {
+    lambdas.add(l1)
+  }
 
-    private fun compute(p: Int): Int {
-        return p + 2
-    }
+  private fun compute(p: Int): Int {
+    return p + 2
+  }
 
-    private inline fun addOne(p: Int) = p + 1
+  private inline fun addOne(p: Int) = p + 1
 }

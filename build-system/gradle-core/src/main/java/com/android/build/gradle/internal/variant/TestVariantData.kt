@@ -23,16 +23,11 @@ import com.android.build.gradle.internal.services.VariantServices
 /**
  * Data about a test component in a normal plugin
  *
- *
  * For the test plugin, ApplicationVariantData is used.
  */
 class TestVariantData(
-    componentIdentity: ComponentIdentity,
-    artifacts: ArtifactsImpl,
-    services: VariantServices,
-    taskContainer: MutableTaskContainer
-) : ApkVariantData(
-    componentIdentity,
-    artifacts,
-    services
-)
+  componentIdentity: ComponentIdentity,
+  artifacts: ArtifactsImpl,
+  services: VariantServices,
+  taskContainer: MutableTaskContainer,
+) : ApkVariantData(componentIdentity, artifacts, services)

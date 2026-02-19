@@ -27,39 +27,24 @@ import org.junit.Test
 
 class AppWithJarDependOnLibTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                api(project(":jar"))
-            }
-        }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-        }
-        genericProject(":jar") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            dependencies {
-                api(project(DEFAULT_LIB_PATH))
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { api(project(":jar")) }
+      }
+      androidLibrary { android { enableKotlin = false } }
+      genericProject(":jar") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        dependencies { api(project(DEFAULT_LIB_PATH)) }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies")
+  }
 }

@@ -17,15 +17,15 @@
 package com.android.build.gradle.internal.core.dsl.features
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that support manifest placeholders.
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that support manifest placeholders.
  */
 interface ManifestPlaceholdersDslInfo {
-    /**
-     * Returns the merged manifest placeholders. All product flavors are merged first, then build
-     * type specific placeholders are added and potentially overrides product flavors values.
-     *
-     * @return the merged manifest placeholders for a build variant.
-     */
-    val placeholders: Map<String, String>
+  /**
+   * Returns the merged manifest placeholders. All product flavors are merged first, then build type specific placeholders are added and
+   * potentially overrides product flavors values.
+   *
+   * @return the merged manifest placeholders for a build variant.
+   */
+  val placeholders: Map<String, String>
 }

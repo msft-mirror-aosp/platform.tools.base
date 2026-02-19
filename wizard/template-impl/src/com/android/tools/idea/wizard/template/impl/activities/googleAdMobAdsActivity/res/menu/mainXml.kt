@@ -16,11 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.menu
 
-
-fun mainXml(
-  activityClass: String,
-  packageName: String
-) = """
+fun mainXml(activityClass: String, packageName: String) =
+  """
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"

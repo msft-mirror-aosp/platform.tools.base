@@ -25,88 +25,95 @@ import org.junit.Rule
 import org.junit.Test
 
 class DynamicFeatureDexingTest {
-    private val app = MinimalSubProject.app("com.example.app").also {
-        it.appendToBuild("""
+  private val app =
+    MinimalSubProject.app("com.example.app").also {
+      it.appendToBuild(
+        """
 
-            android.defaultConfig.minSdkVersion = 25
-            android.dynamicFeatures = [":feature"]
-        """.trimIndent())
+        android.defaultConfig.minSdkVersion = 25
+        android.dynamicFeatures = [":feature"]
+        """
+          .trimIndent()
+      )
     }
 
-    private val feature = MinimalSubProject.dynamicFeature("com.example.feature").also {
-        it.appendToBuild("""
+  private val feature =
+    MinimalSubProject.dynamicFeature("com.example.feature").also {
+      it.appendToBuild(
+        """
 
-            android.defaultConfig.minSdkVersion = 25
-            dependencies {
-                implementation project('::app')
-            }
-        """.trimIndent())
-    }
-
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestApp(
-                    MultiModuleTestProject.builder()
-                            .subproject("app", app)
-                            .subproject("feature", feature)
-                            .build()
-            )
-            .withKotlinGradlePlugin(true)
-            .create()
-
-    @Before
-    fun setUp() {
-        // add a kotlin library as a project dependency for dynamice feature module
-        val kotlinLibrary = project.projectDir.resolve("kotlinLibrary")
-        val buildFile = kotlinLibrary.resolve("build.gradle").also { it.parentFile.mkdirs() }
-        val javaSource = kotlinLibrary.resolve("src/main/java/com/example/JavaClass.java").also {
-            it.parentFile.mkdirs()
+        android.defaultConfig.minSdkVersion = 25
+        dependencies {
+            implementation project('::app')
         }
-        val kotlinSource =
-                kotlinLibrary.resolve("src/main/kotlin/com/example/KotlinClass.kt").also {
-                    it.parentFile.mkdirs()
-                }
-        buildFile.writeText(
-                """
-                    plugins { id 'org.jetbrains.kotlin.jvm' }
-                """.trimIndent()
-        )
-        javaSource.writeText(
-                """
-                    package com.example;
-
-                    public class JavaClass {
-                    }
-                """.trimIndent()
-        )
-        kotlinSource.writeText(
-                """
-                    package com.example
-
-                    class KotlinClass {
-                    }
-                """.trimIndent()
-        )
-        project.getSubproject(":feature").buildFile.appendText(
-                """
-                    dependencies {
-                        implementation project(":kotlinLibrary")
-                    }
-                """.trimIndent()
-        )
-        project.settingsFile.appendText(
-                """
-                    include ':kotlinLibrary'
-                """.trimIndent()
-        )
+        """
+          .trimIndent()
+      )
     }
 
-    // Regression test for b/246326007
-    @Test
-    fun basicTest() {
-        project.executor().run("assembleDebug")
-        val featureApk = project.getSubproject(":feature").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(featureApk).containsClass("Lcom/example/JavaClass;")
-        assertThat(featureApk).containsClass("Lcom/example/KotlinClass;")
-    }
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject("app", app).subproject("feature", feature).build())
+      .withKotlinGradlePlugin(true)
+      .create()
+
+  @Before
+  fun setUp() {
+    // add a kotlin library as a project dependency for dynamice feature module
+    val kotlinLibrary = project.projectDir.resolve("kotlinLibrary")
+    val buildFile = kotlinLibrary.resolve("build.gradle").also { it.parentFile.mkdirs() }
+    val javaSource = kotlinLibrary.resolve("src/main/java/com/example/JavaClass.java").also { it.parentFile.mkdirs() }
+    val kotlinSource = kotlinLibrary.resolve("src/main/kotlin/com/example/KotlinClass.kt").also { it.parentFile.mkdirs() }
+    buildFile.writeText(
+      """
+      plugins { id 'org.jetbrains.kotlin.jvm' }
+      """
+        .trimIndent()
+    )
+    javaSource.writeText(
+      """
+      package com.example;
+
+      public class JavaClass {
+      }
+      """
+        .trimIndent()
+    )
+    kotlinSource.writeText(
+      """
+      package com.example
+
+      class KotlinClass {
+      }
+      """
+        .trimIndent()
+    )
+    project
+      .getSubproject(":feature")
+      .buildFile
+      .appendText(
+        """
+        dependencies {
+            implementation project(":kotlinLibrary")
+        }
+        """
+          .trimIndent()
+      )
+    project.settingsFile.appendText(
+      """
+      include ':kotlinLibrary'
+      """
+        .trimIndent()
+    )
+  }
+
+  // Regression test for b/246326007
+  @Test
+  fun basicTest() {
+    project.executor().run("assembleDebug")
+    val featureApk = project.getSubproject(":feature").getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(featureApk).containsClass("Lcom/example/JavaClass;")
+    assertThat(featureApk).containsClass("Lcom/example/KotlinClass;")
+  }
 }

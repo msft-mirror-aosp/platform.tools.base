@@ -26,8 +26,8 @@ import org.junit.Test
 
 class PathVariablesTest {
   /**
-   * For a given [file], make sure that with the given path [variables] it will serialize to the
-   * given [path], and deserialize from that path to the given file.
+   * For a given [file], make sure that with the given path [variables] it will serialize to the given [path], and deserialize from that
+   * path to the given file.
    */
   private fun check(variables: PathVariables, file: File, path: String) {
     assertEquals(path, variables.toPathString(file, unix = true))
@@ -74,24 +74,15 @@ class PathVariablesTest {
     variables.add("HOME", home)
     // temp and other deliberately not added; we want to check relative and absolute path handling
 
-    assertEquals(
-      "\$HOME/dir1/dir2",
-      variables.toPathString(underHome, relativeTo = home, unix = true),
-    )
-    assertEquals(
-      "\$HOME${separator}dir1${separator}dir2",
-      variables.toPathString(underHome, relativeTo = home, unix = false),
-    )
+    assertEquals("\$HOME/dir1/dir2", variables.toPathString(underHome, relativeTo = home, unix = true))
+    assertEquals("\$HOME${separator}dir1${separator}dir2", variables.toPathString(underHome, relativeTo = home, unix = false))
 
     assertEquals(underHome, variables.fromPathString("dir1/dir2", relativeTo = home))
     assertEquals(underHome, variables.fromPathString("dir1${separator}dir2", relativeTo = home))
 
     // If no variable match, use relativeTo anchor
     assertEquals("dir1/dir2", variables.toPathString(underTemp, relativeTo = temp, unix = true))
-    assertEquals(
-      "dir1${separator}dir2",
-      variables.toPathString(underTemp, relativeTo = temp, unix = false),
-    )
+    assertEquals("dir1${separator}dir2", variables.toPathString(underTemp, relativeTo = temp, unix = false))
 
     assertEquals(underTemp, variables.fromPathString("dir1/dir2", relativeTo = temp))
     assertEquals(underTemp, variables.fromPathString("dir1${separator}dir2", relativeTo = temp))

@@ -41,8 +41,7 @@ class TerminologyDetectorTest {
     val w8 = "\u0077\u0068\u0069\u0074\u0065\u004c\u0069\u0073\u0074"
     val w9 = "\u0077\u0068\u0069\u0074\u0065-\u006c\u0069\u0073\u0074"
     val w10 = "\u0057\u0068\u0069\u0074\u0065\u004c\u0069\u0073\u0074"
-    val w11 =
-      "\u0063\u0068\u0061\u0072\u0061\u0063\u0074\u0065\u0072\u0073\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
+    val w11 = "\u0063\u0068\u0061\u0072\u0061\u0063\u0074\u0065\u0072\u0073\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
     val w12 = "\u0057\u0068\u0069\u0074\u0065\u006c\u0069\u0073\u0074"
     // </unicode>
 
@@ -165,8 +164,7 @@ class TerminologyDetectorTest {
           words = false,
         ),
         Recommendation(
-          replace =
-            "\u0067\u0072\u0061\u006e\u0064\u0066\u0061\u0074\u0068\u0065\u0072\u0065\u0064",
+          replace = "\u0067\u0072\u0061\u006e\u0064\u0066\u0061\u0074\u0068\u0065\u0072\u0065\u0064",
           with = "\u0062\u0061\u0073\u0065\u006c\u0069\u006e\u0065",
         ),
         Recommendation(
@@ -175,11 +173,7 @@ class TerminologyDetectorTest {
           words = true,
         ),
         Recommendation(replace = "\u0066\u0075\u0063\u006b", with = "?", words = true),
-        Recommendation(
-          replace = "\u0066\u0075\u0063\u006b\u0069\u006e\u0067",
-          with = "?",
-          words = true,
-        ),
+        Recommendation(replace = "\u0066\u0075\u0063\u006b\u0069\u006e\u0067", with = "?", words = true),
         Recommendation(replace = "\u0066*\u0063\u006b", with = "?", words = true),
         Recommendation(replace = "\u0066*\u0063\u006b\u0069\u006e\u0067", with = "?", words = true),
         Recommendation(replace = "\u0073\u0068\u0069\u0074", with = "?", words = true),
@@ -200,12 +194,7 @@ class TerminologyDetectorTest {
 
     val stringWriter = StringWriter()
     val printer = PrintWriter(stringWriter)
-    val names =
-      recommendations
-        .map { it.getNames() }
-        .flatten()
-        .sortedWith(compareBy({ it.length }, { it }))
-        .toSet()
+    val names = recommendations.map { it.getNames() }.flatten().sortedWith(compareBy({ it.length }, { it })).toSet()
 
     val replacements: MutableMap<String, String> = mutableMapOf()
     recommendations.forEach { recommendation ->
@@ -222,8 +211,7 @@ class TerminologyDetectorTest {
     }
 
     fun String.mustEscapeIdentifier(): Boolean {
-      return isNotEmpty() &&
-        (!this[0].isJavaIdentifierStart() || this.any { !it.isJavaIdentifierPart() })
+      return isNotEmpty() && (!this[0].isJavaIdentifierStart() || this.any { !it.isJavaIdentifierPart() })
     }
 
     val prefixSet: MutableSet<String> = HashSet()
@@ -359,8 +347,7 @@ class TerminologyDetectorTest {
 
     if (
       replace(
-        path =
-          "tools/base/lint/studio-checks/src/main/java/com/android/tools/lint/checks/studio/TerminologyDetector.kt",
+        path = "tools/base/lint/studio-checks/src/main/java/com/android/tools/lint/checks/studio/TerminologyDetector.kt",
         startMarker = "// <editor-fold",
         endMarker = "// </editor-fold>",
         replacementFunction = { generated.trim() },
@@ -369,9 +356,7 @@ class TerminologyDetectorTest {
       return
     }
 
-    println(
-      "Generated code; insert into TerminologyDetector, or set \$ADT_SOURCE_TREE to have it written directly:\n"
-    )
+    println("Generated code; insert into TerminologyDetector, or set \$ADT_SOURCE_TREE to have it written directly:\n")
     println(generated)
   }
 
@@ -381,8 +366,7 @@ class TerminologyDetectorTest {
   fun unicodeify() {
     // Inserts unicode in the string regions between the <\u0075nicode> markers
     replace(
-      path =
-        "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
+      path = "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
       startMarker = "<\u0075nicode>",
       endMarker = "</\u0075nicode>",
       replacementFunction = { source ->
@@ -419,8 +403,7 @@ class TerminologyDetectorTest {
   fun unidecodeify() {
     // Inserts unicode in the string regions between the <\u0075nicode> markers
     replace(
-      path =
-        "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
+      path = "tools/base/lint/studio-checks/src/test/java/com/android/tools/lint/checks/studio/TerminologyDetectorTest.kt",
       startMarker = "<\u0075nicode>",
       endMarker = "</\u0075nicode>",
       replacementFunction = { source ->
@@ -450,12 +433,7 @@ class TerminologyDetectorTest {
 
   /** Replaces source ranges in the source tree. */
   @Suppress("SameParameterValue")
-  private fun replace(
-    path: String,
-    startMarker: String,
-    endMarker: String,
-    replacementFunction: (String) -> String,
-  ): Boolean {
+  private fun replace(path: String, startMarker: String, endMarker: String, replacementFunction: (String) -> String): Boolean {
     // Set $ADT_SOURCE_TREE to point to your git repository root; if done, then
     // this will replace the updated source into the source file in place
     val root = System.getenv("ADT_SOURCE_TREE")

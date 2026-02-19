@@ -15,11 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.responsiveActivity.res.layout_w1240dp
 
-fun contentMainXml(
-  appBarMainLayoutName: String,
-  navHostFragmentId: String,
-  navHeaderLayoutName: String
-) = """
+fun contentMainXml(appBarMainLayoutName: String, navHostFragmentId: String, navHeaderLayoutName: String) =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"

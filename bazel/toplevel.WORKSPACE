@@ -5,13 +5,13 @@ http_archive(
     name = "perfetto",
     patch_args = ["-p1"],
     patches = [
-        # The patch is the same as https://github.com/google/perfetto/pull/3033
-        # applied to the 52.0 release.
-        "@//tools/base/bazel/bzlmod:perfetto_pr_3033.patch",
+        # The patch is the same as https://github.com/google/perfetto/pull/4707
+        # applied to the 53.0 release.
+        "@//tools/base/bazel/bzlmod:perfetto_pr_4707.patch",
     ],
-    sha256 = "8bfada46f61b938ec26a777db3c8facf562af8aa22049d478f169f3105f53b4c",
-    strip_prefix = "perfetto-52.0",
-    url = "https://github.com/google/perfetto/archive/refs/tags/v52.0.zip",
+    sha256 = "11c9780e4df8c76593fd0013d411dab282c1ae33606d585ff60cf9672d2ece33",
+    strip_prefix = "perfetto-53.0",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v53.0.zip",
 )
 
 # TODO(b/415841192) Migrate @perfetto_repo to @perfetto.
@@ -20,9 +20,9 @@ http_archive(
 http_archive(
     name = "perfetto_repo",
     build_file = "@//tools/base/profiler:native/external/perfetto.BUILD",
-    sha256 = "8bfada46f61b938ec26a777db3c8facf562af8aa22049d478f169f3105f53b4c",
-    strip_prefix = "perfetto-52.0",
-    url = "https://github.com/google/perfetto/archive/refs/tags/v52.0.zip",
+    sha256 = "11c9780e4df8c76593fd0013d411dab282c1ae33606d585ff60cf9672d2ece33",
+    strip_prefix = "perfetto-53.0",
+    url = "https://github.com/google/perfetto/archive/refs/tags/v53.0.zip",
 )
 
 setup_external_repositories()

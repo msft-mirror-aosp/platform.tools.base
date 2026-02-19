@@ -23,40 +23,33 @@ import java.io.Serializable
 /** Information required for incremental dexing. */
 class IncrementalDexSpec(
 
-    /** The input class files to dex. A class file could be a regular file or a jar entry. */
-    val inputClassFiles: ClassBucket,
+  /** The input class files to dex. A class file could be a regular file or a jar entry. */
+  val inputClassFiles: ClassBucket,
 
-    /** The path to a directory or jar file containing output dex files. */
-    val dexOutputPath: File,
+  /** The path to a directory or jar file containing output dex files. */
+  val dexOutputPath: File,
 
-    /** The path to a directory containing output global synthetics files. */
-    val globalSyntheticsOutput: File?,
+  /** The path to a directory containing output global synthetics files. */
+  val globalSyntheticsOutput: File?,
 
-    /** Parameters for dexing. */
-    val dexParams: DexParametersForWorkers,
+  /** Parameters for dexing. */
+  val dexParams: DexParametersForWorkers,
 
-    /** Whether incremental information is available. */
-    val isIncremental: Boolean,
+  /** Whether incremental information is available. */
+  val isIncremental: Boolean,
 
-    /**
-     * The set of all changed (removed, modified, added) files, including those in input files and
-     * classpath.
-     */
-    val changedFiles: Set<File>,
+  /** The set of all changed (removed, modified, added) files, including those in input files and classpath. */
+  val changedFiles: Set<File>,
 
-    /**
-     * The file containing the desugaring graph used to compute the set of impacted files, not
-     * `null` iff desugaring is enabled.
-     */
-    val desugarGraphFile: File?
-
+  /** The file containing the desugaring graph used to compute the set of impacted files, not `null` iff desugaring is enabled. */
+  val desugarGraphFile: File?,
 ) : Serializable {
 
-    init {
-        check(dexParams.withDesugaring xor (desugarGraphFile == null))
-    }
+  init {
+    check(dexParams.withDesugaring xor (desugarGraphFile == null))
+  }
 
-    companion object {
-        private const val serialVersionUID: Long = 2L
-    }
+  companion object {
+    private const val serialVersionUID: Long = 2L
+  }
 }

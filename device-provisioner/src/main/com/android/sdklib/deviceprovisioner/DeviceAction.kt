@@ -23,21 +23,15 @@ import javax.swing.Icon
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * An action that a user might invoke on a device or a device provisioner. The actual action methods
- * are defined on subinterfaces, since their signatures may vary.
+ * An action that a user might invoke on a device or a device provisioner. The actual action methods are defined on subinterfaces, since
+ * their signatures may vary.
  *
- * TODO: These did not end up varying much; we perhaps don't need a distinct interface for every
- *   action type
+ * TODO: These did not end up varying much; we perhaps don't need a distinct interface for every action type
  */
 interface DeviceAction {
   val presentation: StateFlow<Presentation>
 
-  data class Presentation(
-    val label: String,
-    val icon: Icon,
-    val enabled: Boolean,
-    val detail: String? = null,
-  )
+  data class Presentation(val label: String, val icon: Icon, val enabled: Boolean, val detail: String? = null)
 
   /** Returns the appropriate element of DefaultPresentation for this class. */
   fun DefaultPresentation.fromContext(): Presentation
@@ -45,8 +39,8 @@ interface DeviceAction {
   /**
    * A default value for [Presentation] for all the action types.
    *
-   * This primarily exists to allow icons to be defined / loaded by higher-level modules and
-   * injected into plugin implementations in tools/base.
+   * This primarily exists to allow icons to be defined / loaded by higher-level modules and injected into plugin implementations in
+   * tools/base.
    */
   interface DefaultPresentation {
     val createDeviceAction: Presentation
@@ -75,8 +69,7 @@ interface CreateDeviceAction : DeviceAction {
   /**
    * Creates a device, based on input from the user.
    *
-   * If creation is successful, this should have the side effect of adding the device to the
-   * provisioner's list of devices.
+   * If creation is successful, this should have the side effect of adding the device to the provisioner's list of devices.
    *
    * @param parent the parent component to use for any dialog that is created
    */
@@ -89,8 +82,7 @@ interface CreateDeviceTemplateAction : DeviceAction {
   /**
    * Creates a device template, based on input from the user.
    *
-   * If creation is successful, this should have the side effect of adding the device to the
-   * provisioner's list of templates.
+   * If creation is successful, this should have the side effect of adding the device to the provisioner's list of templates.
    *
    * @param parent the parent component to use for any dialog that is created
    */
@@ -142,8 +134,7 @@ interface EditAction : DeviceAction {
 
 interface EditTemplateAction : DeviceAction {
   /**
-   * Invokes a UI to make edits to the template. If the edits are accepted, returns the new template
-   * that was created.
+   * Invokes a UI to make edits to the template. If the edits are accepted, returns the new template that was created.
    *
    * @param parent the parent component to use for any dialog that is created
    */
@@ -179,10 +170,7 @@ interface ShowAction : DeviceAction {
 
 /** Deletes the given device from any persistent storage. */
 interface DeleteAction : DeviceAction {
-  /**
-   * Deletes the device; this can mean deleting a device from disk, or simply removing it from a
-   * list of remembered devices.
-   */
+  /** Deletes the device; this can mean deleting a device from disk, or simply removing it from a list of remembered devices. */
   suspend fun delete()
 
   override fun DefaultPresentation.fromContext() = deleteAction
@@ -190,15 +178,15 @@ interface DeleteAction : DeviceAction {
 
 interface ReservationAction : DeviceAction {
   /**
-   * Attempts to reserve the device for the given duration. If there is already an active
-   * reservation, this will attempt to extend the reservation for the given duration.
+   * Attempts to reserve the device for the given duration. If there is already an active reservation, this will attempt to extend the
+   * reservation for the given duration.
    *
-   * If the operation is successful, the new state should be reflected in the device's
-   * [Reservation]. If we fail to update an active reservation, but the reservation remains active,
-   * its [ReservationState] should remain ACTIVE, and a [DeviceActionException] should be thrown.
+   * If the operation is successful, the new state should be reflected in the device's [Reservation]. If we fail to update an active
+   * reservation, but the reservation remains active, its [ReservationState] should remain ACTIVE, and a [DeviceActionException] should be
+   * thrown.
    *
-   * If we fail to reserve a device, a [DeviceActionException] should be thrown, with a
-   * user-appropriate message. Also, the device's [ReservationState] should be set to FAILED.
+   * If we fail to reserve a device, a [DeviceActionException] should be thrown, with a user-appropriate message. Also, the device's
+   * [ReservationState] should be set to FAILED.
    *
    * @return the new end time of the reservation
    */
@@ -207,8 +195,8 @@ interface ReservationAction : DeviceAction {
   /**
    * Attempts to end the reservation.
    *
-   * If the operation is successful, the new state should change to [ReservationState.COMPLETE].
-   * Otherwise, a [DeviceActionException] should be thrown with a user-appropriate message.
+   * If the operation is successful, the new state should change to [ReservationState.COMPLETE]. Otherwise, a [DeviceActionException] should
+   * be thrown with a user-appropriate message.
    */
   suspend fun endReservation()
 
@@ -217,14 +205,13 @@ interface ReservationAction : DeviceAction {
 
 interface TemplateActivationAction : DeviceAction {
   /**
-   * Attempts to activate an instance of the template. If a duration is passed, it may be used to
-   * determine the initial length of the device reservation, if applicable. If duration is null, a
-   * default duration value will be used if needed.
+   * Attempts to activate an instance of the template. If a duration is passed, it may be used to determine the initial length of the device
+   * reservation, if applicable. If duration is null, a default duration value will be used if needed.
    *
    * If the operation is successful, the resulting device should be returned.
    *
-   * If we fail to activate a device, a [DeviceActionException] should be thrown, with a
-   * user-appropriate message. An underlying exception may be passed as the cause.
+   * If we fail to activate a device, a [DeviceActionException] should be thrown, with a user-appropriate message. An underlying exception
+   * may be passed as the cause.
    */
   suspend fun activate(duration: Duration? = null): DeviceHandle
 
@@ -257,7 +244,7 @@ interface HideDeviceAction : DeviceAction {
 }
 
 interface PairGlassesAction : DeviceAction {
-  suspend fun pairGlasses(parent: Component?, glassesHandle: DeviceHandle)
+  suspend fun pairGlasses(parent: Component?)
 
   override fun DefaultPresentation.fromContext() = pairGlassesAction
 }
@@ -271,36 +258,30 @@ interface UnpairGlassesAction : DeviceAction {
 /**
  * Indicates a failure in performing a device action, with a user-relevant cause.
  *
- * This is intended for the same types of errors that checked exceptions are used for in Java:
- * unpreventable errors due to external conditions (lack of resources, I/O errors, etc.)
+ * This is intended for the same types of errors that checked exceptions are used for in Java: unpreventable errors due to external
+ * conditions (lack of resources, I/O errors, etc.)
  *
- * It should *not* be used to wrap programming errors (NullPointerException,
- * IllegalArgumentException, etc.): these are generally not user-relevant and should be allowed to
- * propagate to the Studio error handler.
+ * It should *not* be used to wrap programming errors (NullPointerException, IllegalArgumentException, etc.): these are generally not
+ * user-relevant and should be allowed to propagate to the Studio error handler.
  *
  * @param message a user-visible statement of what went wrong
  * @param cause the underlying exception; not displayed to user
  */
-open class DeviceActionException
-@JvmOverloads
-constructor(message: String, cause: Throwable? = null) : Exception(message, cause)
+open class DeviceActionException @JvmOverloads constructor(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 /**
- * Indicates that a device action was canceled by the user. In contrast to DeviceActionException,
- * this generally doesn't merit an error message.
+ * Indicates that a device action was canceled by the user. In contrast to DeviceActionException, this generally doesn't merit an error
+ * message.
  *
- * This is also distinct from a lower-level CancellationException, which could happen if a device
- * action occurs on a scope which is canceled.
+ * This is also distinct from a lower-level CancellationException, which could happen if a device action occurs on a scope which is
+ * canceled.
  */
 class DeviceActionCanceledException(message: String) : DeviceActionException(message)
 
 /**
- * Indicates that the device action was called when it is not enabled. This may be unavoidable due
- * to race conditions; callers should recover gracefully. Callers should strongly consider supplying
- * a more natural error message.
+ * Indicates that the device action was called when it is not enabled. This may be unavoidable due to race conditions; callers should
+ * recover gracefully. Callers should strongly consider supplying a more natural error message.
  */
 class DeviceActionDisabledException(message: String) : DeviceActionException(message) {
-  constructor(
-    action: DeviceAction
-  ) : this("The \"${action.presentation.value.label}\" action is unavailable.")
+  constructor(action: DeviceAction) : this("The \"${action.presentation.value.label}\" action is unavailable.")
 }

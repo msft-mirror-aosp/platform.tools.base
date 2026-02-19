@@ -18,7 +18,6 @@ package com.android.build.gradle.internal
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.api.LazyAndroidSourceSet
-import com.android.build.gradle.options.ProjectOptions
 
 /**
  * Class containing a ProductFlavor and associated data (sourcesets)
@@ -26,18 +25,19 @@ import com.android.build.gradle.options.ProjectOptions
  * This generated during DSL execution and is used for variant creation
  */
 class ProductFlavorData<ProductFlavorT : ProductFlavor>(
-    val productFlavor: ProductFlavorT,
-    sourceSet: DefaultAndroidSourceSet,
-    testFixturesSourceSet: LazyAndroidSourceSet?,
-    androidTestSourceSet: LazyAndroidSourceSet?,
-    unitTestSourceSet: LazyAndroidSourceSet?,
-    screenshotTestSourceSet: LazyAndroidSourceSet?,
-    lazySourceSetCreation: Boolean
-) : VariantDimensionData(
+  val productFlavor: ProductFlavorT,
+  sourceSet: DefaultAndroidSourceSet,
+  testFixturesSourceSet: LazyAndroidSourceSet?,
+  androidTestSourceSet: LazyAndroidSourceSet?,
+  unitTestSourceSet: LazyAndroidSourceSet?,
+  screenshotTestSourceSet: LazyAndroidSourceSet?,
+  lazySourceSetCreation: Boolean,
+) :
+  VariantDimensionData(
     sourceSet,
     testFixturesSourceSet,
     androidTestSourceSet,
     unitTestSourceSet,
     screenshotTestSourceSet,
-    lazySourceSetCreation
-)
+    lazySourceSetCreation,
+  )

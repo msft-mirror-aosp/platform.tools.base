@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.navigationDrawerActivity.res.values
 
-fun dimens() = """
+fun dimens() =
+  """
 <resources>
     <!-- Default screen margins, per the Android Design guidelines. -->
     <dimen name="activity_horizontal_margin">16dp</dimen>

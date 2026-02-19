@@ -17,40 +17,41 @@
 package com.android.compose.screenshot.report
 
 abstract class TestResultModel {
-    abstract val duration: Long
-    abstract val title: String
+  abstract val duration: Long
+  abstract val title: String
 
-    val statusClass: String
-        get() = when (getResultType()) {
-            ResultType.SUCCESS -> "success"
-            ResultType.FAILURE -> "failures"
-            ResultType.ERROR -> "errors"
-            ResultType.SKIPPED -> "skipped"
-        }
+  val statusClass: String
+    get() =
+      when (getResultType()) {
+        ResultType.SUCCESS -> "success"
+        ResultType.FAILURE -> "failures"
+        ResultType.ERROR -> "errors"
+        ResultType.SKIPPED -> "skipped"
+      }
 
-    abstract fun getResultType(): ResultType
+  abstract fun getResultType(): ResultType
 
-    open fun getFormattedDuration(): String {
-        return DURATION_FORMATTER.format(duration)
+  open fun getFormattedDuration(): String {
+    return DURATION_FORMATTER.format(duration)
+  }
+
+  fun getFormattedResultType(): String {
+    return when (getResultType()) {
+      ResultType.SUCCESS -> "passed"
+      ResultType.FAILURE -> "failed"
+      ResultType.ERROR -> "error"
+      ResultType.SKIPPED -> "ignored"
     }
+  }
 
-    fun getFormattedResultType(): String {
-        return when (getResultType()) {
-            ResultType.SUCCESS -> "passed"
-            ResultType.FAILURE -> "failed"
-            ResultType.ERROR -> "error"
-            ResultType.SKIPPED -> "ignored"
-        }
-    }
+  companion object {
+    val DURATION_FORMATTER: DurationFormatter = DurationFormatter()
+  }
 
-    companion object {
-        val DURATION_FORMATTER: DurationFormatter = DurationFormatter()
-    }
-
-    enum class ResultType {
-        SUCCESS,
-        FAILURE,
-        ERROR,
-        SKIPPED
-    }
+  enum class ResultType {
+    SUCCESS,
+    FAILURE,
+    ERROR,
+    SKIPPED,
+  }
 }

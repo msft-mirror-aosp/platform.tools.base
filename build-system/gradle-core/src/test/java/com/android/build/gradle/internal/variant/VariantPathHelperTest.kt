@@ -30,91 +30,67 @@ import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import org.mockito.kotlin.doReturn
 
 internal class VariantPathHelperTest {
 
-    val project: Project = ProjectBuilder.builder().build()
+  val project: Project = ProjectBuilder.builder().build()
 
-    val buildDirectory: DirectoryProperty by lazy {
-        project.layout.buildDirectory
-    }
+  val buildDirectory: DirectoryProperty by lazy { project.layout.buildDirectory }
 
-    private val variantDslInfo: MultiVariantComponentDslInfo = mock(lenient = true)
+  private val variantDslInfo: MultiVariantComponentDslInfo = mock(lenient = true)
 
-    private val dslServices: DslServices = mock(lenient = true)
+  private val dslServices: DslServices = mock(lenient = true)
 
-    private val projectOptions: ProjectOptions = mock(lenient = true)
+  private val projectOptions: ProjectOptions = mock(lenient = true)
 
-    @Before
-    fun setup() {
-        whenever(dslServices.projectOptions).thenReturn(projectOptions)
-        whenever(variantDslInfo.componentType).thenReturn(ComponentTypeImpl.LIBRARY)
-        whenever(variantDslInfo.productFlavorList).thenReturn(emptyList())
-        whenever(variantDslInfo.buildType).thenReturn("apk_location")
-    }
+  @Before
+  fun setup() {
+    whenever(dslServices.projectOptions).thenReturn(projectOptions)
+    whenever(variantDslInfo.componentType).thenReturn(ComponentTypeImpl.LIBRARY)
+    whenever(variantDslInfo.productFlavorList).thenReturn(emptyList())
+    whenever(variantDslInfo.buildType).thenReturn("apk_location")
+  }
 
-    @Test
-    fun testCustomAbiBuildLocation() {
-        val variantPathHelper = VariantPathHelper(
-            buildDirectory,
-            variantDslInfo,
-            dslServices
-        )
-        doReturn("x86").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_ABI)
-        Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("intermediates")
-    }
+  @Test
+  fun testCustomAbiBuildLocation() {
+    val variantPathHelper = VariantPathHelper(buildDirectory, variantDslInfo, dslServices)
+    doReturn("x86").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_ABI)
+    Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("intermediates")
+  }
 
-    @Test
-    fun testCustomAbiTargetFilterConfiguration() {
-        val variantPathHelper = VariantPathHelper(
-                buildDirectory,
-                variantDslInfo,
-                dslServices
-        )
-        doReturn("x86,armeabi-v7a").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_ABI)
-        Truth.assertThat(variantPathHelper.targetFilterConfigurations)
-                .containsExactly(
-                        FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, "x86,armeabi-v7a"))
-    }
+  @Test
+  fun testCustomAbiTargetFilterConfiguration() {
+    val variantPathHelper = VariantPathHelper(buildDirectory, variantDslInfo, dslServices)
+    doReturn("x86,armeabi-v7a").whenever(projectOptions).get(StringOption.IDE_BUILD_TARGET_ABI)
+    Truth.assertThat(variantPathHelper.targetFilterConfigurations)
+      .containsExactly(FilterConfigurationImpl(FilterConfiguration.FilterType.ABI, "x86,armeabi-v7a"))
+  }
 
-    @Test
-    fun testCustomAPIBuildLocation() {
-        val variantPathHelper = VariantPathHelper(
-            buildDirectory,
-            variantDslInfo,
-            dslServices
-        )
-        doReturn(21).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
-        Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("intermediates")
-    }
+  @Test
+  fun testCustomAPIBuildLocation() {
+    val variantPathHelper = VariantPathHelper(buildDirectory, variantDslInfo, dslServices)
+    doReturn(21).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
+    Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("intermediates")
+  }
 
-    @Test
-    fun testIdeBuildLocation() {
-        val variantPathHelper = VariantPathHelper(
-            buildDirectory,
-            variantDslInfo,
-            dslServices
-        )
-        // necessary, otherwise mockito will return 0.
-        doReturn(null).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
-        doReturn(true).whenever(projectOptions).get(BooleanOption.IDE_INVOKED_FROM_IDE)
-        Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("outputs")
-    }
+  @Test
+  fun testIdeBuildLocation() {
+    val variantPathHelper = VariantPathHelper(buildDirectory, variantDslInfo, dslServices)
+    // necessary, otherwise mockito will return 0.
+    doReturn(null).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
+    doReturn(true).whenever(projectOptions).get(BooleanOption.IDE_INVOKED_FROM_IDE)
+    Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("outputs")
+  }
 
-    @Test
-    fun testNormalBuildLocation() {
-        val variantPathHelper = VariantPathHelper(
-            buildDirectory,
-            variantDslInfo,
-            dslServices
-        )
-        // necessary, otherwise mockito will return 0.
-        doReturn(null).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
-        Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("outputs")
-    }
+  @Test
+  fun testNormalBuildLocation() {
+    val variantPathHelper = VariantPathHelper(buildDirectory, variantDslInfo, dslServices)
+    // necessary, otherwise mockito will return 0.
+    doReturn(null).whenever(projectOptions).get(IntegerOption.IDE_TARGET_DEVICE_API)
+    Truth.assertThat(variantPathHelper.apkLocation.absolutePath).contains("outputs")
+  }
 }

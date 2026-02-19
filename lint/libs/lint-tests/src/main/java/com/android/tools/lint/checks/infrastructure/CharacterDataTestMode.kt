@@ -25,11 +25,7 @@ import java.io.File
 
 /** Test mode which inserts unnecessary whitespace characters into the source code */
 class CharacterDataTestMode :
-  SourceTransformationTestMode(
-    description = "Converting text nodes to CDATA XML sections",
-    "TestMode.CDATA",
-    "cdata",
-  ) {
+  SourceTransformationTestMode(description = "Converting text nodes to CDATA XML sections", "TestMode.CDATA", "cdata") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -45,9 +41,7 @@ class CharacterDataTestMode :
       .trimIndent()
 
   override fun applies(context: TestModeContext): Boolean {
-    return context.projects.any {
-      it.files.any { file -> file is TestFile.XmlTestFile && file.contents.contains("<string") }
-    }
+    return context.projects.any { it.files.any { file -> file is TestFile.XmlTestFile && file.contents.contains("<string") } }
   }
 
   override fun before(context: TestModeContext): Any? {

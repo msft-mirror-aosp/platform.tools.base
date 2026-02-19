@@ -19,7 +19,4 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.models.TestApkTestSuiteSource
 
-class TestApkTestSuiteSourceImpl(
-    override val name: String,
-    override val sourceProvider: SourceProvider
-): TestApkTestSuiteSource
+class TestApkTestSuiteSourceImpl(override val name: String, override val sourceProvider: SourceProvider) : TestApkTestSuiteSource

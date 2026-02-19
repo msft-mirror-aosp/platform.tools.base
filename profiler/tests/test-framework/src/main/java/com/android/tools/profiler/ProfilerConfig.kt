@@ -21,35 +21,31 @@ import com.android.tools.profiler.proto.Common
 import com.android.tools.profiler.proto.Memory.MemoryAllocSamplingData
 import com.android.tools.transport.TransportRule
 
-/**
- * Additional profiler configurations that can be passed into a [TransportRule].
- */
+/** Additional profiler configurations that can be passed into a [TransportRule]. */
 open class ProfilerConfig : TransportRule.Config() {
-    open val liveAllocSampleRate = 1
+  open val liveAllocSampleRate = 1
 
-    final override fun initDaemonConfig(daemonConfig: Common.CommonConfig.Builder) {
-        // The production is disabling keyboard events by default, which can be
-        // overridden by the server flag. But we still test the functionality as it's
-        // enabled to avoid accidental breakage. See b/211154220.
-        daemonConfig.profilerKeyboardEvent = true
-        daemonConfig.profilerUnifiedPipeline = true
-    }
+  final override fun initDaemonConfig(daemonConfig: Common.CommonConfig.Builder) {
+    // The production is disabling keyboard events by default, which can be
+    // overridden by the server flag. But we still test the functionality as it's
+    // enabled to avoid accidental breakage. See b/211154220.
+    daemonConfig.profilerKeyboardEvent = true
+    daemonConfig.profilerUnifiedPipeline = true
+  }
 
-    final override fun initAgentConfig(agentConfig: AgentConfig.Builder) {
-        val memConfig = MemoryConfig.newBuilder()
-                .setTrackGlobalJniRefs(true)
-                .setAppDir("/")
-                .setMaxStackDepth(50)
-                .setSamplingRate(
-                        MemoryAllocSamplingData.newBuilder()
-                                .setSamplingNumInterval(liveAllocSampleRate)
-                                .build())
-                .build()
+  final override fun initAgentConfig(agentConfig: AgentConfig.Builder) {
+    val memConfig =
+      MemoryConfig.newBuilder()
+        .setTrackGlobalJniRefs(true)
+        .setAppDir("/")
+        .setMaxStackDepth(50)
+        .setSamplingRate(MemoryAllocSamplingData.newBuilder().setSamplingNumInterval(liveAllocSampleRate).build())
+        .build()
 
-        agentConfig.mem = memConfig
-    }
+    agentConfig.mem = memConfig
+  }
 
-    final override fun onBeforeActivityLaunched(transportRule: TransportRule) {
-        transportRule.androidDriver.setProperty("profiler.service.address", transportRule.commonConfig.serviceAddress)
-    }
+  final override fun onBeforeActivityLaunched(transportRule: TransportRule) {
+    transportRule.androidDriver.setProperty("profiler.service.address", transportRule.commonConfig.serviceAddress)
+  }
 }

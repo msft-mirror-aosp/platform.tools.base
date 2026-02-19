@@ -83,12 +83,13 @@ public class AppCompatResourceDetector extends ResourceXmlDetector {
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
         Project project = context.getProject();
         Boolean appCompat = project.dependsOn(APPCOMPAT_LIB_ARTIFACT);
+        if (appCompat == null) return;
         String localName = attribute.getLocalName();
         if (ANDROID_URI.equals(attribute.getNamespaceURI())) {
             if (context.getFolderVersion() >= 14) {
                 return;
             }
-            if (appCompat == Boolean.TRUE) {
+            if (appCompat) {
                 LintFix fix =
                         fix().replaceAttribute(
                                         attribute,
@@ -104,7 +105,7 @@ public class AppCompatResourceDetector extends ResourceXmlDetector {
                 context.report(ISSUE, attribute, context.getLocation(attribute), message, fix);
             }
         } else {
-            if (appCompat == Boolean.FALSE) {
+            if (!appCompat) {
 
                 LintFix fix =
                         fix().replaceAttribute(

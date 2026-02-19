@@ -18,11 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.viewModelFragment.
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun blankViewModelJava(
-  packageName: String,
-  useAndroidX: Boolean,
-  viewModelName: String
-) = """
+fun blankViewModelJava(packageName: String, useAndroidX: Boolean, viewModelName: String) =
+  """
 package ${packageName};
 
 import ${getMaterialComponentName("android.arch.lifecycle.ViewModel", useAndroidX)};

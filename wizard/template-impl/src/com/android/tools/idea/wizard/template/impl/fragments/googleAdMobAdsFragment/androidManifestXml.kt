@@ -16,8 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment
 
-
-fun androidManifestXml() = """
+fun androidManifestXml() =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Include required permissions for Google Mobile Ads to run. -->

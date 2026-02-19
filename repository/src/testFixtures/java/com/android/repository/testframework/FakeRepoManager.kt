@@ -39,10 +39,7 @@ class FakeRepoManager(
   override val packages: RepositoryPackages,
   additionalSchemaModules: List<SchemaModule<*>>,
 ) : RepoManager() {
-  constructor(
-    localPath: Path?,
-    packages: RepositoryPackages,
-  ) : this(localPath, packages, emptyList())
+  constructor(localPath: Path?, packages: RepositoryPackages) : this(localPath, packages, emptyList())
 
   constructor(packages: RepositoryPackages) : this(null, packages, emptyList())
 
@@ -51,11 +48,7 @@ class FakeRepoManager(
   override val sourceProviders: List<RepositorySourceProvider>
     get() = emptyList()
 
-  override fun getSources(
-    downloader: Downloader?,
-    progress: ProgressIndicator,
-    forceRefresh: Boolean,
-  ): List<RepositorySource> = emptyList()
+  override fun getSources(downloader: Downloader?, progress: ProgressIndicator, forceRefresh: Boolean): List<RepositorySource> = emptyList()
 
   override fun load(
     cacheExpirationMs: Long,
@@ -83,10 +76,7 @@ class FakeRepoManager(
     onSuccess?.loaded(this.packages)
   }
 
-  override suspend fun loadLocalPackages(
-    indicator: ProgressIndicator,
-    cacheExpiration: Duration,
-  ): List<LocalPackage> = emptyList()
+  override suspend fun loadLocalPackages(indicator: ProgressIndicator, cacheExpiration: Duration): List<LocalPackage> = emptyList()
 
   override suspend fun loadRemotePackages(
     indicator: ProgressIndicator,

@@ -20,7 +20,6 @@ import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.CLASS
 import com.android.tools.idea.wizard.template.Constraint.LAYOUT
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
-import com.android.tools.idea.wizard.template.Constraint.PACKAGE
 import com.android.tools.idea.wizard.template.Constraint.UNIQUE
 import com.android.tools.idea.wizard.template.FormFactor
 import com.android.tools.idea.wizard.template.LanguageWidget
@@ -67,12 +66,7 @@ val googleMapsFragmentTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(fragmentClass),
-      TextFieldWidget(layoutName),
-      PackageNameWidget(packageName),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(fragmentClass), TextFieldWidget(layoutName), PackageNameWidget(packageName), LanguageWidget())
 
     thumb { File("google-maps-fragment").resolve("template_map_fragment.png") }
 

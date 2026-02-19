@@ -31,12 +31,8 @@ import java.io.File
 import java.io.IOException
 
 /** Lint project wrapping a library. */
-open class LintModelModuleLibraryProject(
-  client: LintClient,
-  dir: File,
-  referenceDir: File,
-  val dependency: LintModelDependency?,
-) : Project(client, dir, referenceDir) {
+open class LintModelModuleLibraryProject(client: LintClient, dir: File, referenceDir: File, val dependency: LintModelDependency?) :
+  Project(client, dir, referenceDir) {
 
   init {
     reportIssues = false
@@ -230,8 +226,7 @@ open class LintModelModuleAndroidLibraryProject(
       ANDROIDX_APPCOMPAT_LIB_ARTIFACT -> {
         if (appCompat == null) {
           appCompat =
-            dependency?.hasDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) == true ||
-              dependency?.hasDependency(APPCOMPAT_LIB_ARTIFACT) == true
+            dependency?.hasDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) == true || dependency?.hasDependency(APPCOMPAT_LIB_ARTIFACT) == true
         }
         appCompat
       }

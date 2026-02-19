@@ -35,23 +35,15 @@ import org.jetbrains.kotlin.parsing.KotlinParserDefinition
 
 private class VirtualFileWrapper(val file: VirtualFile) : File(file.path)
 
-/**
- * Convert [VirtualFile] into [File] without losing information, as far as [UastEnvironment] is
- * concerned
- */
+/** Convert [VirtualFile] into [File] without losing information, as far as [UastEnvironment] is concerned */
 fun VirtualFile.asFile(): File = VirtualFileWrapper(this)
 
 // Copied over from `org.jetbrains.kotlin.analysis.project.structure.impl.KtModuleUtils.kt`
 
-internal fun getSourceFilePaths(
-  javaSourceRoots: Collection<File>,
-  includeDirectoryRoot: Boolean = false,
-): PathCollection =
+internal fun getSourceFilePaths(javaSourceRoots: Collection<File>, includeDirectoryRoot: Boolean = false): PathCollection =
   getFilePaths(javaSourceRoots, sourceFileExtensions::contains, includeDirectoryRoot)
 
-/**
- * Return a [PathCollection] of paths beneath [roots], whose extensions satisfy [isExtensionWanted]
- */
+/** Return a [PathCollection] of paths beneath [roots], whose extensions satisfy [isExtensionWanted] */
 private fun getFilePaths(
   roots: Collection<File>,
   isExtensionWanted: (String?) -> Boolean,
@@ -95,8 +87,8 @@ private fun getFilePaths(
 }
 
 /**
- * Recover [PathCollection] from [File]s, some of which may have been created from [asFile]. This
- * prevents failure from extracting a [Path] our of a non-physical file.
+ * Recover [PathCollection] from [File]s, some of which may have been created from [asFile]. This prevents failure from extracting a [Path]
+ * our of a non-physical file.
  */
 internal fun Iterable<File>.toPathCollection(): PathCollection {
   val physicalFilePaths = hashSetOf<Path>()
@@ -127,16 +119,11 @@ internal fun Iterable<File>.toPathCollection(): PathCollection {
 /**
  * Collect source file path from the given [root] store them in [result].
  *
- * E.g., for `project/app/src` as a [root], this will walk the file tree and collect all `.kt`,
- * `.kts`, and `.java` files under that folder.
+ * E.g., for `project/app/src` as a [root], this will walk the file tree and collect all `.kt`, `.kts`, and `.java` files under that folder.
  *
  * Note that this util gracefully skips [IOException] during file tree traversal.
  */
-private fun collectFilePaths(
-  root: Path,
-  result: MutableSet<Path>,
-  isExtensionWanted: (String?) -> Boolean,
-) {
+private fun collectFilePaths(root: Path, result: MutableSet<Path>, isExtensionWanted: (String?) -> Boolean) {
   // NB: [Files#walk] throws an exception if there is an issue during IO.
   // With [Files#walkFileTree] with a custom visitor, we can take control of exception handling.
   Files.walkFileTree(
@@ -172,10 +159,7 @@ internal class PathCollection(
   val virtualDirectories: Collection<VirtualFile>,
 ) {
   fun isEmpty(): Boolean =
-    physicalFiles.isEmpty() &&
-      physicalDirectories.isEmpty() &&
-      virtualFiles.isEmpty() &&
-      virtualDirectories.isEmpty()
+    physicalFiles.isEmpty() && physicalDirectories.isEmpty() && virtualFiles.isEmpty() && virtualDirectories.isEmpty()
 
   fun hasFiles(): Boolean = physicalFiles.isNotEmpty() || virtualFiles.isNotEmpty()
 
@@ -184,10 +168,7 @@ internal class PathCollection(
   fun isNotEmpty(): Boolean = !isEmpty()
 
   /** Partition the paths into those that satisfy [keepVirtual] and don't, respectively */
-  fun partition(
-    fileSystem: CoreLocalFileSystem,
-    keepVirtual: (VirtualFile) -> Boolean,
-  ): Pair<PathCollection, PathCollection> {
+  fun partition(fileSystem: CoreLocalFileSystem, keepVirtual: (VirtualFile) -> Boolean): Pair<PathCollection, PathCollection> {
     fun keepPhysical(path: Path): Boolean {
       val vFile = fileSystem.findFileByPath(path.toString())
       return vFile != null && keepVirtual(vFile)
@@ -212,12 +193,7 @@ internal class PathCollection(
         newPhysicalFiles.add(path)
       }
     }
-    return PathCollection(
-      newPhysicalFiles,
-      newPhysicalDirectories,
-      virtualFiles,
-      virtualDirectories,
-    )
+    return PathCollection(newPhysicalFiles, newPhysicalDirectories, virtualFiles, virtualDirectories)
   }
 
   override fun toString(): String {
@@ -249,8 +225,4 @@ internal fun KtBinaryModuleBuilder.addBinaryPaths(paths: PathCollection) {
 }
 
 private val sourceFileExtensions =
-  arrayOf(
-    KotlinFileType.EXTENSION,
-    KotlinParserDefinition.STD_SCRIPT_SUFFIX,
-    JavaFileType.DEFAULT_EXTENSION,
-  )
+  arrayOf(KotlinFileType.EXTENSION, KotlinParserDefinition.STD_SCRIPT_SUFFIX, JavaFileType.DEFAULT_EXTENSION)

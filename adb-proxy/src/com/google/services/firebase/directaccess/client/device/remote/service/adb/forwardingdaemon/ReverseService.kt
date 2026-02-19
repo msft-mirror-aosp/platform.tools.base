@@ -27,33 +27,22 @@ import kotlinx.coroutines.sync.withLock
 /**
  * A local implementation of the "reverse:" service on an Android device.
  *
- * The "reverse:" service on an Android device allows the user to create port forwards from the
- * device to the host. However, its current implementation works by sending OPEN requests from the
- * device to the host, which means that any reverse forwards opened from the device will land on the
- * **first** host that exists. For the forwarding daemon, this means that it would land on the lab
- * machine, which is both a feature gap and a security issue.
+ * The "reverse:" service on an Android device allows the user to create port forwards from the device to the host. However, its current
+ * implementation works by sending OPEN requests from the device to the host, which means that any reverse forwards opened from the device
+ * will land on the **first** host that exists. For the forwarding daemon, this means that it would land on the lab machine, which is both a
+ * feature gap and a security issue.
  *
- * The ReverseService should know about all instances of [ReverseForwardStream] which are currently
- * active. This allows for the implementation of `adb reverse --list`, `adb reverse --remove-all`,
- * and `adb reverse --remove <remote>`.
+ * The ReverseService should know about all instances of [ReverseForwardStream] which are currently active. This allows for the
+ * implementation of `adb reverse --list`, `adb reverse --remove-all`, and `adb reverse --remove <remote>`.
  */
 internal class ReverseService(
   private val deviceId: String,
   private val scope: CoroutineScope,
   private val responseWriter: ResponseWriter,
   private val adbSession: AdbSession,
-  private val reverseForwardStreamFactory: (String, String, Int) -> ReverseForwardStream =
-    { devicePort, localPort, streamId ->
-      ReverseForwardStream(
-        devicePort,
-        localPort,
-        streamId,
-        deviceId,
-        adbSession,
-        responseWriter,
-        scope,
-      )
-    },
+  private val reverseForwardStreamFactory: (String, String, Int) -> ReverseForwardStream = { devicePort, localPort, streamId ->
+    ReverseForwardStream(devicePort, localPort, streamId, deviceId, adbSession, responseWriter, scope)
+  },
 ) {
   private val openReverses = ConcurrentHashMap<String, ReverseForwardStream>()
   private val openReversesLock = Mutex()
@@ -123,8 +112,8 @@ internal class ReverseService(
   /**
    * Kill all open reverse forward connections.
    *
-   * Note that any currently open sockets will remain open. However, the server sockets on the
-   * device will be closed, so no new connections will be made.
+   * Note that any currently open sockets will remain open. However, the server sockets on the device will be closed, so no new connections
+   * will be made.
    */
   suspend fun killAll() {
     openReversesLock.withLock { openReverses.forEach { (key, _) -> killForwardUnsafe(key) } }
@@ -136,8 +125,7 @@ internal class ReverseService(
   }
 
   /**
-   * This function is unsafe to call directly. Instead, call to this function should be wrapped with
-   * a lock on [openReversesLock].
+   * This function is unsafe to call directly. Instead, call to this function should be wrapped with a lock on [openReversesLock].
    *
    * For example, see [killForward], [killAll]
    */

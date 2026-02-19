@@ -82,10 +82,7 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
         priority = 8,
         severity = Severity.WARNING,
         implementation =
-          Implementation(
-            TranslucentViewDetector::class.java,
-            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE),
-          ),
+          Implementation(TranslucentViewDetector::class.java, EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.JAVA_FILE)),
       )
   }
 
@@ -102,8 +99,7 @@ class TranslucentViewDetector : Detector(), XmlScanner, SourceCodeScanner {
   }
 
   private fun isScreenOrientationFixed(orientation: String): Boolean {
-    return orientation.endsWith("portrait", ignoreCase = true) ||
-      orientation.endsWith("landscape", ignoreCase = true)
+    return orientation.endsWith("portrait", ignoreCase = true) || orientation.endsWith("landscape", ignoreCase = true)
   }
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {

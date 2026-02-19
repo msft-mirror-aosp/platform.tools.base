@@ -21,8 +21,8 @@ import com.android.SdkConstants.FN_SETTINGS_GRADLE
 import com.android.SdkConstants.FN_SETTINGS_GRADLE_KTS
 import com.android.utils.FileUtils.writeToFile
 import com.google.common.io.Files
-import junit.framework.TestCase
 import java.io.File
+import junit.framework.TestCase
 
 class BuildScriptUtilTest : TestCase() {
   fun testFindGradleBuildFile() {
@@ -54,5 +54,4 @@ class BuildScriptUtilTest : TestCase() {
     writeToFile(ktsBuildFilePath, "")
     assertEquals(ktsBuildFilePath, findGradleSettingsFile(tempDir))
   }
-
 }

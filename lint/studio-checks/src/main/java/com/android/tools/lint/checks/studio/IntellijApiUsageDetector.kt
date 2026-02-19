@@ -40,8 +40,7 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 
 /**
- * Searches for usages of scheduled-for-removal IntelliJ APIs, for the purpose of migrating to newer
- * APIs before the next platform merge.
+ * Searches for usages of scheduled-for-removal IntelliJ APIs, for the purpose of migrating to newer APIs before the next platform merge.
  */
 class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
 
@@ -104,16 +103,13 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
         origin == AnnotationOrigin.CLASS && referenced is PsiMethod && referenced.isConstructor -> {
           "`$symbolName`"
         }
-        origin == AnnotationOrigin.METHOD &&
-          referenced is PsiMethod &&
-          referenced.isConstructor -> {
+        origin == AnnotationOrigin.METHOD && referenced is PsiMethod && referenced.isConstructor -> {
           "This constructor for `$symbolName`"
         }
         origin == AnnotationOrigin.FILE -> {
           "The file containing `$symbolName`"
         }
-        origin == AnnotationOrigin.OUTER_CLASS ||
-          origin == AnnotationOrigin.CLASS && referenced !is PsiClass -> {
+        origin == AnnotationOrigin.OUTER_CLASS || origin == AnnotationOrigin.CLASS && referenced !is PsiClass -> {
           val containingClass = (annotationInfo.annotated as? PsiNamedElement)?.name
           if (containingClass != null) {
             "Containing class `$containingClass`"
@@ -128,22 +124,18 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
           "`$symbolName`"
         }
       }
-    context.report(
-      SCHEDULED_FOR_REMOVAL,
-      element,
-      context.getNameLocation(element),
-      "$toBlame is $annotationDisplayName",
-    )
+    context.report(SCHEDULED_FOR_REMOVAL, element, context.getNameLocation(element), "$toBlame is $annotationDisplayName")
   }
 
   private fun isInIgnoredPackage(annotation: UAnnotation): Boolean {
-    // Ignore our own packages, since the focus is on IntelliJ APIs that might change during platform updates.
+    // Ignore our own packages, since the focus is on IntelliJ APIs that might change during
+    // platform updates.
     // Also ignore JDK APIs since these are removed very infrequently.
     val packageName = (annotation.javaPsi?.containingFile as? PsiClassOwner)?.packageName ?: return false
     return packageName.startsWith("com.android.") ||
-        packageName.startsWith("com.google") ||
-        packageName.startsWith("org.jetbrains.android.") ||
-        packageName.startsWith("java.")
+      packageName.startsWith("com.google") ||
+      packageName.startsWith("org.jetbrains.android.") ||
+      packageName.startsWith("java.")
   }
 
   private fun isDeprecatedForRemoval(annotation: UAnnotation): Boolean {
@@ -154,11 +146,7 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun isOverrideOfNonDeprecatedMethod(
-    context: JavaContext,
-    anno: AnnotationInfo,
-    declaration: PsiElement?,
-  ): Boolean {
+  private fun isOverrideOfNonDeprecatedMethod(context: JavaContext, anno: AnnotationInfo, declaration: PsiElement?): Boolean {
     // If a class is marked for removal, then it'll be deleted soon. However, clients will still
     // be able to call methods that remain in the supertypes. This scenario comes up sometimes
     // when JetBrains deprecates a class in the "middle" of a class hierarchy.
@@ -186,8 +174,7 @@ class IntellijApiUsageDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(IntellijApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(IntellijApiUsageDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val SCHEDULED_FOR_REMOVAL =

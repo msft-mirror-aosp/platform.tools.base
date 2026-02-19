@@ -15,22 +15,17 @@
  */
 package com.android.utils.reflection
 
-import org.junit.Test
 import kotlin.test.assertEquals
-
+import org.junit.Test
 
 class ReflectionUtilsTest {
 
-    class TestClass {
-        val bar = "foo"
-    }
+  class TestClass {
+    val bar = "foo"
+  }
 
-    @Test
-    fun testQualifiedName() {
-        assertEquals(
-            "com.android.utils.reflection.ReflectionUtilsTest\$TestClass.bar",
-            TestClass::bar.qualifiedName<TestClass>()
-        )
-    }
+  @Test
+  fun testQualifiedName() {
+    assertEquals("com.android.utils.reflection.ReflectionUtilsTest\$TestClass.bar", TestClass::bar.qualifiedName<TestClass>())
+  }
 }
-

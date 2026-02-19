@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.io.IAbstractFile;
 import com.android.io.StreamException;
 import com.android.utils.ILogger;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,6 +31,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HardwareProperties {
+    /** AVD/config.ini key for the type of screen */
+    public static final String HW_SCREEN = "hw.screen";
+    /** AVD/config.ini value for when the type of screen is notouch*/
+    public static final String HW_SCREEN_NOTOUCH = "no-touch";
     /** AVD/config.ini key for whether hardware buttons are present. */
     public static final String HW_MAINKEYS = "hw.mainKeys";
 
@@ -86,6 +91,15 @@ public class HardwareProperties {
 
     /** AVD/config.ini key for LCD height. */
     public static final String HW_LCD_HEIGHT = "hw.lcd.height";
+
+    /** AVD/config.ini key for whether touchpad is present. */
+    public static final String HW_TOUCHPAD0 = "hw.touchpad0";
+
+    /** AVD/config.ini key for touchpad width. */
+    public static final String HW_TOUCHPAD0_WIDTH = "hw.touchpad0.width";
+
+    /** AVD/config.ini key for touchpad height. */
+    public static final String HW_TOUCHPAD0_HEIGHT = "hw.touchpad0.height";
 
     /** AVD/config.ini key for the device having Open/Closed state. */
     public static final String HW_KEYBOARD_LID = "hw.keyboard.lid";
@@ -328,39 +342,5 @@ public class HardwareProperties {
         }
 
         return null;
-    }
-
-    /**
-     * Returns the boolean value matching the given index.
-     * This is the reverse of {@link #getBooleanValueIndex(String)}.
-     *
-     * @param index 0 or 1.
-     * @return {@link #BOOLEAN_YES} for 0 or {@link #BOOLEAN_NO} for 1.
-     * @throws IndexOutOfBoundsException if index is neither 0 nor 1.
-     */
-    public static String getBooleanValue(int index) {
-        if (index == 0) {
-            return BOOLEAN_YES;
-        } else if (index == 1) {
-            return BOOLEAN_NO;
-        }
-        throw new IndexOutOfBoundsException("HardwareProperty boolean index must 0 (true) or 1 (false) but was " + index);
-    }
-
-    /**
-     * Returns the index of a boolean <var>value</var>.
-     * This if the reverse of {@link #getBooleanValue(int)}.
-     *
-     * @param value Either {@link #BOOLEAN_YES} or {@link #BOOLEAN_NO}.
-     * @return 0 for {@link #BOOLEAN_YES}, 1 for {@link #BOOLEAN_NO} or -1 for anything else.
-     */
-    public static int getBooleanValueIndex(String value) {
-        if (BOOLEAN_YES.equals(value)) {
-            return 0;
-        } else if (BOOLEAN_NO.equals(value)) {
-            return 1;
-        }
-
-        return -1;
     }
 }

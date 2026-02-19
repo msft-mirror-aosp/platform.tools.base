@@ -20,27 +20,27 @@ import com.android.tools.perflogger.Metric
 import java.time.Instant
 
 class ComposeRenderingMetric {
-    private var mTimestamp: Long = 0
-    private var mPrevUsedMem: Long = 0
-    private var mMemoryUsage: Long = 0
-    private var mStartTime: Long = 0
-    private var mElapsedTime: Long = 0
+  private var mTimestamp: Long = 0
+  private var mPrevUsedMem: Long = 0
+  private var mMemoryUsage: Long = 0
+  private var mStartTime: Long = 0
+  private var mElapsedTime: Long = 0
 
-    val timeMetricSample: Metric.MetricSample
-        get() = Metric.MetricSample(mTimestamp, mElapsedTime)
+  val timeMetricSample: Metric.MetricSample
+    get() = Metric.MetricSample(mTimestamp, mElapsedTime)
 
-    val memoryMetricSample: Metric.MetricSample
-        get() = Metric.MetricSample(mTimestamp, mMemoryUsage)
+  val memoryMetricSample: Metric.MetricSample
+    get() = Metric.MetricSample(mTimestamp, mMemoryUsage)
 
-    fun beforeTest() {
-        mPrevUsedMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
-        mStartTime = System.currentTimeMillis()
-    }
+  fun beforeTest() {
+    mPrevUsedMem = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+    mStartTime = System.currentTimeMillis()
+  }
 
-    fun afterTest() {
-        mElapsedTime = System.currentTimeMillis() - mStartTime
-        mMemoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - mPrevUsedMem
+  fun afterTest() {
+    mElapsedTime = System.currentTimeMillis() - mStartTime
+    mMemoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory() - mPrevUsedMem
 
-        mTimestamp = Instant.now().toEpochMilli()
-    }
+    mTimestamp = Instant.now().toEpochMilli()
+  }
 }

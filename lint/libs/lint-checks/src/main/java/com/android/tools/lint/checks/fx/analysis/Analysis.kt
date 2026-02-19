@@ -77,6 +77,7 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiVariable
+import java.util.IdentityHashMap
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentListOf
@@ -146,18 +147,14 @@ import org.jetbrains.uast.tryResolveNamed
 import org.jetbrains.uast.util.isConstructorCall
 
 /**
- * An [Analysis] of a [module] is a [Monotone] on summaries, as in "given a hypothetical
- * bootstrapping summary of the [module], what else must be true before the summary is sound?". The
- * summary of interest is the [Analysis]'s least fix point. In addition, [assumptions] has the
- * assumed summaries of bindings that occur free in [module] (i.e. they are not defined in [module],
- * but [module] may use those).
+ * An [Analysis] of a [module] is a [Monotone] on summaries, as in "given a hypothetical bootstrapping summary of the [module], what else
+ * must be true before the summary is sound?". The summary of interest is the [Analysis]'s least fix point. In addition, [assumptions] has
+ * the assumed summaries of bindings that occur free in [module] (i.e. they are not defined in [module], but [module] may use those).
  *
- * The analysis is parameterized by a [concreteEffect] lattice, and assumes that effects are to be
- * joined regardless of whether they are combined sequentially or from different branches. Some
- * examples of useful [concreteEffect] in practice are "thread requirements" (e.g. for detecting
- * conflicting thread requirements), "constructor calls" (e.g. for detecting subclass initialization
- * from superclass), "all function calls" (e.g. for reconstructing a modular, polymorphic call
- * graph).
+ * The analysis is parameterized by a [concreteEffect] lattice, and assumes that effects are to be joined regardless of whether they are
+ * combined sequentially or from different branches. Some examples of useful [concreteEffect] in practice are "thread requirements" (e.g.
+ * for detecting conflicting thread requirements), "constructor calls" (e.g. for detecting subclass initialization from superclass), "all
+ * function calls" (e.g. for reconstructing a modular, polymorphic call graph).
  */
 internal open class Analysis<FX : Any>(
   private val module: Module<FX>,
@@ -169,11 +166,10 @@ internal open class Analysis<FX : Any>(
   /**
    * Default effect for constructs we don't understand.
    *
-   * Analyses on safety properties that need to be a sound over-approximation resort to `⊤`, while
-   * ones that aim to be helpful bug-finders without overwhelming users with technically correct but
-   * practically pessimistic and tedious errors resort to `⊥`. Note that the latter means both false
-   * positives and negatives are possible. This is also the default, because Lint tends to be more
-   * of a useful bug-finder than a rigorous verifier.
+   * Analyses on safety properties that need to be a sound over-approximation resort to `⊤`, while ones that aim to be helpful bug-finders
+   * without overwhelming users with technically correct but practically pessimistic and tedious errors resort to `⊥`. Note that the latter
+   * means both false positives and negatives are possible. This is also the default, because Lint tends to be more of a useful bug-finder
+   * than a rigorous verifier.
    */
   protected open val <T> Lattice<T>.unsure: T
     get() = bottom
@@ -187,31 +183,13 @@ internal open class Analysis<FX : Any>(
   private val constraintLattice = typeEffectConstraintLattice.constraintLattice
 
   private val fxInstantiationLattice =
-    Lattice.product(
-      ::Instantiation,
-      Instantiation<FX>::result,
-      Instantiation<FX>::errors,
-      effectLattice,
-      possibilityLattice(),
-    )
+    Lattice.product(::Instantiation, Instantiation<FX>::result, Instantiation<FX>::errors, effectLattice, possibilityLattice())
 
   private val fxInferenceLattice =
-    Lattice.product(
-      ::Inference,
-      Inference<FX>::result,
-      Inference<FX>::errors,
-      effectLattice,
-      errorSetLattice(),
-    )
+    Lattice.product(::Inference, Inference<FX>::result, Inference<FX>::errors, effectLattice, errorSetLattice())
 
   private val fxCheckingLattice =
-    Lattice.product(
-      ::Checking,
-      Checking<FX>::result,
-      Checking<FX>::errors,
-      constraintLattice,
-      errorSetLattice(),
-    )
+    Lattice.product(::Checking, Checking<FX>::result, Checking<FX>::errors, constraintLattice, errorSetLattice())
 
   private val instantiationLattice = Result.domain(typeLattice, fxInstantiationLattice)
   private val inferenceLattice = Result.domain(typeLattice, fxInferenceLattice)
@@ -224,13 +202,7 @@ internal open class Analysis<FX : Any>(
   private fun inferenceMode(ann: EffectAnnotation.Implicit<FX>) =
     when {
       ann.nearestBaseAnnotations.isEmpty() -> unboundedInferenceMode
-      else ->
-        Mode.Inference(
-          ann.nearestBaseAnnotations,
-          concreteEffect,
-          fxInferenceLattice,
-          constraintLattice,
-        )
+      else -> Mode.Inference(ann.nearestBaseAnnotations, concreteEffect, fxInferenceLattice, constraintLattice)
     }
 
   private fun checkingMode(ann: EffectAnnotation.Explicit<FX>) =
@@ -259,8 +231,7 @@ internal open class Analysis<FX : Any>(
    * - checking: [Type.MethodRef] -> [Type] × [EffectResult.Checking]
    *     * Given annotated method, ensure its definition behaves accordingly
    * - instantiation: [Point.Instantiation] -> [Type] × [EffectResult.Instantiation]
-   *     * Given a method and arguments, instantiation the method's summary for context-sensitive
-   *       type+effect
+   *     * Given a method and arguments, instantiation the method's summary for context-sensitive type+effect
    */
   override fun invoke(rec: (Point<FX>) -> Ans<FX>, point: Point<FX>): Ans<FX> =
     when (point) {
@@ -272,8 +243,7 @@ internal open class Analysis<FX : Any>(
 
         when (val status = method.status) {
           is MethodBody.Status.Abstract -> Result(method.returnTypeAnnotation, Inapplicable)
-          is MethodBody.Status.BasicConstructor ->
-            unboundedInferenceMode.pure(method.returnTypeAnnotation)
+          is MethodBody.Status.BasicConstructor -> unboundedInferenceMode.pure(method.returnTypeAnnotation)
           is MethodBody.Status.ForChecking ->
             with(checkingMode(status.upperBound)) {
               when (val body = status.body) {
@@ -281,12 +251,10 @@ internal open class Analysis<FX : Any>(
                 else -> checkingLattice.catchError { eval(body) }
               }
             }
-          is MethodBody.Status.ForInference ->
-            inferenceLattice.catchError { inferenceMode(status.base).eval(status.body) }
+          is MethodBody.Status.ForInference -> inferenceLattice.catchError { inferenceMode(status.base).eval(status.body) }
         }
       }
-      is Point.Instantiation ->
-        instantiationLattice.catchError { apply(rec, point.method, point.args) }
+      is Point.Instantiation -> instantiationLattice.catchError { apply(rec, point.method, point.args) }
     }
 
   /** Run action with errors suppressed in production, to avoid bringing down all of Lint */
@@ -305,11 +273,10 @@ internal open class Analysis<FX : Any>(
   /**
    * Mode-polymorphic analysis of [body] (i.e. either checking or inference)
    *
-   * Assuming an oracle [rec] that knows existing summaries and their instantiations, [eval] is
-   * implemented as a structural recursion on the expression.
+   * Assuming an oracle [rec] that knows existing summaries and their instantiations, [eval] is implemented as a structural recursion on the
+   * expression.
    *
-   * Most complexities of this function are from manipulating UAST, which will eventually be cleaned
-   * up.
+   * Most complexities of this function are from manipulating UAST, which will eventually be cleaned up.
    */
   private fun <R : EffectResult.Eval<FX>> Mode<FX, R>.eval(
     rec: (Point<FX>) -> Ans<FX>,
@@ -338,8 +305,8 @@ internal open class Analysis<FX : Any>(
       }
 
     /**
-     * When there is an expression/feature we don't know, we return the type from
-     * [UExpression.getExpressionType], and assume [unsure] effect.
+     * When there is an expression/feature we don't know, we return the type from [UExpression.getExpressionType], and assume [unsure]
+     * effect.
      */
     fun giveUp(e: UExpression, msg: String): Result<Type<FX>, R> {
       log("WARNING: $msg")
@@ -374,32 +341,32 @@ internal open class Analysis<FX : Any>(
       return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
     }
 
+    val cache = IdentityHashMap<UExpression, Result<Type<FX>, R>>()
+
     fun loop(e: UExpression): Result<Type<FX>, R> {
 
-      fun callMethod(
-        receiver: UExpression?,
-        method: PsiMethod,
-        args: List<UExpression>,
-      ): Result<Type<FX>, R> {
-        fun implicitThis() =
-          e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
+      /** Analyze local sub-expression that might be shared and reusable */
+      fun loopCached(e: UExpression) = cache.getOrPut(e) { loop(e) }
+
+      fun callMethod(receiver: UExpression?, method: PsiMethod, args: List<UExpression>): Result<Type<FX>, R> {
+        fun implicitThis() = e.getContainingUClass()?.javaPsi?.let { PsiClassAdapter.translate(typeParams, it) }!!
 
         val virRecvAns: Result<Type<FX>, R>? =
           when {
             method.isStatic() -> null
             method.isConstructor -> null
-            receiver != null -> loop(receiver) // TODO nope. See below
+            receiver != null -> loopCached(receiver) // TODO nope. See below
             else -> pure(env.receiver(ClassId.of(method.containingClass!!)) ?: implicitThis())
           }
 
         val extRecvAns: Result<Type<FX>, R>? =
           when {
             !method.isExtension() -> null
-            receiver != null -> loop(receiver) // TODO nope. See above
+            receiver != null -> loopCached(receiver) // TODO nope. See above
             else -> pure(env.innermostExtensionReceiver() ?: implicitThis())
           }
 
-        val (restTypes, restFx) = mapM(::loop, args)
+        val (restTypes, restFx) = mapM(::loopCached, args)
 
         return when {
           // virtual extension
@@ -409,10 +376,8 @@ internal open class Analysis<FX : Any>(
             val (extRecvType, extRecvFx) = extRecvAns
             val (appType, appFx) =
               when {
-                method.isFinal() ->
-                  rec[Type.MethodRef(method), listOf(virRecvType, extRecvType) + restTypes]
-                else ->
-                  invokeVirtual(rec, virRecvType, MethodId(method), listOf(extRecvType) + restTypes)
+                method.isFinal() -> rec[Type.MethodRef(method), listOf(virRecvType, extRecvType) + restTypes]
+                else -> invokeVirtual(rec, virRecvType, MethodId(method), listOf(extRecvType) + restTypes)
               }
             Result(appType, virRecvFx join extRecvFx join restFx join onInvocationEffect(e, appFx))
           }
@@ -440,18 +405,12 @@ internal open class Analysis<FX : Any>(
         }
       }
 
-      fun callLambda(
-        receiver: UExpression?,
-        method: ULambdaExpression,
-        args: List<UExpression>,
-      ): Result<Type<FX>, R> {
+      fun callLambda(receiver: UExpression?, method: ULambdaExpression, args: List<UExpression>): Result<Type<FX>, R> {
 
         val methodRef =
           containerChain(method)?.let { (c, m) -> Type.MethodRef(c, m) }
             ?: method.nameFromSource?.let { env.funAt(it) { it.method.isCompatible(args) } }
-            ?: return unsureResult.also {
-              log("Warning: Don't know what `${method.nameFromSource}` is in `$targetName`")
-            }
+            ?: return unsureResult.also { log("Warning: Don't know what `${method.nameFromSource}` is in `$targetName`") }
 
         fun KtNamedFunction.implicitThis(): Result<Type<FX>, R> {
           val t = KtTypeReferenceAdapter.translate(typeParams, typeReference) as Type.Application
@@ -493,19 +452,12 @@ internal open class Analysis<FX : Any>(
       fun call(call: UCallExpression): Result<Type<FX>, R> {
         val method = call.resolveToUElement()
         return when {
+          // constructor call, with constructor definition missing or explicitly "default"
+          call.isConstructorCall() && (method?.javaPsi as? PsiMethod)?.isDefaultConstructor != false -> pure(getType(call))
           method is UMethod ->
-            callMethod(
-              call.callReceiver(),
-              method.javaPsi,
-              completeArguments(typeParams, call, method, UMethod::uastParameters),
-            )
+            callMethod(call.callReceiver(), method.javaPsi, completeArguments(typeParams, call, method, UMethod::uastParameters))
           method is ULambdaExpression ->
-            callLambda(
-              call.callReceiver(),
-              method,
-              completeArguments(typeParams, call, method, ULambdaExpression::valueParameters),
-            )
-          call.isConstructorCall() -> pure(getType(call))
+            callLambda(call.callReceiver(), method, completeArguments(typeParams, call, method, ULambdaExpression::valueParameters))
           else -> {
             fun fail() =
               giveUp(
@@ -517,11 +469,7 @@ internal open class Analysis<FX : Any>(
             when (val recvDecl = recv.tryResolveUDeclaration()) {
               is UVariable -> {
                 val rhs = recvDecl.uastInitializer as? ULambdaExpression ?: return fail()
-                callLambda(
-                  call.callReceiver(),
-                  rhs,
-                  completeArguments(typeParams, call, rhs, ULambdaExpression::valueParameters),
-                )
+                callLambda(call.callReceiver(), rhs, completeArguments(typeParams, call, rhs, ULambdaExpression::valueParameters))
               }
               // TODO shot in the dark below
               else -> {
@@ -531,11 +479,7 @@ internal open class Analysis<FX : Any>(
                 when {
                   // Applying extension method whose code we don't have?
                   recvType is Type.Application -> {
-                    val (t, _) =
-                      giveUp(
-                        e,
-                        "Applying extension method whose code we don't have at ${e.uastParent?.renderAbbrev()}",
-                      )
+                    val (t, _) = giveUp(e, "Applying extension method whose code we don't have at ${e.uastParent?.renderAbbrev()}")
                     Result(t, recvFx join restFx)
                   }
                   else -> {
@@ -546,8 +490,7 @@ internal open class Analysis<FX : Any>(
                             null,
                             is Module.MethodLookupException.NotFound ->
                               "WARNING: Don't know what method `$methodName` is in `${e.uastParent?.renderAbbrev()}` in `$targetName`"
-                            is Module.MethodLookupException.Ambiguous ->
-                              "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
+                            is Module.MethodLookupException.Ambiguous -> "ERROR: ${exc.candidates.size} methods found for name ${exc.name}"
                           }
                         )
                       }
@@ -587,19 +530,14 @@ internal open class Analysis<FX : Any>(
         is UQualifiedReferenceExpression -> {
           val target = e.resolve()
           when {
-            target is PsiField ->
-              Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
-            target is KtLightMethod && target.isAccessor(getter = true) ->
-              callMethod(e.receiver, target, listOf())
+            target is PsiField -> Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
+            target is KtLightMethod && target.isAccessor(getter = true) -> callMethod(e.receiver, target, listOf())
             e.selector is UCallExpression -> loop(e.selector)
             else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
           }
         }
         is UCallableReferenceExpression -> {
-          fun fail() =
-            unsureResult.also {
-              log("ERROR: Don't know how to parse method reference ${e.renderAbbrev()}")
-            }
+          fun fail() = unsureResult.also { log("ERROR: Don't know how to parse method reference ${e.renderAbbrev()}") }
           when (val method = e.resolve()) {
             is PsiMethod -> {
               val ref = Type.MethodRef(method)
@@ -607,8 +545,7 @@ internal open class Analysis<FX : Any>(
                 when {
                   method.isConstructor -> pure(ref)
                   (e.qualifierExpression as? UReferenceExpression)?.resolve() is PsiClass &&
-                    method.containingClass.toUElement()?.sourcePsi !is KtObjectDeclaration ->
-                    pure(ref)
+                    method.containingClass.toUElement()?.sourcePsi !is KtObjectDeclaration -> pure(ref)
                   !method.isStatic() || method.isExtension() -> {
                     fun fromExplicit() =
                       e.qualifierExpression?.let { recvExpr ->
@@ -677,9 +614,7 @@ internal open class Analysis<FX : Any>(
           // Accumulate the returned value at the target
           when (val jumpTarget = e.jumpTarget) {
             null -> target.accumulate(t)
-            else ->
-              returns.find { it.target == jumpTarget }?.accumulate(t)
-                ?: throw UnresolvedReturnTargetException(e, returns)
+            else -> returns.find { it.target == jumpTarget }?.accumulate(t) ?: throw UnresolvedReturnTargetException(e, returns)
           }
           // `return` clause, as an expression, computes no value
           Result(Type.None, fx)
@@ -692,8 +627,7 @@ internal open class Analysis<FX : Any>(
               null -> unboundedInferenceMode
               else ->
                 when (val status = module.getSAMStatus(funIntf)) {
-                  is MethodBody.Status.ForChecking ->
-                    inferenceMode(EffectAnnotation.Implicit(listOf(status.upperBound)))
+                  is MethodBody.Status.ForChecking -> inferenceMode(EffectAnnotation.Implicit(listOf(status.upperBound)))
                   is MethodBody.Status.ForInference,
                   is MethodBody.Status.Abstract -> unboundedInferenceMode
                   is MethodBody.Status.BasicConstructor -> throw IllegalStateException()
@@ -711,12 +645,8 @@ internal open class Analysis<FX : Any>(
                 }
               param.name to paramType
             }
-          val (t, fx) =
-            mode.eval(rec, env.withVars<FX>(lambdaParams), e.body, returns.add(ReturnRecord(e)))
-          Result(
-            Type.Lambda(lambdaParams.map { (_, t) -> t }, Result(t, fx.result), funIntf),
-            bottom + fx.errors,
-          )
+          val (t, fx) = mode.eval(rec, env.withVars<FX>(lambdaParams), e.body, returns.add(ReturnRecord(e)))
+          Result(Type.Lambda(lambdaParams.map { (_, t) -> t }, Result(t, fx.result), funIntf), bottom + fx.errors)
         }
         is UDeclarationsExpression ->
           lastM(
@@ -726,12 +656,11 @@ internal open class Analysis<FX : Any>(
                   val decPsi = dec.javaPsi as PsiLocalVariable
                   val rhs = dec.uastInitializer?.let(::loop)
                   val rhsType =
-                    // For immutable local bindings, we bypass even the user-declared type to use
+                    // For immutable local bindings, we bypass even the user-declared type to
+                    // use
                     // the inferred more precise type.
                     when {
-                      rhs != null &&
-                        rhs.value is Type.Lambda /* TODO generalize */ &&
-                        dec.isImmutable() -> rhs.value
+                      rhs != null && rhs.value is Type.Lambda /* TODO generalize */ && dec.isImmutable() -> rhs.value
                       else -> translate(decPsi.type)
                     }
                   // We update the local environment imperatively instead of accumulating it
@@ -765,18 +694,12 @@ internal open class Analysis<FX : Any>(
                       val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return default()
                       when {
                         // TODO
-                        method.name.startsWith("get") ->
-                          callMethod(receiver, method, indices).effect
+                        method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
                         // TODO
-                        method.name.startsWith("set") ->
-                          callMethod(receiver, method, indices + operand).effect
+                        method.name.startsWith("set") -> callMethod(receiver, method, indices + operand).effect
                         // TODO assuming inc/dec operator
-                        method.parameterList.parametersCount == 1 ->
-                          callMethod(operand, method, listOf()).effect
-                        else ->
-                          throw IllegalStateException(
-                            "Got method `${method.name}` during ${e.renderAbbrev()}"
-                          )
+                        method.parameterList.parametersCount == 1 -> callMethod(operand, method, listOf()).effect
+                        else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
                       }
                     }
                   Result(e.getExpressionType()?.let(::translate) ?: Type.Int, fx)
@@ -821,20 +744,13 @@ internal open class Analysis<FX : Any>(
                       val method = res.element as? PsiMethod ?: return@fold acc
                       when {
                         // TODO
-                        method.name.startsWith("get") ->
-                          callMethod(receiver, method, indices).effect
+                        method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
                         // TODO
-                        method.name.startsWith("set") ->
-                          callMethod(receiver, method, indices + rhs).effect
+                        method.name.startsWith("set") -> callMethod(receiver, method, indices + rhs).effect
                         // TODO assuming the arith op
-                        method.parameterList.parametersCount == 2 ->
-                          callMethod(lhs, method, listOf(rhs)).effect
-                        method.parameterList.parametersCount == 1 ->
-                          callMethod(lhs, method, listOf(rhs)).effect
-                        else ->
-                          throw IllegalStateException(
-                            "Got method `${method.name}` during ${e.renderAbbrev()}"
-                          )
+                        method.parameterList.parametersCount == 2 -> callMethod(lhs, method, listOf(rhs)).effect
+                        method.parameterList.parametersCount == 1 -> callMethod(lhs, method, listOf(rhs)).effect
+                        else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
                       }
                     }
                   Result(Type.Unit, fx)
@@ -858,10 +774,8 @@ internal open class Analysis<FX : Any>(
         }
         is UBinaryExpressionWithType ->
           when (val op = e.operationKind) {
-            is UastBinaryExpressionWithTypeKind.InstanceCheck ->
-              Result(Type.Boolean, loop(e.operand).effect)
-            is UastBinaryExpressionWithTypeKind.TypeCast ->
-              Result(translate(e.type), loop(e.operand).effect)
+            is UastBinaryExpressionWithTypeKind.InstanceCheck -> Result(Type.Boolean, loop(e.operand).effect)
+            is UastBinaryExpressionWithTypeKind.TypeCast -> Result(translate(e.type), loop(e.operand).effect)
             else -> giveUp(e, "Handle ${e.renderAbbrev()} with operation $op")
           }
         is UIfExpression -> {
@@ -873,19 +787,11 @@ internal open class Analysis<FX : Any>(
           val condition = e.expression
           val (_, conditionFx) = condition?.let(::loop) ?: emptyResult
           val (t, bodyFx) = joinM(::loop, e.body.expressions)
-          Result(
-            t,
-            if (condition != null) merge(condition, conditionFx, bodyFx)
-            else conditionFx join bodyFx,
-          )
+          Result(t, if (condition != null) merge(condition, conditionFx, bodyFx) else conditionFx join bodyFx)
         }
         is USwitchClauseExpressionWithBody -> lastM(::loop, e.body.expressions) ?: unitResult
         is UWhileExpression -> Result(Type.Unit, forM(::loop, listOf(e.condition, e.body)))
-        is UForExpression ->
-          Result(
-            Type.Unit,
-            forM(::loop, listOfNotNull(e.declaration, e.condition, e.update, e.body)),
-          )
+        is UForExpression -> Result(Type.Unit, forM(::loop, listOfNotNull(e.declaration, e.condition, e.update, e.body)))
         is UForEachExpression -> {
           val (t1, fx1) = loop(e.iteratedValue)
           val bodyEnv =
@@ -893,8 +799,7 @@ internal open class Analysis<FX : Any>(
               null -> env
               else ->
                 when {
-                  t1 is Type.Application && t1.args.firstOrNull() != null ->
-                    env.withVar(x.name, t1.args.first())
+                  t1 is Type.Application && t1.args.firstOrNull() != null -> env.withVar(x.name, t1.args.first())
                   t1 is Type.Ellipsis -> env.withVar(x.name, t1.element)
                   else -> env // TODO
                 }
@@ -940,12 +845,10 @@ internal open class Analysis<FX : Any>(
         val lastStm = body.expressions.lastOrNull()
         val res =
           when {
-            (body.uastParent as? UMethod)?.isConstructor == true ->
-              translate((body.uastParent as UMethod).getContainingUClass()!!)
+            (body.uastParent as? UMethod)?.isConstructor == true -> translate((body.uastParent as UMethod).getContainingUClass()!!)
             body.expressions.any { it is UReturnExpression } -> target.returns
             // TODO: extract `Nothing` type. Anything else is `Unit`.
-            target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) ->
-              Type.Unit
+            target.returns == Type.None && (lastStm == null || lastStm !is UThrowExpression) -> Type.Unit
             else -> target.returns
           }
         Result(res, fx)
@@ -955,36 +858,26 @@ internal open class Analysis<FX : Any>(
   }
 
   private class ReturnRecord<FX> private constructor(val target: UElement, var returns: Type<FX>) {
-    constructor(
-      destination: UElement
-    ) : this((destination as? UJumpExpression)?.jumpTarget ?: destination, Type.None)
+    constructor(destination: UElement) : this((destination as? UJumpExpression)?.jumpTarget ?: destination, Type.None)
 
     override fun toString() = "${target.renderAbbrev()} ↦ $returns"
   }
 
   /** Run [step] on each of [targets] for the joined type and effect [R] */
-  private fun <X : ErrorSite, R : EffectResult.Eval<FX>> Mode<FX, R>.joinM(
-    step: (X) -> Result<Type<FX>, R>,
-    targets: List<X>,
-  ) = foldM(typeLattice.bottom, typeLattice::joinOf, step, targets)
+  private fun <X : ErrorSite, R : EffectResult.Eval<FX>> Mode<FX, R>.joinM(step: (X) -> Result<Type<FX>, R>, targets: List<X>) =
+    foldM(typeLattice.bottom, typeLattice::joinOf, step, targets)
 
   private fun ReturnRecord<FX>.accumulate(t: Type<FX>) {
     returns = typeLattice.joinOf(returns, t)
   }
 
-  private val placeholderInstantiation: InstAns<FX> =
-    Result(typeLattice.top, /* TODO(b/390196415) */ fxInstantiationLattice.unsure)
+  private val placeholderInstantiation: InstAns<FX> = Result(typeLattice.top, /* TODO(b/390196415) */ fxInstantiationLattice.unsure)
 
   /**
-   * Assuming an oracle [rec] that knows about existing summaries and their instantiations, either
-   * instantiate given statically known receiver, or return a symbolic invocation.
+   * Assuming an oracle [rec] that knows about existing summaries and their instantiations, either instantiate given statically known
+   * receiver, or return a symbolic invocation.
    */
-  private fun invokeVirtual(
-    rec: (Point<FX>) -> Ans<FX>,
-    receiver: Type<FX>,
-    method: MethodId,
-    args: List<Type<FX>>,
-  ): InstAns<FX> =
+  private fun invokeVirtual(rec: (Point<FX>) -> Ans<FX>, receiver: Type<FX>, method: MethodId, args: List<Type<FX>>): InstAns<FX> =
     when (receiver) {
       // TODO pass class type arguments too
       is Type.Application ->
@@ -992,7 +885,7 @@ internal open class Analysis<FX : Any>(
           Type.MethodRef(receiver.constructor, method),
           listOf(receiver) + args,
         ]
-      is Type.Lambda -> rec[receiver, listOf(receiver) + args]
+      is Type.Lambda -> if (receiver.params.size == args.size) rec[receiver, listOf(receiver) + args] else instantiationLattice.bottom
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
       is Type.Sym.Param,
@@ -1003,8 +896,7 @@ internal open class Analysis<FX : Any>(
         val sym = Type.Sym.Invoke(receiver, method, args)
         Result(sym, Instantiation(Effect(concreteEffect.bottom, persistentSetOf(sym))))
       }
-      is Type.Union ->
-        receiver.cases.joinedOver(instantiationLattice) { invokeVirtual(rec, it, method, args) }
+      is Type.Union -> receiver.cases.joinedOver(instantiationLattice) { invokeVirtual(rec, it, method, args) }
       is Type.WildCard -> placeholderInstantiation
       // TODO("Look at super methods to apply $receiver.$method(${args.joinToString()})")
       is Type.Ellipsis -> fxInstantiationLattice.pure(Type.None)
@@ -1022,48 +914,35 @@ internal open class Analysis<FX : Any>(
       // TODO pass class type arguments too
       is Type.Application ->
         try {
-          rec[
-            module.findMethodByName(methodName, receiver.constructor, args),
-            listOf(receiver) + args]
+          rec[module.findMethodByName(methodName, receiver.constructor, args), listOf(receiver) + args]
         } catch (e: Module.MethodLookupException) {
           notFound(e)
         }
       is Type.Lambda -> rec[receiver, listOf(receiver) + args]
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
-      is Type.Union ->
-        receiver.cases.joinedOver(instantiationLattice) {
-          invokeWildGuess(rec, it, methodName, args, notFound)
-        }
+      is Type.Union -> receiver.cases.joinedOver(instantiationLattice) { invokeWildGuess(rec, it, methodName, args, notFound) }
       is Type.Sym,
       is Type.WildCard -> notFound(Module.MethodLookupException.NotFound(methodName))
-      is Type.Ellipsis ->
-        throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
+      is Type.Ellipsis -> throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
       is Type.Sym.Rec -> throw IllegalStateException("Unbound recursive variable $receiver")
     }
 
   /** Instantiate [method]'s summaries at [args] */
-  private fun apply(
-    rec: (Point<FX>) -> Ans<FX>,
-    method: Instantiable<FX>,
-    args: List<Type<FX>>,
-  ): InstAns<FX> =
+  private fun apply(rec: (Point<FX>) -> Ans<FX>, method: Instantiable<FX>, args: List<Type<FX>>): InstAns<FX> =
     when (method) {
       is Type.MethodRef ->
         when (val assumption = assumptions[method]) {
           null ->
             when (val methodDefn = module[method]) {
-              null ->
-                instantiationLattice
-                  .bottom // If method not found, we ASSUME it's from a spurious call
+              null -> instantiationLattice.bottom // If method not found, we ASSUME it's from a spurious call
               else -> {
                 val (t, methodEffectResult) = rec[method]
                 val methodFx: Effect<FX> =
                   when (methodEffectResult) {
                     is Checking<FX> ->
                       Effect(
-                        concrete =
-                          (methodDefn.status as MethodBody.Status.ForChecking).upperBound.annotated,
+                        concrete = (methodDefn.status as MethodBody.Status.ForChecking).upperBound.annotated,
                         constraint = methodEffectResult.result,
                       )
                     is Inference<FX> -> methodEffectResult.result
@@ -1073,15 +952,7 @@ internal open class Analysis<FX : Any>(
                 apply(rec, methodDefn.initEnvironment.types, methodDefn.domains, t, methodFx, args)
               }
             }
-          else ->
-            apply(
-              rec,
-              assumption.typeBounds,
-              assumption.domains,
-              assumption.range,
-              assumption.effect,
-              args,
-            )
+          else -> apply(rec, assumption.typeBounds, assumption.domains, assumption.range, assumption.effect, args)
         }
       is Type.Lambda -> {
         val (xs, body, intf) = method // TODO make sure applying the right message
@@ -1129,15 +1000,13 @@ internal open class Analysis<FX : Any>(
             effect =
               with(effectLattice) {
                 // TODO discarding constraint errors below. Will be problematic.
-                Effect(fxResBound) join
-                  (fxResInvks?.joinedOver { instEffect(rec, it).result } ?: top)
+                Effect(fxResBound) join (fxResInvks?.joinedOver { instEffect(rec, it).result } ?: top)
               },
           )
         Type.Lambda(xs, instantiatedBody, intf)
       }
       is Type.MethodRef -> type
-      is Type.SpecializedMethodRef ->
-        Type.SpecializedMethodRef(instType(rec, type.receiver), type.ref)
+      is Type.SpecializedMethodRef -> Type.SpecializedMethodRef(instType(rec, type.receiver), type.ref)
       is Type.Sym.Param -> varAt(type.name) ?: type
       is Type.Sym.This -> receiver(type.site) ?: type
       is Type.Sym.Invoke ->
@@ -1165,8 +1034,7 @@ internal open class Analysis<FX : Any>(
       }
       is Type.Sym.Rec -> fxInstantiationLattice.bottom // TODO confirm OK??
       is Type.Sym.This,
-      is Type.Sym.Param ->
-        throw IllegalStateException("Unexpected symbolic effect representation: $fx")
+      is Type.Sym.Param -> throw IllegalStateException("Unexpected symbolic effect representation: $fx")
       is Type.Sym.Fix -> instFix(rec, fx).effect
     }
 
@@ -1203,13 +1071,7 @@ internal open class Analysis<FX : Any>(
             val substArgs = args.map { it.substAndInvoke(base) }
             val args = substArgs.map { it.value }
             val argsFx = substArgs.fold(bottom) { fx, arg -> fx join arg.effect }
-            val (res, invFx) =
-              invokeVirtual(
-                rec,
-                typeLattice.widen(substReceivers),
-                method,
-                args.map(typeLattice::widen),
-              )
+            val (res, invFx) = invokeVirtual(rec, typeLattice.widen(substReceivers), method, args.map(typeLattice::widen))
             Result(res, recvFx join argsFx join invFx)
           }
           is Type.Application,
@@ -1217,21 +1079,14 @@ internal open class Analysis<FX : Any>(
           is Type.WildCard,
           is Type.MethodRef -> pure(this)
           is Type.Union -> cases.joinedOver(instantiationLattice) { it.substAndInvoke(base) }
-          is Type.Lambda -> {
-            val (bodyT0, bodyFx0) = body
-            val (bodyT, bodyFx) = bodyT0.substAndInvoke(base)
-            pure(
-              Type.Lambda(params, Result(bodyT, effectLattice.joinOf(bodyFx0, bodyFx.result)), intf)
-            )
-          }
+          is Type.Lambda -> pure(this)
           is Type.SpecializedMethodRef -> {
             val (t, fx) = receiver.substAndInvoke(base)
             Result(copy(receiver = t), fx)
           }
           is Type.Sym.Fix ->
             with(instantiationLattice) {
-              baseCases.joinedOver { it.substAndInvoke(base) } join
-                inductiveCases.joinedOver { it.substAndInvoke(base) }
+              baseCases.joinedOver { it.substAndInvoke(base) } join inductiveCases.joinedOver { it.substAndInvoke(base) }
             }
         }
 
@@ -1272,13 +1127,10 @@ internal open class Analysis<FX : Any>(
       }
     }
 
-  private operator fun ((Point<FX>) -> Ans<FX>).get(method: Type.MethodRef) =
-    this(method) as SummAns<FX>
+  private operator fun ((Point<FX>) -> Ans<FX>).get(method: Type.MethodRef) = this(method) as SummAns<FX>
 
-  private operator fun ((Point<FX>) -> Ans<FX>).get(
-    method: Instantiable<FX>,
-    args: List<Type<FX>>,
-  ) = this(Point.Instantiation(method, args)) as InstAns<FX>
+  private operator fun ((Point<FX>) -> Ans<FX>).get(method: Instantiable<FX>, args: List<Type<FX>>) =
+    this(Point.Instantiation(method, args)) as InstAns<FX>
 
   private fun resolvePossiblyAnnotatedSuperClass(e: UExpression): ClassId? {
     fun typeOf(t: PsiType?) = (t as? PsiClassType)?.let(ClassId::of)
@@ -1308,9 +1160,7 @@ internal open class Analysis<FX : Any>(
     }
   }
 
-  /**
-   * Given [method] and user-supplied arguments in [call], fill in default arguments from [method]
-   */
+  /** Given [method] and user-supplied arguments in [call], fill in default arguments from [method] */
   private fun <M : UElement> completeArguments(
     typeParams: Set<String>,
     call: UCallExpression,
@@ -1330,16 +1180,10 @@ internal open class Analysis<FX : Any>(
     }
   }
 
-  private fun completeArguments(
-    typeParams: Set<String>,
-    call: UCallExpression,
-    params: List<UParameter>,
-  ) =
+  private fun completeArguments(typeParams: Set<String>, call: UCallExpression, params: List<UParameter>) =
     when {
       // Common case: don't resort to `getArgumentForParameter` args already match!
-      params.size == call.valueArguments.size &&
-        params.none { it.isVararg() } &&
-        !call.hasComplexArgList() -> call.valueArguments
+      params.size == call.valueArguments.size && params.none { it.isVararg() } && !call.hasComplexArgList() -> call.valueArguments
       else ->
         params.mapIndexed { i, param ->
           val paramPsi = param.javaPsi as PsiParameter
@@ -1370,8 +1214,7 @@ internal open class Analysis<FX : Any>(
   private fun UParameter.isVararg(): Boolean =
     (sourcePsi as? KtParameter)?.isVarArg == true || (javaPsi as? PsiParameter)?.isVarArgs == true
 
-  private fun UCallExpression.isArrayAccess() =
-    javaClass.canonicalName == "com.android.tools.lint.detector.api.ArrayAccessAsCallExpression"
+  private fun UCallExpression.isArrayAccess() = javaClass.canonicalName == "com.android.tools.lint.detector.api.ArrayAccessAsCallExpression"
 
   private fun <R : EffectResult.Eval<FX>> Mode<FX, R>.guardImplAgainstIntf(
     rec: (Point<FX>) -> Ans<FX>,
@@ -1384,13 +1227,7 @@ internal open class Analysis<FX : Any>(
     val impls = module[implId] ?: return persistentSetOf()
     return intfs.entries.flatMapToPersistentSet { (methodIntf, methodIntfHeader) ->
       val methodImplHeader = impls[methodIntf] ?: return@flatMapToPersistentSet persistentSetOf()
-      guardImplAgainstStatus(
-        rec,
-        arg,
-        methodIntfHeader.status,
-        Type.MethodRef(implId, methodIntf),
-        methodImplHeader,
-      )
+      guardImplAgainstStatus(rec, arg, methodIntfHeader.status, Type.MethodRef(implId, methodIntf), methodImplHeader)
     }
   }
 
@@ -1417,8 +1254,7 @@ internal open class Analysis<FX : Any>(
                 }
               }
               is Checking -> {
-                val implCheckedFx =
-                  (methodImplHeader.status as MethodBody.Status.ForChecking).upperBound.annotated
+                val implCheckedFx = (methodImplHeader.status as MethodBody.Status.ForChecking).upperBound.annotated
                 if (!concreteEffects.precede(implCheckedFx, annValue)) {
                   result += Error.ConflictingInference(arg, implCheckedFx, baseAnn)
                 }
@@ -1453,13 +1289,9 @@ internal open class Analysis<FX : Any>(
       effects: Lattice<EffectResult.Inference<FX>>,
       constraintLattice: Lattice<Constraint<FX>>,
     ) : Mode<FX, EffectResult.Inference<FX>>(concreteEffects, effects, constraintLattice) {
-      private val upperBound =
-        bases.fold(concreteEffects.top) { acc, base -> concreteEffects.meetOf(acc, base.annotated) }
+      private val upperBound = bases.fold(concreteEffects.top) { acc, base -> concreteEffects.meetOf(acc, base.annotated) }
 
-      override fun onInvocationEffect(
-        source: UExpression,
-        fxInst: Instantiation<FX>,
-      ): EffectResult.Inference<FX> {
+      override fun onInvocationEffect(source: UExpression, fxInst: Instantiation<FX>): EffectResult.Inference<FX> {
         val (fx, failures) = fxInst
 
         // Accumulate errors
@@ -1504,12 +1336,7 @@ internal open class Analysis<FX : Any>(
               left.result.concrete != top &&
               right.result.concrete != top &&
               joined.result.concrete == top ->
-              joined.copy(
-                errors =
-                  persistentSetOf(
-                    Error.IntroducingTop(context, left.result.concrete, right.result.concrete)
-                  )
-              )
+              joined.copy(errors = persistentSetOf(Error.IntroducingTop(context, left.result.concrete, right.result.concrete)))
             else -> joined
           }
         }
@@ -1526,17 +1353,10 @@ internal open class Analysis<FX : Any>(
         with(concreteEffects) {
           val (fx, failures) = fxInst
           var errors = persistentSetOf<Error<FX>>()
-          if (!(fx.concrete precedes annotation))
-            errors += Error.ExceedingAnnotation(annotation, fx.concrete, source)
+          if (!(fx.concrete precedes annotation)) errors += Error.ExceedingAnnotation(annotation, fx.concrete, source)
           errors += failures.at(source)
           val generatedConstraints = Constraint.concrete(annotation, fx.invocations)
-          Checking(
-            constraintLattice.joinOf(
-              fx.constraint,
-              Constraint(generatedConstraints, persistentMapOf()),
-            ),
-            errors,
-          )
+          Checking(constraintLattice.joinOf(fx.constraint, Constraint(generatedConstraints, persistentMapOf())), errors)
         }
     }
 
@@ -1545,10 +1365,7 @@ internal open class Analysis<FX : Any>(
 
   private class UnresolvedNameException(val element: UElement) : Exception()
 
-  private class UnresolvedReturnTargetException(
-    val statement: UElement,
-    val targets: List<ReturnRecord<*>>,
-  ) : Exception()
+  private class UnresolvedReturnTargetException(val statement: UElement, val targets: List<ReturnRecord<*>>) : Exception()
 }
 
 private val <T> Lattice<T>.emptyResult: Result<Type<Nothing>, T>
@@ -1558,14 +1375,11 @@ private val <T> Lattice<T>.unitResult: Result<Type<Nothing>, T>
   get() = pure(Type.Unit)
 
 /**
- * The "effect" information returned is a little different depending on whether we're inferring,
- * checking, or instantiating.
+ * The "effect" information returned is a little different depending on whether we're inferring, checking, or instantiating.
  * - [Inference] represents inferred [Effect] as well as [errors] during the process.
- * - [Checking] represents implied [Constraint] during checking, without inferring anything, as well
- *   as errors during the process.
- * - [Instantiation] represents internally instantiated [Effect]. Instantiation is agnostic of call
- *   sites, so results can be shared. In particular, the [ConstraintFailure] doesn't have any call
- *   site attached to it yet, compared to [Error.FailingConstraint].
+ * - [Checking] represents implied [Constraint] during checking, without inferring anything, as well as errors during the process.
+ * - [Instantiation] represents internally instantiated [Effect]. Instantiation is agnostic of call sites, so results can be shared. In
+ *   particular, the [ConstraintFailure] doesn't have any call site attached to it yet, compared to [Error.FailingConstraint].
  */
 sealed class EffectResult<out FX> {
   abstract val errors: UnboundedSet<*>
@@ -1575,16 +1389,10 @@ sealed class EffectResult<out FX> {
     abstract override val errors: UnboundedSet<Error<FX>>
   }
 
-  data class Inference<out FX>(
-    override val result: Effect<FX>,
-    override val errors: UnboundedSet<Error<FX>>,
-  ) : Eval<FX>()
+  data class Inference<out FX>(override val result: Effect<FX>, override val errors: UnboundedSet<Error<FX>>) : Eval<FX>()
 
   // TODO: Also generate constraints on higher-order arguments
-  data class Checking<out FX>(
-    override val result: Constraint<FX>,
-    override val errors: UnboundedSet<Error<FX>>,
-  ) : Eval<FX>()
+  data class Checking<out FX>(override val result: Constraint<FX>, override val errors: UnboundedSet<Error<FX>>) : Eval<FX>()
 
   data object Inapplicable : Eval<Nothing>(), Lattice<Inapplicable> {
     override val errors = persistentSetOf<Nothing>()
@@ -1614,9 +1422,7 @@ sealed class EffectResult<out FX> {
     }
 }
 
-private operator fun <FX, R : EffectResult.Eval<FX>> R.plus(
-  moreErrors: UnboundedSet<Error<FX>>
-): R =
+private operator fun <FX, R : EffectResult.Eval<FX>> R.plus(moreErrors: UnboundedSet<Error<FX>>): R =
   when (this) {
     is Inference<*> -> copy(errors = errors unionedWith moreErrors) as R
     is Checking<*> -> copy(errors = errors unionedWith moreErrors) as R
@@ -1665,8 +1471,7 @@ private data class RestArg(val elems: List<UExpression>) : UExpression {
 
   override val uAnnotations = listOf<Nothing>()
 
-  private fun joinString(onElem: (UExpression) -> String) =
-    "[|${elems.joinToString(transform = onElem)}|]"
+  private fun joinString(onElem: (UExpression) -> String) = "[|${elems.joinToString(transform = onElem)}|]"
 }
 
 private fun UExpression.lhsReceiverAndIndices(): Pair<UExpression?, List<UExpression>>? =
@@ -1681,10 +1486,7 @@ private fun UExpression.lhsReceiverAndIndices(): Pair<UExpression?, List<UExpres
 private fun UCallExpression.callReceiver(): UExpression? =
   receiver
     ?: when (val src = sourcePsi) {
-      is KtCallExpression ->
-        (src.calleeExpression.toUElement() as? UExpression)?.takeIf {
-          it.getExpressionType() != null
-        }
+      is KtCallExpression -> (src.calleeExpression.toUElement() as? UExpression)?.takeIf { it.getExpressionType() != null }
       else -> null
     }
 

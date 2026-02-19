@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.viewModelActivity.res.layout
 
-
-fun activityXml(
-  activityClass: String) =
-
+fun activityXml(activityClass: String) =
   """<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"

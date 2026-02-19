@@ -28,20 +28,17 @@ import org.jetbrains.kotlin.gradle.idea.serialize.IdeaKotlinExtrasSerializationE
 import org.jetbrains.kotlin.gradle.idea.serialize.IdeaKotlinExtrasSerializer
 import org.jetbrains.kotlin.tooling.core.Extras
 
-/**
- * An extension that provides the kotlin plugin with information on how to serialize android extra
- * models.
- */
+/** An extension that provides the kotlin plugin with information on how to serialize android extra models. */
 class AndroidExtrasSerializationExtension : IdeaKotlinExtrasSerializationExtension {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T> serializer(key: Extras.Key<T>): IdeaKotlinExtrasSerializer<T>? {
-        return when(key) {
-            androidTargetKey -> AndroidTargetModelSerializer as IdeaKotlinExtrasSerializer<T>
-            androidCompilationKey -> AndroidCompilationModelSerializer as IdeaKotlinExtrasSerializer<T>
-            androidSourceSetKey -> AndroidSourceSetModelSerializer as IdeaKotlinExtrasSerializer<T>
-            androidDependencyKey -> AndroidDependencyModelSerializer as IdeaKotlinExtrasSerializer<T>
-            else -> null
-        }
+  @Suppress("UNCHECKED_CAST")
+  override fun <T> serializer(key: Extras.Key<T>): IdeaKotlinExtrasSerializer<T>? {
+    return when (key) {
+      androidTargetKey -> AndroidTargetModelSerializer as IdeaKotlinExtrasSerializer<T>
+      androidCompilationKey -> AndroidCompilationModelSerializer as IdeaKotlinExtrasSerializer<T>
+      androidSourceSetKey -> AndroidSourceSetModelSerializer as IdeaKotlinExtrasSerializer<T>
+      androidDependencyKey -> AndroidDependencyModelSerializer as IdeaKotlinExtrasSerializer<T>
+      else -> null
     }
+  }
 }

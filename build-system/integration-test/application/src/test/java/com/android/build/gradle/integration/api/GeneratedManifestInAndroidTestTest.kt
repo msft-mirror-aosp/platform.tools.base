@@ -18,137 +18,123 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.truth.Truth
-import org.junit.Before
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class GeneratedManifestInAndroidTestTest {
-    @Rule
-    @JvmField
-    var project = GradleTestProject.builder().fromTestProject("androidManifestInTest").create()
+  @Rule @JvmField var project = GradleTestProject.builder().fromTestProject("androidManifestInTest").create()
 
-    fun addManifestGenerationToManifest(toAndroidTest: Boolean = true) {
-        project.buildFile.appendText(
-            """
-            androidComponents {
-                onVariants(selector().all(), { variant ->
-                    def generateCustomManifestTask = tasks.register("generate${"$"}{variant.name.capitalize()}CustomManifest", GenerateCustomManifestTask)
-            """.trimIndent())
-        if (toAndroidTest) {
-            project.buildFile.appendText(
-                """
+  fun addManifestGenerationToManifest(toAndroidTest: Boolean = true) {
+    project.buildFile.appendText(
+      """
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              def generateCustomManifestTask = tasks.register("generate${"$"}{variant.name.capitalize()}CustomManifest", GenerateCustomManifestTask)
+      """
+        .trimIndent()
+    )
+    if (toAndroidTest) {
+      project.buildFile.appendText(
+        """
 
-                    if (variant.androidTest != null) {
-                        variant.androidTest.sources.manifests.addGeneratedManifestFile(generateCustomManifestTask, { it.getManifestProperty() })
-                    }
-                })
-            }
-            """.trimIndent()
-            )
-        } else {
-            project.buildFile.appendText(
-                """
-
-                    variant.sources.manifests.addGeneratedManifestFile(generateCustomManifestTask, { it.getManifestProperty() })
-                })
-            }
-            """.trimIndent()
-            )
-        }
-
-        project.buildFile.appendText("""
-
-            abstract class GenerateCustomManifestTask extends DefaultTask {
-                @OutputFile
-                abstract RegularFileProperty getManifestProperty()
-
-                @TaskAction
-                void generateManifest() {
-                    String manifest = ""${'"'}
-                        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                            android:versionCode="00000000"
-                            android:versionName="0.0.0">
-
-                            <permission
-                                android:name="foo.generated.SEND_TEXT"
-                                android:description="@string/app_name"
-                                android:label="@string/app_name"
-                                android:permissionGroup="foo.permission-group.COST_MONEY" />
-                        </manifest>
-                    ""${'"'}.stripIndent()
-
-                    File manifestFile = manifestProperty.get().asFile
-                    manifestFile.write(manifest)
+                if (variant.androidTest != null) {
+                    variant.androidTest.sources.manifests.addGeneratedManifestFile(generateCustomManifestTask, { it.getManifestProperty() })
                 }
-            }
-            """.trimIndent()
-        )
-    }
-
-    @Test
-    fun testGeneratedManifestIsUsed() {
-        addManifestGenerationToManifest()
-        project.execute("assembleDebugAndroidTest")
-        project.getIntermediateFile(
-            "packaged_manifests",
-            "debugAndroidTest",
-            "processDebugAndroidTestManifest",
-            "AndroidManifest.xml"
-        ).let {
-            Truth.assertThat(it.exists()).isTrue()
-            it.readText().let { content ->
-                Truth.assertThat(content).contains("android:name=\"foo.generated.SEND_TEXT\"")
-                Truth.assertThat(content).contains("android:versionCode=\"00000000")
-            }
+            })
         }
-    }
+        """
+          .trimIndent()
+      )
+    } else {
+      project.buildFile.appendText(
+        """
 
-    @Test
-    fun testGeneratedManifestIsUsedAsMainManifest() {
-
-        addManifestGenerationToManifest()
-        // delete the main manifest source file and make sure it still merges fine.
-        File(project.projectDir, "src/androidTest/AndroidManifest.xml").delete()
-        project.execute("assembleDebugAndroidTest")
-        project.getIntermediateFile(
-            "packaged_manifests",
-            "debugAndroidTest",
-            "processDebugAndroidTestManifest",
-            "AndroidManifest.xml"
-        ).let {
-            Truth.assertThat(it.exists()).isTrue()
-            it.readText().let { content ->
-                Truth.assertThat(content).contains("android:name=\"foo.generated.SEND_TEXT\"")
-                Truth.assertThat(content).contains("android:versionCode=\"00000000")
-            }
+                variant.sources.manifests.addGeneratedManifestFile(generateCustomManifestTask, { it.getManifestProperty() })
+            })
         }
+        """
+          .trimIndent()
+      )
     }
 
-    @Test
-    fun testNoMainManifestNorOverlays() {
+    project.buildFile.appendText(
+      """
 
-        // delete the main manifest source file and make sure it still merges fine.
-        File(project.projectDir, "src/androidTest/AndroidManifest.xml").delete()
-        project.execute("assembleDebugAndroidTest")
-        project.getIntermediateFile(
-            "packaged_manifests",
-            "debugAndroidTest",
-            "processDebugAndroidTestManifest",
-            "AndroidManifest.xml"
-        ).let {
-            Truth.assertThat(it.exists()).isTrue()
-            // the instrumentation manifest file should have been generated correctly.
-            it.readText().let { content ->
-                Truth.assertThat(content).contains("instrumentation")
-            }
-        }
-    }
+      abstract class GenerateCustomManifestTask extends DefaultTask {
+          @OutputFile
+          abstract RegularFileProperty getManifestProperty()
 
-    @Test
-    fun testSyncWithGeneratedManifests() {
-        // ensure that generated manifest file does not trigger a sync exception.
-        addManifestGenerationToManifest(toAndroidTest = false)
-        project.modelV2().fetchModels()
+          @TaskAction
+          void generateManifest() {
+              String manifest = ""${'"'}
+                  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                      android:versionCode="00000000"
+                      android:versionName="0.0.0">
+
+                      <permission
+                          android:name="foo.generated.SEND_TEXT"
+                          android:description="@string/app_name"
+                          android:label="@string/app_name"
+                          android:permissionGroup="foo.permission-group.COST_MONEY" />
+                  </manifest>
+              ""${'"'}.stripIndent()
+
+              File manifestFile = manifestProperty.get().asFile
+              manifestFile.write(manifest)
+          }
+      }
+      """
+        .trimIndent()
+    )
+  }
+
+  @Test
+  fun testGeneratedManifestIsUsed() {
+    addManifestGenerationToManifest()
+    project.execute("assembleDebugAndroidTest")
+    project.getIntermediateFile("packaged_manifests", "debugAndroidTest", "processDebugAndroidTestManifest", "AndroidManifest.xml").let {
+      Truth.assertThat(it.exists()).isTrue()
+      it.readText().let { content ->
+        Truth.assertThat(content).contains("android:name=\"foo.generated.SEND_TEXT\"")
+        Truth.assertThat(content).contains("android:versionCode=\"00000000")
+      }
     }
+  }
+
+  @Test
+  fun testGeneratedManifestIsUsedAsMainManifest() {
+
+    addManifestGenerationToManifest()
+    // delete the main manifest source file and make sure it still merges fine.
+    File(project.projectDir, "src/androidTest/AndroidManifest.xml").delete()
+    project.execute("assembleDebugAndroidTest")
+    project.getIntermediateFile("packaged_manifests", "debugAndroidTest", "processDebugAndroidTestManifest", "AndroidManifest.xml").let {
+      Truth.assertThat(it.exists()).isTrue()
+      it.readText().let { content ->
+        Truth.assertThat(content).contains("android:name=\"foo.generated.SEND_TEXT\"")
+        Truth.assertThat(content).contains("android:versionCode=\"00000000")
+      }
+    }
+  }
+
+  @Test
+  fun testNoMainManifestNorOverlays() {
+
+    // delete the main manifest source file and make sure it still merges fine.
+    File(project.projectDir, "src/androidTest/AndroidManifest.xml").delete()
+    project.execute("assembleDebugAndroidTest")
+    project.getIntermediateFile("packaged_manifests", "debugAndroidTest", "processDebugAndroidTestManifest", "AndroidManifest.xml").let {
+      Truth.assertThat(it.exists()).isTrue()
+      // the instrumentation manifest file should have been generated correctly.
+      it.readText().let { content -> Truth.assertThat(content).contains("instrumentation") }
+    }
+  }
+
+  @Test
+  fun testSyncWithGeneratedManifests() {
+    // ensure that generated manifest file does not trigger a sync exception.
+    addManifestGenerationToManifest(toAndroidTest = false)
+    project.modelV2().fetchModels()
+  }
 }

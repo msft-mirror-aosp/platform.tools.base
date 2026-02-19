@@ -9,7 +9,8 @@
     bootClassPath="${androidSdkDir}/platforms/android-${androidHighestKnownStableApi}/android.jar:${androidSdkDir}/build-tools/36.0.0/core-lambda-stubs.jar"
     javaSourceLevel="11"
     compileTarget="android-${androidHighestKnownStableApi}"
-    neverShrinking="true">
+    neverShrinking="true"
+    highlightGradualR8Api="false">
   <lintOptions
       disable="GradleDependency"
       abortOnError="true"

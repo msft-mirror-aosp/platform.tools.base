@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.fullscreenActivit
 
 import com.android.tools.idea.wizard.template.renderIf
 
-
-fun stringsXml(
-  activityTitle: String,
-  isNewModule: Boolean,
-  simpleName: String): String {
-  val title = renderIf(!isNewModule) {"""<string name="title_${simpleName}">${activityTitle}</string>"""}
+fun stringsXml(activityTitle: String, isNewModule: Boolean, simpleName: String): String {
+  val title = renderIf(!isNewModule) { """<string name="title_${simpleName}">${activityTitle}</string>""" }
   return """<resources>
     $title
     <string name="dummy_button">Dummy Button</string>

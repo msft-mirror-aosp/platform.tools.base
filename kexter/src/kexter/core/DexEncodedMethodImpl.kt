@@ -42,31 +42,19 @@ internal class CodeItem(
       // padding
       // tries
       // handlers
-      return CodeItem(
-        registerSize,
-        insSize,
-        outsSize,
-        triesSize,
-        debugInfoOffset,
-        sizeInstructions,
-        instructions,
-      )
+      return CodeItem(registerSize, insSize, outsSize, triesSize, debugInfoOffset, sizeInstructions, instructions)
     }
   }
 }
 
-internal class DexEncodedMethodImpl(
-  private val method: EncodedMethod,
-  override val isDirect: Boolean,
-  private val dex: DexImpl,
-) : DexEncodedMethod {
+internal class DexEncodedMethodImpl(private val method: EncodedMethod, override val isDirect: Boolean, private val dex: DexImpl) :
+  DexEncodedMethod {
 
   override val name: String by lazy(LazyThreadSafetyMode.NONE) { retrieveName() }
 
   override val byteCode by lazy(LazyThreadSafetyMode.NONE) { retrieveByteCode() }
 
-  override val type: String by
-    lazy(LazyThreadSafetyMode.NONE) { dex.typeIds.get(methodId.classIndex.toUInt()) }
+  override val type: String by lazy(LazyThreadSafetyMode.NONE) { dex.typeIds.get(methodId.classIndex.toUInt()) }
 
   override val isNative: Boolean
     get() = byteCode.instructions.size == 0
@@ -74,8 +62,7 @@ internal class DexEncodedMethodImpl(
   override val shorty: String
     get() = dex.stringIds.get(protoId.shortyIndex)
 
-  override val params: List<String> by
-    lazy(LazyThreadSafetyMode.NONE) { dex.retrieveParams(protoId) }
+  override val params: List<String> by lazy(LazyThreadSafetyMode.NONE) { dex.retrieveParams(protoId) }
 
   override val returnType: String
     get() = dex.typeIds.get(protoId.returnTypeIndex)

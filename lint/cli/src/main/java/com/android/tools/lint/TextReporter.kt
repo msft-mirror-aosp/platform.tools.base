@@ -56,12 +56,7 @@ class TextReporter(
    * @param writer the writer to write into
    * @param close whether the writer should be closed when done
    */
-  constructor(
-    client: LintCliClient,
-    flags: LintCliFlags,
-    writer: Writer,
-    close: Boolean,
-  ) : this(client, flags, null, writer, close)
+  constructor(client: LintCliClient, flags: LintCliFlags, writer: Writer, close: Boolean) : this(client, flags, null, writer, close)
 
   @Throws(IOException::class)
   override fun write(stats: LintStats, issues: List<Incident>, registry: IssueRegistry) {
@@ -73,13 +68,7 @@ class TextReporter(
         if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
           val baselineFile = flags.baselineFile!!
           val counts =
-            describeCounts(
-              stats.baselineErrorCount,
-              stats.baselineWarningCount,
-              stats.baselineHintCount,
-              comma = true,
-              capitalize = true,
-            )
+            describeCounts(stats.baselineErrorCount, stats.baselineWarningCount, stats.baselineHintCount, comma = true, capitalize = true)
           writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
         writer.write('.'.code)
@@ -132,9 +121,7 @@ class TextReporter(
           output.append("This issue has been automatically fixed.\n")
         }
         if (flags.isShowSourceLines) {
-          incident.getErrorLines(textProvider = { client.getSourceText(it) })?.let {
-            if (it.isNotEmpty()) output.append(it)
-          }
+          incident.getErrorLines(textProvider = { client.getSourceText(it) })?.let { if (it.isNotEmpty()) output.append(it) }
         }
         if (incident.location.secondary != null) {
           var location = incident.location.secondary
@@ -161,9 +148,7 @@ class TextReporter(
               omitted = true
             }
             if (flags.isShowSourceLines && includeSecondaryLineContent) {
-              location.getErrorLines(textProvider = { client.getSourceText(it) })?.let {
-                if (it.isNotEmpty()) output.append(it)
-              }
+              location.getErrorLines(textProvider = { client.getSourceText(it) })?.let { if (it.isNotEmpty()) output.append(it) }
             }
             location = location.secondary
           }
@@ -213,25 +198,12 @@ class TextReporter(
       writer.write(output.toString())
       if (writeStats) {
         writer.write(
-          describeCounts(
-            stats.errorCount,
-            stats.warningCount,
-            stats.hintCount,
-            comma = true,
-            capitalize = true,
-            includeZero = true,
-          )
+          describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = true, capitalize = true, includeZero = true)
         )
         if (stats.baselineErrorCount > 0 || stats.baselineWarningCount > 0) {
           val baselineFile = flags.baselineFile!!
           val counts =
-            describeCounts(
-              stats.baselineErrorCount,
-              stats.baselineWarningCount,
-              stats.baselineHintCount,
-              comma = true,
-              capitalize = true,
-            )
+            describeCounts(stats.baselineErrorCount, stats.baselineWarningCount, stats.baselineHintCount, comma = true, capitalize = true)
           writer.write(" (and $counts filtered by baseline ${baselineFile.name})")
         }
       }

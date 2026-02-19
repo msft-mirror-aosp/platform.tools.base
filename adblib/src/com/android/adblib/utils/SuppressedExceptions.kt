@@ -15,30 +15,25 @@
  */
 package com.android.adblib.utils
 
-/**
- * Helper class to allow collecting a list of [Throwable] for the purpose of recording
- * [Throwable.suppressedExceptions]
- */
+/** Helper class to allow collecting a list of [Throwable] for the purpose of recording [Throwable.suppressedExceptions] */
 object SuppressedExceptions {
 
-    fun init(): List<Throwable> {
-        return emptyList()
-    }
+  fun init(): List<Throwable> {
+    return emptyList()
+  }
 
-    /** Returns a result that must be assigned to a variable and used. */
-    fun add(existing: List<Throwable>, e: Throwable): List<Throwable> {
-        return if (existing.isEmpty()) {
-            ArrayList<Throwable>(1).apply { add(e) }
-        } else {
-            (existing as ArrayList<Throwable>).apply { add(e) }
-        }
+  /** Returns a result that must be assigned to a variable and used. */
+  fun add(existing: List<Throwable>, e: Throwable): List<Throwable> {
+    return if (existing.isEmpty()) {
+      ArrayList<Throwable>(1).apply { add(e) }
+    } else {
+      (existing as ArrayList<Throwable>).apply { add(e) }
     }
+  }
 }
 
-/**
- * Record a list of [Throwable] as [Throwable.suppressedExceptions]
- */
+/** Record a list of [Throwable] as [Throwable.suppressedExceptions] */
 fun <T : Exception> T.withSuppressed(suppressedException: List<Throwable>?): T {
-    suppressedException?.forEach { addSuppressed(it) }
-    return this
+  suppressedException?.forEach { addSuppressed(it) }
+  return this
 }

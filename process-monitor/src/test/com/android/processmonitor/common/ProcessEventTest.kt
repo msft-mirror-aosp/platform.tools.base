@@ -20,32 +20,28 @@ import com.android.processmonitor.monitor.ProcessNames
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/**
- * Tests for [ProcessEvent]
- */
+/** Tests for [ProcessEvent] */
 class ProcessEventTest {
 
-    @Test
-    fun processAdded_toProcessNames() {
-        assertThat(ProcessAdded(1, "applicationId", "processName").toProcessNames())
-            .isEqualTo(ProcessNames("applicationId", "processName"))
-    }
+  @Test
+  fun processAdded_toProcessNames() {
+    assertThat(ProcessAdded(1, "applicationId", "processName").toProcessNames()).isEqualTo(ProcessNames("applicationId", "processName"))
+  }
 
-    @Test
-    fun processAdded_toProcessNames_nullApplicationId() {
-        assertThat(ProcessAdded(1, null, "processName").toProcessNames())
-            .isEqualTo(ProcessNames("processName", "processName"))
-    }
+  @Test
+  fun processAdded_toProcessNames_nullApplicationId() {
+    assertThat(ProcessAdded(1, null, "processName").toProcessNames()).isEqualTo(ProcessNames("processName", "processName"))
+  }
 
-    @Test
-    fun processAdded_toProcessNames_extractsApplicationId() {
-        assertThat(ProcessAdded(1, null, "com.google.app:service").toProcessNames())
-            .isEqualTo(ProcessNames("com.google.app", "com.google.app:service"))
-    }
+  @Test
+  fun processAdded_toProcessNames_extractsApplicationId() {
+    assertThat(ProcessAdded(1, null, "com.google.app:service").toProcessNames())
+      .isEqualTo(ProcessNames("com.google.app", "com.google.app:service"))
+  }
 
-    @Test
-    fun processAdded_toProcessNames_doesNotExtractApplicationIdIfNotNull() {
-        assertThat(ProcessAdded(1, "applicationId", "com.google.app:service").toProcessNames())
-            .isEqualTo(ProcessNames("applicationId", "com.google.app:service"))
-    }
+  @Test
+  fun processAdded_toProcessNames_doesNotExtractApplicationIdIfNotNull() {
+    assertThat(ProcessAdded(1, "applicationId", "com.google.app:service").toProcessNames())
+      .isEqualTo(ProcessNames("applicationId", "com.google.app:service"))
+  }
 }

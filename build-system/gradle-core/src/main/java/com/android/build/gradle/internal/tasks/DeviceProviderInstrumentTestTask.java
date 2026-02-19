@@ -56,7 +56,6 @@ import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.testing.StaticTestData;
 import com.android.build.gradle.internal.testing.TestData;
 import com.android.build.gradle.internal.testing.TestRunner;
-import com.android.build.gradle.internal.testing.androidtest.AndroidTestUtilsKt;
 import com.android.build.gradle.internal.testing.utp.UtpTestRunner;
 import com.android.build.gradle.internal.testing.utp.UtpTestUtilsKt;
 import com.android.build.gradle.options.BooleanOption;
@@ -69,11 +68,11 @@ import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.ide.common.workers.ExecutorServiceAdapter;
-import com.android.sdklib.BuildToolInfo;
 import com.android.tools.utp.gradle.api.EmulatorControlConfig;
 import com.android.tools.utp.gradle.api.UtpDependencies;
 import com.android.utils.FileUtils;
 import com.android.utils.StringHelper;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -82,7 +81,6 @@ import com.google.common.io.Files;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ArtifactCollection;
 import org.gradle.api.artifacts.Configuration;
@@ -91,7 +89,6 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.provider.ListProperty;
@@ -124,7 +121,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -139,16 +135,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             file -> SdkConstants.EXT_ANDROID_PACKAGE.equals(Files.getFileExtension(file.getName()));
 
     public abstract static class TestRunnerFactory {
-
-        /** Java runtime environment to run UTP in */
-        @Internal
-        public abstract RegularFileProperty getJvmExecutable();
-
-        @Input
-        public abstract Property<JavaVersion> getJavaVersion();
-
-        @Internal
-        public abstract Property<Boolean> getIsUtpLoggingEnabled();
 
         @Input
         public abstract Property<Boolean> getUninstallIncompatibleApks();
@@ -224,7 +210,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     workerExecutor,
                     objectFactory,
                     executorServiceAdapter,
-                    getJvmExecutable().get().getAsFile(),
                     getUtpDependencies(),
                     getSdkBuildService()
                             .get()
@@ -235,14 +220,9 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                     useOrchestrator,
                     getForceCompilation().get(),
                     getUninstallIncompatibleApks().get(),
-                    utpLoggingLevel(),
                     getInstallApkTimeout().getOrNull(),
                     getTargetIsSplitApk().getOrElse(false),
                     !getKeepInstalledApks().get());
-        }
-
-        private Level utpLoggingLevel() {
-            return getIsUtpLoggingEnabled().get() ? Level.INFO : Level.OFF;
         }
     }
 
@@ -286,43 +266,28 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
 
     @Override
     protected void doTaskAction() throws DeviceException, IOException, ExecutionException {
-        if (getRunWithBuiltInPlatform().get()) {
-            AndroidTestUtilsKt.runAndroidTest(
-                    getWorkerExecutor(),
-                    getBuildTools().adbExecutable(),
-                    getAaptExecutable(),
-                    getDeviceProviderFactory(),
-                    getTestData().get(),
-                    getBuddyApks(),
-                    getDeviceProviderFactory().getTimeOutInMs(),
-                    getInstallOptions(),
-                    getTestRunnerFactory().getKeepInstalledApks().map((it) -> !it)
-            );
-        } else {
-            run(
-                    getDeviceProviderFactory(),
-                    getBuddyApks().getFiles(),
-                    getResultsDir().get().getAsFile(),
-                    getAdditionalTestOutputEnabled().get(),
-                    getAdditionalTestOutputDir().get().getAsFile(),
-                    getCoverageDirectory().get().getAsFile(),
-                    getTestRunnerFactory(),
-                    getReportsDir().getAsFile().get(),
-                    getCodeCoverageEnabled().get(),
-                    getAnalyticsService().get(),
-                    getIgnoreFailures(),
-                    getLogger(),
-                    getTestData().get(),
-                    getTargetSerials(),
-                    getProjectPath().get(),
-                    getInstallOptions().getOrElse(ImmutableList.of()),
-                    testsFound(),
-                    getWorkerExecutor(),
-                    getObjectFactory(),
-                    getPrivacySandboxSdkApksFiles().getFiles(),
-                    getExecutorServiceAdapter(),
-                    dependencies);
-        }
+        run(
+                getDeviceProviderFactory(),
+                getBuddyApks().getFiles(),
+                getResultsDir().get().getAsFile(),
+                getAdditionalTestOutputEnabled().get(),
+                getAdditionalTestOutputDir().get().getAsFile(),
+                getCoverageDirectory().get().getAsFile(),
+                getTestRunnerFactory(),
+                getReportsDir().getAsFile().get(),
+                getCodeCoverageEnabled().get(),
+                getAnalyticsService().get(),
+                getIgnoreFailures(),
+                getLogger(),
+                getTestData().get(),
+                getTargetSerials(),
+                getProjectPath().get(),
+                getInstallOptions().getOrElse(ImmutableList.of()),
+                testsFound(),
+                getWorkerExecutor(),
+                getObjectFactory(),
+                getExecutorServiceAdapter(),
+                dependencies);
     }
 
     private static void run(
@@ -345,7 +310,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             boolean testsFound,
             WorkerExecutor workerExecutor,
             ObjectFactory objectFactory,
-            Set<File> privacySandboxSdkApkFiles,
             ExecutorServiceAdapter executorServiceAdapter,
             ArtifactCollection dependencies)
             throws IOException, ExecutionException, DeviceException {
@@ -406,7 +370,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                             logger,
                             useAdditionalTargetOutputDir,
                             enableCoverage,
-                            privacySandboxSdkApkFiles,
                             dependencies,
                             targetSerials,
                             testRunnerFactory.getExecutionEnum().get()
@@ -454,7 +417,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             @NonNull Logger logger,
             @NonNull Boolean useAdditionalTargetOutputDir,
             @NonNull Boolean enableCoverage,
-            @NonNull Set<File> privacySandboxSdkApkFiles,
             @NonNull ArtifactCollection dependencies,
             List<String> targetSerials,
             Execution execution
@@ -462,17 +424,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         return deviceProvider.use(
                 () -> {
                     try {
-                        boolean devicesSupportPrivacySandbox =
-                                deviceProvider.getDevices().stream()
-                                        .allMatch(DeviceConnector::getSupportsPrivacySandbox);
-
                         return testRunner.runTests(
                                 projectPath,
                                 staticTestData.getFlavorName(),
                                 staticTestData,
-                                devicesSupportPrivacySandbox
-                                        ? privacySandboxSdkApkFiles
-                                        : Collections.emptySet(),
                                 buddyApkFiles,
                                 getFilteredDevices(deviceProvider, targetSerials),
                                 deviceProvider.getTimeoutInMs(),
@@ -655,15 +610,8 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Optional
     public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
 
-    @Input
-    public abstract Property<Boolean> getRunWithBuiltInPlatform();
-
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();
-
-    @InputFile
-    @PathSensitive(PathSensitivity.ABSOLUTE)
-    public abstract RegularFileProperty getAaptExecutable();
 
     public static class CreationAction
             extends VariantTaskCreationAction<
@@ -878,14 +826,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             SdkComponentsKt.initialize(
                     task.getTestRunnerFactory().getBuildTools(), task, creationConfig);
 
-            task.getAaptExecutable().fileProvider(
-            task.getTestRunnerFactory().getSdkBuildService().flatMap((it) -> it.sdkLoader(
-                    task.getTestRunnerFactory().getBuildTools().getCompileSdkVersion(),
-                    task.getTestRunnerFactory().getBuildTools().getBuildToolsRevision()
-            ).getBuildToolInfoProvider()).map(
-                    (it) -> new File(it.getPath(BuildToolInfo.PathId.AAPT))));
-            task.getAaptExecutable().disallowChanges();
-
             task.getTestRunnerFactory()
                     .getExecutionEnum()
                     .set(this.creationConfig.getGlobal().getTestOptionExecutionEnum());
@@ -893,12 +833,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             task.getTestRunnerFactory()
                     .getForceCompilation()
                     .set(creationConfig.isForceAotCompilation());
-
-            task.getTestRunnerFactory()
-                    .getJvmExecutable()
-                    .set(new File(System.getProperty("java.home"), "bin/java"));
-
-            task.getTestRunnerFactory().getJavaVersion().set(JavaVersion.current());
 
             if (connectedCheckTargetSerials != null) {
                 task.getTestRunnerFactory()
@@ -918,10 +852,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             UtpTestUtilsKt.resolveDependencies(
                     task.getTestRunnerFactory().getUtpDependencies(),
                     task.getProject().getConfigurations());
-
-            boolean infoLoggingEnabled =
-                    Logging.getLogger(DeviceProviderInstrumentTestTask.class).isInfoEnabled();
-            task.getTestRunnerFactory().getIsUtpLoggingEnabled().set(infoLoggingEnabled);
 
             task.getTestRunnerFactory()
                     .getUninstallIncompatibleApks()
@@ -1028,14 +958,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                                                         .RUNTIME_CLASSPATH));
             }
             task.getRClasses().disallowChanges();
-            if (testData.getPrivacySandboxSdkApks() != null) {
-                task.getPrivacySandboxSdkApksFiles().setFrom(testData.getPrivacySandboxSdkApks());
-            }
-            task.getPrivacySandboxSdkApksFiles().disallowChanges();
-
-            task.getRunWithBuiltInPlatform().set(
-                    projectOptions.getProvider(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM));
-            task.getRunWithBuiltInPlatform().disallowChanges();
 
             SdkComponentsKt.initialize(
                     task.getBuildTools(),

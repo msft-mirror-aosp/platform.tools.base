@@ -16,8 +16,5 @@
 
 package com.android.build.api.dsl
 
-/**
- * Options for the adb tool.
- */
-@Deprecated("Renamed to Installation", replaceWith = ReplaceWith("Installation"))
-interface AdbOptions : Installation
+/** Options for the adb tool. */
+@Deprecated("Renamed to Installation", replaceWith = ReplaceWith("Installation")) interface AdbOptions : Installation

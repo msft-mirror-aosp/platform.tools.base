@@ -30,35 +30,31 @@ import java.util.Stack
 import kotlin.math.roundToInt
 
 fun ViewGroup.getChildren(): List<View> {
-    return (0 until childCount).map { i -> getChildAt(i) }
+  return (0 until childCount).map { i -> getChildAt(i) }
 }
 
-/**
- * Return this node's text value, if it is a kind of node that has one.
- */
+/** Return this node's text value, if it is a kind of node that has one. */
 fun View.getTextValue(): String? {
-    if (this !is TextView) return null
-    return text?.toString()
+  if (this !is TextView) return null
+  return text?.toString()
 }
 
-/**
- * Return a list of this view and all its children in depth-first order
- */
+/** Return a list of this view and all its children in depth-first order */
 fun View.flatten(): Sequence<View> {
-    ThreadUtils.assertOnMainThread()
+  ThreadUtils.assertOnMainThread()
 
-    return sequence {
-        val toProcess = Stack<View>()
-        toProcess.push(this@flatten)
+  return sequence {
+    val toProcess = Stack<View>()
+    toProcess.push(this@flatten)
 
-        while (toProcess.isNotEmpty()) {
-            val curr = toProcess.pop()
-            yield(curr)
-            if (curr is ViewGroup) {
-                toProcess.addAll(curr.getChildren())
-            }
-        }
+    while (toProcess.isNotEmpty()) {
+      val curr = toProcess.pop()
+      yield(curr)
+      if (curr is ViewGroup) {
+        toProcess.addAll(curr.getChildren())
+      }
     }
+  }
 }
 
 /**
@@ -67,41 +63,39 @@ fun View.flatten(): Sequence<View> {
  * This method may return null if the app runs out of memory or has a reflection issue.
  */
 fun View.takeScreenshot(scale: Float, bitmapType: BitmapType): Bitmap? {
-    val scaledWidth = (width * scale).roundToInt()
-    val scaledHeight = (height * scale).roundToInt()
-    val surface = viewRootImpl?.mSurface ?: return null
-    if (scaledWidth <= 0 || scaledHeight <= 0 || !surface.isValid) {
-        return null
+  val scaledWidth = (width * scale).roundToInt()
+  val scaledHeight = (height * scale).roundToInt()
+  val surface = viewRootImpl?.mSurface ?: return null
+  if (scaledWidth <= 0 || scaledHeight <= 0 || !surface.isValid) {
+    return null
+  }
+  val bitmap = Bitmap.createBitmap(scaledWidth, scaledHeight, bitmapType.toBitmapConfig())
+  return try {
+    val location = IntArray(2)
+    getLocationInSurface(location)
+    val bounds = Rect(location[0], location[1], width + location[0], height + location[1])
+    val resultCode = SynchronousPixelCopy().request(surface, bounds, bitmap)
+    if (resultCode == PixelCopy.SUCCESS) {
+      bitmap
+    } else {
+      Log.w("ViewLayoutInspector", "PixelCopy got error code $resultCode")
+      null
     }
-    val bitmap = Bitmap.createBitmap(scaledWidth, scaledHeight, bitmapType.toBitmapConfig())
-    return try {
-            val location = IntArray(2)
-            getLocationInSurface(location)
-            val bounds = Rect(location[0], location[1], width + location[0], height + location[1])
-            val resultCode = SynchronousPixelCopy().request(surface, bounds, bitmap)
-            if (resultCode == PixelCopy.SUCCESS) {
-                bitmap
-            } else {
-                Log.w("ViewLayoutInspector", "PixelCopy got error code $resultCode")
-                null
-            }
-    } catch (t: Throwable) {
-        Log.w("ViewLayoutInspector", t)
-        null
-    }
+  } catch (t: Throwable) {
+    Log.w("ViewLayoutInspector", t)
+    null
+  }
 }
 
-/**
- * Return the max size among the siblings of [view] within this parent [ViewGroup].
- */
+/** Return the max size among the siblings of [view] within this parent [ViewGroup]. */
 fun ViewGroup.measureSize(view: View): Size {
-    var width = 0
-    var height = 0
-    getChildren().forEach { child ->
-        if (child !== view) {
-            width = maxOf(width, child.left + child.measuredWidth)
-            height = maxOf(height, child.top + child.measuredHeight)
-        }
+  var width = 0
+  var height = 0
+  getChildren().forEach { child ->
+    if (child !== view) {
+      width = maxOf(width, child.left + child.measuredWidth)
+      height = maxOf(height, child.top + child.measuredHeight)
     }
-    return Size(width - paddingLeft, height - paddingTop)
+  }
+  return Size(width - paddingLeft, height - paddingTop)
 }

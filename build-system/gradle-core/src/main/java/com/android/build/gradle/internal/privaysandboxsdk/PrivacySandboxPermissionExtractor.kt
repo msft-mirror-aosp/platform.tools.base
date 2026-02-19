@@ -25,54 +25,43 @@ import com.android.ide.common.xml.XmlFormatStyle
 import com.android.ide.common.xml.XmlPrettyPrinter
 import com.android.utils.PositionXmlParser
 import com.android.utils.forEach
+import java.io.InputStream
 import org.w3c.dom.Attr
 import org.w3c.dom.Element
-import java.io.InputStream
 
 /**
- * Given an input manifest file from a privacy sandbox sdk,
- * return a manifest snippet with just the uses-permission elements,
- * all tagged with tools:requiredByPrivacySandboxSdk, for merging
- * in to the main app manifest.
+ * Given an input manifest file from a privacy sandbox sdk, return a manifest snippet with just the uses-permission elements, all tagged
+ * with tools:requiredByPrivacySandboxSdk, for merging in to the main app manifest.
  *
- * Bundle tool then strips them when the privacy sandbox is supported,
- * where the SDKs have the default permissions in the SDK, but keeps
+ * Bundle tool then strips them when the privacy sandbox is supported, where the SDKs have the default permissions in the SDK, but keeps
  * them in the main app for the backward compatibility case.
  */
 fun extractPrivacySandboxPermissions(asarManifest: InputStream): String {
-    val document = PositionXmlParser.parse(asarManifest)
-    val rootElement = document.documentElement
-    var needsToolsNamespace = false
-    var hasToolsNamespace = false
-    var toolsNsName = TOOLS_NS_NAME
-    // Find existing tools namespace
-    rootElement.attributes.forEach { attribute ->
-        if (attribute is Attr && attribute.name.startsWith(XMLNS_PREFIX) && attribute.value == TOOLS_URI) {
-            toolsNsName = attribute.name.removePrefix(XMLNS_PREFIX)
-            hasToolsNamespace = true
-        }
+  val document = PositionXmlParser.parse(asarManifest)
+  val rootElement = document.documentElement
+  var needsToolsNamespace = false
+  var hasToolsNamespace = false
+  var toolsNsName = TOOLS_NS_NAME
+  // Find existing tools namespace
+  rootElement.attributes.forEach { attribute ->
+    if (attribute is Attr && attribute.name.startsWith(XMLNS_PREFIX) && attribute.value == TOOLS_URI) {
+      toolsNsName = attribute.name.removePrefix(XMLNS_PREFIX)
+      hasToolsNamespace = true
     }
-    // Keep only uses-permission elements
-    rootElement.childNodes.forEach { node ->
-        if (node is Element && node.tagName == TAG_USES_PERMISSION) {
-            needsToolsNamespace = true
-            val attr: Attr =
-                    document.createAttributeNS(
-                            TOOLS_URI,
-                            "$toolsNsName:requiredByPrivacySandboxSdk")
-            attr.value = "true"
-            node.attributes.setNamedItemNS(attr)
-        } else {
-            rootElement.removeChild(node)
-        }
+  }
+  // Keep only uses-permission elements
+  rootElement.childNodes.forEach { node ->
+    if (node is Element && node.tagName == TAG_USES_PERMISSION) {
+      needsToolsNamespace = true
+      val attr: Attr = document.createAttributeNS(TOOLS_URI, "$toolsNsName:requiredByPrivacySandboxSdk")
+      attr.value = "true"
+      node.attributes.setNamedItemNS(attr)
+    } else {
+      rootElement.removeChild(node)
     }
-    if (needsToolsNamespace && !hasToolsNamespace) {
-        rootElement.setAttribute(XMLNS_PREFIX + toolsNsName, TOOLS_URI)
-    }
-    return XmlPrettyPrinter.prettyPrint(
-            document,
-            XmlFormatPreferences.defaults(),
-            XmlFormatStyle.MANIFEST,
-            null,
-            false)
+  }
+  if (needsToolsNamespace && !hasToolsNamespace) {
+    rootElement.setAttribute(XMLNS_PREFIX + toolsNsName, TOOLS_URI)
+  }
+  return XmlPrettyPrinter.prettyPrint(document, XmlFormatPreferences.defaults(), XmlFormatStyle.MANIFEST, null, false)
 }

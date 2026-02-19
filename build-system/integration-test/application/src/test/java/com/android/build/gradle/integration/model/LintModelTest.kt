@@ -33,152 +33,125 @@ import org.junit.Rule
 import org.junit.Test
 
 class PrebuiltLintChecksModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            dependencies {
-                lintChecks(localJar("lint-check.jar") { addEmptyClasses("com/example/MainClass") })
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary { dependencies { lintChecks(localJar("lint-check.jar") { addEmptyClasses("com/example/MainClass") }) } }
     }
 
-    @Test
-    fun `test lintChecksJars in Lib model`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test lintChecksJars in Lib model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
-            ?: throw RuntimeException("No AndroidProject model for :lib")
+    val androidProject =
+      result.container.getProject(DEFAULT_LIB_PATH).androidProject ?: throw RuntimeException("No AndroidProject model for :lib")
 
-        Truth
-            .assertThat(androidProject.lintChecksJars.map { it.toValueString(result.normalizer) })
-            .containsExactly("{PROJECT}/lib/libs/lint-check.jar{F}")
-    }
+    Truth.assertThat(androidProject.lintChecksJars.map { it.toValueString(result.normalizer) })
+      .containsExactly("{PROJECT}/lib/libs/lint-check.jar{F}")
+  }
 }
 
 class SubProjectLintChecksModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            dependencies {
-                lintChecks(project(":lint-check"))
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary { dependencies { lintChecks(project(":lint-check")) } }
+      genericProject(":lint-check") {
+        applyPlugin(PluginType.JAVA_LIBRARY)
+        dependencies {
+          implementation(localJar("local-lint.jar") { addEmptyClasses("com/example/MainClass") })
+          implementation(project(":lint-check-dependency"))
         }
-        genericProject(":lint-check") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-            dependencies {
-                implementation(localJar("local-lint.jar") { addEmptyClasses("com/example/MainClass") })
-                implementation(project(":lint-check-dependency"))
-            }
-        }
-        genericProject(":lint-check-dependency") {
-            applyPlugin(PluginType.JAVA_LIBRARY)
-        }
+      }
+      genericProject(":lint-check-dependency") { applyPlugin(PluginType.JAVA_LIBRARY) }
     }
 
-    @Test
-    fun `test lintChecksJars in Lib model`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test lintChecksJars in Lib model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
-            ?: throw RuntimeException("No AndroidProject model for :lib")
+    val androidProject =
+      result.container.getProject(DEFAULT_LIB_PATH).androidProject ?: throw RuntimeException("No AndroidProject model for :lib")
 
-        Truth
-            .assertThat(androidProject.lintChecksJars.map { it.toValueString(result.normalizer) })
-            .containsExactly(
-                "{PROJECT}/lint-check/build/libs/lint-check.jar{!}",
-                "{PROJECT}/lint-check/libs/local-lint.jar{F}",
-                "{PROJECT}/lint-check-dependency/build/libs/lint-check-dependency.jar{!}"
-            )
-    }
+    Truth.assertThat(androidProject.lintChecksJars.map { it.toValueString(result.normalizer) })
+      .containsExactly(
+        "{PROJECT}/lint-check/build/libs/lint-check.jar{!}",
+        "{PROJECT}/lint-check/libs/local-lint.jar{F}",
+        "{PROJECT}/lint-check-dependency/build/libs/lint-check-dependency.jar{!}",
+      )
+  }
 }
 
 class AppAndLibWithLintPublishModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            dependencies {
-                lintPublish(localJar("lint-publish.jar") { addEmptyClasses("com/example/MainClass") })
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
+      androidLibrary { dependencies { lintPublish(localJar("lint-publish.jar") { addEmptyClasses("com/example/MainClass") }) } }
     }
 
-    private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
+  private lateinit var result: ModelBuilderV2.FetchResult<ModelContainerV2>
 
-    @Before
-    fun setup() {
-        result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-    }
+  @Before
+  fun setup() {
+    result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+  }
 
-    @Test
-    fun `test lint jar in library project model`() {
-        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
-            ?: throw RuntimeException("No AndroidProject model for :lib")
+  @Test
+  fun `test lint jar in library project model`() {
+    val androidProject =
+      result.container.getProject(DEFAULT_LIB_PATH).androidProject ?: throw RuntimeException("No AndroidProject model for :lib")
 
-        Truth.assertThat(androidProject.lintJar.toValueString(result.normalizer))
-            .isEqualTo("{PROJECT}/lib/libs/lint-publish.jar{F}")
-    }
+    Truth.assertThat(androidProject.lintJar.toValueString(result.normalizer)).isEqualTo("{PROJECT}/lib/libs/lint-publish.jar{F}")
+  }
 
-    @Test
-    fun `check publish jar does not show up in lintChecks`() {
-        val androidProject = result.container.getProject(DEFAULT_LIB_PATH).androidProject
-            ?: throw RuntimeException("No AndroidProject model for :lib")
+  @Test
+  fun `check publish jar does not show up in lintChecks`() {
+    val androidProject =
+      result.container.getProject(DEFAULT_LIB_PATH).androidProject ?: throw RuntimeException("No AndroidProject model for :lib")
 
-        Truth.assertThat(androidProject.lintChecksJars).isEmpty()
-    }
+    Truth.assertThat(androidProject.lintChecksJars).isEmpty()
+  }
 }
 
 class AppWithExternalLibraryWithLintJarModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                implementation(
-                    MavenRepoGenerator.Library(
-                        mavenCoordinate = "com.example:example-aar:4.2",
-                        packaging = "aar",
-                        artifact =
-                            generateAarWithContent(
-                                packageName = "com.example.aar",
-                                mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
-                                resources = mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
-                                lintJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/LintChecks")),
-                            )
-                    )
-                )
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        dependencies {
+          implementation(
+            MavenRepoGenerator.Library(
+              mavenCoordinate = "com.example:example-aar:4.2",
+              packaging = "aar",
+              artifact =
+                generateAarWithContent(
+                  packageName = "com.example.aar",
+                  mainJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/AarClass")),
+                  resources =
+                    mapOf("values/strings.xml" to """<resources><string name="aar_string">Aar String</string></resources>""".toByteArray()),
+                  lintJar = TestInputsGenerator.jarWithEmptyClasses(ImmutableList.of("com/example/aar/LintChecks")),
+                ),
+            )
+          )
         }
+      }
     }
 
-    @Test
-    fun `test lint model in app dependency`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test lint model in app dependency`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val variantDeps = result.container.getProject().variantDependencies
-            ?: throw RuntimeException("No VariantDependencies model for :app")
+    val variantDeps = result.container.getProject().variantDependencies ?: throw RuntimeException("No VariantDependencies model for :app")
 
-        val lib = variantDeps.libraries.values.singleOrNull {
-            it.libraryInfo?.let { info ->
-                info.name == "example-aar"  && info.attributes["org.gradle.usage"] == "java-api"
-            } ?: false
-        }
+    val lib =
+      variantDeps.libraries.values.singleOrNull {
+        it.libraryInfo?.let { info -> info.name == "example-aar" && info.attributes["org.gradle.usage"] == "java-api" } ?: false
+      }
 
-        Truth.assertWithMessage("lib Library instance").that(lib).isNotNull()
+    Truth.assertWithMessage("lib Library instance").that(lib).isNotNull()
 
-        Truth.assertThat(lib?.lintJar?.toValueString(result.normalizer)).isEqualTo(
-            "{GRADLE_CACHE}/{CHECKSUM}/transformed/example-aar-4.2/jars/lint.jar{F}"
-        )
-    }
+    Truth.assertThat(lib?.lintJar?.toValueString(result.normalizer))
+      .isEqualTo("{GRADLE_CACHE}/{CHECKSUM}/transformed/example-aar-4.2/jars/lint.jar{F}")
+  }
 }

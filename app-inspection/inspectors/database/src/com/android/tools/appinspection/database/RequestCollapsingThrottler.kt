@@ -26,9 +26,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Throttler implementation ensuring that events are run not more frequently that specified
- * interval. Events submitted during the interval period are collapsed into one (i.e. only one is
- * executed).
+ * Throttler implementation ensuring that events are run not more frequently that specified interval. Events submitted during the interval
+ * period are collapsed into one (i.e. only one is executed).
  *
  * Thread safe.
  */

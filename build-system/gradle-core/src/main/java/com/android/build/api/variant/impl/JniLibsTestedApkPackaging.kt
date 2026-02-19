@@ -20,13 +20,8 @@ import com.android.build.api.dsl.Packaging
 import com.android.build.api.variant.JniLibsTestedApkPackaging
 import com.android.build.gradle.internal.services.VariantServices
 
-class JniLibsTestedApkPackagingImpl(
-    dslPackaging: Packaging,
-    variantServices: VariantServices,
-    minSdk: Int
-) : JniLibsApkPackagingImpl(dslPackaging, variantServices, minSdk),
-    JniLibsTestedApkPackaging {
+class JniLibsTestedApkPackagingImpl(dslPackaging: Packaging, variantServices: VariantServices, minSdk: Int) :
+  JniLibsApkPackagingImpl(dslPackaging, variantServices, minSdk), JniLibsTestedApkPackaging {
 
-    override val testOnly =
-        variantServices.setPropertyOf(String::class.java) { dslPackaging.jniLibs.testOnly }
+  override val testOnly = variantServices.setPropertyOf(String::class.java) { dslPackaging.jniLibs.testOnly }
 }

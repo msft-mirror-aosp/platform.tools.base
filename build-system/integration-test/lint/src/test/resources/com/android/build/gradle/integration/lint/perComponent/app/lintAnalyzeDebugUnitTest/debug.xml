@@ -15,6 +15,7 @@
         manifests="src/test/AndroidManifest.xml"
         javaDirectories="src/test/java:src/testDebug/java:src/test/kotlin:src/testDebug/kotlin"
         assetsDirectories="src/test/assets:src/testDebug/assets"
+        keepRulesDirectories="src/test/keepRules:src/testDebug/keepRules"
         unitTest="true"/>
   </testSourceProviders>
   <testFixturesSourceProviders>

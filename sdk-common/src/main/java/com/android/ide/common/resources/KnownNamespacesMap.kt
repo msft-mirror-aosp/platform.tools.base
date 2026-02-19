@@ -27,99 +27,103 @@ import java.util.AbstractMap
  *
  * Using other keys will result in [IllegalArgumentException].
  *
- * For now there is no support for [ResourceNamespace.ANDROID], since these resources don't change
- * over time and are usually stored separately (see [com.android.ide.common.util.DisjointUnionMap] for
- * a way to combine the two).
+ * For now there is no support for [ResourceNamespace.ANDROID], since these resources don't change over time and are usually stored
+ * separately (see [com.android.ide.common.util.DisjointUnionMap] for a way to combine the two).
  */
 class KnownNamespacesMap<V> : MutableMap<ResourceNamespace, V> {
 
-    private var resAutoValue: V? = null
-    private var toolsValue: V? = null
+  private var resAutoValue: V? = null
+  private var toolsValue: V? = null
 
-    companion object {
-        /**
-         * Checks if all given namespaces are valid keys for a [KnownNamespacesMap]. See the class
-         * documentation for details.
-         *
-         * @see KnownNamespacesMap
-         */
-        @JvmStatic
-        fun canContainAll(keys: Collection<ResourceNamespace>): Boolean {
-            return keys.size <= 2 && keys.all { key ->
-                when (key) {
-                    RES_AUTO, TOOLS -> true
-                    else -> false
-                }
-            }
+  companion object {
+    /**
+     * Checks if all given namespaces are valid keys for a [KnownNamespacesMap]. See the class documentation for details.
+     *
+     * @see KnownNamespacesMap
+     */
+    @JvmStatic
+    fun canContainAll(keys: Collection<ResourceNamespace>): Boolean {
+      return keys.size <= 2 &&
+        keys.all { key ->
+          when (key) {
+            RES_AUTO,
+            TOOLS -> true
+            else -> false
+          }
         }
     }
+  }
 
-    override val size: Int
-        get() {
-            var result = 0
-            resAutoValue?.run { result++ }
-            toolsValue?.run { result++ }
-            return result
-        }
-
-    override val entries: MutableSet<MutableMap.MutableEntry<ResourceNamespace, V>>
-        get() {
-            val result = mutableSetOf<MutableMap.MutableEntry<ResourceNamespace, V>>()
-            resAutoValue?.run { result.add(AbstractMap.SimpleEntry(RES_AUTO, resAutoValue)) }
-            toolsValue?.run { result.add(AbstractMap.SimpleEntry(TOOLS, toolsValue)) }
-            return result
-        }
-
-    override val keys: MutableSet<ResourceNamespace>
-        get() {
-            val result = mutableSetOf<ResourceNamespace>()
-            resAutoValue?.run { result.add(RES_AUTO) }
-            toolsValue?.run { result.add(TOOLS) }
-            return result
-        }
-
-    override val values: MutableCollection<V>
-        get() {
-            val result = mutableSetOf<V>()
-            resAutoValue?.let(result::add)
-            toolsValue?.let(result::add)
-            return result
-        }
-
-    override fun containsKey(key: ResourceNamespace): Boolean = when (key) {
-        RES_AUTO -> resAutoValue != null
-        TOOLS -> toolsValue != null
-        else -> false
+  override val size: Int
+    get() {
+      var result = 0
+      resAutoValue?.run { result++ }
+      toolsValue?.run { result++ }
+      return result
     }
 
-    override fun get(key: ResourceNamespace): V? = when (key) {
-        RES_AUTO -> resAutoValue
-        TOOLS -> toolsValue
-        else -> null
+  override val entries: MutableSet<MutableMap.MutableEntry<ResourceNamespace, V>>
+    get() {
+      val result = mutableSetOf<MutableMap.MutableEntry<ResourceNamespace, V>>()
+      resAutoValue?.run { result.add(AbstractMap.SimpleEntry(RES_AUTO, resAutoValue)) }
+      toolsValue?.run { result.add(AbstractMap.SimpleEntry(TOOLS, toolsValue)) }
+      return result
     }
 
-    override fun put(key: ResourceNamespace, value: V): V? = when (key) {
-        RES_AUTO -> resAutoValue.also { resAutoValue = value }
-        TOOLS -> toolsValue.also { toolsValue = value }
-        else -> throw IllegalArgumentException("${KnownNamespacesMap::class.qualifiedName}: invalid key $key.")
+  override val keys: MutableSet<ResourceNamespace>
+    get() {
+      val result = mutableSetOf<ResourceNamespace>()
+      resAutoValue?.run { result.add(RES_AUTO) }
+      toolsValue?.run { result.add(TOOLS) }
+      return result
     }
 
-    override fun remove(key: ResourceNamespace): V? = when (key) {
-        RES_AUTO -> resAutoValue.also { resAutoValue = null }
-        TOOLS -> toolsValue.also { toolsValue = null }
-        else -> null
+  override val values: MutableCollection<V>
+    get() {
+      val result = mutableSetOf<V>()
+      resAutoValue?.let(result::add)
+      toolsValue?.let(result::add)
+      return result
     }
 
-    override fun putAll(from: Map<out ResourceNamespace, V>) {
-        from.forEach { k, v -> put(k, v) }
+  override fun containsKey(key: ResourceNamespace): Boolean =
+    when (key) {
+      RES_AUTO -> resAutoValue != null
+      TOOLS -> toolsValue != null
+      else -> false
     }
 
-    override fun clear() {
-        resAutoValue = null
-        toolsValue = null
+  override fun get(key: ResourceNamespace): V? =
+    when (key) {
+      RES_AUTO -> resAutoValue
+      TOOLS -> toolsValue
+      else -> null
     }
 
-    override fun isEmpty(): Boolean = size == 0
+  override fun put(key: ResourceNamespace, value: V): V? =
+    when (key) {
+      RES_AUTO -> resAutoValue.also { resAutoValue = value }
+      TOOLS -> toolsValue.also { toolsValue = value }
+      else -> throw IllegalArgumentException("${KnownNamespacesMap::class.qualifiedName}: invalid key $key.")
+    }
 
-    override fun containsValue(value: V): Boolean = entries.any { it.value == value }
+  override fun remove(key: ResourceNamespace): V? =
+    when (key) {
+      RES_AUTO -> resAutoValue.also { resAutoValue = null }
+      TOOLS -> toolsValue.also { toolsValue = null }
+      else -> null
+    }
+
+  override fun putAll(from: Map<out ResourceNamespace, V>) {
+    from.forEach { k, v -> put(k, v) }
+  }
+
+  override fun clear() {
+    resAutoValue = null
+    toolsValue = null
+  }
+
+  override fun isEmpty(): Boolean = size == 0
+
+  override fun containsValue(value: V): Boolean = entries.any { it.value == value }
 }

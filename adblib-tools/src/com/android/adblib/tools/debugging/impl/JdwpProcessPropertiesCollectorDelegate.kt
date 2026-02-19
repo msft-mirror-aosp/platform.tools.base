@@ -24,16 +24,17 @@ import kotlinx.coroutines.flow.StateFlow
 
 internal class JdwpProcessPropertiesCollectorDelegate(
   override val process: JdwpProcess,
-  private val processProvider: AbstractJdwpProcessDelegateProvider
+  private val processProvider: AbstractJdwpProcessDelegateProvider,
 ) : JdwpProcessPropertiesCollector {
 
-    private val mutableStateFlowForwarder = StateFlowForwarder(
-        session = process.device.session,
-        parentScope = process.scope,
-        sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpPropertiesCollector.stateFlow },
-        defaultValue = JdwpProcessProperties(pid = process.pid)
+  private val mutableStateFlowForwarder =
+    StateFlowForwarder(
+      session = process.device.session,
+      parentScope = process.scope,
+      sourceStateFlowProvider = { processProvider.abstractJdwpProcess().jdwpPropertiesCollector.stateFlow },
+      defaultValue = JdwpProcessProperties(pid = process.pid),
     )
 
-    override val stateFlow: StateFlow<JdwpProcessProperties>
-        get() = mutableStateFlowForwarder.stateFlow
+  override val stateFlow: StateFlow<JdwpProcessProperties>
+    get() = mutableStateFlowForwarder.stateFlow
 }

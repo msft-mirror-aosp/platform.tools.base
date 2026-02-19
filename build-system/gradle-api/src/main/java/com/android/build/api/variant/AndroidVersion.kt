@@ -22,22 +22,15 @@ import org.gradle.api.tasks.Optional
 /**
  * A version of the Android platform.
  *
- * This includes support for preview versions that don't have a final API level, but instead
- * use a [codename].
+ * This includes support for preview versions that don't have a final API level, but instead use a [codename].
  */
 interface AndroidVersion {
 
-    /**
-     * SDK version codes mirroring ones found in Build#VERSION_CODES on Android.
-     */
-    @get:Input
-    val apiLevel: Int
+  /** SDK version codes mirroring ones found in Build#VERSION_CODES on Android. */
+  @get:Input val apiLevel: Int
 
-    /**
-     * Preview versions of the platform are identified by a code name. Their API level
-     * is usually set to the value of the previous platform.
-     */
-    @get:Input
-    @get:Optional
-    val codename: String?
+  /**
+   * Preview versions of the platform are identified by a code name. Their API level is usually set to the value of the previous platform.
+   */
+  @get:Input @get:Optional val codename: String?
 }

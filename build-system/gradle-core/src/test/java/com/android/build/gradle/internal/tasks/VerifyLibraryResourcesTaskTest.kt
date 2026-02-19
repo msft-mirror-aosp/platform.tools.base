@@ -24,74 +24,75 @@ import com.android.ide.common.resources.CopyToOutputDirectoryResourceCompilation
 import com.android.ide.common.resources.FileStatus
 import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 /*
  * Unit tests for {@link VerifyLibraryResourcesTask}.
  */
 class VerifyLibraryResourcesTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    fun otherFilesShouldBeIgnored() {
-        val inputs = mutableListOf<SerializableChange>()
-        val mergedDir = File(temporaryFolder.newFolder("merged"), "release")
-        FileUtils.mkdirs(mergedDir)
+  @Test
+  fun otherFilesShouldBeIgnored() {
+    val inputs = mutableListOf<SerializableChange>()
+    val mergedDir = File(temporaryFolder.newFolder("merged"), "release")
+    FileUtils.mkdirs(mergedDir)
 
-        val relativeFilePath = "values/file.xml"
-        val file = File(mergedDir, relativeFilePath)
-        FileUtils.createFile(file, "content")
-        assertTrue(file.exists())
-        inputs.add(SerializableChange(file, FileStatus.NEW, relativeFilePath))
+    val relativeFilePath = "values/file.xml"
+    val file = File(mergedDir, relativeFilePath)
+    FileUtils.createFile(file, "content")
+    assertTrue(file.exists())
+    inputs.add(SerializableChange(file, FileStatus.NEW, relativeFilePath))
 
-        val invalidFilePath = "values/invalid/invalid.xml"
-        val invalidFile = File(mergedDir, invalidFilePath)
-        FileUtils.createFile(invalidFile, "content")
-        assertTrue(invalidFile.exists())
-        inputs.add(SerializableChange(invalidFile, FileStatus.NEW, invalidFilePath))
+    val invalidFilePath = "values/invalid/invalid.xml"
+    val invalidFile = File(mergedDir, invalidFilePath)
+    FileUtils.createFile(invalidFile, "content")
+    assertTrue(invalidFile.exists())
+    inputs.add(SerializableChange(invalidFile, FileStatus.NEW, invalidFilePath))
 
-        val invalidFilePath2 = "invalid.xml"
-        val invalidFile2 = File(mergedDir, invalidFilePath2)
-        FileUtils.createFile(invalidFile2, "content")
-        assertTrue(invalidFile2.exists())
-        inputs.add(SerializableChange(invalidFile2, FileStatus.NEW, invalidFilePath2))
+    val invalidFilePath2 = "invalid.xml"
+    val invalidFile2 = File(mergedDir, invalidFilePath2)
+    FileUtils.createFile(invalidFile2, "content")
+    assertTrue(invalidFile2.exists())
+    inputs.add(SerializableChange(invalidFile2, FileStatus.NEW, invalidFilePath2))
 
-        val outputDir = temporaryFolder.newFolder("output")
+    val outputDir = temporaryFolder.newFolder("output")
 
-        val compilationService = CopyToOutputDirectoryResourceCompilationService
-        VerifyLibraryResourcesTask.compileResources(
-            inputs = SerializableInputChanges(roots = listOf(mergedDir), changes = inputs),
-            outDirectory = outputDir,
-            mergeBlameFolder = temporaryFolder.newFolder(),
-            compilationService = compilationService
+    val compilationService = CopyToOutputDirectoryResourceCompilationService
+    VerifyLibraryResourcesTask.compileResources(
+      inputs = SerializableInputChanges(roots = listOf(mergedDir), changes = inputs),
+      outDirectory = outputDir,
+      mergeBlameFolder = temporaryFolder.newFolder(),
+      compilationService = compilationService,
+      resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable("Test"),
+    )
+
+    val fileOut =
+      compilationService.compileOutputFor(
+        CompileResourceRequest(
+          file,
+          outputDir,
+          "values",
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
         )
+      )
+    assertTrue(fileOut.exists())
 
-        val fileOut = compilationService.compileOutputFor(
-            CompileResourceRequest(
-                file,
-                outputDir,
-                "values",
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
-            )
+    val dirOut =
+      compilationService.compileOutputFor(
+        CompileResourceRequest(
+          invalidFile,
+          outputDir,
+          mergedDir.name,
+          resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable(justification = "Test"),
         )
-        assertTrue(fileOut.exists())
-
-        val dirOut = compilationService.compileOutputFor(
-            CompileResourceRequest(
-                invalidFile,
-                outputDir,
-                mergedDir.name,
-                resourcePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
-            )
-        )
-        assertFalse(dirOut.exists())
-    }
-
+      )
+    assertFalse(dirOut.exists())
+  }
 }

@@ -38,7 +38,8 @@ import java.io.File
 val fullscreenFragmentTemplate
   get() = template {
     name = "Fullscreen Fragment"
-    description = "Creates a new fragment that toggles the visibility of the system UI (status and navigation bars) and action bar upon user interaction"
+    description =
+      "Creates a new fragment that toggles the visibility of the system UI (status and navigation bars) and action bar upon user interaction"
     minApi = MIN_API
     category = Category.Fragment
     formFactor = FormFactor.Mobile
@@ -63,12 +64,7 @@ val fullscreenFragmentTemplate
 
     val packageName = defaultPackageNameParameter
 
-    widgets(
-      TextFieldWidget(fragmentClass),
-      TextFieldWidget(layoutName),
-      PackageNameWidget(packageName),
-      LanguageWidget()
-    )
+    widgets(TextFieldWidget(fragmentClass), TextFieldWidget(layoutName), PackageNameWidget(packageName), LanguageWidget())
 
     thumb { File("fullscreen-fragment").resolve("template_fullscreen_fragment.png") }
 

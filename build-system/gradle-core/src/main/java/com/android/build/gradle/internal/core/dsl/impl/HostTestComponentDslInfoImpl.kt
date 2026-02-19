@@ -31,36 +31,24 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 
 internal open class HostTestComponentDslInfoImpl(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    override val mainVariantDslInfo: TestedVariantDslInfo,
-    extension: InternalTestedExtension
-) : ComponentDslInfoImpl(
-    componentIdentity,
-    componentType,
-    defaultConfig,
-    buildTypeObj,
-    productFlavorList,
-    services,
-    extension
-), HostTestComponentDslInfo {
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  override val mainVariantDslInfo: TestedVariantDslInfo,
+  extension: InternalTestedExtension,
+) :
+  ComponentDslInfoImpl(componentIdentity, componentType, defaultConfig, buildTypeObj, productFlavorList, services, extension),
+  HostTestComponentDslInfo {
 
-    override val namespace: Provider<String> by lazy(LazyThreadSafetyMode.NONE) {
-        getTestComponentNamespace(extension, services)
-    }
+  override val namespace: Provider<String> by lazy(LazyThreadSafetyMode.NONE) { getTestComponentNamespace(extension, services) }
 
-    override val applicationId: Property<String> =
-        services.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            initTestApplicationId(productFlavorList, defaultConfig, services)
-        )
+  override val applicationId: Property<String> =
+    services.newPropertyBackingDeprecatedApi(String::class.java, initTestApplicationId(productFlavorList, defaultConfig, services))
 
-    override val minSdkVersion: MutableAndroidVersion
-        get() = mainVariantDslInfo.minSdkVersion
-
+  override val minSdkVersion: MutableAndroidVersion
+    get() = mainVariantDslInfo.minSdkVersion
 }

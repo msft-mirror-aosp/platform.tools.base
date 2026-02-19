@@ -26,6 +26,8 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.packaging.JarFlinger
 import com.android.utils.FileUtils
+import java.util.function.Predicate
+import java.util.zip.Deflater
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFiles
@@ -35,87 +37,68 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.util.function.Predicate
-import java.util.zip.Deflater
 
-/** Task to merge the res/classes intermediate jars from a library into a single one  */
+/** Task to merge the res/classes intermediate jars from a library into a single one */
 @DisableCachingByDefault(because = SIMPLE_MERGING_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MISC, secondaryTaskCategories = [TaskCategory.ZIPPING, TaskCategory.MERGING])
 abstract class ZipMergingTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    abstract val libraryInputFile: RegularFileProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) abstract val libraryInputFile: RegularFileProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    abstract val javaResDirectory: DirectoryProperty
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val javaResDirectory: DirectoryProperty
 
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
-    public override fun doTaskAction() {
-        val destinationFile = outputFile.get().asFile
-        FileUtils.cleanOutputDir(destinationFile.parentFile)
-        val usedNamesPredicate = object : Predicate<String> {
-            val usedNames = mutableSetOf<String>()
+  public override fun doTaskAction() {
+    val destinationFile = outputFile.get().asFile
+    FileUtils.cleanOutputDir(destinationFile.parentFile)
+    val usedNamesPredicate =
+      object : Predicate<String> {
+        val usedNames = mutableSetOf<String>()
 
-            override fun test(t: String): Boolean {
-                return usedNames.add(t)
-            }
+        override fun test(t: String): Boolean {
+          return usedNames.add(t)
         }
+      }
 
-        JarFlinger(
-            destinationFile.toPath(),
-            usedNamesPredicate
-        ).use {
-            // Don't compress because compressing takes extra time, and this jar doesn't go into any
-            // APKs or AARs.
-            it.setCompressionLevel(Deflater.NO_COMPRESSION)
-            val lib = libraryInputFile.get().asFile
-            if (lib.exists()) {
-                it.addJar(lib.toPath())
-            }
-            val javaRes = javaResDirectory.orNull?.asFile
-            if (javaRes?.exists() == true) {
-                it.addDirectory(javaRes.toPath())
-            }
-        }
+    JarFlinger(destinationFile.toPath(), usedNamesPredicate).use {
+      // Don't compress because compressing takes extra time, and this jar doesn't go into any
+      // APKs or AARs.
+      it.setCompressionLevel(Deflater.NO_COMPRESSION)
+      val lib = libraryInputFile.get().asFile
+      if (lib.exists()) {
+        it.addJar(lib.toPath())
+      }
+      val javaRes = javaResDirectory.orNull?.asFile
+      if (javaRes?.exists() == true) {
+        it.addDirectory(javaRes.toPath())
+      }
+    }
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<ZipMergingTask, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("createFullJar")
+
+    override val type: Class<ZipMergingTask>
+      get() = ZipMergingTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ZipMergingTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ZipMergingTask::outputFile)
+        .withName(creationConfig.getArtifactName(FN_INTERMEDIATE_FULL_JAR))
+        .on(InternalArtifactType.FULL_JAR)
     }
 
-    class CreationAction(creationConfig: ComponentCreationConfig) :
-        VariantTaskCreationAction<ZipMergingTask, ComponentCreationConfig>(
-            creationConfig
-        ) {
+    override fun configure(task: ZipMergingTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("createFullJar")
-        override val type: Class<ZipMergingTask>
-            get() = ZipMergingTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ZipMergingTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ZipMergingTask::outputFile
-            ).withName(creationConfig.getArtifactName(FN_INTERMEDIATE_FULL_JAR))
-             .on(InternalArtifactType.FULL_JAR)
-        }
-
-        override fun configure(
-            task: ZipMergingTask
-        ) {
-            super.configure(task)
-
-            val artifacts = creationConfig.artifacts
-            artifacts.setTaskInputToFinalProduct(InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR, task.libraryInputFile)
-            artifacts.setTaskInputToFinalProduct(
-                InternalArtifactType.JAVA_RES,
-                task.javaResDirectory
-            )
-        }
+      val artifacts = creationConfig.artifacts
+      artifacts.setTaskInputToFinalProduct(InternalArtifactType.RUNTIME_LIBRARY_CLASSES_JAR, task.libraryInputFile)
+      artifacts.setTaskInputToFinalProduct(InternalArtifactType.JAVA_RES, task.javaResDirectory)
     }
+  }
 }

@@ -27,51 +27,38 @@ import org.junit.Test
 
 class OldVariantApiCompatibility {
 
-    @get:Rule
-    val project: GradleTestProject = builder()
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @get:Rule val project: GradleTestProject = builder().fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
 
-    @Test
-    fun testApplicationId() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android.libraryVariants.all { variant ->
-                  println(variant.applicationId)
-                }
-            """.trimIndent()
-        )
-        val result = project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run(
-                "clean"
-            )
+  @Test
+  fun testApplicationId() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.libraryVariants.all { variant ->
+        println(variant.applicationId)
+      }
+      """
+        .trimIndent(),
+    )
+    val result = project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).with(BooleanOption.USE_NEW_DSL, false).run("clean")
 
-        ScannerSubject.assertThat(result.stdout).contains("com.example.helloworld")
-    }
+    ScannerSubject.assertThat(result.stdout).contains("com.example.helloworld")
+  }
 
-    @Test
-    fun testApplicationIdInSafeMode() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android.libraryVariants.all { variant ->
-                  println(variant.applicationId)
-                }
-            """.trimIndent()
-        )
-        val result = project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, false)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .expectFailure()
-            .run(
-                "clean"
-            )
+  @Test
+  fun testApplicationIdInSafeMode() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.libraryVariants.all { variant ->
+        println(variant.applicationId)
+      }
+      """
+        .trimIndent(),
+    )
+    val result =
+      project.executor().with(BooleanOption.ENABLE_LEGACY_API, false).with(BooleanOption.USE_NEW_DSL, false).expectFailure().run("clean")
 
-        ScannerSubject.assertThat(result.stderr).contains(
-            "Access to applicationId via deprecated Variant API requires compatibility mode"
-        )
-    }
+    ScannerSubject.assertThat(result.stderr).contains("Access to applicationId via deprecated Variant API requires compatibility mode")
+  }
 }

@@ -29,7 +29,7 @@ fun mainActivityKt(
   contentMainLayoutName: String,
   layoutName: String,
   navHostFragmentId: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val appBarMainBinding = underscoreToLowerCamelCase(appBarLayoutName)

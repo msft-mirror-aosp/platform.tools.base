@@ -23,25 +23,13 @@ import org.junit.Test
 
 class ConfigurationCacheTERMEnvVarTest {
 
-    @get:Rule
-    val project = GradleTestProject
-        .builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    /**
-     * Regression test for b/379657438
-     */
-    @Test
-    fun `TERM variable set or unset does not affect CC`() {
-        project.executor().run("assembleDebug")
-        project.executor()
-            .withEnvironmentVariables(mapOf("TERM" to "xterm-256color"))
-            .run("assembleDebug")
-            .assertConfigurationCacheHit()
-        project.executor()
-            .withEnvironmentVariables(mapOf("TERM" to "dumb"))
-            .run("assembleDebug")
-            .assertConfigurationCacheMiss()
-    }
+  /** Regression test for b/379657438 */
+  @Test
+  fun `TERM variable set or unset does not affect CC`() {
+    project.executor().run("assembleDebug")
+    project.executor().withEnvironmentVariables(mapOf("TERM" to "xterm-256color")).run("assembleDebug").assertConfigurationCacheHit()
+    project.executor().withEnvironmentVariables(mapOf("TERM" to "dumb")).run("assembleDebug").assertConfigurationCacheMiss()
+  }
 }

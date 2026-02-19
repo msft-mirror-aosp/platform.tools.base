@@ -22,45 +22,38 @@ import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledDslDefinedHostTestBuilderTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: HostTestBuilder = mock()
+  private val delegate: HostTestBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledHostTestBuilder by lazy {
-        AnalyticsEnabledHostTestBuilder(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledHostTestBuilder by lazy { AnalyticsEnabledHostTestBuilder(delegate, stats) }
 
-    @Test
-    fun testEnable() {
-        proxy.enable = true
+  @Test
+  fun testEnable() {
+    proxy.enable = true
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.UNIT_TEST_ENABLED_VALUE)
-        verify(delegate, times(1)).enable = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.UNIT_TEST_ENABLED_VALUE)
+    verify(delegate, times(1)).enable = true
+  }
 
-    @Test
-    fun testEnableCodeCoverage() {
-        proxy.enableCodeCoverage = true
+  @Test
+  fun testEnableCodeCoverage() {
+    proxy.enableCodeCoverage = true
 
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE)
-        verify(delegate, times(1)).enableCodeCoverage = true
-    }
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type)
+      .isEqualTo(VariantMethodType.HOST_TEST_ENABLE_CODE_COVERAGE_VALUE)
+    verify(delegate, times(1)).enableCodeCoverage = true
+  }
 }

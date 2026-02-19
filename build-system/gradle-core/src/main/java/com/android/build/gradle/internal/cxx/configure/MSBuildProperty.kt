@@ -16,25 +16,18 @@
 
 package com.android.build.gradle.internal.cxx.configure
 
-/**
- * MSBuild\AGDE command-line properties
- */
+/** MSBuild\AGDE command-line properties */
 enum class MSBuildProperty {
-    /**
-     * From AGDE, the name of the MSBuild Platform to generate build.ninja for.
-     * Ex, Android-x86
-     */
-    Platform,
+  /** From AGDE, the name of the MSBuild Platform to generate build.ninja for. Ex, Android-x86 */
+  Platform,
 
-    /**
-     * The name of a specific configuration to build. This maps to, for example,
-     * - 'Configuration' in MSBuild
-     * - 'Variant' in Android Gradle Plugin
-     */
-    Configuration,
+  /**
+   * The name of a specific configuration to build. This maps to, for example,
+   * - 'Configuration' in MSBuild
+   * - 'Variant' in Android Gradle Plugin
+   */
+  Configuration,
 
-    /**
-     * From AGDE, the name of the MSBuild project to generate build.ninja for.
-     */
-    NinjaProject,
+  /** From AGDE, the name of the MSBuild project to generate build.ninja for. */
+  NinjaProject,
 }

@@ -68,12 +68,7 @@ class PrivateResourceDetector
     private const val KEY_URL = "url"
 
     private val IMPLEMENTATION =
-      Implementation(
-        PrivateResourceDetector::class.java,
-        Scope.JAVA_AND_RESOURCE_FILES,
-        Scope.JAVA_FILE_SCOPE,
-        Scope.RESOURCE_FILE_SCOPE,
-      )
+      Implementation(PrivateResourceDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES, Scope.JAVA_FILE_SCOPE, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE: Issue =
@@ -102,13 +97,7 @@ class PrivateResourceDetector
     return true
   }
 
-  override fun visitResourceReference(
-    context: JavaContext,
-    node: UElement,
-    type: ResourceType,
-    name: String,
-    isFramework: Boolean,
-  ) {
+  override fun visitResourceReference(context: JavaContext, node: UElement, type: ResourceType, name: String, isFramework: Boolean) {
     if (!isFramework && isPrivate(context, type, name)) {
       // See if it's a local package reference
       var foreignPackage = false
@@ -119,10 +108,7 @@ class PrivateResourceDetector
           val pkg = context.evaluator.getPackage(resolved)
           if (pkg != null) {
             val pkgName = pkg.qualifiedName
-            if (
-              !(pkgName == context.project.getPackage() ||
-                globalAnalysis && pkgName == context.mainProject.getPackage())
-            ) {
+            if (!(pkgName == context.project.getPackage() || globalAnalysis && pkgName == context.mainProject.getPackage())) {
               foreignPackage = true
             }
           }
@@ -160,11 +146,7 @@ class PrivateResourceDetector
     return false
   }
 
-  private fun referencedInMain(
-    context: Context,
-    resourceType: ResourceType,
-    name: String,
-  ): Boolean {
+  private fun referencedInMain(context: Context, resourceType: ResourceType, name: String): Boolean {
     val client = context.client
     val mainProject = context.mainProject
     val repository = client.getResources(mainProject, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
@@ -189,14 +171,7 @@ class PrivateResourceDetector
 
   /** Check resource definitions: overriding a private resource from an upstream library? */
   override fun getApplicableElements(): List<String> {
-    return listOf(
-      TAG_STYLE,
-      TAG_RESOURCES,
-      TAG_ARRAY,
-      TAG_STRING_ARRAY,
-      TAG_INTEGER_ARRAY,
-      TAG_PLURALS,
-    )
+    return listOf(TAG_STYLE, TAG_RESOURCES, TAG_ARRAY, TAG_STRING_ARRAY, TAG_INTEGER_ARRAY, TAG_PLURALS)
   }
 
   override fun visitElement(context: XmlContext, element: Element) {
@@ -337,11 +312,7 @@ class PrivateResourceDetector
     return false
   }
 
-  private fun createOverrideErrorMessage(
-    context: Context,
-    type: ResourceType,
-    name: String,
-  ): String {
+  private fun createOverrideErrorMessage(context: Context, type: ResourceType, name: String): String {
     val libraryName: String = getLibraryName(context, type, name)
     return "Overriding `@$type/$name` which is marked as private in $libraryName. If " +
       "deliberate, use tools:override=\"true\", otherwise pick a " +

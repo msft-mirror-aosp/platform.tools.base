@@ -85,11 +85,9 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   private val registerReceiverMethods = BROADCAST_RECEIVER_METHOD_NAMES
 
-  override fun getApplicableMethodNames() =
-    listOf("getParcelableExtra", "getParcelable", "getIntent", "parseUri") + registerReceiverMethods
+  override fun getApplicableMethodNames() = listOf("getParcelableExtra", "getParcelable", "getIntent", "parseUri") + registerReceiverMethods
 
-  override fun applicableSuperClasses() =
-    listOf("android.app.Activity", "android.content.BroadcastReceiver", "android.app.Service")
+  override fun applicableSuperClasses() = listOf("android.app.Activity", "android.content.BroadcastReceiver", "android.app.Service")
 
   override fun getApplicableElements() = listOf(TAG_ACTIVITY, TAG_SERVICE, TAG_RECEIVER)
 
@@ -97,11 +95,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     storeUnprotectedComponents(context, getProtectedComponent(context, element) ?: return)
   }
 
-  private fun isComponentExported(
-    context: Context,
-    root: Element,
-    incidentComponent: String?,
-  ): Boolean {
+  private fun isComponentExported(context: Context, root: Element, incidentComponent: String?): Boolean {
     val application = root.subtag(SdkConstants.TAG_APPLICATION) ?: return false
     for (component in application) {
       when (component.tagName) {
@@ -119,10 +113,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   // The element passed in is guaranteed to be one of the activity, receiver or service tag.
   private fun getProtectedComponent(context: Context, component: Element): String? {
     val exportedAttr = component.getAttributeNS(ANDROID_URI, ATTR_EXPORTED)
-    if (
-      "true" == exportedAttr ||
-        exportedAttr.isEmpty() && component.getElementsByTagName("intent-filter").length > 0
-    ) {
+    if ("true" == exportedAttr || exportedAttr.isEmpty() && component.getElementsByTagName("intent-filter").length > 0) {
       val permission = component.getAttributeNS(ANDROID_URI, ATTR_PERMISSION)
       if (!isProbablyProtectedBySignaturePermission(permission)) {
         var componentName = component.getAttributeNS(ANDROID_URI, ATTR_NAME)
@@ -145,10 +136,8 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     val evaluator = context.evaluator
     val methodNames =
       when {
-        evaluator.extendsClass(declaration.javaPsi, ACTIVITY_CLASS, true) ->
-          UNSAFE_INTENT_AS_PARAMETER_METHODS[ACTIVITY_CLASS]
-        evaluator.extendsClass(declaration.javaPsi, SERVICE_CLASS, true) ->
-          UNSAFE_INTENT_AS_PARAMETER_METHODS[SERVICE_CLASS]
+        evaluator.extendsClass(declaration.javaPsi, ACTIVITY_CLASS, true) -> UNSAFE_INTENT_AS_PARAMETER_METHODS[ACTIVITY_CLASS]
+        evaluator.extendsClass(declaration.javaPsi, SERVICE_CLASS, true) -> UNSAFE_INTENT_AS_PARAMETER_METHODS[SERVICE_CLASS]
         evaluator.extendsClass(declaration.javaPsi, BROADCAST_RECEIVER_CLASS, true) ->
           UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]
         else -> return
@@ -157,20 +146,13 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       for (psiMethod in declaration.javaPsi.findMethodsByName(methodName, false)) {
         val method = psiMethod.toUElementOfType<UMethod>()
         val intentParam =
-          method
-            ?.javaPsi
-            ?.parameterList
-            ?.parameters
-            ?.firstOrNull { it.type.canonicalText == INTENT_CLASS }
-            ?.toUElementOfType<UParameter>()
+          method?.javaPsi?.parameterList?.parameters?.firstOrNull { it.type.canonicalText == INTENT_CLASS }?.toUElementOfType<UParameter>()
         val visitor =
           IntentLaunchChecker(
             initial = setOf(intentParam ?: return),
             context = context,
             location = context.getLocation(intentParam.sourcePsi),
-            checkProtectedBroadcast =
-              UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]?.contains(methodName) ==
-                true,
+            checkProtectedBroadcast = UNSAFE_INTENT_AS_PARAMETER_METHODS[BROADCAST_RECEIVER_CLASS]?.contains(methodName) == true,
           )
         method.accept(visitor)
         if (visitor.launched) {
@@ -182,22 +164,12 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
-    if (
-      method.name in registerReceiverMethods &&
-        evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)
-    ) {
+    if (method.name in registerReceiverMethods && evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)) {
       // register receiver at runtime methods, figure out if it is registered as unprotected.
       processRuntimeReceiver(context, node, method)
-    } else if (
-      isUnParcellingIntentMethods(evaluator, method) or isParseUnsafeUri(evaluator, node, method)
-    ) {
+    } else if (isUnParcellingIntentMethods(evaluator, method) or isParseUnsafeUri(evaluator, node, method)) {
       // methods that launch Intent. Figure out if the Intent is launched.
-      val visitor =
-        IntentLaunchChecker(
-          initial = setOf(node),
-          context = context,
-          location = context.getLocation(node),
-        )
+      val visitor = IntentLaunchChecker(initial = setOf(node), context = context, location = context.getLocation(node))
       val containingMethod = node.getParentOfType(UMethod::class.java)
       containingMethod?.accept(visitor)
       if (visitor.launched) {
@@ -212,11 +184,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     }
   }
 
-  private fun isParseUnsafeUri(
-    evaluator: JavaEvaluator,
-    call: UCallExpression,
-    method: PsiMethod,
-  ): Boolean {
+  private fun isParseUnsafeUri(evaluator: JavaEvaluator, call: UCallExpression, method: PsiMethod): Boolean {
     if (method.name == "parseUri" && evaluator.isMemberInClass(method, INTENT_CLASS)) {
       val intentArg = call.getArgumentForParameter(0)?.skipParenthesizedExprDown()
       val getUriStringCall =
@@ -224,52 +192,37 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
           findLastAssignment(intentArg.resolve() as? PsiVariable ?: return false, call)
         } else intentArg
 
-      val getUriStringMethod =
-        (getUriStringCall?.findSelector() as? UCallExpression)?.resolve() ?: return false
+      val getUriStringMethod = (getUriStringCall?.findSelector() as? UCallExpression)?.resolve() ?: return false
       return isUnParcellingStringMethods(evaluator, getUriStringMethod)
     } else return false
   }
 
   private fun isUnParcellingIntentMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
     return when (method.name) {
-      "getParcelableExtra" ->
-        evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
-          evaluator.isMemberInClass(method, INTENT_COMPAT_CLASS)
-      "getParcelable" ->
-        evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS) ||
-          evaluator.isMemberInClass(method, BUNDLE_COMPAT_CLASS)
+      "getParcelableExtra" -> evaluator.isMemberInSubClassOf(method, INTENT_CLASS) || evaluator.isMemberInClass(method, INTENT_COMPAT_CLASS)
+      "getParcelable" -> evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS) || evaluator.isMemberInClass(method, BUNDLE_COMPAT_CLASS)
       "getIntent" -> evaluator.isMemberInSubClassOf(method, CONTEXT_CLASS)
       else -> false
     }
   }
 
   private fun isUnParcellingStringMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
-    return (method.name == "getStringExtra") &&
-      evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
+    return (method.name == "getStringExtra") && evaluator.isMemberInSubClassOf(method, INTENT_CLASS) ||
       method.name == "getString" && evaluator.isMemberInSubClassOf(method, BUNDLE_CLASS)
   }
 
-  private fun processRuntimeReceiver(
-    context: JavaContext,
-    call: UCallExpression,
-    method: PsiMethod,
-  ) {
+  private fun processRuntimeReceiver(context: JavaContext, call: UCallExpression, method: PsiMethod) {
     val receiverArg = UastLintUtils.findArgument(call, method, BROADCAST_RECEIVER_CLASS) ?: return
     if (receiverArg.isNullLiteral()) return
 
     if (!isRuntimeReceiverProtected(call, method, context.evaluator)) {
       val receiverConstructor = findConstruction(BROADCAST_RECEIVER_CLASS, receiverArg, call, true)
-      val unprotectedReceiverClassName =
-        receiverConstructor?.classReference.getQualifiedName() ?: return
+      val unprotectedReceiverClassName = receiverConstructor?.classReference.getQualifiedName() ?: return
       storeUnprotectedComponents(context, unprotectedReceiverClassName)
     }
   }
 
-  fun isRuntimeReceiverProtected(
-    call: UCallExpression,
-    method: PsiMethod,
-    javaEvaluator: JavaEvaluator,
-  ): Boolean {
+  fun isRuntimeReceiverProtected(call: UCallExpression, method: PsiMethod, javaEvaluator: JavaEvaluator): Boolean {
     // The parameter positions vary across the various registerReceiver*() methods, so rather
     // than hardcode them we simply look them up based on the parameter name and type.
 
@@ -282,22 +235,15 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
     val permission = evaluator.evaluate(permissionArg) as? String
     if (isProbablyProtectedBySignaturePermission(permission)) return true
 
-    val filterArg =
-      UastLintUtils.findArgument(call, method, "android.content.IntentFilter") ?: return true
-    val (isProtected, _) =
-      BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(
-        filterArg,
-        call,
-        javaEvaluator,
-      )
+    val filterArg = UastLintUtils.findArgument(call, method, "android.content.IntentFilter") ?: return true
+    val (isProtected, _) = BroadcastReceiverUtils.checkIsProtectedReceiverAndReturnUnprotectedActions(filterArg, call, javaEvaluator)
 
     return isProtected
   }
 
   private fun storeUnprotectedComponents(context: Context, unprotectedComponentName: String) {
     val lintMap = context.getPartialResults(ISSUE).map()
-    val unprotectedComponents =
-      lintMap.getMap(KEY_UNPROTECTED) ?: map().also { lintMap.put(KEY_UNPROTECTED, it) }
+    val unprotectedComponents = lintMap.getMap(KEY_UNPROTECTED) ?: map().also { lintMap.put(KEY_UNPROTECTED, it) }
     // the value of the lintMap is not used. only the key is used later.
     unprotectedComponents.put(unprotectedComponentName, true)
   }
@@ -305,13 +251,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
   private fun reportIncident(context: Context, visitor: IntentLaunchChecker) {
     if (context.isGlobalAnalysis()) {
       val incidentComponent = visitor.incidentClass
-      if (
-        isComponentExported(
-          context,
-          context.mainProject.mergedManifest?.documentElement ?: return,
-          incidentComponent,
-        )
-      ) {
+      if (isComponentExported(context, context.mainProject.mergedManifest?.documentElement ?: return, incidentComponent)) {
         reportIssue(context, incidentComponent, visitor.location)
       }
     } else {
@@ -377,10 +317,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       // intent = getIntent().getParcelableExtra() could have been considered chained builder
       // without this override
       // and falsely identify the getIntent() calls as an issue.
-      if (
-        call.methodName in INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF &&
-          call.receiverType?.canonicalText == INTENT_CLASS
-      ) {
+      if (call.methodName in INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF && call.receiverType?.canonicalText == INTENT_CLASS) {
         return false
       }
 
@@ -389,9 +326,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
           if (lambda !is ULambdaExpression) break
           // call's arguments could either be empty (in case of run, with, apply) or the context (in
           // case of let, also)
-          val tracked =
-            (if (lambda.valueParameters.isEmpty()) getThisExpression(lambda.body)
-            else lambda.valueParameters[0]) ?: break
+          val tracked = (if (lambda.valueParameters.isEmpty()) getThisExpression(lambda.body) else lambda.valueParameters[0]) ?: break
           val returnsTracker = ReturnsTracker(context, tracked)
           lambda.body.accept(returnsTracker)
           if (returnsTracker.returned) return true
@@ -421,8 +356,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
         if (resolveCallDepth > MAX_CALL_DEPTH) return
         // escaped to another method call. check the method recursively.
         val containingMethod = call.resolve()?.toUElementOfType<UMethod>() ?: return
-        val intentParameter =
-          context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference]
+        val intentParameter = context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference]
         val visitor =
           IntentLaunchChecker(
             initial = setOf(intentParameter.toUElement() ?: return),
@@ -443,31 +377,19 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     /** Returns if the expression is evaluated to a protected broadcast action. */
     private fun isProtectedBroadcastAction(expression: UExpression?): Boolean {
-      val action =
-        (ConstantEvaluator().allowFieldInitializers().evaluate(expression)) as? String
-          ?: return false
+      val action = (ConstantEvaluator().allowFieldInitializers().evaluate(expression)) as? String ?: return false
       return BroadcastReceiverUtils.isProtectedBroadcast(action)
     }
 
     /**
-     * Check if the call is within a branch of code that is protected by a protected broadcast
-     * action. It could either be an if statement that checks if the action of the intent is equal
-     * to a protected action; or an equivalent of a switch case statement.
+     * Check if the call is within a branch of code that is protected by a protected broadcast action. It could either be an if statement
+     * that checks if the action of the intent is equal to a protected action; or an equivalent of a switch case statement.
      */
-    private fun inProtectedBroadcastBranch(
-      context: JavaContext,
-      call: UCallExpression,
-      reference: UElement,
-    ): Boolean {
-      return inProtectedBroadcastIfBranch(context, call, reference) ||
-        inProtectedBroadcastSwitchCase(call, reference)
+    private fun inProtectedBroadcastBranch(context: JavaContext, call: UCallExpression, reference: UElement): Boolean {
+      return inProtectedBroadcastIfBranch(context, call, reference) || inProtectedBroadcastSwitchCase(call, reference)
     }
 
-    private fun inProtectedBroadcastIfBranch(
-      context: JavaContext,
-      call: UCallExpression,
-      reference: UElement,
-    ): Boolean {
+    private fun inProtectedBroadcastIfBranch(context: JavaContext, call: UCallExpression, reference: UElement): Boolean {
       var ifExp = call.getParentOfType<UIfExpression>()
       while (ifExp != null) {
         var op1: UExpression? = null
@@ -498,17 +420,13 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       return false
     }
 
-    private fun inProtectedBroadcastSwitchCase(
-      call: UCallExpression,
-      reference: UElement,
-    ): Boolean {
+    private fun inProtectedBroadcastSwitchCase(call: UCallExpression, reference: UElement): Boolean {
       var switchExp = call.getParentOfType<USwitchExpression>()
       while (switchExp != null) {
         val subject = switchExp.expression as? UReferenceExpression
         val caseExpression = call.getParentOfType<USwitchClauseExpression>() ?: return false
         val caseValue = caseExpression.caseValues.firstOrNull() ?: return false
-        if ((caseValue.sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true)
-          return false
+        if ((caseValue.sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true) return false
         if (isIntentAction(subject, reference) && isProtectedBroadcastAction(caseValue)) return true
         switchExp = switchExp.getParentOfType()
       }
@@ -517,8 +435,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
     private fun isIntentAction(expression: UExpression?, intentRef: UElement): Boolean {
       val actionAssignmentCall = findIntentActionAssignmentCall(expression)
-      return actionAssignmentCall?.receiver?.skipParenthesizedExprDown()?.tryResolve() ===
-        intentRef.tryResolve()
+      return actionAssignmentCall?.receiver?.skipParenthesizedExprDown()?.tryResolve() === intentRef.tryResolve()
     }
 
     private fun findIntentActionAssignmentCall(expression: UExpression?): UCallExpression? {
@@ -562,38 +479,23 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
         isIntentLaunchedByPendingIntentMethods(evaluator, method)
     }
 
-    private fun isIntentLaunchedByContextMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
-    ): Boolean {
+    private fun isIntentLaunchedByContextMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
       return method.containingClass?.qualifiedName == CONTEXT_CLASS ||
         method.containingClass?.qualifiedName == CONTEXT_COMPAT_CLASS ||
         method.findSuperMethods(evaluator.findClass(CONTEXT_CLASS)).isNotEmpty()
     }
 
-    private fun isIntentLaunchedByActivityMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
-    ): Boolean {
+    private fun isIntentLaunchedByActivityMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
       return method.name in ACTIVITY_INTENT_LAUNCH_METHODS &&
-        (evaluator.isMemberInSubClassOf(method, ACTIVITY_CLASS) ||
-          evaluator.isMemberInClass(method, ACTIVITY_COMPAT_CLASS))
+        (evaluator.isMemberInSubClassOf(method, ACTIVITY_CLASS) || evaluator.isMemberInClass(method, ACTIVITY_COMPAT_CLASS))
     }
 
-    private fun isIntentLaunchedByBroadcastReceiver(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
-    ): Boolean {
-      return method.name == "peekService" &&
-        evaluator.isMemberInSubClassOf(method, BROADCAST_RECEIVER_CLASS)
+    private fun isIntentLaunchedByBroadcastReceiver(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
+      return method.name == "peekService" && evaluator.isMemberInSubClassOf(method, BROADCAST_RECEIVER_CLASS)
     }
 
-    private fun isIntentLaunchedByPendingIntentMethods(
-      evaluator: JavaEvaluator,
-      method: PsiMethod,
-    ): Boolean {
-      return method.name in PENDING_INTENT_LAUNCH_METHODS &&
-        evaluator.isMemberInClass(method, PENDING_INTENT_CLASS)
+    private fun isIntentLaunchedByPendingIntentMethods(evaluator: JavaEvaluator, method: PsiMethod): Boolean {
+      return method.name in PENDING_INTENT_LAUNCH_METHODS && evaluator.isMemberInClass(method, PENDING_INTENT_CLASS)
     }
 
     private fun handleAnonymousBroadcastReceiver(call: UCallExpression): Boolean {
@@ -637,16 +539,9 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       return result
     }
 
-    /**
-     * check if the tracked is returned from the visited method. It will follow the tracked if it is
-     * passed down to another method.
-     */
-    inner class ReturnsTracker(
-      val context: JavaContext,
-      tracked: UElement,
-      var returned: Boolean = false,
-      var resolveCallDepth: Int = 0,
-    ) : DataFlowAnalyzer(setOf(tracked)) {
+    /** check if the tracked is returned from the visited method. It will follow the tracked if it is passed down to another method. */
+    inner class ReturnsTracker(val context: JavaContext, tracked: UElement, var returned: Boolean = false, var resolveCallDepth: Int = 0) :
+      DataFlowAnalyzer(setOf(tracked)) {
       override fun returns(expression: UReturnExpression) {
         returned = true
       }
@@ -654,12 +549,8 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       override fun argument(call: UCallExpression, reference: UElement) {
         if (resolveCallDepth > MAX_CALL_DEPTH) return
         val containingMethod = call.resolve()?.toUElementOfType<UMethod>() ?: return
-        val tracked =
-          context.evaluator
-            .computeArgumentMapping(call, containingMethod.javaPsi)[reference]
-            .toUElement() ?: return
-        val returnsTracker =
-          ReturnsTracker(context, tracked, resolveCallDepth = resolveCallDepth + 1)
+        val tracked = context.evaluator.computeArgumentMapping(call, containingMethod.javaPsi)[reference].toUElement() ?: return
+        val returnsTracker = ReturnsTracker(context, tracked, resolveCallDepth = resolveCallDepth + 1)
         call.resolve()?.toUElementOfType<UMethod>()?.accept(returnsTracker)
         returned = returnsTracker.returned
       }
@@ -668,11 +559,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        UnsafeIntentLaunchDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(UnsafeIntentLaunchDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST), Scope.JAVA_FILE_SCOPE)
 
     /** Issue describing the problem and pointing to the detector implementation. */
     @JvmField
@@ -717,8 +604,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
       mapOf(
         BROADCAST_RECEIVER_CLASS to arrayOf("onReceive"),
         ACTIVITY_CLASS to arrayOf("onNewIntent", "onActivityResult", "onActivityReenter"),
-        SERVICE_CLASS to
-          arrayOf("onBind", "onUnbind", "onRebind", "onTaskRemoved", "onStartCommand", "onStart"),
+        SERVICE_CLASS to arrayOf("onBind", "onUnbind", "onRebind", "onTaskRemoved", "onStartCommand", "onStart"),
       )
 
     private val ACTIVITY_INTENT_LAUNCH_METHODS =
@@ -737,8 +623,7 @@ class UnsafeIntentLaunchDetector : Detector(), SourceCodeScanner, XmlScanner {
         "setResult",
       )
 
-    private val PENDING_INTENT_LAUNCH_METHODS =
-      listOf("getActivity", "getBroadcast", "getService", "getForegroundService")
+    private val PENDING_INTENT_LAUNCH_METHODS = listOf("getActivity", "getBroadcast", "getService", "getForegroundService")
 
     private val INTENT_METHODS_RETURNS_INTENT_BUT_NOT_SELF =
       arrayOf("cloneFilter", "getOriginalIntent", "getSelector", "getParcelableExtra")

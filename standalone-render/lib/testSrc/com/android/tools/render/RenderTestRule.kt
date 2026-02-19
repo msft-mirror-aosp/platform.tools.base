@@ -21,13 +21,10 @@ import com.android.tools.rendering.RenderService
 import com.android.tools.rendering.RenderTask
 import com.android.tools.sdk.AndroidTargetData
 import com.android.tools.sdk.EmbeddedRenderTarget
-import org.junit.rules.ExternalResource
 import java.util.concurrent.TimeUnit
+import org.junit.rules.ExternalResource
 
-/**
- * Rule to use for tests doing rendering.
- * It ensures the state of the RenderService is cleaned between tests.
- */
+/** Rule to use for tests doing rendering. It ensures the state of the RenderService is cleaned between tests. */
 class RenderTestRule : ExternalResource() {
   override fun before() {
     super.before()
@@ -35,7 +32,6 @@ class RenderTestRule : ExternalResource() {
     EmbeddedRenderTarget.resetRenderTarget()
     RenderService.initializeRenderExecutor()
     AndroidTargetData.clearCache()
-
   }
 
   override fun after() {

@@ -20,5 +20,5 @@ import com.android.builder.model.v2.ide.SyncIssue
 import com.android.builder.model.v2.models.ProjectSyncIssues
 
 fun ProjectSyncIssues.filter(severity: Int, type: Int): List<SyncIssue> {
-    return syncIssues.filter { it.severity == severity && it.type == type }
+  return syncIssues.filter { it.severity == severity && it.type == type }
 }

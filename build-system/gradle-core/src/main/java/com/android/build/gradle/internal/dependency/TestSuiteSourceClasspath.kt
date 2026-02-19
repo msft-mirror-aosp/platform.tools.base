@@ -29,89 +29,73 @@ import org.gradle.api.artifacts.result.ResolutionResult
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.model.ObjectFactory
 
-/**
- * Resolvable dependencies of a test suite. Do not resolve these configurations before execution
- * phase.
- */
+/** Resolvable dependencies of a test suite. Do not resolve these configurations before execution phase. */
 class TestSuiteSourceClasspath(
-    /**
-     * The test suite classpath that can be used to compile the test suite sources
-     */
-    val compileClasspath: Configuration,
+  /** The test suite classpath that can be used to compile the test suite sources */
+  val compileClasspath: Configuration,
 
-    /**
-     * The test suite runtime classpath that can be used when configuring the test task or to
-     * package in the resulting test APK depending on source type.
-     */
-    val runtimeClasspath: Configuration,
+  /**
+   * The test suite runtime classpath that can be used when configuring the test task or to package in the resulting test APK depending on
+   * source type.
+   */
+  val runtimeClasspath: Configuration,
+  val objectFactory: ObjectFactory,
+) : ResolutionResultProvider {
 
-    val objectFactory: ObjectFactory,
-): ResolutionResultProvider {
+  fun resolvedArtifacts(
+    artifactCollection: ArtifactCollection,
+    dependencyFailureHandler: (Collection<Throwable>) -> Any = {},
+  ): Set<ResolvedArtifact> {
 
-    fun resolvedArtifacts(
-        artifactCollection: ArtifactCollection,
-        dependencyFailureHandler: (Collection<Throwable>) -> Any = {}
-    ): Set<ResolvedArtifact> {
+    val resolvedArtifacts = artifactCollection.artifacts
 
-        val resolvedArtifacts = artifactCollection.artifacts
+    // use a linked hash set to keep the artifact order.
+    val artifacts = Sets.newLinkedHashSetWithExpectedSize<ResolvedArtifact>(resolvedArtifacts.size)
 
-        // use a linked hash set to keep the artifact order.
-        val artifacts =
-            Sets.newLinkedHashSetWithExpectedSize<ResolvedArtifact>(resolvedArtifacts.size)
-
-        resolvedArtifacts.forEach { resolvedArtifact ->
-            artifacts.add(
-                ResolvedArtifact(
-                    mainArtifactResult = resolvedArtifact,
-                    artifactFile = resolvedArtifact.file,
-                    extractedFolder = null,
-                    publishedLintJar = null,
-                    dependencyType = ResolvedArtifact.DependencyType.JAVA,
-                    isWrappedModule = false
-                )
-            )
-
-        }
-        return artifacts
-    }
-
-    fun getArtifactCollectionForToolingModel(
-        configType: ConsumedConfigType,
-        artifactType: AndroidArtifacts.ArtifactType,
-        configurationFactory: (Configuration) -> Configuration = { it }
-    ): ArtifactCollection {
-        val configuration = configurationFactory(
-            when (configType) {
-                ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
-                ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
-                else -> throw RuntimeException("Test suite do not support $configType")
-            }
+    resolvedArtifacts.forEach { resolvedArtifact ->
+      artifacts.add(
+        ResolvedArtifact(
+          mainArtifactResult = resolvedArtifact,
+          artifactFile = resolvedArtifact.file,
+          extractedFolder = null,
+          publishedLintJar = null,
+          dependencyType = ResolvedArtifact.DependencyType.JAVA,
+          isWrappedModule = false,
         )
-        val attributesAction =
-            Action { container: AttributeContainer ->
-                container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
-                artifactType.getAttributes { type, name ->
-                    objectFactory.named(type, name)
-                }.addAttributesToContainer(container)
-            }
+      )
+    }
+    return artifacts
+  }
 
-        return configuration
-            .incoming
-            .artifactView { config: ArtifactView.ViewConfiguration ->
-                config.attributes(attributesAction)
-            }
-            .artifacts
+  fun getArtifactCollectionForToolingModel(
+    configType: ConsumedConfigType,
+    artifactType: AndroidArtifacts.ArtifactType,
+    configurationFactory: (Configuration) -> Configuration = { it },
+  ): ArtifactCollection {
+    val configuration =
+      configurationFactory(
+        when (configType) {
+          ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath
+          ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath
+          else -> throw RuntimeException("Test suite do not support $configType")
+        }
+      )
+    val attributesAction = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, artifactType.type)
+      artifactType.getAttributes { type, name -> objectFactory.named(type, name) }.addAttributesToContainer(container)
     }
 
-    override fun getResolutionResult(configType: ConsumedConfigType): ResolutionResult = when (configType) {
-        ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath.incoming.resolutionResult
-        ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath.incoming.resolutionResult
-        else -> throw RuntimeException("Unsupported ConsumedConfigType value: $configType")
+    return configuration.incoming.artifactView { config: ArtifactView.ViewConfiguration -> config.attributes(attributesAction) }.artifacts
+  }
+
+  override fun getResolutionResult(configType: ConsumedConfigType): ResolutionResult =
+    when (configType) {
+      ConsumedConfigType.COMPILE_CLASSPATH -> compileClasspath.incoming.resolutionResult
+      ConsumedConfigType.RUNTIME_CLASSPATH -> runtimeClasspath.incoming.resolutionResult
+      else -> throw RuntimeException("Unsupported ConsumedConfigType value: $configType")
     }
-    override fun getAdditionalArtifacts(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        type: AdditionalArtifactType
-    ): ArtifactCollection {
-        throw RuntimeException("Not yet implemented")
-    }
+
+  override fun getAdditionalArtifacts(configType: AndroidArtifacts.ConsumedConfigType, type: AdditionalArtifactType): ArtifactCollection {
+    throw RuntimeException("Not yet implemented")
+  }
 }

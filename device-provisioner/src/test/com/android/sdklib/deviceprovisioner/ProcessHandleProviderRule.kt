@@ -17,17 +17,15 @@ package com.android.testutils
 
 import com.android.sdklib.deviceprovisioner.ProcessHandleProvider
 import fleet.fastutil.longs.Long2ObjectOpenHashMap
-import org.junit.rules.ExternalResource
 import java.time.Duration
 import java.time.Instant
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import java.util.stream.Stream
+import org.junit.rules.ExternalResource
 
 /** Allows tests to inject fake project handles in [ProcessHandleProvider]. */
-class ProcessHandleProviderRule(
-    var factory: ProcessHandleProvider.Factory? = null
-) : ExternalResource() {
+class ProcessHandleProviderRule(var factory: ProcessHandleProvider.Factory? = null) : ExternalResource() {
 
   override fun before() {
     ProcessHandleProvider.overrideForTest(factory ?: fakeProcessHandleFactory)

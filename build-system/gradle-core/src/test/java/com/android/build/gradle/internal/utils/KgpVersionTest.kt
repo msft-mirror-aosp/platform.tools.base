@@ -21,25 +21,24 @@ import org.junit.Test
 
 class KgpVersionTest {
 
-    @Suppress("LocalVariableName")
-    @Test
-    fun `test parsing and comparing different KGP versions`() {
-        val kgp_2_0_0 = KgpVersion.parse("2.0.0")
-        val kgp_2_1_0_beta1 = KgpVersion.parse("2.1.0-Beta1")
-        val kgp_2_1_20_rc = KgpVersion.parse("2.1.20-RC")
-        val kgp_2_2_20_dev_7502 = KgpVersion.parse("2.2.20-dev-7502")
-        val kgp_2_2_20 = KgpVersion.parse("2.2.20")
+  @Suppress("LocalVariableName")
+  @Test
+  fun `test parsing and comparing different KGP versions`() {
+    val kgp_2_0_0 = KgpVersion.parse("2.0.0")
+    val kgp_2_1_0_beta1 = KgpVersion.parse("2.1.0-Beta1")
+    val kgp_2_1_20_rc = KgpVersion.parse("2.1.20-RC")
+    val kgp_2_2_20_dev_7502 = KgpVersion.parse("2.2.20-dev-7502")
+    val kgp_2_2_20 = KgpVersion.parse("2.2.20")
 
-        assertThat(kgp_2_0_0.toString()).isEqualTo("2.0.0")
-        assertThat(kgp_2_1_0_beta1.toString()).isEqualTo("2.1.0-Beta1")
-        assertThat(kgp_2_1_20_rc.toString()).isEqualTo("2.1.20-RC")
-        assertThat(kgp_2_2_20_dev_7502.toString()).isEqualTo("2.2.20-dev-7502")
-        assertThat(kgp_2_2_20.toString()).isEqualTo("2.2.20")
+    assertThat(kgp_2_0_0.toString()).isEqualTo("2.0.0")
+    assertThat(kgp_2_1_0_beta1.toString()).isEqualTo("2.1.0-Beta1")
+    assertThat(kgp_2_1_20_rc.toString()).isEqualTo("2.1.20-RC")
+    assertThat(kgp_2_2_20_dev_7502.toString()).isEqualTo("2.2.20-dev-7502")
+    assertThat(kgp_2_2_20.toString()).isEqualTo("2.2.20")
 
-        assertThat(kgp_2_0_0).isLessThan(kgp_2_1_0_beta1)
-        assertThat(kgp_2_1_0_beta1).isLessThan(kgp_2_1_20_rc)
-        assertThat(kgp_2_1_20_rc).isLessThan(kgp_2_2_20_dev_7502)
-        assertThat(kgp_2_2_20_dev_7502).isLessThan(kgp_2_2_20)
-    }
-
+    assertThat(kgp_2_0_0).isLessThan(kgp_2_1_0_beta1)
+    assertThat(kgp_2_1_0_beta1).isLessThan(kgp_2_1_20_rc)
+    assertThat(kgp_2_1_20_rc).isLessThan(kgp_2_2_20_dev_7502)
+    assertThat(kgp_2_2_20_dev_7502).isLessThan(kgp_2_2_20)
+  }
 }

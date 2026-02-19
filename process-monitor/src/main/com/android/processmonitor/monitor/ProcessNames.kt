@@ -15,9 +15,7 @@
  */
 package com.android.processmonitor.monitor
 
-/**
- * Contains an Android process application id (or "package name") and process name
- */
+/** Contains an Android process application id (or "package name") and process name */
 data class ProcessNames(val applicationId: String, val processName: String) {
   fun isInitialized(): Boolean = applicationId.isNotEmpty() && processName.isNotEmpty()
 

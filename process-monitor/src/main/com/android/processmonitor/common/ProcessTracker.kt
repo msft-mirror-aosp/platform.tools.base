@@ -17,10 +17,8 @@ package com.android.processmonitor.common
 
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Provides a [Flow] of [ProcessEvent]
- */
+/** Provides a [Flow] of [ProcessEvent] */
 internal fun interface ProcessTracker {
 
-    fun trackProcesses(): Flow<ProcessEvent>
+  fun trackProcesses(): Flow<ProcessEvent>
 }

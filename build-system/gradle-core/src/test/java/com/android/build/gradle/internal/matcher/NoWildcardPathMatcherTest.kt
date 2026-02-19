@@ -17,27 +17,27 @@
 package com.android.build.gradle.internal.matcher
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
 class NoWildcardPathMatcherTest {
 
-    @Test
-    fun testPattern() {
-        assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/b").matches()).isTrue()
-        assertThat(NoWildcardPathMatcher.factory().pattern().matcher("**/a").matches()).isFalse()
-        assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/**").matches()).isFalse()
-        assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/*.java").matches()).isFalse()
-        assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/b{.class,.java}").matches()).isFalse()
-    }
+  @Test
+  fun testPattern() {
+    assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/b").matches()).isTrue()
+    assertThat(NoWildcardPathMatcher.factory().pattern().matcher("**/a").matches()).isFalse()
+    assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/**").matches()).isFalse()
+    assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/*.java").matches()).isFalse()
+    assertThat(NoWildcardPathMatcher.factory().pattern().matcher("/a/b{.class,.java}").matches()).isFalse()
+  }
 
-    @Test
-    fun testMatches() {
-        val noWildcardPathMatcher = NoWildcardPathMatcher(NoWildcardPathMatcher.factory().pattern().matcher("/a/b"))
-        assertThat(noWildcardPathMatcher.matches(Paths.get("/a/b"))).isTrue()
-        assertThat(noWildcardPathMatcher.matches(Paths.get("/a/b/c"))).isFalse()
-        assertThat(noWildcardPathMatcher.matches(Paths.get("/aa/b"))).isFalse()
-        assertThat(noWildcardPathMatcher.matches(Paths.get("/a/bb"))).isFalse()
-        assertThat(noWildcardPathMatcher.matches(Paths.get("/a/a/b"))).isFalse()
-    }
+  @Test
+  fun testMatches() {
+    val noWildcardPathMatcher = NoWildcardPathMatcher(NoWildcardPathMatcher.factory().pattern().matcher("/a/b"))
+    assertThat(noWildcardPathMatcher.matches(Paths.get("/a/b"))).isTrue()
+    assertThat(noWildcardPathMatcher.matches(Paths.get("/a/b/c"))).isFalse()
+    assertThat(noWildcardPathMatcher.matches(Paths.get("/aa/b"))).isFalse()
+    assertThat(noWildcardPathMatcher.matches(Paths.get("/a/bb"))).isFalse()
+    assertThat(noWildcardPathMatcher.matches(Paths.get("/a/a/b"))).isFalse()
+  }
 }

@@ -31,6 +31,8 @@ import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import kotlin.test.fail
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
@@ -39,268 +41,243 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.io.File
-import kotlin.test.fail
 
 class ProcessMultiApkApplicationManifestTest {
 
-    @Rule
-    @JvmField var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    private lateinit var project: Project
-    private lateinit var task: ProcessMultiApkApplicationManifest
-    private lateinit var sourceManifestFolder: File
+  private lateinit var project: Project
+  private lateinit var task: ProcessMultiApkApplicationManifest
+  private lateinit var sourceManifestFolder: File
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        val taskProvider = project.tasks.register("testProcessApplicationManifest", ProcessMultiApkApplicationManifest::class.java)
-        task = taskProvider.get()
-        sourceManifestFolder = temporaryFolder.newFolder("source_manifest")
-        task.mainMergedManifest.set(File(sourceManifestFolder, SdkConstants.ANDROID_MANIFEST_XML))
-        task.multiApkManifestOutputDirectory.set(temporaryFolder.newFolder("output_manifests"))
-        task.compatibleScreensManifest.set(temporaryFolder.newFolder("compatible_screen_manifests"))
-        task.applicationId.set("com.android.test")
-        task.variantName = "debug"
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-        task.namespace.set("com.example.foo")
-        initSourceMainManifest(task.mainMergedManifest.get().asFile)
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    val taskProvider = project.tasks.register("testProcessApplicationManifest", ProcessMultiApkApplicationManifest::class.java)
+    task = taskProvider.get()
+    sourceManifestFolder = temporaryFolder.newFolder("source_manifest")
+    task.mainMergedManifest.set(File(sourceManifestFolder, SdkConstants.ANDROID_MANIFEST_XML))
+    task.multiApkManifestOutputDirectory.set(temporaryFolder.newFolder("output_manifests"))
+    task.compatibleScreensManifest.set(temporaryFolder.newFolder("compatible_screen_manifests"))
+    task.applicationId.set("com.android.test")
+    task.variantName = "debug"
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+    task.namespace.set("com.example.foo")
+    initSourceMainManifest(task.mainMergedManifest.get().asFile)
+  }
+
+  @Test
+  fun testNoSplit() {
+    val mainOutput =
+      VariantOutputImpl(
+        FakeGradleProperty(value = 0),
+        FakeGradleProperty(value = ""),
+        FakeGradleProperty(value = true),
+        VariantOutputConfigurationImpl(false, listOf()),
+        "base_name",
+        "main_full_name",
+        FakeGradleProperty(value = "output_file_name"),
+      )
+    val creationConfig = mock<ApplicationCreationConfig>()
+    whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(mainOutput)))
+    task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
+        applicationId = task.applicationId.get(),
+        variantName = task.variantName,
+        elements = listOf(),
+      )
+      .saveToDirectory(task.compatibleScreensManifest.get().asFile)
+
+    task.taskAction()
+
+    val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
+    assertThat(listFiles).hasLength(2)
+    assertThat(File(task.multiApkManifestOutputDirectory.asFile.get(), SdkConstants.ANDROID_MANIFEST_XML).readText())
+      .isEqualTo(task.mainMergedManifest.get().asFile.readText())
+    val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
+    assertThat(builtArtifacts).isNotNull()
+    assertThat(builtArtifacts!!.elements).hasSize(1)
+    assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
+    assertThat(builtArtifacts.variantName).isEqualTo("debug")
+    val singleOutput = builtArtifacts.elements.single()
+    assertThat(singleOutput.variantOutputConfiguration.outputType).isEqualTo(VariantOutputConfiguration.OutputType.SINGLE)
+  }
+
+  @Test
+  fun testAbiSplit() {
+    val x86 = createVariantOutputForAbi("x86")
+    x86.versionCode.set(24)
+    val arm = createVariantOutputForAbi("arm")
+    arm.versionCode.set(23)
+    val x86_64 = createVariantOutputForAbi("x86_64")
+    x86_64.versionCode.set(22)
+
+    val mainOutput = createVariantOutput()
+    val creationConfig = mock<ApplicationCreationConfig>()
+    whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(mainOutput, x86, arm, x86_64)))
+    task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
+        applicationId = task.applicationId.get(),
+        variantName = task.variantName,
+        elements = listOf(),
+      )
+      .saveToDirectory(task.compatibleScreensManifest.get().asFile)
+
+    task.taskAction()
+
+    val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
+    assertThat(listFiles).hasLength(5)
+    val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
+    assertThat(builtArtifacts).isNotNull()
+    assertThat(builtArtifacts!!.elements).hasSize(4)
+    assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
+    assertThat(builtArtifacts.variantName).isEqualTo("debug")
+    builtArtifacts.elements.forEach {
+      val finalMergedManifest = File(it.outputFile)
+      val manifestContent = finalMergedManifest.readText()
+      assertThat(finalMergedManifest.exists()).isTrue()
+      if (it.variantOutputConfiguration.filters.size == 1) {
+        val filter = it.variantOutputConfiguration.filters.single()
+        assertThat(it.variantOutputConfiguration.outputType).isEqualTo(VariantOutputConfiguration.OutputType.ONE_OF_MANY)
+        assertThat(filter.filterType).isEqualTo(FilterConfiguration.FilterType.ABI)
+        assertThat(finalMergedManifest.absolutePath).contains(filter.identifier)
+        val expectedVersion =
+          when (filter.identifier) {
+            "x86" -> 24
+            "arm" -> 23
+            "x86_64" -> 22
+            else -> fail("Unknown ABI filter")
+          }
+        assertThat(manifestContent).contains("android:versionCode=\"$expectedVersion\"")
+      } else {
+        assertThat(it.variantOutputConfiguration.outputType).isEqualTo(VariantOutputConfiguration.OutputType.SINGLE)
+        assertThat(manifestContent).contains("android:versionCode=\"12\"")
+      }
     }
+  }
 
-    @Test
-    fun testNoSplit() {
-        val mainOutput = VariantOutputImpl(
-            FakeGradleProperty(value = 0),
-            FakeGradleProperty(value = ""),
-            FakeGradleProperty(value = true),
-            VariantOutputConfigurationImpl(false, listOf()),
-            "base_name",
-            "main_full_name",
-            FakeGradleProperty(value = "output_file_name"),
-        )
-        val creationConfig = mock<ApplicationCreationConfig>()
-        whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(mainOutput)))
-        task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+  @Test
+  fun testSeveralSplitNoUniversal() {
+    val xxhpdi = createVariantOutputForDensity("xxhdpi")
+    val xhdpi = createVariantOutputForDensity("xhdpi")
+    val hdpi = createVariantOutputForDensity("hdpi")
 
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
-            applicationId = task.applicationId.get(),
-            variantName = task.variantName,
-            elements = listOf(),
-        ).saveToDirectory(task.compatibleScreensManifest.get().asFile)
+    val creationConfig = mock<ApplicationCreationConfig>()
+    whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(xxhpdi, xhdpi, hdpi)))
+    task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
 
-        task.taskAction()
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
+        applicationId = task.applicationId.get(),
+        variantName = task.variantName,
+        elements =
+          listOf(
+            xxhpdi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "480")),
+            xhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "xhdpi")),
+            hdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "hdpi")),
+          ),
+      )
+      .saveToDirectory(task.compatibleScreensManifest.get().asFile)
 
-        val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
-        assertThat(listFiles).hasLength(2)
-        assertThat(
-            File(task.multiApkManifestOutputDirectory.asFile.get(),
-                SdkConstants.ANDROID_MANIFEST_XML).readText())
-            .isEqualTo(task.mainMergedManifest.get().asFile.readText())
-        val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
-        assertThat(builtArtifacts).isNotNull()
-        assertThat(builtArtifacts!!.elements).hasSize(1)
-        assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
-        assertThat(builtArtifacts.variantName).isEqualTo("debug")
-        val singleOutput = builtArtifacts.elements.single()
-        assertThat(singleOutput.variantOutputConfiguration.outputType).isEqualTo(
-            VariantOutputConfiguration.OutputType.SINGLE
-        )
+    task.taskAction()
+
+    val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
+    assertThat(listFiles).hasLength(4)
+    val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
+    assertThat(builtArtifacts).isNotNull()
+    assertThat(builtArtifacts!!.elements).hasSize(3)
+    assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
+    assertThat(builtArtifacts.variantName).isEqualTo("debug")
+    builtArtifacts.elements.forEach {
+      assertThat(it.variantOutputConfiguration.outputType).isEqualTo(VariantOutputConfiguration.OutputType.ONE_OF_MANY)
+      assertThat(it.variantOutputConfiguration.filters.size).isEqualTo(1)
+      val filter = it.variantOutputConfiguration.filters.single()
+      assertThat(filter.filterType).isEqualTo(FilterConfiguration.FilterType.DENSITY)
+      val finalMergedManifest = File(it.outputFile)
+      assertThat(finalMergedManifest.exists()).isTrue()
+      assertThat(finalMergedManifest.absolutePath).contains(filter.identifier)
+      val manifestContent = finalMergedManifest.readText()
+      val densityValue = if (filter.identifier == "xxhdpi") "480" else filter.identifier
+      assertThat(manifestContent).contains("android:screenDensity=\"$densityValue\"")
     }
+  }
 
-    @Test
-    fun testAbiSplit() {
-        val x86 = createVariantOutputForAbi("x86")
-        x86.versionCode.set(24)
-        val arm = createVariantOutputForAbi("arm")
-        arm.versionCode.set(23)
-        val x86_64 = createVariantOutputForAbi("x86_64")
-        x86_64.versionCode.set(22)
+  @Test
+  fun testSeveralSplitNoUniversalWithVariantOutputSpecificVersions() {
+    val xxhdpi = createVariantOutputForDensity("xxhdpi")
+    xxhdpi.versionCode.set(24)
+    xxhdpi.versionName.set("twentyfour")
+    val xhdpi = createVariantOutputForDensity("xhdpi")
+    xhdpi.versionCode.set(23)
+    xhdpi.versionName.set("twentythree")
+    val hdpi = createVariantOutputForDensity("hdpi")
+    hdpi.versionCode.set(22)
+    hdpi.versionName.set("twentytwo")
 
-        val mainOutput = createVariantOutput()
-        val creationConfig = mock<ApplicationCreationConfig>()
-        whenever(creationConfig.outputs).thenReturn(
-            VariantOutputList(listOf(mainOutput, x86, arm, x86_64))
-        )
-        task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+    val creationConfig = mock<ApplicationCreationConfig>()
+    whenever(creationConfig.outputs).thenReturn(VariantOutputList(listOf(xxhdpi, xhdpi, hdpi)))
+    task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
 
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
-            applicationId = task.applicationId.get(),
-            variantName = task.variantName,
-            elements = listOf()
-        ).saveToDirectory(task.compatibleScreensManifest.get().asFile)
+    BuiltArtifactsImpl(
+        artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
+        applicationId = task.applicationId.get(),
+        variantName = task.variantName,
+        elements =
+          listOf(
+            xxhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "480")),
+            xhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "xhdpi")),
+            hdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(task.compatibleScreensManifest.get().asFile, "hdpi")),
+          ),
+      )
+      .saveToDirectory(task.compatibleScreensManifest.get().asFile)
 
-        task.taskAction()
+    task.taskAction()
 
-        val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
-        assertThat(listFiles).hasLength(5)
-        val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
-        assertThat(builtArtifacts).isNotNull()
-        assertThat(builtArtifacts!!.elements).hasSize(4)
-        assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
-        assertThat(builtArtifacts.variantName).isEqualTo("debug")
-        builtArtifacts.elements.forEach {
-            val finalMergedManifest = File(it.outputFile)
-            val manifestContent = finalMergedManifest.readText()
-            assertThat(finalMergedManifest.exists()).isTrue()
-            if (it.variantOutputConfiguration.filters.size == 1) {
-                val filter = it.variantOutputConfiguration.filters.single()
-                assertThat(it.variantOutputConfiguration.outputType).isEqualTo(
-                    VariantOutputConfiguration.OutputType.ONE_OF_MANY
-                )
-                assertThat(filter.filterType).isEqualTo(FilterConfiguration.FilterType.ABI)
-                assertThat(finalMergedManifest.absolutePath).contains(filter.identifier)
-                val expectedVersion = when(filter.identifier) {
-                    "x86" -> 24
-                    "arm" -> 23
-                    "x86_64" -> 22
-                    else -> fail("Unknown ABI filter")
-                }
-                assertThat(manifestContent).contains("android:versionCode=\"$expectedVersion\"")
-            } else {
-                assertThat(it.variantOutputConfiguration.outputType).isEqualTo(
-                    VariantOutputConfiguration.OutputType.SINGLE
-                )
-                assertThat(manifestContent).contains("android:versionCode=\"12\"")
-            }
-        }
+    val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
+    assertThat(listFiles).hasLength(4)
+    val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
+    assertThat(builtArtifacts).isNotNull()
+    assertThat(builtArtifacts!!.elements).hasSize(3)
+    builtArtifacts.elements.forEach {
+      val manifestContent = File(it.outputFile).readText()
+      val filter = it.variantOutputConfiguration.filters.single()
+      when (filter.identifier) {
+        "xxhdpi" -> assertThat(manifestContent).contains("android:versionCode=\"24\"")
+        "xhdpi" -> assertThat(manifestContent).contains("android:versionCode=\"23\"")
+        "hdpi" -> assertThat(manifestContent).contains("android:versionCode=\"22\"")
+        else -> fail("Unknown Density : ${filter.identifier}")
+      }
     }
+  }
 
+  private fun createVariantOutput(filter: FilterConfigurationImpl? = null) =
+    VariantOutputImpl(
+      FakeGradleProperty(value = 0),
+      FakeGradleProperty(value = ""),
+      FakeGradleProperty(value = true),
+      VariantOutputConfigurationImpl(false, if (filter != null) listOf(filter) else listOf()),
+      "base_name",
+      "main_full_name",
+      FakeGradleProperty(value = "some_output_file"),
+    )
 
-    @Test
-    fun testSeveralSplitNoUniversal() {
-        val xxhpdi = createVariantOutputForDensity("xxhdpi")
-        val xhdpi = createVariantOutputForDensity("xhdpi")
-        val hdpi = createVariantOutputForDensity("hdpi")
+  private fun createVariantOutputForFilter(filterType: FilterConfiguration.FilterType, identifier: String) =
+    createVariantOutput(FilterConfigurationImpl(filterType, identifier))
 
-        val creationConfig = mock<ApplicationCreationConfig>()
-        whenever(creationConfig.outputs).thenReturn(
-            VariantOutputList(listOf(xxhpdi, xhdpi, hdpi))
-        )
-        task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
+  private fun createVariantOutputForDensity(density: String) = createVariantOutputForFilter(FilterConfiguration.FilterType.DENSITY, density)
 
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
-            applicationId = task.applicationId.get(),
-            variantName = task.variantName,
-            elements = listOf(
-                xxhpdi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "480")),
-                xhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "xhdpi")),
-                hdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "hdpi"))
-            )
-        ).saveToDirectory(task.compatibleScreensManifest.get().asFile)
+  private fun createVariantOutputForAbi(density: String) = createVariantOutputForFilter(FilterConfiguration.FilterType.ABI, density)
 
-        task.taskAction()
-
-        val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
-        assertThat(listFiles).hasLength(4)
-        val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
-        assertThat(builtArtifacts).isNotNull()
-        assertThat(builtArtifacts!!.elements).hasSize(3)
-        assertThat(builtArtifacts.applicationId).isEqualTo("com.android.test")
-        assertThat(builtArtifacts.variantName).isEqualTo("debug")
-        builtArtifacts.elements.forEach {
-            assertThat(it.variantOutputConfiguration.outputType).isEqualTo(
-                VariantOutputConfiguration.OutputType.ONE_OF_MANY
-            )
-            assertThat(it.variantOutputConfiguration.filters.size).isEqualTo(1)
-            val filter = it.variantOutputConfiguration.filters.single()
-            assertThat(filter.filterType).isEqualTo(FilterConfiguration.FilterType.DENSITY)
-            val finalMergedManifest = File(it.outputFile)
-            assertThat(finalMergedManifest.exists()).isTrue()
-            assertThat(finalMergedManifest.absolutePath).contains(filter.identifier)
-            val manifestContent = finalMergedManifest.readText()
-            val densityValue = if (filter.identifier == "xxhdpi") "480" else filter.identifier
-            assertThat(manifestContent).contains("android:screenDensity=\"$densityValue\"")
-        }
-    }
-
-    @Test
-    fun testSeveralSplitNoUniversalWithVariantOutputSpecificVersions() {
-        val xxhdpi = createVariantOutputForDensity("xxhdpi")
-        xxhdpi.versionCode.set(24)
-        xxhdpi.versionName.set("twentyfour")
-        val xhdpi = createVariantOutputForDensity("xhdpi")
-        xhdpi.versionCode.set(23)
-        xhdpi.versionName.set("twentythree")
-        val hdpi = createVariantOutputForDensity("hdpi")
-        hdpi.versionCode.set(22)
-        hdpi.versionName.set("twentytwo")
-
-        val creationConfig = mock<ApplicationCreationConfig>()
-        whenever(creationConfig.outputs).thenReturn(
-            VariantOutputList(listOf(xxhdpi, xhdpi, hdpi))
-        )
-        task.outputsHandler.set(MultiOutputHandler.create(creationConfig))
-
-        BuiltArtifactsImpl(
-            artifactType = InternalArtifactType.COMPATIBLE_SCREEN_MANIFEST,
-            applicationId = task.applicationId.get(),
-            variantName = task.variantName,
-            elements = listOf(
-                xxhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "480")),
-                xhdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "xhdpi")),
-                hdpi.toBuiltArtifact(createCompatibleScreensManifestForDensity(
-                    task.compatibleScreensManifest.get().asFile,
-                    "hdpi"))
-            )
-        ).saveToDirectory(task.compatibleScreensManifest.get().asFile)
-
-        task.taskAction()
-
-        val listFiles = task.multiApkManifestOutputDirectory.asFile.get().listFiles()
-        assertThat(listFiles).hasLength(4)
-        val builtArtifacts = BuiltArtifactsLoaderImpl().load(task.multiApkManifestOutputDirectory)
-        assertThat(builtArtifacts).isNotNull()
-        assertThat(builtArtifacts!!.elements).hasSize(3)
-        builtArtifacts.elements.forEach {
-            val manifestContent = File(it.outputFile).readText()
-            val filter = it.variantOutputConfiguration.filters.single()
-            when(filter.identifier) {
-                "xxhdpi" -> assertThat(manifestContent).contains("android:versionCode=\"24\"")
-                "xhdpi" -> assertThat(manifestContent).contains("android:versionCode=\"23\"")
-                "hdpi" -> assertThat(manifestContent).contains("android:versionCode=\"22\"")
-                else -> fail("Unknown Density : ${filter.identifier}")
-            }
-        }
-    }
-
-    private fun createVariantOutput(filter: FilterConfigurationImpl? = null) =
-        VariantOutputImpl(
-            FakeGradleProperty(value = 0),
-            FakeGradleProperty(value =""),
-            FakeGradleProperty(value =true),
-            VariantOutputConfigurationImpl(false, if (filter != null) listOf(filter) else listOf()),
-            "base_name",
-            "main_full_name",
-            FakeGradleProperty(value = "some_output_file"),
-        )
-
-    private fun createVariantOutputForFilter(filterType: FilterConfiguration.FilterType, identifier: String) =
-        createVariantOutput(FilterConfigurationImpl(filterType, identifier))
-
-    private fun createVariantOutputForDensity(density: String) =
-        createVariantOutputForFilter(FilterConfiguration.FilterType.DENSITY, density)
-
-    private fun createVariantOutputForAbi(density: String) =
-        createVariantOutputForFilter(FilterConfiguration.FilterType.ABI, density)
-
-    private fun createCompatibleScreensManifestForDensity(folder: File, density: String): File {
-        val parentFolder = File(folder, density)
-        parentFolder.mkdirs()
-        val manifestFile = File(parentFolder, SdkConstants.ANDROID_MANIFEST_XML)
-        manifestFile.writeText("""
+  private fun createCompatibleScreensManifestForDensity(folder: File, density: String): File {
+    val parentFolder = File(folder, density)
+    parentFolder.mkdirs()
+    val manifestFile = File(parentFolder, SdkConstants.ANDROID_MANIFEST_XML)
+    manifestFile.writeText(
+      """
             <?xml version="1.0" encoding="utf-8"?>
             <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
@@ -312,60 +289,65 @@ class ProcessMultiApkApplicationManifestTest {
                     <screen android:screenSize="xlarge" android:screenDensity="$density" />
                 </compatible-screens>
             </manifest>
-        """.trimIndent())
-        return manifestFile
-    }
+        """
+        .trimIndent()
+    )
+    return manifestFile
+  }
 
-    private fun initSourceMainManifest(outputFile: File) {
-        outputFile.writeText("""
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="com.android.tests.basic.debug"
-                android:versionCode="12"
-                android:versionName="2.0" >
+  private fun initSourceMainManifest(outputFile: File) {
+    outputFile.writeText(
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="com.android.tests.basic.debug"
+          android:versionCode="12"
+          android:versionName="2.0" >
 
-                <uses-sdk
-                    android:minSdkVersion="16"
-                    android:targetSdkVersion="16" />
+          <uses-sdk
+              android:minSdkVersion="16"
+              android:targetSdkVersion="16" />
 
-                <uses-permission android:name="com.blah12" />
+          <uses-permission android:name="com.blah12" />
 
-                <permission-group
-                    android:name="foo.permission-group.COST_MONEY"
-                    android:description="@string/app_name"
-                    android:label="@string/app_name" />
+          <permission-group
+              android:name="foo.permission-group.COST_MONEY"
+              android:description="@string/app_name"
+              android:label="@string/app_name" />
 
-                <permission
-                    android:name="foo.permission.SEND_SMS"
-                    android:description="@string/app_name"
-                    android:label="@string/app_name"
-                    android:permissionGroup="foo.permission-group.COST_MONEY" />
+          <permission
+              android:name="foo.permission.SEND_SMS"
+              android:description="@string/app_name"
+              android:label="@string/app_name"
+              android:permissionGroup="foo.permission-group.COST_MONEY" />
 
-                <application
-                    android:appComponentFactory="android.support.v4.app.CoreComponentFactory"
-                    android:debuggable="true"
-                    android:icon="@drawable/icon"
-                    android:label="@string/app_name" >
-                    <activity
-                        android:name="com.android.tests.basic.Main"
-                        android:label="@string/app_name" >
-                        <intent-filter>
-                            <action android:name="android.intent.action.MAIN" />
+          <application
+              android:appComponentFactory="android.support.v4.app.CoreComponentFactory"
+              android:debuggable="true"
+              android:icon="@drawable/icon"
+              android:label="@string/app_name" >
+              <activity
+                  android:name="com.android.tests.basic.Main"
+                  android:label="@string/app_name" >
+                  <intent-filter>
+                      <action android:name="android.intent.action.MAIN" />
 
-                            <category android:name="android.intent.category.LAUNCHER" />
-                        </intent-filter>
-                    </activity>
-                    <activity
-                        android:name="com.google.android.gms.common.api.GoogleApiActivity"
-                        android:exported="false"
-                        android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+                      <category android:name="android.intent.category.LAUNCHER" />
+                  </intent-filter>
+              </activity>
+              <activity
+                  android:name="com.google.android.gms.common.api.GoogleApiActivity"
+                  android:exported="false"
+                  android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-                    <meta-data
-                        android:name="com.google.android.gms.version"
-                        android:value="@integer/google_play_services_version" />
-                </application>
+              <meta-data
+                  android:name="com.google.android.gms.version"
+                  android:value="@integer/google_play_services_version" />
+          </application>
 
-            </manifest>
-        """.trimIndent())
-    }
+      </manifest>
+      """
+        .trimIndent()
+    )
+  }
 }

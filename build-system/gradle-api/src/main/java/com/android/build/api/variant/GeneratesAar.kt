@@ -16,14 +16,9 @@
 
 package com.android.build.api.variant
 
-/**
- * Build-time properties for [Component] that generate AARs.
- */
+/** Build-time properties for [Component] that generate AARs. */
 interface GeneratesAar {
 
-    /**
-     * Variant's aar metadata, initialized by merging the corresponding
-     * [com.android.build.api.dsl.AarMetadata] DSL elements.
-     */
-    val aarMetadata: AarMetadata
+  /** Variant's aar metadata, initialized by merging the corresponding [com.android.build.api.dsl.AarMetadata] DSL elements. */
+  val aarMetadata: AarMetadata
 }

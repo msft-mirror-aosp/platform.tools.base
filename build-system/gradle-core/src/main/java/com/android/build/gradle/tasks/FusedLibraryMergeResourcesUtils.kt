@@ -28,55 +28,55 @@ import com.android.ide.common.resources.ResourcePathEncoding
 import com.android.ide.common.resources.ResourceSet
 import com.android.ide.common.workers.WorkerExecutorFacade
 import com.android.utils.FileUtils
-import org.gradle.api.logging.Logger
 import java.io.File
+import org.gradle.api.logging.Logger
 
 internal fun mergeResourcesWithCompilationService(
-        resCompilerService: ResourceCompilationService,
-        incrementalMergedResources: File,
-        mergedResources: File,
-        resourceSets: List<File>,
-        minSdk: Int,
-        aaptWorkerFacade: WorkerExecutorFacade,
-        blameLogOutputFolder: File,
-        logger: Logger) {
-    val incrementalMergedResources = incrementalMergedResources
-    val mergedResourcesDir = File(mergedResources, SdkConstants.RES_FOLDER).also {
-        it.mkdirs()
+  resCompilerService: ResourceCompilationService,
+  incrementalMergedResources: File,
+  mergedResources: File,
+  resourceSets: List<File>,
+  minSdk: Int,
+  aaptWorkerFacade: WorkerExecutorFacade,
+  blameLogOutputFolder: File,
+  logger: Logger,
+) {
+  val incrementalMergedResources = incrementalMergedResources
+  val mergedResourcesDir = File(mergedResources, SdkConstants.RES_FOLDER).also { it.mkdirs() }
+  val sourcesResourceSet = ResourceSet(null, ResourceNamespace.RES_AUTO, null, false, null).apply { addSources(resourceSets.reversed()) }
+  val resourceMerger =
+    ResourceMerger(minSdk).apply {
+      sourcesResourceSet.loadFromFiles(LoggerWrapper(logger))
+      addDataSet(sourcesResourceSet)
     }
-    val sourcesResourceSet = ResourceSet(
-            null, ResourceNamespace.RES_AUTO, null, false, null
-    ).apply {
-        addSources(resourceSets.reversed())
+  aaptWorkerFacade.use { workerExecutorFacade ->
+    resCompilerService.use { resCompilationService ->
+      val mergeResourcesWriterRequest =
+        MergedResourceWriterRequest(
+          workerExecutor = workerExecutorFacade,
+          rootFolder = mergedResourcesDir,
+          publicFile = null,
+          blameLog = getCleanBlameLog(blameLogOutputFolder),
+          preprocessor = null,
+          resourceCompilationService = resCompilationService,
+          temporaryDirectory = incrementalMergedResources,
+          dataBindingExpressionRemover = null,
+          notCompiledOutputDirectory = null,
+          pseudoLocalesEnabled = false,
+          crunchPng = false,
+          relativePathEncoding =
+            ResourcePathEncoding.AbsoluteNotRelocatable(
+              justification = "Fused Library does not contain local resources requiring compilation."
+            ),
+        )
+      val writer = MergedResourceWriter(mergeResourcesWriterRequest)
+      resourceMerger.mergeData(writer, true)
+      resourceMerger.writeBlobTo(incrementalMergedResources, writer, false)
     }
-    val resourceMerger = ResourceMerger(minSdk).apply {
-        sourcesResourceSet.loadFromFiles(LoggerWrapper(logger))
-        addDataSet(sourcesResourceSet)
-    }
-    aaptWorkerFacade.use { workerExecutorFacade ->
-        resCompilerService.use { resCompilationService ->
-            val mergeResourcesWriterRequest = MergedResourceWriterRequest(
-                    workerExecutor = workerExecutorFacade,
-                    rootFolder = mergedResourcesDir,
-                    publicFile = null,
-                    blameLog = getCleanBlameLog(blameLogOutputFolder),
-                    preprocessor = null,
-                    resourceCompilationService = resCompilationService,
-                    temporaryDirectory = incrementalMergedResources,
-                    dataBindingExpressionRemover = null,
-                    notCompiledOutputDirectory = null,
-                    pseudoLocalesEnabled = false,
-                    crunchPng = false,
-                    relativePathEncoding = ResourcePathEncoding.AbsoluteNotRelocatable
-            )
-            val writer = MergedResourceWriter(mergeResourcesWriterRequest)
-            resourceMerger.mergeData(writer, true)
-            resourceMerger.writeBlobTo(incrementalMergedResources, writer, false)
-        }
-    }
+  }
 }
 
 private fun getCleanBlameLog(blameLogOutputFolder: File): MergingLog {
-    FileUtils.cleanOutputDir(blameLogOutputFolder)
-    return MergingLog(blameLogOutputFolder)
+  FileUtils.cleanOutputDir(blameLogOutputFolder)
+  return MergingLog(blameLogOutputFolder)
 }

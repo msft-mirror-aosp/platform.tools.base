@@ -23,132 +23,119 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class ShrinkLibraryTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(getMultiModuleProject())
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(getMultiModuleProject()).create()
 
-    private lateinit var libraryA: GradleTestProject
-    private lateinit var libraryB: GradleTestProject
+  private lateinit var libraryA: GradleTestProject
+  private lateinit var libraryB: GradleTestProject
 
-    @Before
-    fun setUp() {
-        libraryA = project.getSubproject(LIBRARY_A)
-        libraryB = project.getSubproject(LIBRARY_B)
+  @Before
+  fun setUp() {
+    libraryA = project.getSubproject(LIBRARY_A)
+    libraryB = project.getSubproject(LIBRARY_B)
 
-        TestFileUtils.appendToFile(libraryA.buildFile,
-            """
-                android {
-                    buildTypes {
-                        debug {
-                            minifyEnabled true
-                            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+    TestFileUtils.appendToFile(
+      libraryA.buildFile,
+      """
+      android {
+          buildTypes {
+              debug {
+                  minifyEnabled true
+                  proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testLambdaStubOnBootclasspath() {
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
-            "// onCreate",
-            """
-                new java.util.ArrayList<Integer>().forEach( (n) -> System.out.println(n));
-            """.trimIndent()
-        )
+  @Test
+  fun testLambdaStubOnBootclasspath() {
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
+      "// onCreate",
+      """
+      new java.util.ArrayList<Integer>().forEach( (n) -> System.out.println(n));
+      """
+        .trimIndent(),
+    )
 
-        compileWithJava8Target(libraryA.buildFile)
-        libraryA.executor().run("assembleDebug")
-    }
+    compileWithJava8Target(libraryA.buildFile)
+    libraryA.executor().run("assembleDebug")
+  }
 
-    // Regression test for b/282544776
-    @Test
-    fun testExternalDependencyRClassConsideredAsClasspath() {
-        TestFileUtils.appendToFile(
-            libraryA.buildFile,
-            "dependencies { implementation 'com.google.android.material:material:1.8.0' }"
-        )
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "android.useAndroidX=true"
-        )
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
-            "// onCreate",
-            """
-                int[] a = com.google.android.material.R.styleable.ActionBar;
-            """.trimIndent()
-        )
+  // Regression test for b/282544776
+  @Test
+  fun testExternalDependencyRClassConsideredAsClasspath() {
+    TestFileUtils.appendToFile(libraryA.buildFile, "dependencies { implementation 'com.google.android.material:material:1.8.0' }")
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "android.useAndroidX=true")
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
+      "// onCreate",
+      """
+      int[] a = com.google.android.material.R.styleable.ActionBar;
+      """
+        .trimIndent(),
+    )
 
-        libraryA.executor().run("assembleDebug")
-    }
+    libraryA.executor().run("assembleDebug")
+  }
 
-    // Regression test for b/282544776
-    @Test
-    fun testProjectDependencyRClassConsideredAsClasspath() {
-        TestFileUtils.appendToFile(
-            libraryA.buildFile,
-            "dependencies { implementation project(':$LIBRARY_B') }"
-        )
+  // Regression test for b/282544776
+  @Test
+  fun testProjectDependencyRClassConsideredAsClasspath() {
+    TestFileUtils.appendToFile(libraryA.buildFile, "dependencies { implementation project(':$LIBRARY_B') }")
 
-        TestFileUtils.searchAndReplace(
-            FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
-            "// onCreate",
-            "int foo = com.example.$LIBRARY_B.R.string.app_name;"
-        )
+    TestFileUtils.searchAndReplace(
+      FileUtils.join(libraryA.mainSrcDir, "com/example/$LIBRARY_A/HelloWorld.java"),
+      "// onCreate",
+      "int foo = com.example.$LIBRARY_B.R.string.app_name;",
+    )
 
-        libraryA.executor().run("assembleDebug")
-    }
+    libraryA.executor().run("assembleDebug")
+  }
 
-    /** Regression test for b/319132114. */
-    @Test
-    fun `test task dependencies with Android resources disabled`() {
-        TestFileUtils.searchAndReplace(
-            libraryA.mainSrcDir.resolve("com/example/$LIBRARY_A/HelloWorld.java"),
-            "setContentView(R.layout.main);",
-            "// setContentView(R.layout.main);"
-        )
-        libraryA.executor()
-            .with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false)
-            .run("minifyDebugWithR8")
-    }
+  /** Regression test for b/319132114. */
+  @Test
+  fun `test task dependencies with Android resources disabled`() {
+    TestFileUtils.searchAndReplace(
+      libraryA.mainSrcDir.resolve("com/example/$LIBRARY_A/HelloWorld.java"),
+      "setContentView(R.layout.main);",
+      "// setContentView(R.layout.main);",
+    )
+    libraryA.executor().with(BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES, false).run("minifyDebugWithR8")
+  }
 
-    private fun compileWithJava8Target(buildFile: File) {
-        TestFileUtils.appendToFile(buildFile,
-            """
-                android {
-                    compileOptions {
-                        sourceCompatibility JavaVersion.VERSION_1_8
-                        targetCompatibility JavaVersion.VERSION_1_8
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+  private fun compileWithJava8Target(buildFile: File) {
+    TestFileUtils.appendToFile(
+      buildFile,
+      """
+      android {
+          compileOptions {
+              sourceCompatibility JavaVersion.VERSION_1_8
+              targetCompatibility JavaVersion.VERSION_1_8
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    private fun getMultiModuleProject(): TestProject {
-        val libraryA = HelloWorldApp.forPluginWithNamespace(
-            "com.android.library", "com.example.$LIBRARY_A")
-        val libraryB = HelloWorldApp.forPluginWithNamespace(
-            "com.android.library", "com.example.$LIBRARY_B")
-        return  MultiModuleTestProject.builder()
-            .subproject(LIBRARY_A, libraryA)
-            .subproject(LIBRARY_B, libraryB)
-            .build()
-    }
+  private fun getMultiModuleProject(): TestProject {
+    val libraryA = HelloWorldApp.forPluginWithNamespace("com.android.library", "com.example.$LIBRARY_A")
+    val libraryB = HelloWorldApp.forPluginWithNamespace("com.android.library", "com.example.$LIBRARY_B")
+    return MultiModuleTestProject.builder().subproject(LIBRARY_A, libraryA).subproject(LIBRARY_B, libraryB).build()
+  }
 
-    companion object {
-        const val LIBRARY_A = "libraryA"
-        const val LIBRARY_B = "libraryB"
-    }
+  companion object {
+    const val LIBRARY_A = "libraryA"
+    const val LIBRARY_B = "libraryB"
+  }
 }

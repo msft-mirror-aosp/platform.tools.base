@@ -19,52 +19,47 @@ package com.android.build.gradle.integration.databinding
 import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.options.BooleanOption
-import com.android.sdklib.SdkVersionInfo
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 /**
- * This is a smoke test that ensures that the integration tests of DataBinding with Dynamic Features
- * compiles fine. The actual test is run as a post-submit step.
+ * This is a smoke test that ensures that the integration tests of DataBinding with Dynamic Features compiles fine. The actual test is run
+ * as a post-submit step.
  */
 class DataBindingWithDynamicFeaturesAppTest {
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromDataBindingIntegrationTest("DynamicApp", true)
-        .addGradleProperties( // TODO(b/439806981): Remove this
-            "${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true"
-        )
-        .create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromDataBindingIntegrationTest("DynamicApp", true)
+      .addGradleProperties( // TODO(b/439806981): Remove this
+        "${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=true"
+      )
+      .create()
 
-    @Before
-    fun clean() {
-        executor().run("clean")
-    }
+  @Before
+  fun clean() {
+    executor().run("clean")
+  }
 
-    @Test
-    fun app() {
-        executor().run(":app:assemble")
-    }
+  @Test
+  fun app() {
+    executor().run(":app:assemble")
+  }
 
-    @Test
-    fun project() {
-        executor().run("assembleDebug")
-    }
+  @Test
+  fun project() {
+    executor().run("assembleDebug")
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+  }
 
-    companion object {
-        @Parameterized.Parameters(name = "useAndroidX_{0}")
-        @JvmStatic
-        fun params() = listOf(true, false)
-    }
+  companion object {
+    @Parameterized.Parameters(name = "useAndroidX_{0}") @JvmStatic fun params() = listOf(true, false)
+  }
 }

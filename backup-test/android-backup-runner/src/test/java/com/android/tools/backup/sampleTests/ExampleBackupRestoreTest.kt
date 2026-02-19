@@ -16,9 +16,9 @@
 
 package com.android.tools.backup.sampleTests
 
+import com.android.tools.backup.BackupAndRestoreTest
 import com.android.tools.backup.BeforeBackup
 import com.android.tools.backup.BetweenBackupAndRestore
-import com.android.tools.backup.BackupAndRestoreTest
 import com.android.tools.backup.TestBackupType
 import org.junit.Ignore
 import org.junit.Test
@@ -26,12 +26,9 @@ import org.junit.Test
 @Ignore("Example test for AndroidBackupRunnerBuilderTest")
 @BackupAndRestoreTest(TestBackupType.DEVICE_TO_DEVICE)
 class ExampleBackupRestoreTest {
-    @BeforeBackup
-    fun beforeBackupMethod() {}
+  @BeforeBackup fun beforeBackupMethod() {}
 
-    @BetweenBackupAndRestore
-    fun betweenBackupAndRestoreMethod() {}
+  @BetweenBackupAndRestore fun betweenBackupAndRestoreMethod() {}
 
-    @Test
-    fun test1() {}
+  @Test fun test1() {}
 }

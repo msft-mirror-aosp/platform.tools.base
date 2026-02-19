@@ -44,10 +44,7 @@ import org.jetbrains.kotlin.psi.KtTypeAlias
 import org.jetbrains.kotlin.psi.KtVisitorVoid
 import org.jetbrains.kotlin.psi.ValueArgument
 
-/**
- * Code to extract analysis API compatibility typealiases, intended to be used in the jar bytecode
- * migration
- */
+/** Code to extract analysis API compatibility typealiases, intended to be used in the jar bytecode migration */
 fun main() {
   // old/type -> new/type
   val typeMap = mutableMapOf<String, String>()
@@ -61,18 +58,10 @@ fun main() {
     // File(".../Downloads/kotlinc-source/kotlin-compiler-source-v2.1.0.jar")
     //
     // when using the current version of source snapshot in prebuilts:
-    File(
-      TestUtils.getWorkspaceRoot().toFile(),
-      "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar",
-    )
+    File(TestUtils.getWorkspaceRoot().toFile(), "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar")
 
   val parentDisposable = Disposer.newDisposable("ExtractMigrationTable")
-  val env =
-    KotlinCoreEnvironment.createForProduction(
-      parentDisposable,
-      CompilerConfiguration(),
-      JVM_CONFIG_FILES,
-    )
+  val env = KotlinCoreEnvironment.createForProduction(parentDisposable, CompilerConfiguration(), JVM_CONFIG_FILES)
 
   JarInputStream(ByteArrayInputStream(currentSources.readBytes())).use { jis ->
     var entry = jis.nextJarEntry
@@ -91,9 +80,7 @@ fun main() {
     }
   }
 
-  val typeToInternalName = { typeName: String ->
-    "\"" + getInternalName(typeName).replace("$", "\\$") + "\""
-  }
+  val typeToInternalName = { typeName: String -> "\"" + getInternalName(typeName).replace("$", "\\$") + "\"" }
 
   println("=".repeat(6) + " type mapping " + "=".repeat(6))
   println()
@@ -114,13 +101,7 @@ fun main() {
       val names = api.substringBefore(" ")
       val clsName = names.substringBeforeLast(".")
       val mtdName = names.substringAfterLast(".")
-      "// " +
-        getInternalName(clsName).replace("$", "\\$") +
-        "\n      \"" +
-        mtdName +
-        " " +
-        sig +
-        "\""
+      "// " + getInternalName(clsName).replace("$", "\\$") + "\n      \"" + mtdName + " " + sig + "\""
     } else {
       "\"$api\""
     }
@@ -297,18 +278,13 @@ private fun extract(
         return if (name.startsWith("is") || name.startsWith("get")) {
           name
         } else {
-          "get" +
-            name.replaceFirstChar {
-              if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString()
-            }
+          "get" + name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(getDefault()) else it.toString() }
         }
       }
 
       private fun getDeprecatedAnnotation(annotated: KtAnnotated): KtAnnotationEntry? {
         // Finding @Deprecated(...)
-        return annotated.annotationEntries.find { entry ->
-          entry.typeReference?.text?.contains("Deprecated") == true
-        }
+        return annotated.annotationEntries.find { entry -> entry.typeReference?.text?.contains("Deprecated") == true }
       }
 
       private fun getReplaceWith(annotationEntry: KtAnnotationEntry): ValueArgument? {
@@ -380,10 +356,7 @@ private fun extract(
 
         // TODO: how to check a subtype of KaSessionComponent
         fun isKaSessionComponent(type: String): Boolean {
-          return type.endsWith("Provider") ||
-            type.endsWith("Optimizer") ||
-            type.endsWith("Resolver") ||
-            type.endsWith("Checker")
+          return type.endsWith("Provider") || type.endsWith("Optimizer") || type.endsWith("Resolver") || type.endsWith("Checker")
         }
 
         return buildString {

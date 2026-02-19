@@ -20,16 +20,13 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 class SdkConstantsSyncTest {
-    @Test
-    fun checkBuildToolsVersion() {
-        Truth.assertThat(SdkConstants.BUILD_TOOLS_VERSION)
-            .isEqualTo(com.android.SdkConstants.CURRENT_BUILD_TOOLS_VERSION)
-    }
+  @Test
+  fun checkBuildToolsVersion() {
+    Truth.assertThat(SdkConstants.BUILD_TOOLS_VERSION).isEqualTo(com.android.SdkConstants.CURRENT_BUILD_TOOLS_VERSION)
+  }
 
-    @Test
-    fun checkNdkVersion() {
-        Truth.assertThat(SdkConstants.NDK_VERSION)
-            .isEqualTo(com.android.SdkConstants.NDK_DEFAULT_VERSION)
-    }
-
+  @Test
+  fun checkNdkVersion() {
+    Truth.assertThat(SdkConstants.NDK_VERSION).isEqualTo(com.android.SdkConstants.NDK_DEFAULT_VERSION)
+  }
 }

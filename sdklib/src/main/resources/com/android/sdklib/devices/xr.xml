@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <d:devices
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:d="http://schemas.android.com/sdk/devices/7">
+        xmlns:d="http://schemas.android.com/sdk/devices/8">
     <d:device>
         <d:name>XR Headset</d:name>
         <d:id>xr_headset_device</d:id>
@@ -107,6 +107,10 @@
                     <d:screen-type>notouch</d:screen-type>
                 </d:touch>
             </d:screen>
+            <d:touchpad>
+                <d:width>1542</d:width>
+                <d:height>297</d:height>
+            </d:touchpad>
             <d:networking>
                 Wifi
                 Bluetooth
@@ -121,6 +125,7 @@
             <d:mic>true</d:mic>
             <d:camera>
                 <d:location>back</d:location>
+                <d:sensor-orientation>0</d:sensor-orientation>
                 <d:autofocus>false</d:autofocus>
                 <d:flash>false</d:flash>
             </d:camera>

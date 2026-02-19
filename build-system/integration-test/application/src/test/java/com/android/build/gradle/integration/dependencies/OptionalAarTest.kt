@@ -28,65 +28,61 @@ import org.junit.Test
 
 class OptionalAarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestProject("projectWithModules")
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library", "library2")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    api project(":library")
-                }
-            """.trimIndent())
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library", "library2")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          api project(":library")
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                dependencies {
-                    compileOnly project(":library2")
-                }
-            """.trimIndent())
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      dependencies {
+          compileOnly project(":library2")
+      }
+      """
+        .trimIndent(),
+    )
 
-        project.executor().run("clean", ":app:assembleDebug", "library:assembleDebug")
+    project.executor().run("clean", ":app:assembleDebug", "library:assembleDebug")
+  }
+
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
+
+  @Test
+  fun checkAppDoesNotContainProvidedLibsLayout() {
+    val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(apk).doesNotContainResource("layout/lib2layout.xml")
+  }
+
+  @Test
+  fun checkAppDoesNotContainProvidedLibsCode() {
+    val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/library2/PersonView2;")
+  }
+
+  @Test
+  fun checkLibDoesNotContainProvidedLibsLayout() {
+    project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+      androidResources().containsExactly("layout/liblayout.xml")
+      textSymbolFile().apply {
+        doesNotContain("int layout lib2layout")
+        contains("int layout liblayout")
+      }
     }
-
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
-
-    @Test
-    fun checkAppDoesNotContainProvidedLibsLayout() {
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).doesNotContainResource("layout/lib2layout.xml")
-    }
-
-    @Test
-    fun checkAppDoesNotContainProvidedLibsCode() {
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/library2/PersonView2;")
-    }
-
-    @Test
-    fun checkLibDoesNotContainProvidedLibsLayout() {
-        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
-            androidResources().containsExactly("layout/liblayout.xml")
-            textSymbolFile().apply {
-                doesNotContain("int layout lib2layout")
-                contains("int layout liblayout")
-            }
-        }
-    }
+  }
 }

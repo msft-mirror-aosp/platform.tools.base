@@ -22,58 +22,52 @@ import java.io.OutputStream
 import java.net.Socket
 
 /**
- * host-prefix:killforward ADB command removes a port forward from the specified local port. This
- * implementation only handles tcp sockets, and not Unix domain sockets.
+ * host-prefix:killforward ADB command removes a port forward from the specified local port. This implementation only handles tcp sockets,
+ * and not Unix domain sockets.
  */
 class KillForwardCommandHandler : SimpleHostCommandHandler("killforward") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        assert(device != null)
-        val stream: OutputStream
-        stream = try {
-            responseSocket.getOutputStream()
-        } catch (ignored: IOException) {
-            return false
-        }
-        val hostAddress = args.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-        when (hostAddress[0]) {
-            "tcp" -> {}
-            "local" -> {
-                writeFailResponse(
-                    stream, "Host Unix domain sockets not supported in fake ADB Server."
-                )
-                return false
-            }
-
-            else -> {
-                writeFailResponse(stream, "Invalid host transport specified: " + hostAddress[0])
-                return false
-            }
-        }
-        val hostPort: Int
-        hostPort = try {
-            hostAddress[1].toInt()
-        } catch (ignored: NumberFormatException) {
-            writeFailResponse(stream, "Invalid port specified: " + hostAddress[1])
-            return false
-        }
-        if (!device!!.removePortForwarder(hostPort)) {
-            writeFailResponse(stream, "Could not successfully remove forward.")
-            return false
-        }
-        // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
-        // See
-        // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
-        writeOkay(stream)
-        writeOkay(stream)
-
-        // We always close the connection, as per ADB protocol spec.
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    assert(device != null)
+    val stream: OutputStream
+    stream =
+      try {
+        responseSocket.getOutputStream()
+      } catch (ignored: IOException) {
         return false
-    }
+      }
+    val hostAddress = args.split(":".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+    when (hostAddress[0]) {
+      "tcp" -> {}
+      "local" -> {
+        writeFailResponse(stream, "Host Unix domain sockets not supported in fake ADB Server.")
+        return false
+      }
 
+      else -> {
+        writeFailResponse(stream, "Invalid host transport specified: " + hostAddress[0])
+        return false
+      }
+    }
+    val hostPort: Int
+    hostPort =
+      try {
+        hostAddress[1].toInt()
+      } catch (ignored: NumberFormatException) {
+        writeFailResponse(stream, "Invalid port specified: " + hostAddress[1])
+        return false
+      }
+    if (!device!!.removePortForwarder(hostPort)) {
+      writeFailResponse(stream, "Could not successfully remove forward.")
+      return false
+    }
+    // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
+    // See
+    // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
+    writeOkay(stream)
+    writeOkay(stream)
+
+    // We always close the connection, as per ADB protocol spec.
+    return false
+  }
 }

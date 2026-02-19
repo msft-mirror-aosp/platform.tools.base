@@ -20,15 +20,12 @@ import com.android.builder.model.v2.ide.ProjectInfo
 import com.android.builder.model.v2.models.ProjectGraph
 import java.io.Serializable
 
-data class ProjectGraphImpl(
-    override val resolvedVariantsWithProjectInfo: Map<ProjectInfo, String>,
-): ProjectGraph, Serializable {
+data class ProjectGraphImpl(override val resolvedVariantsWithProjectInfo: Map<ProjectInfo, String>) : ProjectGraph, Serializable {
 
-    @Deprecated("Model with missing data. Use resolvedVariantsWithProjectInfo")
-    override val resolvedVariants: Map<String, String>? = resolvedVariantsWithProjectInfo.mapKeys { it.key.projectPath }
+  @Deprecated("Model with missing data. Use resolvedVariantsWithProjectInfo")
+  override val resolvedVariants: Map<String, String>? = resolvedVariantsWithProjectInfo.mapKeys { it.key.projectPath }
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

@@ -18,17 +18,17 @@ package com.android.processmonitor.agenttracker
 /** Exposes the locations of the agent source */
 object AgentSourcePaths {
 
-    /**
-     * Location of the agent binary in a development environment.
-     *
-     * See //tools/base/process-monitor/process-tracker-agent/BUILD
-     */
-    const val AGENT_SOURCE_DEV = "tools/base/process-monitor/process-tracker-agent"
+  /**
+   * Location of the agent binary in a development environment.
+   *
+   * See //tools/base/process-monitor/process-tracker-agent/BUILD
+   */
+  const val AGENT_SOURCE_DEV = "tools/base/process-monitor/process-tracker-agent"
 
-    /**
-     * Location of the agent binary in production.
-     *
-     * See //tools/base/process-monitor/process-tracker-agent/BUILD
-     */
-    const val AGENT_RESOURCE_PROD = "resources/process-tracker-agent"
+  /**
+   * Location of the agent binary in production.
+   *
+   * See //tools/base/process-monitor/process-tracker-agent/BUILD
+   */
+  const val AGENT_RESOURCE_PROD = "resources/process-tracker-agent"
 }

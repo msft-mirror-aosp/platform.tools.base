@@ -16,27 +16,24 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** Test setting applicationId and applicationIdSuffix.  */
+/** Test setting applicationId and applicationIdSuffix. */
 class ApplicationIdTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
+  @get:Rule var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             |apply plugin: "com.android.application"
             |
             |android {
@@ -62,37 +59,29 @@ class ApplicationIdTest {
             |        }
             |    }
             |}
-            |""".trimMargin("|")
-        )
-    }
+            |"""
+        .trimMargin("|"),
+    )
+  }
 
-    @Test
-    fun checkApplicationIdDebug() {
-        project.execute("assembleF1Debug")
-        assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "f1"))
-            .hasApplicationId("com.example.applicationidtest.default.f1.debug")
+  @Test
+  fun checkApplicationIdDebug() {
+    project.execute("assembleF1Debug")
+    assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "f1")).hasApplicationId("com.example.applicationidtest.default.f1.debug")
 
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "applicationIdSuffix \".debug\"",
-            "applicationIdSuffix \".foo\""
-        )
+    TestFileUtils.searchAndReplace(project.buildFile, "applicationIdSuffix \".debug\"", "applicationIdSuffix \".foo\"")
 
-        project.execute("assembleF1Debug")
+    project.execute("assembleF1Debug")
 
-        assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "f1"))
-            .hasApplicationId("com.example.applicationidtest.default.f1.foo")
-    }
+    assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "f1")).hasApplicationId("com.example.applicationidtest.default.f1.foo")
+  }
 
-    @Test
-    fun checkApplicationIdRelease() {
-        project.executor().run("assembleF1Release")
-        assertThat(project.getApk(GradleTestProject.ApkType.RELEASE, "f1"))
-            .hasApplicationId("com.example.applicationidtest.default.f1")
+  @Test
+  fun checkApplicationIdRelease() {
+    project.executor().run("assembleF1Release")
+    assertThat(project.getApk(GradleTestProject.ApkType.RELEASE, "f1")).hasApplicationId("com.example.applicationidtest.default.f1")
 
-        project.executor().run("assembleF1Release")
-        assertThat(project.getApk(GradleTestProject.ApkType.RELEASE, "f1"))
-            .hasApplicationId("com.example.applicationidtest.default.f1")
-    }
+    project.executor().run("assembleF1Release")
+    assertThat(project.getApk(GradleTestProject.ApkType.RELEASE, "f1")).hasApplicationId("com.example.applicationidtest.default.f1")
+  }
 }
-

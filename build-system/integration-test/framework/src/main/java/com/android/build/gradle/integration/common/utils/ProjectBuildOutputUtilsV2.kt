@@ -15,6 +15,7 @@
  */
 
 @file:JvmName("ProjectBuildOutputUtilsV2")
+
 package com.android.build.gradle.integration.common.utils
 
 import com.android.build.api.variant.impl.BuiltArtifactImpl
@@ -25,12 +26,10 @@ import java.io.File
 import java.lang.RuntimeException
 
 fun Variant.getApkFolderOutput() =
-        getBuiltArtifacts(mainArtifact.assembleTaskOutputListingFile!!)
-                .elements
-                .map(BuiltArtifactImpl::outputFile)
+  getBuiltArtifacts(mainArtifact.assembleTaskOutputListingFile!!).elements.map(BuiltArtifactImpl::outputFile)
 
 fun getBuiltArtifacts(assembleTaskOutputListingFile: File): BuiltArtifactsImpl =
-    (BuiltArtifactsLoaderImpl.loadFromFile(assembleTaskOutputListingFile)
-        ?: throw RuntimeException("Cannot load built artifacts from $assembleTaskOutputListingFile"))
+  (BuiltArtifactsLoaderImpl.loadFromFile(assembleTaskOutputListingFile)
+    ?: throw RuntimeException("Cannot load built artifacts from $assembleTaskOutputListingFile"))
 
 fun Variant.getSingleOutputFile() = getApkFolderOutput().single()

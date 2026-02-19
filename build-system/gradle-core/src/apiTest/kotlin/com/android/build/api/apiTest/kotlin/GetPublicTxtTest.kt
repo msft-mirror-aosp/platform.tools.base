@@ -18,19 +18,21 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetPublicTxtTest: VariantApiBaseTest(TestType.Script){
+class GetPublicTxtTest : VariantApiBaseTest(TestType.Script) {
 
-    @Test
-    fun getPublicTxt() {
-        given {
-            tasksToInvoke.add(":lib:validateDebugPublicResources")
-            addModule(":lib") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile = // language=kotlin prefix="import org.gradle.api.*; import org.gradle.api.file.*;import org.gradle.api.provider.*; import org.gradle.api.tasks.*; import org.gradle.workers.*;"
-                    """
+  @Test
+  fun getPublicTxt() {
+    given {
+      tasksToInvoke.add(":lib:validateDebugPublicResources")
+      addModule(":lib") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile = // language=kotlin prefix="import org.gradle.api.*; import
+          // org.gradle.api.file.*;import org.gradle.api.provider.*;
+          // import org.gradle.api.tasks.*; import org.gradle.workers.*;"
+          """
             plugins {
                 id("com.android.library")
                 kotlin("android")
@@ -98,45 +100,46 @@ class GetPublicTxtTest: VariantApiBaseTest(TestType.Script){
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-                addSource(
-                    "src/main/res/values/strings.xml",
-                    """
-                    <resources>
-                        <string name="public_string">String</string>
-                    </resources>
-                    """.trimIndent())
-                addSource(
-                    "src/test/expectedApi/public-resources.txt",
-                    "string public_string"
-                )
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Public txt get in Kotlin
-
-This sample shows how to obtain the file listing the public artifacts from the Android Gradle Plugin.
-The [onVariants] block will wire the [PublicResourcesValidatorTask] input property
-(publicAndroidResources) by using
-the [Artifacts.get] call with the right [SingleArtifact..
-
-```publicAndroidResources.set(artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST))```
-
-For more information about how to mark resources as public see
-[Choose resources to make public](https://developer.android.com/studio/projects/android-library.html#PrivateResources)
-
-## To Run
-./gradlew validateDebugPublicResources
-expected result : "Public Android resources unchanged."
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Public Android resources unchanged")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+        addSource(
+          "src/main/res/values/strings.xml",
+          """
+          <resources>
+              <string name="public_string">String</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        addSource("src/test/expectedApi/public-resources.txt", "string public_string")
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Public txt get in Kotlin
+
+        This sample shows how to obtain the file listing the public artifacts from the Android Gradle Plugin.
+        The [onVariants] block will wire the [PublicResourcesValidatorTask] input property
+        (publicAndroidResources) by using
+        the [Artifacts.get] call with the right [SingleArtifact..
+
+        ```publicAndroidResources.set(artifacts.get(SingleArtifact.PUBLIC_ANDROID_RESOURCES_LIST))```
+
+        For more information about how to mark resources as public see
+        [Choose resources to make public](https://developer.android.com/studio/projects/android-library.html#PrivateResources)
+
+        ## To Run
+        ./gradlew validateDebugPublicResources
+        expected result : "Public Android resources unchanged."
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Public Android resources unchanged")
+    }
+  }
 }

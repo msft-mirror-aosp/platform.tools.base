@@ -32,24 +32,14 @@ import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UCatchClause
 import org.jetbrains.uast.UTypeReferenceExpression
 
-/**
- * Reports all calls to `getCredential` and `getCredentialAsync`, unless we see a reference to
- * `NoCredentialException`.
- */
+/** Reports all calls to `getCredential` and `getCredentialAsync`, unless we see a reference to `NoCredentialException`. */
 class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames() = listOf("getCredential", "getCredentialAsync")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val cls = method.containingClass ?: return
-    if (
-      !context.evaluator.implementsInterface(
-        cls,
-        "androidx.credentials.CredentialManager",
-        strict = false,
-      )
-    )
-      return
+    if (!context.evaluator.implementsInterface(cls, "androidx.credentials.CredentialManager", strict = false)) return
 
     // Skip if suppressed.
     if (context.driver.isSuppressed(context, ISSUE, node)) return
@@ -63,8 +53,7 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
       .appendLocation(context.getLocation(node))
   }
 
-  override fun getApplicableUastTypes() =
-    listOf(UCatchClause::class.java, UTypeReferenceExpression::class.java)
+  override fun getApplicableUastTypes() = listOf(UCatchClause::class.java, UTypeReferenceExpression::class.java)
 
   override fun createUastHandler(context: JavaContext) =
     object : UElementHandler() {
@@ -78,10 +67,7 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
         // UCatchClause.typeReferences includes the children of disjoint exception types, like in
         // `catch (A|B|C ex) { ... }`.
         for (typeReference in node.typeReferences) {
-          if (
-            typeReference.type.canonicalText ==
-              "androidx.credentials.exceptions.NoCredentialException"
-          ) {
+          if (typeReference.type.canonicalText == "androidx.credentials.exceptions.NoCredentialException") {
             storeSawNoCredentialException()
             break
           }
@@ -117,11 +103,7 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
         .flatMap { it.asLocationSequence() }
 
     for (location in locations) {
-      context.report(
-        ISSUE,
-        location,
-        "Call to `CredentialManager.getCredential` without use of `NoCredentialException`",
-      )
+      context.report(ISSUE, location, "Call to `CredentialManager.getCredential` without use of `NoCredentialException`")
     }
   }
 
@@ -136,8 +118,7 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
     private const val KEY_GET_CREDENTIAL_CALLS = "GET_CREDENTIAL_CALLS"
     private const val KEY_SAW_NO_CREDENTIAL_EXCEPTION = "SAW_NO_CREDENTIAL_EXCEPTION"
 
-    private val IMPLEMENTATION =
-      Implementation(CredentialManagerMisuseDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
+    private val IMPLEMENTATION = Implementation(CredentialManagerMisuseDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     @JvmField
     val ISSUE =
@@ -149,8 +130,7 @@ class CredentialManagerMisuseDetector : Detector(), SourceCodeScanner {
           When calling `CredentialManager.getCredential` or `CredentialManager.getCredentialAsync`, \
           you should handle `NoCredentialException` somewhere in your project.
           """,
-        moreInfo =
-          "https://developer.android.com/identity/sign-in/credential-manager#handle-exceptions",
+        moreInfo = "https://developer.android.com/identity/sign-in/credential-manager#handle-exceptions",
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,

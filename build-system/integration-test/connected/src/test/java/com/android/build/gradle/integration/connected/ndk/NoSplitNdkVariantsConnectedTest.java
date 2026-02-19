@@ -59,7 +59,7 @@ public class NoSplitNdkVariantsConnectedTest {
                         + "      minSdkVersion "
                         + GradleTestProject.DEFAULT_MIN_SDK_VERSION
                         + "\n"
-                        + "      testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'\n"
+                        + "      testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                         + "    }\n"
                         + "\n"
                         + "    externalNativeBuild {\n"
@@ -88,8 +88,8 @@ public class NoSplitNdkVariantsConnectedTest {
                         + "    }\n"
                         + "}\n"
                         + "dependencies {\n"
-                        + "  androidTestImplementation \"com.android.support.test:runner:${libs.versions.testSupportLibVersion.get()}\"\n"
-                        + "  androidTestImplementation \"com.android.support.test:rules:${libs.versions.testSupportLibVersion.get()}\"\n"
+                        + "  androidTestImplementation \"androidx.test:runner:1.4.0-alpha06\"\n"
+                        + "  androidTestImplementation \"androidx.test:rules:1.4.0-alpha06\"\n"
                         + "}\n"
                         + "\n");
         TestFileUtils.appendToFile(

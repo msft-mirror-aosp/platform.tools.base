@@ -41,20 +41,13 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
     object : UElementHandler() {
       override fun visitClass(node: UClass) {
         if (
-          SPLASH_SCREEN_KEYWORDS.any {
-            node.nameFromSource?.contains(it, ignoreCase = true) == true
-          } && isActivityOrFragment(context, node)
+          SPLASH_SCREEN_KEYWORDS.any { node.nameFromSource?.contains(it, ignoreCase = true) == true } && isActivityOrFragment(context, node)
         ) {
           if (node.sourcePsi == null) {
             // A compilation unit class for top level functions
             return
           }
-          val incident =
-            Incident(
-              ISSUE,
-              context.getNameLocation(node),
-              "The application should not provide its own launch screen",
-            )
+          val incident = Incident(ISSUE, context.getNameLocation(node), "The application should not provide its own launch screen")
           context.report(incident, targetSdkAtLeast(S))
         }
       }
@@ -64,10 +57,8 @@ class SplashScreenDetector : Detector(), SourceCodeScanner {
     PROHIBITED_SUPERCLASSES.any { context.evaluator.extendsClass(cls.javaPsi, it) }
 
   companion object {
-    private val SPLASH_SCREEN_KEYWORDS =
-      listOf("SplashScreen", "SplashActivity", "LaunchActivity", "LaunchScreen")
-    private val PROHIBITED_SUPERCLASSES =
-      listOf(CLASS_ACTIVITY, CLASS_V4_FRAGMENT.oldName(), CLASS_V4_FRAGMENT.newName(), CLASS_VIEW)
+    private val SPLASH_SCREEN_KEYWORDS = listOf("SplashScreen", "SplashActivity", "LaunchActivity", "LaunchScreen")
+    private val PROHIBITED_SUPERCLASSES = listOf(CLASS_ACTIVITY, CLASS_V4_FRAGMENT.oldName(), CLASS_V4_FRAGMENT.newName(), CLASS_VIEW)
 
     @JvmField
     val ISSUE =

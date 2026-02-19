@@ -1,0 +1,23 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/01"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/01"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <license id="lic1" type="text">Sample license</license>
+    <localPackage path="platforms;android-22" obsolete="true">
+        <type-details xsi:type="sdk:platformDetailsType">
+            <api-level>22</api-level>
+            <layoutlib api="5"/>
+        </type-details>
+        <revision>
+            <major>1</major>
+            <minor>2</minor>
+            <micro>3</micro>
+        </revision>
+        <display-name>Sample platform v1</display-name>
+        <uses-license ref="lic1"/>
+        <dependencies>
+            <dependency path="tools">
+                <min-revision><major>24</major></min-revision>
+            </dependency>
+        </dependencies>
+    </localPackage>
+</common:repository>

@@ -70,5 +70,10 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "//tools/adt/idea/android-common:intellij.android.common",
+        "//tools/base/flags:studio.android.sdktools.flags",
+        "//prebuilts/tools/common/m2:wire-runtime-jvm-5.4.0",
+        "//prebuilts/tools/common/m2:tracing-desktop-2.0.0-alpha01",
+        "//prebuilts/tools/common/m2:tracing-wire-desktop-2.0.0-alpha01",
     ],
 )

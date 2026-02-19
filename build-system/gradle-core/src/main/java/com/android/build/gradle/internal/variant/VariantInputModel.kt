@@ -21,22 +21,21 @@ import com.android.build.gradle.internal.DefaultConfigData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dependency.SourceSetManager
 
-/**
- * Model containing the inputs for the variants to be created.
- */
+/** Model containing the inputs for the variants to be created. */
 interface VariantInputModel<
-        DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
-        BuildTypeT : com.android.build.api.dsl.BuildType,
-        ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
-        SigningConfigT : com.android.build.api.dsl.ApkSigningConfig> {
+  DefaultConfigT : com.android.build.api.dsl.DefaultConfig,
+  BuildTypeT : com.android.build.api.dsl.BuildType,
+  ProductFlavorT : com.android.build.api.dsl.ProductFlavor,
+  SigningConfigT : com.android.build.api.dsl.ApkSigningConfig,
+> {
 
-    val defaultConfigData: DefaultConfigData<DefaultConfigT>
+  val defaultConfigData: DefaultConfigData<DefaultConfigT>
 
-    val buildTypes: Map<String, BuildTypeData<BuildTypeT>>
+  val buildTypes: Map<String, BuildTypeData<BuildTypeT>>
 
-    val productFlavors: Map<String, ProductFlavorData<ProductFlavorT>>
+  val productFlavors: Map<String, ProductFlavorData<ProductFlavorT>>
 
-    val signingConfigs: Map<String, SigningConfigT>
+  val signingConfigs: Map<String, SigningConfigT>
 
-    val sourceSetManager: SourceSetManager
+  val sourceSetManager: SourceSetManager
 }

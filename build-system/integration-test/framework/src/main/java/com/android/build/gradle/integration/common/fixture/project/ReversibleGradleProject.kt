@@ -22,27 +22,24 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
-/**
- * Base Class for all reversible projects
- */
+/** Base Class for all reversible projects */
 internal abstract class ReversibleGradleProject<ProjectT : GradleProject<ProjectDefinitionT>, ProjectDefinitionT : GradleProjectDefinition>(
-    protected val parentProject: ProjectT,
-    fileChangeController: FileChangeController,
-) : GradleProject<ProjectDefinitionT>  {
+  protected val parentProject: ProjectT,
+  fileChangeController: FileChangeController,
+) : GradleProject<ProjectDefinitionT> {
 
-    @Suppress("UNCHECKED_CAST")
-    override val files: GradleProjectFiles = fileChangeController.newGradleProjectFiles(
-        (parentProject as GradleProjectImpl<ProjectDefinitionT>).location
-    )
+  @Suppress("UNCHECKED_CAST")
+  override val files: GradleProjectFiles =
+    fileChangeController.newGradleProjectFiles((parentProject as GradleProjectImpl<ProjectDefinitionT>).location)
 
-    override fun resolve(path: String): Path = parentProject.resolve(path)
+  override fun resolve(path: String): Path = parentProject.resolve(path)
 
-    override fun resolve(artifact: Artifact<*>): Path = parentProject.resolve(artifact)
+  override fun resolve(artifact: Artifact<*>): Path = parentProject.resolve(artifact)
 
-    override val buildDir: Path
-        get() = parentProject.buildDir
+  override val buildDir: Path
+    get() = parentProject.buildDir
 
-    override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
-        throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
-    }
+  override fun reconfigure(action: ProjectDefinitionT.() -> Unit) {
+    throw RuntimeException("Cannot reconfigure inside withReversibleModifications")
+  }
 }

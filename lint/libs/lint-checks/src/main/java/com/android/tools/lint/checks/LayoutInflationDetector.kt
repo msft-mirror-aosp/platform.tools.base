@@ -63,10 +63,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
     val pendingErrors = pendingErrors ?: return
     for (pair in pendingErrors) {
       val inflatedLayout = pair.first
-      if (
-        layoutsWithRootLayoutParams == null ||
-          !layoutsWithRootLayoutParams!!.contains(inflatedLayout)
-      ) {
+      if (layoutsWithRootLayoutParams == null || !layoutsWithRootLayoutParams!!.contains(inflatedLayout)) {
         // No root layout parameters on the inflated layout: no need to complain
         continue
       }
@@ -85,10 +82,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       val n = attributes.length
       while (i < n) {
         val attribute = attributes.item(i) as Attr
-        if (
-          attribute.localName != null &&
-            attribute.localName.startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)
-        ) {
+        if (attribute.localName != null && attribute.localName.startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)) {
           val layouts =
             layoutsWithRootLayoutParams
               ?: run {
@@ -176,12 +170,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(
-        LayoutInflationDetector::class.java,
-        Scope.JAVA_AND_RESOURCE_FILES,
-        Scope.JAVA_FILE_SCOPE,
-      )
+    private val IMPLEMENTATION = Implementation(LayoutInflationDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES, Scope.JAVA_FILE_SCOPE)
 
     /** Passing in a null parent to a layout inflater. */
     @JvmField
@@ -207,9 +196,8 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       "Avoid passing `null` as the view root (needed to resolve layout parameters on the inflated layout's root element)"
 
     /**
-     * Is this call to the layout inflater used for the Alert Dialog? If so, a null root is okay.
-     * See for example "Every Rule Has An Exception" here:
-     * https://wundermanthompsonmobile.com/2013/05/layout-inflation-as-intended/
+     * Is this call to the layout inflater used for the Alert Dialog? If so, a null root is okay. See for example "Every Rule Has An
+     * Exception" here: https://wundermanthompsonmobile.com/2013/05/layout-inflation-as-intended/
      */
     private fun isUsedWithAlertDialog(context: JavaContext, call: UCallExpression): Boolean {
       val variable = call.getParentOfType<UElement>(UVariable::class.java) ?: return false
@@ -219,9 +207,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
       val isAlertBuilderUsage = Ref(false)
       method.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             checkUsage(node)
             return super.visitSimpleNameReferenceExpression(node)
           }
@@ -295,11 +281,7 @@ class LayoutInflationDetector : LayoutDetector(), SourceCodeScanner {
           for (i in 0 until parser.attributeCount) {
             if (parser.getAttributeName(i).startsWith(SdkConstants.ATTR_LAYOUT_RESOURCE_PREFIX)) {
               val prefix = parser.getAttributePrefix(i)
-              if (
-                prefix != null &&
-                  prefix.isNotEmpty() &&
-                  SdkConstants.ANDROID_URI == parser.getNamespace(prefix)
-              ) {
+              if (prefix != null && prefix.isNotEmpty() && SdkConstants.ANDROID_URI == parser.getNamespace(prefix)) {
                 return true
               }
             }

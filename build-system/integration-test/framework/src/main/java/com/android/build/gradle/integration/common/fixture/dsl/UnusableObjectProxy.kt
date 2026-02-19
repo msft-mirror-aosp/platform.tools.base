@@ -27,44 +27,36 @@ import java.lang.reflect.Proxy
 /**
  * A proxy that allows us to make an [Object] non usable.
  *
- * Usage is disallowed when it's impossible to record the usage and reconstruct it into the
- * build file. Here, the Object is dangling (returned from another method) and it's impossible
- * to know what is done with it, so we cannot allow usage in our proxied DSL.
+ * Usage is disallowed when it's impossible to record the usage and reconstruct it into the build file. Here, the Object is dangling
+ * (returned from another method) and it's impossible to know what is done with it, so we cannot allow usage in our proxied DSL.
  */
-class UnusableObjectProxy private constructor(
-): InvocationHandler {
+class UnusableObjectProxy private constructor() : InvocationHandler {
 
-    companion object {
+  companion object {
 
-        /**
-         * Creates a Java proxy for type `theClass`
-         */
-        @Suppress("UNCHECKED_CAST")
-        fun <T> createProxy(theClass: Class<T>): T = when (theClass) {
-            ApplicationProductFlavor::class.java -> UnusableApplicationProductFlavorProxy() as T
-            LibraryProductFlavor::class.java -> UnusableLibraryProductFlavorProxy() as T
-            DynamicFeatureProductFlavor::class.java -> UnusableDynamicFeatureProductFlavorProxy() as T
-            TestProductFlavor::class.java -> UnusableTestProductFlavorProxy() as T
-            else -> Proxy.newProxyInstance(
-                UnusableObjectProxy::class.java.classLoader,
-                arrayOf(theClass),
-                UnusableObjectProxy()
-            ) as T
-        }
-    }
+    /** Creates a Java proxy for type `theClass` */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> createProxy(theClass: Class<T>): T =
+      when (theClass) {
+        ApplicationProductFlavor::class.java -> UnusableApplicationProductFlavorProxy() as T
+        LibraryProductFlavor::class.java -> UnusableLibraryProductFlavorProxy() as T
+        DynamicFeatureProductFlavor::class.java -> UnusableDynamicFeatureProductFlavorProxy() as T
+        TestProductFlavor::class.java -> UnusableTestProductFlavorProxy() as T
+        else -> Proxy.newProxyInstance(UnusableObjectProxy::class.java.classLoader, arrayOf(theClass), UnusableObjectProxy()) as T
+      }
+  }
 
-    override fun invoke(
-        proxy: Any,
-        method: Method,
-        args: Array<out Any?>
-    ): Any? {
-        throwUnusableError("${method.declaringClass}.${method.name}")
-    }
+  override fun invoke(proxy: Any, method: Method, args: Array<out Any?>): Any? {
+    throwUnusableError("${method.declaringClass}.${method.name}")
+  }
 }
 
 fun throwUnusableError(method: String): Nothing {
-    throw RuntimeException("""
+  throw RuntimeException(
+    """
             Calls into this instance is not permitted ($method)
             The instance was returned by the DSL proxy feature to satisfy the proxied interface API but cannot be used directly.
-            This is generally because usage of this object cannot be properly recorded to rewrite the build file.""".trimIndent())
+            This is generally because usage of this object cannot be properly recorded to rewrite the build file."""
+      .trimIndent()
+  )
 }

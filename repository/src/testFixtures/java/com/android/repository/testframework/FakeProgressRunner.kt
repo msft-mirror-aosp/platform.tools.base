@@ -23,9 +23,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /** A basic [ProgressRunner] that uses a [FakeProgressIndicator]. */
-class FakeProgressRunner(
-  val coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
-) : ProgressRunner {
+class FakeProgressRunner(val coroutineScope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)) : ProgressRunner {
   var progressIndicator: FakeProgressIndicator = FakeProgressIndicator()
 
   override fun runAsyncWithProgress(r: ProgressRunnable) {

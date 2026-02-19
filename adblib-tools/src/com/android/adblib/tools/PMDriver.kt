@@ -19,14 +19,14 @@ import com.android.adblib.AdbDeviceServices
 import com.android.adblib.DeviceSelector
 import com.android.adblib.availableFeatures
 import com.android.adblib.deviceProperties
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.Instant
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 // A summary of how install works based on the target device.
 // Three parameter are to be considered in order to decide of an install strategy.
@@ -42,7 +42,8 @@ import java.util.regex.Pattern
 //
 // 3/ PM access. Initially the only ADB service supported was to spawn a "pm" executable using EXEC.
 //    Later API introduced a "cmd" light-weight executable which is a generalized binder service
-//    client ("pm" executable is limited to contacting "Package Manager" service and is heavy-weight).
+//    client ("pm" executable is limited to contacting "Package Manager" service and is
+// heavy-weight).
 //    "cmd" is also to be invoked over EXEC service. In API 30, a new ADB service "ABB" allowed to
 //    contact binder services without need for spawning an executable. Two flavors of ABB exist,
 //    one using cooked terminal (ABB) and one using raw terminal (ABB_EXEC).
@@ -53,7 +54,8 @@ import java.util.regex.Pattern
 //
 // * If the device and adb host features mention "abb", ABB and ABB_EXEC service are used.
 //   In this case "streamed install" is always used
-// * ElseIf, the device and adb host features mention "cmd" then commands are sent to "cmd" over SHELL
+// * ElseIf, the device and adb host features mention "cmd" then commands are sent to "cmd" over
+// SHELL
 //   service for install session management (create/abandon) and EXEC service for write. Whether
 //   "install" or "multiple-install" is used is based on API.
 // * Else fallback to single apk install. The APK is pushed to the device if needed and "pm"
@@ -65,124 +67,113 @@ import java.util.regex.Pattern
 // TODO: Add progress callback so that caller is notified of overall progress
 //       (similar to AdbDeviceSyncServices.send )
 
+internal class PMDriver(private val service: AdbDeviceServices, private val device: DeviceSelector) {
 
+  private val logger = service.session.host.logger
 
+  suspend fun install(apks: List<Path>, options: List<String> = listOf()): InstallMetrics {
+    return withContext(service.session.host.ioDispatcher) { installOnIODispatcher(apks, options) }
+  }
 
-internal class PMDriver(private val service : AdbDeviceServices, private val device: DeviceSelector) {
+  private suspend fun installOnIODispatcher(apks: List<Path>, options: List<String> = listOf()): InstallMetrics {
+    val installStart = Instant.now()
 
-    private val logger = service.session.host.logger
+    // Before we start, decide of an install strategy
+    val features = service.session.hostServices.availableFeatures(device)
+    val api = service.deviceProperties(device).api()
+    val pm: PM =
+      when {
+        // Test API level
+        api < 21 -> PMLegacy(service)
+        features.contains("abb_exec") -> PMAbb(service)
+        features.contains("cmd") -> PMCmd(service)
+        else -> PMPm(service)
+      }
 
+    // Report our strategy
+    val strategy = pm.getStrategy()
+    logger.info { "PMDriver installing via '$strategy' " }
+    val optionsString = options.joinToString(" ")
+    logger.info { "  options: '$optionsString' " }
+    apks.forEach { logger.info { "  apk: '$it' " } }
 
-    suspend fun install(
-        apks: List<Path>,
-        options: List<String> = listOf()
-    ) : InstallMetrics {
-        return withContext(service.session.host.ioDispatcher){
-            installOnIODispatcher(apks, options)
-        }
+    // Check that all files to push are ok
+    apks.forEach {
+      if (!Files.exists(it)) {
+        throw InstallException(InstallResult("Cannot install '$it' (does not exist)"))
+      }
+
+      if (Files.isDirectory(it)) {
+        throw InstallException(InstallResult("Cannot install '$it' (directory)"))
+      }
     }
 
-    private suspend fun installOnIODispatcher(
-        apks: List<Path>,
-        options: List<String> = listOf()
-    ) : InstallMetrics {
-        val installStart = Instant.now()
+    // Finally, installing!
+    val pushStart = Instant.now()
+    val apkSizes = apks.map { Files.size(it) }.toList()
+    val totalSize = apkSizes.sum()
 
-        // Before we start, decide of an install strategy
-        val features = service.session.hostServices.availableFeatures(device)
-        val api = service.deviceProperties(device).api()
-        val pm : PM = when {
-            // Test API level
-            api < 21 -> PMLegacy(service)
-            features.contains("abb_exec") -> PMAbb(service)
-            features.contains("cmd") -> PMCmd(service)
-            else -> PMPm(service)
+    // 1/ Create session
+    logger.info { "  creating install session: 'total size=$totalSize' " }
+    val flowCreate = pm.createSession(device, options, totalSize)
+    val sessionID = parseSessionID(flowCreate.first())
+    logger.info { "  created session: 'sessionID=$sessionID' " }
+
+    try {
+      // 2/ Write all apks
+      apks.forEachIndexed { index, apk ->
+        val size = apkSizes[index]
+        // Make sure we have a filename that won't mess with our command
+        service.session.channelFactory.openFile(apk).use {
+          logger.info { "  streaming 'apk=$apk' 'size=$size' " }
+          val flow = pm.streamApk(device, sessionID, it, "${apk.fileName}", size)
+          parseInstallResult(flow.first())
         }
-
-        // Report our strategy
-        val strategy = pm.getStrategy()
-        logger.info{ "PMDriver installing via '$strategy' " }
-        val optionsString = options.joinToString(" ")
-        logger.info{ "  options: '$optionsString' " }
-        apks.forEach{
-            logger.info{ "  apk: '$it' " }
+      }
+    } catch (t: Throwable) {
+      runCatching {
+          logger.info { "  abandoning session: 'sessionID=$sessionID' " }
+          val flow = pm.abandon(device, sessionID)
+          flow.first()
         }
+        .onFailure { t.addSuppressed(it) }
+      throw t
+    }
+    val pushEnd = Instant.now()
 
-        // Check that all files to push are ok
-        apks.forEach{
-            if (!Files.exists(it)) {
-                throw InstallException(InstallResult("Cannot install '$it' (does not exist)"))
-            }
+    // 3/ Finalize
+    logger.info { "  committing session: 'sessionID=$sessionID' " }
+    val flow = pm.commit(device, sessionID)
+    parseInstallResult(flow.first())
+    val installEnd = Instant.now()
+    val installDuration = Duration.between(installStart, installEnd)
+    logger.info { "  installation completed in ${installDuration.seconds}s " }
 
-            if (Files.isDirectory(it)) {
-                throw InstallException(InstallResult("Cannot install '$it' (directory)"))
-            }
-        }
+    return InstallMetrics(installStart, installDuration, pushStart, Duration.between(pushStart, pushEnd))
+  }
 
-        // Finally, installing!
-        val pushStart = Instant.now()
-        val apkSizes = apks.map { Files.size(it) }.toList()
-        val totalSize = apkSizes.sum()
+  companion object {
 
-        // 1/ Create session
-        logger.info { "  creating install session: 'total size=$totalSize' " }
-        val flowCreate = pm.createSession(device, options, totalSize)
-        val sessionID = parseSessionID(flowCreate.first())
-        logger.info { "  created session: 'sessionID=$sessionID' " }
+    // Parse output from package manager when issuing a request "install-create". A valid answer is
+    // as follows:
+    // "Success: created install session [1731367907]"
+    // Error message vary from properly formatted output to Java StackTrace
+    private val createSessionPattern = Pattern.compile("""Success: .*\[(\d*)\].*""")
 
-        try {
-            // 2/ Write all apks
-            apks.forEachIndexed { index, apk ->
-                val size = apkSizes[index]
-                // Make sure we have a filename that won't mess with our command
-                service.session.channelFactory.openFile(apk).use {
-                    logger.info { "  streaming 'apk=$apk' 'size=$size' " }
-                    val flow = pm.streamApk(device, sessionID, it, "${apk.fileName}", size)
-                    parseInstallResult(flow.first())
-                }
-            }
-        } catch (t: Throwable) {
-            runCatching {
-                logger.info { "  abandoning session: 'sessionID=$sessionID' " }
-                val flow = pm.abandon(device, sessionID)
-                flow.first()
-            }.onFailure { t.addSuppressed(it) }
-            throw t
-        }
-        val pushEnd = Instant.now()
-
-        // 3/ Finalize
-        logger.info { "  committing session: 'sessionID=$sessionID' " }
-        val flow = pm.commit(device, sessionID)
-        parseInstallResult(flow.first())
-        val installEnd = Instant.now()
-        val installDuration = Duration.between(installStart, installEnd)
-        logger.info { "  installation completed in ${installDuration.seconds}s " }
-
-        return InstallMetrics(installStart, installDuration, pushStart, Duration.between(pushStart, pushEnd))
+    internal fun parseSessionID(output: String): String {
+      val matcher: Matcher = createSessionPattern.matcher(output.trim())
+      if (matcher.matches()) {
+        return matcher.group(1)
+      } else {
+        throw InstallException(InstallResult(output))
+      }
     }
 
-    companion object {
-
-        // Parse output from package manager when issuing a request "install-create". A valid answer is
-        // as follows:
-        // "Success: created install session [1731367907]"
-        // Error message vary from properly formatted output to Java StackTrace
-        private val createSessionPattern = Pattern.compile("""Success: .*\[(\d*)\].*""")
-        internal fun parseSessionID(output: String): String {
-            val matcher: Matcher = createSessionPattern.matcher(output.trim())
-            if (matcher.matches()) {
-                return matcher.group(1)
-            } else {
-                throw InstallException(InstallResult(output))
-            }
-        }
-
-        internal fun parseInstallResult(output: String) {
-            val res = InstallResult(output)
-            if (!res.success) {
-                throw InstallException(res)
-            }
-        }
+    internal fun parseInstallResult(output: String) {
+      val res = InstallResult(output)
+      if (!res.success) {
+        throw InstallException(res)
+      }
     }
+  }
 }

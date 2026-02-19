@@ -40,27 +40,18 @@ import org.jetbrains.uast.UCallExpression
 class ShortcutUsageDetector : Detector(), SourceCodeScanner {
 
   /**
-   * The number of calls to setDynamicShortcuts() in the current lint invocation. This is used as
-   * the next key for storing the location of a call to setDynamicShortcuts in a LintMap. See
-   * [visitMethodCall].
+   * The number of calls to setDynamicShortcuts() in the current lint invocation. This is used as the next key for storing the location of a
+   * call to setDynamicShortcuts in a LintMap. See [visitMethodCall].
    */
   private var numSetOrAddDynamicShortcutsCalls = 0
 
   override fun getApplicableMethodNames(): List<String>? {
-    return listOf(
-      "addDynamicShortcuts",
-      "setDynamicShortcuts",
-      "pushDynamicShortcut",
-      "reportShortcutUsed",
-    )
+    return listOf("addDynamicShortcuts", "setDynamicShortcuts", "pushDynamicShortcut", "reportShortcutUsed")
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
-    if (
-      evaluator.isMemberInClass(method, SHORTCUT_MANAGER_CLASS) ||
-        evaluator.isMemberInClass(method, SHORTCUT_MANAGER_COMPAT_CLASS)
-    ) {
+    if (evaluator.isMemberInClass(method, SHORTCUT_MANAGER_CLASS) || evaluator.isMemberInClass(method, SHORTCUT_MANAGER_COMPAT_CLASS)) {
       val map = context.getPartialResults(ISSUE).map()
       when (method.name) {
         ADD_DYNAMIC_SHORTCUTS,
@@ -92,8 +83,7 @@ class ShortcutUsageDetector : Detector(), SourceCodeScanner {
     // Otherwise, the values are locations to setDynamicShortcuts calls.
     for (perModuleLintMap in partialResults.maps()) {
       for (key in perModuleLintMap) {
-        val url =
-          "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage"
+        val url = "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts#track-usage"
         context.report(
           Incident(context)
             .issue(ISSUE)
@@ -143,11 +133,9 @@ class ShortcutUsageDetector : Detector(), SourceCodeScanner {
         category = Category.USABILITY,
         priority = 2,
         severity = Severity.INFORMATIONAL,
-        implementation =
-          Implementation(ShortcutUsageDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES)),
+        implementation = Implementation(ShortcutUsageDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES)),
         androidSpecific = true,
-        moreInfo =
-          "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts",
+        moreInfo = "https://developer.android.com/develop/ui/views/launch/shortcuts/managing-shortcuts",
       )
   }
 }

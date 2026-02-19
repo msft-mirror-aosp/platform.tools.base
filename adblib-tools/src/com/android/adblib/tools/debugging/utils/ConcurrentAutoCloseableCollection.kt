@@ -21,84 +21,72 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * This class acts as a container of [AutoCloseable] elements that will be closes when this
- * container is closed. This class is thread safe.
+ * This class acts as a container of [AutoCloseable] elements that will be closes when this container is closed. This class is thread safe.
  *
- * Iterating over this collection will not reflect additions or removals from the collection
- * since this collection's iterator provides a snapshot of the state of the collection when the
- * iterator was constructed. No synchronization is needed while traversing the collection.
+ * Iterating over this collection will not reflect additions or removals from the collection since this collection's iterator provides a
+ * snapshot of the state of the collection when the iterator was constructed. No synchronization is needed while traversing the collection.
  */
 internal class ConcurrentAutoCloseableCollection<T> : AutoCloseable, Iterable<T> {
 
-    private val list = CopyOnWriteArrayList<T>()
-    private val lock = ReentrantLock()
-    private var isClosed = false
+  private val list = CopyOnWriteArrayList<T>()
+  private val lock = ReentrantLock()
+  private var isClosed = false
 
-    fun add(element: T) {
-        val toClose = lock.withLock {
-            if (!isClosed) {
-                list.add(element)
-                null
-            } else {
-                (element as? AutoCloseable)
-            }
+  fun add(element: T) {
+    val toClose =
+      lock.withLock {
+        if (!isClosed) {
+          list.add(element)
+          null
+        } else {
+          (element as? AutoCloseable)
         }
-        // If the collection is closed, immediately close the added AutoCloseable
-        if (toClose != null) {
-            runCatching {
-                toClose.close()
-            }.onFailure {
-                val error =
-                    Exception("Error closing element when adding it to a closed collection")
-                error.addSuppressed(it)
-                throw error
-            }
+      }
+    // If the collection is closed, immediately close the added AutoCloseable
+    if (toClose != null) {
+      runCatching { toClose.close() }
+        .onFailure {
+          val error = Exception("Error closing element when adding it to a closed collection")
+          error.addSuppressed(it)
+          throw error
         }
     }
+  }
 
-    override fun close() {
-        val toClose = lock.withLock {
-            if (!isClosed) {
-                isClosed = true
-                list.filterIsInstance<AutoCloseable>().also {
-                    list.clear()
-                }
-            } else {
-                emptyList()
-            }
+  override fun close() {
+    val toClose =
+      lock.withLock {
+        if (!isClosed) {
+          isClosed = true
+          list.filterIsInstance<AutoCloseable>().also { list.clear() }
+        } else {
+          emptyList()
         }
+      }
 
-        // Close outside lock to prevent potential deadlocks
-        closeAll(toClose)
-    }
+    // Close outside lock to prevent potential deadlocks
+    closeAll(toClose)
+  }
 
-    /**
-     * Returns an iterator over the elements in this collection.
-     *
-     * The returned iterator provides a snapshot of this collection, and it will not reflect
-     * additions or removals from the collection. No synchronization is needed while
-     * traversing the iterator.
-     */
-    override fun iterator(): Iterator<T> {
-        return list.iterator()
-    }
+  /**
+   * Returns an iterator over the elements in this collection.
+   *
+   * The returned iterator provides a snapshot of this collection, and it will not reflect additions or removals from the collection. No
+   * synchronization is needed while traversing the iterator.
+   */
+  override fun iterator(): Iterator<T> {
+    return list.iterator()
+  }
 
-    companion object {
-        private fun closeAll(toClose: List<AutoCloseable>) {
-            var closeExceptions = SuppressedExceptions.init()
-            toClose.forEach {
-                runCatching {
-                    it.close()
-                }.onFailure {
-                    closeExceptions = SuppressedExceptions.add(closeExceptions, it)
-                }
-            }
-            if (closeExceptions.isNotEmpty()) {
-                val error =
-                    Exception("One or more errors closing elements of auto closable collection")
-                closeExceptions.forEach { error.addSuppressed(it) }
-                throw error
-            }
-        }
+  companion object {
+    private fun closeAll(toClose: List<AutoCloseable>) {
+      var closeExceptions = SuppressedExceptions.init()
+      toClose.forEach { runCatching { it.close() }.onFailure { closeExceptions = SuppressedExceptions.add(closeExceptions, it) } }
+      if (closeExceptions.isNotEmpty()) {
+        val error = Exception("One or more errors closing elements of auto closable collection")
+        closeExceptions.forEach { error.addSuppressed(it) }
+        throw error
+      }
     }
+  }
 }

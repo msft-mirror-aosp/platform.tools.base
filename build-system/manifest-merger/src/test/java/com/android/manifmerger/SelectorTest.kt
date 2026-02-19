@@ -16,67 +16,63 @@
 
 package com.android.manifmerger
 
+import java.util.Optional
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import java.util.Optional
 
 class SelectorTest {
 
-    private val xmlAttribute = mock<XmlAttribute>()
-    private val xmlDocument = mock<XmlDocument> {
-        on { getPackage() } doReturn Optional.of(xmlAttribute)
-    }
-    private val xmlElement = mock<XmlElement> {
-        on { document } doReturn xmlDocument
-    }
-    private val keyResolver = mock<KeyResolver<String>>()
+  private val xmlAttribute = mock<XmlAttribute>()
+  private val xmlDocument = mock<XmlDocument> { on { getPackage() } doReturn Optional.of(xmlAttribute) }
+  private val xmlElement = mock<XmlElement> { on { document } doReturn xmlDocument }
+  private val keyResolver = mock<KeyResolver<String>>()
 
-    @Test
-    fun missingXmlAttribute_appliesTo() {
-        val selector = Selector("com.example.foo")
-        whenever(xmlDocument.`package`).thenReturn(Optional.empty())
-        assertFalse(selector.appliesTo(xmlElement))
-    }
+  @Test
+  fun missingXmlAttribute_appliesTo() {
+    val selector = Selector("com.example.foo")
+    whenever(xmlDocument.`package`).thenReturn(Optional.empty())
+    assertFalse(selector.appliesTo(xmlElement))
+  }
 
-    @Test
-    fun selectorWithSinglePackage_appliesTo() {
-        val selector = Selector("com.example.lib1")
-        whenever(xmlAttribute.value).thenReturn("com.example.lib1")
-        assertTrue(selector.appliesTo(xmlElement))
+  @Test
+  fun selectorWithSinglePackage_appliesTo() {
+    val selector = Selector("com.example.lib1")
+    whenever(xmlAttribute.value).thenReturn("com.example.lib1")
+    assertTrue(selector.appliesTo(xmlElement))
 
-        whenever(xmlAttribute.value).thenReturn("com.example.lib2")
-        assertFalse(selector.appliesTo(xmlElement))
-    }
+    whenever(xmlAttribute.value).thenReturn("com.example.lib2")
+    assertFalse(selector.appliesTo(xmlElement))
+  }
 
-    @Test
-    fun selectorWithMultiplePackages_appliesTo() {
-        val selector = Selector("com.example.lib1,com.example.lib2")
-        whenever(xmlAttribute.value).thenReturn("com.example.lib2")
-        assertTrue(selector.appliesTo(xmlElement))
+  @Test
+  fun selectorWithMultiplePackages_appliesTo() {
+    val selector = Selector("com.example.lib1,com.example.lib2")
+    whenever(xmlAttribute.value).thenReturn("com.example.lib2")
+    assertTrue(selector.appliesTo(xmlElement))
 
-        whenever(xmlAttribute.value).thenReturn("com.example.lib3")
-        assertFalse(selector.appliesTo(xmlElement))
-    }
+    whenever(xmlAttribute.value).thenReturn("com.example.lib3")
+    assertFalse(selector.appliesTo(xmlElement))
+  }
 
-    @Test
-    fun selectorWithSinglePackage_isResolvable() {
-        val selector = Selector("com.example.lib1")
-        whenever(keyResolver.resolve("com.example.lib1")).thenReturn("somevalue")
-        assertTrue(selector.isResolvable(keyResolver))
-    }
+  @Test
+  fun selectorWithSinglePackage_isResolvable() {
+    val selector = Selector("com.example.lib1")
+    whenever(keyResolver.resolve("com.example.lib1")).thenReturn("somevalue")
+    assertTrue(selector.isResolvable(keyResolver))
+  }
 
-    @Test
-    fun selectorWithMultiplePackages_isResolvable() {
-        val selector = Selector("com.example.lib1,com.example.lib2")
-        whenever(keyResolver.resolve("com.example.lib1")).thenReturn("somevalue")
-        whenever(keyResolver.resolve("com.example.lib2")).thenReturn("anothervalue")
-        assertTrue(selector.isResolvable(keyResolver))
+  @Test
+  fun selectorWithMultiplePackages_isResolvable() {
+    val selector = Selector("com.example.lib1,com.example.lib2")
+    whenever(keyResolver.resolve("com.example.lib1")).thenReturn("somevalue")
+    whenever(keyResolver.resolve("com.example.lib2")).thenReturn("anothervalue")
+    assertTrue(selector.isResolvable(keyResolver))
 
-        whenever(keyResolver.resolve("com.example.lib2")).thenReturn(null)
-        assertFalse(selector.isResolvable(keyResolver))
-    }
+    whenever(keyResolver.resolve("com.example.lib2")).thenReturn(null)
+    assertFalse(selector.isResolvable(keyResolver))
+  }
 }

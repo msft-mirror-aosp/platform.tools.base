@@ -16,6 +16,4 @@
 
 package com.android.build.gradle.internal.transforms.testdata
 
-annotation class YetAnotherClass {
-
-}
+annotation class YetAnotherClass {}

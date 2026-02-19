@@ -30,7 +30,13 @@ import java.util.Map;
  * <p>The values are never serialized anywhere.
  */
 public final class InMemoryFlagValueContainer implements FlagValueContainer {
+
+    private final String displayName;
     private final Map<Flag<?>, String> overrides = new HashMap<>();
+
+    public InMemoryFlagValueContainer(String displayName) {
+        this.displayName = displayName;
+    }
 
     @Override
     public void clear() {
@@ -51,5 +57,10 @@ public final class InMemoryFlagValueContainer implements FlagValueContainer {
     @Override
     public String get(@NonNull Flag<?> flag) {
         return overrides.get(flag);
+    }
+
+    @Override
+    public String toString() {
+        return "InMemoryFlagValueContainer(" + displayName + ")";
     }
 }

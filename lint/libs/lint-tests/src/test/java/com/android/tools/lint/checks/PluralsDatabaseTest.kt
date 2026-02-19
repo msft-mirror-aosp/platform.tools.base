@@ -40,14 +40,8 @@ class PluralsDatabaseTest : TestCase() {
 
   fun testFindExamples() {
     val db = PluralsDatabase.LATEST
-    assertEquals(
-      "1, 101, 201, 301, 401, 501, 601, 701, 1001, \u2026",
-      db.findIntegerExamples("sl", Quantity.one),
-    )
-    assertEquals(
-      "1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026",
-      db.findIntegerExamples("ru", Quantity.one),
-    )
+    assertEquals("1, 101, 201, 301, 401, 501, 601, 701, 1001, \u2026", db.findIntegerExamples("sl", Quantity.one))
+    assertEquals("1, 21, 31, 41, 51, 61, 71, 81, 101, 1001, \u2026", db.findIntegerExamples("ru", Quantity.one))
   }
 
   fun testHasMultiValue() {
@@ -62,9 +56,9 @@ class PluralsDatabaseTest : TestCase() {
   }
 
   /**
-   * If the lint unit test data/ folder contains a plurals.txt database file, this test will parse
-   * that file and ensure that our current database produces exactly the same results as those
-   * inferred from the file. If not, it will dump out updated data structures for the database.
+   * If the lint unit test data/ folder contains a plurals.txt database file, this test will parse that file and ensure that our current
+   * database produces exactly the same results as those inferred from the file. If not, it will dump out updated data structures for the
+   * database.
    *
    * Last update: downloaded icu4c-69_1-data.zip and copied data/misc/plurals.txt into
    * tools/base/lint/libs/lint-tests/src/test/java/com/android/tools/lint/checks/data
@@ -113,12 +107,10 @@ class PluralsDatabaseTest : TestCase() {
   /** Plurals database backed by a plurals.txt file from ICU */
   private class PluralsTextDatabase {
     private lateinit var plurals: MutableMap<String, EnumSet<Quantity>>
-    private val multiValueSetNames: MutableMap<Quantity, MutableSet<String?>> =
-      Maps.newEnumMap(Quantity::class.java)
+    private val multiValueSetNames: MutableMap<Quantity, MutableSet<String?>> = Maps.newEnumMap(Quantity::class.java)
     private var ruleSetOffset = 0
     private val descriptions by lazy {
-      val stream =
-        PluralsDatabaseTest::class.java.getResourceAsStream("data/plurals.txt") ?: return@lazy ""
+      val stream = PluralsDatabaseTest::class.java.getResourceAsStream("data/plurals.txt") ?: return@lazy ""
       stream.use { inputStream ->
         val descriptions = inputStream.readAllBytes().toString(Charsets.UTF_8)
         val ruleSetOffset = descriptions.indexOf("rules{")
@@ -447,7 +439,7 @@ class PluralsDatabaseTest : TestCase() {
           |
           |object CLDR41Dataset : PluralsDataset(
           |    languageCodes = arrayOf(
-        """
+          """
             .trimMargin()
         )
         val printedLanguages = languages.filter { db.getSetName(it) != null }
@@ -459,7 +451,7 @@ class PluralsDatabaseTest : TestCase() {
         appendLine(
           """
           |    languageFlags = intArrayOf(
-        """
+          """
             .trimMargin()
         )
 
@@ -558,8 +550,7 @@ class PluralsDatabaseTest : TestCase() {
       setsWithExamples: Map<String, String>,
     ) {
       val output = buildString {
-        val quantityName =
-          quantity.name.let { name -> name[0].uppercaseChar().toString() + name.substring(1) }
+        val quantityName = quantity.name.let { name -> name[0].uppercaseChar().toString() + name.substring(1) }
         appendLine(
           """
           |    override fun getExampleForQuantity$quantityName(language: String): String? {
@@ -598,8 +589,7 @@ class PluralsDatabaseTest : TestCase() {
           |            else -> null
           |        }
           |    }
-          |
-          """
+          |"""
             .trimMargin()
         )
       }

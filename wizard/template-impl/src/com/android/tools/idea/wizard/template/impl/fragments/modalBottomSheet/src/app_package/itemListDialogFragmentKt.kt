@@ -32,7 +32,7 @@ fun itemListDialogFragmentKt(
   objectKind: String,
   packageName: String,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
   val layoutManagerImport =
     if (columnCount == 1) "import ${getMaterialComponentName("android.support.v7.widget.LinearLayoutManager", useAndroidX)}"
@@ -42,18 +42,25 @@ fun itemListDialogFragmentKt(
     if (columnCount == 1) "activity?.findViewById<RecyclerView>(R.id.list)?.layoutManager = LinearLayoutManager(context)"
     else "list.layoutManager = GridLayoutManager(context, ${columnCount})"
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       _binding = ${layoutToViewBindingClass(listLayout)}.inflate(inflater, container, false)
       return binding.root
-  """ else "return inflater.inflate(R.layout.$listLayout, container, false)"
+  """
+    else "return inflater.inflate(R.layout.$listLayout, container, false)"
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     private inner class ViewHolder internal constructor(binding: ${layoutToViewBindingClass(itemLayout)})
         : RecyclerView.ViewHolder(binding.root) {
 
         internal val text: TextView = binding.text
     }
-  """ else """
+  """
+    else
+      """
     private inner class ViewHolder internal constructor(inflater: LayoutInflater, parent: ViewGroup)
         : RecyclerView.ViewHolder(inflater.inflate(R.layout.${itemLayout}, parent, false)) {
 
@@ -61,9 +68,13 @@ fun itemListDialogFragmentKt(
     }
   """
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     return ViewHolder(${layoutToViewBindingClass(itemLayout)}.inflate(LayoutInflater.from(parent.context), parent, false))
-  """ else """
+  """
+    else
+      """
     return ViewHolder(LayoutInflater.from(parent.context), parent)
   """
 

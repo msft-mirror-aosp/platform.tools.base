@@ -25,45 +25,41 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Ensure we get salt properly for project id anonymization.
- */
+/** Ensure we get salt properly for project id anonymization. */
 class ProjectIdAnonymizationTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .enableProfileOutput()
-        .create()
+  @get:Rule
+  var project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).enableProfileOutput().create()
 
-    @Before
-    fun setUp() {
-        project.buildFile.appendText(
-            """
-                import com.android.tools.analytics.AnalyticsSettings
-                import com.android.utils.DateProvider
+  @Before
+  fun setUp() {
+    project.buildFile.appendText(
+      """
+      import com.android.tools.analytics.AnalyticsSettings
+      import com.android.utils.DateProvider
 
-                task dateSetTask {
-                    doLast {
-                        AnalyticsSettings.dateProvider = new DateProvider() {
-                            public Date now() {
-                                return new Date(2020, 0, 1)
-                            }
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-    }
+      task dateSetTask {
+          doLast {
+              AnalyticsSettings.dateProvider = new DateProvider() {
+                  public Date now() {
+                      return new Date(2020, 0, 1)
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent()
+    )
+  }
 
-    @Test
-    fun checkSaltRotation() {
-        val capturer = ProfileCapturer(project)
-        val firstRun = capturer.capture { project.execute("dateSetTask")}.single()
-        val firstProjectId = firstRun.projectId
-        // change date in the second build and check if we get different salt for project id
-        TestFileUtils.searchAndReplace(project.buildFile, "2020", "2030")
-        val secondRun = capturer.capture { project.execute("dateSetTask")}.single()
-        Truth.assertThat(secondRun.projectId).isNotEqualTo(firstProjectId)
-    }
+  @Test
+  fun checkSaltRotation() {
+    val capturer = ProfileCapturer(project)
+    val firstRun = capturer.capture { project.execute("dateSetTask") }.single()
+    val firstProjectId = firstRun.projectId
+    // change date in the second build and check if we get different salt for project id
+    TestFileUtils.searchAndReplace(project.buildFile, "2020", "2030")
+    val secondRun = capturer.capture { project.execute("dateSetTask") }.single()
+    Truth.assertThat(secondRun.projectId).isNotEqualTo(firstProjectId)
+  }
 }

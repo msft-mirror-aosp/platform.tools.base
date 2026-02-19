@@ -18,60 +18,46 @@ package com.android.builder.merge
 
 import com.google.common.truth.Truth.assertThat
 
-/**
- * Output that keeps track of all requested operations. Used for tests.
- */
+/** Output that keeps track of all requested operations. Used for tests. */
 internal class IncrementalFileMergerTestOutput : IncrementalFileMergerOutput {
-    var open: Boolean = false
-    val removed: MutableSet<String> = mutableSetOf()
-    val created: MutableList<CreateParams> = mutableListOf()
-    val updated: MutableList<UpdateParams> = mutableListOf()
+  var open: Boolean = false
+  val removed: MutableSet<String> = mutableSetOf()
+  val created: MutableList<CreateParams> = mutableListOf()
+  val updated: MutableList<UpdateParams> = mutableListOf()
 
-    override fun open() {
-        assertThat(open).isFalse()
-        open = true
-    }
+  override fun open() {
+    assertThat(open).isFalse()
+    open = true
+  }
 
-    override fun close() {
-        assertThat(open).isTrue()
-        open = false
-    }
+  override fun close() {
+    assertThat(open).isTrue()
+    open = false
+  }
 
-    override fun remove(path: String) {
-        assertThat(open).isTrue()
-        removed.add(path)
-    }
+  override fun remove(path: String) {
+    assertThat(open).isTrue()
+    removed.add(path)
+  }
 
-    override fun create(
-        path: String,
-        inputs: List<IncrementalFileMergerInput>,
-        compress: Boolean
-    ) {
-        assertThat(open).isTrue()
-        assertThat(created.any { it.path == path }).isFalse()
-        created.add(CreateParams(path, inputs.toList(), compress))
-    }
+  override fun create(path: String, inputs: List<IncrementalFileMergerInput>, compress: Boolean) {
+    assertThat(open).isTrue()
+    assertThat(created.any { it.path == path }).isFalse()
+    created.add(CreateParams(path, inputs.toList(), compress))
+  }
 
-    override fun update(
-        path: String,
-        prevInputNames: List<String>,
-        inputs: List<IncrementalFileMergerInput>,
-        compress: Boolean
-    ) {
-        assertThat(open).isTrue()
-        assertThat(created.any { it.path == path }).isFalse()
-        updated.add(UpdateParams(path, prevInputNames.toList(), inputs.toList(), compress))
-    }
+  override fun update(path: String, prevInputNames: List<String>, inputs: List<IncrementalFileMergerInput>, compress: Boolean) {
+    assertThat(open).isTrue()
+    assertThat(created.any { it.path == path }).isFalse()
+    updated.add(UpdateParams(path, prevInputNames.toList(), inputs.toList(), compress))
+  }
 }
 
-data class CreateParams(
-    val path: String,
-    val inputs: List<IncrementalFileMergerInput>,
-    val compress: Boolean)
+data class CreateParams(val path: String, val inputs: List<IncrementalFileMergerInput>, val compress: Boolean)
 
 data class UpdateParams(
-    val path: String,
-    val prevInputNames: List<String>,
-    val inputs: List<IncrementalFileMergerInput>,
-    val compress: Boolean)
-
+  val path: String,
+  val prevInputNames: List<String>,
+  val inputs: List<IncrementalFileMergerInput>,
+  val compress: Boolean,
+)

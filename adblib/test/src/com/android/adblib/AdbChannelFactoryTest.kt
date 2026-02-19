@@ -19,6 +19,10 @@ import com.android.adblib.impl.channels.AdbChannelFactoryImpl
 import com.android.adblib.testingutils.CloseablesRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.TestingAdbSession
+import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.channels.ClosedChannelException
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
@@ -34,264 +38,251 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.channels.ClosedChannelException
-import java.util.concurrent.TimeUnit
 
 class AdbChannelFactoryTest {
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
+  private fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
+
+  @Test
+  fun testConnectSocketWorks() = runBlockingWithTimeout {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind()
+
+    // Act
+    launch {
+      serverSocket.accept().use { socket ->
+        socket.readString()
+        socket.writeString("World")
+        socket.shutdownOutput()
+      }
     }
 
-    @Test
-    fun testConnectSocketWorks() = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind()
+    val serverMessage =
+      channelFactory.connectSocket(serverAddress).use { clientSocket ->
+        clientSocket.writeString("Hello")
+        clientSocket.shutdownOutput()
+        clientSocket.readString()
+      }
 
-        // Act
-        launch {
-            serverSocket.accept().use { socket ->
-                socket.readString()
-                socket.writeString("World")
-                socket.shutdownOutput()
-            }
-        }
+    // Assert
+    assertEquals("World", serverMessage)
+  }
 
-        val serverMessage = channelFactory.connectSocket(serverAddress).use { clientSocket ->
-            clientSocket.writeString("Hello")
-            clientSocket.shutdownOutput()
-            clientSocket.readString()
-        }
+  // @Test // Disabled for now, because server socket backlog behavior is platform dependent
+  fun testConnectSocketWithTimeoutWorks() = runBlocking {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind(backLog = 1)
 
-        // Assert
-        assertEquals("World", serverMessage)
+    // Act: We have a backlog of "1", so first connect succeeds, second one should fail
+    registerCloseable(channelFactory.connectSocket(serverAddress))
+    exceptionRule.expect(TimeoutCancellationException::class.java)
+    channelFactory.connectSocket(serverAddress, 500, TimeUnit.MILLISECONDS)
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  @Test
+  fun testConnectSocketReadIsClosedWhenPendingReadReachesTimeout() = runBlocking {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind()
+
+    // Act
+    launch {
+      serverSocket.accept().use {
+        // Don't send anything, so that client read waits for at least 1 second
+        delay(1_000)
+      }
+    }
+    channelFactory.connectSocket(serverAddress).use { clientSocket ->
+      val buffer = ByteBuffer.allocate(10)
+      try {
+        clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
+      } catch (_: IOException) {}
+
+      exceptionRule.expect(Exception::class.java)
+      clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
     }
 
-    //@Test // Disabled for now, because server socket backlog behavior is platform dependent
-    fun testConnectSocketWithTimeoutWorks() = runBlocking {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind(backLog = 1)
+    // Assert
+    fail("Should not reach")
+  }
 
-        // Act: We have a backlog of "1", so first connect succeeds, second one should fail
-        registerCloseable(channelFactory.connectSocket(serverAddress))
-        exceptionRule.expect(TimeoutCancellationException::class.java)
-        channelFactory.connectSocket(serverAddress, 500, TimeUnit.MILLISECONDS)
+  @Test
+  fun testConnectSocketReadIsClosedWhenPendingReadIsCancelled() = runBlocking {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind()
 
-        // Assert
-        fail("Should not reach")
+    // Act
+    launch {
+      serverSocket.accept().use {
+        // Don't send anything, so that client read waits for at least 1 second
+        delay(1_000)
+      }
+    }
+    channelFactory.connectSocket(serverAddress).use { clientSocket ->
+      val buffer = ByteBuffer.allocate(10)
+      withTimeoutOrNull(100) { clientSocket.read(buffer) }
+
+      exceptionRule.expect(Exception::class.java)
+      clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
     }
 
-    @Test
-    fun testConnectSocketReadIsClosedWhenPendingReadReachesTimeout() = runBlocking {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind()
+    // Assert
+    fail("Should not reach")
+  }
 
-        // Act
-        launch {
-            serverSocket.accept().use {
-                // Don't send anything, so that client read waits for at least 1 second
-                delay(1_000)
-            }
+  @Test
+  fun testConnectSocketReadTimeoutWorks() = runBlocking {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind()
+
+    // Act
+    launch {
+      serverSocket.accept().use {
+        // Don't send anything, so that client read waits for at least 1 second
+        delay(1_000)
+      }
+    }
+    channelFactory.connectSocket(serverAddress).use { clientSocket ->
+      val buffer = ByteBuffer.allocate(10)
+      exceptionRule.expect(IOException::class.java)
+      clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
+    }
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  @Test
+  fun testServerSocketHasNullLocalAddressByDefault() = runBlockingWithTimeout {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+
+    // Act
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+
+    // Assert
+    assertNull(serverSocket.localAddress())
+  }
+
+  @Test
+  fun testServerSocketBindWorks() = runBlockingWithTimeout {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+
+    // Act
+    val localAddress = serverSocket.bind()
+
+    // Assert
+    assertNotNull(serverSocket.localAddress())
+    assertEquals(localAddress, serverSocket.localAddress())
+  }
+
+  @Test
+  fun testServerSocketAcceptWorks() = runBlockingWithTimeout {
+    // Prepare
+    val host = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(host)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    val serverAddress = serverSocket.bind()
+
+    // Act
+    val job1 =
+      async(Dispatchers.IO) {
+        serverSocket.accept().use { socket ->
+          val message = socket.readString()
+          socket.writeString("World")
+          socket.shutdownOutput()
+          message
         }
+      }
+    val job2 =
+      async(Dispatchers.IO) {
         channelFactory.connectSocket(serverAddress).use { clientSocket ->
-            val buffer = ByteBuffer.allocate(10)
-            try {
-                clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
-            } catch (_: IOException) {
-            }
-
-            exceptionRule.expect(Exception::class.java)
-            clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
+          clientSocket.writeString("Hello")
+          clientSocket.shutdownOutput()
+          clientSocket.readString()
         }
+      }
 
-        // Assert
-        fail("Should not reach")
-    }
+    // Assert
+    assertEquals("Hello", job1.await())
+    assertEquals("World", job2.await())
+  }
 
-    @Test
-    fun testConnectSocketReadIsClosedWhenPendingReadIsCancelled() = runBlocking {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind()
+  @Test
+  fun testServerSocketCancellationOfPendingAcceptClosesSocket() = runBlockingWithTimeout {
+    // Prepare
+    val session = registerCloseable(TestingAdbSession())
+    val channelFactory = AdbChannelFactoryImpl(session)
+    val serverSocket = registerCloseable(channelFactory.createServerSocket())
+    serverSocket.bind()
 
-        // Act
-        launch {
-            serverSocket.accept().use {
-                // Don't send anything, so that client read waits for at least 1 second
-                delay(1_000)
-            }
-        }
-        channelFactory.connectSocket(serverAddress).use { clientSocket ->
-            val buffer = ByteBuffer.allocate(10)
-            withTimeoutOrNull(100) {
-                clientSocket.read(buffer)
-            }
+    // Act
+    val job1 = launch { serverSocket.accept().use { throw Exception("Accept should not complete") } }
+    delay(200)
+    job1.cancelAndJoin()
 
-            exceptionRule.expect(Exception::class.java)
-            clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
-        }
+    exceptionRule.expect(ClosedChannelException::class.java)
+    serverSocket.accept()
 
-        // Assert
-        fail("Should not reach")
-    }
+    // Assert
+    fail("Should not reach")
+  }
 
-    @Test
-    fun testConnectSocketReadTimeoutWorks() = runBlocking {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind()
+  private suspend fun AdbChannel.writeInt(value: Int) {
+    val buffer = ByteBuffer.allocate(4)
+    buffer.putInt(value)
+    buffer.flip()
+    writeExactly(buffer)
+  }
 
-        // Act
-        launch {
-            serverSocket.accept().use {
-                // Don't send anything, so that client read waits for at least 1 second
-                delay(1_000)
-            }
-        }
-        channelFactory.connectSocket(serverAddress).use { clientSocket ->
-            val buffer = ByteBuffer.allocate(10)
-            exceptionRule.expect(IOException::class.java)
-            clientSocket.read(buffer, 100, TimeUnit.MILLISECONDS)
-        }
+  private suspend fun AdbChannel.readInt(): Int {
+    val buffer = ByteBuffer.allocate(4)
+    readExactly(buffer)
+    buffer.flip()
+    return buffer.int
+  }
 
-        // Assert
-        fail("Should not reach")
-    }
+  private suspend fun AdbChannel.writeString(value: String) {
+    val bytes = value.toByteArray(Charsets.UTF_8)
+    writeInt(bytes.size)
 
-    @Test
-    fun testServerSocketHasNullLocalAddressByDefault() = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
+    val buffer = ByteBuffer.wrap(bytes)
+    writeExactly(buffer)
+  }
 
-        // Act
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
+  private suspend fun AdbChannel.readString(): String {
+    val length = readInt()
 
-        // Assert
-        assertNull(serverSocket.localAddress())
-    }
+    val buffer = ByteBuffer.allocate(length)
+    readExactly(buffer)
 
-
-    @Test
-    fun testServerSocketBindWorks() = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-
-        // Act
-        val localAddress = serverSocket.bind()
-
-        // Assert
-        assertNotNull(serverSocket.localAddress())
-        assertEquals(localAddress, serverSocket.localAddress())
-    }
-
-    @Test
-    fun testServerSocketAcceptWorks() = runBlockingWithTimeout {
-        // Prepare
-        val host = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(host)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        val serverAddress = serverSocket.bind()
-
-        // Act
-        val job1 = async(Dispatchers.IO) {
-            serverSocket.accept().use { socket ->
-                val message = socket.readString()
-                socket.writeString("World")
-                socket.shutdownOutput()
-                message
-            }
-        }
-        val job2 = async(Dispatchers.IO) {
-            channelFactory.connectSocket(serverAddress).use { clientSocket ->
-                clientSocket.writeString("Hello")
-                clientSocket.shutdownOutput()
-                clientSocket.readString()
-            }
-        }
-
-        // Assert
-        assertEquals("Hello", job1.await())
-        assertEquals("World", job2.await())
-    }
-
-    @Test
-    fun testServerSocketCancellationOfPendingAcceptClosesSocket() = runBlockingWithTimeout {
-        // Prepare
-        val session = registerCloseable(TestingAdbSession())
-        val channelFactory = AdbChannelFactoryImpl(session)
-        val serverSocket = registerCloseable(channelFactory.createServerSocket())
-        serverSocket.bind()
-
-        // Act
-        val job1 = launch {
-            serverSocket.accept().use {
-                throw Exception("Accept should not complete")
-            }
-        }
-        delay(200)
-        job1.cancelAndJoin()
-
-        exceptionRule.expect(ClosedChannelException::class.java)
-        serverSocket.accept()
-
-        // Assert
-        fail("Should not reach")
-    }
-
-    private suspend fun AdbChannel.writeInt(value: Int) {
-        val buffer = ByteBuffer.allocate(4)
-        buffer.putInt(value)
-        buffer.flip()
-        writeExactly(buffer)
-    }
-
-    private suspend fun AdbChannel.readInt(): Int {
-        val buffer = ByteBuffer.allocate(4)
-        readExactly(buffer)
-        buffer.flip()
-        return buffer.int
-    }
-
-    private suspend fun AdbChannel.writeString(value: String) {
-        val bytes = value.toByteArray(Charsets.UTF_8)
-        writeInt(bytes.size)
-
-        val buffer = ByteBuffer.wrap(bytes)
-        writeExactly(buffer)
-    }
-
-    private suspend fun AdbChannel.readString(): String {
-        val length = readInt()
-
-        val buffer = ByteBuffer.allocate(length)
-        readExactly(buffer)
-
-        return String(buffer.array(), Charsets.UTF_8)
-    }
+    return String(buffer.array(), Charsets.UTF_8)
+  }
 }

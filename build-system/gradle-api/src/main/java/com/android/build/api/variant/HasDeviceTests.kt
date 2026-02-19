@@ -16,20 +16,14 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.Incubating
-
-/**
- * [Variant] that optionally have [DeviceTest] components like [AndroidTest].
- */
+/** [Variant] that optionally have [DeviceTest] components like [AndroidTest]. */
 interface HasDeviceTests {
 
-    /**
-     * Variant's [Map] of [DeviceTest] configurations, or empty if all devices tests (like android
-     * tests) are disabled for this variant.
-     *
-     *  @return a [Map] which keys are unique names within the tested variant like
-     * [DeviceTestBuilder.ANDROID_TEST_TYPE] and the values are [DeviceTest] for that host
-     * test suite.
-     */
-    val deviceTests: Map<String, DeviceTest>
+  /**
+   * Variant's [Map] of [DeviceTest] configurations, or empty if all devices tests (like android tests) are disabled for this variant.
+   *
+   * @return a [Map] which keys are unique names within the tested variant like [DeviceTestBuilder.ANDROID_TEST_TYPE] and the values are
+   *   [DeviceTest] for that host test suite.
+   */
+  val deviceTests: Map<String, DeviceTest>
 }

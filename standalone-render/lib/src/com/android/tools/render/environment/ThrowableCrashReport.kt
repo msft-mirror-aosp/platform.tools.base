@@ -20,11 +20,10 @@ import com.android.tools.analytics.crash.CrashReport
 import org.apache.http.entity.mime.MultipartEntityBuilder
 
 /** [CrashReport] that prints [Throwable] to a console. */
-internal class ThrowableCrashReport(private val t: Throwable) :
-    CrashReport("", "", emptyMap(), "") {
-    override fun serializeTo(builder: MultipartEntityBuilder) { }
+internal class ThrowableCrashReport(private val t: Throwable) : CrashReport("", "", emptyMap(), "") {
+  override fun serializeTo(builder: MultipartEntityBuilder) {}
 
-    fun report() {
-        t.printStackTrace()
-    }
+  fun report() {
+    t.printStackTrace()
+  }
 }

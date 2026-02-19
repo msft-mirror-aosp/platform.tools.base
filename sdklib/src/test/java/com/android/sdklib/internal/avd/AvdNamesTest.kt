@@ -17,8 +17,8 @@ package com.android.sdklib.internal.avd
 
 import com.android.sdklib.devices.DeviceManager
 import com.android.sdklib.internal.avd.AvdNames.cleanAvdName
-import com.android.sdklib.internal.avd.AvdNames.isValid
 import com.android.sdklib.internal.avd.AvdNames.cleanDisplayName
+import com.android.sdklib.internal.avd.AvdNames.isValid
 import com.android.sdklib.repository.AndroidSdkHandler
 import com.android.testutils.file.createInMemoryFileSystemAndFolder
 import com.android.utils.NullLogger
@@ -42,8 +42,7 @@ class AvdNamesTest {
   @Test
   fun testCleanDisplayName() {
     assertThat(cleanDisplayName("Simple")).isEqualTo("Simple")
-    assertThat(cleanDisplayName("this.name is-also_(OK) 45"))
-      .isEqualTo("this.name is-also_(OK) 45")
+    assertThat(cleanDisplayName("this.name is-also_(OK) 45")).isEqualTo("this.name is-also_(OK) 45")
 
     assertThat(cleanDisplayName("either/or")).isEqualTo("either or")
     assertThat(cleanDisplayName("9\" nails")).isEqualTo("9 nails")
@@ -77,21 +76,13 @@ class AvdNamesTest {
     val sdk = root.resolve("sdk").createDirectories()
     val avds = root.resolve("avds").createDirectories()
     val sdkHandler = AndroidSdkHandler(sdk, avds)
-    val avdManager =
-      AvdManager.createInstance(
-        sdkHandler,
-        avds,
-        DeviceManager.createInstance(sdkHandler, NullLogger()),
-        NullLogger(),
-      )
+    val avdManager = AvdManager.createInstance(sdkHandler, avds, DeviceManager.createInstance(sdkHandler, NullLogger()), NullLogger())
 
     avds.resolve("Pixel.avd").createDirectories()
     avds.resolve("Pixel_2.avd").createDirectories()
 
-    assertThat(avdManager.uniquifyAvdFolder("Pixel").toString())
-      .isEqualTo(avds.resolve("Pixel_3.avd").toString())
+    assertThat(avdManager.uniquifyAvdFolder("Pixel").toString()).isEqualTo(avds.resolve("Pixel_3.avd").toString())
     // We could perhaps be smarter about this
-    assertThat(avdManager.uniquifyAvdFolder("Pixel_2").toString())
-      .isEqualTo(avds.resolve("Pixel_2_2.avd").toString())
+    assertThat(avdManager.uniquifyAvdFolder("Pixel_2").toString()).isEqualTo(avds.resolve("Pixel_2_2.avd").toString())
   }
 }

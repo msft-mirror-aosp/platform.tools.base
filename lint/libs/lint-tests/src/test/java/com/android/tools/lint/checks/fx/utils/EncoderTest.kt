@@ -37,9 +37,7 @@ class EncoderTest {
     Encoder.fix { treeEncoder ->
       Encoder.sum<Tree>(
         Encoder.case<_, Tree.Leaf>(Encoder.const(Tree.Leaf)),
-        Encoder.case<_, Tree.Node>(
-          Encoder.product(Tree::Node, Encoder.int, treeEncoder.zeroOrMore())
-        ),
+        Encoder.case<_, Tree.Node>(Encoder.product(Tree::Node, Encoder.int, treeEncoder.zeroOrMore())),
       )
     }
 
@@ -84,11 +82,8 @@ class EncoderTest {
   fun `test interned string preverse value and saves in obvious case`() {
     data class Person(val first: String, val last: String, val age: Int)
 
-    val personEncoder =
-      Encoder.product(::Person, Encoder.string, Encoder.string, Encoder.int).zeroOrMore()
-    val optPersonEncoder =
-      Encoder.product(::Person, Encoder.internedString, Encoder.internedString, Encoder.int)
-        .zeroOrMore()
+    val personEncoder = Encoder.product(::Person, Encoder.string, Encoder.string, Encoder.int).zeroOrMore()
+    val optPersonEncoder = Encoder.product(::Person, Encoder.internedString, Encoder.internedString, Encoder.int).zeroOrMore()
 
     val data =
       listOf(
@@ -102,8 +97,7 @@ class EncoderTest {
     personEncoder.testEncodingThenDecodingPreservesValue(data)
     optPersonEncoder.testEncodingThenDecodingPreservesValue(data)
 
-    Truth.assertThat(optPersonEncoder.encodingSize(data))
-      .isLessThan(personEncoder.encodingSize(data))
+    Truth.assertThat(optPersonEncoder.encodingSize(data)).isLessThan(personEncoder.encodingSize(data))
   }
 
   fun `compressing encoder preserves information, and saves in obvious case`() {
@@ -152,35 +146,22 @@ class EncoderTest {
 
   @Test
   fun `sum, product, list, and recursive encoders preserve values`() {
-    val tree =
-      Tree.Node(
-        42,
-        listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf),
-      )
+    val tree = Tree.Node(42, listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf))
     treeEncoder.testEncodingThenDecodingPreservesValue(tree)
   }
 
   @Test
   fun `encoder of map on complex objects preserve values`() {
-    val tree1 =
-      Tree.Node(
-        42,
-        listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf),
-      )
+    val tree1 = Tree.Node(42, listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf))
     val tree2 = Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf))
-    val treeMap =
-      persistentMapOf<Tree, Tree>(tree1 to tree2, tree2 to Tree.Node(42, listOf(tree1, tree1)))
+    val treeMap = persistentMapOf<Tree, Tree>(tree1 to tree2, tree2 to Tree.Node(42, listOf(tree1, tree1)))
     val treeMapEncoder = Encoder.map(treeEncoder, treeEncoder)
     treeMapEncoder.testEncodingThenDecodingPreservesValue(treeMap)
   }
 
   @Test
   fun `encoder of set on complex objects preserve values`() {
-    val tree1 =
-      Tree.Node(
-        42,
-        listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf),
-      )
+    val tree1 = Tree.Node(42, listOf(Tree.Node(1), Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf)), Tree.Leaf))
     val tree2 = Tree.Node(2, listOf(Tree.Leaf, Tree.Node(21), Tree.Leaf))
     val treeSet = persistentSetOf(tree1, tree2)
     val treeSetEncoder = Encoder.set(treeEncoder)
@@ -213,11 +194,7 @@ class EncoderTest {
     data class Outer2(val value: Inner) : Outer()
     data class Outer3(val value: Inner) : Outer()
 
-    val innerEncoder =
-      Encoder.sum<Inner>(
-        Encoder.case<_, Inner1>(Encoder.const(inner1)),
-        Encoder.case<_, Inner2>(Encoder.const(inner2)),
-      )
+    val innerEncoder = Encoder.sum<Inner>(Encoder.case<_, Inner1>(Encoder.const(inner1)), Encoder.case<_, Inner2>(Encoder.const(inner2)))
 
     val outerEncoder =
       Encoder.sum<Outer>(

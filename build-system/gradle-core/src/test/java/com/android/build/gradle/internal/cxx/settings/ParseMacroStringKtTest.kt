@@ -17,133 +17,126 @@
 package com.android.build.gradle.internal.cxx.settings
 
 import com.android.build.gradle.internal.cxx.RandomInstanceGenerator
-import com.android.build.gradle.internal.cxx.model.BasicCmakeMock
-import com.google.common.truth.Truth.*
 import com.android.build.gradle.internal.cxx.settings.Token.*
+import com.google.common.truth.Truth.*
 import org.junit.Test
-
 
 class ParseMacroStringKtTest {
 
-    @Test
-    fun `simple macro`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("\${macro}") { tokens += it }
-        assertThat(tokens).hasSize(1)
-        assertThat(tokens[0] is MacroToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("macro")
+  @Test
+  fun `simple macro`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("\${macro}") { tokens += it }
+    assertThat(tokens).hasSize(1)
+    assertThat(tokens[0] is MacroToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("macro")
+  }
+
+  @Test
+  fun `simple literal`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("literal") { tokens += it }
+    assertThat(tokens).hasSize(1)
+    assertThat(tokens[0] is LiteralToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("literal")
+  }
+
+  @Test
+  fun `literal macro`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("literal\${macro}") { tokens += it }
+    assertThat(tokens).hasSize(2)
+    assertThat(tokens[0] is LiteralToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("literal")
+    assertThat(tokens[1] is MacroToken).isTrue()
+    assertThat(tokens[1].toString()).isEqualTo("macro")
+  }
+
+  @Test
+  fun `macro literal`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("\${macro}literal") { tokens += it }
+    assertThat(tokens).hasSize(2)
+    assertThat(tokens[0] is MacroToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("macro")
+    assertThat(tokens[1] is LiteralToken).isTrue()
+    assertThat(tokens[1].toString()).isEqualTo("literal")
+  }
+
+  @Test
+  fun `dollar dollar`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("\$\$") { tokens += it }
+    assertThat(tokens).hasSize(1)
+    assertThat(tokens[0] is LiteralToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("\$\$")
+  }
+
+  @Test
+  fun `dollar x`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("\$x") { tokens += it }
+    assertThat(tokens).hasSize(1)
+    assertThat(tokens[0] is LiteralToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("\$x")
+  }
+
+  @Test
+  fun `dollar curly x`() {
+    val tokens = mutableListOf<Token>()
+    tokenizeMacroString("\${x") { tokens += it }
+    assertThat(tokens).hasSize(1)
+    assertThat(tokens[0] is LiteralToken).isTrue()
+    assertThat(tokens[0].toString()).isEqualTo("\${x")
+  }
+
+  @Test
+  fun `dollar (found by fuzz)`() {
+    val text = "$"
+    val reconstructed = roundTrip(text)
+    assertThat(reconstructed.toString()).isEqualTo(text)
+  }
+
+  @Test
+  fun `trailing dollar (found by fuzz)`() {
+    val text = "trailing$"
+    val reconstructed = roundTrip(text)
+    assertThat(reconstructed.toString()).isEqualTo(text)
+  }
+
+  @Test
+  fun `trailing dollar curly (found by fuzz)`() {
+    val text = "trailing\${"
+    val reconstructed = roundTrip(text)
+    assertThat(reconstructed.toString()).isEqualTo(text)
+  }
+
+  @Test
+  fun `trailing dollar curly curly (found by fuzz)`() {
+    val text = "trailing\${}"
+    val reconstructed = roundTrip(text)
+    assertThat(reconstructed.toString()).isEqualTo(text)
+  }
+
+  @Test
+  fun fuzz() {
+    RandomInstanceGenerator().strings().forEach { text ->
+      val reconstructed = roundTrip(text)
+      assertThat(reconstructed.toString()).named("Parsing <<$text>>").isEqualTo(text)
     }
+  }
 
-    @Test
-    fun `simple literal`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("literal") { tokens += it }
-        assertThat(tokens).hasSize(1)
-        assertThat(tokens[0] is LiteralToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("literal")
-    }
-
-    @Test
-    fun `literal macro`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("literal\${macro}") { tokens += it }
-        assertThat(tokens).hasSize(2)
-        assertThat(tokens[0] is LiteralToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("literal")
-        assertThat(tokens[1] is MacroToken).isTrue()
-        assertThat(tokens[1].toString()).isEqualTo("macro")
-
-    }
-
-    @Test
-    fun `macro literal`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("\${macro}literal") { tokens += it }
-        assertThat(tokens).hasSize(2)
-        assertThat(tokens[0] is MacroToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("macro")
-        assertThat(tokens[1] is LiteralToken).isTrue()
-        assertThat(tokens[1].toString()).isEqualTo("literal")
-    }
-
-    @Test
-    fun `dollar dollar`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("\$\$") { tokens += it }
-        assertThat(tokens).hasSize(1)
-        assertThat(tokens[0] is LiteralToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("\$\$")
-    }
-
-    @Test
-    fun `dollar x`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("\$x") { tokens += it }
-        assertThat(tokens).hasSize(1)
-        assertThat(tokens[0] is LiteralToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("\$x")
-    }
-
-    @Test
-    fun `dollar curly x`() {
-        val tokens = mutableListOf<Token>()
-        tokenizeMacroString("\${x") { tokens += it }
-        assertThat(tokens).hasSize(1)
-        assertThat(tokens[0] is LiteralToken).isTrue()
-        assertThat(tokens[0].toString()).isEqualTo("\${x")
-    }
-
-    @Test
-    fun `dollar (found by fuzz)`() {
-        val text = "$"
-        val reconstructed = roundTrip(text)
-        assertThat(reconstructed.toString()).isEqualTo(text)
-    }
-
-    @Test
-    fun `trailing dollar (found by fuzz)`() {
-        val text = "trailing$"
-        val reconstructed = roundTrip(text)
-        assertThat(reconstructed.toString()).isEqualTo(text)
-    }
-
-    @Test
-    fun `trailing dollar curly (found by fuzz)`() {
-        val text = "trailing\${"
-        val reconstructed = roundTrip(text)
-        assertThat(reconstructed.toString()).isEqualTo(text)
-    }
-
-    @Test
-    fun `trailing dollar curly curly (found by fuzz)`() {
-        val text = "trailing\${}"
-        val reconstructed = roundTrip(text)
-        assertThat(reconstructed.toString()).isEqualTo(text)
-    }
-
-    @Test
-    fun fuzz() {
-        RandomInstanceGenerator()
-            .strings()
-            .forEach { text ->
-                val reconstructed = roundTrip(text)
-                assertThat(reconstructed.toString())
-                    .named("Parsing <<$text>>")
-                    .isEqualTo(text)
-            }
-    }
-
-    private fun roundTrip(text: String): StringBuilder {
-        val reconstructed = StringBuilder()
-        tokenizeMacroString(text) {
-            when (it) {
-                is LiteralToken -> {
-                    assertThat(it.literal).isNotEmpty()
-                    reconstructed.append(it.literal)
-                }
-                is MacroToken -> reconstructed.append("\${${it.macro}}")
-            }
+  private fun roundTrip(text: String): StringBuilder {
+    val reconstructed = StringBuilder()
+    tokenizeMacroString(text) {
+      when (it) {
+        is LiteralToken -> {
+          assertThat(it.literal).isNotEmpty()
+          reconstructed.append(it.literal)
         }
-        return reconstructed
+        is MacroToken -> reconstructed.append("\${${it.macro}}")
+      }
     }
+    return reconstructed
+  }
 }

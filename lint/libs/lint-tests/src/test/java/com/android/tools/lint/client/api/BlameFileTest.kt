@@ -171,11 +171,7 @@ class BlameFileTest {
         "\t\tINJECTED from \${ROOT}/app/src/main/AndroidManifest.xml\n")
     blameLog = blameLog.replace("\${ROOT}", root.path)
 
-    val blameFile =
-      TestFile()
-        .to("app/build/outputs/logs/manifest-merger-debug-report.txt")
-        .withSource(blameLog)
-        .createFile(root)
+    val blameFile = TestFile().to("app/build/outputs/logs/manifest-merger-debug-report.txt").withSource(blameLog).createFile(root)
 
     val file = BlameFile.parse(blameFile)
     assertThat(file).isNotNull()

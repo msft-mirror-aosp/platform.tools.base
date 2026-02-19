@@ -35,130 +35,101 @@ import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-/**
- * [AnalyticsProfileWriter] is used to initialize analytics library, write analytics data and
- * de-initialize analytics library.
- */
+/** [AnalyticsProfileWriter] is used to initialize analytics library, write analytics data and de-initialize analytics library. */
 class AnalyticsProfileWriter {
 
-    // Append a random value to avoid collision on output file name. The consumer of those files
-    // only care about the directory not the exact file name.
-    private val random = UUID.randomUUID().toString()
+  // Append a random value to avoid collision on output file name. The consumer of those files
+  // only care about the directory not the exact file name.
+  private val random = UUID.randomUUID().toString()
 
-    private val profileFileName = DateTimeFormatter.ofPattern(
-        "'profile-'yyyy-MM-dd-HH-mm-ss-SSS'-$random.rawproto'", Locale.US)
-    private val studioEventFileName = DateTimeFormatter.ofPattern(
-        "'studioEvent-'yyyy-MM-dd-HH-mm-ss-SSS'-$random.trk'", Locale.US)
-    private val scheduledExecutorService: ScheduledExecutorService
-            = Executors.newScheduledThreadPool(1)
+  private val profileFileName = DateTimeFormatter.ofPattern("'profile-'yyyy-MM-dd-HH-mm-ss-SSS'-$random.rawproto'", Locale.US)
+  private val studioEventFileName = DateTimeFormatter.ofPattern("'studioEvent-'yyyy-MM-dd-HH-mm-ss-SSS'-$random.trk'", Locale.US)
+  private val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
 
-    fun writeAndFinish(
-        profile: GradleBuildProfile,
-        events: List<AndroidStudioEvent.Builder>,
-        profileDir: File?,
-        enableProfileJson: Boolean
-    ) {
-        if (profileDir == null) {
-            scheduledExecutorService.submit {
-                writeAnalytics(
-                    profile,
-                    events,
-                    enableProfileJson,
-                    profileDir
-                )
-            }
-        } else {
-            writeAnalytics(
-                profile,
-                events,
-                enableProfileJson,
-                profileDir
-            )
+  fun writeAndFinish(profile: GradleBuildProfile, events: List<AndroidStudioEvent.Builder>, profileDir: File?, enableProfileJson: Boolean) {
+    if (profileDir == null) {
+      scheduledExecutorService.submit { writeAnalytics(profile, events, enableProfileJson, profileDir) }
+    } else {
+      writeAnalytics(profile, events, enableProfileJson, profileDir)
+    }
+  }
+
+  private fun writeAnalytics(
+    profile: GradleBuildProfile,
+    events: List<AndroidStudioEvent.Builder>,
+    enableChromeTracingOutput: Boolean,
+    profileDir: File?,
+  ) {
+    synchronized(gate) {
+      // UsageTracker is initialized when analytics service instance is created but we still
+      // have to make sure it is initialized here because another analytics service instance
+      // might de-initialize UsageTracker in the context of composite build.
+      initializeUsageTracker()
+
+      UsageTracker.log(
+        AndroidStudioEvent.newBuilder()
+          .setCategory(AndroidStudioEvent.EventCategory.GRADLE)
+          .setKind(AndroidStudioEvent.EventKind.GRADLE_BUILD_PROFILE)
+          .setGradleBuildProfile(profile)
+          .setJavaProcessStats(CommonMetricsData.javaProcessStats)
+          .setJvmDetails(CommonMetricsData.jvmDetails)
+      )
+      events.forEach { UsageTracker.log(it) }
+      val outputFile = profileDir?.toPath()?.resolve(profileFileName.format(LocalDateTime.now()))
+      val studioMetricsFile = profileDir?.toPath()?.resolve(studioEventFileName.format(LocalDateTime.now()))
+      if (outputFile != null) {
+        // Write benchmark file into build directory
+        Files.createDirectories(outputFile.parent)
+        BufferedOutputStream(Files.newOutputStream(outputFile, StandardOpenOption.CREATE_NEW)).use { outputStream ->
+          profile.writeTo(outputStream)
         }
-    }
-
-    private fun writeAnalytics(
-        profile: GradleBuildProfile,
-        events: List<AndroidStudioEvent.Builder>,
-        enableChromeTracingOutput: Boolean,
-        profileDir: File?
-    ) {
-        synchronized(gate) {
-            // UsageTracker is initialized when analytics service instance is created but we still
-            // have to make sure it is initialized here because another analytics service instance
-            // might de-initialize UsageTracker in the context of composite build.
-            initializeUsageTracker()
-
-            UsageTracker.log(
-                AndroidStudioEvent.newBuilder()
-                    .setCategory(AndroidStudioEvent.EventCategory.GRADLE)
-                    .setKind(AndroidStudioEvent.EventKind.GRADLE_BUILD_PROFILE)
-                    .setGradleBuildProfile(profile)
-                    .setJavaProcessStats(CommonMetricsData.javaProcessStats)
-                    .setJvmDetails(CommonMetricsData.jvmDetails)
-            )
-            events.forEach {
-                UsageTracker.log(it)
-            }
-            val outputFile
-                    = profileDir?.toPath()?.resolve(profileFileName.format(LocalDateTime.now()))
-            val studioMetricsFile
-                    = profileDir?.toPath()?.resolve(studioEventFileName.format(LocalDateTime.now()))
-            if (outputFile != null) {
-                // Write benchmark file into build directory
-                Files.createDirectories(outputFile.parent)
-                BufferedOutputStream(
-                    Files.newOutputStream(outputFile, StandardOpenOption.CREATE_NEW))
-                    .use { outputStream -> profile.writeTo(outputStream) }
-                if (enableChromeTracingOutput) {
-                    ChromeTracingProfileConverter.toJson(outputFile)
-                }
-            }
-            // Write AndroidStudio event metrics to the trk file.
-            if (studioMetricsFile != null) {
-                BufferedOutputStream(
-                    Files.newOutputStream(studioMetricsFile, StandardOpenOption.CREATE_NEW))
-                    .use { outputStream -> events.forEach { it.build().toByteString().writeTo(outputStream) } }
-            }
-
-            deInitializedAnalytics(profileDir)
+        if (enableChromeTracingOutput) {
+          ChromeTracingProfileConverter.toJson(outputFile)
         }
-    }
-
-    fun initializeUsageTracker() {
-        UsageTracker.initialize(scheduledExecutorService)
-        UsageTracker.setMaxJournalTime(10, TimeUnit.MINUTES)
-        UsageTracker.maxJournalSize = 1000
-    }
-
-    private fun deInitializedAnalytics(profileDir: File?) {
-        UsageTracker.deinitialize()
-        cleanUpExtraChromeTraceDirectory(profileDir)
-        scheduledExecutorService.shutdown()
-    }
-
-    private fun cleanUpExtraChromeTraceDirectory(profileDir: File?) {
-        val profileDirPath = profileDir?.toPath()
-        if (profileDirPath != null) {
-            // Proactively delete the folder containing extra chrome traces to be merged.
-            val extraChromeTracePath = profileDirPath.resolve(
-                ChromeTracingProfileConverter.EXTRA_CHROME_TRACE_DIRECTORY
-            )
-            try {
-                PathUtils.deleteRecursivelyIfExists(extraChromeTracePath)
-            } catch (e: IOException) {
-                StdLogger(StdLogger.Level.WARNING).warning(
-                    "Cannot extra Chrome trace directory $extraChromeTracePath. The generated" +
-                            " Chrome trace file may contain stale data.",
-                    e
-                )
-            }
+      }
+      // Write AndroidStudio event metrics to the trk file.
+      if (studioMetricsFile != null) {
+        BufferedOutputStream(Files.newOutputStream(studioMetricsFile, StandardOpenOption.CREATE_NEW)).use { outputStream ->
+          events.forEach { it.build().toByteString().writeTo(outputStream) }
         }
-    }
+      }
 
-    companion object {
-        // the gate is used to ensure analytics library initialization and de-initialization won't
-        // happen concurrently in different threads.
-        val gate = Any()
+      deInitializedAnalytics(profileDir)
     }
+  }
+
+  fun initializeUsageTracker() {
+    UsageTracker.initialize(scheduledExecutorService)
+    UsageTracker.setMaxJournalTime(10, TimeUnit.MINUTES)
+    UsageTracker.maxJournalSize = 1000
+  }
+
+  private fun deInitializedAnalytics(profileDir: File?) {
+    UsageTracker.deinitialize()
+    cleanUpExtraChromeTraceDirectory(profileDir)
+    scheduledExecutorService.shutdown()
+  }
+
+  private fun cleanUpExtraChromeTraceDirectory(profileDir: File?) {
+    val profileDirPath = profileDir?.toPath()
+    if (profileDirPath != null) {
+      // Proactively delete the folder containing extra chrome traces to be merged.
+      val extraChromeTracePath = profileDirPath.resolve(ChromeTracingProfileConverter.EXTRA_CHROME_TRACE_DIRECTORY)
+      try {
+        PathUtils.deleteRecursivelyIfExists(extraChromeTracePath)
+      } catch (e: IOException) {
+        StdLogger(StdLogger.Level.WARNING)
+          .warning(
+            "Cannot extra Chrome trace directory $extraChromeTracePath. The generated" + " Chrome trace file may contain stale data.",
+            e,
+          )
+      }
+    }
+  }
+
+  companion object {
+    // the gate is used to ensure analytics library initialization and de-initialization won't
+    // happen concurrently in different threads.
+    val gate = Any()
+  }
 }

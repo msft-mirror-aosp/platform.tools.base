@@ -22,7 +22,6 @@ import com.android.tools.idea.wizard.template.impl.activities.common.importViewB
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
 import com.android.tools.idea.wizard.template.renderIf
 
-
 fun fullscreenActivityJava(
   actionBarClassFqcn: String,
   activityClass: String,
@@ -30,15 +29,18 @@ fun fullscreenActivityJava(
   layoutName: String,
   packageName: String,
   superClassFqcn: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
   val applicationPackageBlock = renderIf(applicationPackage != null) { "import ${applicationPackage}.R;" }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
 
   return """package ${packageName};
 
@@ -95,11 +97,11 @@ ${renderIf(isViewBindingSupported) {"""
         mControlsView = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fullscreen_content_controls")};
+          id = "fullscreen_content_controls",)};
         mContentView = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "fullscreen_content")};
+          id = "fullscreen_content",)};
 
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -115,7 +117,7 @@ ${renderIf(isViewBindingSupported) {"""
         ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "dummy_button")}.setOnTouchListener(mDelayHideTouchListener);
+          id = "dummy_button",)}.setOnTouchListener(mDelayHideTouchListener);
     }
 
     @Override

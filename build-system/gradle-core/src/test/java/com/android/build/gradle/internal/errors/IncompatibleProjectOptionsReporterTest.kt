@@ -23,51 +23,42 @@ import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.model.SyncIssue.Companion.TYPE_ANDROID_X_PROPERTY_NOT_ENABLED
 import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.lang.Boolean.FALSE
 import java.lang.Boolean.TRUE
+import org.junit.Test
 
 class IncompatibleProjectOptionsReporterTest {
 
-    private val reporter = FakeSyncIssueReporter()
+  private val reporter = FakeSyncIssueReporter()
 
-    @Test
-    fun `test AndroidX enabled Jetifier enabled, expect success`() {
-        val gradleProperties = ImmutableMap.of<String, Any>(
-            BooleanOption.USE_ANDROID_X.propertyName, TRUE,
-            BooleanOption.ENABLE_JETIFIER.propertyName, TRUE
-        )
-        IncompatibleProjectOptionsReporter.check(
-            ProjectOptions(
-                @Suppress("RemoveExplicitTypeArguments")
-                FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)
-            ),
-            reporter
-        )
-        assertThat(reporter.errors).isEmpty()
-        assertThat(reporter.warnings).isEmpty()
-    }
+  @Test
+  fun `test AndroidX enabled Jetifier enabled, expect success`() {
+    val gradleProperties =
+      ImmutableMap.of<String, Any>(BooleanOption.USE_ANDROID_X.propertyName, TRUE, BooleanOption.ENABLE_JETIFIER.propertyName, TRUE)
+    IncompatibleProjectOptionsReporter.check(
+      ProjectOptions(@Suppress("RemoveExplicitTypeArguments") FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)),
+      reporter,
+    )
+    assertThat(reporter.errors).isEmpty()
+    assertThat(reporter.warnings).isEmpty()
+  }
 
-    @Test
-    fun `test AndroidX disabled Jetifier enabled, expect failure`() {
-        val gradleProperties = ImmutableMap.of<String, Any>(
-            BooleanOption.USE_ANDROID_X.propertyName, FALSE,
-            BooleanOption.ENABLE_JETIFIER.propertyName, TRUE
-        )
-        IncompatibleProjectOptionsReporter.check(
-            ProjectOptions(
-                @Suppress("RemoveExplicitTypeArguments")
-                FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)
-            ),
-            reporter
-        )
-        assertThat(reporter.errors).containsExactly(
-            "AndroidX must be enabled when Jetifier is enabled. To resolve, set" +
-                    " ${BooleanOption.USE_ANDROID_X.propertyName}=true" +
-                    " in your gradle.properties file."
-        )
-        assertThat(reporter.warnings).isEmpty()
-        assertThat(reporter.syncIssues).hasSize(1)
-        assertThat(reporter.syncIssues[0].type).isEqualTo(TYPE_ANDROID_X_PROPERTY_NOT_ENABLED)
-    }
+  @Test
+  fun `test AndroidX disabled Jetifier enabled, expect failure`() {
+    val gradleProperties =
+      ImmutableMap.of<String, Any>(BooleanOption.USE_ANDROID_X.propertyName, FALSE, BooleanOption.ENABLE_JETIFIER.propertyName, TRUE)
+    IncompatibleProjectOptionsReporter.check(
+      ProjectOptions(@Suppress("RemoveExplicitTypeArguments") FakeProviderFactory(FakeProviderFactory.factory, gradleProperties)),
+      reporter,
+    )
+    assertThat(reporter.errors)
+      .containsExactly(
+        "AndroidX must be enabled when Jetifier is enabled. To resolve, set" +
+          " ${BooleanOption.USE_ANDROID_X.propertyName}=true" +
+          " in your gradle.properties file."
+      )
+    assertThat(reporter.warnings).isEmpty()
+    assertThat(reporter.syncIssues).hasSize(1)
+    assertThat(reporter.syncIssues[0].type).isEqualTo(TYPE_ANDROID_X_PROPERTY_NOT_ENABLED)
+  }
 }

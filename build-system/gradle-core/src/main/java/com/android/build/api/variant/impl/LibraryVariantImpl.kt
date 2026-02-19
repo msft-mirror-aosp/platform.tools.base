@@ -51,26 +51,29 @@ import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.BuilderConstants
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import javax.inject.Inject
 
-open class LibraryVariantImpl @Inject constructor(
-    override val variantBuilder: LibraryVariantBuilderImpl,
-    buildFeatureValues: BuildFeatureValues,
-    dslInfo: LibraryVariantDslInfo,
-    variantDependencies: VariantDependencies,
-    variantSources: VariantSources,
-    paths: VariantPathHelper,
-    artifacts: ArtifactsImpl,
-    variantData: BaseVariantData,
-    taskContainer: MutableTaskContainer,
-    internalServices: VariantServices,
-    taskCreationServices: TaskCreationServices,
-    globalTaskCreationConfig: GlobalTaskCreationConfig,
-) : VariantImpl<LibraryVariantDslInfo>(
+open class LibraryVariantImpl
+@Inject
+constructor(
+  override val variantBuilder: LibraryVariantBuilderImpl,
+  buildFeatureValues: BuildFeatureValues,
+  dslInfo: LibraryVariantDslInfo,
+  variantDependencies: VariantDependencies,
+  variantSources: VariantSources,
+  paths: VariantPathHelper,
+  artifacts: ArtifactsImpl,
+  variantData: BaseVariantData,
+  taskContainer: MutableTaskContainer,
+  internalServices: VariantServices,
+  taskCreationServices: TaskCreationServices,
+  globalTaskCreationConfig: GlobalTaskCreationConfig,
+) :
+  VariantImpl<LibraryVariantDslInfo>(
     variantBuilder,
     buildFeatureValues,
     dslInfo,
@@ -83,135 +86,108 @@ open class LibraryVariantImpl @Inject constructor(
     internalServices,
     taskCreationServices,
     globalTaskCreationConfig,
-), LibraryVariant,
-    LibraryCreationConfig,
-    HasDeviceTestsCreationConfig,
-    HasTestFixtures,
-    HasHostTestsCreationConfig,
-    HasHostTests,
-    HasTestSuitesCreationConfig,
-    HasTestSuites,
-    HasUnitTest {
+  ),
+  LibraryVariant,
+  LibraryCreationConfig,
+  HasDeviceTestsCreationConfig,
+  HasTestFixtures,
+  HasHostTestsCreationConfig,
+  HasHostTests,
+  HasTestSuitesCreationConfig,
+  HasTestSuites,
+  HasUnitTest {
 
-    // ---------------------------------------------------------------------------------------------
-    // PUBLIC API
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // PUBLIC API
+  // ---------------------------------------------------------------------------------------------
 
-    override val targetSdk: AndroidVersion by lazy(LazyThreadSafetyMode.NONE) {
-        variantBuilder.targetSdkVersion
-    }
+  override val targetSdk: AndroidVersion by lazy(LazyThreadSafetyMode.NONE) { variantBuilder.targetSdkVersion }
 
-    override val targetSdkVersion: AndroidVersion
-        get() = targetSdk
+  override val targetSdkVersion: AndroidVersion
+    get() = targetSdk
 
-    override val targetSdkOverride: AndroidVersion?
-        get() = variantBuilder.mutableTargetSdk?.sanitize()
+  override val targetSdkOverride: AndroidVersion?
+    get() = variantBuilder.mutableTargetSdk?.sanitize()
 
-    override val applicationId: Provider<String> =
-        internalServices.newProviderBackingDeprecatedApi(
-            type = String::class.java,
-            value = dslInfo.namespace
-        )
+  override val applicationId: Provider<String> =
+    internalServices.newProviderBackingDeprecatedApi(type = String::class.java, value = dslInfo.namespace)
 
+  override val deviceTests: Map<String, DeviceTest>
+    get() = internalDeviceTests
 
-    override val deviceTests: Map<String, DeviceTest>
-        get() = internalDeviceTests
+  override val hostTests: Map<String, HostTestCreationConfig>
+    get() = internalHostTests
 
-    override val hostTests: Map<String, HostTestCreationConfig>
-        get() = internalHostTests
+  override val suites: Map<String, TestSuiteCreationConfig>
+    get() = internalTestSuites.toImmutableMap()
 
-    override val suites: Map<String, TestSuiteCreationConfig>
-        get() = internalTestSuites.toImmutableMap()
+  override var testFixtures: TestFixturesImpl? = null
 
-    override var testFixtures: TestFixturesImpl? = null
+  override val renderscript: Renderscript? by lazy { renderscriptCreationConfig?.renderscript }
 
-    override val renderscript: Renderscript? by lazy {
-        renderscriptCreationConfig?.renderscript
-    }
-
-    override val aarMetadata: AarMetadata =
-        internalServices.newInstance(AarMetadata::class.java).also {
-            it.minCompileSdk.set(
-                if (services.projectOptions[BooleanOption.DEFAULT_MIN_COMPILE_SDK_IN_AAR_METADATA]) {
-                    dslInfo.aarMetadata.minCompileSdk
-                        ?: parseTargetHash(global.compileSdkHashString).apiLevel
-                        ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-                } else {
-                    dslInfo.aarMetadata.minCompileSdk
-                        ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-                }
-            )
-            it.minCompileSdkExtension.set(
-                dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
-            )
-            it.minAgpVersion.set(
-                dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
-            )
-        }
-
-    override val isMinifyEnabled: Boolean
-        get() = variantBuilder.isMinifyEnabled
-
-    override val androidResources: AndroidResourcesImpl =
-        getAndroidResources(dslInfo.androidResourcesDsl.androidResources)
-
-    override val packaging: TestedComponentPackaging by lazy {
-        TestedComponentPackagingImpl(dslInfo.packaging, internalServices)
-    }
-
-    override val consumerProguardFiles: ListProperty<RegularFile> by lazy {
-        optimizationCreationConfig.consumerProguardFiles
-    }
-
-    // ---------------------------------------------------------------------------------------------
-    // INTERNAL API
-    // ---------------------------------------------------------------------------------------------
-
-    override val aarOutputFileName: Property<String> =
-        internalServices.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            services.projectInfo.getProjectBaseName().map {
-                "$it-$baseName.${BuilderConstants.EXT_LIB_ARCHIVE}"
-            }
-        )
-
-    override val debuggable: Boolean = dslInfo.isDebuggable
-
-    override fun <T : Component> createUserVisibleVariantObject(
-        stats: GradleBuildVariant.Builder?
-    ): T =
-        if (stats == null) {
-            this as T
+  override val aarMetadata: AarMetadata =
+    internalServices.newInstance(AarMetadata::class.java).also {
+      it.minCompileSdk.set(
+        if (services.projectOptions[BooleanOption.DEFAULT_MIN_COMPILE_SDK_IN_AAR_METADATA]) {
+          dslInfo.aarMetadata.minCompileSdk ?: parseTargetHash(global.compileSdkHashString).apiLevel ?: DEFAULT_MIN_COMPILE_SDK_VERSION
         } else {
-           services.newInstance(
-                AnalyticsEnabledLibraryVariant::class.java,
-                this,
-                stats
-            ) as T
+          dslInfo.aarMetadata.minCompileSdk ?: DEFAULT_MIN_COMPILE_SDK_VERSION
         }
-
-    override val publishInfo: VariantPublishingInfo? = dslInfo.publishInfo
-
-    override fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig) {
-        internalHostTests[testTypeName] = testComponent
+      )
+      it.minCompileSdkExtension.set(dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION)
+      it.minAgpVersion.set(dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION)
     }
 
-    override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
-        internalDeviceTests[testTypeName] = deviceTest
+  override val isMinifyEnabled: Boolean
+    get() = variantBuilder.isMinifyEnabled
+
+  override val androidResources: AndroidResourcesImpl = getAndroidResources(dslInfo.androidResourcesDsl.androidResources)
+
+  override val packaging: TestedComponentPackaging by lazy { TestedComponentPackagingImpl(dslInfo.packaging, internalServices) }
+
+  override val consumerProguardFiles: ListProperty<RegularFile> by lazy { optimizationCreationConfig.consumerProguardFiles }
+
+  // ---------------------------------------------------------------------------------------------
+  // INTERNAL API
+  // ---------------------------------------------------------------------------------------------
+
+  override val aarOutputFileName: Property<String> =
+    internalServices.newPropertyBackingDeprecatedApi(
+      String::class.java,
+      services.projectInfo.getProjectBaseName().map { "$it-$baseName.${BuilderConstants.EXT_LIB_ARCHIVE}" },
+    )
+
+  override val debuggable: Boolean = dslInfo.isDebuggable
+
+  override fun <T : Component> createUserVisibleVariantObject(stats: GradleBuildVariant.Builder?): T =
+    if (stats == null) {
+      this as T
+    } else {
+      services.newInstance(AnalyticsEnabledLibraryVariant::class.java, this, stats) as T
     }
 
-    override fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig) {
-        internalTestSuites[testName] =  testComponent
-    }
+  override val publishInfo: VariantPublishingInfo? = dslInfo.publishInfo
 
-    override val testSuites: List<TestSuiteCreationConfig>
-        get() = internalTestSuites.values.toImmutableList()
+  override fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig) {
+    internalHostTests[testTypeName] = testComponent
+  }
 
-    // ---------------------------------------------------------------------------------------------
-    // Private stuff
-    // ---------------------------------------------------------------------------------------------
+  override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
+    internalDeviceTests[testTypeName] = deviceTest
+  }
 
-    private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
-    private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
-    private val internalTestSuites = mutableMapOf<String, TestSuiteCreationConfig>()
+  override fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig) {
+    internalTestSuites[testName] = testComponent
+  }
+
+  override val testSuites: List<TestSuiteCreationConfig>
+    get() = internalTestSuites.values.toImmutableList()
+
+  // ---------------------------------------------------------------------------------------------
+  // Private stuff
+  // ---------------------------------------------------------------------------------------------
+
+  private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
+  private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
+  private val internalTestSuites = mutableMapOf<String, TestSuiteCreationConfig>()
 }

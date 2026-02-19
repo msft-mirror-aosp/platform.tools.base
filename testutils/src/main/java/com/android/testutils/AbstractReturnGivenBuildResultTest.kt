@@ -17,56 +17,45 @@
 package com.android.testutils
 
 /**
- * Base class to write given/expect test using one returning the [GivenT] object and one to
- * build the [ResulT] object.
+ * Base class to write given/expect test using one returning the [GivenT] object and one to build the [ResulT] object.
  *
  * A good use case is when the input and the result are a single objects
  *
  * Use with:
  *
- * given {
- *     10
- * }
+ * given { 10 }
  *
- * `when` {
- *     it.pow(2)
- *  }
+ * `when` { it.pow(2) }
  *
- *  expect {
- *     result = 100
- *  }
+ * expect { result = 100 }
  */
-abstract class AbstractReturnGivenBuildResultTest<GivenT, ResultBuilderT: AbstractReturnGivenBuildResultTest.ResultBuilder<ResultT>, ResultT> :
-    AbstractGivenExpectTest<GivenT, ResultT>() {
+abstract class AbstractReturnGivenBuildResultTest<
+  GivenT,
+  ResultBuilderT : AbstractReturnGivenBuildResultTest.ResultBuilder<ResultT>,
+  ResultT,
+> : AbstractGivenExpectTest<GivenT, ResultT>() {
 
-    private var givenAction: (() -> GivenT)? = null
+  private var givenAction: (() -> GivenT)? = null
 
-    /**
-     * Registers an action block returning the given state as a single object
-     */
-    open fun given(action: () -> GivenT) {
-        checkState(TestState.START)
-        givenAction = action
-        state = TestState.GIVEN
-    }
+  /** Registers an action block returning the given state as a single object */
+  open fun given(action: () -> GivenT) {
+    checkState(TestState.START)
+    givenAction = action
+    state = TestState.GIVEN
+  }
 
-    /**
-     * Registers an action block return the expected result values. This also runs the test.
-     */
-    fun expect(resultAction: ResultBuilderT.() -> Unit) {
-        runTest(
-            givenAction?.invoke() ?: noGivenData(),
-            instantiateResulBuilder().also { resultAction.invoke(it) }.toResult()
-        )
-    }
+  /** Registers an action block return the expected result values. This also runs the test. */
+  fun expect(resultAction: ResultBuilderT.() -> Unit) {
+    runTest(givenAction?.invoke() ?: noGivenData(), instantiateResulBuilder().also { resultAction.invoke(it) }.toResult())
+  }
 
-    open fun noGivenData(): GivenT {
-        throw RuntimeException("No given data")
-    }
+  open fun noGivenData(): GivenT {
+    throw RuntimeException("No given data")
+  }
 
-    abstract fun instantiateResulBuilder(): ResultBuilderT
+  abstract fun instantiateResulBuilder(): ResultBuilderT
 
-    interface ResultBuilder<T> {
-        fun toResult(): T
-    }
+  interface ResultBuilder<T> {
+    fun toResult(): T
+  }
 }

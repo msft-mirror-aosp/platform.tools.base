@@ -29,28 +29,18 @@ import org.jetbrains.uast.UFile
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.junit.rules.TemporaryFolder
 
-abstract class UastSourceTransformationTestMode(
-  description: String,
-  testMode: String,
-  folder: String,
-) : SourceTransformationTestMode(description, testMode, folder) {
+abstract class UastSourceTransformationTestMode(description: String, testMode: String, folder: String) :
+  SourceTransformationTestMode(description, testMode, folder) {
 
   /**
-   * Transform the given AST in [root] which corresponds to the given [source] code, returning a
-   * list of edit operations. The [clientData] map can be used to store shared state across the
-   * various test files; the type alias test mode for example will use it to keep track of type
-   * aliases assigned per package.
+   * Transform the given AST in [root] which corresponds to the given [source] code, returning a list of edit operations. The [clientData]
+   * map can be used to store shared state across the various test files; the type alias test mode for example will use it to keep track of
+   * type aliases assigned per package.
    *
-   * The result list should be a mutable list because the test infrastructure will merge these
-   * lists.
+   * The result list should be a mutable list because the test infrastructure will merge these lists.
    */
   @Deprecated("Override the one with a testModeContext instead")
-  abstract fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit>
+  abstract fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit>
 
   @Suppress("DEPRECATION")
   open fun transform(
@@ -62,8 +52,7 @@ abstract class UastSourceTransformationTestMode(
   ): MutableList<Edit> = transform(source, context, root, clientData)
 
   protected open fun isRelevantFile(file: TestFile): Boolean {
-    return file.targetRelativePath.endsWith(SdkConstants.DOT_KT) ||
-      file.targetRelativePath.endsWith(SdkConstants.DOT_JAVA)
+    return file.targetRelativePath.endsWith(SdkConstants.DOT_KT) || file.targetRelativePath.endsWith(SdkConstants.DOT_JAVA)
   }
 
   override fun applies(context: TestModeContext): Boolean {
@@ -79,11 +68,7 @@ abstract class UastSourceTransformationTestMode(
 
   override fun before(context: TestModeContext): Any? {
     for (project in context.projectFolders) {
-      if (
-        project.walk().any {
-          it.path.endsWith(SdkConstants.DOT_KT) || it.path.endsWith(SdkConstants.DOT_JAVA)
-        }
-      ) {
+      if (project.walk().any { it.path.endsWith(SdkConstants.DOT_KT) || it.path.endsWith(SdkConstants.DOT_JAVA) }) {
         if (!processTestFiles(context, project, sdkHome = context.task.sdkHome)) {
           return CANCEL
         }
@@ -130,23 +115,11 @@ abstract class UastSourceTransformationTestMode(
   ): Boolean {
     val temporaryFolder = TemporaryFolder().apply { create() }
     try {
-      val (allContexts, disposable) =
-        parse(
-          temporaryFolder = temporaryFolder,
-          sdkHome = sdkHome,
-          testFiles = testFiles.toTypedArray(),
-        )
+      val (allContexts, disposable) = parse(temporaryFolder = temporaryFolder, sdkHome = sdkHome, testFiles = testFiles.toTypedArray())
       val contexts = allContexts.filter { contextFilter(it) }
       try {
         val context =
-          testModeContext
-            ?: TestModeContext(
-              TestLintTask(),
-              temporaryFolder.root,
-              emptyList(),
-              listOf(contexts.first().project.dir),
-              null,
-            )
+          testModeContext ?: TestModeContext(TestLintTask(), temporaryFolder.root, emptyList(), listOf(contexts.first().project.dir), null)
         return processTestFiles(contexts, context, changeCallback)
       } finally {
         Disposer.dispose(disposable)
@@ -227,21 +200,11 @@ abstract class UastSourceTransformationTestMode(
       return Edit(offset, offset + text.length, "", biasRight, depth)
     }
 
-    fun MutableList<Edit>.surround(
-      beginNode: UExpression,
-      endNode: UExpression,
-      open: String,
-      close: String,
-    ) {
+    fun MutableList<Edit>.surround(beginNode: UExpression, endNode: UExpression, open: String, close: String) {
       surround(beginNode.sourcePsi, endNode.sourcePsi, open, close)
     }
 
-    fun MutableList<Edit>.surround(
-      beginPsi: PsiElement?,
-      endPsi: PsiElement?,
-      open: String,
-      close: String,
-    ) {
+    fun MutableList<Edit>.surround(beginPsi: PsiElement?, endPsi: PsiElement?, open: String, close: String) {
       beginPsi ?: return
       endPsi ?: return
 
@@ -266,23 +229,11 @@ abstract class UastSourceTransformationTestMode(
       add(insert(end, close, biasRight = false))
     }
 
-    fun MutableList<Edit>.unsurround(
-      beginNode: UExpression,
-      endNode: UExpression,
-      open: String,
-      close: String,
-      source: String,
-    ) {
+    fun MutableList<Edit>.unsurround(beginNode: UExpression, endNode: UExpression, open: String, close: String, source: String) {
       unsurround(beginNode.sourcePsi, endNode.sourcePsi, open, close, source)
     }
 
-    fun MutableList<Edit>.unsurround(
-      beginPsi: PsiElement?,
-      endPsi: PsiElement?,
-      open: String,
-      close: String,
-      source: String,
-    ) {
+    fun MutableList<Edit>.unsurround(beginPsi: PsiElement?, endPsi: PsiElement?, open: String, close: String, source: String) {
       beginPsi ?: return
       endPsi ?: return
 

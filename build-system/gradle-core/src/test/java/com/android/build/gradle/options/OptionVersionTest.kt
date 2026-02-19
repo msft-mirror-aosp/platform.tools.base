@@ -22,153 +22,150 @@ import com.android.ide.common.repository.AgpVersion
 import org.junit.Test
 
 /** Tests the validity of the Android Gradle plugin versions associated with the [Option]s. */
-@OptIn(ExperimentalStdlibApi::class)  // For Enum.entries
+@OptIn(ExperimentalStdlibApi::class) // For Enum.entries
 class OptionVersionTest {
 
-    companion object {
+  companion object {
 
-        /**
-         * The AGP stable version that is going to be published (ignoring dot releases for the
-         * purpose of this test).
-         */
-        private val AGP_STABLE_VERSION: AgpVersion = run {
-            val agpVersion = AgpVersion.parse(ANDROID_GRADLE_PLUGIN_VERSION)
-            AgpVersion(agpVersion.major, agpVersion.minor, 0)
-        }
-
-        /**
-         * Deprecated [Option]s that have invalid [DeprecationTarget].
-         *
-         * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP
-         * team and mark it as blocking the RC release.
-         *   - [Insert new bug below]
-         *   - Tracking bug for AGP 9.0: b/433951904
-         *   - Tracking bug for AGP 8.3: b/295183580
-         *   - Tracking bug for AGP 8.2: b/277803353
-         *   - Tracking bug for AGP 8.0: b/243560711
-         */
-        private val INVALID_DEPRECATED_OPTIONS: List<Option<*>> = listOf(
-            BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
-            BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
-            BooleanOption.ENABLE_EMULATOR_CONTROL,
-            BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
-            BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
-            BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
-            BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
-            BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
-        )
-
-        /**
-         * [Option]s that have invalid [FutureStage].
-         *
-         * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP
-         * team and mark it as blocking the RC release.
-         *   - [Insert new bug below]
-         *   - Tracking bug for AGP 9.0: b/433951904
-         *   - Tracking bug for AGP 8.3: b/295183580
-         *   - Tracking bug for AGP 8.2: b/277803353
-         *   - Tracking bug for AGP 8.0: b/243560711
-         */
-        private val OPTIONS_WITH_INVALID_FUTURE_STAGE: List<Option<*>> = listOf(
-            BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
-            BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
-            BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
-            BooleanOption.ENABLE_EMULATOR_CONTROL,
-            BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
-            BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
-            BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
-            BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
-            BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
-            BooleanOption.TEST_SUITE_SUPPORT,
-            BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
-            BooleanOption.DISALLOW_KOTLIN_SOURCE_SETS
-        )
-
+    /** The AGP stable version that is going to be published (ignoring dot releases for the purpose of this test). */
+    private val AGP_STABLE_VERSION: AgpVersion = run {
+      val agpVersion = AgpVersion.parse(ANDROID_GRADLE_PLUGIN_VERSION)
+      AgpVersion(agpVersion.major, agpVersion.minor, 0)
     }
 
-    @Test
-    fun `check deprecated options have removal versions in the future`() {
-        val violatingOptions = getAllOptions()
-            .filter { it.status is Option.Status.Deprecated }
-            .filter {
-                (it.status as Option.Status.Deprecated).deprecationTarget.removalTarget.agpVersion <= AGP_STABLE_VERSION
-            }
+    /**
+     * Deprecated [Option]s that have invalid [DeprecationTarget].
+     *
+     * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP team and mark it as blocking the RC
+     * release.
+     * - [Insert new bug below]
+     * - Tracking bug for AGP 9.0: b/433951904
+     * - Tracking bug for AGP 8.3: b/295183580
+     * - Tracking bug for AGP 8.2: b/277803353
+     * - Tracking bug for AGP 8.0: b/243560711
+     */
+    private val INVALID_DEPRECATED_OPTIONS: List<Option<*>> =
+      listOf(
+        BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
+        BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
+        BooleanOption.ENABLE_EMULATOR_CONTROL,
+        BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
+        BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
+        BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
+        BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
+        BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
+        BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
+      )
 
-        checkViolatingProjectOptions(
-                violatingOptions = violatingOptions,
-                ignoreList = INVALID_DEPRECATED_OPTIONS,
-                requirement = "Deprecated options must have removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
-                suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
-                        "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
-                        "To do that:\n" +
-                        "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATED_OPTIONS`.\n" +
-                        "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353)."
-        )
-    }
+    /**
+     * [Option]s that have invalid [FutureStage].
+     *
+     * @ RELEASE TEAM: If you update this list when upgrading AGP, please file a bug for the AGP team and mark it as blocking the RC
+     * release.
+     * - [Insert new bug below]
+     * - Tracking bug for AGP 9.0: b/433951904
+     * - Tracking bug for AGP 8.3: b/295183580
+     * - Tracking bug for AGP 8.2: b/277803353
+     * - Tracking bug for AGP 8.0: b/243560711
+     */
+    private val OPTIONS_WITH_INVALID_FUTURE_STAGE: List<Option<*>> =
+      listOf(
+        BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM,
+        BooleanOption.ANDROID_TEST_USES_UNIFIED_TEST_PLATFORM,
+        BooleanOption.DISABLE_MINIFY_LOCAL_DEPENDENCIES_FOR_LIBRARIES,
+        BooleanOption.ENABLE_EMULATOR_CONTROL,
+        BooleanOption.ENABLE_RESOURCE_OPTIMIZATIONS,
+        BooleanOption.CUSTOM_SHADER_PATH_REQUIRED,
+        BooleanOption.IDE_DEPLOY_AS_INSTANT_APP,
+        BooleanOption.LINT_ANALYSIS_PER_COMPONENT,
+        BooleanOption.PRIVACY_SANDBOX_SDK_ENABLE_LINT,
+        BooleanOption.TEST_SUITE_SUPPORT,
+        BooleanOption.DEFAULT_ANDROIDX_TEST_RUNNER,
+      )
+  }
 
-    @Test
-    fun `check removed options do not have removed versions in the future`() {
-        val violatingOptions = getAllOptions()
-            .filter { it.status is Option.Status.Removed }
-            .filter {
-                (it.status as Option.Status.Removed).removedVersion.agpVersion > AGP_STABLE_VERSION
-            }
+  @Test
+  fun `check deprecated options have removal versions in the future`() {
+    val violatingOptions =
+      getAllOptions()
+        .filter { it.status is Option.Status.Deprecated }
+        .filter { (it.status as Option.Status.Deprecated).deprecationTarget.removalTarget.agpVersion <= AGP_STABLE_VERSION }
 
-        checkViolatingProjectOptions(
-                violatingOptions = violatingOptions,
-                requirement = "Removed options must not have removed versions in the future."
-        )
-    }
+    checkViolatingProjectOptions(
+      violatingOptions = violatingOptions,
+      ignoreList = INVALID_DEPRECATED_OPTIONS,
+      requirement =
+        "Deprecated options must have removal versions in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
+      suggestion =
+        "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
+          "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
+          "To do that:\n" +
+          "  - Please copy the invalid options shown above to `OptionVersionTest.INVALID_DEPRECATED_OPTIONS`.\n" +
+          "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353).",
+    )
+  }
 
-    @Test
-    fun `check BooleanOptions have FutureStage in the future`() {
-        val violatingOptions = BooleanOption.entries.filter {
-            it.futureStage != null && it.futureStage.version.agpVersion <= AGP_STABLE_VERSION
-        }
+  @Test
+  fun `check removed options do not have removed versions in the future`() {
+    val violatingOptions =
+      getAllOptions()
+        .filter { it.status is Option.Status.Removed }
+        .filter { (it.status as Option.Status.Removed).removedVersion.agpVersion > AGP_STABLE_VERSION }
 
-        checkViolatingProjectOptions(
-            violatingOptions = violatingOptions,
-            ignoreList = OPTIONS_WITH_INVALID_FUTURE_STAGE,
-            requirement = "`BooleanOption`s must have FutureStage in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
-            suggestion = "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
-                    "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
-                    "To do that:\n" +
-                    "  - Please copy the invalid options shown above to `OptionVersionTest.OPTIONS_WITH_INVALID_FUTURE_STAGES`.\n" +
-                    "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353)."
-        )
-    }
+    checkViolatingProjectOptions(
+      violatingOptions = violatingOptions,
+      requirement = "Removed options must not have removed versions in the future.",
+    )
+  }
 
-    private fun getAllOptions(): List<Option<Any>> =
-        BooleanOption.entries +
-                OptionalBooleanOption.entries +
-                StringOption.entries +
-                IntegerOption.entries
+  @Test
+  fun `check BooleanOptions have FutureStage in the future`() {
+    val violatingOptions =
+      BooleanOption.entries.filter { it.futureStage != null && it.futureStage.version.agpVersion <= AGP_STABLE_VERSION }
+
+    checkViolatingProjectOptions(
+      violatingOptions = violatingOptions,
+      ignoreList = OPTIONS_WITH_INVALID_FUTURE_STAGE,
+      requirement =
+        "`BooleanOption`s must have FutureStage in the future. (@ RELEASE TEAM: To handle this error, please read the full error message.) ",
+      suggestion =
+        "@ RELEASE TEAM: This error usually happens when we upgrade AGP version.\n" +
+          "We don't have to fix this issue immediately, but we should fix it before the RC release.\n" +
+          "To do that:\n" +
+          "  - Please copy the invalid options shown above to `OptionVersionTest.OPTIONS_WITH_INVALID_FUTURE_STAGES`.\n" +
+          "  - Please file a bug for the AGP team and mark it as blocking the RC release (example bug: b/277803353).",
+    )
+  }
+
+  private fun getAllOptions(): List<Option<Any>> =
+    BooleanOption.entries + OptionalBooleanOption.entries + StringOption.entries + IntegerOption.entries
 }
 
 internal fun checkViolatingProjectOptions(
-        violatingOptions: List<Option<*>>,
-        ignoreList: List<Option<*>> = emptyList(),
-        requirement: String,
-        suggestion: String? = null) {
-    val newViolations = violatingOptions - ignoreList.toSet()
-    check(newViolations.isEmpty()) {
-        "$requirement\n" +
-                "The following options do not meet that requirement:\n" +
-                "```\n" +
-                newViolations.joinToString(",\n") { "${it.javaClass.simpleName}.$it" } + "\n" +
-                "```\n" +
-                (suggestion
-                    ?: "If this is intended, copy the above code snippet to the ignore list of this test.")
-    }
+  violatingOptions: List<Option<*>>,
+  ignoreList: List<Option<*>> = emptyList(),
+  requirement: String,
+  suggestion: String? = null,
+) {
+  val newViolations = violatingOptions - ignoreList.toSet()
+  check(newViolations.isEmpty()) {
+    "$requirement\n" +
+      "The following options do not meet that requirement:\n" +
+      "```\n" +
+      newViolations.joinToString(",\n") { "${it.javaClass.simpleName}.$it" } +
+      "\n" +
+      "```\n" +
+      (suggestion ?: "If this is intended, copy the above code snippet to the ignore list of this test.")
+  }
 
-    val fixedViolations = ignoreList - violatingOptions.toSet()
-    check(fixedViolations.isEmpty()) {
-        "$requirement\n" +
-                "The following options have met that requirement:\n" +
-                "```\n" +
-                fixedViolations.joinToString(",\n") { "${it.javaClass.simpleName}.$it" } + "\n" +
-                "```\n" +
-                "Remove them from the ignore list of this test."
-    }
+  val fixedViolations = ignoreList - violatingOptions.toSet()
+  check(fixedViolations.isEmpty()) {
+    "$requirement\n" +
+      "The following options have met that requirement:\n" +
+      "```\n" +
+      fixedViolations.joinToString(",\n") { "${it.javaClass.simpleName}.$it" } +
+      "\n" +
+      "```\n" +
+      "Remove them from the ignore list of this test."
+  }
 }

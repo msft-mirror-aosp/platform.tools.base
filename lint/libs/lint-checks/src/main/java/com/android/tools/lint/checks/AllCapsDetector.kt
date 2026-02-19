@@ -31,9 +31,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.XmlContext
 import org.w3c.dom.Attr
 
-/**
- * Checks for the combination of textAllCaps=true and using markup in the string being formatted.
- */
+/** Checks for the combination of textAllCaps=true and using markup in the string being formatted. */
 /** Constructs an [AllCapsDetector] */
 class AllCapsDetector : LayoutDetector() {
   companion object Issues {
@@ -51,12 +49,7 @@ class AllCapsDetector : LayoutDetector() {
         category = Category.TYPOGRAPHY,
         priority = 8,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(
-            AllCapsDetector::class.java,
-            Scope.ALL_RESOURCES_SCOPE,
-            Scope.RESOURCE_FILE_SCOPE,
-          ),
+        implementation = Implementation(AllCapsDetector::class.java, Scope.ALL_RESOURCES_SCOPE, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 

@@ -26,7 +26,6 @@ public class SeparateTestModuleWithVariantsTest {
     @Rule
     public GradleTestProject project =
             GradleTestProject.builder().fromTestProject("separateTestModule")
-                    .addGradleProperties(BooleanOption.USE_ANDROID_X.getPropertyName() + "=true")
                     .create();
 
     @Before

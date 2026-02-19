@@ -21,18 +21,16 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class WindowManagerCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "wm"
-) {
+class WindowManagerCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "wm") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
-    }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
+  }
 }

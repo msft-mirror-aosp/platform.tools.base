@@ -16,17 +16,15 @@
 package com.android.builder.model.v2.ide
 
 interface TestSuiteTarget {
-    val name: String
+  val name: String
 
-    /**
-     * Returns the name of the task used to run the test suite
-     *
-     * @return name of the task used to run the tests.
-     */
-    val testTaskName: String
+  /**
+   * Returns the name of the task used to run the test suite
+   *
+   * @return name of the task used to run the tests.
+   */
+  val testTaskName: String
 
-    /**
-     * List of targeted device.
-     */
-    val targetedDevices: Collection<String>
+  /** List of targeted device. */
+  val targetedDevices: Collection<String>
 }

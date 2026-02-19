@@ -15,17 +15,13 @@
  */
 package com.android.adblib
 
-/**
- * Coroutine equivalent to [java.io.Reader], i.e. allows reading character streams
- * asynchronously.
- */
+/** Coroutine equivalent to [java.io.Reader], i.e. allows reading character streams asynchronously. */
 abstract class AdbChannelReader : AutoCloseable {
 
-    /**
-     * Reads a line of text, or returns `null` if the end of the
-     * stream has been reached without reading any characters.
-     *
-     * See [java.io.BufferedReader.readLine].
-     */
-    abstract suspend fun readLine(): String?
+  /**
+   * Reads a line of text, or returns `null` if the end of the stream has been reached without reading any characters.
+   *
+   * See [java.io.BufferedReader.readLine].
+   */
+  abstract suspend fun readLine(): String?
 }

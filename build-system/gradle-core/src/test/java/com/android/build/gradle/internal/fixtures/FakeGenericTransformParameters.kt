@@ -20,8 +20,7 @@ import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
 
-class FakeGenericTransformParameters constructor(@Internal val name:String? = "project_name"): GenericTransformParameters {
-    override val projectName: Property<String>
-        get() = FakeGradleProperty(name)
-
+class FakeGenericTransformParameters constructor(@Internal val name: String? = "project_name") : GenericTransformParameters {
+  override val projectName: Property<String>
+    get() = FakeGradleProperty(name)
 }

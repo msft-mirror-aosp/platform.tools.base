@@ -42,8 +42,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** A reporter which emits lint results into an HTML report. */
-class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
-  Reporter(client, output) {
+class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : Reporter(client, output) {
 
   private val writer: Writer
   private val flags: LintCliFlags
@@ -63,9 +62,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
     val extra = computeExtraIssues(registry)
     startReport(stats)
     writeNavigationHeader(stats) {
-      append(
-        "      <a class=\"mdl-navigation__link\" href=\"#overview\"><i class=\"material-icons\">dashboard</i>Overview</a>\n"
-      )
+      append("      <a class=\"mdl-navigation__link\" href=\"#overview\"><i class=\"material-icons\">dashboard</i>Overview</a>\n")
       for (warnings in related) {
         val first = warnings[0]
         val anchor = first.issue.id
@@ -81,12 +78,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
     }
     if (incidents.isNotEmpty()) {
       append("\n<a name=\"overview\"></a>\n")
-      writeCard(
-        "Overview",
-        true,
-        "OverviewCard",
-        appender = { writeOverview(related, missing.size, extra.size) },
-      )
+      writeCard("Overview", true, "OverviewCard", appender = { writeOverview(related, missing.size, extra.size) })
       var previousCategory: Category? = null
       for (warnings in related) {
         val category = warnings[0].issue.category
@@ -107,9 +99,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
     finishReport()
     writeReport()
     val output = output
-    if (
-      !client.flags.isQuiet && output != null && (stats.errorCount > 0 || stats.warningCount > 0)
-    ) {
+    if (!client.flags.isQuiet && output != null && (stats.errorCount > 0 || stats.warningCount > 0)) {
       val url = SdkUtils.fileToUrlString(output.absoluteFile)
       println("Wrote HTML report to $url")
     }
@@ -158,11 +148,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
         // inspect 50+ individual reports of errors of the same type
         if (count >= MAX_COUNT) {
           if (count == MAX_COUNT) {
-            append(
-              "<br/><b>NOTE: " +
-                (incidents.size - count).toString() +
-                " results omitted.</b><br/><br/>"
-            )
+            append("<br/><b>NOTE: " + (incidents.size - count).toString() + " results omitted.</b><br/><br/>")
           }
           count++
           continue
@@ -176,13 +162,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
           append("Link\" onclick=\"reveal('")
           append(id)
           append("');\" />")
-          append(
-            String.format(
-              Locale.getDefault(),
-              "+ %1\$d More Occurrences...",
-              incidents.size - SHOWN_COUNT,
-            )
-          )
+          append(String.format(Locale.getDefault(), "+ %1\$d More Occurrences...", incidents.size - SHOWN_COUNT))
           append("</button>\n")
           append("<div id=\"")
           append(id)
@@ -223,13 +203,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
         // Insert surrounding code block window
         val fileContents = if (incident.line >= 0) client.getSourceText(incident.file) else null
         if (fileContents != null && incident.startOffset != -1 && incident.endOffset != -1) {
-          appendCodeBlock(
-            incident.file,
-            fileContents,
-            incident.startOffset,
-            incident.endOffset,
-            incident.severity,
-          )
+          appendCodeBlock(incident.file, fileContents, incident.startOffset, incident.endOffset, incident.severity)
         }
         append('\n')
         if (incident.location.secondary != null) {
@@ -361,13 +335,7 @@ class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) :
   <header class="mdl-layout__header">
     <div class="mdl-layout__header-row">
       <span class="mdl-layout-title">$title: """ +
-        describeCounts(
-          stats.errorCount,
-          stats.warningCount,
-          stats.hintCount,
-          comma = false,
-          capitalize = true,
-        ) +
+        describeCounts(stats.errorCount, stats.warningCount, stats.hintCount, comma = false, capitalize = true) +
         "</span>\n" +
         "      <div class=\"mdl-layout-spacer\"></div>\n" +
         "      <nav class=\"mdl-navigation mdl-layout--large-screen-only\">"
@@ -538,17 +506,14 @@ document.getElementById(id).style.display = 'none';
     val vendor = issue.vendor ?: issue.registry?.vendor
     if (vendor === AOSP_VENDOR) {
       if (hasAutoFix(issue)) {
-        append(
-          "Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA."
-        )
+        append("Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.")
         append("<br>\n")
       }
     }
     if (includeSuppressInfo) {
       append(
         String.format(
-          "To suppress this error, use the issue id \"%1\$s\" as explained in the " +
-            "%2\$sSuppressing Warnings and Errors%3\$s section.",
+          "To suppress this error, use the issue id \"%1\$s\" as explained in the " + "%2\$sSuppressing Warnings and Errors%3\$s section.",
           issue.id,
           "<a href=\"#SuppressInfo\">",
           "</a>",
@@ -566,9 +531,7 @@ document.getElementById(id).style.display = 'none';
     append("\n</div>\n") // class=explanation
   }
 
-  /**
-   * Returns the list of extra issues that were included in analysis (those that are not built in).
-   */
+  /** Returns the list of extra issues that were included in analysis (those that are not built in). */
   private fun computeExtraIssues(registry: IssueRegistry): List<Issue> {
     val issues = registry.issues
     return issues.filter { issue ->
@@ -577,10 +540,7 @@ document.getElementById(id).style.display = 'none';
     }
   }
 
-  private fun computeMissingIssues(
-    registry: IssueRegistry,
-    incidents: List<Incident>,
-  ): Map<Issue, String> {
+  private fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
     val projects: MutableSet<Project> = HashSet()
     val seen: MutableSet<Issue> = HashSet()
     for (incident in incidents) {
@@ -596,9 +556,7 @@ document.getElementById(id).style.display = 'none';
           map[issue] = "Command line flag"
           continue
         }
-        if (
-          !issue.isEnabledByDefault() && !client.isAllEnabled && !client.isExplicitlyEnabled(issue)
-        ) {
+        if (!issue.isEnabledByDefault() && !client.isAllEnabled && !client.isExplicitlyEnabled(issue)) {
           map[issue] = "Default"
           continue
         }
@@ -630,12 +588,12 @@ document.getElementById(id).style.display = 'none';
       ) {
         append(
           """
-                    One or more issues were not run by lint, either
-                    because the check is not enabled by default, or because
-                    it was disabled with a command line flag or via one or
-                    more <code>lint.xml</code> configuration files in the project directories.
+          One or more issues were not run by lint, either
+          because the check is not enabled by default, or because
+          it was disabled with a command line flag or via one or
+          more <code>lint.xml</code> configuration files in the project directories.
 
-                    """
+          """
             .trimIndent()
         )
         append("<div id=\"SuppressedIssues\" style=\"display: none;\">")
@@ -651,13 +609,7 @@ document.getElementById(id).style.display = 'none';
           append("<div class=\"issueSeparator\"></div>\n")
           append("</div>\n")
           val disabledBy = missing[issue]
-          writeIssueMetadata(
-            issue,
-            disabledBy,
-            hide = false,
-            includeSuppressInfo = false,
-            includeVendorInfo = false,
-          )
+          writeIssueMetadata(issue, disabledBy, hide = false, includeSuppressInfo = false, includeVendorInfo = false)
           append("</div>\n")
         }
         append("</div>\n") // SuppressedIssues
@@ -676,13 +628,13 @@ document.getElementById(id).style.display = 'none';
       ) {
         append(
           """
-                    This card lists all the extra checks run by lint, provided from libraries,
-                    build configuration and extra flags. This is included to help you verify
-                    whether a particular check is included in analysis when configuring builds.
-                    (Note that the list does not include the hundreds of built-in checks into lint,
-                    only additional ones.)
+          This card lists all the extra checks run by lint, provided from libraries,
+          build configuration and extra flags. This is included to help you verify
+          whether a particular check is included in analysis when configuring builds.
+          (Note that the list does not include the hundreds of built-in checks into lint,
+          only additional ones.)
 
-                    """
+          """
             .trimIndent()
         )
         append("<div id=\"IncludedIssues\" style=\"display: none;\">")
@@ -695,13 +647,7 @@ document.getElementById(id).style.display = 'none';
           append(issue.id)
           append("<div class=\"issueSeparator\"></div>\n")
           append("</div>\n")
-          writeIssueMetadata(
-            issue,
-            null,
-            hide = false,
-            includeSuppressInfo = false,
-            includeVendorInfo = true,
-          )
+          writeIssueMetadata(issue, null, hide = false, includeSuppressInfo = false, includeVendorInfo = true)
           append("</div>\n")
         }
         append("</div>\n") // ExtraIssues
@@ -827,13 +773,7 @@ ${action.title}</button>"""
   private var cardNumber = 0
   private val usedCardIds: MutableSet<String> = mutableSetOf()
 
-  private fun writeCard(
-    title: String?,
-    dismissible: Boolean,
-    cardId: String?,
-    actions: List<Action> = emptyList(),
-    appender: () -> Unit,
-  ) {
+  private fun writeCard(title: String?, dismissible: Boolean, cardId: String?, actions: List<Action> = emptyList(), appender: () -> Unit) {
     @Suppress("NAME_SHADOWING")
     val cardId =
       cardId
@@ -871,21 +811,12 @@ ${action.title}</button>"""
     // Clean up super-long and ugly paths to cache files such as
     //    ../../../../../../.gradle/caches/transforms-1/files-1.1/timber-4.6.0.aar/
     //      8fe9cb22a46026bb3bd0c9d976e2897a/jars/lint.jar
-    if (
-      displayPath.contains("transforms-1") &&
-        displayPath.endsWith("lint.jar") &&
-        displayPath.contains(".aar")
-    ) {
+    if (displayPath.contains("transforms-1") && displayPath.endsWith("lint.jar") && displayPath.contains(".aar")) {
       val aarIndex = displayPath.indexOf(".aar")
       val startWin = displayPath.lastIndexOf('\\', aarIndex) + 1
       val startUnix = displayPath.lastIndexOf('/', aarIndex) + 1
       val start = max(startWin, startUnix)
-      displayPath =
-        (displayPath.substring(start, aarIndex + 4) +
-          File.separator +
-          "..." +
-          File.separator +
-          "lint.jar")
+      displayPath = (displayPath.substring(start, aarIndex + 4) + File.separator + "..." + File.separator + "lint.jar")
     }
     append(displayPath)
     if (url != null) {
@@ -1029,13 +960,7 @@ ${action.title}</button>"""
   }
 
   /** Insert syntax highlighted XML. */
-  private fun appendCodeBlock(
-    file: File,
-    contents: CharSequence,
-    startOffset: Int,
-    endOffset: Int,
-    severity: Severity,
-  ) {
+  private fun appendCodeBlock(file: File, contents: CharSequence, startOffset: Int, endOffset: Int, severity: Severity) {
     val builder = builder ?: return
     val start = max(0, startOffset)
     val end = max(start, min(endOffset, contents.length))
@@ -1055,19 +980,13 @@ ${action.title}</button>"""
       }
     }
 
-    /**
-     * Maximum number of warnings allowed for a single issue type before we split up and hide all
-     * but the first [.SHOWN_COUNT] items.
-     */
+    /** Maximum number of warnings allowed for a single issue type before we split up and hide all but the first [.SHOWN_COUNT] items. */
     private var SPLIT_LIMIT = 0
 
     /** Maximum number of incidents shown per issue type */
     private var MAX_COUNT = 0
 
-    /**
-     * When a warning has at least [SPLIT_LIMIT] items, then we show the following number of items
-     * before the "Show more" button/link.
-     */
+    /** When a warning has at least [SPLIT_LIMIT] items, then we show the following number of items before the "Show more" button/link. */
     private var SHOWN_COUNT = 0
 
     /** Number of lines to show around code snippets. */
@@ -1078,17 +997,15 @@ ${action.title}</button>"""
     private var USE_WAVY_UNDERLINES_FOR_ERRORS = false
 
     /**
-     * Whether we should try to use browser support for wavy underlines. Underlines are not working
-     * well; see https://bugs.chromium.org/p/chromium/issues/detail?id=165462 for when to re-enable.
-     * If false we're using a CSS trick with repeated images instead. (Only applies if
-     * [USE_WAVY_UNDERLINES_FOR_ERRORS] is true.)
+     * Whether we should try to use browser support for wavy underlines. Underlines are not working well; see
+     * https://bugs.chromium.org/p/chromium/issues/detail?id=165462 for when to re-enable. If false we're using a CSS trick with repeated
+     * images instead. (Only applies if [USE_WAVY_UNDERLINES_FOR_ERRORS] is true.)
      */
     private const val USE_CSS_DECORATION_FOR_WAVY_UNDERLINES = false
     private var preferredThemeName = "light"
 
     /**
-     * CSS themes for syntax highlighting. The following classes map to an IntelliJ color theme like
-     * this:
+     * CSS themes for syntax highlighting. The following classes map to an IntelliJ color theme like this:
      * * pre.errorlines: General > Text > Default Text
      * * .prefix: XML > Namespace Prefix
      * * .attribute: XML > Attribute name
@@ -1101,8 +1018,7 @@ ${action.title}</button>"""
      * * .number: Java > Numbers
      * * .keyword: Java > Keyword
      * * .caretline: General > Editor > Caret row (Background)
-     * * .lineno: For color, General > Code > Line number, Foreground, and for background-color,
-     *   Editor > Gutter background
+     * * .lineno: For color, General > Code > Line number, Foreground, and for background-color, Editor > Gutter background
      * * .error: General > Errors and Warnings > Error
      * * .warning: General > Errors and Warnings > Warning
      * * text-decoration: none;\n"
@@ -1340,10 +1256,7 @@ pre.errorlines {
 
     private var cssSyntaxColors: String = "" // set by initializePreferences() called from init { }
 
-    /**
-     * Stylesheet for the HTML report. Note that the [LintSyntaxHighlighter] also depends on these
-     * class names.
-     */
+    /** Stylesheet for the HTML report. Note that the [LintSyntaxHighlighter] also depends on these class names. */
     val cssStyles: String
       get() =
         """section.section--center {
@@ -1432,10 +1345,7 @@ $cssSyntaxColors.overview {
 }
 """
 
-    /**
-     * Sorts the list of warnings into a list of lists where each list contains warnings for the
-     * same base issue type.
-     */
+    /** Sorts the list of warnings into a list of lists where each list contains warnings for the same base issue type. */
     private fun computeIssueLists(issues: List<Incident>): List<List<Incident>> {
       var previousIssue: Issue? = null
       val related: MutableList<List<Incident>> = ArrayList()
@@ -1461,10 +1371,7 @@ $cssSyntaxColors.overview {
       return "explanation" + issue.id
     }
 
-    /**
-     * Returns the density for the given file, if known (e.g. in a density folder, such as
-     * drawable-mdpi.
-     */
+    /** Returns the density for the given file, if known (e.g. in a density folder, such as drawable-mdpi. */
     private fun getDensity(file: File): Int {
       val parent = file.parentFile
       if (parent != null) {
@@ -1488,8 +1395,7 @@ $cssSyntaxColors.overview {
     }
 
     fun initializePreferences() {
-      val preferences =
-        System.getenv(REPORT_PREFERENCE_ENV_VAR) ?: System.getProperty(REPORT_PREFERENCE_PROPERTY)
+      val preferences = System.getenv(REPORT_PREFERENCE_ENV_VAR) ?: System.getProperty(REPORT_PREFERENCE_PROPERTY)
       var codeWindowSize = 3
       var splitLimit = 8
       var maxCount = 50

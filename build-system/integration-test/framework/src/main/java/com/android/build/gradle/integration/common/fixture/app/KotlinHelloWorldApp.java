@@ -81,6 +81,7 @@ public class KotlinHelloWorldApp extends HelloWorldApp {
                                 + "    buildToolsVersion = libs.versions.buildToolsVersion.get()\n"
                                 + "    defaultConfig {\n"
                                 + "        minSdkVersion libs.versions.supportLibMinSdk.get()\n"
+                                + "        targetSdkVersion libs.versions.latestCompileSdk.get().toInteger()\n"
                                 + "        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'\n"
                                 + "    }\n"
                                 + "    sourceSets {\n"

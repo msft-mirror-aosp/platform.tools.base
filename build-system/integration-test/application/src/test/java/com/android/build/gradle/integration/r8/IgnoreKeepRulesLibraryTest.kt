@@ -29,16 +29,15 @@ import org.junit.Test
 
 class IgnoreKeepRulesLibraryTest {
 
-    @get:Rule
-    val lib = GradleTestProject.builder()
-            .withAdditionalMavenRepo(mavenRepo)
-            .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-            .create()
+  @get:Rule
+  val lib =
+    GradleTestProject.builder().withAdditionalMavenRepo(mavenRepo).fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(lib.buildFile,
-                """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      lib.buildFile,
+      """
                 android {
                     buildTypes {
                         debug {
@@ -56,66 +55,68 @@ class IgnoreKeepRulesLibraryTest {
                     implementation '$LIB_FOO_ID'
                     implementation '$LIB_BAR_ID'
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testBasicMergingAndFiltering() {
-        lib.executor().run(":minifyPaidDebugWithR8")
-        var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
-        assertThat(configuration).contains(LIB_FOO_RULE)
-        assertThat(configuration).contains(LIB_BAR_RULE)
+  @Test
+  fun testBasicMergingAndFiltering() {
+    lib.executor().run(":minifyPaidDebugWithR8")
+    var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+    assertThat(configuration).contains(LIB_FOO_RULE)
+    assertThat(configuration).contains(LIB_BAR_RULE)
 
-        ignoreProguardArtifact(BUILD_TYPES, "debug", LIB_BAR_ID)
-        ignoreProguardArtifact(PRODUCT_FLAVORS, "paid", LIB_FOO_ID)
+    ignoreProguardArtifact(BUILD_TYPES, "debug", LIB_BAR_ID)
+    ignoreProguardArtifact(PRODUCT_FLAVORS, "paid", LIB_FOO_ID)
 
-        lib.executor().run(":minifyPaidDebugWithR8")
-        configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+    lib.executor().run(":minifyPaidDebugWithR8")
+    configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
 
-        assertThat(configuration).doesNotContain(LIB_BAR_RULE)
-        assertThat(configuration).doesNotContain(LIB_FOO_RULE)
-    }
+    assertThat(configuration).doesNotContain(LIB_BAR_RULE)
+    assertThat(configuration).doesNotContain(LIB_FOO_RULE)
+  }
 
-    @Test
-    fun testIgnoreAllKeepRules() {
-        lib.executor().run(":minifyPaidDebugWithR8")
-        var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
-        assertThat(configuration).contains(LIB_FOO_RULE)
-        assertThat(configuration).contains(LIB_BAR_RULE)
+  @Test
+  fun testIgnoreAllKeepRules() {
+    lib.executor().run(":minifyPaidDebugWithR8")
+    var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+    assertThat(configuration).contains(LIB_FOO_RULE)
+    assertThat(configuration).contains(LIB_BAR_RULE)
 
-        TestFileUtils.appendToFile(
-                lib.buildFile,
-                """
-                    android {
-                        buildTypes {
-                            debug {
-                                optimization {
-                                    keepRules { ignoreFromAllExternalDependencies true }
-                                }
-                            }
-                        }
-                    }
-                """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      lib.buildFile,
+      """
+      android {
+          buildTypes {
+              debug {
+                  optimization {
+                      keepRules { ignoreFromAllExternalDependencies true }
+                  }
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        lib.executor().run(":minifyPaidDebugWithR8")
-        configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+    lib.executor().run(":minifyPaidDebugWithR8")
+    configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
 
-        assertThat(configuration).doesNotContain(LIB_BAR_RULE)
-        assertThat(configuration).doesNotContain(LIB_FOO_RULE)
-    }
+    assertThat(configuration).doesNotContain(LIB_BAR_RULE)
+    assertThat(configuration).doesNotContain(LIB_FOO_RULE)
+  }
 
-    @Test
-    fun testVersionWildcardMatching() {
-        lib.executor().run(":minifyPaidDebugWithR8")
-        var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
-        assertThat(configuration).contains(LIB_FOO_RULE)
-        assertThat(configuration).contains(LIB_BAR_RULE)
+  @Test
+  fun testVersionWildcardMatching() {
+    lib.executor().run(":minifyPaidDebugWithR8")
+    var configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+    assertThat(configuration).contains(LIB_FOO_RULE)
+    assertThat(configuration).contains(LIB_BAR_RULE)
 
-        TestFileUtils.appendToFile(
-                lib.buildFile,
-                """
+    TestFileUtils.appendToFile(
+      lib.buildFile,
+      """
                     android {
                         buildTypes {
                             debug {
@@ -128,28 +129,24 @@ class IgnoreKeepRulesLibraryTest {
                             }
                         }
                     }
-                """.trimIndent()
-        )
-
-        val result = lib.executor().run(":minifyPaidDebugWithR8")
-        configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
-
-        assertThat(configuration).contains(LIB_BAR_RULE)
-        assertThat(configuration).doesNotContain(LIB_FOO_RULE)
-        result.stdout.use {
-            ScannerSubject.assertThat(it).contains(
-                    "Keep rules from [$LIB_BAR_ID_UNSUPPORTED_FORMAT] are specified to be ignored")
-        }
-    }
-
-    private fun ignoreProguardArtifact(
-            variantDimensions: String,
-            variantDimension: String,
-            id: String
-    ) {
-        TestFileUtils.appendToFile(
-                lib.buildFile,
                 """
+        .trimIndent(),
+    )
+
+    val result = lib.executor().run(":minifyPaidDebugWithR8")
+    configuration = lib.getOutputFile("mapping", "paidDebug", "configuration.txt")
+
+    assertThat(configuration).contains(LIB_BAR_RULE)
+    assertThat(configuration).doesNotContain(LIB_FOO_RULE)
+    result.stdout.use {
+      ScannerSubject.assertThat(it).contains("Keep rules from [$LIB_BAR_ID_UNSUPPORTED_FORMAT] are specified to be ignored")
+    }
+  }
+
+  private fun ignoreProguardArtifact(variantDimensions: String, variantDimension: String, id: String) {
+    TestFileUtils.appendToFile(
+      lib.buildFile,
+      """
                 android {
                     $variantDimensions {
                         $variantDimension {
@@ -161,33 +158,29 @@ class IgnoreKeepRulesLibraryTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    private val mavenRepo : MavenRepoGenerator
-        get() = MavenRepoGenerator(
-                listOf(
-                        MavenRepoGenerator.Library(
-                                LIB_FOO_ID,
-                                jarWithTextEntries(PROGUARD_PATH to LIB_FOO_RULE)
-                        ),
-                        MavenRepoGenerator.Library(
-                                LIB_BAR_ID,
-                                jarWithTextEntries(PROGUARD_PATH to LIB_BAR_RULE)
-                        )
-                )
+  private val mavenRepo: MavenRepoGenerator
+    get() =
+      MavenRepoGenerator(
+        listOf(
+          MavenRepoGenerator.Library(LIB_FOO_ID, jarWithTextEntries(PROGUARD_PATH to LIB_FOO_RULE)),
+          MavenRepoGenerator.Library(LIB_BAR_ID, jarWithTextEntries(PROGUARD_PATH to LIB_BAR_RULE)),
         )
+      )
 
-    companion object {
-        private const val BUILD_TYPES = "buildTypes"
-        private const val PRODUCT_FLAVORS = "productFlavors"
-        private const val LIB_FOO_ID = "com.example:foo:1.0.0"
-        private const val LIB_FOO_ID_NO_VERSION = "com.example:foo"
-        private const val LIB_BAR_ID = "com.example:bar:1.0.0"
-        private const val LIB_BAR_ID_UNSUPPORTED_FORMAT = "com.example:bar:"
-        private const val LIB_FOO_RULE = "-keep class foo { *; }"
-        private const val LIB_BAR_RULE = "-keep class bar { *; }"
-        private const val PROGUARD_PATH = "META-INF/proguard/rules.txt"
-    }
+  companion object {
+    private const val BUILD_TYPES = "buildTypes"
+    private const val PRODUCT_FLAVORS = "productFlavors"
+    private const val LIB_FOO_ID = "com.example:foo:1.0.0"
+    private const val LIB_FOO_ID_NO_VERSION = "com.example:foo"
+    private const val LIB_BAR_ID = "com.example:bar:1.0.0"
+    private const val LIB_BAR_ID_UNSUPPORTED_FORMAT = "com.example:bar:"
+    private const val LIB_FOO_RULE = "-keep class foo { *; }"
+    private const val LIB_BAR_RULE = "-keep class bar { *; }"
+    private const val PROGUARD_PATH = "META-INF/proguard/rules.txt"
+  }
 }

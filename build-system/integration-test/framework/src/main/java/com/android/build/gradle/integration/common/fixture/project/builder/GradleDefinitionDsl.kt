@@ -16,10 +16,5 @@
 
 package com.android.build.gradle.integration.common.fixture.project.builder
 
-/**
- * this Dsl marker is used on all the definition interface of the GradleRule fixtures so that
- * we avoid mistakes.
- */
-@DslMarker
-@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
-annotation class GradleDefinitionDsl()
+/** this Dsl marker is used on all the definition interface of the GradleRule fixtures so that we avoid mistakes. */
+@DslMarker @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE) annotation class GradleDefinitionDsl()

@@ -41,8 +41,7 @@ import studio.network.inspection.NetworkInspectorProtocol.Transformation.HeaderA
 import studio.network.inspection.NetworkInspectorProtocol.Transformation.HeaderReplaced
 import studio.network.inspection.NetworkInspectorProtocol.Transformation.StatusCodeReplaced
 
-private val METHODS =
-  listOf("GET", "POST", "HEAD", "PUT", "DELETE", "TRACE", "CONNECT", "PATCH", "OPTIONS")
+private val METHODS = listOf("GET", "POST", "HEAD", "PUT", "DELETE", "TRACE", "CONNECT", "PATCH", "OPTIONS")
 
 class InterceptionRuleTest {
 
@@ -121,8 +120,7 @@ class InterceptionRuleTest {
           .build()
       )
     assertThat(criteria.appliesTo(connection)).isTrue()
-    assertThat(criteria.appliesTo(NetworkConnection("https://www.google.com:8080", "POST")))
-      .isFalse()
+    assertThat(criteria.appliesTo(NetworkConnection("https://www.google.com:8080", "POST"))).isFalse()
     assertThat(criteria.appliesTo(NetworkConnection("http://www.google.com", "GET"))).isFalse()
     assertThat(criteria.appliesTo(NetworkConnection("https://www.google.com", "POST"))).isFalse()
 
@@ -139,44 +137,17 @@ class InterceptionRuleTest {
           }
           .build()
       )
-    assertThat(
-        detailedCriteria.appliesTo(
-          NetworkConnection("https://www.google.com:8080/path?query", "GET")
-        )
-      )
-      .isTrue()
-    assertThat(
-        detailedCriteria.appliesTo(NetworkConnection("https://www.google.com/path?query", "GET"))
-      )
-      .isFalse()
-    assertThat(
-        detailedCriteria.appliesTo(
-          NetworkConnection("https://www.google.com:8080/path?query2", "GET")
-        )
-      )
-      .isFalse()
-    assertThat(
-        detailedCriteria.appliesTo(
-          NetworkConnection("https://www.google.com:8080/path2?query", "GET")
-        )
-      )
-      .isFalse()
-    assertThat(
-        detailedCriteria.appliesTo(
-          NetworkConnection("https://www.google.com:8080/path?query", "POST")
-        )
-      )
-      .isFalse()
+    assertThat(detailedCriteria.appliesTo(NetworkConnection("https://www.google.com:8080/path?query", "GET"))).isTrue()
+    assertThat(detailedCriteria.appliesTo(NetworkConnection("https://www.google.com/path?query", "GET"))).isFalse()
+    assertThat(detailedCriteria.appliesTo(NetworkConnection("https://www.google.com:8080/path?query2", "GET"))).isFalse()
+    assertThat(detailedCriteria.appliesTo(NetworkConnection("https://www.google.com:8080/path2?query", "GET"))).isFalse()
+    assertThat(detailedCriteria.appliesTo(NetworkConnection("https://www.google.com:8080/path?query", "POST"))).isFalse()
   }
 
   @Test
   fun changeStatusCode() {
     val response =
-      NetworkResponse(
-        200,
-        mapOf(null to listOf("HTTP/1.0 200 OK"), "response-status-code" to listOf("200")),
-        "Body".byteInputStream(),
-      )
+      NetworkResponse(200, mapOf(null to listOf("HTTP/1.0 200 OK"), "response-status-code" to listOf("200")), "Body".byteInputStream())
     val proto =
       StatusCodeReplaced.newBuilder()
         .apply {
@@ -192,20 +163,14 @@ class InterceptionRuleTest {
     assertThat(transformedResponse.responseHeaders[null]!![0]).isEqualTo("HTTP/1.0 404 OK")
     assertThat(transformedResponse.responseHeaders["response-status-code"]!![0]).isEqualTo("404")
     val responseWithoutMessage =
-      NetworkResponse(
-        200,
-        mapOf(null to listOf("HTTP/1.0 200"), "response-status-code" to listOf("200")),
-        "Body".byteInputStream(),
-      )
+      NetworkResponse(200, mapOf(null to listOf("HTTP/1.0 200"), "response-status-code" to listOf("200")), "Body".byteInputStream())
     transformedResponse = StatusCodeReplacedTransformation(proto).transform(responseWithoutMessage)
     assertThat(transformedResponse.interception.statusCode).isTrue()
     assertThat(transformedResponse.responseHeaders[null]!![0]).isEqualTo("HTTP/1.0 404")
     assertThat(transformedResponse.responseHeaders["response-status-code"]!![0]).isEqualTo("404")
 
-    val responseWithoutStatusLine =
-      NetworkResponse(200, mapOf("response-status-code" to listOf("200")), "Body".byteInputStream())
-    transformedResponse =
-      StatusCodeReplacedTransformation(proto).transform(responseWithoutStatusLine)
+    val responseWithoutStatusLine = NetworkResponse(200, mapOf("response-status-code" to listOf("200")), "Body".byteInputStream())
+    transformedResponse = StatusCodeReplacedTransformation(proto).transform(responseWithoutStatusLine)
     assertThat(transformedResponse.interception.statusCode).isTrue()
     assertThat(transformedResponse.responseHeaders[null]).isNull()
     assertThat(transformedResponse.responseHeaders["response-status-code"]!![0]).isEqualTo("404")
@@ -213,8 +178,7 @@ class InterceptionRuleTest {
 
   @Test
   fun addResponseHeader() {
-    val response =
-      NetworkResponse(200, mapOf(null to listOf("HTTP/1.0 200 OK")), "Body".byteInputStream())
+    val response = NetworkResponse(200, mapOf(null to listOf("HTTP/1.0 200 OK")), "Body".byteInputStream())
     val addingNewHeaderAndValue =
       HeaderAdded.newBuilder()
         .apply {
@@ -234,16 +198,14 @@ class InterceptionRuleTest {
         }
         .build()
 
-    transformedResponse =
-      HeaderAddedTransformation(addingValueToExitingHeader).transform(transformedResponse)
+    transformedResponse = HeaderAddedTransformation(addingValueToExitingHeader).transform(transformedResponse)
     assertThat(transformedResponse.interception.headerAdded).isTrue()
     assertThat(transformedResponse.responseHeaders["Name"]).containsExactly("Value", "Value2")
   }
 
   @Test
   fun replaceResponseHeader() {
-    val response =
-      NetworkResponse(200, mapOf("header1" to listOf("value1", "value2")), "Body".byteInputStream())
+    val response = NetworkResponse(200, mapOf("header1" to listOf("value1", "value2")), "Body".byteInputStream())
     val headerNotMatchedProto =
       HeaderReplaced.newBuilder()
         .apply {
@@ -259,19 +221,16 @@ class InterceptionRuleTest {
           newValue = "newValue"
         }
         .build()
-    var transformedResponse =
-      HeaderReplacedTransformation(headerNotMatchedProto).transform(response)
+    var transformedResponse = HeaderReplacedTransformation(headerNotMatchedProto).transform(response)
     assertThat(transformedResponse.interception.headerReplaced).isFalse()
     assertThat(transformedResponse.responseHeaders["newName"]).isNull()
 
-    val valueNotMatchedProto =
-      headerNotMatchedProto.toBuilder().apply { targetNameBuilder.text = "header1" }.build()
+    val valueNotMatchedProto = headerNotMatchedProto.toBuilder().apply { targetNameBuilder.text = "header1" }.build()
     transformedResponse = HeaderReplacedTransformation(valueNotMatchedProto).transform(response)
     assertThat(transformedResponse.interception.headerReplaced).isFalse()
     assertThat(transformedResponse.responseHeaders["newName"]).isNull()
 
-    val matchedProto =
-      valueNotMatchedProto.toBuilder().apply { targetValueBuilder.text = "value1" }.build()
+    val matchedProto = valueNotMatchedProto.toBuilder().apply { targetValueBuilder.text = "value1" }.build()
     transformedResponse = HeaderReplacedTransformation(matchedProto).transform(response)
     assertThat(transformedResponse.interception.headerReplaced).isTrue()
     assertThat(transformedResponse.responseHeaders["newName"]!![0]).isEqualTo("newValue")
@@ -295,8 +254,7 @@ class InterceptionRuleTest {
 
   @Test
   fun replaceResponseHeaderPartially() {
-    val response =
-      NetworkResponse(200, mapOf("header" to listOf("value", "value2")), "Body".byteInputStream())
+    val response = NetworkResponse(200, mapOf("header" to listOf("value", "value2")), "Body".byteInputStream())
     val headerValueReplacedProto =
       HeaderReplaced.newBuilder()
         .apply {
@@ -311,8 +269,7 @@ class InterceptionRuleTest {
           newValue = "newValue"
         }
         .build()
-    var transformedResponse =
-      HeaderReplacedTransformation(headerValueReplacedProto).transform(response)
+    var transformedResponse = HeaderReplacedTransformation(headerValueReplacedProto).transform(response)
     assertThat(transformedResponse.interception.headerReplaced).isTrue()
     assertThat(transformedResponse.responseHeaders["newName"]).isNull()
     assertThat(transformedResponse.responseHeaders["header"]).containsExactly("newValue", "value2")
@@ -357,17 +314,11 @@ class InterceptionRuleTest {
         .build()
     var transformedResponse = BodyModifiedTransformation(bodyModifiedProto).transform(response)
     assertThat(transformedResponse.interception.bodyModified).isTrue()
-    assertThat(transformedResponse.body.reader().use { it.readText() })
-      .isEqualTo("TestXTestXTestXBoody")
+    assertThat(transformedResponse.body.reader().use { it.readText() }).isEqualTo("TestXTestXTestXBoody")
 
     val responseWithJsonContent =
-      NetworkResponse(
-        200,
-        mapOf(null to listOf("HTTP/1.0 200 OK"), "content-type" to listOf("application/json")),
-        "Body".byteInputStream(),
-      )
-    transformedResponse =
-      BodyModifiedTransformation(bodyModifiedProto).transform(responseWithJsonContent)
+      NetworkResponse(200, mapOf(null to listOf("HTTP/1.0 200 OK"), "content-type" to listOf("application/json")), "Body".byteInputStream())
+    transformedResponse = BodyModifiedTransformation(bodyModifiedProto).transform(responseWithJsonContent)
     assertThat(transformedResponse.interception.bodyModified).isTrue()
     assertThat(transformedResponse.body.reader().use { it.readText() }).isEqualTo("Test")
   }
@@ -392,8 +343,7 @@ class InterceptionRuleTest {
         .build()
     val transformedResponse = BodyModifiedTransformation(bodyModifiedRegexProto).transform(response)
     assertThat(transformedResponse.interception.bodyModified).isTrue()
-    assertThat(transformedResponse.body.reader().use { it.readText() })
-      .isEqualTo("TestXTestXTestXTest")
+    assertThat(transformedResponse.body.reader().use { it.readText() }).isEqualTo("TestXTestXTestXTest")
   }
 
   @Test
@@ -403,11 +353,7 @@ class InterceptionRuleTest {
     val response =
       NetworkResponse(
         200,
-        mapOf(
-          null to listOf("HTTP/1.0 200 OK"),
-          "content-type" to listOf("text/html"),
-          "content-encoding" to listOf("gzip"),
-        ),
+        mapOf(null to listOf("HTTP/1.0 200 OK"), "content-type" to listOf("text/html"), "content-encoding" to listOf("gzip")),
         byteOutput.toByteArray().inputStream(),
       )
     val bodyModifiedProto =
@@ -424,8 +370,7 @@ class InterceptionRuleTest {
     val transformedResponse = BodyModifiedTransformation(bodyModifiedProto).transform(response)
 
     assertThat(transformedResponse.interception.bodyModified).isTrue()
-    assertThat(GZIPInputStream(transformedResponse.body).reader().use { it.readText() })
-      .isEqualTo("Test")
+    assertThat(GZIPInputStream(transformedResponse.body).reader().use { it.readText() }).isEqualTo("Test")
   }
 
   @Test
@@ -435,20 +380,14 @@ class InterceptionRuleTest {
     val response =
       NetworkResponse(
         200,
-        mapOf(
-          null to listOf("HTTP/1.0 200 OK"),
-          "content-type" to listOf("text/html"),
-          "content-encoding" to listOf("gzip"),
-        ),
+        mapOf(null to listOf("HTTP/1.0 200 OK"), "content-type" to listOf("text/html"), "content-encoding" to listOf("gzip")),
         byteOutput.toByteArray().inputStream(),
       )
-    val bodyReplaced =
-      BodyReplaced.newBuilder().apply { body = ByteString.copyFrom("Test".toByteArray()) }.build()
+    val bodyReplaced = BodyReplaced.newBuilder().apply { body = ByteString.copyFrom("Test".toByteArray()) }.build()
     val transformedResponse = BodyReplacedTransformation(bodyReplaced).transform(response)
 
     assertThat(transformedResponse.interception.bodyReplaced).isTrue()
-    assertThat(GZIPInputStream(transformedResponse.body).reader().use { it.readText() })
-      .isEqualTo("Test")
+    assertThat(GZIPInputStream(transformedResponse.body).reader().use { it.readText() }).isEqualTo("Test")
   }
 
   @Test
@@ -465,8 +404,7 @@ class InterceptionRuleTest {
         mapOf(null to listOf("HTTP/1.0 200 OK"), "content-type" to listOf("text/html")),
         "Body2".toByteArray().inputStream(),
       )
-    val bodyReplaced =
-      BodyReplaced.newBuilder().apply { body = ByteString.copyFrom("Test".toByteArray()) }.build()
+    val bodyReplaced = BodyReplaced.newBuilder().apply { body = ByteString.copyFrom("Test".toByteArray()) }.build()
     val transformation = BodyReplacedTransformation(bodyReplaced)
     val transformedResponse1 = transformation.transform(response1)
     val transformedResponse2 = transformation.transform(response2)
@@ -476,8 +414,7 @@ class InterceptionRuleTest {
 
   @Test
   fun interceptCriteriaMethod_containsAllMethods() {
-    assertThat(Method.values().map { it.name.substringAfter("_") })
-      .containsExactlyElementsIn(METHODS + "UNSPECIFIED" + "UNRECOGNIZED")
+    assertThat(Method.values().map { it.name.substringAfter("_") }).containsExactlyElementsIn(METHODS + "UNSPECIFIED" + "UNRECOGNIZED")
   }
 
   @Test
@@ -550,9 +487,7 @@ class InterceptionRuleTest {
   fun interceptionCriteriaMatchesConnections_methodConnect() {
     val matched =
       METHODS.filter {
-        InterceptionCriteria(
-            InterceptCriteria.newBuilder().setMethod(Method.METHOD_CONNECT).build()
-          )
+        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_CONNECT).build())
           .appliesTo(NetworkConnection("https://www.google.com", it))
       }
 
@@ -574,9 +509,7 @@ class InterceptionRuleTest {
   fun interceptionCriteriaMatchesConnections_methodOptions() {
     val matched =
       METHODS.filter {
-        InterceptionCriteria(
-            InterceptCriteria.newBuilder().setMethod(Method.METHOD_OPTIONS).build()
-          )
+        InterceptionCriteria(InterceptCriteria.newBuilder().setMethod(Method.METHOD_OPTIONS).build())
           .appliesTo(NetworkConnection("https://www.google.com", it))
       }
 

@@ -17,6 +17,7 @@ package com.android.adblib.tools.debugging.utils
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -28,245 +29,220 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-import java.util.concurrent.CancellationException
 
 class SerializedChannelTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun testSendNoWaitWorks() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+  @Test
+  fun testSendNoWaitWorks() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
 
-        // Act
-        val intValue = async {
-            channel.unsafeReceive()
-        }
-        channel.sendNoWait(MutableIntWrapper(5))
+    // Act
+    val intValue = async { channel.unsafeReceive() }
+    channel.sendNoWait(MutableIntWrapper(5))
 
-        // Assert
-        assertEquals(5, intValue.await().mutableValue)
+    // Assert
+    assertEquals(5, intValue.await().mutableValue)
+  }
+
+  @Test
+  fun testSendNoWaitWithNoReceiveBlocks() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val result = withTimeoutOrNull(100) { channel.sendNoWait(MutableIntWrapper(5)) }
+
+    // Assert
+    assertNull(result)
+  }
+
+  @Test
+  fun testSendWithNoReceiveBlocks() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val result = withTimeoutOrNull(100) { channel.send(MutableIntWrapper(5)) }
+
+    // Assert
+    assertNull(result)
+  }
+
+  @Test
+  fun testSendBlocks() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so 2nd "send" blocks
+    val job = async { channel.unsafeReceive() }
+    channel.send(MutableIntWrapper(5))
+    val result = withTimeoutOrNull(100) { channel.send(MutableIntWrapper(6)) }
+    job.join()
+
+    // Assert
+    assertNull(result)
+  }
+
+  @Test
+  fun testSendWaitsForReceiverToComplete() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so 2nd "send" blocks
+    val job = async {
+      channel.receive {
+        delay(10)
+        it.mutableValue = 101
+      }
     }
+    val element = MutableIntWrapper(10)
+    channel.send(element)
+    job.join()
 
-    @Test
-    fun testSendNoWaitWithNoReceiveBlocks() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+    // Assert
+    assertEquals(101, element.mutableValue)
+  }
 
-        // Act: There is only one "receive", so "send" blocks
-        val result = withTimeoutOrNull(100) {
-            channel.sendNoWait(MutableIntWrapper(5))
-        }
+  @Test
+  fun testSendUnblocksAfterSecondReceive() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
 
-        // Assert
-        assertNull(result)
+    // Act: There is only one "receive", so "send" blocks
+    val intValue = async {
+      channel.unsafeReceive()
+      channel.unsafeReceive()
     }
+    channel.send(MutableIntWrapper(5))
+    channel.send(MutableIntWrapper(10))
 
-    @Test
-    fun testSendWithNoReceiveBlocks() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+    // Assert
+    assertEquals(10, intValue.await().mutableValue)
+  }
 
-        // Act: There is only one "receive", so "send" blocks
-        val result = withTimeoutOrNull(100) {
-            channel.send(MutableIntWrapper(5))
+  @Test
+  fun testReceiveAllWorks() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val values = mutableListOf<MutableIntWrapper>()
+    val job = async {
+      channel.receiveAllCatching {
+        values.add(it)
+        if (values.size == 4) {
+          cancel("Foo")
         }
-
-        // Assert
-        assertNull(result)
+      }
     }
+    channel.send(MutableIntWrapper(5))
+    channel.send(MutableIntWrapper(6))
+    channel.send(MutableIntWrapper(7))
+    channel.send(MutableIntWrapper(8))
 
-    @Test
-    fun testSendBlocks() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+    job.join() // "join" does not throw on cancellation
 
-        // Act: There is only one "receive", so 2nd "send" blocks
-        val job = async {
-            channel.unsafeReceive()
-        }
-        channel.send(MutableIntWrapper(5))
-        val result = withTimeoutOrNull(100) {
-            channel.send(MutableIntWrapper(6))
-        }
-        job.join()
+    // Assert
+    assertEquals(4, values.size)
+    assertEquals(5, values[0].mutableValue)
+    assertEquals(6, values[1].mutableValue)
+    assertEquals(7, values[2].mutableValue)
+    assertEquals(8, values[3].mutableValue)
+  }
 
-        // Assert
-        assertNull(result)
+  @Test
+  fun testCancelWorksForReceiveAll() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val values = mutableListOf<MutableIntWrapper>()
+    val job = async { channel.receiveAllCatching { values.add(it) } }
+    channel.send(MutableIntWrapper(5))
+    channel.send(MutableIntWrapper(6))
+    channel.send(MutableIntWrapper(7))
+    channel.send(MutableIntWrapper(8))
+    channel.cancel()
+
+    job.await()
+
+    // Assert
+    assertEquals(4, values.size)
+    assertEquals(5, values[0].mutableValue)
+    assertEquals(6, values[1].mutableValue)
+    assertEquals(7, values[2].mutableValue)
+    assertEquals(8, values[3].mutableValue)
+  }
+
+  @Test
+  fun testCancelWorksForPendingSend() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val job = async { channel.send(MutableIntWrapper(5)) }
+    delay(100)
+    channel.cancel()
+
+    exceptionRule.expect(CancellationException::class.java)
+    job.await()
+
+    // Assert
+    fail("Should not reach")
+  }
+
+  @Test
+  fun testCancelWorksForSlowReceiver() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val deferredReceive = CompletableDeferred<Unit>()
+    val sendJob = async { channel.send(MutableIntWrapper(5)) }
+    launch {
+      channel.receiveCatching {
+        deferredReceive.complete(Unit)
+        delay(10_000)
+      }
     }
+    deferredReceive.await()
+    channel.cancel()
 
-    @Test
-    fun testSendWaitsForReceiverToComplete() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+    exceptionRule.expect(CancellationException::class.java)
+    sendJob.await()
 
-        // Act: There is only one "receive", so 2nd "send" blocks
-        val job = async {
-            channel.receive {
-                delay(10)
-                it.mutableValue = 101
-            }
-        }
-        val element = MutableIntWrapper(10)
-        channel.send(element)
-        job.join()
+    // Assert
+    fail("Should not reach")
+  }
 
-        // Assert
-        assertEquals(101, element.mutableValue)
+  @Test
+  fun testCancelDoesNotCancelSlowReceiver() = runBlockingWithTimeout {
+    // Prepare
+    val channel = SynchronizedChannel<MutableIntWrapper>()
+
+    // Act: There is only one "receive", so "send" blocks
+    val deferredReceive = CompletableDeferred<Unit>()
+    launch { channel.send(MutableIntWrapper(5)) }
+    val receiveJob = async {
+      channel.receiveCatching {
+        deferredReceive.complete(Unit)
+        delay(500)
+      }
     }
+    deferredReceive.await()
+    channel.cancel()
+    val result = receiveJob.await()
 
-    @Test
-    fun testSendUnblocksAfterSecondReceive() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
+    // Assert
+    assertTrue(result.isSuccess)
+  }
 
-        // Act: There is only one "receive", so "send" blocks
-        val intValue = async {
-            channel.unsafeReceive()
-            channel.unsafeReceive()
-        }
-        channel.send(MutableIntWrapper(5))
-        channel.send(MutableIntWrapper(10))
+  private suspend fun <E> SynchronizedReceiveChannel<out E>.unsafeReceive(): E {
+    var result: Result<E>? = null
+    receiveCatching { result = Result.success(it) }.onFailure { throw it ?: IllegalStateException("Unexpected channel failure") }
+    return result!!.getOrThrow()
+  }
 
-        // Assert
-        assertEquals(10, intValue.await().mutableValue)
-    }
-
-    @Test
-    fun testReceiveAllWorks() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
-
-        // Act: There is only one "receive", so "send" blocks
-        val values = mutableListOf<MutableIntWrapper>()
-        val job = async {
-            channel.receiveAllCatching {
-                values.add(it)
-                if (values.size == 4) {
-                    cancel("Foo")
-                }
-            }
-        }
-        channel.send(MutableIntWrapper(5))
-        channel.send(MutableIntWrapper(6))
-        channel.send(MutableIntWrapper(7))
-        channel.send(MutableIntWrapper(8))
-
-        job.join() // "join" does not throw on cancellation
-
-        // Assert
-        assertEquals(4, values.size)
-        assertEquals(5, values[0].mutableValue)
-        assertEquals(6, values[1].mutableValue)
-        assertEquals(7, values[2].mutableValue)
-        assertEquals(8, values[3].mutableValue)
-    }
-
-    @Test
-    fun testCancelWorksForReceiveAll() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
-
-        // Act: There is only one "receive", so "send" blocks
-        val values = mutableListOf<MutableIntWrapper>()
-        val job = async {
-            channel.receiveAllCatching {
-                values.add(it)
-            }
-        }
-        channel.send(MutableIntWrapper(5))
-        channel.send(MutableIntWrapper(6))
-        channel.send(MutableIntWrapper(7))
-        channel.send(MutableIntWrapper(8))
-        channel.cancel()
-
-        job.await()
-
-        // Assert
-        assertEquals(4, values.size)
-        assertEquals(5, values[0].mutableValue)
-        assertEquals(6, values[1].mutableValue)
-        assertEquals(7, values[2].mutableValue)
-        assertEquals(8, values[3].mutableValue)
-    }
-
-    @Test
-    fun testCancelWorksForPendingSend() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
-
-        // Act: There is only one "receive", so "send" blocks
-        val job = async {
-            channel.send(MutableIntWrapper(5))
-        }
-        delay(100)
-        channel.cancel()
-
-        exceptionRule.expect(CancellationException::class.java)
-        job.await()
-
-        // Assert
-        fail("Should not reach")
-    }
-
-    @Test
-    fun testCancelWorksForSlowReceiver() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
-
-        // Act: There is only one "receive", so "send" blocks
-        val deferredReceive = CompletableDeferred<Unit>()
-        val sendJob = async {
-            channel.send(MutableIntWrapper(5))
-        }
-        launch {
-            channel.receiveCatching {
-                deferredReceive.complete(Unit)
-                delay(10_000)
-            }
-        }
-        deferredReceive.await()
-        channel.cancel()
-
-        exceptionRule.expect(CancellationException::class.java)
-        sendJob.await()
-
-        // Assert
-        fail("Should not reach")
-    }
-
-    @Test
-    fun testCancelDoesNotCancelSlowReceiver() = runBlockingWithTimeout {
-        // Prepare
-        val channel = SynchronizedChannel<MutableIntWrapper>()
-
-        // Act: There is only one "receive", so "send" blocks
-        val deferredReceive = CompletableDeferred<Unit>()
-        launch {
-            channel.send(MutableIntWrapper(5))
-        }
-        val receiveJob = async {
-            channel.receiveCatching {
-                deferredReceive.complete(Unit)
-                delay(500)
-            }
-        }
-        deferredReceive.await()
-        channel.cancel()
-        val result = receiveJob.await()
-
-        // Assert
-        assertTrue(result.isSuccess)
-    }
-
-    private suspend fun <E> SynchronizedReceiveChannel<out E>.unsafeReceive(): E {
-        var result: Result<E>? = null
-        receiveCatching {
-            result = Result.success(it)
-        }.onFailure {
-            throw it ?: IllegalStateException("Unexpected channel failure")
-        }
-        return result!!.getOrThrow()
-    }
-
-    private class MutableIntWrapper(var mutableValue: Int = 0)
+  private class MutableIntWrapper(var mutableValue: Int = 0)
 }

@@ -25,6 +25,9 @@ import com.android.tools.idea.wizard.template.impl.activities.composeActivityMat
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.colorKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.themeKt
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3Navigation.createAccountBoxIconXml
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3Navigation.createFavoriteIconXml
+import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3Navigation.createHomeIconXml
 import com.android.tools.idea.wizard.template.impl.activities.composeNavigationUiActivityMaterial3.src.app_package.mainActivityKt
 
 fun RecipeExecutor.composeNavigationUiActivityRecipe(
@@ -33,7 +36,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   packageName: String,
   isLauncher: Boolean,
   greeting: String,
-  defaultPreview: String
+  defaultPreview: String,
 ) {
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
@@ -42,7 +45,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData)
+  addComposeDependencies(moduleData, composeBomVersion = "2025.12.00")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
   addDependency(mavenCoordinate = "androidx.compose.material3:material3-adaptive-navigation-suite")
@@ -54,7 +57,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
     packageName = packageName,
     isLauncher = isLauncher,
     hasNoActionBar = true,
-    generateActivityTitle = true
+    generateActivityTitle = true,
   )
   // It doesn't have to create separate themes.xml for light and night because the default
   // status bar color is same between them at this moment
@@ -67,20 +70,17 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
   val themeName = "${moduleData.themesData.appName}Theme"
   val appComposableName = "${moduleData.themesData.appName}App"
   save(
-    mainActivityKt(
-      activityClass,
-      defaultPreview,
-      greeting,
-      packageName,
-      themeName,
-      appComposableName
-    ),
-    srcOut.resolve("${activityClass}.kt")
+    mainActivityKt(activityClass, defaultPreview, greeting, packageName, themeName, appComposableName),
+    srcOut.resolve("${activityClass}.kt"),
   )
   val uiThemeFolder = "ui/theme"
   save(colorKt(packageName), srcOut.resolve("$uiThemeFolder/Color.kt"))
   save(themeKt(packageName, themeName), srcOut.resolve("$uiThemeFolder/Theme.kt"))
   save(typeKt(packageName), srcOut.resolve("$uiThemeFolder/Type.kt"))
+
+  save(createHomeIconXml(), resOut.resolve("drawable/ic_home.xml"))
+  save(createFavoriteIconXml(), resOut.resolve("drawable/ic_favorite.xml"))
+  save(createAccountBoxIconXml(), resOut.resolve("drawable/ic_account_box.xml"))
 
   setJavaKotlinCompileOptions(true)
   setBuildFeature("compose", true)

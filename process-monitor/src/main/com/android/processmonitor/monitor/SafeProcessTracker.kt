@@ -18,28 +18,25 @@ package com.android.processmonitor.monitor
 import com.android.adblib.AdbLogger
 import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.common.ProcessTracker
+import java.io.EOFException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
-import java.io.EOFException
 
 /** A [ProcessTracker] that doesn't fail on exception */
-internal class SafeProcessTracker(
-    private val delegate: ProcessTracker,
-    private val errorMessage: String,
-    private val logger: AdbLogger
-) : ProcessTracker {
+internal class SafeProcessTracker(private val delegate: ProcessTracker, private val errorMessage: String, private val logger: AdbLogger) :
+  ProcessTracker {
 
-    override fun trackProcesses(): Flow<ProcessEvent> {
-        return delegate.trackProcesses().catch {
-            if (it is EOFException) {
-                logger.info { "Stopping process monitoring" }
-            } else {
-                logger.warn(it, errorMessage)
-            }
-        }
+  override fun trackProcesses(): Flow<ProcessEvent> {
+    return delegate.trackProcesses().catch {
+      if (it is EOFException) {
+        logger.info { "Stopping process monitoring" }
+      } else {
+        logger.warn(it, errorMessage)
+      }
     }
+  }
 
-    override fun toString(): String {
-        return "SafeProcessTracker(${delegate::class.simpleName})"
-    }
+  override fun toString(): String {
+    return "SafeProcessTracker(${delegate::class.simpleName})"
+  }
 }

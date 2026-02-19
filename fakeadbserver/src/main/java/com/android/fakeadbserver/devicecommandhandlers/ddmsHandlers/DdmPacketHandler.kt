@@ -21,28 +21,27 @@ import kotlinx.coroutines.CoroutineScope
 
 fun interface DdmPacketHandler {
 
-    /**
-     * Interface for fake debugger to handle incoming packets
-     *
-     * @param device The device associated with the client
-     * @param client The client associated with the connection
-     * @param packet The packet that is being handled
-     * @param jdwpHandlerOutput The stream to write the response to
-     * @param socketScope CoroutineScope with a lifecycle of a client socket
-     * @return If true the fake debugger should continue accepting packets, if false it should
-     * terminate the session
-     */
-    fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean
+  /**
+   * Interface for fake debugger to handle incoming packets
+   *
+   * @param device The device associated with the client
+   * @param client The client associated with the connection
+   * @param packet The packet that is being handled
+   * @param jdwpHandlerOutput The stream to write the response to
+   * @param socketScope CoroutineScope with a lifecycle of a client socket
+   * @return If true the fake debugger should continue accepting packets, if false it should terminate the session
+   */
+  fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean
 
-    fun replyDdmFail(jdwpHandlerOutput: JdwpHandlerOutput, packetId: Int) {
-        // Android seems to always reply to invalid DDM commands with an empty JDWP reply packet
-        val packet = JdwpPacket(packetId, true, 0.toShort(), ByteArray(0), 0, 0)
-        packet.write(jdwpHandlerOutput)
-    }
+  fun replyDdmFail(jdwpHandlerOutput: JdwpHandlerOutput, packetId: Int) {
+    // Android seems to always reply to invalid DDM commands with an empty JDWP reply packet
+    val packet = JdwpPacket(packetId, true, 0.toShort(), ByteArray(0), 0, 0)
+    packet.write(jdwpHandlerOutput)
+  }
 }

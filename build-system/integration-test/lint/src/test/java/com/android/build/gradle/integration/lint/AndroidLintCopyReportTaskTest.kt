@@ -16,47 +16,39 @@
 
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.internal.lint.AndroidLintCopyReportTask
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
+import java.io.File
 
-/**
- * Integration test for [AndroidLintCopyReportTask]
- */
+/** Integration test for [AndroidLintCopyReportTask] */
 class AndroidLintCopyReportTaskTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                lintOptions {
-                                    textOutput = file("lint-results.txt")
-                                }
-                            }
-                        """.trimIndent()
-                    )
-            ).create()
-
-    // Regression test for b/189877657
-    @Test
-    fun testRunningTaskDirectly() {
-        project.executor().run("clean", "copyDebugLintReports")
-        ScannerSubject.assertThat(project.buildResult.stdout).contains("BUILD SUCCESSFUL")
-        ScannerSubject.assertThat(project.buildResult.stdout)
-            .contains("Unable to copy the lint text report")
+  @get:Rule
+  val rule = GradleRule.from {
+    androidApplication {
+      android {
+        lint {
+          textOutput = File("lint-results.txt")
+        }
+      }
     }
+  }
 
-    @Test
-    fun testReportCopiedAfterLint() {
-        project.executor().run("clean", "lintDebug")
-        assertThat(project.file("lint-results.txt")).exists()
-    }
+  // Regression test for b/189877657
+  @Test
+  fun testRunningTaskDirectly() {
+    val result = rule.build.executor.run("clean", ":app:copyDebugLintReports")
+    ScannerSubject.assertThat(result.stdout).contains("BUILD SUCCESSFUL")
+    ScannerSubject.assertThat(result.stdout).contains("Unable to copy the lint text report")
+  }
+
+  @Test
+  fun testReportCopiedAfterLint() {
+    rule.build.executor.run("clean", ":app:lintDebug")
+    assertThat(rule.build.androidApplication().resolve("lint-results.txt")).exists()
+  }
 }

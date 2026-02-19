@@ -21,59 +21,59 @@ import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TestProductFlavor
 
-class UnusableTestProductFlavorProxy(
-): UnusableProductFlavorProxy(), TestProductFlavor {
+class UnusableTestProductFlavorProxy() : UnusableProductFlavorProxy(), TestProductFlavor {
 
-    override var targetSdk: Int?
-        get() = throwUnusableError("TestProductFlavor.targetSdk")
-        set(value) {
-            throwUnusableError("TestProductFlavor.targetSdk")
-        }
-
-    override fun targetSdkVersion(targetSdkVersion: Int) {
-        throwUnusableError("TestProductFlavor.targetSdkVersion")
+  override var targetSdk: Int?
+    get() = throwUnusableError("TestProductFlavor.targetSdk")
+    set(value) {
+      throwUnusableError("TestProductFlavor.targetSdk")
     }
 
-    override fun targetSdkVersion(targetSdkVersion: String?) {
-        throwUnusableError("TestProductFlavor.targetSdkVersion")
+  override fun targetSdkVersion(targetSdkVersion: Int) {
+    throwUnusableError("TestProductFlavor.targetSdkVersion")
+  }
+
+  override fun targetSdkVersion(targetSdkVersion: String?) {
+    throwUnusableError("TestProductFlavor.targetSdkVersion")
+  }
+
+  override var targetSdkPreview: String?
+    get() = throwUnusableError("TestProductFlavor.targetSdkPreview")
+    set(value) {
+      throwUnusableError("TestProductFlavor.targetSdkPreview")
     }
 
-    override var targetSdkPreview: String?
-        get() = throwUnusableError("TestProductFlavor.targetSdkPreview")
-        set(value) {
-            throwUnusableError("TestProductFlavor.targetSdkPreview")
-        }
+  override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+    throwUnusableError("TestProductFlavor.targetSdk")
+  }
 
-    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
-        throwUnusableError("TestProductFlavor.targetSdk")
+  override fun setTargetSdkVersion(targetSdkVersion: String?) {
+    throwUnusableError("TestProductFlavor.setTargetSdkVersion")
+  }
+
+  override var maxSdk: Int?
+    get() = throwUnusableError("TestProductFlavor.maxSdk")
+    set(value) {
+      throwUnusableError("TestProductFlavor.maxSdk")
     }
 
-    override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        throwUnusableError("TestProductFlavor.setTargetSdkVersion")
+  override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+    throwUnusableError("TestProductFlavor.maxSdk")
+  }
+
+  override fun maxSdkVersion(maxSdkVersion: Int) {
+    throwUnusableError("TestProductFlavor.maxSdkVersion")
+  }
+
+  override var multiDexEnabled: Boolean?
+    get() = throwUnusableError("TestProductFlavor.multiDexEnabled")
+    set(value) {
+      throwUnusableError("TestProductFlavor.multiDexEnabled")
     }
 
-    override var maxSdk: Int?
-        get() = throwUnusableError("TestProductFlavor.maxSdk")
-        set(value) {
-            throwUnusableError("TestProductFlavor.maxSdk")
-        }
-
-    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
-        throwUnusableError("TestProductFlavor.maxSdk")
+  override var signingConfig: ApkSigningConfig?
+    get() = throwUnusableError("TestProductFlavor.signingConfig")
+    set(value) {
+      throwUnusableError("TestProductFlavor.signingConfig")
     }
-
-    override fun maxSdkVersion(maxSdkVersion: Int) {
-        throwUnusableError("TestProductFlavor.maxSdkVersion")
-    }
-
-    override var multiDexEnabled: Boolean?
-        get() = throwUnusableError("TestProductFlavor.multiDexEnabled")
-        set(value) {
-            throwUnusableError("TestProductFlavor.multiDexEnabled")
-        }
-    override var signingConfig: ApkSigningConfig?
-        get() = throwUnusableError("TestProductFlavor.signingConfig")
-        set(value) {
-            throwUnusableError("TestProductFlavor.signingConfig")
-        }
 }

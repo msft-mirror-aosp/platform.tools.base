@@ -20,7 +20,6 @@ import com.android.SdkConstants
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.gradle.internal.component.ApkCreationConfig
-import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
@@ -42,6 +41,7 @@ import com.android.tools.profgen.ObfuscationMap
 import com.android.tools.profgen.buildArtProfileWithDexMetadata
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
+import java.io.File
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -56,232 +56,195 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import shadow.bundletool.com.android.utils.PathUtils
-import java.io.File
 
-/**
- * Task that transforms a human readable art profile into a binary form version that can be shipped
- * inside an APK or a Bundle.
- */
+/** Task that transforms a human readable art profile into a binary form version that can be shipped inside an APK or a Bundle. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ART_PROFILE, secondaryTaskCategories = [TaskCategory.COMPILATION])
-abstract class CompileArtProfileTask: NonIncrementalTask() {
+abstract class CompileArtProfileTask : NonIncrementalTask() {
 
-    @get: [InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
-    abstract val mergedArtProfile: RegularFileProperty
+  @get:[InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
+  abstract val mergedArtProfile: RegularFileProperty
 
-    @get: [InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
-    abstract val l8ArtProfile: RegularFileProperty
+  @get:[InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
+  abstract val l8ArtProfile: RegularFileProperty
 
-    @get: [InputFiles PathSensitive(PathSensitivity.RELATIVE)]
-    abstract val dexFolders: ConfigurableFileCollection
+  @get:[InputFiles PathSensitive(PathSensitivity.RELATIVE)]
+  abstract val dexFolders: ConfigurableFileCollection
 
-    @get: [InputFiles Optional PathSensitive(PathSensitivity.RELATIVE)]
-    abstract val featuresDexFolders: ConfigurableFileCollection
+  @get:[InputFiles Optional PathSensitive(PathSensitivity.RELATIVE)]
+  abstract val featuresDexFolders: ConfigurableFileCollection
 
-    @get: Input
-    abstract val useMappingFile: Property<Boolean>
+  @get:Input abstract val useMappingFile: Property<Boolean>
 
-    @get: [InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
-    abstract val obfuscationMappingFile: RegularFileProperty
+  @get:[InputFiles Optional PathSensitive(PathSensitivity.NAME_ONLY)]
+  abstract val obfuscationMappingFile: RegularFileProperty
 
-    @get: OutputFile
-    abstract val binaryArtProfile: RegularFileProperty
+  @get:OutputFile abstract val binaryArtProfile: RegularFileProperty
 
-    @get: OutputFile
-    abstract val binaryArtProfileMetadata: RegularFileProperty
+  @get:OutputFile abstract val binaryArtProfileMetadata: RegularFileProperty
 
-    @get: OutputDirectory
-    @get: Optional
-    abstract val dexMetadataDirectory: DirectoryProperty
+  @get:OutputDirectory @get:Optional abstract val dexMetadataDirectory: DirectoryProperty
 
-    @get: OutputFile
-    abstract val combinedArtProfile: RegularFileProperty
+  @get:OutputFile abstract val combinedArtProfile: RegularFileProperty
 
-    abstract class CompileArtProfileWorkAction:
-            ProfileAwareWorkAction<CompileArtProfileWorkAction.Parameters>() {
+  abstract class CompileArtProfileWorkAction : ProfileAwareWorkAction<CompileArtProfileWorkAction.Parameters>() {
 
-        abstract class Parameters : ProfileAwareWorkAction.Parameters() {
-            abstract val mergedArtProfile: RegularFileProperty
-            abstract val dexFolders: ConfigurableFileCollection
-            abstract val obfuscationMappingFile: RegularFileProperty
-            abstract val binaryArtProfileOutputFile: RegularFileProperty
-            abstract val binaryArtProfileMetadataOutputFile: RegularFileProperty
-            abstract val dexMetadataDirectory: DirectoryProperty
-            abstract val l8ArtProfile: RegularFileProperty
-            abstract val combinedArtProfile: RegularFileProperty
-        }
-
-        override fun run() {
-            val filesToCompile = mutableListOf(parameters.mergedArtProfile.get().asFile)
-            if (parameters.l8ArtProfile.isPresent) {
-                filesToCompile.add(parameters.l8ArtProfile.get().asFile)
-            }
-            mergeFiles(filesToCompile, parameters.combinedArtProfile.get().asFile)
-
-            val diagnostics = Diagnostics {
-                    error -> throw RuntimeException("Error parsing baseline-prof.txt : $error")
-            }
-            val humanReadableProfile = HumanReadableProfile(
-                parameters.combinedArtProfile.get().asFile,
-                diagnostics
-            ) ?: throw RuntimeException(
-                "Merged ${SdkConstants.FN_ART_PROFILE} cannot be parsed successfully."
-            )
-            val obfuscationMap = if (parameters.obfuscationMappingFile.isPresent) {
-                ObfuscationMap(parameters.obfuscationMappingFile.get().asFile)
-            } else {
-                ObfuscationMap.Empty
-            }
-            val supplier = DexFileNameSupplier()
-            // Sort and rename the dex files in the same way that they are packaged in the APK
-            // (DexIncrementalRenameManager) and the bundle (PerModuleBundleTask) (b/346268213)
-            val dexFiles =
-                parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).map {
-                    it.inputStream().buffered().use { stream ->
-                        DexFile(stream, supplier.get())
-                    }
-                }
-
-            val artProfile = if (parameters.dexMetadataDirectory.isPresent) {
-                val artProfileWithDexMetadata = buildArtProfileWithDexMetadata(
-                    humanReadableProfile,
-                    obfuscationMap,
-                    dexFiles,
-                    outputDir = parameters.dexMetadataDirectory.get().asFile
-                )
-
-                val dexMetadataMap =
-                    artProfileWithDexMetadata.dexMetadata.entries.joinToString("\n") {
-                        it.key.toString() + "=" +
-                            PathUtils.toSystemIndependentPath(
-                                parameters.dexMetadataDirectory.get().asFile.toPath()
-                                    .relativize(it.value.toPath())
-                            )
-                    }
-                FileUtils.writeToFile(
-                    File(parameters.dexMetadataDirectory.get().asFile, SdkConstants.FN_DEX_METADATA_PROP),
-                    dexMetadataMap
-                )
-                artProfileWithDexMetadata.profile
-            } else {
-                ArtProfile(humanReadableProfile, obfuscationMap, dexFiles)
-            }
-
-            // the P compiler is always used, the server side will transcode if necessary.
-            parameters.binaryArtProfileOutputFile.get().asFile.outputStream().use {
-                artProfile.save(it, ArtProfileSerializer.V0_1_0_P)
-            }
-
-            // create the metadata.
-            parameters.binaryArtProfileMetadataOutputFile.get().asFile.outputStream().use {
-                artProfile.save(it, ArtProfileSerializer.METADATA_0_0_2)
-            }
-        }
+    abstract class Parameters : ProfileAwareWorkAction.Parameters() {
+      abstract val mergedArtProfile: RegularFileProperty
+      abstract val dexFolders: ConfigurableFileCollection
+      abstract val obfuscationMappingFile: RegularFileProperty
+      abstract val binaryArtProfileOutputFile: RegularFileProperty
+      abstract val binaryArtProfileMetadataOutputFile: RegularFileProperty
+      abstract val dexMetadataDirectory: DirectoryProperty
+      abstract val l8ArtProfile: RegularFileProperty
+      abstract val combinedArtProfile: RegularFileProperty
     }
 
-    override fun doTaskAction() {
-        // if we do not have a merged human readable profile, just return.
-        if (!mergedArtProfile.isPresent || !mergedArtProfile.get().asFile.exists()) return
+    override fun run() {
+      val filesToCompile = mutableListOf(parameters.mergedArtProfile.get().asFile)
+      if (parameters.l8ArtProfile.isPresent) {
+        filesToCompile.add(parameters.l8ArtProfile.get().asFile)
+      }
+      mergeFiles(filesToCompile, parameters.combinedArtProfile.get().asFile)
 
-        workerExecutor.noIsolation().submit(CompileArtProfileWorkAction::class.java) {
-            it.initializeFromBaseTask(this)
-            it.mergedArtProfile.set(mergedArtProfile)
-            it.dexFolders.from(dexFolders)
-            if (useMappingFile.get()) {
-                it.obfuscationMappingFile.set(obfuscationMappingFile)
-            }
-            it.binaryArtProfileOutputFile.set(binaryArtProfile)
-            it.binaryArtProfileMetadataOutputFile.set(binaryArtProfileMetadata)
-            it.dexMetadataDirectory.set(dexMetadataDirectory)
-            it.l8ArtProfile.set(l8ArtProfile)
-            it.combinedArtProfile.set(combinedArtProfile)
+      val diagnostics = Diagnostics { error -> throw RuntimeException("Error parsing baseline-prof.txt : $error") }
+      val humanReadableProfile =
+        HumanReadableProfile(parameters.combinedArtProfile.get().asFile, diagnostics)
+          ?: throw RuntimeException("Merged ${SdkConstants.FN_ART_PROFILE} cannot be parsed successfully.")
+      val obfuscationMap =
+        if (parameters.obfuscationMappingFile.isPresent) {
+          ObfuscationMap(parameters.obfuscationMappingFile.get().asFile)
+        } else {
+          ObfuscationMap.Empty
         }
+      val supplier = DexFileNameSupplier()
+      // Sort and rename the dex files in the same way that they are packaged in the APK
+      // (DexIncrementalRenameManager) and the bundle (PerModuleBundleTask) (b/346268213)
+      val dexFiles =
+        parameters.dexFolders.asFileTree.files.sortedWith(DexFileComparator).map {
+          it.inputStream().buffered().use { stream -> DexFile(stream, supplier.get()) }
+        }
+
+      val artProfile =
+        if (parameters.dexMetadataDirectory.isPresent) {
+          val artProfileWithDexMetadata =
+            buildArtProfileWithDexMetadata(
+              humanReadableProfile,
+              obfuscationMap,
+              dexFiles,
+              outputDir = parameters.dexMetadataDirectory.get().asFile,
+            )
+
+          val dexMetadataMap =
+            artProfileWithDexMetadata.dexMetadata.entries.joinToString("\n") {
+              it.key.toString() +
+                "=" +
+                PathUtils.toSystemIndependentPath(parameters.dexMetadataDirectory.get().asFile.toPath().relativize(it.value.toPath()))
+            }
+          FileUtils.writeToFile(File(parameters.dexMetadataDirectory.get().asFile, SdkConstants.FN_DEX_METADATA_PROP), dexMetadataMap)
+          artProfileWithDexMetadata.profile
+        } else {
+          ArtProfile(humanReadableProfile, obfuscationMap, dexFiles)
+        }
+
+      // the P compiler is always used, the server side will transcode if necessary.
+      parameters.binaryArtProfileOutputFile.get().asFile.outputStream().use { artProfile.save(it, ArtProfileSerializer.V0_1_0_P) }
+
+      // create the metadata.
+      parameters.binaryArtProfileMetadataOutputFile.get().asFile.outputStream().use {
+        artProfile.save(it, ArtProfileSerializer.METADATA_0_0_2)
+      }
+    }
+  }
+
+  override fun doTaskAction() {
+    // if we do not have a merged human readable profile, just return.
+    if (!mergedArtProfile.isPresent || !mergedArtProfile.get().asFile.exists()) return
+
+    workerExecutor.noIsolation().submit(CompileArtProfileWorkAction::class.java) {
+      it.initializeFromBaseTask(this)
+      it.mergedArtProfile.set(mergedArtProfile)
+      it.dexFolders.from(dexFolders)
+      if (useMappingFile.get()) {
+        it.obfuscationMappingFile.set(obfuscationMappingFile)
+      }
+      it.binaryArtProfileOutputFile.set(binaryArtProfile)
+      it.binaryArtProfileMetadataOutputFile.set(binaryArtProfileMetadata)
+      it.dexMetadataDirectory.set(dexMetadataDirectory)
+      it.l8ArtProfile.set(l8ArtProfile)
+      it.combinedArtProfile.set(combinedArtProfile)
+    }
+  }
+
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<CompileArtProfileTask, ApkCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("compile", "ArtProfile")
+
+    override val type: Class<CompileArtProfileTask>
+      get() = CompileArtProfileTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<CompileArtProfileTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, CompileArtProfileTask::binaryArtProfile)
+        .on(InternalArtifactType.BINARY_ART_PROFILE)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, CompileArtProfileTask::binaryArtProfileMetadata)
+        .on(InternalArtifactType.BINARY_ART_PROFILE_METADATA)
+
+      // Only include the dex metadata (.dm) files for release builds since these are used
+      // along with the APKs for installation on devices
+      // Additionally, do not generate the .dm files if opt-out is specified in the DSL
+      if (
+        !creationConfig.debuggable &&
+          creationConfig.global.installationOptions is ApplicationInstallation &&
+          (creationConfig.global.installationOptions as ApplicationInstallation).enableBaselineProfile
+      ) {
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, CompileArtProfileTask::dexMetadataDirectory)
+          .on(InternalArtifactType.DEX_METADATA_DIRECTORY)
+      }
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, CompileArtProfileTask::combinedArtProfile)
+        .on(InternalArtifactType.COMBINED_ART_PROFILE)
     }
 
-    class CreationAction(
-            creationConfig: ApkCreationConfig
-    ) : VariantTaskCreationAction<CompileArtProfileTask, ApkCreationConfig>(creationConfig) {
+    override fun configure(task: CompileArtProfileTask) {
+      super.configure(task)
+      task.mergedArtProfile.setDisallowChanges(
+        creationConfig.artifacts.get(
+          if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
+            InternalArtifactType.R8_ART_PROFILE
+          } else {
+            InternalArtifactType.MERGED_ART_PROFILE
+          }
+        )
+      )
+      if (creationConfig.dexing.shouldPackageDesugarLibDex) {
+        task.l8ArtProfile.setDisallowChanges(creationConfig.artifacts.get(InternalArtifactType.L8_ART_PROFILE))
+      }
+      task.dexFolders.fromDisallowChanges(PackageAndroidArtifact.CreationAction.getDexFolders(creationConfig))
 
-        override val name: String
-            get() = computeTaskName("compile", "ArtProfile")
-        override val type: Class<CompileArtProfileTask>
-            get() = CompileArtProfileTask::class.java
+      PackageAndroidArtifact.CreationAction.getFeatureDexFolder(creationConfig, task.project.path)?.let { task.featuresDexFolders.from(it) }
+      task.featuresDexFolders.disallowChanges()
 
-        override fun handleProvider(taskProvider: TaskProvider<CompileArtProfileTask>) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                CompileArtProfileTask::binaryArtProfile
-            ).on(InternalArtifactType.BINARY_ART_PROFILE)
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                CompileArtProfileTask::binaryArtProfileMetadata
-            ).on(InternalArtifactType.BINARY_ART_PROFILE_METADATA)
-
-            // Only include the dex metadata (.dm) files for release builds since these are used
-            // along with the APKs for installation on devices
-            // Additionally, do not generate the .dm files if opt-out is specified in the DSL
-            if (!creationConfig.debuggable &&
-                creationConfig.global.installationOptions is ApplicationInstallation &&
-                (creationConfig.global.installationOptions as ApplicationInstallation)
-                    .enableBaselineProfile) {
-                creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    CompileArtProfileTask::dexMetadataDirectory
-                ).on(InternalArtifactType.DEX_METADATA_DIRECTORY)
-            }
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                CompileArtProfileTask::combinedArtProfile
-            ).on(InternalArtifactType.COMBINED_ART_PROFILE)
-        }
-
-        override fun configure(task: CompileArtProfileTask) {
-            super.configure(task)
-            task.mergedArtProfile.setDisallowChanges(
-                creationConfig.artifacts.get(
-                    if (creationConfig.optimizationCreationConfig.minifiedEnabled) {
-                        InternalArtifactType.R8_ART_PROFILE
-                    } else {
-                        InternalArtifactType.MERGED_ART_PROFILE
-                    }
-                )
-            )
-            if (creationConfig.dexing.shouldPackageDesugarLibDex) {
-                task.l8ArtProfile.setDisallowChanges(
-                    creationConfig.artifacts.get(InternalArtifactType.L8_ART_PROFILE)
-                )
-            }
-            task.dexFolders.fromDisallowChanges(
-                    PackageAndroidArtifact.CreationAction.getDexFolders(creationConfig)
-            )
-
-            PackageAndroidArtifact.CreationAction.getFeatureDexFolder(
-                    creationConfig,
-                    task.project.path
-            )?.let {
-                task.featuresDexFolders.from(it)
-            }
-            task.featuresDexFolders.disallowChanges()
-
-            configureObfuscationMappingFile(task)
-        }
-
-        @VisibleForTesting
-        internal fun configureObfuscationMappingFile(task: CompileArtProfileTask) {
-            if (creationConfig is VariantCreationConfig) {
-                task.useMappingFile.setDisallowChanges(
-                    creationConfig.experimentalProperties.map {
-                        !ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it)
-                    })
-            } else {
-                task.useMappingFile.setDisallowChanges(true)
-            }
-            task.obfuscationMappingFile.setDisallowChanges(
-                creationConfig.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE)
-            )
-        }
+      configureObfuscationMappingFile(task)
     }
+
+    @VisibleForTesting
+    internal fun configureObfuscationMappingFile(task: CompileArtProfileTask) {
+      if (creationConfig is VariantCreationConfig) {
+        task.useMappingFile.setDisallowChanges(
+          creationConfig.experimentalProperties.map { !ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it) }
+        )
+      } else {
+        task.useMappingFile.setDisallowChanges(true)
+      }
+      task.obfuscationMappingFile.setDisallowChanges(creationConfig.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
+    }
+  }
 }

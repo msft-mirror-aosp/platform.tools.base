@@ -21,24 +21,20 @@ import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodTy
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.file.RegularFileProperty
 
-open class AnalyticsEnabledDexing(
-    val delegate: Dexing,
-    val stats: GradleBuildVariant.Builder,
-): Dexing {
+open class AnalyticsEnabledDexing(val delegate: Dexing, val stats: GradleBuildVariant.Builder) : Dexing {
 
-    override val isMultiDexEnabled: Boolean
-        get() = delegate.isMultiDexEnabled
+  override val isMultiDexEnabled: Boolean
+    get() = delegate.isMultiDexEnabled
 
-    override val multiDexKeepProguard: RegularFileProperty
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.MULTI_DEX_KEEP_PROGUARD_VALUE
-            return delegate.multiDexKeepProguard
-        }
-    override val multiDexKeepFile: RegularFileProperty
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.MULTI_DEX_KEEP_FILE_VALUE
-            return delegate.multiDexKeepFile
-        }
+  override val multiDexKeepProguard: RegularFileProperty
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MULTI_DEX_KEEP_PROGUARD_VALUE
+      return delegate.multiDexKeepProguard
+    }
+
+  override val multiDexKeepFile: RegularFileProperty
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.MULTI_DEX_KEEP_FILE_VALUE
+      return delegate.multiDexKeepFile
+    }
 }

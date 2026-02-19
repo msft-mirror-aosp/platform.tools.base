@@ -24,11 +24,10 @@ import java.util.Deque
 /**
  * The class allows for observing method's thisObject and args in ExitHook.
  *
- * It works by registering both (entry and exit) hooks and keeping its own method frame stack. On
- * exit, it calls [OnExitCallback] provided by the user.
+ * It works by registering both (entry and exit) hooks and keeping its own method frame stack. On exit, it calls [OnExitCallback] provided
+ * by the user.
  *
- * TODO: handle cases when frames could be dropped (e.g. because of an Exception) causing internal
- *   state to be corrupted.
+ * TODO: handle cases when frames could be dropped (e.g. because of an Exception) causing internal state to be corrupted.
  *
  * Thread safe by using a [ThreadLocal].
  */
@@ -58,12 +57,7 @@ internal class EntryExitMatchingHookRegistry(private val environment: InspectorE
     }
   }
 
-  internal data class Frame(
-    val method: String,
-    val thisObject: Any?,
-    val args: List<Any?>,
-    val result: Any? = null,
-  )
+  internal data class Frame(val method: String, val thisObject: Any?, val args: List<Any?>, val result: Any? = null)
 
   internal fun interface OnExitCallback<O, R> {
     fun onExit(thisObject: O?, args: List<Any?>, result: R?): R?

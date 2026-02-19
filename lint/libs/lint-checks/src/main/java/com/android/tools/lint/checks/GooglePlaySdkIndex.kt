@@ -73,8 +73,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     const val DEFAULT_SHOW_DEPRECATION_ISSUES = true
     const val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_FILE = "snapshot.gz"
     const val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE = "sdk-index-offline-snapshot.proto.gz"
-    val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_URL =
-      System.getenv(SDK_INDEX_SNAPSHOT_TEST_BASE_URL_ENV_VAR) ?: DEFAULT_SDK_INDEX_SNAPSHOT_BASE_URL
+    val GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_URL = System.getenv(SDK_INDEX_SNAPSHOT_TEST_BASE_URL_ENV_VAR) ?: DEFAULT_SDK_INDEX_SNAPSHOT_BASE_URL
     const val GOOGLE_PLAY_SDK_INDEX_KEY = "sdk_index"
     const val GOOGLE_PLAY_SDK_CACHE_EXPIRY_INTERVAL_DAYS = 7L
     const val GOOGLE_PLAY_SDK_INDEX_URL = "https://developer.android.com/distribute/sdk-index"
@@ -91,20 +90,12 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
         SDK_POLICY_MALWARE to "Malware",
       )
 
-    data class VulnerabilityDescription(
-      val name: String,
-      val description: String,
-      val link: String?,
-    )
+    data class VulnerabilityDescription(val name: String, val description: String, val link: String?)
 
     val SECURITY_VULNERABILITY_TYPE_TO_TEXT =
       mapOf(
         SDK_SECURITY_VULNERABILITY_TYPE_UNSPECIFIED to
-          VulnerabilityDescription(
-            name = "unspecified",
-            description = "contains unspecified vulnerability issues",
-            link = null,
-          ),
+          VulnerabilityDescription(name = "unspecified", description = "contains unspecified vulnerability issues", link = null),
         SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_TRUST_MANAGER to
           VulnerabilityDescription(
             name = "Unsafe TrustManager",
@@ -114,8 +105,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
         SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_HOSTNAME_VERIFIER to
           VulnerabilityDescription(
             name = "Unsafe HostnameVerifier",
-            description =
-              "contains an unsafe implementation of the interfaces HostnameVerifier or X509HostnameVerifier",
+            description = "contains an unsafe implementation of the interfaces HostnameVerifier or X509HostnameVerifier",
             link = "https://support.google.com/googleplay/android-developer/answer/9888379",
           ),
         SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_SSL_ERROR_HANDLER to
@@ -193,8 +183,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
         SDK_SECURITY_VULNERABILITY_TYPE_FRAGMENT_INJECTION to
           VulnerabilityDescription(
             name = "Fragment Injection",
-            description =
-              "contains an unsafe PreferenceActivity implementation that may be vulnerable to Fragment Injection",
+            description = "contains an unsafe PreferenceActivity implementation that may be vulnerable to Fragment Injection",
             link = "https://support.google.com/googleplay/android-developer/answer/9888379",
           ),
         SDK_SECURITY_VULNERABILITY_TYPE_PATH_TRAVERSAL to
@@ -233,8 +222,8 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   var showDeprecationIssues = DEFAULT_SHOW_DEPRECATION_ISSUES
 
   /**
-   * Read Index snapshot (locally if it is not old and remotely if old and network is available) and
-   * store results in maps for later consumption.
+   * Read Index snapshot (locally if it is not old and remotely if old and network is available) and store results in maps for later
+   * consumption.
    */
   fun initialize() {
     initialize(null)
@@ -249,19 +238,13 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
         val gzipData = GZIPInputStream(rawData)
         readDataErrorType = ReadDataErrorType.INDEX_PARSE_EXCEPTION
         val index = Index.parseFrom(gzipData)
-        readDataErrorType =
-          if (index != null) ReadDataErrorType.NO_ERROR
-          else ReadDataErrorType.INDEX_PARSE_NULL_ERROR
+        readDataErrorType = if (index != null) ReadDataErrorType.NO_ERROR else ReadDataErrorType.INDEX_PARSE_NULL_ERROR
         return ReadDataResult(index, readDataErrorType, exception = null)
       }
     } catch (exception: Exception) {
       return ReadDataResult(index = null, readDataErrorType, exception)
     }
-    return ReadDataResult(
-      index = null,
-      readDataErrorType = ReadDataErrorType.DATA_FUNCTION_NULL_ERROR,
-      exception = null,
-    )
+    return ReadDataResult(index = null, readDataErrorType = ReadDataErrorType.DATA_FUNCTION_NULL_ERROR, exception = null)
   }
 
   @VisibleForTesting
@@ -290,9 +273,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
       } else {
         if (lastReadSourceType != DataSourceType.DEFAULT_DATA) {
           lastReadSourceType = DataSourceType.UNKNOWN_SOURCE
-          val offlineResult = readIndexData {
-            readDefaultData(GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE)
-          }
+          val offlineResult = readIndexData { readDefaultData(GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE) }
           if (offlineResult.index != null) {
             indexDataSource = DataSourceType.DEFAULT_DATA
             index = offlineResult.index
@@ -323,17 +304,10 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @param buildFile: build file in which this dependency is declared, for logging purposes
-   * @return true if the index has information about this particular version, and it has compliant
-   *   issues.
+   * @return true if the index has information about this particular version, and it has compliant issues.
    */
-  fun isLibraryNonCompliant(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): Boolean {
-    val isNonCompliant =
-      getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() == true
+  fun isLibraryNonCompliant(groupId: String, artifactId: String, versionString: String, buildFile: File?): Boolean {
+    val isNonCompliant = getLabels(groupId, artifactId, versionString)?.hasPolicyIssuesInfo() == true
     if (isNonCompliant) {
       logNonCompliant(groupId, artifactId, versionString, buildFile)
     }
@@ -347,15 +321,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @param buildFile: build file in which this dependency is declared, for logging purposes
-   * @return true if the index has information about this particular version, and it has been marked
-   *   as outdated.
+   * @return true if the index has information about this particular version, and it has been marked as outdated.
    */
-  fun isLibraryOutdated(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): Boolean {
+  fun isLibraryOutdated(groupId: String, artifactId: String, versionString: String, buildFile: File?): Boolean {
     val isOutdated = getLabels(groupId, artifactId, versionString)?.hasOutdatedIssueInfo() == true
     if (isOutdated) {
       logOutdated(groupId, artifactId, versionString, buildFile)
@@ -370,17 +338,10 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @param buildFile: build file in which this dependency is declared, for logging purposes
-   * @return true if the index has information about this particular version, and it has critical
-   *   issues reported by its authors.
+   * @return true if the index has information about this particular version, and it has critical issues reported by its authors.
    */
-  fun hasLibraryCriticalIssues(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): Boolean {
-    val hasCriticalIssues =
-      getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() == true
+  fun hasLibraryCriticalIssues(groupId: String, artifactId: String, versionString: String, buildFile: File?): Boolean {
+    val hasCriticalIssues = getLabels(groupId, artifactId, versionString)?.hasCriticalIssueInfo() == true
     if (hasCriticalIssues) {
       logHasCriticalIssues(groupId, artifactId, versionString, buildFile)
     }
@@ -394,17 +355,10 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
    * @param buildFile: build file in which this dependency is declared, for logging purposes
-   * @return true if the index has information about this particular version, and it has security
-   *   vulnerabilities reported.
+   * @return true if the index has information about this particular version, and it has security vulnerabilities reported.
    */
-  fun hasLibraryVulnerabilityIssues(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): Boolean {
-    val hasVulnerabilities =
-      getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() == true
+  fun hasLibraryVulnerabilityIssues(groupId: String, artifactId: String, versionString: String, buildFile: File?): Boolean {
+    val hasVulnerabilities = getLabels(groupId, artifactId, versionString)?.hasSecurityVulnerabilitiesInfo() == true
     if (hasVulnerabilities) {
       logVulnerability(groupId, artifactId, versionString, buildFile)
     }
@@ -418,15 +372,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version currently used, for logging purposes
    * @param buildFile: build file in which this dependency is declared, for logging purposes
-   * @return true if the index has information about this particular version, and it has been
-   *   labeled with [LibraryDeprecation].
+   * @return true if the index has information about this particular version, and it has been labeled with [LibraryDeprecation].
    */
-  fun isLibraryDeprecated(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): Boolean {
+  fun isLibraryDeprecated(groupId: String, artifactId: String, versionString: String, buildFile: File?): Boolean {
     val library = getLibrary(groupId, artifactId) ?: return false
     val deprecation = library.deprecation
     if (deprecation != null && deprecation.deprecationTimestampSeconds > 0) {
@@ -442,14 +390,9 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param groupId: group id for library coordinates
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
-   * @return true if the index has information about this particular version, and it has been
-   *   labeled with blocking severity.
+   * @return true if the index has information about this particular version, and it has been labeled with blocking severity.
    */
-  fun hasLibraryBlockingIssues(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): Boolean {
+  fun hasLibraryBlockingIssues(groupId: String, artifactId: String, versionString: String): Boolean {
     val labels = getLabels(groupId, artifactId, versionString) ?: return false
     val severity = labels.severity
     return severity == LibraryVersionLabels.Severity.BLOCKING_SEVERITY
@@ -461,19 +404,13 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param groupId: group id for library coordinates
    * @param artifactId: artifact id for library coordinates
    * @param versionString: version to check
-   * @return true if the index has information about this particular version, and it has issues that
-   *   will cause an error or warning. (Any blocking issue is an error, non-blocking outdated,
-   *   policy or vulnerability issues are warnings; deprecated libraries will cause a warning if no
-   *   blocking issues exist (error otherwise))
+   * @return true if the index has information about this particular version, and it has issues that will cause an error or warning. (Any
+   *   blocking issue is an error, non-blocking outdated, policy or vulnerability issues are warnings; deprecated libraries will cause a
+   *   warning if no blocking issues exist (error otherwise))
    */
-  fun hasLibraryErrorOrWarning(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): Boolean {
+  fun hasLibraryErrorOrWarning(groupId: String, artifactId: String, versionString: String): Boolean {
     val library = getLibrary(groupId, artifactId)
-    return library?.deprecation.isDeprecated() ||
-      library?.getVersion(versionString)?.versionLabels.hasErrorOrWarning()
+    return library?.deprecation.isDeprecated() || library?.getVersion(versionString)?.versionLabels.hasErrorOrWarning()
   }
 
   /**
@@ -500,11 +437,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return getLibrary(groupId, artifactId)?.getLatestVersion()
   }
 
-  private fun getLabels(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): LibraryVersionLabels? {
+  private fun getLabels(groupId: String, artifactId: String, versionString: String): LibraryVersionLabels? {
     if (!isReady()) {
       return null
     }
@@ -512,11 +445,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return libraryVersion.versionLabels
   }
 
-  private fun getLibraryVersion(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): LibraryVersion? {
+  private fun getLibraryVersion(groupId: String, artifactId: String, versionString: String): LibraryVersion? {
     val coordinate = createCoordinateString(groupId, artifactId)
     val sdk = libraryToSdk[coordinate] ?: return null
     return sdk.getVersion(versionString)
@@ -532,11 +461,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     val sdkList = index.sdksList
     for (sdk in sdkList) {
       for (library in sdk.librariesList) {
-        val coordinate =
-          createCoordinateString(
-            library.libraryId.mavenId.groupId,
-            library.libraryId.mavenId.artifactId,
-          )
+        val coordinate = createCoordinateString(library.libraryId.mavenId.groupId, library.libraryId.mavenId.artifactId)
         val currentLibrary = LibraryToSdk(coordinate, sdk)
         // Add SDK deprecation issues
         val deprecation = library.libraryDeprecation
@@ -589,9 +514,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
       logCachingError(lastReadResult, lastReadSourceType)
     }
     // We only have a single file, return it no matter what relative string is used
-    return GooglePlaySdkIndex::class
-      .java
-      .getResourceAsStream("/$GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE")
+    return GooglePlaySdkIndex::class.java.getResourceAsStream("/$GOOGLE_PLAY_SDK_INDEX_SNAPSHOT_RESOURCE")
   }
 
   /**
@@ -603,22 +526,13 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
    * @param buildFile: build file where this library is being used
    * @return a link to the SDK url this library belongs to if the index has information about it
    */
-  open fun generateSdkLinkLintFix(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    buildFile: File?,
-  ): LintFix? {
+  open fun generateSdkLinkLintFix(groupId: String, artifactId: String, versionString: String, buildFile: File?): LintFix? {
     val url = getSdkUrl(groupId, artifactId)
     return if (url.isNullOrBlank()) null else LintFix.ShowUrl(VIEW_DETAILS_MESSAGE, null, url)
   }
 
   /** Generate a message for a library that has blocking policy issues */
-  fun generateBlockingPolicyMessage(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  fun generateBlockingPolicyMessage(groupId: String, artifactId: String, versionString: String): String {
     val recommendedVersions = getPolicyRecommendedVersions(groupId, artifactId, versionString)
     val policyLabels = getPolicyLabels(getLabels(groupId, artifactId, versionString))
     val labels = policyLabels.sorted().joinToString(", ")
@@ -636,11 +550,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   }
 
   /** Generate a message for a library that has blocking critical issues */
-  fun generateBlockingCriticalMessage(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  fun generateBlockingCriticalMessage(groupId: String, artifactId: String, versionString: String): String {
     val note = getNoteFromDeveloper(groupId, artifactId, versionString)
     return "**[Prevents app release in Google Play Console]** $groupId:$artifactId version $versionString has been reported as problematic by its author and will block publishing of your app to Play Console$note"
   }
@@ -652,11 +562,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   }
 
   /** Generate a message for a library that has blocking outdated issues */
-  fun generateBlockingOutdatedMessage(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  fun generateBlockingOutdatedMessage(groupId: String, artifactId: String, versionString: String): String {
     val recommendedVersions = getOutdatedRecommendedVersions(groupId, artifactId, versionString)
     return "**[Prevents app release in Google Play Console]** $groupId:$artifactId version $versionString has been reported as outdated by its author and will block publishing of your app to Play Console$recommendedVersions"
   }
@@ -667,15 +573,8 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return "$groupId:$artifactId version $versionString has been reported as outdated by its author$recommendedVersions"
   }
 
-  /**
-   * Generate a list of messages for a library that has vulnerability issues, with a link for more
-   * information (can be null)
-   */
-  fun generateVulnerabilityMessages(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): List<VulnerabilityDescription> {
+  /** Generate a list of messages for a library that has vulnerability issues, with a link for more information (can be null) */
+  fun generateVulnerabilityMessages(groupId: String, artifactId: String, versionString: String): List<VulnerabilityDescription> {
     return getVulnerabilityLabels(getLabels(groupId, artifactId, versionString)).map { message ->
       VulnerabilityDescription(
         message.name,
@@ -699,62 +598,26 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
       alternatives
   }
 
-  /**
-   * Generate a list of versions that the library owner has recommended to use instead of the passed
-   * version.
-   */
-  fun recommendedVersions(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): Collection<LibraryVersionRange> {
+  /** Generate a list of versions that the library owner has recommended to use instead of the passed version. */
+  fun recommendedVersions(groupId: String, artifactId: String, versionString: String): Collection<LibraryVersionRange> {
     val recommendations = LinkedHashSet<LibraryVersionRange>()
     val labels = getLabels(groupId, artifactId, versionString)
     if (labels != null) {
-      labels.policyIssuesInfo.recommendedVersionsList?.filterNotNull()?.forEach {
-        recommendations.add(it)
-      }
-      labels.outdatedIssueInfo.recommendedVersionsList?.filterNotNull()?.forEach {
-        recommendations.add(it)
-      }
+      labels.policyIssuesInfo.recommendedVersionsList?.filterNotNull()?.forEach { recommendations.add(it) }
+      labels.outdatedIssueInfo.recommendedVersionsList?.filterNotNull()?.forEach { recommendations.add(it) }
     }
     return recommendations
   }
 
-  protected open fun logHasCriticalIssues(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    file: File?,
-  ) {}
+  protected open fun logHasCriticalIssues(groupId: String, artifactId: String, versionString: String, file: File?) {}
 
-  protected open fun logNonCompliant(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    file: File?,
-  ) {}
+  protected open fun logNonCompliant(groupId: String, artifactId: String, versionString: String, file: File?) {}
 
-  protected open fun logOutdated(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    file: File?,
-  ) {}
+  protected open fun logOutdated(groupId: String, artifactId: String, versionString: String, file: File?) {}
 
-  protected open fun logVulnerability(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    file: File?,
-  ) {}
+  protected open fun logVulnerability(groupId: String, artifactId: String, versionString: String, file: File?) {}
 
-  protected open fun logDeprecated(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-    file: File?,
-  ) {}
+  protected open fun logDeprecated(groupId: String, artifactId: String, versionString: String, file: File?) {}
 
   protected open fun logCachingError(readResult: ReadDataResult, dataSourceType: DataSourceType) {}
 
@@ -776,11 +639,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     INDEX_PARSE_NULL_ERROR,
   }
 
-  protected class ReadDataResult(
-    val index: Index?,
-    val readDataErrorType: ReadDataErrorType,
-    val exception: Exception?,
-  )
+  protected class ReadDataResult(val index: Index?, val readDataErrorType: ReadDataErrorType, val exception: Exception?)
 
   @VisibleForTesting fun getLastReadSource() = lastReadSourceType
 
@@ -803,9 +662,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return result
   }
 
-  private fun extractPolicyViolations(
-    labels: LibraryVersionLabels?
-  ): Set<LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy> {
+  private fun extractPolicyViolations(labels: LibraryVersionLabels?): Set<LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy> {
     val result = mutableSetOf<LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy>()
     if (labels == null || !labels.hasPolicyIssuesInfo()) {
       return result
@@ -817,11 +674,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return result
   }
 
-  private fun getNoteFromDeveloper(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  private fun getNoteFromDeveloper(groupId: String, artifactId: String, versionString: String): String {
     if (!showNotesFromDeveloper) return ""
     val labels = getLabels(groupId, artifactId, versionString) ?: return ""
     val criticalIssue = labels.criticalIssueInfo ?: return ""
@@ -830,32 +683,18 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return ".\n**Note:** $message"
   }
 
-  private fun getOutdatedRecommendedVersions(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  private fun getOutdatedRecommendedVersions(groupId: String, artifactId: String, versionString: String): String {
     if (!showRecommendedVersions) return ""
     val labels = getLabels(groupId, artifactId, versionString) ?: return ""
     val outdatedIssue = labels.outdatedIssueInfo ?: return ""
-    return generateRecommendedList(
-      outdatedIssue.recommendedVersionsList,
-      isThirdPartyLibrary(groupId, artifactId),
-    )
+    return generateRecommendedList(outdatedIssue.recommendedVersionsList, isThirdPartyLibrary(groupId, artifactId))
   }
 
-  private fun getPolicyRecommendedVersions(
-    groupId: String,
-    artifactId: String,
-    versionString: String,
-  ): String {
+  private fun getPolicyRecommendedVersions(groupId: String, artifactId: String, versionString: String): String {
     if (!showRecommendedVersions) return ""
     val labels = getLabels(groupId, artifactId, versionString) ?: return ""
     val policyIssue = labels.policyIssuesInfo ?: return ""
-    return generateRecommendedList(
-      policyIssue.recommendedVersionsList,
-      isThirdPartyLibrary(groupId, artifactId),
-    )
+    return generateRecommendedList(policyIssue.recommendedVersionsList, isThirdPartyLibrary(groupId, artifactId))
   }
 
   private fun isThirdPartyLibrary(groupId: String, artifactId: String): Boolean {
@@ -869,10 +708,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     return true
   }
 
-  private fun generateRecommendedList(
-    listOfVersions: List<LibraryVersionRange?>?,
-    isThirdParty: Boolean,
-  ): String {
+  private fun generateRecommendedList(listOfVersions: List<LibraryVersionRange?>?, isThirdParty: Boolean): String {
     val ranges =
       (listOfVersions ?: return "").filterNotNull().joinToString("\n") { range ->
         if (range.upperBound.isNullOrBlank()) {
@@ -890,9 +726,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     }"
   }
 
-  private fun getVulnerabilityLabels(
-    labels: LibraryVersionLabels?
-  ): List<VulnerabilityDescription> {
+  private fun getVulnerabilityLabels(labels: LibraryVersionLabels?): List<VulnerabilityDescription> {
     val defaultDetails = "has unspecified vulnerability issues"
     val defaultName = "unspecified vulnerability"
     val vulnerabilities = extractVulnerabilities(labels)
@@ -915,8 +749,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
   private fun extractVulnerabilities(
     labels: LibraryVersionLabels?
   ): Set<LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType> {
-    val result =
-      mutableSetOf<LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType>()
+    val result = mutableSetOf<LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType>()
     if (labels == null || !labels.hasSecurityVulnerabilitiesInfo()) {
       return result
     }
@@ -932,8 +765,7 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     if (deprecation == null) {
       return ""
     }
-    val alternatives =
-      deprecation.alternativeLibrariesList.mapNotNull { generateAlternativeName(it) }
+    val alternatives = deprecation.alternativeLibrariesList.mapNotNull { generateAlternativeName(it) }
     if (alternatives.isEmpty()) {
       return ""
     }
@@ -948,20 +780,12 @@ abstract class GooglePlaySdkIndex(cacheDir: Path? = null) :
     val name = library.sdkName
     val identifier = library.mavenSdkId
     if (name.isNullOrBlank()) {
-      if (
-        identifier != null &&
-          (!identifier.groupId.isNullOrBlank()) &&
-          (!identifier.artifactId.isNullOrBlank())
-      ) {
+      if (identifier != null && (!identifier.groupId.isNullOrBlank()) && (!identifier.artifactId.isNullOrBlank())) {
         return "${identifier.groupId}:${identifier.artifactId}"
       }
       return null
     } else {
-      if (
-        identifier != null &&
-          (!identifier.groupId.isNullOrBlank()) &&
-          (!identifier.artifactId.isNullOrBlank())
-      ) {
+      if (identifier != null && (!identifier.groupId.isNullOrBlank()) && (!identifier.artifactId.isNullOrBlank())) {
         return "$name (${identifier.groupId}:${identifier.artifactId})"
       }
       return name

@@ -37,10 +37,9 @@ import org.w3c.dom.Element
 /**
  * Checks each foregroundServiceType has corresponding permissions.
  *
- * For targetSdkVersion >= 34 only, each foregroundServiceType under <service> element requires
- * specific sets of permissions, which must be declared in the manifest file. Otherwise at runtime,
- * when the foreground service starts with a foregroundServiceType which has missing permission, the
- * app will get a SecurityException.
+ * For targetSdkVersion >= 34 only, each foregroundServiceType under <service> element requires specific sets of permissions, which must be
+ * declared in the manifest file. Otherwise at runtime, when the foreground service starts with a foregroundServiceType which has missing
+ * permission, the app will get a SecurityException.
  */
 class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeScanner {
   override fun getApplicableElements(): Collection<String> {
@@ -48,9 +47,8 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
   }
 
   /**
-   * "android.permission.FOREGROUND_SERVICE" is an overall permission for the app to run foreground
-   * service. Without this permission, app can not run foreground service at any
-   * foregroundServiceType. There is no need to check each foregroundServiceType's individual
+   * "android.permission.FOREGROUND_SERVICE" is an overall permission for the app to run foreground service. Without this permission, app
+   * can not run foreground service at any foregroundServiceType. There is no need to check each foregroundServiceType's individual
    * permission if this overall permission is missing.
    */
   private fun hasForegroundServicePermission(element: Element): Boolean {
@@ -66,9 +64,8 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
   }
 
   /**
-   * Each foregroundServiceType requires a combination of permissions. The app must have all
-   * permissions from the [allPermissions] list AND (also) at least one permission from the
-   * [anyPermission] list.
+   * Each foregroundServiceType requires a combination of permissions. The app must have all permissions from the [allPermissions] list AND
+   * (also) at least one permission from the [anyPermission] list.
    *
    * @param context
    * @param element
@@ -123,22 +120,8 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
     // check every individual type.
     for (type in types.split('|')) {
       when (type) {
-        "dataSync" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_DATA_SYNC"),
-            null,
-          )
-        "mediaPlayback" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"),
-            null,
-          )
+        "dataSync" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_DATA_SYNC"), null)
+        "mediaPlayback" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"), null)
         "phoneCall" ->
           checkPermission(
             context,
@@ -157,10 +140,7 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
             element,
             type,
             listOf("android.permission.FOREGROUND_SERVICE_LOCATION"),
-            listOf(
-              "android.permission.ACCESS_COARSE_LOCATION",
-              "android.permission.ACCESS_FINE_LOCATION",
-            ),
+            listOf("android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"),
           )
         "connectedDevice" ->
           checkPermission(
@@ -186,14 +166,7 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
             ),
             */
           )
-        "mediaProjection" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"),
-            null,
-          )
+        "mediaProjection" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"), null)
         "camera" ->
           checkPermission(
             context,
@@ -229,14 +202,7 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
               "android.permission.HIGH_SAMPLING_RATE_SENSORS",
             ),
           )
-        "remoteMessaging" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"),
-            null,
-          )
+        "remoteMessaging" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"), null)
         "systemExempted" ->
           checkPermission(
             context,
@@ -245,22 +211,8 @@ class ForegroundServicePermissionDetector : ResourceXmlDetector(), SourceCodeSca
             listOf("android.permission.FOREGROUND_SERVICE_SYSTEM_EXEMPTED"),
             listOf("android.permission.SCHEDULE_EXACT_ALARM", "android.permission.USE_EXACT_ALARM"),
           )
-        "fileManagement" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_FILE_MANAGEMENT"),
-            null,
-          )
-        "specialUse" ->
-          checkPermission(
-            context,
-            element,
-            type,
-            listOf("android.permission.FOREGROUND_SERVICE_SPECIAL_USE"),
-            null,
-          )
+        "fileManagement" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_FILE_MANAGEMENT"), null)
+        "specialUse" -> checkPermission(context, element, type, listOf("android.permission.FOREGROUND_SERVICE_SPECIAL_USE"), null)
         else -> continue
       }
     }

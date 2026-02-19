@@ -23,98 +23,99 @@ import org.junit.Test
 
 class NamedDomainObjectContainerProxyTest {
 
-    private val dslRecorder = DefaultDslRecorder()
+  private val dslRecorder = DefaultDslRecorder()
 
-    @Test
-    fun allAction() {
-        dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
-           container.all {
-               it.foo = 1
-           }
+  @Test
+  fun allAction() {
+    dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) { container.all { it.foo = 1 } }
+
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        root {
+          container.all {
+            foo = 1
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            root {
-              container.all {
-                foo = 1
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun allActionChained() {
+    dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) { objectWithContainer.container.all { it.foo = 1 } }
 
-    @Test
-    fun allActionChained() {
-        dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
-            objectWithContainer.container.all {
-                it.foo = 1
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        root {
+          objectWithContainer.container.all {
+            foo = 1
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            root {
-              objectWithContainer.container.all {
-                foo = 1
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun namedAndConfigure() {
+    dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) { container.named("foo") { it.foo = 1 } }
 
-    @Test
-    fun namedAndConfigure() {
-        dslRecorder.runNestedBlock("root", listOf(), ObjectWithContainer::class.java) {
-            container.named("foo") {
-                it.foo = 1
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        root {
+          container.named('foo') {
+            foo = 1
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            root {
-              container.named('foo') {
-                foo = 1
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun namedAndConfigureChained() {
+    dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) { objectWithContainer.container.named("foo") { it.foo = 1 } }
 
-    @Test
-    fun namedAndConfigureChained() {
-        dslRecorder.runNestedBlock("root", listOf(), EnclosingObject::class.java) {
-            objectWithContainer.container.named("foo") {
-                it.foo = 1
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        root {
+          objectWithContainer.container.named('foo') {
+            foo = 1
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            root {
-              objectWithContainer.container.named('foo') {
-                foo = 1
-              }
-            }
-
-        """.trimIndent())
-    }
+        """
+          .trimIndent()
+      )
+  }
 }
 
 interface DataObject {
-    var foo: Int
+  var foo: Int
 }
 
 interface ObjectWithContainer {
-    val container: NamedDomainObjectContainer<DataObject>
-    fun container(action: NamedDomainObjectContainer<DataObject>.() -> Unit)
+  val container: NamedDomainObjectContainer<DataObject>
+
+  fun container(action: NamedDomainObjectContainer<DataObject>.() -> Unit)
 }
 
 interface EnclosingObject {
-    val objectWithContainer: ObjectWithContainer
+  val objectWithContainer: ObjectWithContainer
 }

@@ -110,24 +110,13 @@ class LeakDetector : Detector(), SourceCodeScanner {
     val uastParent = declaration.uastParent
     if (uastParent != null) {
 
-      val method =
-        uastParent.getParentOfType(
-          UMethod::class.java,
-          true,
-          UClass::class.java,
-          UObjectLiteralExpression::class.java,
-        )
+      val method = uastParent.getParentOfType(UMethod::class.java, true, UClass::class.java, UObjectLiteralExpression::class.java)
       if (method != null && evaluator.isStatic(method)) {
         return
       }
     }
 
-    val invocation =
-      declaration.getParentOfType<UCallExpression>(
-        UObjectLiteralExpression::class.java,
-        true,
-        UMethod::class.java,
-      )
+    val invocation = declaration.getParentOfType<UCallExpression>(UObjectLiteralExpression::class.java, true, UMethod::class.java)
     val location: Location =
       if (isAnonymous && invocation != null) {
         context.getCallLocation(invocation, false, false)
@@ -136,8 +125,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
       }
     var name: String?
     if (isAnonymous) {
-      name =
-        "anonymous " + (declaration.javaPsi as PsiAnonymousClass).baseClassReference.qualifiedName
+      name = "anonymous " + (declaration.javaPsi as PsiAnonymousClass).baseClassReference.qualifiedName
     } else {
       name = declaration.qualifiedName
       if (name == null) {
@@ -146,12 +134,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
     }
 
     val superClassName = superClass.substring(superClass.lastIndexOf('.') + 1)
-    context.report(
-      ISSUE,
-      declaration,
-      location,
-      "This `$superClassName` class should be static or leaks might occur ($name)",
-    )
+    context.report(ISSUE, declaration, location, "This `$superClassName` class should be static or leaks might occur ($name)")
   }
 
   override fun getApplicableUastTypes(): List<Class<out UElement>> {
@@ -167,11 +150,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
     override fun visitField(node: UField) {
       val psiField = node.javaPsi as? PsiField
       val modifierList = psiField?.modifierList
-      if (
-        modifierList == null ||
-          !modifierList.hasModifierProperty(PsiModifier.STATIC) ||
-          node.uastParent is UAnonymousClass
-      ) {
+      if (modifierList == null || !modifierList.hasModifierProperty(PsiModifier.STATIC) || node.uastParent is UAnonymousClass) {
         return
       }
 
@@ -182,13 +161,8 @@ class LeakDetector : Detector(), SourceCodeScanner {
       }
       val cls = type.resolve() ?: return
       if (fqn.startsWith("android.")) {
-        if (
-          isLeakCandidate(cls, context.evaluator) &&
-            !isAppContext(cls, psiField) &&
-            !isInitializedToAppContext(context, node, cls)
-        ) {
-          val message =
-            "Do not place Android context classes in static fields; " + "this is a memory leak"
+        if (isLeakCandidate(cls, context.evaluator) && !isAppContext(cls, psiField) && !isInitializedToAppContext(context, node, cls)) {
+          val message = "Do not place Android context classes in static fields; " + "this is a memory leak"
           report(psiField, modifierList, message)
         }
       } else {
@@ -265,20 +239,14 @@ class LeakDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Is the given [field] in the given [containingClass] assigned in the Java constructor from an
-   * annotated parameter?
+   * Is the given [field] in the given [containingClass] assigned in the Java constructor from an annotated parameter?
    *
-   * (This is only looking in Java files. In Kotlin, we usually use properties for this which is
-   * already handled.)
+   * (This is only looking in Java files. In Kotlin, we usually use properties for this which is already handled.)
    */
   // Specifically targets Java. And for Java we can directly access the constructors (UAST
   // doesn't let us do that.)
   @Suppress("LintImplUseUast")
-  private fun isAssignedInConstructor(
-    context: JavaContext,
-    containingClass: UClass,
-    field: UField,
-  ): Boolean {
+  private fun isAssignedInConstructor(context: JavaContext, containingClass: UClass, field: UField): Boolean {
     if (isKotlin(field.lang)) {
       return false
     }
@@ -286,9 +254,7 @@ class LeakDetector : Detector(), SourceCodeScanner {
     for (constructor in containingClass.javaPsi.constructors) {
       val body = constructor.body ?: continue
       for (statement in body.statements) {
-        val expression =
-          (statement as? PsiExpressionStatement)?.expression?.skipParenthesizedExprDown()
-            ?: continue
+        val expression = (statement as? PsiExpressionStatement)?.expression?.skipParenthesizedExprDown() ?: continue
         if (expression is PsiAssignmentExpression) {
           val lhs = (expression.lExpression as? PsiReferenceExpression)?.resolve() ?: continue
           if (lhs.isEquivalentTo(targetField)) {
@@ -372,10 +338,7 @@ private fun isAppContext(cls: PsiClass, field: PsiField): Boolean {
     return true
   } else if (field is KtLightField) {
     val origin = field.kotlinOrigin
-    if (
-      origin != null &&
-        origin.annotationEntries.any { it.shortName?.identifier == "ApplicationContext" }
-    ) {
+    if (origin != null && origin.annotationEntries.any { it.shortName?.identifier == "ApplicationContext" }) {
       return true
     }
   }
@@ -406,11 +369,7 @@ private fun UAnnotation.isApplicationContext(): Boolean {
   return qualifiedName?.endsWith("ApplicationContext") == true
 }
 
-private fun isInitializedToAppContext(
-  context: JavaContext,
-  field: PsiField,
-  typeClass: PsiClass,
-): Boolean {
+private fun isInitializedToAppContext(context: JavaContext, field: PsiField, typeClass: PsiClass): Boolean {
   if (!context.evaluator.extendsClass(typeClass, CLASS_CONTEXT, false)) {
     return false
   }
@@ -420,11 +379,7 @@ private fun isInitializedToAppContext(
 }
 
 /** If it's a static field see if it's initialized to an app context in one of the constructors. */
-private fun isInitializedToAppContext(
-  context: JavaContext,
-  field: UField,
-  typeClass: PsiClass,
-): Boolean {
+private fun isInitializedToAppContext(context: JavaContext, field: UField, typeClass: PsiClass): Boolean {
   val containingClass = field.getContainingUClass() ?: return false
 
   // Only check for app context if we're dealing with a Context field -- there's
@@ -443,11 +398,7 @@ private fun isInitializedToAppContext(
     methodBody.accept(
       object : AbstractUastVisitor() {
         override fun visitBinaryExpression(node: UBinaryExpression): Boolean {
-          if (
-            node.isAssignment() &&
-              node.leftOperand is UResolvable &&
-              field.sourcePsi == (node.leftOperand as UResolvable).resolve()
-          ) {
+          if (node.isAssignment() && node.leftOperand is UResolvable && field.sourcePsi == (node.leftOperand as UResolvable).resolve()) {
             // Yes, assigning to this field
             // See if the right hand side looks like an app context
             var rhs: UElement = node.rightOperand
@@ -474,8 +425,7 @@ private fun isInitializedToAppContext(
 }
 
 private fun isLeakCandidate(cls: PsiClass, evaluator: JavaEvaluator): Boolean {
-  return (evaluator.extendsClass(cls, CLASS_CONTEXT, false) &&
-    !evaluator.extendsClass(cls, CLASS_APPLICATION, false)) ||
+  return (evaluator.extendsClass(cls, CLASS_CONTEXT, false) && !evaluator.extendsClass(cls, CLASS_APPLICATION, false)) ||
     evaluator.extendsClass(cls, CLASS_VIEW, false) ||
     evaluator.extendsClass(cls, CLASS_FRAGMENT, false) ||
     // TODO: Include androidx fragments here?

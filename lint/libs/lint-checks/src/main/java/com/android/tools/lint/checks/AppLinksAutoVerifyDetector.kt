@@ -75,10 +75,8 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
       }
 
       for (intent in intents) {
-        val actionView =
-          hasNamedSubTag(intent, AndroidManifest.NODE_ACTION, "android.intent.action.VIEW")
-        val browsableCategory =
-          hasNamedSubTag(intent, AndroidManifest.NODE_CATEGORY, "android.intent.category.BROWSABLE")
+        val actionView = hasNamedSubTag(intent, AndroidManifest.NODE_ACTION, "android.intent.action.VIEW")
+        val browsableCategory = hasNamedSubTag(intent, AndroidManifest.NODE_CATEGORY, "android.intent.category.BROWSABLE")
         if (!actionView || !browsableCategory) {
           continue
         }
@@ -103,10 +101,7 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
               context,
               host,
               context.getLocation(host),
-              String.format(
-                "This host does not support app links to your app. Checks the Digital Asset Links JSON file: %s",
-                jsonPath,
-              ),
+              String.format("This host does not support app links to your app. Checks the Digital Asset Links JSON file: %s", jsonPath),
             )
           }
         }
@@ -122,20 +117,14 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
             context,
             host,
             context.getLocation(host),
-            String.format(
-              "Malformed URL of Digital Asset Links JSON file: %s. An unknown protocol is specified",
-              jsonPath,
-            ),
+            String.format("Malformed URL of Digital Asset Links JSON file: %s. An unknown protocol is specified", jsonPath),
           )
         STATUS_UNKNOWN_HOST ->
           reportWarning(
             context,
             host,
             context.getLocation(host),
-            String.format(
-              "Unknown host: %s. Check if the host exists, and check your network connection",
-              key,
-            ),
+            String.format("Unknown host: %s. Check if the host exists, and check your network connection", key),
           )
         STATUS_NOT_FOUND ->
           reportError(
@@ -145,19 +134,9 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
             String.format("Digital Asset Links JSON file %s is not found on the host", jsonPath),
           )
         STATUS_WRONG_JSON_SYNTAX ->
-          reportError(
-            context,
-            host,
-            context.getLocation(host),
-            String.format("%s has incorrect JSON syntax", jsonPath),
-          )
+          reportError(context, host, context.getLocation(host), String.format("%s has incorrect JSON syntax", jsonPath))
         STATUS_JSON_PARSE_FAIL ->
-          reportError(
-            context,
-            host,
-            context.getLocation(host),
-            String.format("Parsing JSON file %s fails", jsonPath),
-          )
+          reportError(context, host, context.getLocation(host), String.format("Parsing JSON file %s fails", jsonPath))
         HttpURLConnection.HTTP_MOVED_PERM,
         HttpURLConnection.HTTP_MOVED_TEMP -> {}
         else ->
@@ -165,11 +144,7 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
             context,
             host,
             context.getLocation(host),
-            String.format(
-              "HTTP request for Digital Asset Links JSON file %1\$s fails. HTTP response code: %2\$s",
-              jsonPath,
-              value.mStatus,
-            ),
+            String.format("HTTP request for Digital Asset Links JSON file %1\$s fails. HTTP response code: %2\$s", jsonPath, value.mStatus),
           )
       }
     }
@@ -195,8 +170,7 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
   private fun getJsonFileAsync(client: LintClient): Map<String, HttpResult?> {
     val executorService = Executors.newCachedThreadPool()
     for ((key) in mJsonHost) {
-      val future =
-        executorService.submit<HttpResult> { getJson(client, key + JSON_RELATIVE_PATH, 0) }
+      val future = executorService.submit<HttpResult> { getJson(client, key + JSON_RELATIVE_PATH, 0) }
       mFutures[key] = future
     }
     executorService.shutdown()
@@ -231,8 +205,7 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
   )
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(AppLinksAutoVerifyDetector::class.java, Scope.MANIFEST_SCOPE)
+    private val IMPLEMENTATION = Implementation(AppLinksAutoVerifyDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val ISSUE: Issue =
@@ -287,18 +260,14 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
     }
 
     /**
-     * Checks if auto verification is needed. i.e. any intent tag element's autoVerify attribute is
-     * set to true.
+     * Checks if auto verification is needed. i.e. any intent tag element's autoVerify attribute is set to true.
      *
      * @param intents The intent tag elements.
      * @return true if auto verification is needed.
      */
     private fun needAutoVerification(intents: List<Element>): Boolean {
       for (intent in intents) {
-        if (
-          intent.getAttributeNS(SdkConstants.ANDROID_URI, ATTRIBUTE_AUTO_VERIFY) ==
-            SdkConstants.VALUE_TRUE
-        ) {
+        if (intent.getAttributeNS(SdkConstants.ANDROID_URI, ATTRIBUTE_AUTO_VERIFY) == SdkConstants.VALUE_TRUE) {
           return true
         }
       }
@@ -317,10 +286,7 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
       val children = element.getElementsByTagName(tagName)
       for (i in 0 until children.length) {
         val e = children.item(i) as Element
-        if (
-          e.getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME) ==
-            nameAttrValue
-        ) {
+        if (e.getAttributeNS(SdkConstants.ANDROID_URI, AndroidManifest.ATTRIBUTE_NAME) == nameAttrValue) {
           return true
         }
       }
@@ -387,16 +353,11 @@ class AppLinksAutoVerifyDetector : Detector(), XmlScanner {
     private fun getJson(client: LintClient, url: String, redirectsCount: Int): HttpResult {
       try {
         val urlObj = URL(url)
-        val urlConnection =
-          client.openConnection(urlObj, 3000) as? HttpURLConnection
-            ?: return HttpResult(STATUS_HTTP_CONNECT_FAIL, null)
+        val urlConnection = client.openConnection(urlObj, 3000) as? HttpURLConnection ?: return HttpResult(STATUS_HTTP_CONNECT_FAIL, null)
         val connection = urlConnection
         try {
           val status = connection.responseCode
-          if (
-            status == HttpURLConnection.HTTP_MOVED_PERM ||
-              status == HttpURLConnection.HTTP_MOVED_TEMP
-          ) {
+          if (status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_MOVED_TEMP) {
             if (redirectsCount < 3) {
               val newUrl = connection.getHeaderField("Location")
               if (newUrl != null && newUrl != url) {

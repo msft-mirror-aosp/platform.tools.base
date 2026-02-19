@@ -21,6 +21,7 @@ import com.android.annotations.NonNull;
 public class Camera {
     @NonNull
     private CameraLocation mLocation;
+    private int mSensorOrientation;
     private boolean mAutofocus;
     private boolean mFlash;
 
@@ -31,18 +32,33 @@ public class Camera {
      * and flash.
      */
     public Camera() {
-        this(CameraLocation.BACK, true, true);
+        this(CameraLocation.BACK, 90,true, true);
     }
 
     /**
      * Creates a new {@link Camera} which describes an on device camera and it's features.
+     *
+     * Sets the sensor orientation to the standard value of 90
      * @param location The location of the {@link Camera} on the device. Either
      * {@link CameraLocation#FRONT} or {@link CameraLocation#BACK}.
      * @param autofocus Whether the {@link Camera} can auto-focus.
      * @param flash Whether the {@link Camera} has flash.
      */
     public Camera(@NonNull CameraLocation location, boolean autofocus, boolean flash) {
+        this(location, 90,autofocus, flash);
+    }
+
+    /**
+     * Creates a new {@link Camera} which describes an on device camera and it's features.
+     * @param location The location of the {@link Camera} on the device. Either
+     * {@link CameraLocation#FRONT} or {@link CameraLocation#BACK}.
+     * @param sensorOrientation What angle the camera is mounted at
+     * @param autofocus Whether the {@link Camera} can auto-focus.
+     * @param flash Whether the {@link Camera} has flash.
+     */
+    public Camera(@NonNull CameraLocation location, int sensorOrientation, boolean autofocus, boolean flash) {
         mLocation = location;
+        mSensorOrientation = sensorOrientation;
         mAutofocus = autofocus;
         mFlash = flash;
     }
@@ -55,6 +71,16 @@ public class Camera {
     public void setLocation(@NonNull CameraLocation location) {
         mLocation = location;
     }
+
+    public int getSensorOrientation() { return mSensorOrientation; }
+
+    public void setSensorOrientation(int sensorOrientation) { mSensorOrientation = sensorOrientation; }
+
+    /**
+     * Whether the sensor orientation is the default value.
+     * @return true iff the sensor orientation has the default value
+     */
+    public boolean isSensorOrientationDefault() { return mSensorOrientation == 90; }
 
     public boolean hasAutofocus() {
         return mAutofocus;
@@ -82,6 +108,7 @@ public class Camera {
     public Camera deepCopy() {
         Camera c = new Camera();
         c.mLocation = mLocation;
+        c.mSensorOrientation = mSensorOrientation;
         c.mAutofocus = mAutofocus;
         c.mFlash = mFlash;
         return c;
@@ -97,6 +124,7 @@ public class Camera {
         }
         Camera c = (Camera) o;
         return mLocation == c.mLocation
+                && mSensorOrientation == c.mSensorOrientation
                 && mAutofocus == c.hasAutofocus()
                 && mFlash == c.hasFlash();
     }
@@ -105,6 +133,7 @@ public class Camera {
     public int hashCode() {
         int hash = 17;
         hash = 31 * hash + mLocation.ordinal();
+        hash = 31 * hash + mSensorOrientation;
         hash = 31 * hash + (mAutofocus ? 1 : 0);
         hash = 31 * hash + (mFlash ? 1 : 0);
         return hash;
@@ -115,6 +144,8 @@ public class Camera {
         StringBuilder sb = new StringBuilder();
         sb.append("Camera <mLocation=");
         sb.append(mLocation);
+        sb.append(", mSensorOrientation=");
+        sb.append(mSensorOrientation);
         sb.append(", mAutofocus=");
         sb.append(mAutofocus);
         sb.append(", mFlash=");

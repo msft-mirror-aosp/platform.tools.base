@@ -21,192 +21,175 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Integration test testing the proper handling of checkDependencies
- */
+/** Integration test testing the proper handling of checkDependencies */
 class LintCheckDependenciesTest {
 
-    private val app = MinimalSubProject.app("com.example.app")
-    private val lib = MinimalSubProject.lib("com.example.lib")
-    // lib2 is a runtimeOnly dependency of app (see b/294279964)
-    private val lib2 = MinimalSubProject.lib("com.example.lib2")
-    private val javaLib = MinimalSubProject.javaLibrary()
+  private val app = MinimalSubProject.app("com.example.app")
+  private val lib = MinimalSubProject.lib("com.example.lib")
+  // lib2 is a runtimeOnly dependency of app (see b/294279964)
+  private val lib2 = MinimalSubProject.lib("com.example.lib2")
+  private val javaLib = MinimalSubProject.javaLibrary()
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .subproject(":lib2", lib2)
-                    .subproject(":javaLib", javaLib)
-                    .dependency(app, lib)
-                    .dependency("runtimeOnly", app, lib2)
-                    .dependency(app, javaLib)
-                    .build()
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", lib)
+          .subproject(":lib2", lib2)
+          .subproject(":javaLib", javaLib)
+          .dependency(app, lib)
+          .dependency("runtimeOnly", app, lib2)
+          .dependency(app, javaLib)
+          .build()
+      )
+      .create()
 
-    @Before
-    fun before() {
-        project.getSubproject(":app")
-            .buildFile
-            .appendText(
-                """
-                    android {
-                        lintOptions {
-                            abortOnError = false
-                            enable('StopShip')
-                            textOutput = file("lint-results.txt")
-                            checkDependencies = false
-                        }
-                    }
-                """.trimIndent()
-            )
-
-        project.getSubproject(":lib")
-            .buildFile
-            .appendText(
-                """
-                    android {
-                        lintOptions {
-                            enable('StopShip')
-                        }
-                    }
-                """.trimIndent()
-            )
-
-        project.getSubproject(":lib2")
-            .buildFile
-            .appendText(
-                """
-                    android {
-                        lintOptions {
-                            enable('StopShip')
-                        }
-                    }
-                """.trimIndent()
-            )
-
-        val appSourceFile =
-            project.getSubproject(":app").file("src/main/java/com/example/foo/App.java")
-        appSourceFile.parentFile.mkdirs()
-        appSourceFile.writeText(
-            """
-                package com.example.foo;
-
-                public class App {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
-
-        val libSourceFile =
-            project.getSubproject(":lib").file("src/main/java/com/example/bar/Lib.java")
-        libSourceFile.parentFile.mkdirs()
-        libSourceFile.writeText(
-            """
-                package com.example.bar;
-
-                public class Lib {
-                    // STOPSHIP
-                }
-            """.trimIndent()
-        )
-
-        val lib2SourceFile =
-            project.getSubproject(":lib2").file("src/main/java/com/example/baz/LibTwo.java")
-        lib2SourceFile.parentFile.mkdirs()
-        lib2SourceFile.writeText(
+  @Before
+  fun before() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
         """
-                    package com.example.baz;
-
-                    public class LibTwo {
-                        // STOPSHIP
-                    }
-                """.trimIndent()
-        )
-    }
-
-    @Test
-    fun testCheckDependencies() {
-        // First run with checkDependencies false and check that lib's STOPSHIP issue is not
-        // included in app's lint report.
-        project.executor().run(":app:lintRelease").apply {
-            assertTask(":lib:lintAnalyzeRelease").didWork()
+        android {
+            lintOptions {
+                abortOnError = false
+                enable('StopShip')
+                textOutput = file("lint-results.txt")
+                checkDependencies = false
+            }
         }
-        val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).contains("App.java:4: Error: STOPSHIP comment found")
-        assertThat(reportFile).doesNotContain("Lib.java")
-        assertThat(reportFile).doesNotContain("LibTwo.java")
-        // Then run with checkDependencies true and check that lib's STOPSHIP issue *is* included
-        // in app's lint report.
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "checkDependencies = false",
-            "checkDependencies = true",
-        )
-        project.executor().run(":app:lintRelease")
-        assertThat(reportFile).exists()
-        assertThat(reportFile).containsAllOf(
-            "App.java:4: Error: STOPSHIP comment found",
-            "Lib.java:4: Error: STOPSHIP comment found",
-            "LibTwo.java:4: Error: STOPSHIP comment found"
-        )
-    }
+        """
+          .trimIndent()
+      )
 
-    @Test
-    fun testCheckDependenciesLintVital() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").file("src/main/java/com/example/foo/App.java"),
-            "// STOPSHIP",
-            "",
-        )
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "abortOnError = false",
-            "abortOnError = true",
-        )
-        // First run with checkDependencies false
-        project.executor().run(":app:lintVitalRelease").apply {
-            assertOutputContains("BUILD SUCCESSFUL")
-            assertTask(":lib:lintVitalAnalyzeRelease").didWork()
+    project
+      .getSubproject(":lib")
+      .buildFile
+      .appendText(
+        """
+        android {
+            lintOptions {
+                enable('StopShip')
+            }
         }
+        """
+          .trimIndent()
+      )
 
-        // Then run with checkDependencies true and check that lib's STOPSHIP issue *is* included
-        // in app's lint report.
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "checkDependencies = false",
-            "checkDependencies = true",
-        )
-        project.executor().expectFailure().run(":app:lintVitalRelease").apply {
-            assertErrorContains("Lib.java:4: Error: STOPSHIP comment found")
-            assertErrorContains("LibTwo.java:4: Error: STOPSHIP comment found")
+    project
+      .getSubproject(":lib2")
+      .buildFile
+      .appendText(
+        """
+        android {
+            lintOptions {
+                enable('StopShip')
+            }
         }
+        """
+          .trimIndent()
+      )
+
+    val appSourceFile = project.getSubproject(":app").file("src/main/java/com/example/foo/App.java")
+    appSourceFile.parentFile.mkdirs()
+    appSourceFile.writeText(
+      """
+      package com.example.foo;
+
+      public class App {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
+
+    val libSourceFile = project.getSubproject(":lib").file("src/main/java/com/example/bar/Lib.java")
+    libSourceFile.parentFile.mkdirs()
+    libSourceFile.writeText(
+      """
+      package com.example.bar;
+
+      public class Lib {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
+
+    val lib2SourceFile = project.getSubproject(":lib2").file("src/main/java/com/example/baz/LibTwo.java")
+    lib2SourceFile.parentFile.mkdirs()
+    lib2SourceFile.writeText(
+      """
+      package com.example.baz;
+
+      public class LibTwo {
+          // STOPSHIP
+      }
+      """
+        .trimIndent()
+    )
+  }
+
+  @Test
+  fun testCheckDependencies() {
+    // First run with checkDependencies false and check that lib's STOPSHIP issue is not
+    // included in app's lint report.
+    project.executor().run(":app:lintRelease").apply { assertTask(":lib:lintAnalyzeRelease").didWork() }
+    val reportFile = File(project.getSubproject("app").projectDir, "lint-results.txt")
+    assertThat(reportFile).exists()
+    assertThat(reportFile).contains("App.java:4: Error: STOPSHIP comment found")
+    assertThat(reportFile).doesNotContain("Lib.java")
+    assertThat(reportFile).doesNotContain("LibTwo.java")
+    // Then run with checkDependencies true and check that lib's STOPSHIP issue *is* included
+    // in app's lint report.
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "checkDependencies = false", "checkDependencies = true")
+    project.executor().run(":app:lintRelease")
+    assertThat(reportFile).exists()
+    assertThat(reportFile)
+      .containsAllOf(
+        "App.java:4: Error: STOPSHIP comment found",
+        "Lib.java:4: Error: STOPSHIP comment found",
+        "LibTwo.java:4: Error: STOPSHIP comment found",
+      )
+  }
+
+  @Test
+  fun testCheckDependenciesLintVital() {
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").file("src/main/java/com/example/foo/App.java"), "// STOPSHIP", "")
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "abortOnError = false", "abortOnError = true")
+    // First run with checkDependencies false
+    project.executor().run(":app:lintVitalRelease").apply {
+      assertOutputContains("BUILD SUCCESSFUL")
+      assertTask(":lib:lintVitalAnalyzeRelease").didWork()
     }
 
-    @Test
-    fun testWarningForJavaLibDependencyWithoutLintPlugin() {
-        val warning =
-            "Warning: Lint will treat :javaLib as an external dependency and not analyze it."
-
-        // We expect no warning when checkDependencies is false
-        project.executor().run(":app:lintDebug").assertOutputDoesNotContain(warning)
-
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "checkDependencies = false",
-            "checkDependencies = true",
-        )
-
-        // We expect the warning when checkDependencies is true
-        project.executor().run(":app:lintDebug").assertOutputContains(warning)
+    // Then run with checkDependencies true and check that lib's STOPSHIP issue *is* included
+    // in app's lint report.
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "checkDependencies = false", "checkDependencies = true")
+    project.executor().expectFailure().run(":app:lintVitalRelease").apply {
+      assertErrorContains("Lib.java:4: Error: STOPSHIP comment found")
+      assertErrorContains("LibTwo.java:4: Error: STOPSHIP comment found")
     }
+  }
+
+  @Test
+  fun testWarningForJavaLibDependencyWithoutLintPlugin() {
+    val warning = "Warning: Lint will treat :javaLib as an external dependency and not analyze it."
+
+    // We expect no warning when checkDependencies is false
+    project.executor().run(":app:lintDebug").assertOutputDoesNotContain(warning)
+
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "checkDependencies = false", "checkDependencies = true")
+
+    // We expect the warning when checkDependencies is true
+    project.executor().run(":app:lintDebug").assertOutputContains(warning)
+  }
 }

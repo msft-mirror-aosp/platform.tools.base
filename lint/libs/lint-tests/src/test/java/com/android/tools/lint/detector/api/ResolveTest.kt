@@ -67,15 +67,15 @@ class ResolveTest : TestCase() {
     val file = pair.first.find { it.file.name == "test.kt" }?.uastFile
     assertEquals(
       """
-            UFile (package = pkg) [package pkg...]
-                UClass (name = TestKt) [public final class TestKt {...}]
-                    UMethod (name = test) [public static final fun test() : void {...}]
-                        UBlockExpression [{...}]
-                            UQualifiedReferenceExpression [Foo.test()] => PsiMethod:test
-                                USimpleNameReferenceExpression (identifier = Foo) [Foo] => PsiClass:Foo
-                                UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [test()] => PsiMethod:test
-                                    UIdentifier (Identifier (test)) [UIdentifier (Identifier (test))]
-            """
+      UFile (package = pkg) [package pkg...]
+          UClass (name = TestKt) [public final class TestKt {...}]
+              UMethod (name = test) [public static final fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UQualifiedReferenceExpression [Foo.test()] => PsiMethod:test
+                          USimpleNameReferenceExpression (identifier = Foo) [Foo] => PsiClass:Foo
+                          UCallExpression (kind = UastCallKind(name='method_call'), argCount = 0)) [test()] => PsiMethod:test
+                              UIdentifier (Identifier (test)) [UIdentifier (Identifier (test))]
+      """
         .trimIndent()
         .trim(),
       file?.asResolveString()?.trim(),
@@ -162,27 +162,27 @@ class ResolveTest : TestCase() {
     val file = pair.first.uastFile
     assertEquals(
       """
-            UFile (package = pkg) [package pkg...]
-                UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
-                UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
-                UClass (name = TestKt) [public final class TestKt {...}]
-                    UMethod (name = test) [public static final fun test() : void {...}]
-                        UBlockExpression [{...}]
-                            UDeclarationsExpression [var bar: lib.Bar = Bar("hello1")]
-                                ULocalVariable (name = bar) [var bar: lib.Bar = Bar("hello1")]
-                                    UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
-                                        UIdentifier (Identifier (Bar)) [UIdentifier (Identifier (Bar))]
-                                        USimpleNameReferenceExpression (identifier = Bar, resolvesTo = PsiClass: Bar) [Bar] => PsiClass:Bar
-                                        UPolyadicExpression (operator = +) ["hello1"]
-                                            ULiteralExpression (value = "hello1") ["hello1"]
-                            UDeclarationsExpression [var bar2: lib.Bar2 = Bar2("hello2")]
-                                ULocalVariable (name = bar2) [var bar2: lib.Bar2 = Bar2("hello2")]
-                                    UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
-                                        UIdentifier (Identifier (Bar2)) [UIdentifier (Identifier (Bar2))]
-                                        USimpleNameReferenceExpression (identifier = Bar2, resolvesTo = PsiClass: Bar2) [Bar2] => PsiClass:Bar2
-                                        UPolyadicExpression (operator = +) ["hello2"]
-                                            ULiteralExpression (value = "hello2") ["hello2"]
-            """
+      UFile (package = pkg) [package pkg...]
+          UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
+          UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
+          UClass (name = TestKt) [public final class TestKt {...}]
+              UMethod (name = test) [public static final fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UDeclarationsExpression [var bar: lib.Bar = Bar("hello1")]
+                          ULocalVariable (name = bar) [var bar: lib.Bar = Bar("hello1")]
+                              UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
+                                  UIdentifier (Identifier (Bar)) [UIdentifier (Identifier (Bar))]
+                                  USimpleNameReferenceExpression (identifier = Bar, resolvesTo = PsiClass: Bar) [Bar] => PsiClass:Bar
+                                  UPolyadicExpression (operator = +) ["hello1"]
+                                      ULiteralExpression (value = "hello1") ["hello1"]
+                      UDeclarationsExpression [var bar2: lib.Bar2 = Bar2("hello2")]
+                          ULocalVariable (name = bar2) [var bar2: lib.Bar2 = Bar2("hello2")]
+                              UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
+                                  UIdentifier (Identifier (Bar2)) [UIdentifier (Identifier (Bar2))]
+                                  USimpleNameReferenceExpression (identifier = Bar2, resolvesTo = PsiClass: Bar2) [Bar2] => PsiClass:Bar2
+                                  UPolyadicExpression (operator = +) ["hello2"]
+                                      ULiteralExpression (value = "hello2") ["hello2"]
+      """
         .trimIndent()
         .trim(),
       file?.asResolveString()?.trim(),
@@ -215,22 +215,22 @@ class ResolveTest : TestCase() {
     val file = pair.first.uastFile
     assertEquals(
       """
-            UFile (package = pkg) [package pkg...]
-                UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
-                UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
-                UClass (name = Foo2) [public class Foo2 {...}]
-                    UAnnotation (fqName = java.lang.SuppressWarnings) [@java.lang.SuppressWarnings(null = "ALL")] => PsiClass:SuppressWarnings
-                        UNamedExpression (name = null) [null = "ALL"]
-                            ULiteralExpression (value = "ALL") ["ALL"]
-                    UMethod (name = test) [public fun test() : void {...}]
-                        UBlockExpression [{...}]
-                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
-                                USimpleNameReferenceExpression (identifier = Bar) [Bar] => PsiClass:Bar
-                                ULiteralExpression (value = "hello1") ["hello1"]
-                            UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
-                                USimpleNameReferenceExpression (identifier = Bar2) [Bar2] => PsiClass:Bar2
-                                ULiteralExpression (value = "hello2") ["hello2"]
-            """
+      UFile (package = pkg) [package pkg...]
+          UImportStatement (isOnDemand = false) [import lib.Bar] => PsiClass:Bar
+          UImportStatement (isOnDemand = false) [import lib.Bar2] => PsiClass:Bar2
+          UClass (name = Foo2) [public class Foo2 {...}]
+              UAnnotation (fqName = java.lang.SuppressWarnings) [@java.lang.SuppressWarnings(null = "ALL")] => PsiClass:SuppressWarnings
+                  UNamedExpression (name = null) [null = "ALL"]
+                      ULiteralExpression (value = "ALL") ["ALL"]
+              UMethod (name = test) [public fun test() : void {...}]
+                  UBlockExpression [{...}]
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar("hello1")] => PsiMethod:Bar
+                          USimpleNameReferenceExpression (identifier = Bar) [Bar] => PsiClass:Bar
+                          ULiteralExpression (value = "hello1") ["hello1"]
+                      UCallExpression (kind = UastCallKind(name='constructor_call'), argCount = 1)) [Bar2("hello2")] => PsiMethod:Bar2
+                          USimpleNameReferenceExpression (identifier = Bar2) [Bar2] => PsiClass:Bar2
+                          ULiteralExpression (value = "hello2") ["hello2"]
+      """
         .trimIndent()
         .trim(),
       file?.asResolveString()?.trim(),
@@ -258,8 +258,7 @@ class ResolveTest : TestCase() {
 
     val pair = LintUtilsTest.parse(source)
 
-    val lcAccessorName =
-      if (useFirUast()) "SymbolLightAccessorMethod" else "KtUltraLightMethodForSourceDeclaration"
+    val lcAccessorName = if (useFirUast()) "SymbolLightAccessorMethod" else "KtUltraLightMethodForSourceDeclaration"
     val uastFile = pair.first.uastFile
     assertEquals(
       """
@@ -329,10 +328,10 @@ class ResolveTest : TestCase() {
     val uastFile = pair.first.uastFile
     assertEquals(
       """
-            UFile (package = ) [import org.checkerframework.checker.nullness.qual.NonNull...]
-                UImportStatement (isOnDemand = false) [import org.checkerframework.checker.nullness.qual.NonNull] => PsiClass:NonNull
-                UClass (name = I1) [public abstract interface I1 {...}]
-            """
+      UFile (package = ) [import org.checkerframework.checker.nullness.qual.NonNull...]
+          UImportStatement (isOnDemand = false) [import org.checkerframework.checker.nullness.qual.NonNull] => PsiClass:NonNull
+          UClass (name = I1) [public abstract interface I1 {...}]
+      """
         .trimIndent()
         .trim(),
       uastFile?.asResolveString()?.trim(),
@@ -396,8 +395,7 @@ class ResolveTest : TestCase() {
     )
 }
 
-private fun UFile.asResolveString() =
-  ResolveLogger().apply { this@asResolveString.accept(this) }.toString()
+private fun UFile.asResolveString() = ResolveLogger().apply { this@asResolveString.accept(this) }.toString()
 
 class ResolveLogger : AbstractUastVisitor() {
 

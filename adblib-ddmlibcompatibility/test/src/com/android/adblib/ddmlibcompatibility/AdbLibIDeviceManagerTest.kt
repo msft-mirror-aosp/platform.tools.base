@@ -1,313 +1,287 @@
 package com.android.adblib.ddmlibcompatibility
 
+import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManagerTest.TestIDeviceManagerListener.EventType
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
+import com.android.adblib.waitForDevice
+import com.android.adblib.waitUntilOnline
+import com.android.adblib.waitUntilState
 import com.android.annotations.concurrency.WorkerThread
 import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.idevicemanager.IDeviceManagerListener
 import com.android.fakeadbserver.DeviceState
+import com.android.fakeadbserver.DeviceState.HostConnectionType
 import com.android.sdklib.AndroidApiLevel
+import kotlin.math.max
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlin.math.max
-import org.junit.Before
 import org.junit.rules.RuleChain
 
 class AdbLibIDeviceManagerTest {
 
-    private val fakeAdbRule = FakeAdbServerProviderRule()
-    private val fakeAdb get() = fakeAdbRule.fakeAdb
-    private val useAdbLibAndroidDebugBridgeRule =
-        UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
-    private val initAndroidDebugBridgeRule =
-        InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
+  private val fakeAdbRule = FakeAdbServerProviderRule()
+  private val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    @get:Rule
-    val ruleChain = RuleChain.outerRule(fakeAdbRule)
-        .around(useAdbLibAndroidDebugBridgeRule)
-        .around(initAndroidDebugBridgeRule)!!
+  private val useAdbLibAndroidDebugBridgeRule = UseAdbLibAndroidDebugBridgeRule { fakeAdbRule.adbSession }
+  private val initAndroidDebugBridgeRule = InitAndroidDebugBridgeRule { fakeAdbRule.fakeAdb.port }
 
-    private lateinit var bridge: AndroidDebugBridge
+  @get:Rule val ruleChain = RuleChain.outerRule(fakeAdbRule).around(useAdbLibAndroidDebugBridgeRule).around(initAndroidDebugBridgeRule)!!
 
-    @Before
-    fun setUp() {
-        bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
-    }
+  private lateinit var bridge: AndroidDebugBridge
 
-    @Test
-    fun hasInitialDeviceList() = runBlockingWithTimeout {
-        // Prepare
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
+  @Before
+  fun setUp() {
+    bridge = AndroidDebugBridge.createBridge() ?: error("Couldn't create a bridge")
+  }
 
-        // Act / Assert
-        yieldUntil { deviceManager.hasInitialDeviceList() }
-    }
+  @Test
+  fun hasInitialDeviceList_returnsFalse_whenAdbCannotBeQueried() = runBlockingWithTimeout {
+    // Prepare
+    val tracker = fakeAdbRule.adbSession.connectedDevicesTracker
+    tracker.connectedDevices.first { it.flowStatus.isActive }
+    fakeAdbRule.fakeAdb.stop()
+    // Note that there is a propagation delay for ADB server failures to appear in `connectedDevices.flowStatus`.
+    // `AdbLibIDeviceManager` implementation relies on this status to validate the device list.
+    tracker.connectedDevices.first { it.flowStatus.isRetrying }
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
-    @Test
-    fun getDevices() = runBlockingWithTimeout {
-        // Prepare
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
-        val fakeDevice = fakeAdb.connectDevice(
-            "dev1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // Act: Wait a little to give AdbLibIDeviceManager a chance to query devices
+    delay(100)
 
-        // Act / Assert
-        yieldUntil { deviceManager.devices.size == 1 }
-        assertEquals("dev1234", deviceManager.devices[0].serialNumber)
-    }
+    // Assert
+    assertFalse(deviceManager.hasInitialDeviceList())
+  }
 
-    @Test
-    fun tracksDeviceStateChanges() = runBlockingWithTimeout {
-        // Prepare
-        val iDeviceManagerListener = TestIDeviceManagerListener()
-        val fakeDevice = fakeAdb.connectDevice(
-            "dev1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.BOOTLOADER
+  @Test
+  fun hasInitialDeviceList_returnsTrue_whenSuccessfullyQueryingEmptyListOfDevices() = runBlockingWithTimeout {
+    // Prepare
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
-        // Act / Assert
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
-        // Wait until receiving `IDeviceManagerListener.addedDevices` event
-        yieldUntil { iDeviceManagerListener.events.size == 1 }
-        assertEquals(1, deviceManager.devices.size)
-        assertFalse(deviceManager.devices[0].isOnline)
-        assertArrayEquals(
-            arrayOf(TestIDeviceManagerListener.EventType.Added),
-            iDeviceManagerListener.events.toTypedArray()
-        )
+    // Act / Assert
+    yieldUntil { deviceManager.hasInitialDeviceList() }
+    assertTrue(deviceManager.devices.isEmpty())
+  }
 
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        // Wait until also receiving `IDeviceManagerListener.deviceStateChanged` event
-        yieldUntil { iDeviceManagerListener.events.size == 2 }
-        assertTrue(deviceManager.devices[0].isOnline)
-        assertArrayEquals(
-            arrayOf(
-                TestIDeviceManagerListener.EventType.Added,
-                TestIDeviceManagerListener.EventType.StateChanged
-            ), iDeviceManagerListener.events.toTypedArray()
-        )
-        assertArrayEquals(
-            arrayOf(IDevice.DeviceState.BOOTLOADER),
-            iDeviceManagerListener.addedDevicesStateValues.toTypedArray()
-        )
-        assertArrayEquals(
-            arrayOf(IDevice.DeviceState.ONLINE),
-            iDeviceManagerListener.deviceStateChangedValues.toTypedArray()
-        )
+  @Test
+  fun hasInitialDeviceList_true_impliesDeviceListIsPopulated() = runBlockingWithTimeout {
+    // Prepare
+    val deviceId = "1234"
+    fakeAdbRule.fakeAdb.connectDevice(deviceId, "Google", "Pixel 9", "Baklava", AndroidApiLevel(36), HostConnectionType.USB)
+    fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
 
-        // Wait a little longer to ensure `IDeviceManagerListener` doesn't get any additional unexpected events
-        delay(200)
-        assertEquals(2, iDeviceManagerListener.events.size)
-    }
+    // Act / Assert
+    yieldUntil { deviceManager.hasInitialDeviceList() }
+    assertEquals(1, deviceManager.devices.size)
+  }
 
-    @Test
-    fun removingOnlineDevice_doesNotTriggerDeviceChangeEventForDisconnectedValue() = runBlockingWithTimeout {
-        // Prepare
-        val deviceId = "dev1234"
-        val iDeviceManagerListener = TestIDeviceManagerListener()
-        val fakeDevice = fakeAdb.connectDevice(
-            deviceId,
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+  @Test
+  fun getDevices() = runBlockingWithTimeout {
+    // Prepare
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, TestIDeviceManagerListener())
+    val fakeDevice =
+      fakeAdb.connectDevice("dev1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
-        // Act / Assert
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
-        // Wait until receiving `IDeviceManagerListener.addedDevices` event
-        yieldUntil { iDeviceManagerListener.events.size == 1 }
-        assertArrayEquals(
-            arrayOf(TestIDeviceManagerListener.EventType.Added),
-            iDeviceManagerListener.events.toTypedArray()
-        )
-        assertEquals(1, deviceManager.devices.size)
-        val device = deviceManager.devices[0]
-        assertTrue(device.isOnline)
+    // Act / Assert
+    yieldUntil { deviceManager.devices.size == 1 }
+    assertEquals("dev1234", deviceManager.devices[0].serialNumber)
+  }
 
-        fakeAdb.disconnectDevice(deviceId)
-        // Wait until also receiving `IDeviceManagerListener.removedDevices` event
-        yieldUntil { iDeviceManagerListener.events.size == 2 }
-        assertArrayEquals(
-            arrayOf(
-                TestIDeviceManagerListener.EventType.Added,
-                TestIDeviceManagerListener.EventType.Removed
-            ), iDeviceManagerListener.events.toTypedArray()
-        )
-        assertArrayEquals(
-            arrayOf(IDevice.DeviceState.DISCONNECTED),
-            iDeviceManagerListener.removedDevicesStateValues.toTypedArray()
-        )
-        assertTrue(deviceManager.devices.isEmpty())
+  @Test
+  fun tracksDeviceStateChanges() = runBlockingWithTimeout {
+    // Prepare
+    val deviceId = "dev1234"
+    val iDeviceManagerListener = TestIDeviceManagerListener()
+    val fakeDevice =
+      fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.BOOTLOADER
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice("dev1234")
+    connectedDevice.waitUntilState(com.android.adblib.DeviceState.BOOTLOADER)
 
-        // Wait a little longer to ensure that the `DISCONNECTED` deviceStateChanged event
-        // wasn't triggered, and neither did any other events.
-        delay(200)
-        assertEquals(2, iDeviceManagerListener.events.size)
-    }
+    // Act / Assert
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
+    // Wait until receiving `IDeviceManagerListener.addedDevices` event
+    yieldUntil { iDeviceManagerListener.events.size == 1 }
+    assertEquals(1, deviceManager.devices.size)
+    assertFalse(deviceManager.devices[0].isOnline)
+    assertArrayEquals(arrayOf(TestIDeviceManagerListener.EventType.Added), iDeviceManagerListener.events.toTypedArray())
 
-    @Test
-    fun testStateChangeUpdatesAreSerialized() = runBlockingWithTimeout {
-        // Prepare
-        val iDeviceManagerListener = object : IDeviceManagerListener {
-            val lock = Any()
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // Wait until also receiving `IDeviceManagerListener.deviceStateChanged` event
+    yieldUntil { iDeviceManagerListener.events.size == 2 }
+    assertTrue(deviceManager.devices[0].isOnline)
+    assertArrayEquals(
+      arrayOf(TestIDeviceManagerListener.EventType.Added, TestIDeviceManagerListener.EventType.StateChanged),
+      iDeviceManagerListener.events.toTypedArray(),
+    )
+    assertArrayEquals(arrayOf(IDevice.DeviceState.BOOTLOADER), iDeviceManagerListener.addedDevicesStateValues.toTypedArray())
+    assertArrayEquals(arrayOf(IDevice.DeviceState.ONLINE), iDeviceManagerListener.deviceStateChangedValues.toTypedArray())
 
-            @Volatile
-            var totalCalls = 0
+    // Wait a little longer to ensure `IDeviceManagerListener` doesn't get any additional unexpected
+    // events
+    delay(200)
+    assertEquals(2, iDeviceManagerListener.events.size)
+  }
 
-            @Volatile
-            var concurrentCalls = 0
+  @Test
+  fun removingOnlineDevice_doesNotTriggerDeviceChangeEventForDisconnectedValue() = runBlockingWithTimeout {
+    // Prepare
+    val deviceId = "dev1234"
+    val iDeviceManagerListener = TestIDeviceManagerListener()
+    val fakeDevice =
+      fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
+    connectedDevice.waitUntilOnline()
 
-            @Volatile
-            var maxConcurrentCalls = 0
+    // Act / Assert
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
+    // Wait until receiving `IDeviceManagerListener.addedDevices` event
+    yieldUntil { iDeviceManagerListener.events.size == 1 }
+    assertArrayEquals(arrayOf(TestIDeviceManagerListener.EventType.Added), iDeviceManagerListener.events.toTypedArray())
+    assertEquals(1, deviceManager.devices.size)
+    val device = deviceManager.devices[0]
+    assertTrue(device.isOnline)
 
-            @WorkerThread
-            override fun addedDevices(deviceList: MutableList<IDevice>) {}
+    fakeAdb.disconnectDevice(deviceId)
+    // Wait until also receiving `IDeviceManagerListener.removedDevices` event
+    yieldUntil { iDeviceManagerListener.events.size == 2 }
+    assertArrayEquals(
+      arrayOf(TestIDeviceManagerListener.EventType.Added, TestIDeviceManagerListener.EventType.Removed),
+      iDeviceManagerListener.events.toTypedArray(),
+    )
+    assertArrayEquals(arrayOf(IDevice.DeviceState.DISCONNECTED), iDeviceManagerListener.removedDevicesStateValues.toTypedArray())
+    assertTrue(deviceManager.devices.isEmpty())
 
-            @WorkerThread
-            override fun removedDevices(deviceList: MutableList<IDevice>) {}
+    // Wait a little longer to ensure that the `DISCONNECTED` deviceStateChanged event
+    // wasn't triggered, and neither did any other events.
+    delay(200)
+    assertEquals(2, iDeviceManagerListener.events.size)
+  }
 
-            @WorkerThread
-            override fun deviceStateChanged(device: IDevice) {
-                Thread.sleep(1)
-                synchronized(lock) {
-                    totalCalls++
-                    concurrentCalls++
-                    maxConcurrentCalls = max(concurrentCalls, maxConcurrentCalls)
-                }
-                Thread.sleep(1)
-                synchronized(lock) {
-                    concurrentCalls--
-                }
-            }
-        }
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
-        val fakeDevice1 = fakeAdb.connectDevice(
-            "dev1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        val fakeDevice2 = fakeAdb.connectDevice(
-            "dev87878",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
+  @Test
+  fun testStateChangeUpdatesAreSerialized() = runBlockingWithTimeout {
+    // Prepare
+    val iDeviceManagerListener =
+      object : IDeviceManagerListener {
+        val lock = Any()
 
-        // Act
-        yieldUntil { deviceManager.devices.size == 2 }
-        while (iDeviceManagerListener.totalCalls < 100) {
-            fakeDevice1.deviceStatus = DeviceState.DeviceStatus.ONLINE
-            fakeDevice2.deviceStatus = DeviceState.DeviceStatus.ONLINE
-            delay(5)
-            fakeDevice1.deviceStatus = DeviceState.DeviceStatus.OFFLINE
-            fakeDevice2.deviceStatus = DeviceState.DeviceStatus.OFFLINE
-            delay(5)
-        }
+        @Volatile var totalCalls = 0
 
-        // Assert
-        assertEquals(
-            "There were more than one concurrent call to the listener, meaning calls were not serialized as expected",
-            1,
-            iDeviceManagerListener.maxConcurrentCalls
-        )
-    }
+        @Volatile var concurrentCalls = 0
 
-    @Test
-    fun testAndroidDebugBridgeRemovedEventIsTriggered_onShutdown() = runBlockingWithTimeout {
-        // Prepare
-        val iDeviceManagerListener = TestIDeviceManagerListener()
-        val deviceManager =
-            AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
-        val fakeDevice = fakeAdb.connectDevice(
-            "dev1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+        @Volatile var maxConcurrentCalls = 0
 
-        // Act / Assert
-        yieldUntil { deviceManager.devices.size == 1 }
-        delay(50)
-        assertEquals("dev1234", deviceManager.devices[0].serialNumber)
-        assertArrayEquals(arrayOf(EventType.Added), iDeviceManagerListener.events.toTypedArray())
+        @WorkerThread override fun addedDevices(deviceList: MutableList<IDevice>) {}
 
-        // Act / Assert
-        deviceManager.shutdown()
-        assertTrue(deviceManager.devices.isEmpty())
-        assertArrayEquals(
-            arrayOf(
-                EventType.Added, EventType.Removed
-            ), iDeviceManagerListener.events.toTypedArray()
-        )
-    }
-
-    private class TestIDeviceManagerListener : IDeviceManagerListener {
-
-        enum class EventType {
-            Added,
-            Removed,
-            StateChanged
-        }
-
-        val events = mutableListOf<EventType>()
-
-        val addedDevicesStateValues = mutableListOf<IDevice.DeviceState?>()
-        val removedDevicesStateValues = mutableListOf<IDevice.DeviceState?>()
-        val deviceStateChangedValues = mutableListOf<IDevice.DeviceState?>()
-
-        @WorkerThread
-        override fun addedDevices(deviceList: MutableList<IDevice>) {
-            deviceList.forEach { addedDevicesStateValues.add(it.state) }
-            events.add(EventType.Added)
-        }
-
-        @WorkerThread
-        override fun removedDevices(deviceList: MutableList<IDevice>) {
-            deviceList.forEach { removedDevicesStateValues.add(it.state) }
-            events.add(EventType.Removed)
-        }
+        @WorkerThread override fun removedDevices(deviceList: MutableList<IDevice>) {}
 
         @WorkerThread
         override fun deviceStateChanged(device: IDevice) {
-            deviceStateChangedValues.add(device.state)
-            events.add(EventType.StateChanged)
+          Thread.sleep(1)
+          synchronized(lock) {
+            totalCalls++
+            concurrentCalls++
+            maxConcurrentCalls = max(concurrentCalls, maxConcurrentCalls)
+          }
+          Thread.sleep(1)
+          synchronized(lock) { concurrentCalls-- }
         }
+      }
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
+    val fakeDevice1 =
+      fakeAdb.connectDevice("dev1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    val fakeDevice2 =
+      fakeAdb.connectDevice("dev87878", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+
+    // Act
+    yieldUntil { deviceManager.devices.size == 2 }
+    while (iDeviceManagerListener.totalCalls < 100) {
+      fakeDevice1.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      fakeDevice2.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      delay(5)
+      fakeDevice1.deviceStatus = DeviceState.DeviceStatus.OFFLINE
+      fakeDevice2.deviceStatus = DeviceState.DeviceStatus.OFFLINE
+      delay(5)
     }
+
+    // Assert
+    assertEquals(
+      "There were more than one concurrent call to the listener, meaning calls were not serialized as expected",
+      1,
+      iDeviceManagerListener.maxConcurrentCalls,
+    )
+  }
+
+  @Test
+  fun testAndroidDebugBridgeRemovedEventIsTriggered_onShutdown() = runBlockingWithTimeout {
+    // Prepare
+    val deviceId = "dev1234"
+    val iDeviceManagerListener = TestIDeviceManagerListener()
+    fakeAdb.connectDevice(deviceId, "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    // We must explicitly wait for the device state to update to avoid receiving unexpected `EventType.StateChanged` events.
+    val connectedDevice = fakeAdbRule.adbSession.connectedDevicesTracker.waitForDevice(deviceId)
+    connectedDevice.waitUntilOnline()
+    val deviceManager = AdbLibIDeviceManager(fakeAdbRule.adbSession, bridge, iDeviceManagerListener)
+
+    // Act / Assert
+    yieldUntil { deviceManager.devices.size == 1 }
+    delay(50)
+    assertEquals("dev1234", deviceManager.devices[0].serialNumber)
+    assertArrayEquals(arrayOf(EventType.Added), iDeviceManagerListener.events.toTypedArray())
+
+    // Act / Assert
+    deviceManager.shutdown()
+    assertTrue(deviceManager.devices.isEmpty())
+    assertArrayEquals(arrayOf(EventType.Added, EventType.Removed), iDeviceManagerListener.events.toTypedArray())
+  }
+
+  private class TestIDeviceManagerListener : IDeviceManagerListener {
+
+    enum class EventType {
+      Added,
+      Removed,
+      StateChanged,
+    }
+
+    val events = mutableListOf<EventType>()
+
+    val addedDevicesStateValues = mutableListOf<IDevice.DeviceState?>()
+    val removedDevicesStateValues = mutableListOf<IDevice.DeviceState?>()
+    val deviceStateChangedValues = mutableListOf<IDevice.DeviceState?>()
+
+    @WorkerThread
+    override fun addedDevices(deviceList: MutableList<IDevice>) {
+      deviceList.forEach { addedDevicesStateValues.add(it.state) }
+      events.add(EventType.Added)
+    }
+
+    @WorkerThread
+    override fun removedDevices(deviceList: MutableList<IDevice>) {
+      deviceList.forEach { removedDevicesStateValues.add(it.state) }
+      events.add(EventType.Removed)
+    }
+
+    @WorkerThread
+    override fun deviceStateChanged(device: IDevice) {
+      deviceStateChangedValues.add(device.state)
+      events.add(EventType.StateChanged)
+    }
+  }
 }

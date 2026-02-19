@@ -20,36 +20,23 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
-/**
- * Abstraction of a source file within the Variant object model.
- */
+/** Abstraction of a source file within the Variant object model. */
 interface FileEntry {
-    /**
-     *  source file name, human-readable but not guaranteed to be unique.
-     */
-    val name: String
+  /** source file name, human-readable but not guaranteed to be unique. */
+  val name: String
 
-    /**
-     * true if it contains generated sources, false it is editable by the user.
-     */
-    val isGenerated: Boolean
+  /** true if it contains generated sources, false it is editable by the user. */
+  val isGenerated: Boolean
 
-    /**
-     * true if the user added this source folder (generated or not), false if it is a folder
-     * that was automatically created by AGP.
-     */
-    val isUserAdded: Boolean
+  /** true if the user added this source folder (generated or not), false if it is a folder that was automatically created by AGP. */
+  val isUserAdded: Boolean
 
-    /**
-     * true if the folder should be added to the IDE model, false otherwise.
-     */
-    val shouldBeAddedToIdeModel: Boolean
+  /** true if the folder should be added to the IDE model, false otherwise. */
+  val shouldBeAddedToIdeModel: Boolean
 
-    /**
-     * Return the source folder as a [Provider] of [Directory], with appropriate
-     * [org.gradle.api.Task] dependency if there is one. Can be used as a task input directly.
-     */
-    fun asFile(
-            projectDir: Provider<Directory>
-    ): Provider<RegularFile>
+  /**
+   * Return the source folder as a [Provider] of [Directory], with appropriate [org.gradle.api.Task] dependency if there is one. Can be used
+   * as a task input directly.
+   */
+  fun asFile(projectDir: Provider<Directory>): Provider<RegularFile>
 }

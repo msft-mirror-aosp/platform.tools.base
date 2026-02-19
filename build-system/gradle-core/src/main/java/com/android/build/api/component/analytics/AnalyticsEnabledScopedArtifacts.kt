@@ -19,25 +19,20 @@ package com.android.build.api.component.analytics
 import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.api.variant.ScopedArtifactsOperation
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.Task
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.TaskProvider
-import javax.inject.Inject
 
-open class AnalyticsEnabledScopedArtifacts @Inject constructor(
-    private val delegate: ScopedArtifacts,
-    val stats: GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory,
-): ScopedArtifacts {
+open class AnalyticsEnabledScopedArtifacts
+@Inject
+constructor(private val delegate: ScopedArtifacts, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) :
+  ScopedArtifacts {
 
-    @Suppress("UNCHECKED_CAST")
-    override fun <T : Task> use(taskProvider: TaskProvider<T>): ScopedArtifactsOperation<T> =
-        // no need to record this usage, we will record one of the method used within that
-        // interface
-        objectFactory.newInstance(
-            AnalyticsEnabledScopedArtifactsOperation::class.java,
-            delegate.use(taskProvider),
-            stats,
-            objectFactory,
-        ) as ScopedArtifactsOperation<T>
+  @Suppress("UNCHECKED_CAST")
+  override fun <T : Task> use(taskProvider: TaskProvider<T>): ScopedArtifactsOperation<T> =
+    // no need to record this usage, we will record one of the method used within that
+    // interface
+    objectFactory.newInstance(AnalyticsEnabledScopedArtifactsOperation::class.java, delegate.use(taskProvider), stats, objectFactory)
+      as ScopedArtifactsOperation<T>
 }

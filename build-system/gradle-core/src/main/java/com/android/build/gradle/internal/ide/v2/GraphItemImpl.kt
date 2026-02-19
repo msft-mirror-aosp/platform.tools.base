@@ -19,26 +19,19 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.ide.GraphItem
 import java.io.Serializable
 
-/**
- * Implementation of [GraphItem] for serialization via the Tooling API.
- */
-data class GraphItemImpl(
-    override val key: String,
-    override val requestedCoordinates: String?,
-) : GraphItem, Serializable {
+/** Implementation of [GraphItem] for serialization via the Tooling API. */
+data class GraphItemImpl(override val key: String, override val requestedCoordinates: String?) : GraphItem, Serializable {
 
-    private val _dependencies = mutableListOf<GraphItem>()
+  private val _dependencies = mutableListOf<GraphItem>()
 
-    override val dependencies: List<GraphItem>
-        get() = _dependencies
+  override val dependencies: List<GraphItem>
+    get() = _dependencies
 
-    internal fun addDependency(dependency: GraphItem) {
-        _dependencies.add(dependency)
-    }
+  internal fun addDependency(dependency: GraphItem) {
+    _dependencies.add(dependency)
+  }
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
-
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

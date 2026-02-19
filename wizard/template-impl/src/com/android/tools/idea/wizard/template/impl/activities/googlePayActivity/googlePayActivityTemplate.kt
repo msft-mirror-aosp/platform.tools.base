@@ -41,7 +41,8 @@ import java.io.File
 val googlePayActivityTemplate
   get() = template {
     name = "Google Pay Views Activity"
-    description = "Creates a new activity with Google Pay, so that your users can start payments quickly using the cards saved under their Google accounts"
+    description =
+      "Creates a new activity with Google Pay, so that your users can start payments quickly using the cards saved under their Google accounts"
     minApi = MIN_API
     constraints = listOf(TemplateConstraint.AndroidX)
 
@@ -88,13 +89,19 @@ val googlePayActivityTemplate
       TextFieldWidget(layoutName),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("google-pay-activity").resolve("template_pay_activity.png") }
 
     recipe = { data: TemplateData ->
-      googlePayActivityRecipe(data as ModuleTemplateData, activityClass.value, viewModelClass.value,
-                               layoutName.value, isLauncher.value, packageName.value)
+      googlePayActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        viewModelClass.value,
+        layoutName.value,
+        isLauncher.value,
+        packageName.value,
+      )
     }
   }

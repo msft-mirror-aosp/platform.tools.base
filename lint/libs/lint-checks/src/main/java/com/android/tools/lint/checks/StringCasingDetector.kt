@@ -43,8 +43,7 @@ import org.w3c.dom.Node
 class StringCasingDetector : ResourceXmlDetector() {
 
   companion object {
-    private val IMPLEMENTATION_XML =
-      Implementation(StringCasingDetector::class.java, Scope.ALL_RESOURCES_SCOPE)
+    private val IMPLEMENTATION_XML = Implementation(StringCasingDetector::class.java, Scope.ALL_RESOURCES_SCOPE)
 
     /** Whether there are any duplicate strings, including capitalization adjustments. */
     @JvmField
@@ -61,8 +60,7 @@ class StringCasingDetector : ResourceXmlDetector() {
                 all be adjusted in the layout or in code.
                 """,
         implementation = IMPLEMENTATION_XML,
-        moreInfo =
-          "https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType",
+        moreInfo = "https://developer.android.com/reference/android/widget/TextView.html#attr_android:inputType",
         category = Category.APP_SIZE,
         priority = 2,
         severity = Severity.WARNING,
@@ -146,9 +144,7 @@ class StringCasingDetector : ResourceXmlDetector() {
             if (string != prevString) {
               caseVaries = true
               location.message +=
-                " (case varies, but you can use " +
-                  "`android:inputType` or `android:capitalize` in the " +
-                  "presentation)"
+                " (case varies, but you can use " + "`android:inputType` or `android:capitalize` in the " + "presentation)"
             }
           }
 
@@ -162,9 +158,7 @@ class StringCasingDetector : ResourceXmlDetector() {
         var message = "Duplicate string value `$prevString`, used in $nameList"
 
         if (caseVaries) {
-          message +=
-            ". Use `android:inputType` or `android:capitalize` " +
-              "to treat these as the same and avoid string duplication."
+          message += ". Use `android:inputType` or `android:capitalize` " + "to treat these as the same and avoid string duplication."
         }
         context.report(DUPLICATE_STRINGS, firstLocation, message)
       }

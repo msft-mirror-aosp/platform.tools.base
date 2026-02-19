@@ -21,15 +21,17 @@ import java.io.File
 import java.nio.file.Path
 
 fun testData(relativePath: String): File {
-    return testDataPath(relativePath).toFile()
+  return testDataPath(relativePath).toFile()
 }
+
 fun testDataPath(): Path {
-    return workspacePath("tools/base/profgen/profgen-cli/testData")
+  return workspacePath("tools/base/profgen/profgen-cli/testData")
 }
 
 fun testDataPath(relativePath: String): Path {
-    return testDataPath().resolve(relativePath)
+  return testDataPath().resolve(relativePath)
 }
+
 fun workspacePath(relativePath: String): Path {
-    return TestUtils.resolveWorkspacePath(relativePath)
+  return TestUtils.resolveWorkspacePath(relativePath)
 }

@@ -23,11 +23,11 @@ import com.android.builder.model.v2.AndroidModel
  *
  * @since 4.2
  */
-interface Installation: AndroidModel {
+interface Installation : AndroidModel {
 
-    /** The time out used for all adb operations. */
-    val timeOutInMs: Int
+  /** The time out used for all adb operations. */
+  val timeOutInMs: Int
 
-    /** The list of APK installation options. */
-    val installOptions: Collection<String>?
+  /** The list of APK installation options. */
+  val installOptions: Collection<String>?
 }

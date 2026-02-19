@@ -18,83 +18,85 @@ package com.android.build.gradle.internal.manifest
 
 import com.android.build.gradle.internal.utils.IssueSubject.assertThat
 import com.android.builder.model.SyncIssue
-import org.junit.Test
 import java.io.File
+import org.junit.Test
 
-/**
- * Basic tests for [LazyManifestParser]
- */
+/** Basic tests for [LazyManifestParser] */
 internal class LazyManifestParserFileTest : LazyManifestParserBaseTest() {
 
-    @Test
-    fun `empty manifest`() {
-        given {
-            manifest = """
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
-""".trimIndent()
-        }
-
-        expect {
-            data {
-                // all null values
-            }
-        }
+  @Test
+  fun `empty manifest`() {
+    given {
+      manifest =
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+        """
+          .trimIndent()
     }
 
-    @Test
-    fun `missing manifest but required`() {
-        val missingFile = File(temporaryFolder.newFolder("test"),"AndroidManifest.xml")
+    expect {
+      data {
+        // all null values
+      }
+    }
+  }
 
-        given {
-            manifestFile = missingFile
-        }
+  @Test
+  fun `missing manifest but required`() {
+    val missingFile = File(temporaryFolder.newFolder("test"), "AndroidManifest.xml")
 
-        expect {
-            issue {
-                severity = SyncIssue.SEVERITY_ERROR
-                type = SyncIssue.TYPE_MISSING_ANDROID_MANIFEST
-                message = "Manifest file does not exist: ${missingFile.absolutePath}"
-            }
-        }
+    given { manifestFile = missingFile }
+
+    expect {
+      issue {
+        severity = SyncIssue.SEVERITY_ERROR
+        type = SyncIssue.TYPE_MISSING_ANDROID_MANIFEST
+        message = "Manifest file does not exist: ${missingFile.absolutePath}"
+      }
+    }
+  }
+
+  @Test
+  fun `missing manifest but not required`() {
+    val missingFile = File(temporaryFolder.newFolder("test"), "AndroidManifest.xml")
+
+    given {
+      manifestFile = missingFile
+      manifestFileIsRequired = false
     }
 
-    @Test
-    fun `missing manifest but not required`() {
-        val missingFile = File(temporaryFolder.newFolder("test"),"AndroidManifest.xml")
+    expect {
+      data {
+        // all null values
+      }
+    }
+  }
 
-        given {
-            manifestFile = missingFile
-            manifestFileIsRequired = false
-        }
+  @Test
+  fun `early manifest parsing check`() {
 
-        expect {
-            data {
-                // all null values
-            }
-        }
+    given {
+      manifest =
+        """
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" />
+        """
+          .trimIndent()
+      earlyManifestParsingCheck = true
     }
 
-    @Test
-    fun `early manifest parsing check`() {
-
-        given {
-            manifest = """
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" />
-""".trimIndent()
-            earlyManifestParsingCheck = true
-        }
-
-        withIssueChecker {
-            val onlyIssue = it.single()
-            assertThat(onlyIssue).hasMessageThatContains("The manifest is being parsed during configuration. Please either remove android.disableConfigurationManifestParsing from build.gradle or remove any build configuration rules that read the android manifest file.\n")
-            assertThat(onlyIssue).hasSeverity(SyncIssue.SEVERITY_WARNING)
-            assertThat(onlyIssue).hasType(SyncIssue.TYPE_MANIFEST_PARSED_DURING_CONFIGURATION)
-        }
-        expect {
-            // already checked in withIssueChecker block
-        }
+    withIssueChecker {
+      val onlyIssue = it.single()
+      assertThat(onlyIssue)
+        .hasMessageThatContains(
+          "The manifest is being parsed during configuration. Please either remove android.disableConfigurationManifestParsing from build.gradle or remove any build configuration rules that read the android manifest file.\n"
+        )
+      assertThat(onlyIssue).hasSeverity(SyncIssue.SEVERITY_WARNING)
+      assertThat(onlyIssue).hasType(SyncIssue.TYPE_MANIFEST_PARSED_DURING_CONFIGURATION)
     }
-
+    expect {
+      // already checked in withIssueChecker block
+    }
+  }
 }

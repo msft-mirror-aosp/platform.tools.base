@@ -15,33 +15,26 @@
  */
 package com.android.testutils
 
-import org.junit.rules.ExternalResource
 import kotlin.reflect.KMutableProperty
+import org.junit.rules.ExternalResource
 
-/**
- * Sets the property returned by the [propertyProvider] to the [newValue] and restores it after
- * the test.
- */
-open class PropertySetterRule<T: Any>(
-    private val newValue: T,
-    private val propertyProvider: () -> KMutableProperty<T>
-) : ExternalResource() {
+/** Sets the property returned by the [propertyProvider] to the [newValue] and restores it after the test. */
+open class PropertySetterRule<T : Any>(private val newValue: T, private val propertyProvider: () -> KMutableProperty<T>) :
+  ExternalResource() {
 
-    var oldValue: T? = null
+  var oldValue: T? = null
 
-    /**
-     * Sets the [property] to the [newValue] and restores it after the test.
-     */
-    constructor(newValue: T, property: KMutableProperty<T>) : this(newValue, { property })
+  /** Sets the [property] to the [newValue] and restores it after the test. */
+  constructor(newValue: T, property: KMutableProperty<T>) : this(newValue, { property })
 
-    override fun before() {
-        val property = propertyProvider()
-        oldValue = property.getter.call()
-        property.setter.call(newValue)
-    }
+  override fun before() {
+    val property = propertyProvider()
+    oldValue = property.getter.call()
+    property.setter.call(newValue)
+  }
 
-    override fun after() {
-        propertyProvider().setter.call(oldValue)
-        oldValue = null
-    }
+  override fun after() {
+    propertyProvider().setter.call(oldValue)
+    oldValue = null
+  }
 }

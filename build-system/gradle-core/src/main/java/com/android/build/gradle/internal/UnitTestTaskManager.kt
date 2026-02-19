@@ -24,65 +24,54 @@ import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPlugin
 
-class UnitTestTaskManager(
-    project: Project,
-    globalConfig: GlobalTaskCreationConfig
-): HostTestTaskManager(project, globalConfig) {
+class UnitTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : HostTestTaskManager(project, globalConfig) {
 
-    fun createTopLevelTasks() {
-        // Create top level unit test tasks.
-        super.createTopLevelTasksCore(
-            globalConfig.taskNames.test,
-            "Run unit tests for all variants."
-        )
+  fun createTopLevelTasks() {
+    // Create top level unit test tasks.
+    super.createTopLevelTasksCore(globalConfig.taskNames.test, "Run unit tests for all variants.")
+  }
+
+  /** Creates the tasks to build unit tests. */
+  fun createTasks(hostTestCreationConfig: HostTestCreationConfig) {
+    val taskContainer = hostTestCreationConfig.taskContainer
+    val testedVariant = hostTestCreationConfig.mainVariant
+    createAnchorTasks(hostTestCreationConfig)
+
+    // Create all current streams (dependencies mostly at this point)
+    createDependencyStreams(hostTestCreationConfig)
+
+    // process java resources
+    createProcessJavaResTask(hostTestCreationConfig)
+
+    if (hostTestCreationConfig.androidResourcesIncluded) {
+      setupAndroidRequiredTasks(testedVariant, hostTestCreationConfig)
+      setupCompilationTaskDependencies(hostTestCreationConfig, taskContainer)
+    } else {
+      if (testedVariant.componentType.isAar && testedVariant.buildFeatures.androidResources) {
+        // With compile classpath R classes, we need to generate a dummy R class for unit
+        // tests
+        // See https://issuetracker.google.com/143762955 for more context.
+        taskFactory.register(GenerateLibraryRFileTask.TestRuntimeStubRClassCreationAction(hostTestCreationConfig))
+      }
     }
 
-    /** Creates the tasks to build unit tests.  */
-    fun createTasks(hostTestCreationConfig: HostTestCreationConfig) {
-        val taskContainer = hostTestCreationConfig.taskContainer
-        val testedVariant = hostTestCreationConfig.mainVariant
-        createAnchorTasks(hostTestCreationConfig)
+    setupAssembleTasks(hostTestCreationConfig, taskContainer, ASSEMBLE_UNIT_TEST)
 
-        // Create all current streams (dependencies mostly at this point)
-        createDependencyStreams(hostTestCreationConfig)
+    setupJavaCompilationTasks(hostTestCreationConfig, taskContainer, testedVariant)
 
-        // process java resources
-        createProcessJavaResTask(hostTestCreationConfig)
+    maybeCreateTransformClassesWithAsmTask(hostTestCreationConfig)
 
-        if (hostTestCreationConfig.androidResourcesIncluded) {
-            setupAndroidRequiredTasks(testedVariant, hostTestCreationConfig)
-            setupCompilationTaskDependencies(hostTestCreationConfig, taskContainer)
-        } else {
-            if (testedVariant.componentType.isAar && testedVariant.buildFeatures.androidResources) {
-                // With compile classpath R classes, we need to generate a dummy R class for unit
-                // tests
-                // See https://issuetracker.google.com/143762955 for more context.
-                taskFactory.register(
-                    GenerateLibraryRFileTask.TestRuntimeStubRClassCreationAction(
-                        hostTestCreationConfig
-                    )
-                )
-            }
-        }
+    setupLintTasks(hostTestCreationConfig)
 
-        setupAssembleTasks(hostTestCreationConfig, taskContainer, ASSEMBLE_UNIT_TEST)
-
-        setupJavaCompilationTasks(hostTestCreationConfig, taskContainer, testedVariant)
-
-        maybeCreateTransformClassesWithAsmTask(hostTestCreationConfig)
-
-        setupLintTasks(hostTestCreationConfig)
-
-        // TODO: use merged java res for unit tests (bug 118690729)
-        super.createRunHostTestTask(
-            hostTestCreationConfig,
-            globalConfig.taskNames.test,
-            JavaPlugin.TEST_TASK_NAME,
-            InternalArtifactType.UNIT_TEST_CODE_COVERAGE)
-    }
-
-    override val javaResMergingScopes = setOf(
-        InternalScopedArtifacts.InternalScope.SUB_PROJECTS,
-        InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS,
+    // TODO: use merged java res for unit tests (bug 118690729)
+    super.createRunHostTestTask(
+      hostTestCreationConfig,
+      globalConfig.taskNames.test,
+      JavaPlugin.TEST_TASK_NAME,
+      InternalArtifactType.UNIT_TEST_CODE_COVERAGE,
     )
+  }
+
+  override val javaResMergingScopes =
+    setOf(InternalScopedArtifacts.InternalScope.SUB_PROJECTS, InternalScopedArtifacts.InternalScope.EXTERNAL_LIBS)
 }

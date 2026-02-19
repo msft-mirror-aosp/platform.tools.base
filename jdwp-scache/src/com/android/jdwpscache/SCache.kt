@@ -29,8 +29,7 @@ import java.nio.ByteBuffer
 typealias CmdKey = String
 
 /**
- * JDWP packet flow in both direction between a debugger and a debuggee. SCache uses the terms
- * "upstream" and "downstream" as follows.
+ * JDWP packet flow in both direction between a debugger and a debuggee. SCache uses the terms "upstream" and "downstream" as follows.
  *
  *     DEBUGGER                    DEBUGGEE
  *         |       ->  upstream ->    |
@@ -41,12 +40,10 @@ typealias CmdKey = String
  * 1. Debugger sends a command and the Debuggee sends a reply.
  * 2. Debugee sends an event (a.ka. a command without a reply).
  *
- * TODO: Optimize with "belay". If a JWDP request arrives but we already speculated on it, it should
- *   be "belayed" and not sent for forwarding. Instead we "wait" for the reply to arrive and send a
- *   retagged reply.
+ * TODO: Optimize with "belay". If a JWDP request arrives but we already speculated on it, it should be "belayed" and not sent for
+ *   forwarding. Instead we "wait" for the reply to arrive and send a retagged reply.
  */
-internal class SCache(internal var enabled: Boolean = true, private val logger: SCacheLogger) :
-  AutoCloseable {
+internal class SCache(internal var enabled: Boolean = true, private val logger: SCacheLogger) : AutoCloseable {
 
   private val triggerManager = TriggerManager()
 
@@ -187,8 +184,7 @@ internal class SCache(internal var enabled: Boolean = true, private val logger: 
 
   private fun onIDSizesReply(reader: MessageReader, response: SCacheResponse) {
     val s = IDSizesReply.parse(reader)
-    idSizes =
-      IDSizes(s.fieldIDSize, s.methodIDSize, s.objectIDSize, s.referenceTypeIDSize, s.frameIDSize)
+    idSizes = IDSizes(s.fieldIDSize, s.methodIDSize, s.objectIDSize, s.referenceTypeIDSize, s.frameIDSize)
   }
 
   override fun close() {

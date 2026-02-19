@@ -24,16 +24,11 @@ import org.gradle.api.file.Directory
 /**
  * Artifact type use for transform
  *
- *
  * This interface is not currently usable. It is a work in progress.
  */
 @Incubating
-sealed class BuildArtifactType : Artifact.Single<Directory>(
-    ArtifactKind.DIRECTORY,
-    Category.INTERMEDIATES
-) {
-    @Incubating
-    object JAVAC_CLASSES : BuildArtifactType()
-    @Incubating
-    object JAVA_COMPILE_CLASSPATH: BuildArtifactType()
+sealed class BuildArtifactType : Artifact.Single<Directory>(ArtifactKind.DIRECTORY, Category.INTERMEDIATES) {
+  @Incubating object JAVAC_CLASSES : BuildArtifactType()
+
+  @Incubating object JAVA_COMPILE_CLASSPATH : BuildArtifactType()
 }

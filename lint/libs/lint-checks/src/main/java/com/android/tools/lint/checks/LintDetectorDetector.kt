@@ -80,29 +80,25 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 /**
  * A special check which analyzes lint detectors themselves, looking for common problems
  *
- * Additional ideas: Bundle this check with standalone lint! Or maybe make driver smart enough to
- * include it if there's a lint dependency in the project! Look for various instanceof PsiSomething
- * where Something is node types inside methods (Assignment expression etc) Look for binary instead
- * of polyadic checks Searching for UReturn which may not be there (expression bodies) Not using
- * named parameters in issue registrations Not using raw strings for issue explanations? And not
- * doing line continuations with \ ? Calling context.report without a scope node? Pulling out a
- * constant without using the constant evaluator? Look for error messages ending with ".", look for
- * capitalization on
+ * Additional ideas: Bundle this check with standalone lint! Or maybe make driver smart enough to include it if there's a lint dependency in
+ * the project! Look for various instanceof PsiSomething where Something is node types inside methods (Assignment expression etc) Look for
+ * binary instead of polyadic checks Searching for UReturn which may not be there (expression bodies) Not using named parameters in issue
+ * registrations Not using raw strings for issue explanations? And not doing line continuations with \ ? Calling context.report without a
+ * scope node? Pulling out a constant without using the constant evaluator? Look for error messages ending with ".", look for capitalization
+ * on
  *
  *       issue registration (and maximum word length for the summary)
  *
- * Creating a visitor and only overriding visitCallExpression -- should probably just use
- * getApplicableMethods and visitMethodCall. Calling accept on a UElement with a PSI visitor
+ * Creating a visitor and only overriding visitCallExpression -- should probably just use getApplicableMethods and visitMethodCall. Calling
+ * accept on a UElement with a PSI visitor
  *
- * Try running TextFormat on all messages to see if there are any problems? Warn about unit test
- * files which do not have any Kotlin test cases (if they analyze JAVA_SCOPE). Maybe look to see if
- * they're particularly needing it:
+ * Try running TextFormat on all messages to see if there are any problems? Warn about unit test files which do not have any Kotlin test
+ * cases (if they analyze JAVA_SCOPE). Maybe look to see if they're particularly needing it:
  * - manipulating strings (for kotlin check template and raw strings)
  * - creating a custom UastHandler
  * - doing anything with equals checks
- * - looking at UReturn statements or switch statements etc For Issue.create calls in Kotlin
- *   companion objects, suggest adding @JvmField to help issue registrations Look for TODO in issue
- *   registration strings, or empty registration strings
+ * - looking at UReturn statements or switch statements etc For Issue.create calls in Kotlin companion objects, suggest adding @JvmField to
+ *   help issue registrations Look for TODO in issue registration strings, or empty registration strings
  */
 class LintDetectorDetector : Detector(), UastScanner {
   override fun applicableSuperClasses(): List<String> {
@@ -123,9 +119,7 @@ class LintDetectorDetector : Detector(), UastScanner {
         if (method.returnType?.canonicalText != CLASS_TEST_LINT_RESULT) {
           return
         }
-        node.valueArguments.firstOrNull()?.let {
-          LintDetectorVisitor(context).checkTrimIndent(it, false)
-        }
+        node.valueArguments.firstOrNull()?.let { LintDetectorVisitor(context).checkTrimIndent(it, false) }
       }
       "files",
       "projects" -> {
@@ -149,12 +143,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       }
       "visitAnnotationUsage" -> {
         if (method.parameterList.parametersCount == 4 && node.receiver is USuperExpression) {
-          context.report(
-            USE_UAST,
-            node,
-            context.getLocation(node),
-            "Do not invoke `super.visitAnnotationUsage`",
-          )
+          context.report(USE_UAST, node, context.getLocation(node), "Do not invoke `super.visitAnnotationUsage`")
         }
       }
     }
@@ -196,8 +185,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       return
     }
 
-    val tests =
-      testClass.uastDeclarations.filterIsInstance<UMethod>().filter { it.name.startsWith("test") }
+    val tests = testClass.uastDeclarations.filterIsInstance<UMethod>().filter { it.name.startsWith("test") }
     if (tests.isEmpty()) {
       return
     }
@@ -350,10 +338,7 @@ class LintDetectorDetector : Detector(), UastScanner {
         "print",
         "println" -> {
           val containingClass = node.resolve()?.containingClass?.qualifiedName
-          if (
-            !context.isTestSource &&
-              (containingClass == "java.io.PrintStream" || containingClass == "kotlin.io.ConsoleKt")
-          ) {
+          if (!context.isTestSource && (containingClass == "java.io.PrintStream" || containingClass == "kotlin.io.ConsoleKt")) {
             context.report(
               TEXT_FORMAT,
               node,
@@ -369,15 +354,7 @@ class LintDetectorDetector : Detector(), UastScanner {
 
     fun checkTestFile(testFile: UCallExpression) {
       val name = testFile.methodName
-      if (
-        name == "java" ||
-          name == "kotlin" ||
-          name == "kt" ||
-          name == "kts" ||
-          name == "manifest" ||
-          name == "gradle" ||
-          name == "xml"
-      ) {
+      if (name == "java" || name == "kotlin" || name == "kt" || name == "kts" || name == "manifest" || name == "gradle" || name == "xml") {
         val args = testFile.valueArguments
         val source =
           if (args.size > 1) args[1]
@@ -407,12 +384,7 @@ class LintDetectorDetector : Detector(), UastScanner {
               index = text.indexOf(DOLLAR_CHAR)
             }
             if (index != -1) {
-              val fix =
-                LintFix.create()
-                  .replace()
-                  .text(if (string) DOLLAR_STRING else DOLLAR_CHAR)
-                  .with("＄")
-                  .build()
+              val fix = LintFix.create().replace().text(if (string) DOLLAR_STRING else DOLLAR_CHAR).with("＄").build()
               val location = context.getRangeLocation(element, index, 6)
               context.report(
                 DOLLAR_STRINGS,
@@ -437,10 +409,7 @@ class LintDetectorDetector : Detector(), UastScanner {
           var name = (argument.tryResolve() as? PsiField)?.name
           if (name == null) {
             name =
-              if (
-                argument is UQualifiedReferenceExpression &&
-                  argument.selector is USimpleNameReferenceExpression
-              ) {
+              if (argument is UQualifiedReferenceExpression && argument.selector is USimpleNameReferenceExpression) {
                 (argument.selector as USimpleNameReferenceExpression).identifier
               } else if (argument is USimpleNameReferenceExpression) {
                 argument.identifier
@@ -473,13 +442,7 @@ class LintDetectorDetector : Detector(), UastScanner {
                     .shortenNames()
                     .autoFix()
                     .build()
-                context.report(
-                  EXISTING_LINT_CONSTANTS,
-                  node,
-                  context.getLocation(node),
-                  "Use `Scope.${field.name}` instead",
-                  fix,
-                )
+                context.report(EXISTING_LINT_CONSTANTS, node, context.getLocation(node), "Use `Scope.${field.name}` instead", fix)
               }
             }
           }
@@ -491,8 +454,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       val create = call.resolve() ?: return
       val evaluator = context.evaluator
       if (
-        !evaluator.isMemberInSubClassOf(create, CLASS_CONTEXT, false) &&
-          !evaluator.isMemberInSubClassOf(create, CLASS_LINT_CLIENT, false)
+        !evaluator.isMemberInSubClassOf(create, CLASS_CONTEXT, false) && !evaluator.isMemberInSubClassOf(create, CLASS_LINT_CLIENT, false)
       ) {
         return
       }
@@ -516,23 +478,8 @@ class LintDetectorDetector : Detector(), UastScanner {
             val fallback = context.getLocation(argument)
             val location = getStringLocation(argument, string, fallback)
             val canFix = location !== fallback || locationContains(location, string)
-            val fix =
-              if (canFix)
-                LintFix.create()
-                  .name("Remove period")
-                  .replace()
-                  .text(".")
-                  .with("")
-                  .autoFix()
-                  .build()
-              else null
-            context.report(
-              TEXT_FORMAT,
-              argument,
-              location,
-              "Single sentence error messages should not end with a period",
-              fix,
-            )
+            val fix = if (canFix) LintFix.create().name("Remove period").replace().text(".").with("").autoFix().build() else null
+            context.report(TEXT_FORMAT, argument, location, "Single sentence error messages should not end with a period", fix)
           }
         }
       }
@@ -568,9 +515,7 @@ class LintDetectorDetector : Detector(), UastScanner {
     private fun checkGetIssues(node: UElement) {
       node.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             val evaluator = context.evaluator
             val type = context.evaluator.getTypeClass(node.getExpressionType())
             if (type != null && evaluator.inheritsFrom(type, CLASS_ISSUE)) {
@@ -579,16 +524,10 @@ class LintDetectorDetector : Detector(), UastScanner {
                 // If marked @JvmField or in Java
                 val issue = resolved.toUElementOfType<UField>()
                 @Suppress("ControlFlowWithEmptyBody")
-                if (
-                  issue != null &&
-                    isJava(issue.lang) &&
-                    evaluator.inheritsFrom(issue.getContainingUClass()?.javaPsi, CLASS_DETECTOR)
-                ) {
+                if (issue != null && isJava(issue.lang) && evaluator.inheritsFrom(issue.getContainingUClass()?.javaPsi, CLASS_DETECTOR)) {
                   // Don't need to do anything; we'll see this registration
                   // as part of our regular detector visit
-                } else if (
-                  issue?.uAnnotations?.any { it.qualifiedName == "kotlin.jvm.JvmField" } == true
-                ) {
+                } else if (issue?.uAnnotations?.any { it.qualifiedName == "kotlin.jvm.JvmField" } == true) {
                   // This field is annotated with @JvmField; we'll come across
                   // it within the class instead
                 } else {
@@ -611,10 +550,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       val evaluator = context.evaluator
       // Check both Issue and Issue.Companion; calls from Kotlin and Java resolve these
       // differently
-      if (
-        !evaluator.isMemberInClass(create, CLASS_ISSUE_COMPANION) &&
-          !evaluator.isMemberInClass(create, CLASS_ISSUE)
-      ) {
+      if (!evaluator.isMemberInClass(create, CLASS_ISSUE_COMPANION) && !evaluator.isMemberInClass(create, CLASS_ISSUE)) {
         return
       }
 
@@ -660,12 +596,7 @@ class LintDetectorDetector : Detector(), UastScanner {
         )
       } else {
         if (title[0].isLowerCase()) {
-          context.report(
-            TEXT_FORMAT,
-            argument,
-            getStringLocation(argument, title),
-            "The issue summary should be capitalized",
-          )
+          context.report(TEXT_FORMAT, argument, getStringLocation(argument, title), "The issue summary should be capitalized")
         }
         if (title.endsWith(".")) {
           context.report(
@@ -714,12 +645,7 @@ class LintDetectorDetector : Detector(), UastScanner {
           "Lint issue IDs should use capitalized camel case, such as `MyIssueId`",
         )
       } else if (id.contains(" ")) {
-        context.report(
-          ID,
-          idArgument,
-          context.getLocation(idArgument),
-          "Lint issue IDs should not contain spaces, such as `MyIssueId`",
-        )
+        context.report(ID, idArgument, context.getLocation(idArgument), "Lint issue IDs should not contain spaces, such as `MyIssueId`")
       } else if (leaf.length >= 40) {
         context.report(
           ID,
@@ -792,11 +718,7 @@ class LintDetectorDetector : Detector(), UastScanner {
             index = alt
           }
         }
-        if (
-          isPolyadicFromStringTemplate(argument) &&
-            argument.operands.size == 1 &&
-            location.source === argument.operands[0]
-        ) {
+        if (isPolyadicFromStringTemplate(argument) && argument.operands.size == 1 && location.source === argument.operands[0]) {
           context.getRangeLocation(argument.operands[0], index - start, string.length)
         } else {
           context.getRangeLocation(argument, index - start, string.length)
@@ -855,23 +777,11 @@ class LintDetectorDetector : Detector(), UastScanner {
           if (protocol == "mailto") {
             return
           } else if (protocol != null && protocol != "http" && protocol != "https") {
-            context.report(
-              CHECK_URL,
-              argument,
-              getStringLocation(argument, url),
-              "Unexpected protocol `$protocol` in `$url`",
-            )
+            context.report(CHECK_URL, argument, getStringLocation(argument, url), "Unexpected protocol `$protocol` in `$url`")
           } else {
             val host = parsed.host
-            if (
-              host != null && (host.contains("corp.google.com") || host.contains("googleplex.com"))
-            ) {
-              context.report(
-                UNEXPECTED_DOMAIN,
-                argument,
-                getStringLocation(argument, url),
-                "Don't use internal Google links (`$url`)",
-              )
+            if (host != null && (host.contains("corp.google.com") || host.contains("googleplex.com"))) {
+              context.report(UNEXPECTED_DOMAIN, argument, getStringLocation(argument, url), "Don't use internal Google links (`$url`)")
             } else if (
               host != null &&
                 !host.endsWith(".google.com") &&
@@ -911,12 +821,7 @@ class LintDetectorDetector : Detector(), UastScanner {
             }
           }
         } catch (e: MalformedURLException) {
-          context.report(
-            CHECK_URL,
-            argument,
-            getStringLocation(argument, url),
-            "The URL `$url` cannot be parsed: $e",
-          )
+          context.report(CHECK_URL, argument, getStringLocation(argument, url), "The URL `$url` cannot be parsed: $e")
         }
       }
     }
@@ -927,8 +832,7 @@ class LintDetectorDetector : Detector(), UastScanner {
         if (selector is UCallExpression) {
           val methodName = selector.methodName
           if (methodName == "trimIndent" || methodName == "trimMargin") {
-            val location =
-              context.getCallLocation(selector, includeReceiver = false, includeArguments = true)
+            val location = context.getCallLocation(selector, includeReceiver = false, includeArguments = true)
 
             val fix =
               if (!isUnitTestFile) {
@@ -1016,12 +920,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       while (true) {
         // Find beginning of next word
         while (index < length && !string[index].isLetter()) {
-          if (
-            string[index] == '?' &&
-              index > 0 &&
-              string[index - 1] == ' ' &&
-              !isInCodeFragment(string, index)
-          ) {
+          if (string[index] == '?' && index > 0 && string[index - 1] == ' ' && !isInCodeFragment(string, index)) {
             // warn about ? in error messages separated by a space,
             // but make sure code fragments ('foo ?: bar', `x = '?'`, ...) is ok.
             val fallback = context.getLocation(argument)
@@ -1034,12 +933,7 @@ class LintDetectorDetector : Detector(), UastScanner {
             // window was the whole concatenated string it would not match the sources.
             val window = string.substring(max(0, index - 5), index) + "|?"
             val location = getStringLocation(argument, "?", fallback, window)
-            context.report(
-              TEXT_FORMAT,
-              argument,
-              location,
-              "Question marks should not be separated by a space",
-            )
+            context.report(TEXT_FORMAT, argument, location, "Question marks should not be separated by a space")
           }
 
           index++
@@ -1096,9 +990,9 @@ class LintDetectorDetector : Detector(), UastScanner {
     }
 
     /**
-     * Returns true if the given [line] looks like it implies a new paragraph from the [previous]
-     * line. For example, if the previous line ends with ":", the next line is probably a new line.
-     * Similarly, if the line starts with a list bullet, or a preformatted text block, etc.
+     * Returns true if the given [line] looks like it implies a new paragraph from the [previous] line. For example, if the previous line
+     * ends with ":", the next line is probably a new line. Similarly, if the line starts with a list bullet, or a preformatted text block,
+     * etc.
      */
     private fun impliesNewLine(previous: String, line: String): Boolean {
       // If the next line is blank, it's a new paragraph
@@ -1162,12 +1056,7 @@ class LintDetectorDetector : Detector(), UastScanner {
         }
         if (offset > 0 && !s[offset - 1].isWhitespace()) {
           val begin = s.lastIndexOf('\n', offset) + 1
-          val location =
-            getStringLocation(
-              argument,
-              s.substring(offset - 1, offset + 1),
-              window = s.substring(begin, offset - 1) + "|",
-            )
+          val location = getStringLocation(argument, s.substring(offset - 1, offset + 1), window = s.substring(begin, offset - 1) + "|")
           var wordBegin = offset - 1
           while (wordBegin > 0 && !s[wordBegin - 1].isWhitespace()) {
             wordBegin--
@@ -1192,12 +1081,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       }
     }
 
-    private fun checkForCodeFragments(
-      pattern: Regex,
-      string: String,
-      argument: UExpression,
-      typeString: String,
-    ): Boolean {
+    private fun checkForCodeFragments(pattern: Regex, string: String, argument: UExpression, typeString: String): Boolean {
       val xml = pattern.find(string)
       return if (xml != null) {
         val s = xml.groupValues[0]
@@ -1221,23 +1105,11 @@ class LintDetectorDetector : Detector(), UastScanner {
     }
 
     private fun createSurroundFix(s: String, location: Location): LintFix {
-      return LintFix.create()
-        .name("Surround with backtics")
-        .replace()
-        .text(s)
-        .with("`$s`")
-        .range(location)
-        .autoFix()
-        .build()
+      return LintFix.create().name("Surround with backtics").replace().text(s).with("`$s`").range(location).autoFix().build()
     }
 
     /** Report the typo found at the given offset and suggest the given replacements. */
-    private fun reportTypo(
-      argument: UExpression,
-      text: String,
-      begin: Int,
-      replacements: List<String>,
-    ) {
+    private fun reportTypo(argument: UExpression, text: String, begin: Int, replacements: List<String>) {
       if (replacements.size < 2) { // first is the typo itself
         return
       }
@@ -1263,14 +1135,7 @@ class LintDetectorDetector : Detector(), UastScanner {
           replacement = replacement.usLocaleCapitalize()
         }
         sb.append(replacement)
-        fixBuilder.add(
-          LintFix.create()
-            .name("Replace with \"$replacement\"")
-            .replace()
-            .text(word)
-            .with(replacement)
-            .build()
-        )
+        fixBuilder.add(LintFix.create().name("Replace with \"$replacement\"").replace().text(word).with(replacement).build())
         sb.append('"')
         i++
       }
@@ -1301,12 +1166,7 @@ class LintDetectorDetector : Detector(), UastScanner {
       return super.visitBinaryExpression(node)
     }
 
-    private fun checkCall(
-      call: UCallExpression,
-      expectedContainer: String,
-      message: String,
-      requireUastReceiver: Boolean = false,
-    ) {
+    private fun checkCall(call: UCallExpression, expectedContainer: String, message: String, requireUastReceiver: Boolean = false) {
       if (requireUastReceiver) {
         call.receiverType?.let {
           val evaluator = context.evaluator
@@ -1325,18 +1185,14 @@ class LintDetectorDetector : Detector(), UastScanner {
     private fun checkEquals(node: UElement, type: PsiType?, arg1: UElement?, arg2: UElement?) {
       if (type is PsiClassType) {
         val psiClass = type.resolve()
-        if (
-          psiClass != null &&
-            context.evaluator.inheritsFrom(psiClass, CLASS_PSI_ELEMENT, strict = false)
-        ) {
+        if (psiClass != null && context.evaluator.inheritsFrom(psiClass, CLASS_PSI_ELEMENT, strict = false)) {
           if (arg1?.isNullLiteral() == true) { // comparisons with null are ok
             return
           }
           if (arg2?.isNullLiteral() == true) {
             return
           }
-          val message =
-            "Don't compare PsiElements with `equals`, use " + "`isEquivalentTo(PsiElement)` instead"
+          val message = "Don't compare PsiElements with `equals`, use " + "`isEquivalentTo(PsiElement)` instead"
           context.report(PSI_COMPARE, node, context.getLocation(node), message)
         }
       }
@@ -1350,10 +1206,8 @@ class LintDetectorDetector : Detector(), UastScanner {
     private const val CLASS_CONTEXT = "com.android.tools.lint.detector.api.Context"
     private const val CLASS_ISSUE = "com.android.tools.lint.detector.api.Issue"
     private const val CLASS_ISSUE_COMPANION = "com.android.tools.lint.detector.api.Issue.Companion"
-    private const val CLASS_TEST_LINT_TASK =
-      "com.android.tools.lint.checks.infrastructure.TestLintTask"
-    private const val CLASS_TEST_LINT_RESULT =
-      "com.android.tools.lint.checks.infrastructure..TestLintResult"
+    private const val CLASS_TEST_LINT_TASK = "com.android.tools.lint.checks.infrastructure.TestLintTask"
+    private const val CLASS_TEST_LINT_RESULT = "com.android.tools.lint.checks.infrastructure..TestLintResult"
     private const val CLASS_PSI_METHOD = "com.intellij.psi.PsiMethod"
     private const val CLASS_PSI_ELEMENT = "com.intellij.psi.PsiElement"
     private const val CLASS_PSI_VARIABLE = "com.intellij.psi.PsiVariable"
@@ -1369,14 +1223,9 @@ class LintDetectorDetector : Detector(), UastScanner {
     private val CALL_PATTERN = Regex("[a-zA-Z().=]+\\(.*\\)")
     private val XML_PATTERN = Regex("<.+>")
 
-    private val IMPLEMENTATION =
-      Implementation(LintDetectorDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(LintDetectorDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
-    private val TEST_IMPLEMENTATION =
-      Implementation(
-        LintDetectorDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-      )
+    private val TEST_IMPLEMENTATION = Implementation(LintDetectorDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES))
 
     /** Expected lint id format. */
     @JvmField

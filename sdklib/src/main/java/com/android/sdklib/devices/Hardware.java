@@ -34,6 +34,7 @@ import java.util.Set;
 
 public class Hardware {
     private Screen mScreen;
+    private Touchpad mTouchpad;
     private Hinge mHinge;
     private EnumSet<Network> mNetworking = EnumSet.noneOf(Network.class);
     private EnumSet<Sensor> mSensors = EnumSet.noneOf(Sensor.class);
@@ -266,6 +267,14 @@ public class Hardware {
         mScreen = s;
     }
 
+    public Touchpad getTouchpad() {
+        return mTouchpad;
+    }
+
+    public void setTouchpad(Touchpad mTouchpad) {
+        this.mTouchpad = mTouchpad;
+    }
+
     public Hinge getHinge() {
         return mHinge;
     }
@@ -284,6 +293,7 @@ public class Hardware {
     public Hardware deepCopy() {
         Hardware hw = new Hardware();
         hw.mScreen = mScreen != null ? mScreen.deepCopy() : null;
+        hw.mTouchpad = mTouchpad != null ? mTouchpad.deepCopy() : null;
         hw.mHinge = mHinge != null ? mHinge.deepCopy() : null;
         hw.mNetworking = mNetworking.clone();
         hw.mSensors = mSensors.clone();
@@ -320,6 +330,7 @@ public class Hardware {
         }
         Hardware hw = (Hardware) o;
         return Objects.equal(mScreen, hw.getScreen())
+                && Objects.equal(mTouchpad, hw.getTouchpad())
                 && Objects.equal(mNetworking, hw.getNetworking())
                 && Objects.equal(mSensors, hw.getSensors())
                 && mMic == hw.hasMic()
@@ -344,6 +355,7 @@ public class Hardware {
     public int hashCode() {
         return Objects.hashCode(
                 mScreen,
+                mTouchpad,
                 mNetworking,
                 mSensors,
                 mMic,
@@ -369,6 +381,8 @@ public class Hardware {
         StringBuilder sb = new StringBuilder();
         sb.append("Hardware <mScreen=");
         sb.append(mScreen);
+        sb.append("mTouchpad=");
+        sb.append(mTouchpad);
         sb.append(", mNetworking=");
         sb.append(mNetworking);
         sb.append(", mSensors=");

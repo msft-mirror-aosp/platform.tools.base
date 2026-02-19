@@ -13,28 +13,12 @@ fi
 
 readonly script_dir="$(dirname "$0")"
 
-collect_and_exit() {
+exit_if_not_test_failure() {
   local -r exit_code=$1
-
-  if [[ -d "${dist_dir}" ]]; then
-    "${script_dir}/bazel" \
-    run //tools/vendor/adt_infra_internal/rbe/logscollector:logs-collector \
-    --config=rcache \
-    -- \
-    -bes "${dist_dir}/bazel-${build_number}.bes" \
-    -error_log "$DIST_DIR/logs/build_error.log"
-  fi
-
-  if [[ $? -ne 0 ]]; then
-    echo "Bazel logs-collector failed!"
-    exit $?
-  fi
-
   # Test failures in CI are displayed by other systems. (context: b/192362688)
-  if [[ $exit_code == $BAZEL_EXITCODE_TEST_FAILURES ]]; then
-    exit 0
+  if [[ $exit_code != $BAZEL_EXITCODE_TEST_FAILURES ]]; then
+    exit $exit_code
   fi
-  exit $exit_code
 }
 
 # Clean up existing results so obsolete data cannot cause issues
@@ -59,7 +43,8 @@ fi
 # Generate baseline coverage file lists
 "${script_dir}/bazel" \
   build \
-  --config=rcache \
+  --config=ci --config=remote-exec \
+  --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --build_tag_filters="coverage-sources" \
   --build_metadata=ab_build_id="${build_number}" \
   --build_metadata=ab_target=studio-coverage \
@@ -71,7 +56,8 @@ fi
 # Run Bazel with coverage instrumentation
 "${script_dir}/bazel" \
   test \
-  --config=ci --config=remote-exec --config=ants \
+  --config=ci --config=remote-exec \
+  --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --invocation_id=${invocation_id} \
   --tool_tag="studio_coverage.sh" \
   --build_event_binary_file="${dist_dir:-/tmp}/bazel-${build_number}.bes" \
@@ -90,7 +76,7 @@ fi
   -- \
   @cov//:all.suite \
   @baseline//... \
-  || collect_and_exit $?
+  || exit_if_not_test_failure $?
 
 # Generate another UUID for the report invocation
 readonly report_invocation_id="$(uuidgen)"
@@ -103,8 +89,8 @@ fi
 # Build the lcov file
 "${script_dir}/bazel" \
   build \
-  --config=rcache \
-  --config=release \
+  --config=ci --config=remote-exec \
+  --credential_helper="*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" \
   --invocation_id=${report_invocation_id} \
   --jobs=HOST_CPUS*.5 \
   --build_metadata=ab_build_id="${build_number}" \
@@ -130,4 +116,4 @@ if [[ -d "${dist_dir}" ]]; then
   cp -pv ${lcov_path} "${dist_dir}/coverage" || exit $?
 fi
 
-collect_and_exit 0
+exit 0

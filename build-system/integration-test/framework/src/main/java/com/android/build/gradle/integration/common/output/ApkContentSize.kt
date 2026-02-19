@@ -22,28 +22,26 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import kotlin.io.path.extension
 
-/**
- * Computes the sum of the compressed size for all the entries in a zip
- */
+/** Computes the sum of the compressed size for all the entries in a zip */
 class ApkContentSize {
-    companion object {
-        fun computeContent(path: Path): Long {
-            var contentsSize = 0L
+  companion object {
+    fun computeContent(path: Path): Long {
+      var contentsSize = 0L
 
-            val extension = path.extension
-            return if (extension == "apk" || extension == "aar" || extension == "zip" || extension == "aab") {
-                ZipFile(path.toFile()).use { zipFile ->
-                    val entries: Enumeration<*> = zipFile.entries()
-                    while (entries.hasMoreElements()) {
-                        val zipEntry = entries.nextElement() as ZipEntry
-                        contentsSize += zipEntry.compressedSize
-                    }
-                }
-
-                contentsSize
-            } else {
-                throw RuntimeException("computeContent() only works on zip archives: $path")
-            }
+      val extension = path.extension
+      return if (extension == "apk" || extension == "aar" || extension == "zip" || extension == "aab") {
+        ZipFile(path.toFile()).use { zipFile ->
+          val entries: Enumeration<*> = zipFile.entries()
+          while (entries.hasMoreElements()) {
+            val zipEntry = entries.nextElement() as ZipEntry
+            contentsSize += zipEntry.compressedSize
+          }
         }
+
+        contentsSize
+      } else {
+        throw RuntimeException("computeContent() only works on zip archives: $path")
+      }
     }
+  }
 }

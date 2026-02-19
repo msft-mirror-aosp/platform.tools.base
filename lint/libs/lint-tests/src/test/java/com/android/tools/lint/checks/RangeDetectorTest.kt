@@ -792,9 +792,11 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
             // into the ConstantEvaluator since it's risky to be complaining
             // about invalid values for a non-final field which could easily
             // have been reassigned anywhere to something compatible.
-            // "        method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); // ERROR\n" +
+            // "        method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); //
+            // ERROR\n" +
             // "        if (ok && unrelated >= 0) {\n" +
-            // "            method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/); //
+            // "            method(/*Value must be ≥ 0 (was -1)*/forcedMeasureHeight/**/);
+            // //
             // ERROR\n" +
             // "        }\n" +
             "        method(forcedMeasureHeight); // ERROR\n" +
@@ -1400,22 +1402,22 @@ src/test/pkg/ConstructorTest.java:14: Error: Value must be ≥ 5 (was 3) [Range]
 
       assertEquals(
         """
-          <?xml version="1.0" encoding="UTF-8"?>
-          <issues>
+        <?xml version="1.0" encoding="UTF-8"?>
+        <issues>
 
-              <issue
-                  id="Range"
-                  message="Value must be ≥ -90.0 (was -150.0)"
-                  errorLine1="        call(-150.0); // ERROR"
-                  errorLine2="             ~~~~~~">
-                  <location
-                      file="src/test/pkg/FloatRangeTest.java"
-                      line="8"
-                      column="14"/>
-              </issue>
+            <issue
+                id="Range"
+                message="Value must be ≥ -90.0 (was -150.0)"
+                errorLine1="        call(-150.0); // ERROR"
+                errorLine2="             ~~~~~~">
+                <location
+                    file="src/test/pkg/FloatRangeTest.java"
+                    line="8"
+                    column="14"/>
+            </issue>
 
-          </issues>
-                """
+        </issues>
+        """
           .trimIndent()
           .trim(),
         LintBaselineTest.readBaseline(baselineFile).trim().dos2unix(), // b/209433064

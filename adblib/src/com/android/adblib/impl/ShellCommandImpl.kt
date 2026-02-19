@@ -33,289 +33,283 @@ import com.android.adblib.deviceProperties
 import com.android.adblib.impl.ShellWithIdleMonitoring.Parameters
 import com.android.adblib.property
 import com.android.adblib.utils.SuspendingLazy
+import java.time.Duration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import java.time.Duration
 
 internal class ShellCommandImpl<T>(
-    override val session: AdbSession,
-    private val device: DeviceSelector,
-    /**
-     * Note: Command is the empty string for an "interactive" shell
-     */
-    private val command: String,
+  override val session: AdbSession,
+  private val device: DeviceSelector,
+  /** Note: Command is the empty string for an "interactive" shell */
+  private val command: String,
 ) : ShellCommand<T> {
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    private var _allowStripCrLfForLegacyShell: Boolean = true
-    private var _allowLegacyShell: Boolean = true
-    private var _allowLegacyExec: Boolean = false
-    private var _allowShellV2: Boolean = true
-    private var collector: ShellV2Collector<T>? = null
-    private var commandTimeout: Duration = INFINITE_DURATION
-    private var commandOutputTimeout: Duration? = null
-    private var commandOverride: ((String, Protocol) -> String)? = null
-    private var stdinChannel: AdbInputChannel? = null
-    private var _shutdownOutputForLegacyShell: Boolean = true
-    private var bufferSize: Int = session.property(AdbLibProperties.DEFAULT_SHELL_BUFFER_SIZE)
-    private var shellOptions: ShellOptions? = null
-    private var windowSizeFlow: Flow<ShellWindowSize>? = null
+  private var _allowStripCrLfForLegacyShell: Boolean = true
+  private var _allowLegacyShell: Boolean = true
+  private var _allowLegacyExec: Boolean = false
+  private var _allowShellV2: Boolean = true
+  private var collector: ShellV2Collector<T>? = null
+  private var commandTimeout: Duration = INFINITE_DURATION
+  private var commandOutputTimeout: Duration? = null
+  private var commandOverride: ((String, Protocol) -> String)? = null
+  private var stdinChannel: AdbInputChannel? = null
+  private var _shutdownOutputForLegacyShell: Boolean = true
+  private var bufferSize: Int = session.property(AdbLibProperties.DEFAULT_SHELL_BUFFER_SIZE)
+  private var shellOptions: ShellOptions? = null
+  private var windowSizeFlow: Flow<ShellWindowSize>? = null
 
-    override fun <U> withCollector(collector: ShellV2Collector<U>): ShellCommand<U> {
-        @Suppress("UNCHECKED_CAST")
-        val result = this as ShellCommandImpl<U>
+  override fun <U> withCollector(collector: ShellV2Collector<U>): ShellCommand<U> {
+    @Suppress("UNCHECKED_CAST") val result = this as ShellCommandImpl<U>
 
-        result.collector = collector
-        return result
-    }
+    result.collector = collector
+    return result
+  }
 
-    override fun <U> withLegacyCollector(collector: ShellCollector<U>): ShellCommand<U> {
-        @Suppress("UNCHECKED_CAST")
-        val result = this as ShellCommandImpl<U>
+  override fun <U> withLegacyCollector(collector: ShellCollector<U>): ShellCommand<U> {
+    @Suppress("UNCHECKED_CAST") val result = this as ShellCommandImpl<U>
 
-        result.collector = ShellCommandHelpers.mapToShellV2Collector(collector)
-        return result
-    }
+    result.collector = ShellCommandHelpers.mapToShellV2Collector(collector)
+    return result
+  }
 
-    override fun withStdin(stdinChannel: AdbInputChannel?): ShellCommand<T> {
-        this.stdinChannel = stdinChannel
-        return this
-    }
+  override fun withStdin(stdinChannel: AdbInputChannel?): ShellCommand<T> {
+    this.stdinChannel = stdinChannel
+    return this
+  }
 
-    override fun withCommandTimeout(timeout: Duration): ShellCommand<T> {
-        this.commandTimeout = timeout
-        return this
-    }
+  override fun withCommandTimeout(timeout: Duration): ShellCommand<T> {
+    this.commandTimeout = timeout
+    return this
+  }
 
-    override fun withCommandOutputTimeout(timeout: Duration): ShellCommand<T> {
-        this.commandOutputTimeout = timeout
-        return this
-    }
+  override fun withCommandOutputTimeout(timeout: Duration): ShellCommand<T> {
+    this.commandOutputTimeout = timeout
+    return this
+  }
 
-    override fun withShellOptions(options: ShellOptions?): ShellCommand<T> {
-        this.shellOptions = options
-        return this
-    }
+  override fun withShellOptions(options: ShellOptions?): ShellCommand<T> {
+    this.shellOptions = options
+    return this
+  }
 
-    override fun withWindowSizeFlow(flow: Flow<ShellWindowSize>?): ShellCommand<T> {
-        this.windowSizeFlow = flow
-        return this
-    }
+  override fun withWindowSizeFlow(flow: Flow<ShellWindowSize>?): ShellCommand<T> {
+    this.windowSizeFlow = flow
+    return this
+  }
 
-    override fun withBufferSize(size: Int): ShellCommand<T> {
-        this.bufferSize = size
-        return this
-    }
+  override fun withBufferSize(size: Int): ShellCommand<T> {
+    this.bufferSize = size
+    return this
+  }
 
-    override fun allowShellV2(value: Boolean): ShellCommand<T> {
-        this._allowShellV2 = value
-        return this
-    }
+  override fun allowShellV2(value: Boolean): ShellCommand<T> {
+    this._allowShellV2 = value
+    return this
+  }
 
-    override fun allowLegacyExec(value: Boolean): ShellCommand<T> {
-        this._allowLegacyExec = value
-        return this
-    }
+  override fun allowLegacyExec(value: Boolean): ShellCommand<T> {
+    this._allowLegacyExec = value
+    return this
+  }
 
-    override fun allowLegacyShell(value: Boolean): ShellCommand<T> {
-        this._allowLegacyShell = value
-        return this
-    }
+  override fun allowLegacyShell(value: Boolean): ShellCommand<T> {
+    this._allowLegacyShell = value
+    return this
+  }
 
-    override fun forceShellV2(): ShellCommand<T> {
-        this._allowShellV2 = true
-        this._allowLegacyExec = false
-        this._allowLegacyShell = false
-        return this
-    }
+  override fun forceShellV2(): ShellCommand<T> {
+    this._allowShellV2 = true
+    this._allowLegacyExec = false
+    this._allowLegacyShell = false
+    return this
+  }
 
-    override fun forceLegacyExec(): ShellCommand<T> {
-        this._allowShellV2 = false
-        this._allowLegacyExec = true
-        this._allowLegacyShell = false
-        return this
-    }
+  override fun forceLegacyExec(): ShellCommand<T> {
+    this._allowShellV2 = false
+    this._allowLegacyExec = true
+    this._allowLegacyShell = false
+    return this
+  }
 
-    override fun forceLegacyShell(): ShellCommand<T> {
-        this._allowShellV2 = false
-        this._allowLegacyExec = false
-        this._allowLegacyShell = true
-        return this
-    }
+  override fun forceLegacyShell(): ShellCommand<T> {
+    this._allowShellV2 = false
+    this._allowLegacyExec = false
+    this._allowLegacyShell = true
+    return this
+  }
 
-    override fun shutdownOutputForLegacyShell(shutdownOutput: Boolean): ShellCommand<T> {
-        this._shutdownOutputForLegacyShell = shutdownOutput
-        return this
-    }
+  override fun shutdownOutputForLegacyShell(shutdownOutput: Boolean): ShellCommand<T> {
+    this._shutdownOutputForLegacyShell = shutdownOutput
+    return this
+  }
 
-    override fun allowStripCrLfForLegacyShell(value: Boolean): ShellCommand<T> {
-        this._allowStripCrLfForLegacyShell = value
-        return this
-    }
+  override fun allowStripCrLfForLegacyShell(value: Boolean): ShellCommand<T> {
+    this._allowStripCrLfForLegacyShell = value
+    return this
+  }
 
-    override fun withCommandOverride(commandOverride: (String, Protocol) -> String): ShellCommand<T> {
-        this.commandOverride = commandOverride
-        return this
-    }
+  override fun withCommandOverride(commandOverride: (String, Protocol) -> String): ShellCommand<T> {
+    this.commandOverride = commandOverride
+    return this
+  }
 
-    override fun execute() = flow {
-        shellFlow().collect {
-            emit(it)
+  override fun execute() = flow { shellFlow().collect { emit(it) } }
+
+  override suspend fun <R> executeAsSingleOutput(block: suspend (T) -> R): R {
+    val collector = collector ?: throw IllegalArgumentException("Shell Collector is not set")
+    require(collector.isSingleOutputCollector) { "Shell Collector '$collector' is not a single output collector" }
+    return execute()
+      .map { singleOutput ->
+        try {
+          block(singleOutput)
+        } finally {
+          (singleOutput as? AutoCloseable)?.close()
         }
+      }
+      .first()
+  }
+
+  private suspend fun shellFlow(): Flow<T> {
+    val collector = collector ?: throw IllegalArgumentException("Collector is not set")
+
+    val protocol = pickProtocol()
+    val commandOutputTimeout = this.commandOutputTimeout
+    val command = commandOverride?.invoke(command, protocol) ?: command
+    val stripCrLf = SuspendingLazy {
+      (protocol == Protocol.SHELL) && _allowStripCrLfForLegacyShell && (session.deviceServices.deviceProperties(device).api() <= 23)
     }
-
-    override suspend fun <R> executeAsSingleOutput(block: suspend (T) -> R): R {
-        val collector = collector ?: throw IllegalArgumentException("Shell Collector is not set")
-        require(collector.isSingleOutputCollector) {
-            "Shell Collector '$collector' is not a single output collector"
+    return if (commandOutputTimeout != null) {
+      logger.debug { "Executing command with protocol=$protocol and commandOutputTimeout=$commandOutputTimeout: $command" }
+      when (protocol) {
+        Protocol.SHELL_V2 -> {
+          ShellV2WithIdleMonitoring(
+              Parameters(
+                deviceServices = session.deviceServices,
+                device = device,
+                command = command,
+                shellCollector = collector,
+                stdinChannel = stdinChannel,
+                commandTimeout = commandTimeout,
+                commandOutputTimeout = commandOutputTimeout,
+                bufferSize = bufferSize,
+                stripCrLf = false,
+                shutdownOutput = false,
+                shellOptions = shellOptions,
+                windowSizeFlow = windowSizeFlow,
+              )
+            )
+            .createFlow()
         }
-        return execute().map { singleOutput ->
-            try {
-                block(singleOutput)
-            } finally {
-                (singleOutput as? AutoCloseable)?.close()
-            }
-        }.first()
+
+        Protocol.EXEC -> {
+          LegacyExecWithIdleMonitoring(
+              Parameters(
+                deviceServices = session.deviceServices,
+                device = device,
+                command = command,
+                shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
+                stdinChannel = stdinChannel,
+                commandTimeout = commandTimeout,
+                commandOutputTimeout = commandOutputTimeout,
+                bufferSize = bufferSize,
+                stripCrLf = false,
+                shutdownOutput = _shutdownOutputForLegacyShell,
+                shellOptions = shellOptions,
+                windowSizeFlow = windowSizeFlow,
+              )
+            )
+            .createFlow()
+        }
+
+        Protocol.SHELL -> {
+          LegacyShellWithIdleMonitoring(
+              Parameters(
+                deviceServices = session.deviceServices,
+                device = device,
+                command = command,
+                shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
+                stdinChannel = stdinChannel,
+                commandTimeout = commandTimeout,
+                commandOutputTimeout = commandOutputTimeout,
+                bufferSize = bufferSize,
+                stripCrLf = stripCrLf.value(),
+                shutdownOutput = _shutdownOutputForLegacyShell,
+                shellOptions = shellOptions,
+                windowSizeFlow = windowSizeFlow,
+              )
+            )
+            .createFlow()
+        }
+      }
+    } else {
+      logger.debug { "Executing command with protocol=$protocol: $command" }
+      when (protocol) {
+        Protocol.SHELL_V2 -> {
+          session.deviceServices.shellV2(
+            device = device,
+            command = command,
+            shellCollector = collector,
+            shellOptions = shellOptions,
+            stdinChannel = stdinChannel,
+            windowSizeFlow = windowSizeFlow,
+            commandTimeout = commandTimeout,
+            bufferSize = bufferSize,
+          )
+        }
+
+        Protocol.EXEC -> {
+          session.deviceServices.exec(
+            device = device,
+            command = command,
+            shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
+            stdinChannel = stdinChannel,
+            commandTimeout = commandTimeout,
+            bufferSize = bufferSize,
+            shutdownOutput = _shutdownOutputForLegacyShell,
+          )
+        }
+
+        Protocol.SHELL -> {
+          session.deviceServices.shell(
+            device = device,
+            command = command,
+            shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
+            shellOptions = shellOptions,
+            stdinChannel = stdinChannel,
+            commandTimeout = commandTimeout,
+            bufferSize = bufferSize,
+            stripCrLf = stripCrLf.value(),
+            shutdownOutput = _shutdownOutputForLegacyShell,
+          )
+        }
+      }
     }
+  }
 
-    private suspend fun shellFlow(): Flow<T> {
-        val collector = collector ?: throw IllegalArgumentException("Collector is not set")
-
-        val protocol = pickProtocol()
-        val commandOutputTimeout = this.commandOutputTimeout
-        val command = commandOverride?.invoke(command, protocol) ?: command
-        val stripCrLf = SuspendingLazy {
-            (protocol == Protocol.SHELL) &&
-                    _allowStripCrLfForLegacyShell &&
-                    (session.deviceServices.deviceProperties(device).api() <= 23)
-        }
-        return if (commandOutputTimeout != null) {
-            logger.debug { "Executing command with protocol=$protocol and commandOutputTimeout=$commandOutputTimeout: $command" }
-            when (protocol) {
-                Protocol.SHELL_V2 -> {
-                    ShellV2WithIdleMonitoring(
-                        Parameters(
-                            deviceServices = session.deviceServices,
-                            device = device,
-                            command = command,
-                            shellCollector = collector,
-                            stdinChannel = stdinChannel,
-                            commandTimeout = commandTimeout,
-                            commandOutputTimeout = commandOutputTimeout,
-                            bufferSize = bufferSize,
-                            stripCrLf = false,
-                            shutdownOutput = false,
-                            shellOptions = shellOptions,
-                            windowSizeFlow = windowSizeFlow,
-                        )
-                    ).createFlow()
-                }
-
-                Protocol.EXEC -> {
-                    LegacyExecWithIdleMonitoring(
-                        Parameters(
-                            deviceServices = session.deviceServices,
-                            device = device,
-                            command = command,
-                            shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
-                            stdinChannel = stdinChannel,
-                            commandTimeout = commandTimeout,
-                            commandOutputTimeout = commandOutputTimeout,
-                            bufferSize = bufferSize,
-                            stripCrLf = false,
-                            shutdownOutput = _shutdownOutputForLegacyShell,
-                            shellOptions = shellOptions,
-                            windowSizeFlow = windowSizeFlow
-                        )
-                    ).createFlow()
-                }
-
-                Protocol.SHELL -> {
-                    LegacyShellWithIdleMonitoring(
-                        Parameters(
-                            deviceServices = session.deviceServices,
-                            device = device,
-                            command = command,
-                            shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
-                            stdinChannel = stdinChannel,
-                            commandTimeout = commandTimeout,
-                            commandOutputTimeout = commandOutputTimeout,
-                            bufferSize = bufferSize,
-                            stripCrLf = stripCrLf.value(),
-                            shutdownOutput = _shutdownOutputForLegacyShell,
-                            shellOptions = shellOptions,
-                            windowSizeFlow = windowSizeFlow
-                        )
-                    ).createFlow()
-                }
-            }
-        } else {
-            logger.debug { "Executing command with protocol=$protocol: $command" }
-            when (protocol) {
-                Protocol.SHELL_V2 -> {
-                    session.deviceServices.shellV2(
-                        device = device,
-                        command = command,
-                        shellCollector = collector,
-                        shellOptions = shellOptions,
-                        stdinChannel = stdinChannel,
-                        windowSizeFlow = windowSizeFlow,
-                        commandTimeout = commandTimeout,
-                        bufferSize = bufferSize,
-                    )
-                }
-
-                Protocol.EXEC -> {
-                    session.deviceServices.exec(
-                        device = device,
-                        command = command,
-                        shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
-                        stdinChannel = stdinChannel,
-                        commandTimeout = commandTimeout,
-                        bufferSize = bufferSize,
-                        shutdownOutput = _shutdownOutputForLegacyShell
-                    )
-                }
-
-                Protocol.SHELL -> {
-                    session.deviceServices.shell(
-                        device = device,
-                        command = command,
-                        shellCollector = ShellCommandHelpers.mapToLegacyCollector(collector),
-                        shellOptions = shellOptions,
-                        stdinChannel = stdinChannel,
-                        commandTimeout = commandTimeout,
-                        bufferSize = bufferSize,
-                        stripCrLf = stripCrLf.value(),
-                        shutdownOutput = _shutdownOutputForLegacyShell
-                    )
-                }
-            }
-        }
+  private suspend fun pickProtocol(): Protocol {
+    val shellV2Supported = SuspendingLazy {
+      // Shell V2 support is exposed as a device (and ADB feature).
+      session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2)
     }
-
-    private suspend fun pickProtocol(): Protocol {
-        val shellV2Supported = SuspendingLazy {
-            // Shell V2 support is exposed as a device (and ADB feature).
-            session.hostServices.availableFeatures(device).contains(AdbFeatures.SHELL_V2)
-        }
-        val execSupported = SuspendingLazy {
-            // Exec support was added in API 21 (Lollipop)
-            session.deviceServices.deviceProperties(device).api() >= 21
-        }
-        val protocol = when {
-            _allowShellV2 && shellV2Supported.value() -> Protocol.SHELL_V2
-            _allowLegacyExec && !isInteractiveSession() && execSupported.value() -> Protocol.EXEC
-            _allowLegacyShell -> Protocol.SHELL
-            else -> throw IllegalArgumentException("No compatible shell protocol is supported or allowed")
-        }
-        return protocol
+    val execSupported = SuspendingLazy {
+      // Exec support was added in API 21 (Lollipop)
+      session.deviceServices.deviceProperties(device).api() >= 21
     }
+    val protocol =
+      when {
+        _allowShellV2 && shellV2Supported.value() -> Protocol.SHELL_V2
+        _allowLegacyExec && !isInteractiveSession() && execSupported.value() -> Protocol.EXEC
+        _allowLegacyShell -> Protocol.SHELL
+        else -> throw IllegalArgumentException("No compatible shell protocol is supported or allowed")
+      }
+    return protocol
+  }
 
-    private fun isInteractiveSession(): Boolean {
-        return command.isEmpty()
-    }
+  private fun isInteractiveSession(): Boolean {
+    return command.isEmpty()
+  }
 }

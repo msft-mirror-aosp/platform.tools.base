@@ -19,8 +19,7 @@ import com.android.tools.lint.detector.api.CURRENT_API
 
 /** Registry which merges many issue registries into one, and presents a unified list of issues. */
 open class CompositeIssueRegistry(val registries: List<IssueRegistry>) : IssueRegistry() {
-  override val issues by
-    lazy(LazyThreadSafetyMode.NONE) { registries.flatMap(IssueRegistry::issues) }
+  override val issues by lazy(LazyThreadSafetyMode.NONE) { registries.flatMap(IssueRegistry::issues) }
   override val deletedIssues
     get() = registries.flatMap(IssueRegistry::deletedIssues)
 

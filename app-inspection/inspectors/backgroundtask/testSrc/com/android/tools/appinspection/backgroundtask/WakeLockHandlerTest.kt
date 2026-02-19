@@ -33,20 +33,13 @@ import org.robolectric.annotation.Config
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class WakeLockHandlerTest {
   private val inspectorRule = BackgroundTaskInspectorRule()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
-  private val powerManager =
-    RuntimeEnvironment.getApplication().getSystemService(PowerManager::class.java)
+  private val powerManager = RuntimeEnvironment.getApplication().getSystemService(PowerManager::class.java)
 
   @Test
   fun wakeLockAcquired() {
@@ -91,8 +84,7 @@ class WakeLockHandlerTest {
     wakeLockHandler.onWakeLockReleasedExit()
     inspectorRule.connection.consume {
       with(wakeLockReleased) {
-        assertThat(flagsList[0])
-          .isEqualTo(WakeLockReleased.ReleaseFlag.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY)
+        assertThat(flagsList[0]).isEqualTo(WakeLockReleased.ReleaseFlag.RELEASE_FLAG_WAIT_FOR_NO_PROXIMITY)
         assertThat(isHeld).isTrue()
       }
     }

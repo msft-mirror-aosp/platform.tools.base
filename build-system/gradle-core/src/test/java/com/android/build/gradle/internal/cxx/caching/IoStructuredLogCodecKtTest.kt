@@ -26,18 +26,21 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class IoStructuredLogCodecKtTest {
-    @Test
-    fun `round trip SynchronizeFile through codec`() {
-        val expected = SynchronizeFile.newBuilder().apply {
-            workingDirectory = "working-directory"
-            sourceFile = "source-file"
-            destinationFile = "destination-file"
-            initialFileComparison = SAME_PATH_ACCORDING_TO_FILE_SYSTEM_PROVIDER
-            outcome = DELETED_DESTINATION_BECAUSE_SOURCE_DID_NOT_EXIST
-        }.build()
-        val strings = StringTable()
-        val encoded = expected.encode(strings)
-        val actual = encoded.decode(strings)
-        assertThat(actual).isEqualTo(expected)
-    }
+  @Test
+  fun `round trip SynchronizeFile through codec`() {
+    val expected =
+      SynchronizeFile.newBuilder()
+        .apply {
+          workingDirectory = "working-directory"
+          sourceFile = "source-file"
+          destinationFile = "destination-file"
+          initialFileComparison = SAME_PATH_ACCORDING_TO_FILE_SYSTEM_PROVIDER
+          outcome = DELETED_DESTINATION_BECAUSE_SOURCE_DID_NOT_EXIST
+        }
+        .build()
+    val strings = StringTable()
+    val encoded = expected.encode(strings)
+    val actual = encoded.decode(strings)
+    assertThat(actual).isEqualTo(expected)
+  }
 }

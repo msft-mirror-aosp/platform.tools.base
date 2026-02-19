@@ -21,155 +21,192 @@ import org.junit.Test
 
 class BuildWriterTest {
 
-    @Test
-    fun setString() {
-        Truth.assertThat(kts.set("foo", "bar").toString()).isEqualTo("foo = \"bar\"\n")
-    }
+  @Test
+  fun setString() {
+    Truth.assertThat(kts.set("foo", "bar").toString()).isEqualTo("foo = \"bar\"\n")
+  }
 
-    data class Person(
-        val name: String,
-        val surname: String
+  data class Person(val name: String, val surname: String) {
+    fun writeBlock(writer: BuildWriter): BuildWriter {
+      writer.block("Person", this) { it ->
+        set("name", it.name)
+        set("surname", it.surname)
+      }
+
+      return writer
+    }
+  }
+
+  @Test
+  fun ktsStrings() {
+    val p = Person("John", "Doe")
+    val writer = p.writeBlock(kts)
+
+    Truth.assertThat(writer.toString())
+      .isEqualTo(
+        """
+        Person {
+          name = "John"
+          surname = "Doe"
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun groovyStrings() {
+    val p = Person("John", "Doe")
+    val writer = p.writeBlock(groovy)
+
+    Truth.assertThat(writer.toString())
+      .isEqualTo(
+        """
+        Person {
+          name = 'John'
+          surname = 'Doe'
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun dclStrings() {
+    val p = Person("John", "Doe")
+    val writer = p.writeBlock(dcl)
+
+    Truth.assertThat(writer.toString())
+      .isEqualTo(
+        """
+        Person {
+          name = "John"
+          surname = "Doe"
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun testPlugins() {
+    testWriterOutput(
+      expected =
+        """
+        id("plugin1") version "3.2"
+        id("plugin2")
+        id("plugin3") version "1.3" apply false
+        id("plugin4") apply false
+
+        """
+          .trimIndent()
     ) {
-        fun writeBlock(writer: BuildWriter): BuildWriter {
-            writer.block("Person", this) { it->
-                set("name", it.name)
-                set("surname", it.surname)
-            }
-
-            return writer
-        }
+      pluginId("plugin1", "3.2", true)
+      pluginId("plugin2", null)
+      pluginId("plugin3", "1.3", false)
+      pluginId("plugin4", null, false)
     }
+  }
 
-    @Test
-    fun ktsStrings() {
-        val p = Person("John", "Doe")
-        val writer =  p.writeBlock(kts)
+  @Test
+  fun testRawString() {
+    testWriterOutput(
+      expected =
+        """
+        a = b
+        b = foo(12)
 
-        Truth.assertThat(writer.toString()).isEqualTo("""
-            Person {
-              name = "John"
-              surname = "Doe"
-            }
-
-        """.trimIndent())
+        """
+          .trimIndent()
+    ) {
+      set("a", rawString("b"))
+      set("b", rawMethod("foo", 12))
     }
+  }
 
-    @Test
-    fun groovyStrings() {
-        val p = Person("John", "Doe")
-        val writer =  p.writeBlock(groovy)
+  @Test
+  fun testMethods() {
+    testWriterOutput(
+      expected =
+        """
+        foo("bar")
+        foo("bar", 12, false)
+        foo(bar(12, false))
 
-        Truth.assertThat(writer.toString()).isEqualTo("""
-            Person {
-              name = 'John'
-              surname = 'Doe'
-            }
-
-        """.trimIndent())
+        """
+          .trimIndent()
+    ) {
+      method("foo", "bar")
+      method("foo", listOf("bar", 12, false), isVarArg = false)
+      method("foo", rawMethod("bar", 12, false))
     }
+  }
 
-    @Test
-    fun dclStrings() {
-        val p = Person("John", "Doe")
-        val writer =  p.writeBlock(dcl)
+  @Test
+  fun testNamedMethodsInKTS() {
+    testWriterOutput(
+      expected =
+        """
+        foo(bar = 12, something = false)
+        foo(bar = 12, something = bar(value = 12))
 
-        Truth.assertThat(writer.toString()).isEqualTo("""
-            Person {
-              name = "John"
-              surname = "Doe"
-            }
-
-        """.trimIndent())
+        """
+          .trimIndent(),
+      kts,
+    ) {
+      method("foo", listOf("bar" to 12, "something" to false))
+      method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
     }
+  }
 
-    @Test
-    fun testPlugins() {
-        testWriterOutput(expected = """
-            id("plugin1") version "3.2"
-            id("plugin2")
-            id("plugin3") version "1.3" apply false
-            id("plugin4") apply false
+  @Test
+  fun testNamedMethodsInGroovy() {
+    testWriterOutput(
+      expected =
+        """
+        foo(bar: 12, something: false)
+        foo(bar: 12, something: bar(value: 12))
 
-        """.trimIndent()) {
-            pluginId("plugin1", "3.2", true)
-            pluginId("plugin2", null)
-            pluginId("plugin3", "1.3", false)
-            pluginId("plugin4", null, false)
-        }
+        """
+          .trimIndent(),
+      groovy,
+    ) {
+      method("foo", listOf("bar" to 12, "something" to false))
+      method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
     }
+  }
 
-    @Test
-    fun testRawString() {
-        testWriterOutput(expected = """
-            a = b
-            b = foo(12)
+  @Test
+  fun testNamedMethodsInDcl() {
+    testWriterOutput(
+      expected =
+        """
+        foo(bar = 12, something = false)
+        foo(bar = 12, something = bar(value = 12))
 
-        """.trimIndent()) {
-            set("a", rawString("b"))
-            set("b", rawMethod("foo", 12))
-        }
+        """
+          .trimIndent(),
+      dcl,
+    ) {
+      method("foo", listOf("bar" to 12, "something" to false))
+      method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
     }
+  }
 
-    @Test
-    fun testMethods() {
-        testWriterOutput(expected = """
-            foo("bar")
-            foo("bar", 12, false)
-            foo(bar(12, false))
+  private fun testWriterOutput(expected: String, writer: BuildWriter = kts, action: BuildWriter.() -> Unit) {
+    action(writer)
+    Truth.assertThat(writer.toString()).isEqualTo(expected)
+  }
 
-        """.trimIndent()) {
-            method("foo", "bar")
-            method("foo", listOf("bar", 12, false), isVarArg = false)
-            method("foo", rawMethod("bar", 12, false))
-        }
-    }
+  private val kts: BuildWriter
+    get() = KtsBuildWriter()
 
-    @Test
-    fun testNamedMethodsInKTS() {
-        testWriterOutput(expected = """
-            foo(bar = 12, something = false)
-            foo(bar = 12, something = bar(value = 12))
+  private val groovy: BuildWriter
+    get() = GroovyBuildWriter()
 
-        """.trimIndent(), kts) {
-            method("foo", listOf("bar" to 12, "something" to false))
-            method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
-        }
-    }
-
-    @Test
-    fun testNamedMethodsInGroovy() {
-        testWriterOutput(expected = """
-            foo(bar: 12, something: false)
-            foo(bar: 12, something: bar(value: 12))
-
-        """.trimIndent(), groovy) {
-            method("foo", listOf("bar" to 12, "something" to false))
-            method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
-        }
-    }
-
-    @Test
-    fun testNamedMethodsInDcl() {
-        testWriterOutput(expected = """
-            foo(bar = 12, something = false)
-            foo(bar = 12, something = bar(value = 12))
-
-        """.trimIndent(), dcl) {
-            method("foo", listOf("bar" to 12, "something" to false))
-            method("foo", listOf("bar" to 12, "something" to rawMethod("bar", listOf("value" to 12))))
-        }
-    }
-
-    private fun testWriterOutput(expected: String, writer: BuildWriter = kts, action: BuildWriter.() -> Unit) {
-        action(writer)
-        Truth.assertThat(writer.toString()).isEqualTo(expected)
-    }
-
-    private val kts: BuildWriter
-        get() = KtsBuildWriter()
-    private val groovy: BuildWriter
-        get() = GroovyBuildWriter()
-    private val dcl: BuildWriter
-        get() = DeclarativeBuildWriter()
-
+  private val dcl: BuildWriter
+    get() = DeclarativeBuildWriter()
 }

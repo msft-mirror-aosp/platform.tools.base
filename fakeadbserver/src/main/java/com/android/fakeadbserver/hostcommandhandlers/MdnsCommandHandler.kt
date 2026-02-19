@@ -23,53 +23,47 @@ import java.util.Locale
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 
-/** host:mdns:check returns the status of mDNS support  */
+/** host:mdns:check returns the status of mDNS support */
 class MdnsCommandHandler : SimpleHostCommandHandler("mdns") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        try {
-            if ("check" == args) {
-                writeOkayResponse(
-                    responseSocket.getOutputStream(),
-                    "mdns daemon version [FakeAdb implementation]\n"
-                )
-            } else if ("services" == args) {
-                val result = formatMdnsServiceList(fakeAdbServer.mdnsServicesCopy.get())
-                writeOkayResponse(responseSocket.getOutputStream(), result)
-            } else {
-                writeFailResponse(
-                    responseSocket.getOutputStream(), "Invalid mdns command"
-                )
-            }
-        } catch (ignored: ExecutionException) {
-            return false
-        } catch (ignored: InterruptedException) {
-            Thread.currentThread().interrupt()
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    try {
+      if ("check" == args) {
+        if (fakeAdbServer.mdnsEnabled) {
+          writeOkayResponse(responseSocket.getOutputStream(), "mdns daemon version [FakeAdb implementation]\n")
+        } else {
+          writeOkayResponse(responseSocket.getOutputStream(), "ERROR: mdns discovery disabled [FakeAdb implementation]\n")
         }
-        return false
+      } else if ("services" == args) {
+        val result = formatMdnsServiceList(fakeAdbServer.mdnsServicesCopy.get())
+        writeOkayResponse(responseSocket.getOutputStream(), result)
+      } else {
+        writeFailResponse(responseSocket.getOutputStream(), "Invalid mdns command")
+      }
+    } catch (ignored: ExecutionException) {
+      return false
+    } catch (ignored: InterruptedException) {
+      Thread.currentThread().interrupt()
     }
+    return false
+  }
 
-    private fun formatMdnsServiceList(services: List<MdnsService>): String {
-        val sb = StringBuilder()
-        services.forEach(
-            Consumer { service: MdnsService ->
-                sb.append(
-                    String.format(
-                        Locale.US,
-                        "%s\t%s\t%s:%d\n",
-                        service.instanceName,
-                        service.serviceName,
-                        service.deviceAddress.hostString,
-                        service.deviceAddress.port
-                    )
-                )
-            })
-        return sb.toString()
-    }
-
+  private fun formatMdnsServiceList(services: List<MdnsService>): String {
+    val sb = StringBuilder()
+    services.forEach(
+      Consumer { service: MdnsService ->
+        sb.append(
+          String.format(
+            Locale.US,
+            "%s\t%s\t%s:%d\n",
+            service.instanceName,
+            service.serviceName,
+            service.deviceAddress.hostString,
+            service.deviceAddress.port,
+          )
+        )
+      }
+    )
+    return sb.toString()
+  }
 }

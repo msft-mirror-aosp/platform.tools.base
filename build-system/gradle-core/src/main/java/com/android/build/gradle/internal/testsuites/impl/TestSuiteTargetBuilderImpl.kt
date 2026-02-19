@@ -20,30 +20,24 @@ import com.android.build.api.variant.TestSuiteTargetBuilder
 import com.android.build.api.variant.impl.capitalizeFirstChar
 import com.android.build.gradle.internal.dsl.AgpTestSuiteTargetImpl
 
-class TestSuiteTargetBuilderImpl(
-    private val dslDefinedTestSuiteTarget: AgpTestSuiteTargetImpl
-): TestSuiteTargetBuilder {
+class TestSuiteTargetBuilderImpl(private val dslDefinedTestSuiteTarget: AgpTestSuiteTargetImpl) : TestSuiteTargetBuilder {
 
-    override var enable = true
+  override var enable = true
 
-    override val targetDevices = mutableListOf<String>().also {
-        it.addAll(dslDefinedTestSuiteTarget.targetDevices)
-    }
+  override val targetDevices = mutableListOf<String>().also { it.addAll(dslDefinedTestSuiteTarget.targetDevices) }
 
-    override fun getName(): String {
-        return dslDefinedTestSuiteTarget.name
-    }
+  override fun getName(): String {
+    return dslDefinedTestSuiteTarget.name
+  }
 
-    /**
-     * Internal Methods
-     */
+  /** Internal Methods */
 
-    /**
-     * Define a unique name for this test suite target within the variant. This is used to generate
-     * test task names and other unique identifiers.
-     */
-    internal fun uniqueName() =
-        // so far, I am joining the targetDevices to the name in case we start creating more than
-        // one test task instance per target (to target a different devices for instance).
-        name + targetDevices.joinToString(separator = "_").capitalizeFirstChar()
+  /**
+   * Define a unique name for this test suite target within the variant. This is used to generate test task names and other unique
+   * identifiers.
+   */
+  internal fun uniqueName() =
+    // so far, I am joining the targetDevices to the name in case we start creating more than
+    // one test task instance per target (to target a different devices for instance).
+    name + targetDevices.joinToString(separator = "_").capitalizeFirstChar()
 }

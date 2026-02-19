@@ -30,8 +30,7 @@ sealed class BootMode {
     fun fromProperties(properties: Map<String, String>): BootMode {
       val snapshot = properties[ConfigKey.CHOSEN_SNAPSHOT_FILE]
       return when {
-        properties[ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE] == "yes" &&
-          !snapshot.isNullOrBlank() -> BootSnapshot(snapshot)
+        properties[ConfigKey.FORCE_CHOSEN_SNAPSHOT_BOOT_MODE] == "yes" && !snapshot.isNullOrBlank() -> BootSnapshot(snapshot)
         properties[ConfigKey.FORCE_COLD_BOOT_MODE] == "yes" -> ColdBoot
         else -> QuickBoot
       }
@@ -50,10 +49,7 @@ data object QuickBoot : BootMode() {
       ConfigKey.FORCE_FAST_BOOT_MODE to "yes",
     )
 
-  /**
-   * No argument is required for quick boot, and none exists to override forceColdBoot in
-   * config.ini.
-   */
+  /** No argument is required for quick boot, and none exists to override forceColdBoot in config.ini. */
   override fun arguments(): List<String> = emptyList()
 }
 

@@ -18,10 +18,6 @@ package com.android.ide.common.vectordrawable
 
 import com.android.ide.common.blame.SourcePosition
 
-/**
- * Runtime exception that a resource reference incorrectly referenced from vector drawables
- * causing PNG generation to fail.
- */
-class IllegalVectorDrawableResourceRefException(
-        val value: String, val sourcePosition: SourcePosition, message: String?)
-    : RuntimeException(message)
+/** Runtime exception that a resource reference incorrectly referenced from vector drawables causing PNG generation to fail. */
+class IllegalVectorDrawableResourceRefException(val value: String, val sourcePosition: SourcePosition, message: String?) :
+  RuntimeException(message)

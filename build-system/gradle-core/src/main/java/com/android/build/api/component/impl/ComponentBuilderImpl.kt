@@ -19,21 +19,20 @@ package com.android.build.api.component.impl
 import com.android.build.api.variant.ComponentBuilder
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.impl.GlobalVariantBuilderConfig
-import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.services.VariantBuilderServices
 
 abstract class ComponentBuilderImpl(
-    protected val globalVariantBuilderConfig: GlobalVariantBuilderConfig,
-    variantConfiguration: ComponentIdentity,
-    protected val variantBuilderServices: VariantBuilderServices
+  protected val globalVariantBuilderConfig: GlobalVariantBuilderConfig,
+  variantConfiguration: ComponentIdentity,
+  protected val variantBuilderServices: VariantBuilderServices,
 ) : ComponentBuilder, ComponentIdentity by variantConfiguration {
 
-    @Suppress("OverridingDeprecatedMember")
-    override var enabled: Boolean
-        get() = enable
-        set(value) {
-            enable = value
-        }
+  @Suppress("OverridingDeprecatedMember")
+  override var enabled: Boolean
+    get() = enable
+    set(value) {
+      enable = value
+    }
 
-    override var enable: Boolean = true
+  override var enable: Boolean = true
 }

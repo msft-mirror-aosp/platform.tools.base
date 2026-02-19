@@ -36,6 +36,8 @@ import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 import com.google.testing.platform.proto.api.core.TestStatusProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.runtime.android.controller.ext.deviceShell
+import java.io.File
+import java.util.logging.Logger
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -49,39 +51,37 @@ import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.eq
 import org.mockito.quality.Strictness
-import java.io.File
-import java.util.logging.Logger
 
-/**
- * Unit tests for [AndroidTestLogcatPlugin]
- */
+/** Unit tests for [AndroidTestLogcatPlugin] */
 @RunWith(JUnit4::class)
 class AndroidTestLogcatPluginTest {
-    @get:Rule val mockitoJUnitRule = MockitoJUnit.rule().strictness(Strictness.LENIENT)
-    @get:Rule var tempFolder: TemporaryFolder = TemporaryFolder()
+  @get:Rule val mockitoJUnitRule = MockitoJUnit.rule().strictness(Strictness.LENIENT)
+  @get:Rule var tempFolder: TemporaryFolder = TemporaryFolder()
 
-    @Mock private lateinit var mockCommandHandle: CommandHandle
-    @Mock private lateinit var mockContext: Context
-    @Mock private lateinit var mockEvents: Events
-    @Mock (extraInterfaces = [ConfigBase::class])
-    private lateinit var mockConfig: ProtoConfig
-    @Mock private lateinit var mockDeviceController: DeviceController
-    @Mock private lateinit var mockLogger: Logger
+  @Mock private lateinit var mockCommandHandle: CommandHandle
+  @Mock private lateinit var mockContext: Context
+  @Mock private lateinit var mockEvents: Events
+  @Mock(extraInterfaces = [ConfigBase::class]) private lateinit var mockConfig: ProtoConfig
+  @Mock private lateinit var mockDeviceController: DeviceController
+  @Mock private lateinit var mockLogger: Logger
 
-    private lateinit var androidTestLogcatPlugin: AndroidTestLogcatPlugin
-    private lateinit var emptyTestResult: TestResult
-    private lateinit var passedTestSuiteResult: TestSuiteResult
-    private lateinit var environment: Environment
+  private lateinit var androidTestLogcatPlugin: AndroidTestLogcatPlugin
+  private lateinit var emptyTestResult: TestResult
+  private lateinit var passedTestSuiteResult: TestSuiteResult
+  private lateinit var environment: Environment
 
-    private val testDeviceTime = "01-01 00:00:00"
-    private val logcatOptions = listOf("shell", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash")
-    private val logcatOutputText = """
-        04-28 23:18:49.444  1887  1988 I TestRunner: started: (.)
-        04-28 23:18:50.444  1887  1988 I ExampleTestApp: test logcat output
-        04-28 23:18:51.444  1887  1988 I TestRunner: finished: (.)
-    """.trimIndent()
-    private val testPackageName = "com.example.myapplication"
-    private val crashLogcatOutputText = """
+  private val testDeviceTime = "01-01 00:00:00"
+  private val logcatOptions = listOf("shell", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash")
+  private val logcatOutputText =
+    """
+    04-28 23:18:49.444  1887  1988 I TestRunner: started: (.)
+    04-28 23:18:50.444  1887  1988 I ExampleTestApp: test logcat output
+    04-28 23:18:51.444  1887  1988 I TestRunner: finished: (.)
+    """
+      .trimIndent()
+  private val testPackageName = "com.example.myapplication"
+  private val crashLogcatOutputText =
+    """
         10-27 15:30:28.456 22746 22746 E AndroidRuntime: Process: ${testPackageName}, PID: 22746
         10-27 15:30:28.456 22746 22746 E AndroidRuntime: 	at dalvik.system.BaseDexClassLoader
         10-27 15:30:28.456 22746 22746 E AndroidRuntime: 	at java.lang.ClassLoader.loadClass
@@ -89,147 +89,145 @@ class AndroidTestLogcatPluginTest {
         10-27 15:30:28.456 22746 22746 E AndroidRuntime: 	at android.app.ActivityThread
         10-27 15:30:28.456 22746 22746 E AndroidRuntime: 	... 10 more
         10-27 15:30:28.457 22746 22746 I Process : Sending signal. PID: 22746 SIG: 9
-    """.trimIndent()
+    """
+      .trimIndent()
 
-    @Before
-    fun setUp() {
-        environment = Environment(tempFolder.root.path, "", "", "", "", null)
-        emptyTestResult = TestResult.newBuilder().apply {
-            testCaseBuilder.apply {
-                testPackage = "package"
-                testClass = "class"
-                testMethod = "method"
-            }
-        }.build()
-        passedTestSuiteResult = TestSuiteResult.newBuilder().apply {
-            testStatus = TestStatusProto.TestStatus.PASSED
-        }.build()
-        androidTestLogcatPlugin = AndroidTestLogcatPlugin(mockLogger, logcatTimeoutSeconds = 0L)
-
-        `when`(mockContext[eq(Context.CONFIG_KEY)]).thenReturn(mockConfig)
-        `when`(mockContext[eq(Context.EVENTS_KEY)]).thenReturn(mockEvents)
-        `when`(mockConfig.environment).thenReturn(environment)
-        `when`(mockConfig.configProto).thenReturn(Any.pack(
-                AndroidTestLogcatConfig.newBuilder().apply {
-                    targetTestProcessName = this@AndroidTestLogcatPluginTest.testPackageName
-                }.build()
-        ))
-        `when`(mockDeviceController.deviceShell(listOf("date", "+%m-%d\\ %H:%M:%S")))
-                .thenReturn(CommandResult(0, listOf(testDeviceTime)))
-        `when`(mockDeviceController.executeAsync(
-                eq(listOf(
-                        "shell", "logcat",
-                        "-v", "threadtime",
-                        "-b", "main",
-                        "-b", "crash",
-                        "-T", "\'$testDeviceTime.000\'")),
-                any())).then  {
-            val outputTextProcessor: (String) -> Unit = it.getArgument(1)
-            logcatOutputText.lines().forEach(outputTextProcessor)
-            mockCommandHandle
+  @Before
+  fun setUp() {
+    environment = Environment(tempFolder.root.path, "", "", "", "", null)
+    emptyTestResult =
+      TestResult.newBuilder()
+        .apply {
+          testCaseBuilder.apply {
+            testPackage = "package"
+            testClass = "class"
+            testMethod = "method"
+          }
         }
+        .build()
+    passedTestSuiteResult = TestSuiteResult.newBuilder().apply { testStatus = TestStatusProto.TestStatus.PASSED }.build()
+    androidTestLogcatPlugin = AndroidTestLogcatPlugin(mockLogger, logcatTimeoutSeconds = 0L)
+
+    `when`(mockContext[eq(Context.CONFIG_KEY)]).thenReturn(mockConfig)
+    `when`(mockContext[eq(Context.EVENTS_KEY)]).thenReturn(mockEvents)
+    `when`(mockConfig.environment).thenReturn(environment)
+    `when`(mockConfig.configProto)
+      .thenReturn(
+        Any.pack(
+          AndroidTestLogcatConfig.newBuilder().apply { targetTestProcessName = this@AndroidTestLogcatPluginTest.testPackageName }.build()
+        )
+      )
+    `when`(mockDeviceController.deviceShell(listOf("date", "+%m-%d\\ %H:%M:%S"))).thenReturn(CommandResult(0, listOf(testDeviceTime)))
+    `when`(
+        mockDeviceController.executeAsync(
+          eq(listOf("shell", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash", "-T", "\'$testDeviceTime.000\'")),
+          any(),
+        )
+      )
+      .then {
+        val outputTextProcessor: (String) -> Unit = it.getArgument(1)
+        logcatOutputText.lines().forEach(outputTextProcessor)
+        mockCommandHandle
+      }
+  }
+
+  @Test
+  fun beforeAll_startsLogcatStreamWithExpectedLogcatOptions() {
+    androidTestLogcatPlugin.configure(mockContext)
+    androidTestLogcatPlugin.beforeAll(mockDeviceController)
+
+    val expectedLogcatOptions = mutableListOf<String>()
+    expectedLogcatOptions.addAll(logcatOptions)
+    expectedLogcatOptions.addAll(listOf("-T", "\'$testDeviceTime.000\'"))
+
+    verify(mockDeviceController).executeAsync(eq(expectedLogcatOptions), any())
+  }
+
+  @Test
+  fun afterEach_addsLogcatArtifacts() {
+    val testResult =
+      androidTestLogcatPlugin.run {
+        configure(mockContext)
+        beforeAll(mockDeviceController)
+        beforeEach(emptyTestResult.testCase, mockDeviceController)
+        afterEachWithReturn(emptyTestResult, mockDeviceController)
+      }
+
+    assertThat(testResult.outputArtifactList).isNotEmpty()
+    testResult.outputArtifactList.forEach {
+      assertThat(it.label.namespace).isEqualTo("android")
+      assertThat(it.label.label).isEqualTo("logcat")
+      assertThat(it.sourcePath.path).endsWith("${File.separator}logcat-package.class-method.txt")
     }
+    verify(mockEvents).sendTestResultUpdate(testResult)
+  }
 
-    @Test
-    fun beforeAll_startsLogcatStreamWithExpectedLogcatOptions() {
-        androidTestLogcatPlugin.configure(mockContext)
-        androidTestLogcatPlugin.beforeAll(mockDeviceController)
-
-        val expectedLogcatOptions = mutableListOf<String>()
-        expectedLogcatOptions.addAll(logcatOptions)
-        expectedLogcatOptions.addAll(listOf("-T", "\'$testDeviceTime.000\'"))
-
-        verify(mockDeviceController).executeAsync(eq(expectedLogcatOptions), any())
-    }
-
-    @Test
-    fun afterEach_addsLogcatArtifacts() {
-        val testResult = androidTestLogcatPlugin.run {
-            configure(mockContext)
-            beforeAll(mockDeviceController)
-            beforeEach(emptyTestResult.testCase, mockDeviceController)
-            afterEachWithReturn(emptyTestResult, mockDeviceController)
+  @Test
+  fun afterEach_addsLogcatArtifacts_escapeInvalidFileName() {
+    val testCaseWithInvalidCharacter =
+      TestCaseProto.TestCase.newBuilder()
+        .apply {
+          testPackage = "com.package:name"
+          testClass = "MyClass\$Inner"
+          testMethod = "testMethod(with emoji: 🧪)"
         }
+        .build()
+    val testResult =
+      androidTestLogcatPlugin.run {
+        configure(mockContext)
+        beforeAll(mockDeviceController)
+        beforeEach(testCaseWithInvalidCharacter, mockDeviceController)
+        afterEachWithReturn(TestResult.newBuilder().apply { testCase = testCaseWithInvalidCharacter }.build(), mockDeviceController)
+      }
 
-        assertThat(testResult.outputArtifactList).isNotEmpty()
-        testResult.outputArtifactList.forEach {
-            assertThat(it.label.namespace).isEqualTo("android")
-            assertThat(it.label.label).isEqualTo("logcat")
-            assertThat(it.sourcePath.path).endsWith("${File.separator}logcat-package.class-method.txt")
-        }
-        verify(mockEvents).sendTestResultUpdate(testResult)
+    assertThat(testResult.outputArtifactList).isNotEmpty()
+    testResult.outputArtifactList.forEach {
+      assertThat(it.label.namespace).isEqualTo("android")
+      assertThat(it.label.label).isEqualTo("logcat")
+      assertThat(it.sourcePath.path).endsWith("${File.separator}logcat-com.package_name.MyClass_Inner-testMethod_with_emoji____.txt")
     }
+    verify(mockEvents).sendTestResultUpdate(testResult)
+  }
 
-    @Test
-    fun afterEach_addsLogcatArtifacts_escapeInvalidFileName() {
-        val testCaseWithInvalidCharacter = TestCaseProto.TestCase.newBuilder().apply {
-            testPackage = "com.package:name"
-            testClass = "MyClass\$Inner"
-            testMethod = "testMethod(with emoji: 🧪)"
-        }.build()
-        val testResult = androidTestLogcatPlugin.run {
-            configure(mockContext)
-            beforeAll(mockDeviceController)
-            beforeEach(testCaseWithInvalidCharacter, mockDeviceController)
-            afterEachWithReturn(TestResult.newBuilder().apply {
-                testCase = testCaseWithInvalidCharacter
-            }.build(), mockDeviceController)
-        }
+  @Test
+  fun afterAll_stopsLogcatStream() {
+    androidTestLogcatPlugin.configure(mockContext)
+    androidTestLogcatPlugin.beforeAll(mockDeviceController)
+    androidTestLogcatPlugin.afterEach(emptyTestResult, mockDeviceController)
+    androidTestLogcatPlugin.afterAll(passedTestSuiteResult, mockDeviceController)
 
-        assertThat(testResult.outputArtifactList).isNotEmpty()
-        testResult.outputArtifactList.forEach {
-            assertThat(it.label.namespace).isEqualTo("android")
-            assertThat(it.label.label).isEqualTo("logcat")
-            assertThat(it.sourcePath.path).endsWith(
-                "${File.separator}logcat-com.package_name.MyClass_Inner-testMethod_with_emoji____.txt")
-        }
-        verify(mockEvents).sendTestResultUpdate(testResult)
-    }
+    verify(mockCommandHandle).stop()
+  }
 
-    @Test
-    fun afterAll_stopsLogcatStream() {
-        androidTestLogcatPlugin.configure(mockContext)
-        androidTestLogcatPlugin.beforeAll(mockDeviceController)
-        androidTestLogcatPlugin.afterEach(emptyTestResult, mockDeviceController)
-        androidTestLogcatPlugin.afterAll(passedTestSuiteResult, mockDeviceController)
+  @Test
+  fun canRun_isTrue() {
+    assertThat(androidTestLogcatPlugin.canRun()).isTrue()
+  }
 
-        verify(mockCommandHandle).stop()
-    }
+  @Test
+  fun afterAll_catchesCrashLogcat() {
+    `when`(
+        mockDeviceController.executeAsync(
+          eq(listOf("shell", "logcat", "-v", "threadtime", "-b", "main", "-b", "crash", "-T", "\'$testDeviceTime.000\'")),
+          any(),
+        )
+      )
+      .then {
+        val outputTextProcessor: (String) -> Unit = it.getArgument(1)
+        crashLogcatOutputText.lines().forEach(outputTextProcessor)
+        mockCommandHandle
+      }
+    val crashedTestSuiteResult = TestSuiteResult.newBuilder().apply { testStatus = TestStatusProto.TestStatus.FAILED }.build()
 
-    @Test
-    fun canRun_isTrue() {
-        assertThat(androidTestLogcatPlugin.canRun()).isTrue()
-    }
+    androidTestLogcatPlugin.configure(mockContext)
+    androidTestLogcatPlugin.beforeAll(mockDeviceController)
+    val finalTestSuiteResult = androidTestLogcatPlugin.afterAllWithReturn(crashedTestSuiteResult, mockDeviceController)
 
-    @Test
-    fun afterAll_catchesCrashLogcat() {
-        `when`(mockDeviceController.executeAsync(
-                eq(listOf(
-                        "shell", "logcat",
-                        "-v", "threadtime",
-                        "-b", "main",
-                        "-b", "crash",
-                        "-T", "\'$testDeviceTime.000\'")),
-                any())).then  {
-            val outputTextProcessor: (String) -> Unit = it.getArgument(1)
-            crashLogcatOutputText.lines().forEach(outputTextProcessor)
-            mockCommandHandle
-        }
-        val crashedTestSuiteResult = TestSuiteResult.newBuilder().apply {
-            testStatus = TestStatusProto.TestStatus.FAILED
-        }.build()
-
-        androidTestLogcatPlugin.configure(mockContext)
-        androidTestLogcatPlugin.beforeAll(mockDeviceController)
-        val finalTestSuiteResult =  androidTestLogcatPlugin.afterAllWithReturn(
-            crashedTestSuiteResult, mockDeviceController)
-
-        verify(mockCommandHandle).stop()
-        val lastIssue = finalTestSuiteResult.issueList.last()
-        assertThat(lastIssue.severity).isEqualTo(IssueProto.Issue.Severity.SEVERE)
-        assertThat(lastIssue.message).contains("Logcat of last crash:")
-        assertThat(lastIssue.message).contains(
-                "... 10 more")
-        verify(mockEvents).sendIssue(lastIssue)
-    }
+    verify(mockCommandHandle).stop()
+    val lastIssue = finalTestSuiteResult.issueList.last()
+    assertThat(lastIssue.severity).isEqualTo(IssueProto.Issue.Severity.SEVERE)
+    assertThat(lastIssue.message).contains("Logcat of last crash:")
+    assertThat(lastIssue.message).contains("... 10 more")
+    verify(mockEvents).sendIssue(lastIssue)
+  }
 }

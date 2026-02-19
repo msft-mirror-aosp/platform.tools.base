@@ -23,35 +23,28 @@ import org.junit.Test
 
 class BasicBuiltInKotlin {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinApplication {
-            android {
-                namespace = "com.foo.application"
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinApplication {
+        android { namespace = "com.foo.application" }
 
-            kotlin {
-                compilerOptions {
-                    moduleName.set("foo")
-                    languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
-                }
-            }
+        kotlin {
+          compilerOptions {
+            moduleName.set("foo")
+            languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9)
+          }
         }
+      }
     }
 
-    @Test
-    fun basicTest() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebug")
-        val project = rule.build.androidApplication()
-        project.assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly(
-                "com/foo/application/HelloWorld",
-                "com/foo/application/R\$",
-                "kotlin/",
-                "org/intellij/",
-                "org/jetbrains/"
-            )
-        }
+  @Test
+  fun basicTest() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebug")
+    val project = rule.build.androidApplication()
+    project.assertApk(ApkSelector.DEBUG) {
+      classes().containsExactly("com/foo/application/HelloWorld", "com/foo/application/R\$", "kotlin/", "org/intellij/", "org/jetbrains/")
     }
+  }
 }

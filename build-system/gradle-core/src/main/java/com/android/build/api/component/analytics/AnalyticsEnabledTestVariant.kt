@@ -27,100 +27,87 @@ import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestVariant
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.file.Directory
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import javax.inject.Inject
 
-open class AnalyticsEnabledTestVariant @Inject constructor(
-    override val delegate: TestVariant,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-): AnalyticsEnabledVariant(delegate, stats, objectFactory), TestVariant {
+open class AnalyticsEnabledTestVariant
+@Inject
+constructor(override val delegate: TestVariant, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledVariant(delegate, stats, objectFactory), TestVariant {
 
-    override val applicationId: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.APPLICATION_ID_VALUE
-            return delegate.applicationId
-        }
-
-    override val testedApplicationId: Provider<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TESTED_APPLICATION_ID_VALUE
-            return delegate.testedApplicationId
-        }
-
-    override val testedApks: Provider<Directory>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TESTED_APKS_VALUE
-            return delegate.testedApks
-        }
-
-    override val instrumentationRunner: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE
-            return delegate.instrumentationRunner
-        }
-
-    override val instrumentationRunnerArguments: MapProperty<String, String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_ARGUMENTS_VALUE
-            return delegate.instrumentationRunnerArguments
-        }
-
-    override val handleProfiling: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.HANDLE_PROFILING_VALUE
-            return delegate.handleProfiling
-        }
-
-    override val functionalTest: Property<Boolean>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE
-            return delegate.functionalTest
-        }
-
-    override val testLabel: Property<String>
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.TEST_LABEL_VALUE
-            return delegate.testLabel
-        }
-
-    override val unitTest: UnitTest? = null
-
-    private val generatesApk: GeneratesApk by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        AnalyticsEnabledGeneratesApk(
-                delegate,
-                stats,
-                objectFactory
-        )
+  override val applicationId: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.APPLICATION_ID_VALUE
+      return delegate.applicationId
     }
 
-    override val androidResources: AndroidResources
-        get() = generatesApk.androidResources
+  override val testedApplicationId: Provider<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TESTED_APPLICATION_ID_VALUE
+      return delegate.testedApplicationId
+    }
 
-    override val renderscript: Renderscript?
-        get() = generatesApk.renderscript
+  override val testedApks: Provider<Directory>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TESTED_APKS_VALUE
+      return delegate.testedApks
+    }
 
-    override val packaging: ApkPackaging
-        get() = generatesApk.packaging
+  override val instrumentationRunner: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE
+      return delegate.instrumentationRunner
+    }
 
-    override val targetSdk: AndroidVersion
-        get() = generatesApk.targetSdk
-    override val dexing: Dexing
-        get() = generatesApk.dexing
+  override val instrumentationRunnerArguments: MapProperty<String, String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_ARGUMENTS_VALUE
+      return delegate.instrumentationRunnerArguments
+    }
 
-    override val outputProviders: ApkOutputProviders
-        get() = generatesApk.outputProviders
+  override val handleProfiling: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.HANDLE_PROFILING_VALUE
+      return delegate.handleProfiling
+    }
 
+  override val functionalTest: Property<Boolean>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE
+      return delegate.functionalTest
+    }
+
+  override val testLabel: Property<String>
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TEST_LABEL_VALUE
+      return delegate.testLabel
+    }
+
+  override val unitTest: UnitTest? = null
+
+  private val generatesApk: GeneratesApk by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) { AnalyticsEnabledGeneratesApk(delegate, stats, objectFactory) }
+
+  override val androidResources: AndroidResources
+    get() = generatesApk.androidResources
+
+  override val renderscript: Renderscript?
+    get() = generatesApk.renderscript
+
+  override val packaging: ApkPackaging
+    get() = generatesApk.packaging
+
+  override val targetSdk: AndroidVersion
+    get() = generatesApk.targetSdk
+
+  override val dexing: Dexing
+    get() = generatesApk.dexing
+
+  override val outputProviders: ApkOutputProviders
+    get() = generatesApk.outputProviders
 }

@@ -17,15 +17,11 @@ package com.android.processmonitor.common
 
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Creates a [Flow] of devices connecting & disconnecting
- */
+/** Creates a [Flow] of devices connecting & disconnecting */
 internal interface DeviceTracker<T> {
 
-    /**
-     * Track devices connecting and disconnecting.
-     */
-    fun trackDevices(): Flow<DeviceEvent<T>>
+  /** Track devices connecting and disconnecting. */
+  fun trackDevices(): Flow<DeviceEvent<T>>
 
-    fun getDeviceSerialNumber(device: T): String
+  fun getDeviceSerialNumber(device: T): String
 }

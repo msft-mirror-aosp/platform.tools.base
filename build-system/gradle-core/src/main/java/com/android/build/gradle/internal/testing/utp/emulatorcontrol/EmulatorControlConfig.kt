@@ -21,12 +21,10 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.tools.utp.gradle.api.EmulatorControlConfig
 
-fun createEmulatorControlConfig(
-    projectOptions: ProjectOptions, emulatorControl: EmulatorControl
-): EmulatorControlConfig {
-    return EmulatorControlConfig(
-        emulatorControl.enable && projectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL),
-        emulatorControl.allowedEndpoints.toSet(),
-        emulatorControl.secondsValid
-    )
+fun createEmulatorControlConfig(projectOptions: ProjectOptions, emulatorControl: EmulatorControl): EmulatorControlConfig {
+  return EmulatorControlConfig(
+    emulatorControl.enable && projectOptions.get(BooleanOption.ENABLE_EMULATOR_CONTROL),
+    emulatorControl.allowedEndpoints.toSet(),
+    emulatorControl.secondsValid,
+  )
 }

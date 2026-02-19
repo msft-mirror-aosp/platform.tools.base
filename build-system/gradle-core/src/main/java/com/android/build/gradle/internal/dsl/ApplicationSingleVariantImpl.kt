@@ -20,14 +20,12 @@ import com.android.build.api.dsl.ApplicationSingleVariant
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class ApplicationSingleVariantImpl @Inject constructor(
-    dslServices: DslServices,
-    override val variantName: String
-) : ApplicationSingleVariant, PublishingOptionsImpl() {
+abstract class ApplicationSingleVariantImpl @Inject constructor(dslServices: DslServices, override val variantName: String) :
+  ApplicationSingleVariant, PublishingOptionsImpl() {
 
-    internal abstract var publishVariantAsApk: Boolean
+  internal abstract var publishVariantAsApk: Boolean
 
-    override fun publishApk() {
-        publishVariantAsApk = true
-    }
+  override fun publishApk() {
+    publishVariantAsApk = true
+  }
 }

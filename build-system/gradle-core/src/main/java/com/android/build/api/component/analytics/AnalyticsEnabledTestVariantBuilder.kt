@@ -22,35 +22,29 @@ import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
 
-/**
- * Shim object for [AnalyticsEnabledVariantBuilder] that records all mutating accesses to the analytics.
- */
-open class AnalyticsEnabledTestVariantBuilder @Inject constructor(
-        override val delegate: TestVariantBuilder,
-        stats: GradleBuildVariant.Builder
-) : AnalyticsEnabledVariantBuilder(delegate, stats),
-    TestVariantBuilder{
-    override var isMinifyEnabled: Boolean
-        get() = delegate.isMinifyEnabled
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
-            delegate.isMinifyEnabled = value
-        }
-    override var debuggable: Boolean
-        get() = throw PropertyAccessNotAllowedException("debuggable", "TestVariantBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.VARIANT_BUILDER_DEBUGGABLE_VALUE
-            delegate.debuggable = value
-        }
+/** Shim object for [AnalyticsEnabledVariantBuilder] that records all mutating accesses to the analytics. */
+open class AnalyticsEnabledTestVariantBuilder
+@Inject
+constructor(override val delegate: TestVariantBuilder, stats: GradleBuildVariant.Builder) :
+  AnalyticsEnabledVariantBuilder(delegate, stats), TestVariantBuilder {
+  override var isMinifyEnabled: Boolean
+    get() = delegate.isMinifyEnabled
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.CODE_MINIFICATION_VALUE_VALUE
+      delegate.isMinifyEnabled = value
+    }
 
-    override var enableMultiDex: Boolean?
-        get() = throw PropertyAccessNotAllowedException("enableMultiDex", "TestVariantBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLE_MULTI_DEX_VALUE
-            delegate.enableMultiDex = value
-        }
+  override var debuggable: Boolean
+    get() = throw PropertyAccessNotAllowedException("debuggable", "TestVariantBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.VARIANT_BUILDER_DEBUGGABLE_VALUE
+      delegate.debuggable = value
+    }
 
-
-
+  override var enableMultiDex: Boolean?
+    get() = throw PropertyAccessNotAllowedException("enableMultiDex", "TestVariantBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLE_MULTI_DEX_VALUE
+      delegate.enableMultiDex = value
+    }
 }

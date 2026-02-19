@@ -33,61 +33,50 @@ import org.mockito.kotlin.verify
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledTestSuiteTest {
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: TestSuite = mock()
+  private val delegate: TestSuite = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledTestSuite by lazy {
-        object: AnalyticsEnabledTestSuite(delegate, stats, FakeObjectFactory.factory) {}
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledTestSuite by lazy { object : AnalyticsEnabledTestSuite(delegate, stats, FakeObjectFactory.factory) {} }
 
-    @Test
-    fun junitEngineSpec() {
-        val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
-        Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
-        val junitEngineSpecProxy = proxy.junitEngineSpec
+  @Test
+  fun junitEngineSpec() {
+    val junitEngineSpec = Mockito.mock<JUnitEngineSpecBuilder>()
+    Mockito.`when`(delegate.junitEngineSpec).thenReturn(junitEngineSpec)
+    val junitEngineSpecProxy = proxy.junitEngineSpec
 
-        Truth.assertThat(junitEngineSpecProxy).isInstanceOf(
-            AnalyticsEnabledJUnitEngineSpec::class.java
-        )
+    Truth.assertThat(junitEngineSpecProxy).isInstanceOf(AnalyticsEnabledJUnitEngineSpec::class.java)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE)
-        verify(delegate)
-            .junitEngineSpec
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.JUNIT_ENGINE_SPEC_VALUE)
+    verify(delegate).junitEngineSpec
+  }
 
-    @Test
-    fun target() {
-        proxy.targets
+  @Test
+  fun target() {
+    proxy.targets
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE)
-        verify(delegate)
-            .targets
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_TARGETS_VALUE)
+    verify(delegate).targets
+  }
 
-    @Test
-    fun codeCoverage() {
-        proxy.codeCoverage
+  @Test
+  fun codeCoverage() {
+    proxy.codeCoverage
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE)
-        verify(delegate).codeCoverage
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_CODE_COVERAGE_VALUE)
+    verify(delegate).codeCoverage
+  }
 
-    @Test
-    fun source() {
-        proxy.sources
+  @Test
+  fun source() {
+    proxy.sources
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE)
-        verify(delegate).sources
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_SUITE_SOURCES_VALUE)
+    verify(delegate).sources
+  }
 }

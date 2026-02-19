@@ -27,51 +27,43 @@ import com.android.testutils.generateAarWithContent
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Checks that classes within an AAR can be desugared together.
- * Regression test for https://issuetracker.google.com/140508065
- *
- */
+/** Checks that classes within an AAR can be desugared together. Regression test for https://issuetracker.google.com/140508065 */
 class DesugarAarTogetherWithD8Test {
 
-    private val app = MinimalSubProject.app("com.example.desugar.aar.together").apply {
-        appendToBuild(
-            """
-                android.compileOptions.sourceCompatibility 1.8
-                android.compileOptions.targetCompatibility 1.8
-                dependencies {
-                    implementation 'com.example:myaar:1'
-                }
-                """.trimIndent()
-        )
+  private val app =
+    MinimalSubProject.app("com.example.desugar.aar.together").apply {
+      appendToBuild(
+        """
+        android.compileOptions.sourceCompatibility 1.8
+        android.compileOptions.targetCompatibility 1.8
+        dependencies {
+            implementation 'com.example:myaar:1'
+        }
+        """
+          .trimIndent()
+      )
     }
 
-    private val aar = generateAarWithContent(
-        packageName = "com.example.myaar",
-        mainJar = jarWithClasses(listOf(ImplOfInterfaceWithDefaultMethod::class.java)),
-        secondaryJars = mapOf("other" to jarWithClasses(listOf(InterfaceWithDefaultMethod::class.java)))
+  private val aar =
+    generateAarWithContent(
+      packageName = "com.example.myaar",
+      mainJar = jarWithClasses(listOf(ImplOfInterfaceWithDefaultMethod::class.java)),
+      secondaryJars = mapOf("other" to jarWithClasses(listOf(InterfaceWithDefaultMethod::class.java))),
     )
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            MavenRepoGenerator.Library("com.example:myaar:1", "aar", aar)
-        )
-    )
+  private val mavenRepo = MavenRepoGenerator(listOf(MavenRepoGenerator.Library("com.example:myaar:1", "aar", aar)))
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(app)
-        .withAdditionalMavenRepo(mavenRepo)
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(app).withAdditionalMavenRepo(mavenRepo).create()
 
-    @Test
-    fun desugarsLibraryDependency() {
-        project.executor().run("assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        assertThat(apk).hasDexVersion(35)
+  @Test
+  fun desugarsLibraryDependency() {
+    project.executor().run("assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    assertThat(apk).hasDexVersion(35)
 
-        assertThat(apk)
-            .hasClass("L" + "com/android/build/gradle/integration/desugar/resources/ImplOfInterfaceWithDefaultMethod;")
-            .that().hasMethod("myDefaultMethod")
-    }
+    assertThat(apk)
+      .hasClass("L" + "com/android/build/gradle/integration/desugar/resources/ImplOfInterfaceWithDefaultMethod;")
+      .that()
+      .hasMethod("myDefaultMethod")
+  }
 }

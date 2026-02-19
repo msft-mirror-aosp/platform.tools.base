@@ -39,8 +39,7 @@ import org.jetbrains.uast.ULambdaExpression
 /** Makes sure that `buildList` calls actually add items */
 class BuildListDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(BuildListDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(BuildListDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Missing Add Call */
     @JvmField
@@ -59,8 +58,7 @@ class BuildListDetector : Detector(), SourceCodeScanner {
         implementation = IMPLEMENTATION,
       )
 
-    private const val BUILD_LIST_OWNER_CLASS_PART =
-      "kotlin.collections.CollectionsKt__CollectionsKt"
+    private const val BUILD_LIST_OWNER_CLASS_PART = "kotlin.collections.CollectionsKt__CollectionsKt"
     private const val BUILD_LIST_OWNER_FACADE = "kotlin.collections.CollectionsKt"
   }
 
@@ -70,9 +68,7 @@ class BuildListDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     if (
       node.valueArgumentCount == 1 &&
-        evaluator.isMemberInClass(method) { fqName ->
-          fqName == BUILD_LIST_OWNER_CLASS_PART || fqName == BUILD_LIST_OWNER_FACADE
-        }
+        evaluator.isMemberInClass(method) { fqName -> fqName == BUILD_LIST_OWNER_CLASS_PART || fqName == BUILD_LIST_OWNER_FACADE }
     ) {
       val argument = node.valueArguments[0] as? ULambdaExpression ?: return
       val lambda = argument.sourcePsi as? KtLambdaExpression ?: return
@@ -87,10 +83,7 @@ class BuildListDetector : Detector(), SourceCodeScanner {
             return super.visitCallExpression(expression, data)
           }
 
-          override fun visitDoubleColonExpression(
-            expression: KtDoubleColonExpression,
-            data: Void?,
-          ): Void? {
+          override fun visitDoubleColonExpression(expression: KtDoubleColonExpression, data: Void?): Void? {
             // ::add, this::add, list::add, etc.
             checkImplicitReceiver(expression)
             return super.visitDoubleColonExpression(expression, data)
@@ -108,9 +101,7 @@ class BuildListDetector : Detector(), SourceCodeScanner {
 
           override fun visitThisExpression(expression: KtThisExpression, data: Void?): Void? {
             analyze(expression) {
-              val reference =
-                expression.getTargetLabel()?.mainReference
-                  ?: expression.instanceReference.mainReference
+              val reference = expression.getTargetLabel()?.mainReference ?: expression.instanceReference.mainReference
               val psi = reference.resolveToSymbol()?.psi
               if (psi == literal) {
                 isAdding = true

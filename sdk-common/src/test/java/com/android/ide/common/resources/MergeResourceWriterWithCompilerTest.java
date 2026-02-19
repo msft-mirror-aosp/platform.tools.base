@@ -152,7 +152,7 @@ public class MergeResourceWriterWithCompilerTest {
                             null,
                             false,
                             false,
-                            ResourcePathEncoding.AbsoluteNotRelocatable.INSTANCE);
+                            new ResourcePathEncoding.AbsoluteNotRelocatable("Test"));
             MergedResourceWriter writer = new MergedResourceWriter(request);
 
             /*

@@ -35,80 +35,81 @@ import org.junit.Test
 
 class BuiltInKaptForScreenshotTestTest {
 
-    @Rule
-    @JvmField
-    val project: GradleTestProject =
-        GradleTestProject.builder().fromTestApp(
-            MultiModuleTestProject(
-                mapOf<String, GradleProject>(
-                    ":app" to HelloWorldApp.forPlugin("com.android.application"),
-                    ":lib" to AnnotationProcessorLib.createLibrary(),
-                    ":lib-compiler" to AnnotationProcessorLib.createCompiler()
-                )
-            )
-        ).withKotlinGradlePlugin(true)
-            .withBuiltInKotlinSupport(true)
-            .disableBuiltInKotlin()
-            .create()
-
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true"
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf<String, GradleProject>(
+            ":app" to HelloWorldApp.forPlugin("com.android.application"),
+            ":lib" to AnnotationProcessorLib.createLibrary(),
+            ":lib-compiler" to AnnotationProcessorLib.createCompiler(),
+          )
         )
-        val app = project.getSubproject(":app")
-        app.buildFile.appendText(
-            """
+      )
+      .withKotlinGradlePlugin(true)
+      .withBuiltInKotlinSupport(true)
+      .disableBuiltInKotlin()
+      .create()
+
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "${BooleanOption.ENABLE_SCREENSHOT_TEST.propertyName}=true")
+    val app = project.getSubproject(":app")
+    app.buildFile.appendText(
+      """
                 android.experimentalProperties["${SCREENSHOT_TEST.key}"] = true
 
                 dependencies {
                     screenshotTestImplementation project(':lib')
                     kaptScreenshotTest project(':lib-compiler')
                 }
-                """.trimIndent()
-        )
-        with(app.projectDir.resolve("src/screenshotTest/java/com/example/Foo.kt")) {
-            parentFile.mkdirs()
-            writeText(
                 """
-                    package com.example
+        .trimIndent()
+    )
+    with(app.projectDir.resolve("src/screenshotTest/java/com/example/Foo.kt")) {
+      parentFile.mkdirs()
+      writeText(
+        """
+        package com.example
 
-                    import com.example.annotation.ProvideString
+        import com.example.annotation.ProvideString
 
-                    @ProvideString
-                    class Foo
-                    """.trimIndent()
-            )
-        }
+        @ProvideString
+        class Foo
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    @Test
-    fun testAnnotationProcessingWithAgpKaptPlugin() {
-        val app = project.getSubproject(":app")
-        TestFileUtils.searchAndReplace(
-            app.buildFile,
-            "apply plugin: 'com.android.application'",
-            """
+  @Test
+  fun testAnnotationProcessingWithAgpKaptPlugin() {
+    val app = project.getSubproject(":app")
+    TestFileUtils.searchAndReplace(
+      app.buildFile,
+      "apply plugin: 'com.android.application'",
+      """
                 apply plugin: 'com.android.application'
                 apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
                 apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
-                """.trimIndent(),
-        )
-        project.executor().run("app:compileDebugScreenshotTestJavaWithJavac")
-        val kaptGeneratedTestDir =
-            app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
-        PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()
-        PathSubject.assertThat(kaptGeneratedTestDir.resolve("Foo\$\$InnerClass.java")).exists()
-    }
+                """
+        .trimIndent(),
+    )
+    project.executor().run("app:compileDebugScreenshotTestJavaWithJavac")
+    val kaptGeneratedTestDir = app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
+    PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()
+    PathSubject.assertThat(kaptGeneratedTestDir.resolve("Foo\$\$InnerClass.java")).exists()
+  }
 
-    @Test
-    fun testAnnotationProcessingWithJetbrainsKaptPlugin() {
-        val app = project.getSubproject(":app")
-        TestFileUtils.searchAndReplace(
-            app.buildFile,
-            "apply plugin: 'com.android.application'",
-            """
+  @Test
+  fun testAnnotationProcessingWithJetbrainsKaptPlugin() {
+    val app = project.getSubproject(":app")
+    TestFileUtils.searchAndReplace(
+      app.buildFile,
+      "apply plugin: 'com.android.application'",
+      """
                 apply plugin: 'com.android.application'
                 apply plugin: '$KOTLIN_ANDROID_PLUGIN_ID'
                 apply plugin: '$KOTLIN_KAPT_PLUGIN_ID'
@@ -116,15 +117,16 @@ class BuiltInKaptForScreenshotTestTest {
                 kotlin {
                     jvmToolchain(17)
                 }
-                """.trimIndent(),
-        )
-        project.executor()
-            .with(BooleanOption.ENABLE_LEGACY_API, true)
-            .with(BooleanOption.USE_NEW_DSL, false)
-            .run("app:compileDebugScreenshotTestJavaWithJavac")
-        val kaptGeneratedTestDir =
-            app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
-        PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()
-        PathSubject.assertThat(kaptGeneratedTestDir.resolve("Foo\$\$InnerClass.java")).exists()
-    }
+                """
+        .trimIndent(),
+    )
+    project
+      .executor()
+      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .with(BooleanOption.USE_NEW_DSL, false)
+      .run("app:compileDebugScreenshotTestJavaWithJavac")
+    val kaptGeneratedTestDir = app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")
+    PathSubject.assertThat(kaptGeneratedTestDir.resolve("FooStringValue.java")).exists()
+    PathSubject.assertThat(kaptGeneratedTestDir.resolve("Foo\$\$InnerClass.java")).exists()
+  }
 }

@@ -63,28 +63,32 @@ import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.google.common.collect.ImmutableMap
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.file.RegularFile
-import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Property
 import java.io.File
 import java.io.Serializable
 import java.util.Collections
 import javax.inject.Inject
+import org.gradle.api.file.RegularFile
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
+import org.gradle.api.provider.Property
 
-open class KmpVariantImpl @Inject constructor(
-    dslInfo: KmpVariantDslInfo,
-    internalServices: VariantServices,
-    buildFeatures: BuildFeatureValues,
-    variantDependencies: VariantDependencies,
-    paths: VariantPathHelper,
-    artifacts: ArtifactsImpl,
-    taskContainer: MutableTaskContainer,
-    services: TaskCreationServices,
-    global: GlobalTaskCreationConfig,
-    androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
-    manifestFile: File,
-): KmpComponentImpl<KmpVariantDslInfo>(
+open class KmpVariantImpl
+@Inject
+constructor(
+  val variantBuilder: KotlinMultiplatformAndroidVariantBuilderImpl,
+  dslInfo: KmpVariantDslInfo,
+  internalServices: VariantServices,
+  buildFeatures: BuildFeatureValues,
+  variantDependencies: VariantDependencies,
+  paths: VariantPathHelper,
+  artifacts: ArtifactsImpl,
+  taskContainer: MutableTaskContainer,
+  services: TaskCreationServices,
+  global: GlobalTaskCreationConfig,
+  androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
+  manifestFile: File,
+) :
+  KmpComponentImpl<KmpVariantDslInfo>(
     dslInfo,
     internalServices,
     buildFeatures,
@@ -96,212 +100,169 @@ open class KmpVariantImpl @Inject constructor(
     global,
     androidKotlinCompilation,
     manifestFile,
-), KotlinMultiplatformAndroidVariant, KmpCreationConfig, HasDeviceTestsCreationConfig, HasHostTestsCreationConfig {
+  ),
+  KotlinMultiplatformAndroidVariant,
+  KmpCreationConfig,
+  HasDeviceTestsCreationConfig,
+  HasHostTestsCreationConfig {
 
-    override val minSdkVersion: AndroidVersion
-        get() = minSdk
+  override val minSdk: AndroidVersion by lazy { variantBuilder.minSdkVersion }
 
-    override val aarOutputFileName: Property<String> =
-        internalServices.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            services.projectInfo.getProjectBaseName().map {
-                it + DOT_AAR
-            }
-        )
+  override val minSdkVersion: AndroidVersion
+    get() = minSdk
 
-    override val aarMetadata: AarMetadata =
-        internalServices.newInstance(AarMetadata::class.java).also {
-            it.minCompileSdk.set(
-                dslInfo.aarMetadata.minCompileSdk
-                    ?: parseTargetHash(global.compileSdkHashString).apiLevel
-                    ?: DEFAULT_MIN_COMPILE_SDK_VERSION)
-            it.minCompileSdkExtension.set(
-                dslInfo.aarMetadata.minCompileSdkExtension
-                    ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION
-            )
-            it.minAgpVersion.set(
-                dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION
-            )
-        }
+  override val aarOutputFileName: Property<String> =
+    internalServices.newPropertyBackingDeprecatedApi(String::class.java, services.projectInfo.getProjectBaseName().map { it + DOT_AAR })
 
-    override val optimizationCreationConfig by lazy(LazyThreadSafetyMode.NONE) {
-        OptimizationCreationConfigImpl(
-            this,
-            dslInfo.optimizationDslInfo,
-            object : CanMinifyCodeBuilder {
-                override var isMinifyEnabled =
-                    dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-            },
-            object : CanMinifyAndroidResourcesBuilder {
-                override var shrinkResources =
-                    dslInfo.optimizationDslInfo.postProcessingOptions.codeShrinkerEnabled()
-            },
-            internalServices
-        )
+  override val aarMetadata: AarMetadata =
+    internalServices.newInstance(AarMetadata::class.java).also {
+      it.minCompileSdk.set(
+        dslInfo.aarMetadata.minCompileSdk ?: parseTargetHash(global.compileSdkHashString).apiLevel ?: DEFAULT_MIN_COMPILE_SDK_VERSION
+      )
+      it.minCompileSdkExtension.set(dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION)
+      it.minAgpVersion.set(dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION)
     }
 
-    override val proguardFiles: ListProperty<RegularFile>
-        get() = optimizationCreationConfig.proguardFiles
-
-    override val consumerProguardFiles: ListProperty<RegularFile>
-        get() = optimizationCreationConfig.consumerProguardFiles
-
-    override val deviceTests: Map<String, DeviceTest>
-        get() = internalDeviceTests
-
-    override val hostTests: Map<String, HostTestCreationConfig>
-            get() = Collections.unmodifiableMap(internalHostTests)
-
-    override val isMinifyEnabled: Boolean
-        get() = optimizationCreationConfig.minifiedEnabled
-
-    override var unitTest: KmpHostTestImpl? = null
-
-    override val androidDeviceTest: KmpAndroidTestImpl?
-        get() = deviceTests.values.filterIsInstance<KmpAndroidTestImpl>().firstOrNull()
-
-    override val requiresJacocoTransformation: Boolean
-        get() = androidDeviceTest?.codeCoverageEnabled ?: false
-
-    override val nestedComponents: List<KmpComponentImpl<*>>
-        get() = listOfNotNull(
-            unitTest,
-            androidDeviceTest
-        )
-    override val components: List<Component>
-        get() = mutableListOf<Component>(this).also {
-            it.addAll(nestedComponents)
-        }
-
-    override fun missingDimensionStrategy(dimension: String, vararg requestedValues: String) {
-        val attributeKey = ProductFlavorAttr.of(dimension)
-        val attributeValue: ProductFlavorAttr = services.named(
-            ProductFlavorAttr::class.java, name
-        )
-
-        variantDependencies.compileClasspath.attributes.attribute(attributeKey, attributeValue)
-        variantDependencies.runtimeClasspath.attributes.attribute(attributeKey, attributeValue)
-        variantDependencies
-            .annotationProcessorConfiguration
-            ?.attributes
-            ?.attribute(attributeKey, attributeValue)
-
-        // then add the fallbacks which contain the actual requested value
-        DependencyConfigurator.addFlavorStrategy(
-            services.dependencies.attributesSchema,
-            dimension,
-            ImmutableMap.of(name, requestedValues.toList())
-        )
+  override val optimizationCreationConfig by
+    lazy(LazyThreadSafetyMode.NONE) {
+      OptimizationCreationConfigImpl(
+        this,
+        dslInfo.optimizationDslInfo,
+        variantBuilder as? CanMinifyCodeBuilder,
+        variantBuilder as? CanMinifyAndroidResourcesBuilder,
+        internalServices,
+      )
     }
 
-    override val experimentalProperties: MapProperty<String, Any> =
-        internalServices.mapPropertyOf(
-            String::class.java,
-            Any::class.java,
-            dslInfo.experimentalProperties,
-            disallowUnsafeRead = false
-        )
+  override val proguardFiles: ListProperty<RegularFile>
+    get() = optimizationCreationConfig.proguardFiles
 
-    override val maxSdk: Int?
-        get() = dslInfo.maxSdkVersion
+  override val consumerProguardFiles: ListProperty<RegularFile>
+    get() = optimizationCreationConfig.consumerProguardFiles
 
-    override val maxSdkVersion: Int?
-        get() = maxSdk
+  override val deviceTests: Map<String, DeviceTest>
+    get() = internalDeviceTests
 
-    override val targetSdkVersion: AndroidVersion
-        get() = minSdk
+  override val hostTests: Map<String, HostTestCreationConfig>
+    get() = Collections.unmodifiableMap(internalHostTests)
 
-    override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
-        get() = buildConfigCreationConfig?.buildConfigFields
+  override val isMinifyEnabled: Boolean
+    get() = variantBuilder.isMinifyEnabled
 
-    override val manifestPlaceholders: MapProperty<String, String>
-        get() = manifestPlaceholdersCreationConfig?.placeholders ?: internalServices.mapPropertyOf(
-            String::class.java,
-            String::class.java,
-            emptyMap()
-        )
+  override var unitTest: KmpHostTestImpl? = null
 
-    override val packaging: TestedComponentPackaging by lazy(LazyThreadSafetyMode.NONE) {
-        TestedComponentPackagingImpl(dslInfo.packaging, internalServices)
+  override val androidDeviceTest: KmpAndroidTestImpl?
+    get() = deviceTests.values.filterIsInstance<KmpAndroidTestImpl>().firstOrNull()
+
+  override val requiresJacocoTransformation: Boolean
+    get() = androidDeviceTest?.codeCoverageEnabled ?: false
+
+  override val nestedComponents: List<KmpComponentImpl<*>>
+    get() = listOfNotNull(unitTest, androidDeviceTest)
+
+  override val components: List<Component>
+    get() = mutableListOf<Component>(this).also { it.addAll(nestedComponents) }
+
+  override fun missingDimensionStrategy(dimension: String, vararg requestedValues: String) {
+    val attributeKey = ProductFlavorAttr.of(dimension)
+    val attributeValue: ProductFlavorAttr = services.named(ProductFlavorAttr::class.java, name)
+
+    variantDependencies.compileClasspath.attributes.attribute(attributeKey, attributeValue)
+    variantDependencies.runtimeClasspath.attributes.attribute(attributeKey, attributeValue)
+    variantDependencies.annotationProcessorConfiguration?.attributes?.attribute(attributeKey, attributeValue)
+
+    // then add the fallbacks which contain the actual requested value
+    DependencyConfigurator.addFlavorStrategy(
+      services.dependencies.attributesSchema,
+      dimension,
+      ImmutableMap.of(name, requestedValues.toList()),
+    )
+  }
+
+  override val experimentalProperties: MapProperty<String, Any> =
+    internalServices.mapPropertyOf(String::class.java, Any::class.java, dslInfo.experimentalProperties, disallowUnsafeRead = false)
+
+  override val maxSdk: Int?
+    get() = variantBuilder.maxSdk
+
+  override val maxSdkVersion: Int?
+    get() = maxSdk
+
+  override val targetSdkVersion: AndroidVersion
+    get() = variantBuilder.targetSdkVersion
+
+  override val buildConfigFields: MapProperty<String, BuildConfigField<out Serializable>>?
+    get() = buildConfigCreationConfig?.buildConfigFields
+
+  override val manifestPlaceholders: MapProperty<String, String>
+    get() =
+      manifestPlaceholdersCreationConfig?.placeholders ?: internalServices.mapPropertyOf(String::class.java, String::class.java, emptyMap())
+
+  override val packaging: TestedComponentPackaging by
+    lazy(LazyThreadSafetyMode.NONE) { TestedComponentPackagingImpl(dslInfo.packaging, internalServices) }
+
+  override val isCoreLibraryDesugaringEnabledLintCheck: Boolean
+    get() = global.compileOptions.isCoreLibraryDesugaringEnabled
+
+  override fun syncAndroidAndKmpClasspathAndSources() {
+    super.syncAndroidAndKmpClasspathAndSources()
+  }
+
+  @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+  override fun <ParamT : InstrumentationParameters> transformClassesWith(
+    classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
+    scope: InstrumentationScope,
+    instrumentationParamsConfig: (ParamT) -> Unit,
+  ) {
+    instrumentation.transformClassesWith(classVisitorFactoryImplClass, scope, instrumentationParamsConfig)
+  }
+
+  @Deprecated("Will be removed in v9.0, use the instrumentation block.")
+  override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
+    instrumentation.setAsmFramesComputationMode(mode)
+  }
+
+  override fun makeResValueKey(type: String, name: String): ResValue.Key {
+    return ResValueKeyImpl(type, name)
+  }
+
+  override val resValues: MapProperty<ResValue.Key, ResValue> by lazy {
+    resValuesCreationConfig?.resValues ?: internalServices.mapPropertyOf(ResValue.Key::class.java, ResValue::class.java, emptyMap())
+  }
+
+  override val pseudoLocalesEnabled: Property<Boolean> by lazy {
+    androidResourcesCreationConfig?.pseudoLocalesEnabled ?: internalServices.propertyOf(Boolean::class.java, false)
+  }
+
+  override fun <T : Component> createUserVisibleVariantObject(stats: GradleBuildVariant.Builder?): T {
+    return if (stats == null) {
+      this as T
+    } else {
+      services.newInstance(AnalyticsEnabledKotlinMultiplatformAndroidVariant::class.java, this, stats) as T
     }
+  }
 
-    override val externalNativeBuild: ExternalNativeBuild?
-        get() = null
+  private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
 
-    override val isCoreLibraryDesugaringEnabledLintCheck: Boolean
-        get() = global.compileOptions.isCoreLibraryDesugaringEnabled
+  override fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig) {
+    internalHostTests[testTypeName] = testComponent
+  }
 
-    override fun syncAndroidAndKmpClasspathAndSources() {
-        super.syncAndroidAndKmpClasspathAndSources()
-    }
+  private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
-    override fun <ParamT : InstrumentationParameters> transformClassesWith(
-        classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
-        scope: InstrumentationScope,
-        instrumentationParamsConfig: (ParamT) -> Unit
-    ) {
-        instrumentation.transformClassesWith(
-            classVisitorFactoryImplClass,
-            scope,
-            instrumentationParamsConfig
-        )
-    }
+  override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
+    internalDeviceTests[testTypeName] = deviceTest
+  }
 
-    @Deprecated("Will be removed in v9.0, use the instrumentation block.")
-    override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
-        instrumentation.setAsmFramesComputationMode(mode)
-    }
+  // Not supported
+  override val externalNativeBuild: ExternalNativeBuild? = null
+  override val renderscriptCreationConfig: RenderscriptCreationConfig? = null
+  override val renderscript: Renderscript? = null
+  override val shadersCreationConfig: ShadersCreationConfig? = null
+  override val nativeBuildCreationConfig: NativeBuildCreationConfig? = null
 
-    override fun makeResValueKey(type: String, name: String): ResValue.Key {
-        return ResValueKeyImpl(type, name)
-    }
+  override fun <T> getExtension(type: Class<T>): T? = null
 
-    override val resValues: MapProperty<ResValue.Key, ResValue> by lazy {
-        resValuesCreationConfig?.resValues ?: internalServices.mapPropertyOf(
-            ResValue.Key::class.java,
-            ResValue::class.java,
-            emptyMap()
-        )
-    }
-
-    override val pseudoLocalesEnabled: Property<Boolean> by lazy {
-        androidResourcesCreationConfig?.pseudoLocalesEnabled
-            ?: internalServices.propertyOf(Boolean::class.java, false)
-    }
-
-    override fun <T : Component> createUserVisibleVariantObject(
-        stats: GradleBuildVariant.Builder?
-    ): T {
-        return if (stats == null) {
-            this as T
-        } else {
-            services.newInstance(
-                AnalyticsEnabledKotlinMultiplatformAndroidVariant::class.java,
-                this,
-                stats
-            ) as T
-        }
-    }
-
-    private val internalHostTests = mutableMapOf<String, HostTestCreationConfig>()
-
-    override fun addTestComponent(testTypeName: String, testComponent: HostTestCreationConfig) {
-        internalHostTests[testTypeName] = testComponent
-    }
-
-    private val internalDeviceTests = mutableMapOf<String, DeviceTest>()
-
-    override fun addDeviceTest(testTypeName: String, deviceTest: DeviceTest) {
-        internalDeviceTests[testTypeName] = deviceTest
-    }
-
-    // Not supported
-    override val renderscriptCreationConfig: RenderscriptCreationConfig? = null
-    override val renderscript: Renderscript? = null
-    override val shadersCreationConfig: ShadersCreationConfig? = null
-    override val nativeBuildCreationConfig: NativeBuildCreationConfig? = null
-    override fun <T> getExtension(type: Class<T>): T?  = null
-    override val testFixtures: TestFixtures? = null
-    override val testSuites: List<TestSuiteCreationConfig> = listOf()
+  override val testFixtures: TestFixtures? = null
+  override val testSuites: List<TestSuiteCreationConfig> = listOf()
 }

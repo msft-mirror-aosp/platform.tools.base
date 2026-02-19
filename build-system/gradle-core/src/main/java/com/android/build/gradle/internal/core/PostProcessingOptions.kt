@@ -19,14 +19,11 @@ package com.android.build.gradle.internal.core
 import com.android.build.gradle.internal.ProguardFilesProvider
 import java.io.File
 
-/**
- * This is a common interface to get post-processing options from DSL, no matter which DSL we use
- * old one or a new (block) one
- */
+/** This is a common interface to get post-processing options from DSL, no matter which DSL we use old one or a new (block) one */
 interface PostProcessingOptions : ProguardFilesProvider {
-    fun getDefaultProguardFiles(): List<File>
+  fun getDefaultProguardFiles(): List<File>
 
-    fun codeShrinkerEnabled(): Boolean
+  fun codeShrinkerEnabled(): Boolean
 
-    fun resourcesShrinkingEnabled(): Boolean
+  fun resourcesShrinkingEnabled(): Boolean
 }

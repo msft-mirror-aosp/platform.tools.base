@@ -37,110 +37,99 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Test to validate that the configurations have the right flavor attributes based on the DSL
- * usage.
- */
+/** Test to validate that the configurations have the right flavor attributes based on the DSL usage. */
 @RunWith(Parameterized::class)
 class FlavorSelectionTest(val variantApi: VariantApiType) {
-    @get:Rule val projectDirectory = TemporaryFolder()
+  @get:Rule val projectDirectory = TemporaryFolder()
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "{0}")
-        fun variantAPI() = VariantApiType.values()
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "{0}") fun variantAPI() = VariantApiType.values()
+  }
+
+  private lateinit var project: Project
+  private lateinit var plugin: AppPlugin
+  private lateinit var android: ApplicationExtension
+  private lateinit var variantConfiguration: Configuration
+  private lateinit var attributeKeys: MutableSet<Attribute<*>>
+
+  @Before
+  fun setUp() {
+    assume().that(variantApi).isNotEqualTo(VariantApiType.OLD) // TODO(b/442520269): Clean up?
+    project = TestProjects.builder(projectDirectory.newFolder("project").toPath()).withPlugin(TestProjects.Plugin.APP).build()
+    android = project.extensions.getByType(TestProjects.Plugin.APP.extensionClass) as ApplicationExtension
+    android.compileSdk { version = release(TestConstants.COMPILE_SDK_VERSION) }
+    android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
+    android.namespace = "com.example.namespace"
+    plugin = project.plugins.getPlugin(TestProjects.Plugin.APP.pluginClass) as AppPlugin
+
+    // manually call the DSL to configure the project.
+
+    // set some flavor selection on default config. Some that will be only applied here,
+    // and some that will be overriden in different ways.
+    val defaultConfig = android.defaultConfig
+    defaultConfig.missingDimensionStrategy("default", "defaultValue")
+    defaultConfig.missingDimensionStrategy("flavor", "defaultValue")
+    defaultConfig.missingDimensionStrategy("variant", "defaultValue")
+
+    // add selection on flavors
+    android.flavorDimensions += "dimension"
+    android.productFlavors.createAndConfig("flavor") {
+      // Here, flavor stands for the dimension value, and won't be considered as a fallback value
+      missingDimensionStrategy("flavor", "other-flavor")
+      missingDimensionStrategy("flavor-only", "other-flavor-only")
     }
 
-    private lateinit var project: Project
-    private lateinit var plugin: AppPlugin
-    private lateinit var android: ApplicationExtension
-    private lateinit var variantConfiguration : Configuration
-    private lateinit var attributeKeys: MutableSet<Attribute<*>>
-
-    @Before
-    fun setUp() {
-        assume().that(variantApi).isNotEqualTo(VariantApiType.OLD) // TODO(b/442520269): Clean up?
-        project = TestProjects.builder(projectDirectory.newFolder("project").toPath())
-                .withPlugin(TestProjects.Plugin.APP)
-                .build()
-        android = project.extensions.getByType(TestProjects.Plugin.APP.extensionClass) as ApplicationExtension
-        android.compileSdk {
-            version = release(TestConstants.COMPILE_SDK_VERSION)
+    // now use the variant API to configure a specific variant
+    when (variantApi) {
+      VariantApiType.OLD -> {
+        (android as AppExtension).applicationVariants.all {
+          it.missingDimensionStrategy("variant", "variant")
+          it.missingDimensionStrategy("variant-only", "variant-only")
         }
-        android.buildToolsVersion = TestConstants.BUILD_TOOL_VERSION
-        android.namespace = "com.example.namespace"
-        plugin = project.plugins.getPlugin(TestProjects.Plugin.APP.pluginClass) as AppPlugin
-
-        // manually call the DSL to configure the project.
-
-        // set some flavor selection on default config. Some that will be only applied here,
-        // and some that will be overriden in different ways.
-        val defaultConfig = android.defaultConfig
-        defaultConfig.missingDimensionStrategy("default", "defaultValue")
-        defaultConfig.missingDimensionStrategy("flavor", "defaultValue")
-        defaultConfig.missingDimensionStrategy("variant", "defaultValue")
-
-        // add selection on flavors
-        android.flavorDimensions += "dimension"
-        android.productFlavors.createAndConfig("flavor") {
-            // Here, flavor stands for the dimension value, and won't be considered as a fallback value
-            missingDimensionStrategy("flavor", "other-flavor")
-            missingDimensionStrategy("flavor-only", "other-flavor-only")
+      }
+      VariantApiType.NEW -> {
+        val androidComponents = project.extensions.getByType(ApplicationAndroidComponentsExtension::class.java)
+        androidComponents.onVariants {
+          it.missingDimensionStrategy("variant", "variant")
+          it.missingDimensionStrategy("variant-only", "variant-only")
         }
-
-        // now use the variant API to configure a specific variant
-        when (variantApi) {
-            VariantApiType.OLD -> {
-                (android as AppExtension).applicationVariants.all {
-                    it.missingDimensionStrategy("variant", "variant")
-                    it.missingDimensionStrategy("variant-only", "variant-only")
-                }
-            }
-            VariantApiType.NEW -> {
-                val androidComponents = project.extensions.getByType(
-                    ApplicationAndroidComponentsExtension::class.java)
-                androidComponents.onVariants {
-                    it.missingDimensionStrategy("variant", "variant")
-                    it.missingDimensionStrategy("variant-only", "variant-only")
-                }
-            }
-        }
-
-        plugin.runAfterEvaluate(project)
-
-        variantConfiguration = project.configurations.getByName("flavorDebugCompileClasspath")
-
-        attributeKeys = variantConfiguration.attributes.keySet()
-
+      }
     }
 
-    @Test
-    fun testBasicAttribute() {
-        checkAttribute("default", "defaultValue")
-    }
+    plugin.runAfterEvaluate(project)
 
-    @Test
-    fun testFlavorAttribute() {
-        checkAttribute("flavor", "other-flavor")
-        checkAttribute("flavor-only", "other-flavor-only")
+    variantConfiguration = project.configurations.getByName("flavorDebugCompileClasspath")
 
-        // TODO: we should check the strategies but there's no API for it right now.
-    }
+    attributeKeys = variantConfiguration.attributes.keySet()
+  }
 
-    @Test
-    fun testVariantAttribute() {
-        checkAttribute("variant", "flavorDebug")
-        checkAttribute("variant-only", "flavorDebug")
-    }
+  @Test
+  fun testBasicAttribute() {
+    checkAttribute("default", "defaultValue")
+  }
 
-    private fun checkAttribute(dimension: String, value: String) {
-        // check the key is present.
-        val key = ProductFlavorAttr.of(dimension)
-        Truth.assertThat(attributeKeys).contains(key as Attribute<*>)
+  @Test
+  fun testFlavorAttribute() {
+    checkAttribute("flavor", "other-flavor")
+    checkAttribute("flavor-only", "other-flavor-only")
 
-        // check the value is correct
-        val attrValue = variantConfiguration.attributes.getAttribute(key)
-        Truth.assertThat(attrValue).named("Value of attribute $dimension").isNotNull()
-        Truth.assertThat(attrValue!!.name).named("Value of attribute $dimension").isEqualTo(value)
-    }
+    // TODO: we should check the strategies but there's no API for it right now.
+  }
+
+  @Test
+  fun testVariantAttribute() {
+    checkAttribute("variant", "flavorDebug")
+    checkAttribute("variant-only", "flavorDebug")
+  }
+
+  private fun checkAttribute(dimension: String, value: String) {
+    // check the key is present.
+    val key = ProductFlavorAttr.of(dimension)
+    Truth.assertThat(attributeKeys).contains(key as Attribute<*>)
+
+    // check the value is correct
+    val attrValue = variantConfiguration.attributes.getAttribute(key)
+    Truth.assertThat(attrValue).named("Value of attribute $dimension").isNotNull()
+    Truth.assertThat(attrValue!!.name).named("Value of attribute $dimension").isEqualTo(value)
+  }
 }

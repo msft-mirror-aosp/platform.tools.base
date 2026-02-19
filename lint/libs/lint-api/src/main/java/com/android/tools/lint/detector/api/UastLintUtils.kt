@@ -36,7 +36,7 @@ import com.intellij.psi.PsiModifier
 import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiNamedElement
 import com.intellij.psi.PsiParameter
-import com.intellij.psi.PsiSwitchLabelStatement
+import com.intellij.psi.PsiSwitchLabelStatementBase
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
@@ -179,10 +179,8 @@ class UastLintUtils {
     fun getQualifiedName(element: PsiElement): String? =
       when (element) {
         is PsiClass -> element.qualifiedName
-        is PsiMethod ->
-          element.containingClass?.let { getQualifiedName(it) }?.let { "$it.${element.name}" }
-        is PsiField ->
-          element.containingClass?.let { getQualifiedName(it) }?.let { "$it.${element.name}" }
+        is PsiMethod -> element.containingClass?.let { getQualifiedName(it) }?.let { "$it.${element.name}" }
+        is PsiField -> element.containingClass?.let { getQualifiedName(it) }?.let { "$it.${element.name}" }
         else -> null
       }
 
@@ -214,10 +212,7 @@ class UastLintUtils {
         currVariable = currVariable.javaPsi
       }
 
-      if (
-        !currVariable.hasModifierProperty(PsiModifier.FINAL) &&
-          (currVariable is PsiLocalVariable || currVariable is PsiParameter)
-      ) {
+      if (!currVariable.hasModifierProperty(PsiModifier.FINAL) && (currVariable is PsiLocalVariable || currVariable is PsiParameter)) {
         val containingFunction = endAt.getContainingUMethod()
         if (containingFunction != null) {
           val finder = ConstantEvaluatorImpl.LastAssignmentFinder(currVariable, endAt, null, -1)
@@ -235,16 +230,14 @@ class UastLintUtils {
      * Finds the first argument of a method that matches the given parameter type.
      *
      * @param node the call expression.
-     * @param method the method this call expression resolves to. It is expected the call expression
-     *   and the method match. Otherwise, the result will be wrong.
+     * @param method the method this call expression resolves to. It is expected the call expression and the method match. Otherwise, the
+     *   result will be wrong.
      * @param type: the type of the parameter to be found.
-     * @return The FIRST expression representing the argument used in the call expression for the
-     *   specific parameter.
+     * @return The FIRST expression representing the argument used in the call expression for the specific parameter.
      */
     @JvmStatic
     fun findArgument(node: UCallExpression, method: PsiMethod, type: String): UExpression? {
-      val psiParameter =
-        method.parameterList.parameters.firstOrNull { it.type.canonicalText == type } ?: return null
+      val psiParameter = method.parameterList.parameters.firstOrNull { it.type.canonicalText == type } ?: return null
       val argument = node.getArgumentForParameter(psiParameter.parameterIndex())
       return argument?.skipParenthesizedExprDown()
     }
@@ -255,8 +248,7 @@ class UastLintUtils {
     }
 
     /**
-     * Finds the initialization method (factory method or constructor) of a variable whose type is a
-     * specific class.
+     * Finds the initialization method (factory method or constructor) of a variable whose type is a specific class.
      *
      * @param fullQualifiedClassName fully qualified class name to be searched for.
      * @param origExpression the variable or the initialization method itself.
@@ -279,12 +271,7 @@ class UastLintUtils {
         if (
           classRef != null &&
             (call.classReference?.getQualifiedName() == fullQualifiedClassName ||
-              includeSubClass &&
-                InheritanceUtil.isInheritor(
-                  classRef.resolve() as? PsiClass,
-                  true,
-                  fullQualifiedClassName,
-                ))
+              includeSubClass && InheritanceUtil.isInheritor(classRef.resolve() as? PsiClass, true, fullQualifiedClassName))
         ) {
           return call
         } else if (expression is UQualifiedReferenceExpression) {
@@ -313,24 +300,14 @@ class UastLintUtils {
       }
     }
 
-    private fun isFactoryMethodForClass(
-      fullQualifiedClassName: String,
-      method: PsiMethod,
-      includeSubClass: Boolean = false,
-    ): Boolean {
+    private fun isFactoryMethodForClass(fullQualifiedClassName: String, method: PsiMethod, includeSubClass: Boolean = false): Boolean {
       return (method.returnType?.canonicalText == fullQualifiedClassName || method.isConstructor) &&
-        (isMemberInClass(method, fullQualifiedClassName) ||
-          includeSubClass && isMemberInSubClassOf(method, fullQualifiedClassName))
+        (isMemberInClass(method, fullQualifiedClassName) || includeSubClass && isMemberInSubClassOf(method, fullQualifiedClassName))
     }
 
-    fun isMemberInSubClassOf(
-      member: PsiMember,
-      className: String,
-      strict: Boolean = false,
-    ): Boolean {
+    fun isMemberInSubClassOf(member: PsiMember, className: String, strict: Boolean = false): Boolean {
       val containingClass = member.containingClass
-      return containingClass != null &&
-        InheritanceUtil.isInheritor(containingClass, strict, className)
+      return containingClass != null && InheritanceUtil.isInheritor(containingClass, strict, className)
     }
 
     fun isMemberInClass(member: PsiMember?, className: String): Boolean {
@@ -359,10 +336,7 @@ class UastLintUtils {
     fun findLastValue(variable: PsiVariable, call: UElement, evaluator: ConstantEvaluator): Any? {
       var value: Any? = null
 
-      if (
-        !variable.hasModifierProperty(PsiModifier.FINAL) &&
-          (variable is PsiLocalVariable || variable is PsiParameter)
-      ) {
+      if (!variable.hasModifierProperty(PsiModifier.FINAL) && (variable is PsiLocalVariable || variable is PsiParameter)) {
         val containingFunction = call.getContainingUMethod()
         if (containingFunction != null) {
           val body = containingFunction.uastBody
@@ -397,9 +371,7 @@ class UastLintUtils {
     fun areIdentifiersEqual(first: UExpression, second: UExpression): Boolean {
       val firstIdentifier = getIdentifier(first)
       val secondIdentifier = getIdentifier(second)
-      return (firstIdentifier != null &&
-        secondIdentifier != null &&
-        firstIdentifier == secondIdentifier)
+      return (firstIdentifier != null && secondIdentifier != null && firstIdentifier == secondIdentifier)
     }
 
     @JvmStatic
@@ -454,12 +426,7 @@ class UastLintUtils {
     }
 
     @JvmStatic
-    fun getLongAttribute(
-      context: JavaContext,
-      annotation: UAnnotation,
-      name: String,
-      defaultValue: Long,
-    ): Long {
+    fun getLongAttribute(context: JavaContext, annotation: UAnnotation, name: String, defaultValue: Long): Long {
       return getLongAttribute(annotation, name, defaultValue)
     }
 
@@ -469,45 +436,29 @@ class UastLintUtils {
     }
 
     @JvmStatic
-    fun getDoubleAttribute(
-      context: JavaContext,
-      annotation: UAnnotation,
-      name: String,
-      defaultValue: Double,
-    ): Double {
+    fun getDoubleAttribute(context: JavaContext, annotation: UAnnotation, name: String, defaultValue: Double): Double {
       return getAnnotationDoubleValue(annotation, name, defaultValue)
     }
 
     @JvmStatic
-    fun getBoolean(
-      context: JavaContext,
-      annotation: UAnnotation,
-      name: String,
-      defaultValue: Boolean,
-    ): Boolean {
+    fun getBoolean(context: JavaContext, annotation: UAnnotation, name: String, defaultValue: Boolean): Boolean {
       return getAnnotationBooleanValue(annotation, name, defaultValue)
     }
 
     @JvmStatic
     fun getAnnotationBooleanValue(annotation: UAnnotation?, name: String): Boolean? {
-      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation)
-        .getAnnotationBooleanValue(annotation, name)
+      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation).getAnnotationBooleanValue(annotation, name)
     }
 
     @JvmStatic
-    fun getAnnotationBooleanValue(
-      annotation: UAnnotation?,
-      name: String,
-      defaultValue: Boolean,
-    ): Boolean {
+    fun getAnnotationBooleanValue(annotation: UAnnotation?, name: String, defaultValue: Boolean): Boolean {
       val value = getAnnotationBooleanValue(annotation, name)
       return value ?: defaultValue
     }
 
     @JvmStatic
     fun getAnnotationLongValue(annotation: UAnnotation?, name: String): Long? {
-      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation)
-        .getAnnotationLongValue(annotation, name)
+      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation).getAnnotationLongValue(annotation, name)
     }
 
     @JvmStatic
@@ -518,47 +469,37 @@ class UastLintUtils {
 
     @JvmStatic
     fun getAnnotationDoubleValue(annotation: UAnnotation?, name: String): Double? {
-      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation)
-        .getAnnotationDoubleValue(annotation, name)
+      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation).getAnnotationDoubleValue(annotation, name)
     }
 
     @JvmStatic
-    fun getAnnotationDoubleValue(
-      annotation: UAnnotation?,
-      name: String,
-      defaultValue: Double,
-    ): Double {
+    fun getAnnotationDoubleValue(annotation: UAnnotation?, name: String, defaultValue: Double): Double {
       val value = getAnnotationDoubleValue(annotation, name)
       return value ?: defaultValue
     }
 
     @JvmStatic
     fun getAnnotationStringValue(annotation: UAnnotation?, name: String): String? {
-      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation)
-        .getAnnotationStringValue(annotation, name)
+      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation).getAnnotationStringValue(annotation, name)
     }
 
     @JvmStatic
     fun getAnnotationStringValues(annotation: UAnnotation?, name: String): Array<String>? {
-      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation)
-        .getAnnotationStringValues(annotation, name)
+      return AnnotationValuesExtractor.getAnnotationValuesExtractor(annotation).getAnnotationStringValues(annotation, name)
     }
 
     @JvmStatic
-    fun containsAnnotation(list: List<UAnnotation>, annotation: UAnnotation): Boolean =
-      list.stream().anyMatch { e -> e === annotation }
+    fun containsAnnotation(list: List<UAnnotation>, annotation: UAnnotation): Boolean = list.stream().anyMatch { e -> e === annotation }
 
     @JvmStatic
     fun containsAnnotation(list: List<UAnnotation>, qualifiedName: String): Boolean =
       list.stream().anyMatch { e -> e.qualifiedName == qualifiedName }
 
     /**
-     * Returns any default-use site annotations for this owner, **even though** in Kotlin these
-     * annotations may not belong on this element. This is done because Kotlin's annotations
-     * semantics means that if you don't specify a use site on a property for example, the
-     * annotation *only* applies to the private backing field, not the get method and not the set
-     * method! However, if you added `@Suppress` on a property you probably expected it to apply to
-     * the getter/setter as well.
+     * Returns any default-use site annotations for this owner, **even though** in Kotlin these annotations may not belong on this element.
+     * This is done because Kotlin's annotations semantics means that if you don't specify a use site on a property for example, the
+     * annotation *only* applies to the private backing field, not the get method and not the set method! However, if you added `@Suppress`
+     * on a property you probably expected it to apply to the getter/setter as well.
      */
     @JvmStatic
     fun getDefaultUseSiteAnnotations(owner: PsiModifierListOwner): List<UAnnotation>? {
@@ -613,8 +554,8 @@ class UastLintUtils {
 }
 
 /**
- * Returns true if the given call represents a Kotlin scope function where the object reference is
- * this. See https://kotlinlang.org/docs/scope-functions.html#function-selection
+ * Returns true if the given call represents a Kotlin scope function where the object reference is this. See
+ * https://kotlinlang.org/docs/scope-functions.html#function-selection
  */
 fun isScopingThis(node: UCallExpression): Boolean {
   val name = getMethodName(node)
@@ -625,8 +566,8 @@ fun isScopingThis(node: UCallExpression): Boolean {
 }
 
 /**
- * Returns true if the given call represents a Kotlin scope function where the object reference is
- * the lambda variable `it`; see https://kotlinlang.org/docs/scope-functions.html#function-selection
+ * Returns true if the given call represents a Kotlin scope function where the object reference is the lambda variable `it`; see
+ * https://kotlinlang.org/docs/scope-functions.html#function-selection
  */
 fun isScopingIt(node: UCallExpression): Boolean {
   val name = getMethodName(node)
@@ -637,8 +578,8 @@ fun isScopingIt(node: UCallExpression): Boolean {
 }
 
 /**
- * Returns true if the given call represents a Kotlin scope function where the return value is the
- * context object; see https://kotlinlang.org/docs/scope-functions.html#function-selection
+ * Returns true if the given call represents a Kotlin scope function where the return value is the context object; see
+ * https://kotlinlang.org/docs/scope-functions.html#function-selection
  */
 fun isReturningContext(node: UCallExpression): Boolean {
   val name = getMethodName(node)
@@ -649,8 +590,8 @@ fun isReturningContext(node: UCallExpression): Boolean {
 }
 
 /**
- * Returns true if the given node appears to be one of the scope functions. Only checks parent
- * class; caller should intend that it's actually one of let, with, apply, etc.
+ * Returns true if the given node appears to be one of the scope functions. Only checks parent class; caller should intend that it's
+ * actually one of let, with, apply, etc.
  */
 private fun isScopingFunctionName(name: String?): Boolean {
   return when (name) {
@@ -692,8 +633,8 @@ fun isScopingFunction(method: PsiMethod): Boolean {
 }
 
 /**
- * Returns true if the given call represents a Kotlin scope function where the return value is the
- * lambda result; see https://kotlinlang.org/docs/scope-functions.html#function-selection
+ * Returns true if the given call represents a Kotlin scope function where the return value is the lambda result; see
+ * https://kotlinlang.org/docs/scope-functions.html#function-selection
  */
 fun isReturningLambdaResult(node: UCallExpression): Boolean {
   val name = getMethodName(node)
@@ -773,10 +714,9 @@ fun UElement.nextStatement(): UExpression? {
 /**
  * UAST adds an implicit lambda return no matter what, so we may need to unwrap that.
  *
- * Before KTIJ-26541, lambda's last expression was wrapped with an implicit return only if it is
- * used as lambda's return while lambda's return type is Unit or Nothing. To avoid an expensive
- * type/resolution involved in parent retrieval, such implicit lambda return expression is added
- * unconditionally.
+ * Before KTIJ-26541, lambda's last expression was wrapped with an implicit return only if it is used as lambda's return while lambda's
+ * return type is Unit or Nothing. To avoid an expensive type/resolution involved in parent retrieval, such implicit lambda return
+ * expression is added unconditionally.
  */
 fun UElement.isIncorrectImplicitReturnInLambda(): Boolean {
   // That is, you will see something like:
@@ -801,10 +741,8 @@ fun UElement.isIncorrectImplicitReturnInLambda(): Boolean {
   if (block.uastParent !is ULambdaExpression) return false
   val lambda = block.uastParent as ULambdaExpression
   val lambdaReturnType =
-    lambda
-      .getReturnType()
-      ?.let { returnType -> if (returnType is PsiWildcardType) returnType.bound else returnType }
-      ?.canonicalText ?: return false
+    lambda.getReturnType()?.let { returnType -> if (returnType is PsiWildcardType) returnType.bound else returnType }?.canonicalText
+      ?: return false
   // Only non-Unit returning lambda should have an implicit return at the end.
   if (
     lambdaReturnType == "kotlin.Unit" ||
@@ -838,8 +776,8 @@ private fun ULambdaExpression.getLambdaType(): PsiType? =
     }
 
 /**
- * Returns the current statement. If you for example have `foo.bar.baz();` and you invoke this on
- * `bar`, it will return the top level UQualifiedReferenceExpression.
+ * Returns the current statement. If you for example have `foo.bar.baz();` and you invoke this on `bar`, it will return the top level
+ * UQualifiedReferenceExpression.
  */
 fun UElement.statement(): UExpression? {
   var prev = this.getParentOfType<UExpression>(false) ?: return null
@@ -881,8 +819,8 @@ fun UElement.previousStatement(): UExpression? {
 }
 
 /**
- * Returns true if [this] element is a child or indirect child of the given [parent]. If [strict] is
- * false, this method will return true when [parent] is the same as [this].
+ * Returns true if [this] element is a child or indirect child of the given [parent]. If [strict] is false, this method will return true
+ * when [parent] is the same as [this].
  */
 fun UElement.isBelow(parent: UElement, strict: Boolean = false): Boolean {
   var curr = if (strict) uastParent else this
@@ -896,8 +834,8 @@ fun UElement.isBelow(parent: UElement, strict: Boolean = false): Boolean {
 }
 
 /**
- * Returns true if [this] element is a child or indirect child of the given [parent]. If [strict] is
- * false, this method will return true when [parent] is the same as [this].
+ * Returns true if [this] element is a child or indirect child of the given [parent]. If [strict] is false, this method will return true
+ * when [parent] is the same as [this].
  */
 fun PsiElement?.isBelow(parent: PsiElement, strict: Boolean = false): Boolean {
   this ?: return false
@@ -905,18 +843,16 @@ fun PsiElement?.isBelow(parent: PsiElement, strict: Boolean = false): Boolean {
 }
 
 /**
- * Returns the class "containing" the given method. This is normally just `member.containingClass`,
- * but for extension functions and properties it's slightly more complicated (e.g. for `fun
- * String.test()` the containing class is `java.lang.String`).
+ * Returns the class "containing" the given method. This is normally just `member.containingClass`, but for extension functions and
+ * properties it's slightly more complicated (e.g. for `fun String.test()` the containing class is `java.lang.String`).
  */
 fun PsiMember.getReceiverOrContainingClass(): PsiClass? {
   return getReceiver() ?: containingClass
 }
 
 /**
- * Given a [PsiMethod] or [PsiField], if it's an extension method or an extension property, returns
- * the [PsiClass] for the extension. For example, for `fun String.test()` the containing class is
- * `java.lang.String`.
+ * Given a [PsiMethod] or [PsiField], if it's an extension method or an extension property, returns the [PsiClass] for the extension. For
+ * example, for `fun String.test()` the containing class is `java.lang.String`.
  */
 fun PsiMember.getReceiver(): PsiClass? {
   val callable =
@@ -938,9 +874,7 @@ fun PsiMethod.isAccessor(): Boolean {
 
 /** Returns `true` if [this] element is a synthetic property accessor (from Java). */
 fun PsiMethod.isSyntheticAccessor(sourcePsi: KtElement): Boolean {
-  val uastResolveService =
-    ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java)
-      ?: return false
+  val uastResolveService = ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java) ?: return false
   val simpleNameExpression = sourcePsi.findSimpleNameExpression() ?: return false
   return uastResolveService.resolveSyntheticJavaPropertyAccessorCall(simpleNameExpression) == this
 }
@@ -1006,21 +940,17 @@ val UCallExpression.implicitReceiver: UExpression?
   get() = receiver?.takeIf { it.sourcePsi == null }
 
 /**
- * Like [UFile.accept], but in the case of multi-file classes (where multiple source files
- * containing top level declarations are annotated with `@JvmMultifileClass`, all naming the same
- * target class) the [UFile] will contain functions and properties from *different* files. Since
- * lint is visiting each source file, that means it would visit these methods multiple times, since
- * they're included in the single large [UFile] built up for each individual source file fragment.
+ * Like [UFile.accept], but in the case of multi-file classes (where multiple source files containing top level declarations are annotated
+ * with `@JvmMultifileClass`, all naming the same target class) the [UFile] will contain functions and properties from *different* files.
+ * Since lint is visiting each source file, that means it would visit these methods multiple times, since they're included in the single
+ * large [UFile] built up for each individual source file fragment.
  *
- * This method will visit a [UFile], but will limit itself to visiting just the parts corresponding
- * to the source file that the [UFile] was constructed from.
+ * This method will visit a [UFile], but will limit itself to visiting just the parts corresponding to the source file that the [UFile] was
+ * constructed from.
  */
 fun UFile.acceptSourceFile(visitor: UastVisitor) {
   val sourcePsi = this.sourcePsi
-  if (
-    sourcePsi is KtFile &&
-      sourcePsi.annotationEntries.any { it.shortName?.asString() == JVM_MULTIFILE_CLASS_SHORT }
-  ) {
+  if (sourcePsi is KtFile && sourcePsi.annotationEntries.any { it.shortName?.asString() == JVM_MULTIFILE_CLASS_SHORT }) {
     acceptMultiFileClass(visitor)
   } else {
     accept(visitor)
@@ -1028,10 +958,9 @@ fun UFile.acceptSourceFile(visitor: UastVisitor) {
 }
 
 /**
- * When methods are overloaded using `@JvmOverloads`, UAST will duplicate the whole inlined method
- * (instead of creating trampoline methods as the compiler appears to do). This means we can come
- * across the same method body implementations multiple times, and report duplicated warnings (or
- * even draw other wrong conclusions).
+ * When methods are overloaded using `@JvmOverloads`, UAST will duplicate the whole inlined method (instead of creating trampoline methods
+ * as the compiler appears to do). This means we can come across the same method body implementations multiple times, and report duplicated
+ * warnings (or even draw other wrong conclusions).
  *
  * This tries to counteract this a bit; we'll only visit the first declaration in this case.
  *
@@ -1049,15 +978,10 @@ fun UMethod.isDuplicatedOverload(): Boolean {
       return false
     }
   }
-  if (
-    method.annotationEntries.any {
-      it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString()
-    }
-  ) {
+  if (method.annotationEntries.any { it.shortName?.asString() == JVM_OVERLOADS_FQ_NAME.shortName().asString() }) {
     // The first method is the one that has all the arguments (isn't a duplicated
     // method omitting some of the arguments)
-    val firstMethod =
-      (uastParent as? UClass)?.uastDeclarations?.firstOrNull { it.sourcePsi == method }
+    val firstMethod = (uastParent as? UClass)?.uastDeclarations?.firstOrNull { it.sourcePsi == method }
     return firstMethod != this
   }
 
@@ -1074,12 +998,10 @@ fun UExpression.skipLabeledExpression(): UExpression {
 }
 
 /**
- * Visits a multi-file class, limiting itself to just the parts from the same source file as the
- * root node.
+ * Visits a multi-file class, limiting itself to just the parts from the same source file as the root node.
  *
- * This method basically mirrors the implementation of [UFile.accept] and [UClass.accept], except
- * that it specifically looks for declarations that seem to have been merged in from a different
- * source file than the origin one at the top level, and it then skips those.
+ * This method basically mirrors the implementation of [UFile.accept] and [UClass.accept], except that it specifically looks for
+ * declarations that seem to have been merged in from a different source file than the origin one at the top level, and it then skips those.
  */
 private fun UFile.acceptMultiFileClass(visitor: UastVisitor) {
   val targetFile = sourcePsi.virtualFile
@@ -1106,8 +1028,7 @@ private fun UFile.acceptMultiFileClass(visitor: UastVisitor) {
 }
 
 /**
- * Does this expression have an unconditional return? This means that all possible branches contains
- * a return or exception throw or yield.
+ * Does this expression have an unconditional return? This means that all possible branches contains a return or exception throw or yield.
  *
  * @return `true` for "definitely unconditional return", and `false` for "not sure"
  */
@@ -1116,12 +1037,11 @@ fun UExpression.isUnconditionalReturn(): Boolean {
   /**
    * Check whether [statement] never finishes.
    *
-   * The result is an over-approximation of the runtime behavior w.r.t. to a lattice of [Boolean]
-   * where (⊥ := `true`, ⊤ := `false`, ⊑ := `<-`, ⊔ := `and`, ⊓ := `or`).
+   * The result is an over-approximation of the runtime behavior w.r.t. to a lattice of [Boolean] where (⊥ := `true`, ⊤ := `false`, ⊑ :=
+   * `<-`, ⊔ := `and`, ⊓ := `or`).
    *
-   * So `false` is the safe (but sometimes suboptimal) value we resort to when not sure. We join
-   * results over different branches, and meet along steps of a sequence. Missing a branch results
-   * in a soundness bug, while missing a step results in imprecision.
+   * So `false` is the safe (but sometimes suboptimal) value we resort to when not sure. We join results over different branches, and meet
+   * along steps of a sequence. Missing a branch results in a soundness bug, while missing a step results in imprecision.
    */
   fun check(statement: UExpression?): Boolean =
     @Suppress("UnstableApiUsage") // UYieldExpression not yet stable
@@ -1132,21 +1052,13 @@ fun UExpression.isUnconditionalReturn(): Boolean {
       // representation)
       is UYieldExpression -> check(statement.expression)
       is UParenthesizedExpression -> check(statement.expression)
-      is UIfExpression ->
-        check(statement.condition) ||
-          check(statement.thenExpression) && check(statement.elseExpression)
+      is UIfExpression -> check(statement.condition) || check(statement.thenExpression) && check(statement.elseExpression)
       is USwitchExpression ->
-        statement.isExhaustive() &&
-          statement.body.expressions.all { case ->
-            case is USwitchClauseExpressionWithBody && check(case.body)
-          }
+        statement.isExhaustive() && statement.body.expressions.all { case -> case is USwitchClauseExpressionWithBody && check(case.body) }
       is UQualifiedReferenceExpression -> check(statement.findSelector() as? UExpression)
       is UReturnExpression,
       is UThrowExpression -> true
-      is UCallExpression ->
-        callNeverReturns(statement) ||
-          check(statement.receiver) ||
-          statement.valueArguments.any(::check)
+      is UCallExpression -> callNeverReturns(statement) || check(statement.receiver) || statement.valueArguments.any(::check)
       else -> false
     }
 
@@ -1154,8 +1066,7 @@ fun UExpression.isUnconditionalReturn(): Boolean {
 }
 
 /**
- * Even though "syntactic exhaustiveness" is decidable, the uncertainty comes from incomplete
- * handling of UAST/Psi representations.
+ * Even though "syntactic exhaustiveness" is decidable, the uncertainty comes from incomplete handling of UAST/Psi representations.
  *
  * @return `true` for "definitely exhaustive", and "false" for not sure.
  */
@@ -1163,24 +1074,19 @@ private fun USwitchExpression.isExhaustive(): Boolean {
   return when {
     isKotlin(body.lang) -> {
       val ktWhen = sourcePsi as? KtWhenExpression ?: return false
-      ktWhen.entries.lastOrNull()?.isElse == true ||
-        @OptIn(KaIdeApi::class) analyze(ktWhen) { ktWhen.computeMissingCases().isEmpty() }
+      ktWhen.entries.lastOrNull()?.isElse == true || @OptIn(KaIdeApi::class) analyze(ktWhen) { ktWhen.computeMissingCases().isEmpty() }
     }
     isJava(body.lang) ->
-      body.expressions.any { case ->
-        case is USwitchClauseExpressionWithBody &&
-          case.caseValues.any {
-            val value = it.sourcePsi
-            value is PsiSwitchLabelStatement && value.isDefaultCase
-          }
-      }
+      body.expressions.any { case -> case is USwitchClauseExpressionWithBody && case.caseValues.any(UExpression::isDefaultSwitchCaseValue) }
     else -> false
   }
 }
 
+fun UExpression.isDefaultSwitchCaseValue(): Boolean = (sourcePsi as? PsiSwitchLabelStatementBase)?.isDefaultCase == true
+
 /**
- * Returns true if this [call] node calls a method known to never return, such as Kotlin's standard
- * library method "error", and JUnit fail methods.
+ * Returns true if this [call] node calls a method known to never return, such as Kotlin's standard library method "error", and JUnit fail
+ * methods.
  */
 fun callNeverReturns(call: UCallExpression): Boolean {
   val sourcePsi = call.sourcePsi
@@ -1207,10 +1113,7 @@ fun callNeverReturns(call: UCallExpression): Boolean {
   return false
 }
 
-/**
- * Finds the common ancestor of [element1] and [element2]. (Based on the equivalent
- * [PsiTreeUtil.findCommonParent] implementation.)
- */
+/** Finds the common ancestor of [element1] and [element2]. (Based on the equivalent [PsiTreeUtil.findCommonParent] implementation.) */
 fun findCommonParent(element1: UElement, element2: UElement): UElement? {
   if (element1 === element2) return element1
   var depth1 = getDepth(element1)
@@ -1247,11 +1150,10 @@ private fun getDepth(element: UElement): Int {
 }
 
 /**
- * Returns true if [this] is a synthetic call of a Java getter or setter for a Kotlin property
- * access.
+ * Returns true if [this] is a synthetic call of a Java getter or setter for a Kotlin property access.
  *
- * KotlinUSimpleReferenceExpression adds synthetic function calls to Java getters/setters for Kotlin
- * property accesses. See KotlinUSimpleReferenceExpression.accept(...).
+ * KotlinUSimpleReferenceExpression adds synthetic function calls to Java getters/setters for Kotlin property accesses. See
+ * KotlinUSimpleReferenceExpression.accept(...).
  *
  * E.g. The right-hand side of `val r = context.contentResolver` looks like:
  * ```
@@ -1261,16 +1163,12 @@ private fun getDepth(element: UElement): Int {
  *         UIdentifier (Identifier (contentResolver))
  * ```
  *
- * The UCallExpression is synthetic, created by the accept function. It cannot be found via
- * properties or methods of the USimpleNameReferenceExpression.
+ * The UCallExpression is synthetic, created by the accept function. It cannot be found via properties or methods of the
+ * USimpleNameReferenceExpression.
  */
-fun UCallExpression.isSyntheticJavaGetterSetterCallForPropertyAccess(): Boolean =
-  uastParent is USimpleNameReferenceExpression
+fun UCallExpression.isSyntheticJavaGetterSetterCallForPropertyAccess(): Boolean = uastParent is USimpleNameReferenceExpression
 
-/**
- * Returns whether this expression is a simple class or interface reference, and if so, maps to its
- * name.
- */
+/** Returns whether this expression is a simple class or interface reference, and if so, maps to its name. */
 @Suppress("unused") // See LintJarApiMigration#migrateAnalyzeCall
 fun UExpression.isClassReference(
   checkClass: Boolean = true,
@@ -1311,7 +1209,6 @@ fun UExpression.isClassReference(
 
     ((checkClass && symbol.classKind.isClass) ||
       (checkInterface && symbol.classKind == KaClassKind.INTERFACE) ||
-      (checkCompanion && symbol.classKind == KaClassKind.COMPANION_OBJECT)) to
-      symbol.name?.asString()
+      (checkCompanion && symbol.classKind == KaClassKind.COMPANION_OBJECT)) to symbol.name?.asString()
   }
 }

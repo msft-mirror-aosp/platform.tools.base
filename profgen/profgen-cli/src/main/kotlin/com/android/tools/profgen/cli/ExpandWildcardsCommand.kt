@@ -24,22 +24,21 @@ import kotlinx.cli.required
 import kotlinx.cli.vararg
 
 @ExperimentalCli
-class ExpandWildcardsCommand: Subcommand("expandWildcards", "Dump a binary profile to a HRF") {
-    private val hrpPath by option(ArgType.String, "profile", "p", "File path to the human readable profile")
-        .required()
-    private val outPath by option(
-        ArgType.String, "output", "o",
-        "File path for the resulting human readable profile without wildcards"
-    )
-        .required()
-    private val programPaths by argument(
+class ExpandWildcardsCommand : Subcommand("expandWildcards", "Dump a binary profile to a HRF") {
+  private val hrpPath by option(ArgType.String, "profile", "p", "File path to the human readable profile").required()
+  private val outPath by
+    option(ArgType.String, "output", "o", "File path for the resulting human readable profile without wildcards").required()
+  private val programPaths by
+    argument(
         ArgType.String,
         "program",
-        "File paths to program sources (.class or .jar). "
-                + "Class files must be on the form <src dir>:<path to file>.class, e.g., "
-                + "src:pkg/Main.class.")
-        .vararg()
-    override fun execute() {
-        expandWildcards(hrpPath, outPath, programPaths, StdErrorDiagnostics)
-    }
+        "File paths to program sources (.class or .jar). " +
+          "Class files must be on the form <src dir>:<path to file>.class, e.g., " +
+          "src:pkg/Main.class.",
+      )
+      .vararg()
+
+  override fun execute() {
+    expandWildcards(hrpPath, outPath, programPaths, StdErrorDiagnostics)
+  }
 }

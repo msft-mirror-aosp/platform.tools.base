@@ -20,14 +20,12 @@ import com.android.build.api.variant.TestSuiteTarget
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
 import com.android.build.gradle.internal.testsuites.impl.TestSuiteTargetBuilderImpl
 
-class TestSuiteTargetImpl(
-    private val testSuiteBuilder: TestSuiteTargetBuilderImpl,
-    override val testTaskName: String,
-): TestSuiteTargetCreationConfig, TestSuiteTarget {
+class TestSuiteTargetImpl(private val testSuiteBuilder: TestSuiteTargetBuilderImpl, override val testTaskName: String) :
+  TestSuiteTargetCreationConfig, TestSuiteTarget {
 
-    override val enabled: Boolean = testSuiteBuilder.enable
+  override val enabled: Boolean = testSuiteBuilder.enable
 
-    override fun getName(): String = testSuiteBuilder.name
+  override fun getName(): String = testSuiteBuilder.name
 
-    override val targetDevices: Collection<String> = testSuiteBuilder.targetDevices
+  override val targetDevices: Collection<String> = testSuiteBuilder.targetDevices
 }

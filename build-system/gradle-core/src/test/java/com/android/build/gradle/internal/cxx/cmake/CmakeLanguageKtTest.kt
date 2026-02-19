@@ -17,47 +17,46 @@
 package com.android.build.gradle.internal.cxx.cmake
 
 import com.google.common.truth.Truth.assertThat
-
 import org.junit.Test
 
 class CmakeLanguageKtTest {
 
-    @Test
-    fun isCmakeConstantTruthyTrue() {
-        assertThat(isCmakeConstantTruthy("1")).isTrue()
-        assertThat(isCmakeConstantTruthy("ON")).isTrue()
-        assertThat(isCmakeConstantTruthy("YES")).isTrue()
-        assertThat(isCmakeConstantTruthy("TRUE")).isTrue()
-        assertThat(isCmakeConstantTruthy("Y")).isTrue()
+  @Test
+  fun isCmakeConstantTruthyTrue() {
+    assertThat(isCmakeConstantTruthy("1")).isTrue()
+    assertThat(isCmakeConstantTruthy("ON")).isTrue()
+    assertThat(isCmakeConstantTruthy("YES")).isTrue()
+    assertThat(isCmakeConstantTruthy("TRUE")).isTrue()
+    assertThat(isCmakeConstantTruthy("Y")).isTrue()
 
-        assertThat(isCmakeConstantTruthy("on")).isTrue()
-        assertThat(isCmakeConstantTruthy("yes")).isTrue()
-        assertThat(isCmakeConstantTruthy("true")).isTrue()
-        assertThat(isCmakeConstantTruthy("y")).isTrue()
+    assertThat(isCmakeConstantTruthy("on")).isTrue()
+    assertThat(isCmakeConstantTruthy("yes")).isTrue()
+    assertThat(isCmakeConstantTruthy("true")).isTrue()
+    assertThat(isCmakeConstantTruthy("y")).isTrue()
 
-        assertThat(isCmakeConstantTruthy("192")).isTrue()
-        assertThat(isCmakeConstantTruthy("-192")).isTrue()
-    }
+    assertThat(isCmakeConstantTruthy("192")).isTrue()
+    assertThat(isCmakeConstantTruthy("-192")).isTrue()
+  }
 
-    @Test
-    fun isCmakeConstantTruthyFalse() {
-        assertThat(isCmakeConstantTruthy("0")).isFalse()
-        assertThat(isCmakeConstantTruthy("OFF")).isFalse()
-        assertThat(isCmakeConstantTruthy("NO")).isFalse()
-        assertThat(isCmakeConstantTruthy("FALSE")).isFalse()
-        assertThat(isCmakeConstantTruthy("N")).isFalse()
-        assertThat(isCmakeConstantTruthy("IGNORE")).isFalse()
-        assertThat(isCmakeConstantTruthy("NOTFOUND")).isFalse()
-        assertThat(isCmakeConstantTruthy("MYFLAG-NOTFOUND")).isFalse()
+  @Test
+  fun isCmakeConstantTruthyFalse() {
+    assertThat(isCmakeConstantTruthy("0")).isFalse()
+    assertThat(isCmakeConstantTruthy("OFF")).isFalse()
+    assertThat(isCmakeConstantTruthy("NO")).isFalse()
+    assertThat(isCmakeConstantTruthy("FALSE")).isFalse()
+    assertThat(isCmakeConstantTruthy("N")).isFalse()
+    assertThat(isCmakeConstantTruthy("IGNORE")).isFalse()
+    assertThat(isCmakeConstantTruthy("NOTFOUND")).isFalse()
+    assertThat(isCmakeConstantTruthy("MYFLAG-NOTFOUND")).isFalse()
 
-        assertThat(isCmakeConstantTruthy("off")).isFalse()
-        assertThat(isCmakeConstantTruthy("no")).isFalse()
-        assertThat(isCmakeConstantTruthy("false")).isFalse()
-        assertThat(isCmakeConstantTruthy("n")).isFalse()
-        assertThat(isCmakeConstantTruthy("ignore")).isFalse()
-        assertThat(isCmakeConstantTruthy("notfound")).isFalse()
-        assertThat(isCmakeConstantTruthy("MYFLAG-notfound")).isFalse()
+    assertThat(isCmakeConstantTruthy("off")).isFalse()
+    assertThat(isCmakeConstantTruthy("no")).isFalse()
+    assertThat(isCmakeConstantTruthy("false")).isFalse()
+    assertThat(isCmakeConstantTruthy("n")).isFalse()
+    assertThat(isCmakeConstantTruthy("ignore")).isFalse()
+    assertThat(isCmakeConstantTruthy("notfound")).isFalse()
+    assertThat(isCmakeConstantTruthy("MYFLAG-notfound")).isFalse()
 
-        assertThat(isCmakeConstantTruthy("ABC")).isFalse()
-    }
+    assertThat(isCmakeConstantTruthy("ABC")).isFalse()
+  }
 }

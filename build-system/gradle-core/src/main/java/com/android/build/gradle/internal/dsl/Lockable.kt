@@ -24,5 +24,5 @@ package com.android.build.gradle.internal.dsl
  * See also [org.gradle.api.provider.HasConfigurableValue] for Gradle managed types.
  */
 interface Lockable {
-    fun lock()
+  fun lock()
 }

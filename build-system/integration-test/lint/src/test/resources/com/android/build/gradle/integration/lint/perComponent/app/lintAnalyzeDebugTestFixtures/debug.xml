@@ -17,10 +17,11 @@
         manifests="src/testFixtures/AndroidManifest.xml"
         javaDirectories="src/testFixtures/java:src/testFixturesDebug/java:src/testFixtures/kotlin:src/testFixturesDebug/kotlin"
         assetsDirectories="src/testFixtures/assets:src/testFixturesDebug/assets"
+        keepRulesDirectories="src/testFixtures/keepRules:src/testFixturesDebug/keepRules"
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/debugTestFixtures/compileDebugTestFixturesJavaWithJavac/classes"
+      classOutputs="build/intermediates/javac/debugTestFixtures/compileDebugTestFixturesJavaWithJavac/classes:build/intermediates/built_in_kotlinc/debugTestFixtures/compileDebugTestFixturesKotlin/classes"
       type="TEST_FIXTURES"
       applicationId="com.example.android.lint.kotlin.testFixtures"
       generatedSourceFolders="build/generated/ap_generated_sources/debugTestFixtures/out"

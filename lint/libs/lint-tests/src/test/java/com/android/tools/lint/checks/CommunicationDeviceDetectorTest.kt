@@ -314,5 +314,4 @@ private val audioDeviceInfoStub: TestFile =
     )
     .indented()
 
-private val mediaModuleStub: ProjectDescription =
-  project().files(audioManagerStub, audioDeviceInfoStub)
+private val mediaModuleStub: ProjectDescription = project().files(audioManagerStub, audioDeviceInfoStub)

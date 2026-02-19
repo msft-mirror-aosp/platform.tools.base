@@ -90,18 +90,6 @@ class MockSourceProvider implements SourceProvider {
         return Collections.singleton(new File(mRoot, "rs"));
     }
 
-    @Override
-    @NonNull
-    public Set<File> getCDirectories() {
-        return Collections.singleton(new File(mRoot, "jni"));
-    }
-
-    @Override
-    @NonNull
-    public Set<File> getCppDirectories() {
-        return Collections.singleton(new File(mRoot, "jni"));
-    }
-
     @NonNull
     @Override
     public Collection<File> getJniLibsDirectories() {

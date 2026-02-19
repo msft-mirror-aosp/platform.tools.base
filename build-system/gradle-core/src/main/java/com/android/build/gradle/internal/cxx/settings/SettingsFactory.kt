@@ -25,97 +25,87 @@ import com.android.build.gradle.internal.cxx.settings.Macro.NDK_FULL_CONFIGURATI
 import com.android.build.gradle.internal.cxx.settings.Macro.NDK_PLATFORM_SYSTEM_VERSION
 import com.android.utils.cxx.CxxDiagnosticCode.BUILD_SETTINGS_MACRO_EXPANSION_DEPTH_LIMIT
 
-/**
- * Expand ${ndk.abi} and ${abi.systemVersion} in environment names.
- */
-fun Settings.expandInheritEnvironmentMacros(abi: CxxAbiModel) : Settings {
-    val environments = environments.map { configuration ->
-        configuration.copy(
-                inheritEnvironments = configuration.inheritEnvironments.map { environment ->
-                    val result = environment
-                            .replace(NDK_ABI.ref, abi.name)
-                            .replace(NDK_PLATFORM_SYSTEM_VERSION.ref, abi.abiPlatformVersion.toString()
-                            )
-                    result
-                }
-        )
+/** Expand ${ndk.abi} and ${abi.systemVersion} in environment names. */
+fun Settings.expandInheritEnvironmentMacros(abi: CxxAbiModel): Settings {
+  val environments =
+    environments.map { configuration ->
+      configuration.copy(
+        inheritEnvironments =
+          configuration.inheritEnvironments.map { environment ->
+            val result =
+              environment.replace(NDK_ABI.ref, abi.name).replace(NDK_PLATFORM_SYSTEM_VERSION.ref, abi.abiPlatformVersion.toString())
+            result
+          }
+      )
     }
-    return copy(environments = environments)
+  return copy(environments = environments)
 }
 
-/**
- * Reify [SettingsConfiguration] by replacing macro values using [SettingsEnvironmentNameResolver].
- */
-fun reifyRequestedConfiguration(
-        resolver: SettingsEnvironmentNameResolver,
-        configuration: SettingsConfiguration)
-        : SettingsConfiguration? {
+/** Reify [SettingsConfiguration] by replacing macro values using [SettingsEnvironmentNameResolver]. */
+fun reifyRequestedConfiguration(resolver: SettingsEnvironmentNameResolver, configuration: SettingsConfiguration): SettingsConfiguration? {
 
-    fun String?.reify() = reifyString(this) { tokenMacro ->
-        when(tokenMacro) {
-            // Exclude properties that shouldn't be evaluated before the configuration hash.
-            NDK_ABI.qualifiedName -> NDK_ABI.ref
-            NDK_CONFIGURATION_HASH.qualifiedName -> NDK_CONFIGURATION_HASH.ref
-            NDK_FULL_CONFIGURATION_HASH.qualifiedName -> NDK_FULL_CONFIGURATION_HASH.ref
-            else -> resolver.resolve(tokenMacro, configuration.inheritEnvironments)
-        }
+  fun String?.reify() =
+    reifyString(this) { tokenMacro ->
+      when (tokenMacro) {
+        // Exclude properties that shouldn't be evaluated before the configuration hash.
+        NDK_ABI.qualifiedName -> NDK_ABI.ref
+        NDK_CONFIGURATION_HASH.qualifiedName -> NDK_CONFIGURATION_HASH.ref
+        NDK_FULL_CONFIGURATION_HASH.qualifiedName -> NDK_FULL_CONFIGURATION_HASH.ref
+        else -> resolver.resolve(tokenMacro, configuration.inheritEnvironments)
+      }
     }
 
-    return configuration.copy(
-            buildRoot = configuration.buildRoot.reify(),
-            configurationType = configuration.configurationType.reify(),
-            installRoot = configuration.installRoot.reify(),
-            cmakeCommandArgs = configuration.cmakeCommandArgs.reify(),
-            buildCommandArgs = configuration.buildCommandArgs.reify(),
-            ctestCommandArgs = configuration.ctestCommandArgs.reify(),
-            cmakeExecutable = configuration.cmakeExecutable.reify(),
-            cmakeToolchain = configuration.cmakeToolchain.reify(),
-            variables = configuration.variables.map { (name, value) ->
-                SettingsConfigurationVariable(name, value.reify()!!)
-            }
-    )
+  return configuration.copy(
+    buildRoot = configuration.buildRoot.reify(),
+    configurationType = configuration.configurationType.reify(),
+    installRoot = configuration.installRoot.reify(),
+    cmakeCommandArgs = configuration.cmakeCommandArgs.reify(),
+    buildCommandArgs = configuration.buildCommandArgs.reify(),
+    ctestCommandArgs = configuration.ctestCommandArgs.reify(),
+    cmakeExecutable = configuration.cmakeExecutable.reify(),
+    cmakeToolchain = configuration.cmakeToolchain.reify(),
+    variables = configuration.variables.map { (name, value) -> SettingsConfigurationVariable(name, value.reify()!!) },
+  )
 }
 
 /**
- * Tokenize [value] and replace macro tokens with the value returned by [reifier].
- * A macro, when expanded, may include other macros so this function loops until there are no
- * macros to expand.
+ * Tokenize [value] and replace macro tokens with the value returned by [reifier]. A macro, when expanded, may include other macros so this
+ * function loops until there are no macros to expand.
  */
-fun reifyString(value : String?, reifier : (String) -> String?) : String {
-    var prior = value ?: return ""
-    var replaced: Boolean
-    val seen = mutableSetOf<String>()
-    do {
-        var recursionError = false
-        replaced = false
-        val sb = StringBuilder()
-        tokenizeMacroString(prior) { token ->
-            when (token) {
-                is Token.LiteralToken -> sb.append(token.literal)
-                is Token.MacroToken -> {
-                    val tokenMacro = token.macro
-                    if (seen.contains(tokenMacro)) {
-                        errorln(
-                            BUILD_SETTINGS_MACRO_EXPANSION_DEPTH_LIMIT,
-                            "Settings.json value '$value' has recursive macro expansion \${$tokenMacro}")
-                        recursionError = true
-                    } else {
-                        val resolved = reifier(tokenMacro)
-                        val value = resolved ?: ""
-                        if (value != "\${$tokenMacro}") {
-                            seen += tokenMacro
-                            replaced = true
-                        }
-                        sb.append(value)
-                    }
-                }
+fun reifyString(value: String?, reifier: (String) -> String?): String {
+  var prior = value ?: return ""
+  var replaced: Boolean
+  val seen = mutableSetOf<String>()
+  do {
+    var recursionError = false
+    replaced = false
+    val sb = StringBuilder()
+    tokenizeMacroString(prior) { token ->
+      when (token) {
+        is Token.LiteralToken -> sb.append(token.literal)
+        is Token.MacroToken -> {
+          val tokenMacro = token.macro
+          if (seen.contains(tokenMacro)) {
+            errorln(
+              BUILD_SETTINGS_MACRO_EXPANSION_DEPTH_LIMIT,
+              "Settings.json value '$value' has recursive macro expansion \${$tokenMacro}",
+            )
+            recursionError = true
+          } else {
+            val resolved = reifier(tokenMacro)
+            val value = resolved ?: ""
+            if (value != "\${$tokenMacro}") {
+              seen += tokenMacro
+              replaced = true
             }
+            sb.append(value)
+          }
         }
-        if (recursionError) return value
-        prior = sb.toString()
-    } while (replaced)
+      }
+    }
+    if (recursionError) return value
+    prior = sb.toString()
+  } while (replaced)
 
-    return prior
+  return prior
 }
-
-

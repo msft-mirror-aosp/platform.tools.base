@@ -16,24 +16,23 @@
 package com.android.tools.deploy.liveedit
 
 class InfiniteLoopsKotlin {
-    companion object {
+  companion object {
 
-        fun infiniteLoop1() : Int {
-            while(true) {}
-            return 1
-        }
-
-        fun infiniteLoop2() : Int {
-            label@ while
-                    (true) {
-                // Some
-                // extra
-                // lines
-                // to
-                // test
-                // LineNumberNodes
-            }
-            return 1
-        }
+    fun infiniteLoop1(): Int {
+      while (true) {}
+      return 1
     }
+
+    fun infiniteLoop2(): Int {
+      label@ while (true) {
+        // Some
+        // extra
+        // lines
+        // to
+        // test
+        // LineNumberNodes
+      }
+      return 1
+    }
+  }
 }

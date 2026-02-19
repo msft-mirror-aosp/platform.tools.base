@@ -33,6 +33,7 @@ import com.android.testutils.TestUtils;
 
 import com.google.common.collect.ListMultimap;
 import com.google.common.io.Files;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import org.junit.AfterClass;
 import org.junit.Rule;
@@ -44,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
@@ -281,7 +283,8 @@ public class AssetMergerTest extends BaseTestCase {
         checkImageColor(new File(resFolder, "touched.png"), (int) 0xFF00FF00);
         checkImageColor(new File(resFolder, "added.png"), (int) 0xFF00FF00);
         checkImageColor(new File(resFolder, "overlay_removed.png"), (int) 0xFF00FF00);
-        checkImageColor(new File(new File(resFolder, "foo"), "overlay_added.png"), (int) 0xFF00FF00);
+        checkImageColor(
+                new File(new File(resFolder, "foo"), "overlay_added.png"), (int) 0xFF00FF00);
 
         // also check the removed file is not there.
         assertFalse(new File(resFolder, "removed.png").isFile());
@@ -325,6 +328,52 @@ public class AssetMergerTest extends BaseTestCase {
         } else {
             assertTrue("Actual: " + actual + "\nExpected: " + expected,
                        loadedMerger.checkValidUpdate(merger1.getDataSets()));
+        }
+    }
+
+    // regression for b/467734218
+    @Test
+    public void testRenameFolder() throws Exception {
+        File assetSourceRoot = TestUtils.createTempDirDeletedOnExit().toFile();
+        File intermediateFolder = TestUtils.createTempDirDeletedOnExit().toFile();
+
+        // create asset in folder in sources
+        File myFolderFile = createFolderWithFile(assetSourceRoot, "myFolder", "file.txt");
+
+        // init assetIte,
+        AssetItem assetItem = AssetItem.create(assetSourceRoot, myFolderFile);
+        AssetFile assetFile = new AssetFile(myFolderFile, assetItem);
+        assetItem.setSourceFile(assetFile);
+
+        String firstPath = "myFolder/file.txt";
+        String secondPath = "MyFolder/file.txt";
+
+        // add previous intermediate folder state
+        File tempFiles = new File(intermediateFolder, firstPath);
+        tempFiles.getParentFile().mkdir();
+        Files.copy(new File(assetSourceRoot, firstPath), new File(intermediateFolder, firstPath));
+
+        // rename (delete and add for windows) folder in sources in upper case
+        myFolderFile.delete();
+        myFolderFile.getParentFile().delete();
+        File renamedFile = createFolderWithFile(assetSourceRoot, "MyFolder", "file.txt");
+
+        AssetItem renamedAsset = AssetItem.create(assetSourceRoot, renamedFile);
+        AssetFile renamedAssetFile = new AssetFile(renamedFile, renamedAsset);
+        renamedAsset.setSourceFile(renamedAssetFile);
+
+        try (ExecutorServiceAdapter facade =
+                new ExecutorServiceAdapter(MoreExecutors.newDirectExecutorService())) {
+            MergedAssetWriter writer = new MergedAssetWriter(intermediateFolder, facade);
+
+            writer.removeItem(assetItem, null);
+            renamedAsset.setTouched();
+            writer.addItem(renamedAsset);
+            writer.postWriteAction();
+
+            assertTrue(Arrays.asList(intermediateFolder.list()).contains("MyFolder"));
+            File newFolderedFile = new File(intermediateFolder, secondPath);
+            assertTrue(newFolderedFile.exists());
         }
     }
 
@@ -474,6 +523,15 @@ public class AssetMergerTest extends BaseTestCase {
         File dest = TestUtils.createTempDirDeletedOnExit().toFile();
         copyFolder(folder, dest);
         return dest;
+    }
+
+    private static File createFolderWithFile(File root, String folderName, String fileName)
+            throws IOException {
+        File myFolder = new File(root, folderName);
+        myFolder.mkdir();
+        File myFolderFile = new File(myFolder, fileName);
+        Files.asCharSink(myFolderFile, StandardCharsets.UTF_8).write("foo");
+        return myFolderFile;
     }
 
     private static void copyFolder(File from, File to) throws IOException {

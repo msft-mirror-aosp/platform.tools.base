@@ -9,7 +9,8 @@
     resourcePrefix=""
     javaSourceLevel="17"
     compileTarget=""
-    neverShrinking="true">
+    neverShrinking="true"
+    highlightGradualR8Api="false">
   <lintOptions
       abortOnError="true"
       absolutePaths="true"

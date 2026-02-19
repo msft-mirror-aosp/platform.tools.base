@@ -25,16 +25,13 @@ package com.android.builder.model.v2.ide
  */
 // TODO : maybe consider subclassing TestInfo
 interface TestSuiteTestInfo {
-    /**
-     * Information for the junit engines configured for running the
-     * test suite.
-     */
-    val junitInfo: JUnitEngineInfo
+  /** Information for the junit engines configured for running the test suite. */
+  val junitInfo: JUnitEngineInfo
 
-    /**
-     * Information for the test suite's targets.
-     *
-     * @return map of [TestSuiteTarget] indexed by their [TestSuiteTarget.name]
-     */
-    val targets: Map<String, TestSuiteTarget>
+  /**
+   * Information for the test suite's targets.
+   *
+   * @return map of [TestSuiteTarget] indexed by their [TestSuiteTarget.name]
+   */
+  val targets: Map<String, TestSuiteTarget>
 }

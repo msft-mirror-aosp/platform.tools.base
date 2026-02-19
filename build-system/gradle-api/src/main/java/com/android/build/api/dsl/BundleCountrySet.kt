@@ -26,15 +26,8 @@ import org.gradle.api.Incubating
 @Incubating
 interface BundleCountrySet {
 
-    @get:Incubating
-    @set:Incubating
-    var enableSplit: Boolean?
+  @get:Incubating @set:Incubating var enableSplit: Boolean?
 
-    /**
-     * Specifies the default country set value for the bundle. Used for filtering splits for
-     * standalone, system and universal APKs.
-     */
-    @get:Incubating
-    @set:Incubating
-    var defaultSet: String?
+  /** Specifies the default country set value for the bundle. Used for filtering splits for standalone, system and universal APKs. */
+  @get:Incubating @set:Incubating var defaultSet: String?
 }

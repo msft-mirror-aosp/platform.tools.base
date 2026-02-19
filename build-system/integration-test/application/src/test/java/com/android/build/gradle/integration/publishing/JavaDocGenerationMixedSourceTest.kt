@@ -22,87 +22,87 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Integration test for generating Java docs from java & kotlin mixed source.
- */
+/** Integration test for generating Java docs from java & kotlin mixed source. */
 class JavaDocGenerationMixedSourceTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("kotlinApp")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("kotlinApp").create()
 
-    private lateinit var library: GradleTestProject
+  private lateinit var library: GradleTestProject
 
-    @Before
-    fun setUp() {
-        project.projectDir.resolve("testrepo").mkdirs()
-        library = project.getSubproject("library")
+  @Before
+  fun setUp() {
+    project.projectDir.resolve("testrepo").mkdirs()
+    library = project.getSubproject("library")
 
-        val javaSource = library.mainSrcDir.resolve("$JAVA_SOURCE_DIR/HelloWorld.java")
-        FileUtils.createFile(javaSource, """
-            package com.example.android.java;
+    val javaSource = library.mainSrcDir.resolve("$JAVA_SOURCE_DIR/HelloWorld.java")
+    FileUtils.createFile(
+      javaSource,
+      """
+      package com.example.android.java;
 
-            /**
-            * See {@link android.app.Activity}, {@link com.example.android.kotlin.LibActivity}
-            */
-            public class HelloWorld {
-                public void sayHelloInJava() {}
-            }
-        """.trimIndent())
+      /**
+      * See {@link android.app.Activity}, {@link com.example.android.kotlin.LibActivity}
+      */
+      public class HelloWorld {
+          public void sayHelloInJava() {}
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.addMethod(
-            library.getMainSrcDir("kotlin").resolve("$KOTLIN_SOURCE_DIR/LibActivity.kt"),
-            """
-                /**
-                * See [com.example.android.java.HelloWorld.sayHelloInJava]
-                */
-                fun sayHelloInKotlin() {}
-            """.trimIndent()
-        )
-    }
+    TestFileUtils.addMethod(
+      library.getMainSrcDir("kotlin").resolve("$KOTLIN_SOURCE_DIR/LibActivity.kt"),
+      """
+      /**
+      * See [com.example.android.java.HelloWorld.sayHelloInJava]
+      */
+      fun sayHelloInKotlin() {}
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testJavaDocGeneration() {
-        TestFileUtils.appendToFile(
-            library.buildFile,
-            """
+  @Test
+  fun testJavaDocGeneration() {
+    TestFileUtils.appendToFile(
+      library.buildFile,
+      """
 
-                android {
-                    publishing {
-                        singleVariant('debug') {
-                            withJavadocJar()
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        library.execute("clean", "javaDocDebugGeneration")
-        val docDirectory = InternalArtifactType.JAVA_DOC_DIR.getOutputDir(library.buildDir)
-            .resolve("debug" + File.separator + "javaDocDebugGeneration")
+      android {
+          publishing {
+              singleVariant('debug') {
+                  withJavadocJar()
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    library.execute("clean", "javaDocDebugGeneration")
+    val docDirectory =
+      InternalArtifactType.JAVA_DOC_DIR.getOutputDir(library.buildDir).resolve("debug" + File.separator + "javaDocDebugGeneration")
 
-        val javaSourceDoc = docDirectory.resolve(JAVA_SOURCE_DOC)
-        val kotlinSourceDoc = docDirectory.resolve(KOTLIN_SOURCE_DOC)
+    val javaSourceDoc = docDirectory.resolve(JAVA_SOURCE_DOC)
+    val kotlinSourceDoc = docDirectory.resolve(KOTLIN_SOURCE_DOC)
 
-        PathSubject.assertThat(javaSourceDoc.toPath()).isFile()
-        PathSubject.assertThat(kotlinSourceDoc.toPath()).isFile()
+    PathSubject.assertThat(javaSourceDoc.toPath()).isFile()
+    PathSubject.assertThat(kotlinSourceDoc.toPath()).isFile()
 
-        PathSubject.assertThat(javaSourceDoc).contains(
-            "<a href=../kotlin/LibActivity.html>com.example.android.kotlin.LibActivity</a>")
+    PathSubject.assertThat(javaSourceDoc).contains("<a href=../kotlin/LibActivity.html>com.example.android.kotlin.LibActivity</a>")
 
-        PathSubject.assertThat(kotlinSourceDoc).contains("See <a href=../java/HelloWorld.html#" +
-                "sayHelloInJava()>com.example.android.java.HelloWorld.sayHelloInJava</a>")
-    }
+    PathSubject.assertThat(kotlinSourceDoc)
+      .contains("See <a href=../java/HelloWorld.html#" + "sayHelloInJava()>com.example.android.java.HelloWorld.sayHelloInJava</a>")
+  }
 
-    companion object {
-        private const val JAVA_SOURCE_DIR: String = "com/example/android/java"
-        private const val JAVA_SOURCE_DOC: String = "$JAVA_SOURCE_DIR/HelloWorld.html"
-        private const val KOTLIN_SOURCE_DIR: String = "com/example/android/kotlin"
-        private const val KOTLIN_SOURCE_DOC: String = "$KOTLIN_SOURCE_DIR/LibActivity.html"
-    }
+  companion object {
+    private const val JAVA_SOURCE_DIR: String = "com/example/android/java"
+    private const val JAVA_SOURCE_DOC: String = "$JAVA_SOURCE_DIR/HelloWorld.html"
+    private const val KOTLIN_SOURCE_DIR: String = "com/example/android/kotlin"
+    private const val KOTLIN_SOURCE_DOC: String = "$KOTLIN_SOURCE_DIR/LibActivity.html"
+  }
 }

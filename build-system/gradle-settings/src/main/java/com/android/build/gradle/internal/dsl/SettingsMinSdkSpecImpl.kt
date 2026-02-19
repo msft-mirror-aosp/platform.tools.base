@@ -19,20 +19,17 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 
-internal open class SettingsMinSdkSpecImpl: MinSdkSpec {
+internal open class SettingsMinSdkSpecImpl : MinSdkSpec {
 
-    override var version: MinSdkVersion? = null
+  override var version: MinSdkVersion? = null
 
-    override fun release(version: Int): MinSdkVersion {
-        return SettingsMinSdkVersionImpl(apiLevel = version, codeName = null)
-    }
+  override fun release(version: Int): MinSdkVersion {
+    return SettingsMinSdkVersionImpl(apiLevel = version, codeName = null)
+  }
 
-    override fun preview(version: String): MinSdkVersion {
-        return SettingsMinSdkVersionImpl(apiLevel = null, codeName = version)
-    }
+  override fun preview(version: String): MinSdkVersion {
+    return SettingsMinSdkVersionImpl(apiLevel = null, codeName = version)
+  }
 }
 
-internal data class SettingsMinSdkVersionImpl(
-    override val apiLevel: Int?,
-    override val codeName: String?
-): MinSdkVersion
+internal data class SettingsMinSdkVersionImpl(override val apiLevel: Int?, override val codeName: String?) : MinSdkVersion

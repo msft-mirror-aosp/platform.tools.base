@@ -16,10 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googlePayActivity.res.layout
 
-fun activityCheckoutXml(
-  activityClass: String,
-  activityPackage: String
-): String {
+fun activityCheckoutXml(activityClass: String, activityPackage: String): String {
 
   return """
 <?xml version="1.0" encoding="utf-8"?>

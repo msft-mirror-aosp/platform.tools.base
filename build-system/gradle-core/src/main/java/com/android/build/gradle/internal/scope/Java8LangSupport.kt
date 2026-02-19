@@ -16,5 +16,9 @@
 package com.android.build.gradle.internal.scope
 
 enum class Java8LangSupport {
-    INVALID, UNUSED, D8, RETROLAMBDA, R8
+  INVALID,
+  UNUSED,
+  D8,
+  RETROLAMBDA,
+  R8,
 }

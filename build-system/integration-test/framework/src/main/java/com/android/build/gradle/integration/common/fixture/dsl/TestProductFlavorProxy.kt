@@ -22,75 +22,74 @@ import com.android.build.api.dsl.TargetSdkSpec
 import com.android.build.api.dsl.TestProductFlavor
 
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks the normal Java Proxy feature (class is
+ * considered broken)
  */
-class TestProductFlavorProxy(
-    dslRecorder: DslRecorder
-): ProductFlavorProxy(dslRecorder), TestProductFlavor {
+class TestProductFlavorProxy(dslRecorder: DslRecorder) : ProductFlavorProxy(dslRecorder), TestProductFlavor {
 
-    override var targetSdk: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@TestProductFlavorProxy.dslRecorder.set("targetSdk", value)
-        }
-
-    override fun targetSdkVersion(targetSdkVersion: Int) {
-        this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override var targetSdk: Int?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      this@TestProductFlavorProxy.dslRecorder.set("targetSdk", value)
     }
 
-    override fun targetSdkVersion(targetSdkVersion: String?) {
-        this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override fun targetSdkVersion(targetSdkVersion: Int) {
+    this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override fun targetSdkVersion(targetSdkVersion: String?) {
+    this@TestProductFlavorProxy.dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override var targetSdkPreview: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      this@TestProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
     }
 
-    override var targetSdkPreview: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@TestProductFlavorProxy.dslRecorder.set("targetSdkPreview", value)
-        }
+  override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+    dslRecorder.runNestedBlock(
+      name = "targetSdk",
+      parameters = listOf(),
+      instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) },
+    ) {
+      action(this)
+    }
+  }
 
-    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
-        dslRecorder.runNestedBlock(
-            name = "targetSdk",
-            parameters = listOf(),
-            instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) }
-        ) {
-            action(this)
-        }
+  override fun setTargetSdkVersion(targetSdkVersion: String?) {
+    this@TestProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override var maxSdk: Int?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      this@TestProductFlavorProxy.dslRecorder.set("maxSdk", value)
     }
 
-    override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        this@TestProductFlavorProxy.dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+    dslRecorder.runNestedBlock(
+      name = "maxSdk",
+      parameters = listOf(),
+      instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) },
+    ) {
+      action(this)
+    }
+  }
+
+  override fun maxSdkVersion(maxSdkVersion: Int) {
+    this@TestProductFlavorProxy.dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
+  }
+
+  override var multiDexEnabled: Boolean?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      this@TestProductFlavorProxy.dslRecorder.set("multiDexEnabled", value)
     }
 
-    override var maxSdk: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@TestProductFlavorProxy.dslRecorder.set("maxSdk", value)
-        }
-
-    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
-        dslRecorder.runNestedBlock(
-            name = "maxSdk",
-            parameters = listOf(),
-            instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) }
-        ) {
-            action(this)
-        }
+  override var signingConfig: ApkSigningConfig?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      throw RuntimeException("Not yet supported")
     }
-
-    override fun maxSdkVersion(maxSdkVersion: Int) {
-        this@TestProductFlavorProxy.dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
-    }
-
-    override var multiDexEnabled: Boolean?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            this@TestProductFlavorProxy.dslRecorder.set("multiDexEnabled", value)
-        }
-    override var signingConfig: ApkSigningConfig?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            throw RuntimeException("Not yet supported")
-        }
 }

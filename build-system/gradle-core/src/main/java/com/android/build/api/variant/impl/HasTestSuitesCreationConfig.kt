@@ -21,17 +21,13 @@ import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 
 interface HasTestSuitesCreationConfig {
 
-    /**
-     * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this
-     * variant.
-     *
-     * @return a [Map] which keys are unique names within the test suites
-     *
-     */
-    val suites: Map<String, TestSuiteCreationConfig>
+  /**
+   * Variant's [TestSuiteBuilder] configuration to configure test suites associated with this variant.
+   *
+   * @return a [Map] which keys are unique names within the test suites
+   */
+  val suites: Map<String, TestSuiteCreationConfig>
 
-    /**
-     * Internal API to add a new test suite to this variant.
-     */
-    fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig)
+  /** Internal API to add a new test suite to this variant. */
+  fun addTestSuite(testName: String, testComponent: TestSuiteCreationConfig)
 }

@@ -27,14 +27,7 @@ abstract class DeviceProvisionerTestFixture {
   protected val fakeSession = FakeAdbSession()
 
   protected val deviceIcons =
-    DeviceIcons(
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-      EmptyIcon.DEFAULT,
-    )
+    DeviceIcons(EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT, EmptyIcon.DEFAULT)
 
   protected object SerialNumbers {
     const val PHYSICAL1_USB = "X1058A"
@@ -55,26 +48,16 @@ abstract class DeviceProvisionerTestFixture {
 
   val devicePropertiesBySerial =
     mapOf(
-      SerialNumbers.PHYSICAL1_USB to
-        baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL1_USB),
-      SerialNumbers.PHYSICAL2_USB to
-        baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
-      SerialNumbers.PHYSICAL2_WIFI to
-        baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
+      SerialNumbers.PHYSICAL1_USB to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL1_USB),
+      SerialNumbers.PHYSICAL2_USB to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
+      SerialNumbers.PHYSICAL2_WIFI to baseProperties + mapOf("ro.serialno" to SerialNumbers.PHYSICAL2_USB),
       SerialNumbers.EMULATOR to
-        baseProperties +
-          mapOf(
-            "ro.serialno" to "EMULATOR31X3X7X0",
-            DevicePropertyNames.RO_PRODUCT_MODEL to "sdk_goog3_x86_64",
-          ),
+        baseProperties + mapOf("ro.serialno" to "EMULATOR31X3X7X0", DevicePropertyNames.RO_PRODUCT_MODEL to "sdk_goog3_x86_64"),
     )
 
   init {
     for (serial in SerialNumbers.ALL) {
-      fakeSession.deviceServices.configureDeviceProperties(
-        DeviceSelector.fromSerialNumber(serial),
-        devicePropertiesBySerial[serial]!!,
-      )
+      fakeSession.deviceServices.configureDeviceProperties(DeviceSelector.fromSerialNumber(serial), devicePropertiesBySerial[serial]!!)
       fakeSession.deviceServices.configureShellCommand(
         DeviceSelector.fromSerialNumber(serial),
         command = "wm size",
@@ -84,8 +67,7 @@ abstract class DeviceProvisionerTestFixture {
   }
 
   protected fun setDevices(vararg serialNumber: String, state: DeviceState = DeviceState.ONLINE) {
-    fakeSession.hostServices.devices =
-      DeviceList(serialNumber.map { DeviceInfo(it, state) }, emptyList())
+    fakeSession.hostServices.devices = DeviceList(serialNumber.map { DeviceInfo(it, state) }, emptyList())
   }
 
   protected fun setBootComplete(serial: String) {
@@ -102,8 +84,7 @@ abstract class DeviceProvisionerTestFixture {
     deviceInfoProto.apply {
       assertThat(manufacturer).isEqualTo("Google")
       assertThat(model).isEqualTo("Pixel 6")
-      assertThat(deviceType)
-        .isEqualTo(com.google.wireless.android.sdk.stats.DeviceInfo.DeviceType.LOCAL_PHYSICAL)
+      assertThat(deviceType).isEqualTo(com.google.wireless.android.sdk.stats.DeviceInfo.DeviceType.LOCAL_PHYSICAL)
     }
   }
 }

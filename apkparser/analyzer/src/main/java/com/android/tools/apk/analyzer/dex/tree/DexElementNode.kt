@@ -22,11 +22,8 @@ import javax.swing.tree.DefaultMutableTreeNode
 
 abstract class DexElementNode
 @JvmOverloads
-internal constructor(
-  val name: String,
-  allowsChildren: Boolean,
-  open val reference: ImmutableReference? = null,
-) : DefaultMutableTreeNode(null, allowsChildren) {
+internal constructor(val name: String, allowsChildren: Boolean, open val reference: ImmutableReference? = null) :
+  DefaultMutableTreeNode(null, allowsChildren) {
   open var isDefined: Boolean = false
 
   var isRemoved: Boolean = false
@@ -41,16 +38,13 @@ internal constructor(
     return super.getChildAt(i) as DexElementNode
   }
 
-  fun getChildren(): Sequence<DexElementNode> =
-    children?.asSequence()?.map { it as DexElementNode } ?: emptySequence()
+  fun getChildren(): Sequence<DexElementNode> = children?.asSequence()?.map { it as DexElementNode } ?: emptySequence()
 
   open fun sort(comparator: Comparator<DexElementNode>) {
     getChildren().forEach { it.sort(comparator) }
 
     if (children != null) {
-      children.sortWith(
-        Comparator { o1, o2 -> comparator.compare(o1 as DexElementNode, o2 as DexElementNode) }
-      )
+      children.sortWith(Comparator { o1, o2 -> comparator.compare(o1 as DexElementNode, o2 as DexElementNode) })
     }
   }
 
@@ -94,9 +88,8 @@ internal constructor(
   }
 
   /**
-   * Returns the private size of this dex node, i.e. size that can not share with other nodes.
-   * Example of shared size that is not included in this value: strings in the string pool,
-   * annotation sets.
+   * Returns the private size of this dex node, i.e. size that can not share with other nodes. Example of shared size that is not included
+   * in this value: strings in the string pool, annotation sets.
    *
    * @return private size of node in bytes
    */

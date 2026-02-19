@@ -24,8 +24,7 @@ import org.gradle.api.attributes.Attribute
  * The key should be [ATTRIBUTE].
  */
 interface VariantAttr : org.gradle.api.Named {
-    companion object {
-        @JvmField
-        val ATTRIBUTE: Attribute<VariantAttr> = Attribute.of(VariantAttr::class.java)
-    }
+  companion object {
+    @JvmField val ATTRIBUTE: Attribute<VariantAttr> = Attribute.of(VariantAttr::class.java)
+  }
 }

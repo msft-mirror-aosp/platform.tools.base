@@ -16,101 +16,98 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-class ListProxy<T>(
-    private val dslRecorder: DslRecorder
-): MutableList<T> {
+class ListProxy<T>(private val dslRecorder: DslRecorder) : MutableList<T> {
 
-    override fun set(index: Int, element: T): T {
-        dslRecorder.call("set", listOf(index, element), isVarArgs = false)
-        return element
-    }
+  override fun set(index: Int, element: T): T {
+    dslRecorder.call("set", listOf(index, element), isVarArgs = false)
+    return element
+  }
 
-    override fun addAll(elements: Collection<T>): Boolean {
-        dslRecorder.collectionAddAll(elements)
-        return true
-    }
+  override fun addAll(elements: Collection<T>): Boolean {
+    dslRecorder.collectionAddAll(elements)
+    return true
+  }
 
-    override fun addAll(index: Int, elements: Collection<T>): Boolean {
-        dslRecorder.call("addAll", listOf(index, elements), isVarArgs = false)
-        return true
-    }
+  override fun addAll(index: Int, elements: Collection<T>): Boolean {
+    dslRecorder.call("addAll", listOf(index, elements), isVarArgs = false)
+    return true
+  }
 
-    override fun add(index: Int, element: T) {
-        dslRecorder.call("add", listOf(index, element), isVarArgs = false)
-    }
+  override fun add(index: Int, element: T) {
+    dslRecorder.call("add", listOf(index, element), isVarArgs = false)
+  }
 
-    override fun add(element: T): Boolean {
-        dslRecorder.collectionAdd(element)
-        return true
-    }
+  override fun add(element: T): Boolean {
+    dslRecorder.collectionAdd(element)
+    return true
+  }
 
-    override fun clear() {
-        dslRecorder.call("clear", listOf(), isVarArgs = false)
-    }
+  override fun clear() {
+    dslRecorder.call("clear", listOf(), isVarArgs = false)
+  }
 
-    override fun removeAt(index: Int): T {
-        throw UnsupportedOperationException("List Proxy does not support this because it cannot handle the return value")
-    }
+  override fun removeAt(index: Int): T {
+    throw UnsupportedOperationException("List Proxy does not support this because it cannot handle the return value")
+  }
 
-    override fun removeAll(elements: Collection<T>): Boolean {
-        dslRecorder.call("removeAll", listOf(elements), isVarArgs = false)
-        return true
-    }
+  override fun removeAll(elements: Collection<T>): Boolean {
+    dslRecorder.call("removeAll", listOf(elements), isVarArgs = false)
+    return true
+  }
 
-    override fun remove(element: T): Boolean {
-        dslRecorder.call("remove", listOf(element), isVarArgs = false)
-        return true
-    }
+  override fun remove(element: T): Boolean {
+    dslRecorder.call("remove", listOf(element), isVarArgs = false)
+    return true
+  }
 
-    // ----------
-    // below here are all the method not related to adding/removing and are therefore
-    // not supported by the proxy.
+  // ----------
+  // below here are all the method not related to adding/removing and are therefore
+  // not supported by the proxy.
 
-    override val size: Int
-        get() = throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  override val size: Int
+    get() = throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
 
-    override fun get(index: Int): T {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun get(index: Int): T {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun isEmpty(): Boolean {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun isEmpty(): Boolean {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun iterator(): MutableIterator<T> {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun iterator(): MutableIterator<T> {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun listIterator(): MutableListIterator<T> {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun listIterator(): MutableListIterator<T> {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun listIterator(index: Int): MutableListIterator<T> {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun listIterator(index: Int): MutableListIterator<T> {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
+  override fun subList(fromIndex: Int, toIndex: Int): MutableList<T> {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun subList(fromIndex: Int, toIndex: Int): MutableList<T> {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun retainAll(elements: Collection<T>): Boolean {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun retainAll(elements: Collection<T>): Boolean {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun lastIndexOf(element: T): Int {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun lastIndexOf(element: T): Int {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun indexOf(element: T): Int {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun indexOf(element: T): Int {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun containsAll(elements: Collection<T>): Boolean {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 
-    override fun containsAll(elements: Collection<T>): Boolean {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
-
-    override fun contains(element: T): Boolean {
-        throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
-    }
+  override fun contains(element: T): Boolean {
+    throw UnsupportedOperationException("List Proxy does not support this. Add support if needed")
+  }
 }

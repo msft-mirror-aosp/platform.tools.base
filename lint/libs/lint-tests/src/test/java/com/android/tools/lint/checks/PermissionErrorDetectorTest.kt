@@ -53,12 +53,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
         object : LintListener {
           private var mode: LintDriver.DriverMode? = null
 
-          override fun update(
-            driver: LintDriver,
-            type: LintListener.EventType,
-            project: Project?,
-            context: Context?,
-          ) {
+          override fun update(driver: LintDriver, type: LintListener.EventType, project: Project?, context: Context?) {
             if (driver.mode != mode) {
               PermissionErrorDetector.clearPlatformPermissions()
             }
@@ -414,18 +409,12 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
     val project = context.project
 
     // well-known cases are handled
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "android.permission.BIND_NCF_SERVICE"),
-    )
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.BIND_NCF_SERVICE"))
     assertEquals(
       "android.permission.BIND_NFC_SERVICE",
       findAlmostPlatformPermission(project, "android.Manifest.permission.BIND_NCF_SERVICE"),
     )
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "android.permission.bind_ncf_service"),
-    )
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.bind_ncf_service"))
     assertEquals(
       "android.permission.BIND_NFC_SERVICE",
       findAlmostPlatformPermission(project, "android.permission\n      .BIND_NCF_@@--~~SERVICE"),
@@ -435,33 +424,21 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
       findAlmostPlatformPermission(
         project,
         """
-                android.permission.BIND_NFC_SERVICE |
-                android.permission.SYSTEM_ALERT_WINDOW |
-                android.permission.BLUETOOTH_PRIVILEGED
-                """
+        |                android.permission.BIND_NFC_SERVICE |
+        |                android.permission.SYSTEM_ALERT_WINDOW |
+        |                android.permission.BLUETOOTH_PRIVILEGED
+        """
           .trimMargin(),
       ),
     )
 
     // Matching based on just the name part
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "@ndr\$oid@.BIND_NCF_SERVICE"))
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "\${MY_SUBSTITUTION}.BIND_NCF_SERVICE"))
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.BIND_NCF_SERVICE"))
     assertEquals(
       "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "@ndr\$oid@.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "\${MY_SUBSTITUTION}.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "android.BIND_NCF_SERVICE"),
-    )
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(
-        project,
-        "adroid.prmission.BIND_NCF_SERVICE",
-      ), // typos in package name
+      findAlmostPlatformPermission(project, "adroid.prmission.BIND_NCF_SERVICE"), // typos in package name
     )
 
     //  assure we don't match one valid permission against another
@@ -474,10 +451,7 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
     assertNull(findAlmostPlatformPermission(project, "my.custom.package.CMERA"))
 
     // assure the edit distance logic behaves as expected per the MAX_EDIT_DISTANCE const
-    assertEquals(
-      "android.permission.BIND_NFC_SERVICE",
-      findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERVZZZ"),
-    )
+    assertEquals("android.permission.BIND_NFC_SERVICE", findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERVZZZ"))
     assertNull(findAlmostPlatformPermission(project, "android.permission.BIND_NFC_SERZZZZ"))
 
     Disposer.dispose(disposable)
@@ -680,18 +654,9 @@ class PermissionErrorDetectorTest : AbstractCheckTest() {
   @Test
   fun testFindAlmostCustomPermission() {
     val customPermissions = listOf("my.custom.permission.FOO_BAR", "my.custom.permission.BAZ_QUXX")
-    assertEquals(
-      findAlmostCustomPermission("my.custom.permission.FOOB", customPermissions),
-      "my.custom.permission.FOO_BAR",
-    )
-    assertEquals(
-      findAlmostCustomPermission("my.custom.permission.BAZQUXX", customPermissions),
-      "my.custom.permission.BAZ_QUXX",
-    )
-    assertEquals(
-      findAlmostCustomPermission("my.custom.permission.BAZ_QZZZ", customPermissions),
-      "my.custom.permission.BAZ_QUXX",
-    )
+    assertEquals(findAlmostCustomPermission("my.custom.permission.FOOB", customPermissions), "my.custom.permission.FOO_BAR")
+    assertEquals(findAlmostCustomPermission("my.custom.permission.BAZQUXX", customPermissions), "my.custom.permission.BAZ_QUXX")
+    assertEquals(findAlmostCustomPermission("my.custom.permission.BAZ_QZZZ", customPermissions), "my.custom.permission.BAZ_QUXX")
     assertNull(findAlmostCustomPermission("my.custom.permission.BAZ_ZZZZ", customPermissions))
   }
 

@@ -25,112 +25,111 @@ import org.junit.Test
 
 class ManifestFullyQualifiedClassNamesTest {
 
-    private val app =
-        MinimalSubProject.app()
-            .appendToBuild(
-                """
-                    android {
-                        namespace = 'com.example.app'
+  private val app =
+    MinimalSubProject.app()
+      .appendToBuild(
+        """
+        android {
+            namespace = 'com.example.app'
 
-                        defaultConfig {
-                            applicationId 'com.example.id'
-                        }
-                    }
-                """.trimIndent()
-            ).withFile(
-                "src/main/AndroidManifest.xml",
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <application>
-                            <activity android:name="MainActivity"/>
-                        </application>
-                    </manifest>
-                """.trimIndent()
+            defaultConfig {
+                applicationId 'com.example.id'
+            }
+        }
+        """
+          .trimIndent()
+      )
+      .withFile(
+        "src/main/AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application>
+                <activity android:name="MainActivity"/>
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+      .withFile(
+        "src/main/java/com/example/app/MainActivity.java",
+        """
+        package com.example.app;
 
-            ).withFile(
-                "src/main/java/com/example/app/MainActivity.java",
-                """
-                    package com.example.app;
+        import android.app.Activity;
+        import android.os.Bundle;
 
-                    import android.app.Activity;
-                    import android.os.Bundle;
+        public class MainActivity extends Activity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+            }
+        }
+        """
+          .trimIndent(),
+      )
 
-                    public class MainActivity extends Activity {
-                        @Override
-                        public void onCreate(Bundle savedInstanceState) {
-                            super.onCreate(savedInstanceState);
-                        }
-                    }
-                """.trimIndent()
-            )
+  private val lib =
+    MinimalSubProject.lib()
+      .appendToBuild(
+        """
+        android {
+            namespace = 'com.example.lib'
+        }
+        """
+          .trimIndent()
+      )
+      .withFile(
+        "src/main/AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application>
+                <activity android:name=".LibraryActivity"/>
+            </application>
+        </manifest>
+        """
+          .trimIndent(),
+      )
+      .withFile(
+        "src/main/java/com/example/lib/LibraryActivity.java",
+        """
+        package com.example.app;
 
-    private val lib =
-        MinimalSubProject.lib()
-            .appendToBuild(
-                """
-                    android {
-                        namespace = 'com.example.lib'
-                    }
-                """.trimIndent()
-            ).withFile(
-                "src/main/AndroidManifest.xml",
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <application>
-                            <activity android:name=".LibraryActivity"/>
-                        </application>
-                    </manifest>
-                """.trimIndent()
+        import android.app.Activity;
+        import android.os.Bundle;
 
-            ).withFile(
-                "src/main/java/com/example/lib/LibraryActivity.java",
-                """
-                    package com.example.app;
+        public class LibraryActivity extends Activity {
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+            }
+        }
+        """
+          .trimIndent(),
+      )
 
-                    import android.app.Activity;
-                    import android.os.Bundle;
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .create()
 
-                    public class LibraryActivity extends Activity {
-                        @Override
-                        public void onCreate(Bundle savedInstanceState) {
-                            super.onCreate(savedInstanceState);
-                        }
-                    }
-                """.trimIndent()
-            )
+  /** Regression test for Issue 213474165 */
+  @Test
+  fun build() {
+    project.executor().run("assembleDebug")
 
-    @get:Rule
-    val project : GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            ).create()
+    val libMergedManifest =
+      project.getSubproject("lib").file("build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml")
 
-    /**
-     * Regression test for Issue 213474165
-     */
-    @Test
-    fun build() {
-        project.executor().run("assembleDebug")
+    val appMergedManifest =
+      project.getSubproject("app").file("build/intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml")
 
-        val libMergedManifest =
-            project.getSubproject("lib")
-                .file("build/intermediates/merged_manifest/debug/processDebugManifest/AndroidManifest.xml")
+    // library and app merged manifests contain correct package values
+    assertThat(libMergedManifest).contains("package=\"com.example.lib\"")
+    assertThat(appMergedManifest).contains("package=\"com.example.id\"")
 
-        val appMergedManifest =
-            project.getSubproject("app")
-                .file("build/intermediates/packaged_manifests/debug/processDebugManifestForPackage/AndroidManifest.xml")
-
-        // library and app merged manifests contain correct package values
-        assertThat(libMergedManifest).contains("package=\"com.example.lib\"")
-        assertThat(appMergedManifest).contains("package=\"com.example.id\"")
-
-        // app merged manifest contains correct fully qualified class names
-        assertThat(appMergedManifest).contains("com.example.app.MainActivity")
-        assertThat(appMergedManifest).contains("com.example.lib.LibraryActivity")
-    }
+    // app merged manifest contains correct fully qualified class names
+    assertThat(appMergedManifest).contains("com.example.app.MainActivity")
+    assertThat(appMergedManifest).contains("com.example.lib.LibraryActivity")
+  }
 }

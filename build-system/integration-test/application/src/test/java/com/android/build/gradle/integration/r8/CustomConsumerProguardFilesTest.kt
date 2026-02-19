@@ -25,38 +25,30 @@ import org.junit.Rule
 import org.junit.Test
 
 class CustomConsumerProguardFilesTest {
-    @get:Rule
-    val rule = GradleRule.configure()
-        .from {
-            androidLibrary {
-                android {
-                }
-                pluginCallbacks += MyLibraryCallback::class.java
-                files.add("src/custom/consumer-proguard-file.pro", "some proguard statements")
-            }
-        }
-
-    class MyLibraryCallback: LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
-                variant.consumerProguardFiles.add(
-                    project.layout.projectDirectory.file("src/custom/consumer-proguard-file.pro")
-                )
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidLibrary {
+        android {}
+        pluginCallbacks += MyLibraryCallback::class.java
+        files.add("src/custom/consumer-proguard-file.pro", "some proguard statements")
+      }
     }
 
-    @Test
-    fun testTaskBasedProduction() {
-        val project = rule.build
-        project.executor.run("assembleDebug")
-
-        // check the resulting aar.
-        project.androidLibrary(":lib").assertAar(AarSelector.DEBUG) {
-            textFile("proguard.txt").isEqualTo("some proguard statements")
-        }
+  class MyLibraryCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+        variant.consumerProguardFiles.add(project.layout.projectDirectory.file("src/custom/consumer-proguard-file.pro"))
+      }
     }
+  }
+
+  @Test
+  fun testTaskBasedProduction() {
+    val project = rule.build
+    project.executor.run("assembleDebug")
+
+    // check the resulting aar.
+    project.androidLibrary(":lib").assertAar(AarSelector.DEBUG) { textFile("proguard.txt").isEqualTo("some proguard statements") }
+  }
 }

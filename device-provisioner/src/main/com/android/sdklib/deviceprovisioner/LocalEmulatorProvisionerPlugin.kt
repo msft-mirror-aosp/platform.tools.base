@@ -37,18 +37,12 @@ import com.android.sdklib.devices.Abi
 import com.android.sdklib.internal.avd.AvdBuilder
 import com.android.sdklib.internal.avd.AvdInfo
 import com.android.sdklib.internal.avd.AvdInfo.AvdStatus
-import com.android.sdklib.internal.avd.BootMode
-import com.android.sdklib.internal.avd.BootSnapshot
-import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.HardwareProperties
 import com.android.sdklib.internal.avd.UserSettingsKey
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.android.utils.ILogger
 import com.google.wireless.android.sdk.stats.DeviceInfo
-import com.intellij.icons.AllIcons
-import java.awt.Component
-import java.io.IOException
 import java.nio.file.Path
 import java.time.Duration
 import javax.swing.Icon
@@ -58,12 +52,10 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.toImmutableMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -81,25 +73,24 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 
 /**
- * Provides access to emulators running on the local machine from the standard AVD directory.
- * Supports creating, editing, starting, and stopping AVD instances.
+ * Provides access to emulators running on the local machine from the standard AVD directory. Supports creating, editing, starting, and
+ * stopping AVD instances.
  *
- * This plugin creates device handles for all AVDs present in the standard AVD directory, running or
- * not. The AVD path is used to identify devices and establish the link between connected devices
- * and their handles. The directory is periodically rescanned to find new devices, and immediately
- * rescanned after an edit is made via a device action.
+ * This plugin creates device handles for all AVDs present in the standard AVD directory, running or not. The AVD path is used to identify
+ * devices and establish the link between connected devices and their handles. The directory is periodically rescanned to find new devices,
+ * and immediately rescanned after an edit is made via a device action.
  */
 class LocalEmulatorProvisionerPlugin
 internal constructor(
   private val context: LocalEmulatorContext,
   private val scope: CoroutineScope,
   private val adbSession: AdbSession,
+  private val refreshAvds: () -> List<AvdInfo>,
   rescanPeriod: Duration = Duration.ofSeconds(10),
   pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
   private val handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
@@ -108,81 +99,31 @@ internal constructor(
   constructor(
     scope: CoroutineScope,
     adbSession: AdbSession,
-    avdManager: AvdManager,
+    refreshAvds: () -> List<AvdInfo>,
     deviceIcons: DeviceIcons,
-    defaultPresentation: DeviceAction.DefaultPresentation,
-    diskIoThread: CoroutineDispatcher,
     rescanPeriod: Duration = Duration.ofSeconds(10),
     pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
     handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   ) : this(
-    LocalEmulatorContext(
-      adbSession.host.loggerFactory.createLogger(LocalEmulatorProvisionerPlugin::class.java),
-      deviceIcons,
-      defaultPresentation,
-      avdManager,
-      diskIoThread,
-      Clock.System,
-    ),
-    scope,
-    adbSession,
-    rescanPeriod,
-    pluginExtensions,
-    handleExtensions,
+    context =
+      LocalEmulatorContext(
+        logger = adbSession.host.loggerFactory.createLogger(LocalEmulatorProvisionerPlugin::class.java),
+        deviceIcons = deviceIcons,
+        clock = Clock.System,
+      ),
+    scope = scope,
+    adbSession = adbSession,
+    refreshAvds = refreshAvds,
+    rescanPeriod = rescanPeriod,
+    pluginExtensions = pluginExtensions,
+    handleExtensions = handleExtensions,
   )
 
   private val logger by context::logger
-  private val avdManager: AvdManager by context::avdManager
-  private val defaultPresentation: DeviceAction.DefaultPresentation by context::defaultPresentation
 
   companion object {
 
     const val PLUGIN_ID = "LocalEmulator"
-  }
-
-  /**
-   * An abstraction of the AvdManager / AvdManagerConnection classes to be injected, allowing for
-   * testing and decoupling from Studio.
-   */
-  interface AvdManager {
-
-    /** A flow of all currently running emulator processes keyed by AVD data folders. */
-    val runningAvdsFlow: StateFlow<Map<Path, RunningAvd>>
-
-    suspend fun rescanAvds(): List<AvdInfo>
-
-    /** Prompts the user to create an AVD. Returns true if an AVD was created. */
-    suspend fun createAvd(parent: Component?): Boolean
-
-    /** Prompts the user to edit the given AVD. Returns true if the AVD was changed. */
-    suspend fun editAvd(parent: Component?, avdInfo: AvdInfo): Boolean
-
-    /** Starts the Glasses Pairing Wizard to pair a phone to the current glasses. */
-    suspend fun pairGlasses(
-      parent: Component?,
-      glassesHandle: LocalEmulatorDeviceHandle,
-      deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
-    )
-
-    /** Unpairs the given device from its companion. */
-    suspend fun unpairGlasses(handle: LocalEmulatorDeviceHandle)
-
-    /** Boots the AVD using the given BootMode, or default if null. */
-    suspend fun startAvd(avdInfo: AvdInfo, bootMode: BootMode)
-
-    suspend fun stopAvd(avdInfo: AvdInfo)
-
-    suspend fun showOnDisk(avdInfo: AvdInfo)
-
-    suspend fun duplicateAvd(parent: Component?, avdInfo: AvdInfo)
-
-    suspend fun wipeData(avdInfo: AvdInfo)
-
-    suspend fun deleteAvd(avdInfo: AvdInfo)
-
-    suspend fun downloadAvdSystemImage(avdInfo: AvdInfo)
-
-    fun requestedAvdShutdown(avdInfo: AvdInfo) {}
   }
 
   // We can identify local emulators reliably, so this can be relatively high priority.
@@ -199,8 +140,7 @@ internal constructor(
 
   private val extensionRegistry = ExtensionRegistry(this, pluginExtensions)
 
-  override fun <T : Extension> extension(extensionClass: Class<T>) =
-    extensionRegistry.extension(extensionClass)
+  override fun <T : Extension> extension(extensionClass: Class<T>) = extensionRegistry.extension(extensionClass)
 
   init {
     avdScanner.runNow()
@@ -215,7 +155,7 @@ internal constructor(
    */
   private suspend fun rescanAvds() {
     try {
-      val avdsOnDisk = avdManager.rescanAvds().associateBy { it.dataFolderPath }
+      val avdsOnDisk = refreshAvds().associateBy { it.dataFolderPath }
       mutex.withLock {
         // Remove any current DeviceHandles that are no longer present on disk, unless they are
         // connected. (If a client holds on to the disconnected device handle, and it gets
@@ -234,12 +174,11 @@ internal constructor(
             null ->
               deviceHandles[path] =
                 LocalEmulatorDeviceHandle(
-                  context,
-                  ::refreshDevices,
-                  _devices,
-                  scope.createChildScope(isSupervisor = true),
-                  handleExtensions,
-                  avdInfo,
+                  context = context,
+                  refreshDevices = ::refreshDevices,
+                  scope = scope.createChildScope(isSupervisor = true),
+                  extensions = handleExtensions,
+                  initialAvdInfo = avdInfo,
                 )
             else -> handle.updateAvdInfo(avdInfo)
           }
@@ -261,9 +200,7 @@ internal constructor(
     val port = result.groupValues[1].toIntOrNull() ?: return null
 
     logger.debug { "Opening emulator console to $port" }
-    val emulatorConsole =
-      withTimeoutOrNull(5.seconds) { adbSession.openEmulatorConsole(localConsoleAddress(port)) }
-        ?: return null
+    val emulatorConsole = withTimeoutOrNull(5.seconds) { adbSession.openEmulatorConsole(localConsoleAddress(port)) } ?: return null
 
     // This will fail on emulator versions prior to 30.0.18.
     val pathResult = kotlin.runCatching { emulatorConsole.avdPath() }
@@ -306,19 +243,6 @@ internal constructor(
   fun refreshDevices() {
     avdScanner.runNow()
   }
-
-  override val createDeviceAction =
-    object : CreateDeviceAction {
-      override val presentation =
-        MutableStateFlow(defaultPresentation.fromContext().copy(label = "Create Virtual Device"))
-          .asStateFlow()
-
-      override suspend fun create(parent: Component?) {
-        if (avdManager.createAvd(parent)) {
-          refreshDevices()
-        }
-      }
-    }
 }
 
 /** The mutable state of a LocalEmulatorDeviceHandle, emitted by the internalStateFlow. */
@@ -330,37 +254,31 @@ private data class InternalState(
 )
 
 /**
- * A handle for a local AVD stored in the SDK's AVD directory. These are only created when reading
- * an AVD off the disk; only devices that have already been read from disk will be claimed.
+ * A handle for a local AVD stored in the SDK's AVD directory. These are only created when reading an AVD off the disk; only devices that
+ * have already been read from disk will be claimed.
  */
-class LocalEmulatorDeviceHandle
-internal constructor(
+class LocalEmulatorDeviceHandle(
   private val context: LocalEmulatorContext,
-  private val refreshDevices: () -> Unit,
-  private val deviceHandleFlow: Flow<List<LocalEmulatorDeviceHandle>>,
+  val refreshDevices: () -> Unit,
   override val scope: CoroutineScope,
   extensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   initialAvdInfo: AvdInfo,
-  initialDeviceProperties: LocalEmulatorProperties =
-    context.disconnectedDeviceProperties(initialAvdInfo),
+  initialDeviceProperties: LocalEmulatorProperties = context.disconnectedDeviceProperties(initialAvdInfo),
 ) : DeviceHandle {
   private val logger by context::logger
-  private val avdManager: LocalEmulatorProvisionerPlugin.AvdManager by context::avdManager
-  private val defaultPresentation: DeviceAction.DefaultPresentation by context::defaultPresentation
   private val clock by context::clock
 
   private val extensionRegistry = ExtensionRegistry(this, extensions)
 
-  override fun <T : Extension> extension(extensionClass: Class<T>) =
-    extensionRegistry.extension(extensionClass)
+  override fun <T : Extension> extension(extensionClass: Class<T>) = extensionRegistry.extension(extensionClass)
 
   private val messageChannel: Channel<LocalEmulatorMessage> = Channel()
 
   override val id = DeviceId(PLUGIN_ID, false, "path=${initialAvdInfo.dataFolderPath}")
 
   /**
-   * The mutable state of the handle, maintained by an actor coroutine which reads from
-   * [messageChannel] serially, and emits the resulting changes on this flow.
+   * The mutable state of the handle, maintained by an actor coroutine which reads from [messageChannel] serially, and emits the resulting
+   * changes on this flow.
    */
   private val internalStateFlow: StateFlow<InternalState> =
     flow {
@@ -384,7 +302,8 @@ internal constructor(
           logger.debug { "${logName()} Processing: $message" }
           when (message) {
             is AvdInfoUpdate -> {
-              // First, apply any updates immediately that don't need a restart to take effect or
+              // First, apply any updates immediately that don't need a restart to take effect
+              // or
               // shouldn't trigger the AvdChangedError.
               if (!activeAvdInfo.isSameMetadata(message.avdInfo)) {
                 activeAvdInfo = activeAvdInfo.copyMetadata(message.avdInfo)
@@ -449,7 +368,8 @@ internal constructor(
             }
             is BootStatusUpdate -> {
               // On a transition from not booted to booted, read the properties from the device.
-              // bootStatus is always reset when connectedDevice becomes null, so connectedDevice
+              // bootStatus is always reset when connectedDevice becomes null, so
+              // connectedDevice
               // is guaranteed to become non-null before bootStatus becomes true
               val connectedDevice = connectedDevice
               if (connectedDevice != null && !bootStatus && message.bootStatus.isBooted) {
@@ -477,20 +397,13 @@ internal constructor(
                   properties =
                     LocalEmulatorProperties.build(activeAvdInfo) {
                       readCommonProperties(newProperties)
-                      populateDeviceInfoProto(
-                        PLUGIN_ID,
-                        connectedDevice.serialNumber,
-                        newProperties,
-                        randomConnectionId(),
-                      )
+                      populateDeviceInfoProto(PLUGIN_ID, connectedDevice.serialNumber, newProperties, randomConnectionId())
                       // Device type is not always reliably read from properties
                       deviceType = activeAvdInfo.toDeviceType()
-                      density =
-                        newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
+                      density = newProperties[DevicePropertyNames.QEMU_SF_LCD_DENSITY]?.toIntOrNull()
                       resolution = message.resolution
                       disambiguator = emulatorConsolePort.toString()
-                      wearPairingId =
-                        activeAvdInfo.dataFolderPath.toString().takeIf { isPairable() }
+                      wearPairingId = activeAvdInfo.dataFolderPath.toString().takeIf { isPairable() }
                       icon = context.deviceIcons.iconForDeviceType(deviceType)
                     }
                 }
@@ -505,9 +418,7 @@ internal constructor(
                   }
                 if (transitionNecessary) {
                   pendingTransition = message
-                  scope.launch {
-                    messageChannel.send(TransitionResult(runCatching { message.action() }))
-                  }
+                  scope.launch { messageChannel.send(TransitionResult(runCatching { message.action() })) }
                   scheduleTimeoutCheck(message.timeout)
                 } else {
                   // We are already in the desired state; this is a no-op
@@ -526,10 +437,12 @@ internal constructor(
               }
             }
             is TransitionResult -> {
-              // Closure-based approaches (e.g. onFailure) inhibit smart-cast on pendingTransition
+              // Closure-based approaches (e.g. onFailure) inhibit smart-cast on
+              // pendingTransition
               val e = message.result.exceptionOrNull()
               if (e != null) {
-                // Note that we only complete on exception; if it succeeded we still wait for the
+                // Note that we only complete on exception; if it succeeded we still wait for
+                // the
                 // state to change before we signal completion
                 pendingTransition?.completion?.completeExceptionally(e)
                 pendingTransition = null
@@ -543,9 +456,7 @@ internal constructor(
                     TransitionType.DEACTIVATION -> "disconnect"
                   }
                 pendingTransition.completion.completeExceptionally(
-                  DeviceActionException(
-                    "Emulator failed to $action within $CONNECTION_TIMEOUT_MINUTES minutes"
-                  )
+                  DeviceActionException("Emulator failed to $action within $CONNECTION_TIMEOUT_MINUTES minutes")
                 )
                 pendingTransition = null
               }
@@ -565,8 +476,7 @@ internal constructor(
                 Connected(
                   properties,
                   isTransitioning = !bootStatus || pendingTransition != null,
-                  isReady =
-                    bootStatus && connectedDeviceState == com.android.adblib.DeviceState.ONLINE,
+                  isReady = bootStatus && connectedDeviceState == com.android.adblib.DeviceState.ONLINE,
                   status =
                     when {
                       pendingTransition != null -> "Shutting down"
@@ -588,33 +498,25 @@ internal constructor(
       .stateIn(
         scope,
         SharingStarted.Eagerly,
-        InternalState(
-          Disconnected(initialDeviceProperties, error = initialAvdInfo.deviceError),
-          null,
-          initialAvdInfo,
-          null,
-        ),
+        InternalState(Disconnected(initialDeviceProperties, error = initialAvdInfo.deviceError), null, initialAvdInfo, null),
       )
 
   override val stateFlow =
-    internalStateFlow
-      .map { it.deviceState }
-      .stateIn(scope, SharingStarted.Eagerly, Disconnected(initialDeviceProperties))
+    internalStateFlow.map { it.deviceState }.stateIn(scope, SharingStarted.Eagerly, Disconnected(initialDeviceProperties))
 
   /** The currently active AvdInfo for the device. */
   val avdInfo: AvdInfo
     get() = internalStateFlow.value.avdInfo
 
   /**
-   * The latest AvdInfo read from the disk for the device. If the on-disk AvdInfo is updated while
-   * the device is already running, the device will continue to reflect the AvdInfo from its boot
-   * time.
+   * The latest AvdInfo read from the disk for the device. If the on-disk AvdInfo is updated while the device is already running, the device
+   * will continue to reflect the AvdInfo from its boot time.
    */
-  private val onDiskAvdInfo: AvdInfo
+  val onDiskAvdInfo: AvdInfo
     get() = internalStateFlow.value.let { it.pendingAvdInfo ?: it.avdInfo }
 
   /** The emulator console is present when the device is connected. */
-  private val emulatorConsole: EmulatorConsole?
+  val emulatorConsole: EmulatorConsole?
     get() = internalStateFlow.value.emulatorConsole
 
   private fun scheduleTimeoutCheck(timeout: Instant) {
@@ -625,69 +527,26 @@ internal constructor(
   }
 
   /**
-   * Update the avdInfo if we're not currently running. If we are running, the old values are
-   * probably still in effect, but we will update on the next scan after shutdown.
+   * Update the avdInfo if we're not currently running. If we are running, the old values are probably still in effect, but we will update
+   * on the next scan after shutdown.
    */
   suspend fun updateAvdInfo(newAvdInfo: AvdInfo) {
     messageChannel.send(AvdInfoUpdate(newAvdInfo))
   }
 
   /** Notifies the handle that it has been connected. */
-  suspend fun updateConnectedDevice(
-    connectedDevice: ConnectedDevice,
-    emulatorConsole: EmulatorConsole,
-    emulatorConsolePort: Int,
-  ) {
-    messageChannel.send(
-      ConnectedDeviceUpdate(connectedDevice, emulatorConsole, emulatorConsolePort)
-    )
+  suspend fun updateConnectedDevice(connectedDevice: ConnectedDevice, emulatorConsole: EmulatorConsole, emulatorConsolePort: Int) {
+    messageChannel.send(ConnectedDeviceUpdate(connectedDevice, emulatorConsole, emulatorConsolePort))
   }
 
-  override val activationAction =
-    object : ActivationAction {
-      override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
-
-      override suspend fun activate() {
-        activate {
-          // Consult the config to see what the default boot method is.
-          val bootMode = BootMode.fromProperties(avdInfo.properties)
-          avdManager.startAvd(avdInfo, bootMode)
-        }
-      }
-    }
-
-  override val coldBootAction =
-    object : ColdBootAction {
-      override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
-
-      override suspend fun activate() {
-        activate { avdManager.startAvd(avdInfo, ColdBoot) }
-      }
-    }
-
-  override val bootSnapshotAction = LocalEmulatorBootSnapshotAction()
-
-  inner class LocalEmulatorBootSnapshotAction : BootSnapshotAction {
-
-    override val presentation = defaultPresentation.fromContext().enabledIfActivatable()
-
-    override suspend fun snapshots(): List<LocalEmulatorSnapshot> =
-      withContext(context.diskIoDispatcher) {
-        LocalEmulatorSnapshotReader(logger)
-          .readSnapshots(avdInfo.dataFolderPath.resolve("snapshots"))
-      }
-
-    override suspend fun activate(snapshot: Snapshot) {
-      activate {
-        val snapshotName = (snapshot as LocalEmulatorSnapshot).path.fileName.toString()
-        avdManager.startAvd(avdInfo, BootSnapshot(snapshotName))
-      }
-    }
-  }
-
-  private suspend fun activate(action: suspend () -> Unit) {
-    val request =
-      TransitionRequest(TransitionType.ACTIVATION, clock.now() + CONNECTION_TIMEOUT, action)
+  /**
+   * Initiates activation of the device. The supplied action is expected to launch the AVD and cause it to connect to ADB. The handle will
+   * expect to be notified of the device's presence by the provisioner; this will complete the activation.
+   *
+   * @throws DeviceActionException if this does not occur within [CONNECTION_TIMEOUT]
+   */
+  suspend fun activate(action: suspend () -> Unit) {
+    val request = TransitionRequest(TransitionType.ACTIVATION, clock.now() + CONNECTION_TIMEOUT, action)
     messageChannel.send(request)
     // Use the Deferred to receive exceptions from the actor.
     request.completion.await()
@@ -696,133 +555,18 @@ internal constructor(
     stateFlow.first { it is Connected }
   }
 
-  override val editAction =
-    object : EditAction {
-      override val presentation = MutableStateFlow(defaultPresentation.fromContext()).asStateFlow()
-
-      override suspend fun edit(parent: Component?) {
-        if (avdManager.editAvd(parent, onDiskAvdInfo)) {
-          refreshDevices()
-        }
-      }
-    }
-
-  override val deactivationAction: DeactivationAction =
-    object : DeactivationAction {
-      // We could check this with AvdManagerConnection.isAvdRunning, but that's expensive, and if
-      // it's not running we should see it from ADB anyway
-      override val presentation =
-        defaultPresentation.fromContext().enabledIf { it is Connected && !it.isTransitioning }
-
-      override suspend fun deactivate() {
-        val request =
-          TransitionRequest(
-            TransitionType.DEACTIVATION,
-            clock.now() + DISCONNECTION_TIMEOUT,
-            ::stop,
-          )
-        messageChannel.send(request)
-        request.completion.await()
-        stateFlow.first { it is Disconnected }
-      }
-    }
-
-  override val repairDeviceAction =
-    object : RepairDeviceAction {
-      override val presentation =
-        DeviceAction.Presentation(
-            label = "Download system image",
-            icon = AllIcons.Actions.Download,
-            enabled = false,
-          )
-          .enabledIf { (it.error as? AvdDeviceError)?.status == AvdStatus.ERROR_IMAGE_MISSING }
-
-      override suspend fun repair() {
-        avdManager.downloadAvdSystemImage(avdInfo)
-        refreshDevices()
-      }
-    }
-
-  override val pairGlassesAction =
-    object : PairGlassesAction {
-      override suspend fun pairGlasses(parent: Component?, glassesHandle: DeviceHandle) {
-        avdManager.pairGlasses(parent, this@LocalEmulatorDeviceHandle, deviceHandleFlow)
-      }
-
-      override val presentation: StateFlow<DeviceAction.Presentation> =
-        defaultPresentation.fromContext().enabledIf {
-          it.properties.deviceType == DeviceType.AI_GLASSES
-        }
-    }
-
-  override val unpairGlassesAction =
-    object : UnpairGlassesAction {
-      override suspend fun unpairGlasses() {
-        avdManager.unpairGlasses(this@LocalEmulatorDeviceHandle)
-      }
-
-      override val presentation: StateFlow<DeviceAction.Presentation> =
-        defaultPresentation.fromContext().enabledIf {
-          it.properties.pairedPhoneId != null || it.properties.pairedGlassesId != null
-        }
-    }
-
   /**
-   * Attempts to stop the AVD. We can either use the emulator console or AvdManager (which uses a
-   * shell command to kill the process)
+   * Initiates deactivation of the device. The supplied action is expected to terminate the AVD, causing its [ConnectedDevice] to enter the
+   * DISCONNECTED state.
+   *
+   * @throws DeviceActionException if this does not occur within [CONNECTION_TIMEOUT]
    */
-  private suspend fun stop() {
-    emulatorConsole?.let {
-      try {
-        it.kill()
-        avdManager.requestedAvdShutdown(avdInfo)
-        return
-      } catch (e: IOException) {
-        // Connection to emulator console is closed, possibly due to a harmless race condition.
-        logger.debug(e) { "Failed to shutdown via emulator console; falling back to AvdManager" }
-      }
-    }
-    avdManager.stopAvd(avdInfo)
+  suspend fun deactivate(action: suspend () -> Unit) {
+    val request = TransitionRequest(TransitionType.DEACTIVATION, clock.now() + DISCONNECTION_TIMEOUT, action)
+    messageChannel.send(request)
+    request.completion.await()
+    stateFlow.first { it is Disconnected }
   }
-
-  override val showAction: ShowAction =
-    object : ShowAction {
-      override val presentation =
-        MutableStateFlow(defaultPresentation.fromContext().copy(label = "Show on Disk"))
-
-      override suspend fun show() {
-        avdManager.showOnDisk(avdInfo)
-      }
-    }
-
-  override val duplicateAction: DuplicateAction =
-    object : DuplicateAction {
-      override val presentation = MutableStateFlow(defaultPresentation.fromContext())
-
-      override suspend fun duplicate(parent: Component?) {
-        avdManager.duplicateAvd(parent, onDiskAvdInfo)
-        refreshDevices()
-      }
-    }
-
-  override val wipeDataAction: WipeDataAction =
-    object : WipeDataAction {
-      override val presentation = defaultPresentation.fromContext().enabledIfStopped()
-
-      override suspend fun wipeData() {
-        avdManager.wipeData(avdInfo)
-      }
-    }
-
-  override val deleteAction: DeleteAction =
-    object : DeleteAction {
-      override val presentation = defaultPresentation.fromContext().enabledIfStopped()
-
-      override suspend fun delete() {
-        avdManager.deleteAvd(avdInfo)
-        refreshDevices()
-      }
-    }
 
   /** Sets the phone that is paired to this device; if null, clears the paired phone. */
   fun updatePairedPhone(companion: LocalEmulatorDeviceHandle?) {
@@ -842,29 +586,9 @@ internal constructor(
     )
     refreshDevices()
   }
-
-  private fun DeviceAction.Presentation.enabledIf(condition: (DeviceState) -> Boolean) =
-    stateFlow
-      .map { this.copy(enabled = condition(it)) }
-      .stateIn(scope, SharingStarted.Eagerly, this)
-
-  private fun DeviceState.isStopped() = this is Disconnected && !this.isTransitioning
-
-  private fun DeviceAction.Presentation.enabledIfStopped() = enabledIf { it.isStopped() }
-
-  private fun DeviceAction.Presentation.enabledIfActivatable() = enabledIf {
-    it.isStopped() && it.error?.severity != DeviceError.Severity.ERROR
-  }
 }
 
-internal class LocalEmulatorContext(
-  val logger: AdbLogger,
-  val deviceIcons: DeviceIcons,
-  val defaultPresentation: DeviceAction.DefaultPresentation,
-  val avdManager: LocalEmulatorProvisionerPlugin.AvdManager,
-  val diskIoDispatcher: CoroutineDispatcher,
-  val clock: Clock,
-) {
+class LocalEmulatorContext(val logger: AdbLogger, val deviceIcons: DeviceIcons, val clock: Clock) {
   fun disconnectedDeviceProperties(avdInfo: AvdInfo): LocalEmulatorProperties =
     LocalEmulatorProperties.build(avdInfo) {
       populateDeviceInfoProto(PLUGIN_ID, null, emptyMap(), "")
@@ -898,6 +622,7 @@ data class LocalEmulatorProperties(
   val displayName: String,
   val hasPlayStore: Boolean,
   val avdConfigProperties: ImmutableMap<String, String>,
+  val isAiGlassesCompatible: Boolean,
 ) : DeviceProperties {
 
   override fun toBuilder(): Builder = Builder().apply { copyFrom(this@LocalEmulatorProperties) }
@@ -920,6 +645,7 @@ data class LocalEmulatorProperties(
     var displayName: String? = null
     var hasPlayStore: Boolean = false
     val avdConfigProperties: MutableMap<String, String> = mutableMapOf()
+    var isAiGlassesCompatible: Boolean = false
 
     fun copyFrom(properties: LocalEmulatorProperties) {
       super.copyFrom(properties)
@@ -929,6 +655,7 @@ data class LocalEmulatorProperties(
       hasPlayStore = properties.hasPlayStore
       avdConfigProperties.clear()
       avdConfigProperties.putAll(properties.avdConfigProperties)
+      isAiGlassesCompatible = properties.isAiGlassesCompatible
     }
 
     fun isPairable(): Boolean {
@@ -947,27 +674,23 @@ data class LocalEmulatorProperties(
       androidVersion = avdInfo.androidVersion
       androidRelease = SdkVersionInfo.getVersionString(avdInfo.androidVersion.apiLevel)
       abiList =
-        avdInfo.systemImage?.let {
-          (it.abiTypes + it.translatedAbiTypes).mapNotNull { Abi.getEnum(it) }
-        } ?: listOfNotNull(Abi.getEnum(avdInfo.abiType))
+        avdInfo.systemImage?.let { (it.abiTypes + it.translatedAbiTypes).mapNotNull { Abi.getEnum(it) } }
+          ?: listOfNotNull(Abi.getEnum(avdInfo.abiType))
       avdName = avdInfo.name
       avdPath = avdInfo.dataFolderPath
       displayName = avdInfo.displayName
       deviceType = avdInfo.toDeviceType()
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
-      pairedPhoneId =
-        avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
-      pairedGlassesId =
-        avdInfo.userSettings[UserSettingsKey.PAIRED_GLASSES_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedPhoneId = avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedGlassesId = avdInfo.userSettings[UserSettingsKey.PAIRED_GLASSES_AVD_ID]?.let { DeviceId.fromString(it) }
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
-      isResizable =
-        avdInfo.androidVersion.isAtLeast(AndroidVersion.MIN_RESIZABLE_DEVICE_API) &&
-          avdInfo.deviceName == "resizable"
+      isResizable = avdInfo.androidVersion.isAtLeast(AndroidVersion.MIN_RESIZABLE_DEVICE_API) && avdInfo.deviceName == "resizable"
       preferredAbi = avdInfo.userSettings[PREFERRED_ABI]
       avdConfigProperties.putAll(avdInfo.properties)
+      isAiGlassesCompatible = avdInfo.isAiGlassesCompatibleDevice
     }
 
     override fun build() =
@@ -997,6 +720,7 @@ data class LocalEmulatorProperties(
         pairedPhoneId = pairedPhoneId,
         pairedGlassesId = pairedGlassesId,
         avdConfigProperties = avdConfigProperties.toImmutableMap(),
+        isAiGlassesCompatible = isAiGlassesCompatible,
       )
   }
 }
@@ -1011,8 +735,7 @@ private data class ConnectedDeviceUpdate(
   val emulatorConsolePort: Int,
 ) : LocalEmulatorMessage
 
-private data class ConnectedDeviceStateUpdate(val deviceState: com.android.adblib.DeviceState) :
-  LocalEmulatorMessage
+private data class ConnectedDeviceStateUpdate(val deviceState: com.android.adblib.DeviceState) : LocalEmulatorMessage
 
 private data class BootStatusUpdate(val bootStatus: BootStatus) : LocalEmulatorMessage
 
@@ -1044,9 +767,7 @@ private val AvdInfo.density
 private val AvdInfo.resolution
   get() =
     properties[HardwareProperties.HW_LCD_WIDTH]?.toIntOrNull()?.let { width ->
-      properties[HardwareProperties.HW_LCD_HEIGHT]?.toIntOrNull()?.let { height ->
-        Resolution(width, height)
-      }
+      properties[HardwareProperties.HW_LCD_HEIGHT]?.toIntOrNull()?.let { height -> Resolution(width, height) }
     }
 
 private val AvdInfo.deviceError
@@ -1056,8 +777,7 @@ private val AvdInfo.deviceError
       else -> errorMessage?.let { AvdDeviceError(status, it) }
     }
 
-private data class AvdDeviceError(val status: AvdStatus, override val message: String) :
-  DeviceError {
+data class AvdDeviceError(val status: AvdStatus, override val message: String) : DeviceError {
   override val severity
     get() = DeviceError.Severity.ERROR
 }
@@ -1067,10 +787,7 @@ internal object AvdChangedError : DeviceError {
   override val message = "Changes will apply on restart"
 }
 
-/**
- * We ignore these keys when deciding if the AVD properties have changed in a way that merits
- * showing the AvdChangedError.
- */
+/** We ignore these keys when deciding if the AVD properties have changed in a way that merits showing the AvdChangedError. */
 private val insignificantKeys =
   setOf(
     ConfigKey.CHOSEN_SNAPSHOT_FILE,
@@ -1081,11 +798,7 @@ private val insignificantKeys =
 
 internal fun AvdInfo.updateInsignificantProperties(newInfo: AvdInfo): AvdInfo {
   if (insignificantKeys.any { properties[it] != newInfo.properties[it] }) {
-    return copy(
-      properties =
-        (properties - insignificantKeys) +
-          newInfo.properties.filterKeys(insignificantKeys::contains)
-    )
+    return copy(properties = (properties - insignificantKeys) + newInfo.properties.filterKeys(insignificantKeys::contains))
   }
   return this
 }

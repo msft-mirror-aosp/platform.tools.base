@@ -34,67 +34,50 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A JDWP process tracked by [JdwpProcessTracker]. Each instance has a [pid] and a [StateFlow]
- * of [JdwpProcessProperties], corresponding to the changes made to the process during a
- * JDWP session (e.g. [JdwpProcessProperties.packageName]).
+ * A JDWP process tracked by [JdwpProcessTracker]. Each instance has a [pid] and a [StateFlow] of [JdwpProcessProperties], corresponding to
+ * the changes made to the process during a JDWP session (e.g. [JdwpProcessProperties.packageName]).
  *
- * A [JdwpProcess] instance becomes invalid when the corresponding process on the device
- * is terminated, or when the device is disconnected.
+ * A [JdwpProcess] instance becomes invalid when the corresponding process on the device is terminated, or when the device is disconnected.
  */
 interface JdwpProcess {
 
-    /**
-     * The [ConnectedDevice] this process runs on.
-     */
-    val device: ConnectedDevice
+  /** The [ConnectedDevice] this process runs on. */
+  val device: ConnectedDevice
 
-    /**
-     * The process ID
-     */
-    val pid: Int
+  /** The process ID */
+  val pid: Int
 
-    /**
-     * The [CoroutineScope] whose lifetime matches the lifetime of the process on the device.
-     * This [scope] can be used for example when collecting the [propertiesFlow].
-     */
-    val scope: CoroutineScope
-        get() = cache.scope
+  /**
+   * The [CoroutineScope] whose lifetime matches the lifetime of the process on the device. This [scope] can be used for example when
+   * collecting the [propertiesFlow].
+   */
+  val scope: CoroutineScope
+    get() = cache.scope
 
-    /**
-     * Returns a [CoroutineScopeCache] associated to this [JdwpProcess]. The cache
-     * is cleared when the process exits.
-     */
-    val cache: CoroutineScopeCache
+  /** Returns a [CoroutineScopeCache] associated to this [JdwpProcess]. The cache is cleared when the process exits. */
+  val cache: CoroutineScopeCache
 
-    /**
-     * Invokes [block] on the [SharedJdwpSession] corresponding to this process.
-     * The [SharedJdwpSession] is opened if needed before [block] is invoked, and closed
-     * after [block] exits (if needed, i.e. if there are no other active blocks).
-     *
-     * Note: This method and [SharedJdwpSession] are both thread-safe, and there
-     * can be an arbitrary number of concurrently active [block], they all share
-     * the same underlying [SharedJdwpSession].
-     *
-     * Note: Given Android is limited to a single JDWP session per process per device
-     * at any point in time, [block] should exit as soon as the [SharedJdwpSession] is
-     * not needed anymore.
-     */
-    suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T
+  /**
+   * Invokes [block] on the [SharedJdwpSession] corresponding to this process. The [SharedJdwpSession] is opened if needed before [block] is
+   * invoked, and closed after [block] exits (if needed, i.e. if there are no other active blocks).
+   *
+   * Note: This method and [SharedJdwpSession] are both thread-safe, and there can be an arbitrary number of concurrently active [block],
+   * they all share the same underlying [SharedJdwpSession].
+   *
+   * Note: Given Android is limited to a single JDWP session per process per device at any point in time, [block] should exit as soon as the
+   * [SharedJdwpSession] is not needed anymore.
+   */
+  suspend fun <T> withJdwpSession(block: suspend SharedJdwpSession.() -> T): T
 }
 
-/**
- * Creates an [AdbLogger] for a [JdwpProcess]
- */
+/** Creates an [AdbLogger] for a [JdwpProcess] */
 fun JdwpProcess.adbLogger(): AdbLogger {
-    return adbLogger(device.session.host).withProcessPrefix(device, pid)
+  return adbLogger(device.session.host).withProcessPrefix(device, pid)
 }
 
 /** Creates immutable [JdwpProcessInfo] from the [JdwpProcess] */
-internal fun JdwpProcess.toJdwpProcessInfo() = JdwpProcessInfo(
-    device = device,
-    properties = propertiesFlow.value,
-    proxyStatus = jdwpProxySocketServer.proxyStatusFlow.value
-)
+internal fun JdwpProcess.toJdwpProcessInfo() =
+  JdwpProcessInfo(device = device, properties = propertiesFlow.value, proxyStatus = jdwpProxySocketServer.proxyStatusFlow.value)
 
 /**
  * Kills a debuggable process by sending a DDMS EXIT packet to the VM.
@@ -102,115 +85,91 @@ internal fun JdwpProcess.toJdwpProcessInfo() = JdwpProcessInfo(
  * If the process has already exited on the device, this method will throw an exception.
  */
 suspend fun JdwpProcess.sendDdmsExit(status: Int) {
-    withJdwpSession {
-        sendDdmsExit(status)
-    }
+  withJdwpSession { sendDdmsExit(status) }
 }
 
 /**
- * Sends a DDMS command to the AndroidVM to run the garbage collector in this [JdwpProcess]
- * and waits for the confirmation from the AndroidVM the GC was successfully performed.
+ * Sends a DDMS command to the AndroidVM to run the garbage collector in this [JdwpProcess] and waits for the confirmation from the
+ * AndroidVM the GC was successfully performed.
  */
 suspend fun JdwpProcess.executeGarbageCollector(progress: JdwpCommandProgress? = null) {
-    withJdwpSession {
-        handleDdmsHPGC(progress)
-    }
+  withJdwpSession { handleDdmsHPGC(progress) }
 }
 
 /**
- * Resumes execution of this [JdwpProcess] if it is in the
- * [JdwpProcessProperties.isWaitingForDebugger] state.
+ * Resumes execution of this [JdwpProcess] if it is in the [JdwpProcessProperties.isWaitingForDebugger] state.
  *
- * Note: This method uses different strategies depending on the device configuration and
- * [AdbSession] configuration, including dispatching the call to other [AdbSession]
- * instances via pre-registered [ExternalJdwpProcessCommandDispatcher] if needed.
+ * Note: This method uses different strategies depending on the device configuration and [AdbSession] configuration, including dispatching
+ * the call to other [AdbSession] instances via pre-registered [ExternalJdwpProcessCommandDispatcher] if needed.
  */
 suspend fun JdwpProcess.resumeProcess() {
-    if (this is AbstractJdwpProcessDelegateProvider) {
-        abstractJdwpProcess().resumeProcess()
-    } else {
-        resumeProcessImpl.resumeProcess()
-    }
+  if (this is AbstractJdwpProcessDelegateProvider) {
+    abstractJdwpProcess().resumeProcess()
+  } else {
+    resumeProcessImpl.resumeProcess()
+  }
 }
 
-private val resumeProcessImplKey =
-    CoroutineScopeCache.Key<ResumeProcessImpl>("${ResumeProcessImpl::class.java.simpleName}")
+private val resumeProcessImplKey = CoroutineScopeCache.Key<ResumeProcessImpl>("${ResumeProcessImpl::class.java.simpleName}")
 
 internal val JdwpProcess.resumeProcessImpl: ResumeProcessImpl
-    get() = cache.getOrPut(resumeProcessImplKey) { ResumeProcessImpl(this) }
+  get() = cache.getOrPut(resumeProcessImplKey) { ResumeProcessImpl(this) }
 
-private val jdwpProcessAllocationTrackerKey =
-    CoroutineScopeCache.Key<JdwpProcessAllocationTracker>("JdwpProcessAllocationTracker")
+private val jdwpProcessAllocationTrackerKey = CoroutineScopeCache.Key<JdwpProcessAllocationTracker>("JdwpProcessAllocationTracker")
 
 /**
- * Returns the [JdwpProcessAllocationTracker] for this [JdwpProcess]. This API is deprecated
- * and should only be used for "legacy" devices (API <= 25 "Android N")
+ * Returns the [JdwpProcessAllocationTracker] for this [JdwpProcess]. This API is deprecated and should only be used for "legacy" devices
+ * (API <= 25 "Android N")
  */
 val JdwpProcess.allocationTracker: JdwpProcessAllocationTracker
-    get() = this.cache.getOrPut(jdwpProcessAllocationTrackerKey) {
-        JdwpProcessAllocationTrackerImpl(this)
-    }
+  get() = this.cache.getOrPut(jdwpProcessAllocationTrackerKey) { JdwpProcessAllocationTrackerImpl(this) }
 
-private val jdwpProcessProfilerKey =
-    CoroutineScopeCache.Key<JdwpProcessProfiler>("JdwpProcessProfiler")
+private val jdwpProcessProfilerKey = CoroutineScopeCache.Key<JdwpProcessProfiler>("JdwpProcessProfiler")
 
 /**
- * Returns the [JdwpProcessProfiler] for this [JdwpProcess]. This API is deprecated
- * and should only be used for "legacy" devices (API <= 25 "Android N")
+ * Returns the [JdwpProcessProfiler] for this [JdwpProcess]. This API is deprecated and should only be used for "legacy" devices (API <= 25
+ * "Android N")
  */
 val JdwpProcess.profiler: JdwpProcessProfiler
-    get() = this.cache.getOrPut(jdwpProcessProfilerKey) {
-        JdwpProcessProfilerImpl(this)
-    }
+  get() = this.cache.getOrPut(jdwpProcessProfilerKey) { JdwpProcessProfilerImpl(this) }
 
-private val jdwpProcessViewHierarchyKey =
-    CoroutineScopeCache.Key<JdwpProcessViewHierarchy>("JdwpProcessViewHierarchy")
+private val jdwpProcessViewHierarchyKey = CoroutineScopeCache.Key<JdwpProcessViewHierarchy>("JdwpProcessViewHierarchy")
 
 val JdwpProcess.viewHierarchy: JdwpProcessViewHierarchy
-    get() = this.cache.getOrPut(jdwpProcessViewHierarchyKey) {
-        JdwpProcessViewHierarchyImpl(this)
-    }
+  get() = this.cache.getOrPut(jdwpProcessViewHierarchyKey) { JdwpProcessViewHierarchyImpl(this) }
 
 enum class DdmsProtocolKind {
-    /**
-     * DDMS commands always return a [JdwpPacketView.isReply], even when there is no
-     * data to send back. This is currently the protocol used for devices API < 28.
-     */
-    EmptyRepliesAllowed,
+  /**
+   * DDMS commands always return a [JdwpPacketView.isReply], even when there is no data to send back. This is currently the protocol used
+   * for devices API < 28.
+   */
+  EmptyRepliesAllowed,
 
-    /**
-     * DDMS commands **never** return an empty [JdwpPacketView.isReply] when there is no
-     * payload in the chunk response. This is a bug introduced in the DDMS protocol used for
-     * devices API >= 28.
-     */
-    EmptyRepliesDiscarded
+  /**
+   * DDMS commands **never** return an empty [JdwpPacketView.isReply] when there is no payload in the chunk response. This is a bug
+   * introduced in the DDMS protocol used for devices API >= 28.
+   */
+  EmptyRepliesDiscarded,
 }
 
-/**
- * The [com.android.adblib.CoroutineScopeCache.Key] for the [WarningsTracker]
- */
-private val WarningsTrackerKey =
-    CoroutineScopeCache.Key<WarningsTracker>("WarningsTrackerKey")
+/** The [com.android.adblib.CoroutineScopeCache.Key] for the [WarningsTracker] */
+private val WarningsTrackerKey = CoroutineScopeCache.Key<WarningsTracker>("WarningsTrackerKey")
 
-/**
- * [WarningsTracker] associated with this [JdwpProcess]
- */
+/** [WarningsTracker] associated with this [JdwpProcess] */
 val JdwpProcess.warningsTracker: WarningsTracker
-    get() = this.cache.getOrPut(WarningsTrackerKey) {
-        WarningsTracker(
-            staleThreshold = Duration.ofMinutes(60),
-            repeatLogPeriod = Duration.ofMinutes(10)
-        )
+  get() =
+    this.cache.getOrPut(WarningsTrackerKey) {
+      WarningsTracker(staleThreshold = Duration.ofMinutes(60), repeatLogPeriod = Duration.ofMinutes(10))
     }
 
 private val ddmsProtocolKindKey = CoroutineScopeCache.Key<DdmsProtocolKind>("DdmsProtocolKind")
 
 suspend fun ConnectedDevice.ddmsProtocolKind(): DdmsProtocolKind {
-    return cache.getOrPutSuspending(ddmsProtocolKindKey) {
-        val api = deviceProperties().api()
-        when {
-            api >= 28 -> DdmsProtocolKind.EmptyRepliesDiscarded
-            else -> DdmsProtocolKind.EmptyRepliesAllowed
-        }
+  return cache.getOrPutSuspending(ddmsProtocolKindKey) {
+    val api = deviceProperties().api()
+    when {
+      api >= 28 -> DdmsProtocolKind.EmptyRepliesDiscarded
+      else -> DdmsProtocolKind.EmptyRepliesAllowed
     }
+  }
 }

@@ -725,10 +725,7 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 
     val prev = System.getProperty(REPORT_PREFERENCE_PROPERTY)
     try {
-      System.setProperty(
-        REPORT_PREFERENCE_PROPERTY,
-        "maxIncidents=1,theme=darcula,window=1,underlineErrors=false",
-      )
+      System.setProperty(REPORT_PREFERENCE_PROPERTY, "maxIncidents=1,theme=darcula,window=1,underlineErrors=false")
       HtmlReporter.initializePreferences()
       checkReportOutput(
         """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">

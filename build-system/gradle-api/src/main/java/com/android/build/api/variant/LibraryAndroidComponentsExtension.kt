@@ -25,5 +25,4 @@ import com.android.build.api.dsl.LibraryExtension
  *
  * Only the Android Gradle Plugin should create instances of interfaces in com.android.build.api.variant.
  */
-interface LibraryAndroidComponentsExtension:
-    AndroidComponentsExtension<LibraryExtension, LibraryVariantBuilder, LibraryVariant>
+interface LibraryAndroidComponentsExtension : AndroidComponentsExtension<LibraryExtension, LibraryVariantBuilder, LibraryVariant>

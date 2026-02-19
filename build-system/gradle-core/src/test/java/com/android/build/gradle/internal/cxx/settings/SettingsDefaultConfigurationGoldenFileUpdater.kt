@@ -18,11 +18,11 @@ package com.android.build.gradle.internal.cxx.settings
 
 /** See [SettingsDefaultConfigurationGoldenFileTest] */
 class SettingsDefaultConfigurationGoldenFileUpdater {
-    companion object {
-        /** Run this to update the expected file.*/
-        @JvmStatic
-        fun main(args: Array<String>) {
-            SettingsDefaultConfigurationGoldenFileTest.goldenFile.update()
-        }
+  companion object {
+    /** Run this to update the expected file. */
+    @JvmStatic
+    fun main(args: Array<String>) {
+      SettingsDefaultConfigurationGoldenFileTest.goldenFile.update()
     }
+  }
 }

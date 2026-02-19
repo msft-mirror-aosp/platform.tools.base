@@ -21,7 +21,6 @@ maven_repository(
         "@maven//:com.google.protobuf.protobuf-bom_3.17.2",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.google.protobuf.protoc_3.22.3",
-        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",
@@ -70,12 +69,12 @@ maven_repository(
         "@maven//:org.junit.junit-bom_5.9.2",
         "@maven//:org.junit.junit-bom_5.9.3",
         "@maven//:org.mockito.mockito-core",
-        "@maven//:org.ow2.asm.asm-analysis_9.8",
-        "@maven//:org.ow2.asm.asm-bom_9.8",
-        "@maven//:org.ow2.asm.asm-commons_9.8",
-        "@maven//:org.ow2.asm.asm-tree_9.8",
-        "@maven//:org.ow2.asm.asm-util_9.8",
-        "@maven//:org.ow2.asm.asm_9.8",
+        "@maven//:org.ow2.asm.asm-analysis_9.9",
+        "@maven//:org.ow2.asm.asm-bom_9.9",
+        "@maven//:org.ow2.asm.asm-commons_9.9",
+        "@maven//:org.ow2.asm.asm-tree_9.9",
+        "@maven//:org.ow2.asm.asm-util_9.9",
+        "@maven//:org.ow2.asm.asm_9.9",
         "@maven//:org.tensorflow.tensorflow-lite-metadata",
         "@maven//:org.tomlj.tomlj",
     ],
@@ -140,6 +139,7 @@ maven_repository(
 
 AGP_TEST_ARTIFACTS = [
     "//tools/analytics-library/testing:tools.analytics-testing",  # TODO: Only required for AGP tests
+    "//tools/base/android-test/android-test-junit-engine:android-test-engine",  # For android test with JUnit Platform
     "//tools/base/apkparser/analyzer:tools.analyzer.maven",  # TODO(b/143864616): Only required for tests
     "//tools/base/apkparser:tools.binary-resources",  # TODO(b/143864616): Only required for tests
     "//tools/base/emulator/proto",  # Used for UTP

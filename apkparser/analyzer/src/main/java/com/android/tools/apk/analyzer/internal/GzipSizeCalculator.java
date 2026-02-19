@@ -17,11 +17,12 @@
 package com.android.tools.apk.analyzer.internal;
 
 import static com.android.ide.common.pagealign.PageAlignUtilsKt.hasElfMagicNumber;
-import static com.android.ide.common.pagealign.PageAlignUtilsKt.readElfMinimumLoadSectionAlignment;
+import static com.android.ide.common.pagealign.PageAlignUtilsKt.readElfAlignmentProblems;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_16K;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_4K;
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
+import com.android.ide.common.pagealign.AlignmentProblem;
 import com.android.tools.apk.analyzer.ApkSizeCalculator;
 import com.android.tools.apk.analyzer.ZipEntryInfo;
 import com.android.zipflinger.Entry;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.zip.Deflater;
@@ -153,18 +155,16 @@ public class GzipSizeCalculator implements ApkSizeCalculator {
                 } else {
                     alignment = ALIGNMENT_NONE;
                 }
-                long loadAlignment = -1;
-                boolean isElf = false;
+                List<@NotNull AlignmentProblem> alignmentProblems = null;
                 try (InputStream stream = zip.getInputStream(entry.getName())) {
                     if (hasElfMagicNumber(stream)) {
-                        isElf = true;
-                        loadAlignment = readElfMinimumLoadSectionAlignment(stream);
+                        alignmentProblems = readElfAlignmentProblems(stream);
                     }
                 }
 
                 sizes.put(
                         "/" + entry.getName(),
-                        new ZipEntryInfo(size, alignment, isCompressed, isElf, loadAlignment));
+                        new ZipEntryInfo(size, alignment, isCompressed, alignmentProblems));
             }
         } catch (IOException ignored) {
         }

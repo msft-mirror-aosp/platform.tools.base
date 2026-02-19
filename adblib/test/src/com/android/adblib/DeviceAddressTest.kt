@@ -15,77 +15,75 @@
  */
 package com.android.adblib
 
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.ExpectedException
-import java.net.InetAddress
-import java.net.InetSocketAddress
 
 class DeviceAddressTest {
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun fromUnresolvedInetSocketAddressWorks() {
-        // Prepare
-        val inetAddress = InetSocketAddress.createUnresolved("foo.bar", 1000)
+  @Test
+  fun fromUnresolvedInetSocketAddressWorks() {
+    // Prepare
+    val inetAddress = InetSocketAddress.createUnresolved("foo.bar", 1000)
 
-        // Act
-        val deviceAddress = inetAddress.toDeviceInetAddress()
+    // Act
+    val deviceAddress = inetAddress.toDeviceInetAddress()
 
-        // Assert
-        assertEquals("foo.bar:1000", deviceAddress.address)
-    }
+    // Assert
+    assertEquals("foo.bar:1000", deviceAddress.address)
+  }
 
-    @Test
-    fun fromResolvedInetSocketAddressWorks() {
-        // Prepare
-        val inetAddress = InetSocketAddress(InetAddress.getByName("10.0.0.1"), 1000)
+  @Test
+  fun fromResolvedInetSocketAddressWorks() {
+    // Prepare
+    val inetAddress = InetSocketAddress(InetAddress.getByName("10.0.0.1"), 1000)
 
-        // Act
-        val deviceAddress = inetAddress.toDeviceInetAddress()
+    // Act
+    val deviceAddress = inetAddress.toDeviceInetAddress()
 
-        // Assert
-        assertEquals("10.0.0.1:1000", deviceAddress.address)
-    }
+    // Assert
+    assertEquals("10.0.0.1:1000", deviceAddress.address)
+  }
 
-    @Test
-    fun toInetSocketAddressWorks() {
-        // Prepare
-        val deviceAddress = DeviceAddress("foo.bar:1000")
+  @Test
+  fun toInetSocketAddressWorks() {
+    // Prepare
+    val deviceAddress = DeviceAddress("foo.bar:1000")
 
-        // Act
-        val inetAddress = deviceAddress.toInetAddress()
+    // Act
+    val inetAddress = deviceAddress.toInetAddress()
 
-        // Assert
-        assertEquals(InetSocketAddress.createUnresolved("foo.bar", 1000), inetAddress)
-        assertEquals("foo.bar", inetAddress.hostString)
-        assertEquals(1000, inetAddress.port)
-    }
+    // Assert
+    assertEquals(InetSocketAddress.createUnresolved("foo.bar", 1000), inetAddress)
+    assertEquals("foo.bar", inetAddress.hostString)
+    assertEquals(1000, inetAddress.port)
+  }
 
-    @Test
-    fun wrappingInvalidAddressWorks() {
-        // Prepare
-        val expected = "a k b l :: --200"
+  @Test
+  fun wrappingInvalidAddressWorks() {
+    // Prepare
+    val expected = "a k b l :: --200"
 
-        // Act
-        val deviceAddress = DeviceAddress(expected)
+    // Act
+    val deviceAddress = DeviceAddress(expected)
 
-        // Assert
-        assertEquals(expected, deviceAddress.address)
-    }
+    // Assert
+    assertEquals(expected, deviceAddress.address)
+  }
 
-    @Test
-    fun convertingInvalidAddressThrows() {
-        // Prepare
-        val expected = "a k b l :: --200"
-        val deviceAddress = DeviceAddress(expected)
+  @Test
+  fun convertingInvalidAddressThrows() {
+    // Prepare
+    val expected = "a k b l :: --200"
+    val deviceAddress = DeviceAddress(expected)
 
-        // Act
-        exceptionRule.expect(IllegalArgumentException::class.java)
-        deviceAddress.toInetAddress()
-    }
+    // Act
+    exceptionRule.expect(IllegalArgumentException::class.java)
+    deviceAddress.toInetAddress()
+  }
 }

@@ -18,12 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun detailsActivityKt(
-  detailsActivity: String,
-  detailsFragmentClass: String,
-  detailsLayoutName: String,
-  packageName: String
-) = """
+fun detailsActivityKt(detailsActivity: String, detailsFragmentClass: String, detailsLayoutName: String, packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

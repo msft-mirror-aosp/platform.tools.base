@@ -22,54 +22,40 @@ import com.google.common.truth.Subject
 import java.nio.file.Files
 import java.nio.file.Path
 
-/**
- * Basic Truth subject to validate if the underlying zip archive exists.
- */
-open class BaseZipSubject<S: Subject<S, T>, T: Zip> internal constructor(
-    metadata: FailureMetadata,
-    actual: T
-): Subject<S, T>(metadata, actual) {
+/** Basic Truth subject to validate if the underlying zip archive exists. */
+open class BaseZipSubject<S : Subject<S, T>, T : Zip> internal constructor(metadata: FailureMetadata, actual: T) :
+  Subject<S, T>(metadata, actual) {
 
-    /**
-     * Checks if the zip file exists.
-     */
-    fun exists() {
-        when (actual().status) {
-            Zip.Status.EXISTS -> {
-                // nothing to be done here.
-            }
-            Zip.Status.DIRECTORY -> {
-                failWithoutActual(Fact.simpleFact("points to a directory"))
-            }
-            Zip.Status.DOES_NOT_EXIST -> {
-                val zip = actual() as? SimpleZip
-                    ?: throw RuntimeException("Zip other than SimpleZip should only be with status EXIST")
+  /** Checks if the zip file exists. */
+  fun exists() {
+    when (actual().status) {
+      Zip.Status.EXISTS -> {
+        // nothing to be done here.
+      }
+      Zip.Status.DIRECTORY -> {
+        failWithoutActual(Fact.simpleFact("points to a directory"))
+      }
+      Zip.Status.DOES_NOT_EXIST -> {
+        val zip = actual() as? SimpleZip ?: throw RuntimeException("Zip other than SimpleZip should only be with status EXIST")
 
-                if (zip.archivePath != null) {
-                    var nearestParent: Path? = zip.archivePath
-                    while (nearestParent != null && !Files.exists(nearestParent)) {
-                        nearestParent = nearestParent.parent
-                    }
+        if (zip.archivePath != null) {
+          var nearestParent: Path? = zip.archivePath
+          while (nearestParent != null && !Files.exists(nearestParent)) {
+            nearestParent = nearestParent.parent
+          }
 
-                    failWithoutActual(
-                        Fact.fact("expected to exist", zip.archivePath),
-                        Fact.fact("nearest existing ancestor", nearestParent)
-                    )
-                } else {
-                    failWithoutActual(
-                        Fact.simpleFact("expected to exist"),
-                    )
-                }
-            }
+          failWithoutActual(Fact.fact("expected to exist", zip.archivePath), Fact.fact("nearest existing ancestor", nearestParent))
+        } else {
+          failWithoutActual(Fact.simpleFact("expected to exist"))
         }
+      }
     }
+  }
 
-    /**
-     * Checks if the zip file does not exist.
-     */
-    fun doesNotExist() {
-        if (actual().exists()) {
-            failWithActual(Fact.simpleFact("expected zip to not exist"))
-        }
+  /** Checks if the zip file does not exist. */
+  fun doesNotExist() {
+    if (actual().exists()) {
+      failWithActual(Fact.simpleFact("expected zip to not exist"))
     }
+  }
 }

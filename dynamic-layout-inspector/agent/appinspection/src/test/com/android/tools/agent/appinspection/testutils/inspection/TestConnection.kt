@@ -19,9 +19,9 @@ package com.android.tools.agent.appinspection.testutils.inspection
 import androidx.inspection.Connection
 
 class TestConnection : Connection() {
-    val eventListeners = mutableListOf<(ByteArray) -> Unit>()
+  val eventListeners = mutableListOf<(ByteArray) -> Unit>()
 
-    override fun sendEvent(data: ByteArray) {
-        eventListeners.forEach { it(data) }
-    }
+  override fun sendEvent(data: ByteArray) {
+    eventListeners.forEach { it(data) }
+  }
 }

@@ -24,6 +24,9 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.bundle.DeviceGroupConfig
 import com.google.common.annotations.VisibleForTesting
+import java.io.File
+import java.nio.file.Files
+import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputFile
@@ -33,94 +36,72 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.w3c.dom.Document
-import java.io.File
-import java.nio.file.Files
-import javax.xml.parsers.DocumentBuilderFactory
 
-/**
- * Task that parses a DeviceGroupConfig proto from an XML file.
- */
+/** Task that parses a DeviceGroupConfig proto from an XML file. */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.METADATA)
 abstract class ParseDeviceTargetingConfigTask : NonIncrementalTask() {
 
-    @get:InputFile
-    @get:Optional
-    @get:PathSensitive(PathSensitivity.NONE)
+  @get:InputFile @get:Optional @get:PathSensitive(PathSensitivity.NONE) abstract val deviceTargetingConfigXml: RegularFileProperty
+
+  @get:OutputFile abstract val deviceTargetingConfigProto: RegularFileProperty
+
+  public override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(ParseDeviceTargetingConfigRunnable::class.java) {
+      it.initializeFromBaseTask(this)
+      it.deviceTargetingConfigXml.set(deviceTargetingConfigXml)
+      it.deviceTargetingConfigProto.set(deviceTargetingConfigProto)
+    }
+  }
+
+  @VisibleForTesting
+  abstract class Params : ProfileAwareWorkAction.Parameters() {
     abstract val deviceTargetingConfigXml: RegularFileProperty
-
-    @get:OutputFile
     abstract val deviceTargetingConfigProto: RegularFileProperty
+  }
 
-    public override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(ParseDeviceTargetingConfigRunnable::class.java) {
-            it.initializeFromBaseTask(this)
-            it.deviceTargetingConfigXml.set(deviceTargetingConfigXml)
-            it.deviceTargetingConfigProto.set(deviceTargetingConfigProto)
-        }
+  @VisibleForTesting
+  abstract class ParseDeviceTargetingConfigRunnable : ProfileAwareWorkAction<Params>() {
+    override fun run() {
+      parameters.deviceTargetingConfigXml.asFile.orNull?.let {
+        val doc = loadXML(it)
+        val configProto = DeviceTargetingConfigParser(doc).parseConfig()
+        storeProto(configProto, parameters.deviceTargetingConfigProto.asFile.get())
+      } ?: run { Files.deleteIfExists(parameters.deviceTargetingConfigProto.asFile.get().toPath()) }
     }
 
-    @VisibleForTesting
-    abstract class Params: ProfileAwareWorkAction.Parameters() {
-        abstract val deviceTargetingConfigXml: RegularFileProperty
-        abstract val deviceTargetingConfigProto: RegularFileProperty
+    private fun loadXML(xmlFile: File): Document {
+      val documentFactory = DocumentBuilderFactory.newInstance()
+      documentFactory.isNamespaceAware = true
+      val documentBuilder = documentFactory.newDocumentBuilder()
+      return documentBuilder.parse(xmlFile)
     }
 
-    @VisibleForTesting
-    abstract class ParseDeviceTargetingConfigRunnable  : ProfileAwareWorkAction<Params>() {
-        override fun run() {
-            parameters.deviceTargetingConfigXml.asFile.orNull?.let {
-                val doc = loadXML(it)
-                val configProto = DeviceTargetingConfigParser(doc).parseConfig()
-                storeProto(configProto, parameters.deviceTargetingConfigProto.asFile.get())
-            } ?: run {
-                Files.deleteIfExists(parameters.deviceTargetingConfigProto.asFile.get().toPath())
-            }
-        }
-        private fun loadXML(xmlFile: File): Document {
-            val documentFactory = DocumentBuilderFactory.newInstance()
-            documentFactory.isNamespaceAware = true
-            val documentBuilder = documentFactory.newDocumentBuilder()
-            return documentBuilder.parse(xmlFile)
-        }
+    private fun storeProto(configProto: DeviceGroupConfig, output: File) {
+      Files.newOutputStream(output.toPath()).use { outputStream -> configProto.writeTo(outputStream) }
+    }
+  }
 
-        private fun storeProto(configProto: DeviceGroupConfig, output: File) {
-            Files.newOutputStream(output.toPath()).use { outputStream ->
-                configProto.writeTo(outputStream)
-            }
-        }
+  class CreationAction(creationConfig: VariantCreationConfig) :
+    VariantTaskCreationAction<ParseDeviceTargetingConfigTask, VariantCreationConfig>(creationConfig) {
 
+    override val name: String
+      get() = computeTaskName("parse", "DeviceTargetingConfig")
+
+    override val type: Class<ParseDeviceTargetingConfigTask>
+      get() = ParseDeviceTargetingConfigTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ParseDeviceTargetingConfigTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ParseDeviceTargetingConfigTask::deviceTargetingConfigProto)
+        .withName("DeviceTargetingConfig.pb")
+        .on(InternalArtifactType.DEVICE_TARGETING_CONFIG)
     }
 
-
-    class CreationAction(creationConfig: VariantCreationConfig) :
-        VariantTaskCreationAction<ParseDeviceTargetingConfigTask, VariantCreationConfig>(
-            creationConfig
-        ) {
-
-        override val name: String
-            get() = computeTaskName("parse", "DeviceTargetingConfig")
-
-        override val type: Class<ParseDeviceTargetingConfigTask>
-            get() = ParseDeviceTargetingConfigTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ParseDeviceTargetingConfigTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ParseDeviceTargetingConfigTask::deviceTargetingConfigProto
-            ).withName("DeviceTargetingConfig.pb").on(InternalArtifactType.DEVICE_TARGETING_CONFIG)
-        }
-
-        override fun configure(
-            task: ParseDeviceTargetingConfigTask
-        ) {
-            super.configure(task)
-            task.deviceTargetingConfigXml.setDisallowChanges(creationConfig.global.bundleOptions.deviceTargetingConfig)
-        }
+    override fun configure(task: ParseDeviceTargetingConfigTask) {
+      super.configure(task)
+      task.deviceTargetingConfigXml.setDisallowChanges(creationConfig.global.bundleOptions.deviceTargetingConfig)
     }
+  }
 }
-
-

@@ -28,49 +28,42 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Integration test class for [LintModelWriterTask]
- */
+/** Integration test class for [LintModelWriterTask] */
 @RunWith(Parameterized::class)
 class LintModelWriterTaskTest(private val lintAnalysisPerComponent: Boolean) {
 
-    private val javaLib1 = MinimalSubProject.javaLibrary()
-    private val javaLib2 = MinimalSubProject.javaLibrary()
+  private val javaLib1 = MinimalSubProject.javaLibrary()
+  private val javaLib2 = MinimalSubProject.javaLibrary()
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":javaLib1", javaLib1)
-                    .subproject(":javaLib2", javaLib2)
-                    .dependency(javaLib1, javaLib2)
-                    .dependency("testImplementation", javaLib2, javaLib1)
-                    .build()
-            ).create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":javaLib1", javaLib1)
+          .subproject(":javaLib2", javaLib2)
+          .dependency(javaLib1, javaLib2)
+          .dependency("testImplementation", javaLib2, javaLib1)
+          .build()
+      )
+      .create()
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "lintAnalysisPerComponent_{0}")
-        fun params() = listOf(true, false)
-    }
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "lintAnalysisPerComponent_{0}") fun params() = listOf(true, false)
+  }
 
-    @Before
-    fun before() {
-        listOf(":javaLib1", ":javaLib2").forEach {
-            project.getSubproject(it).buildFile.appendText("\napply plugin: 'com.android.lint'\n")
-        }
-    }
+  @Before
+  fun before() {
+    listOf(":javaLib1", ":javaLib2").forEach { project.getSubproject(it).buildFile.appendText("\napply plugin: 'com.android.lint'\n") }
+  }
 
-    /**
-     * Regression test for b/291934867 - "Lint model tasks have circular dependencies"
-     */
-    @Test
-    fun testUnusualDependencyStructure() {
-        getExecutor().run("lint")
-    }
+  /** Regression test for b/291934867 - "Lint model tasks have circular dependencies" */
+  @Test
+  fun testUnusualDependencyStructure() {
+    getExecutor().run("lint")
+  }
 
-    private fun getExecutor(): GradleTaskExecutor {
-        return project.executor().with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
-    }
+  private fun getExecutor(): GradleTaskExecutor {
+    return project.executor().with(LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
+  }
 }

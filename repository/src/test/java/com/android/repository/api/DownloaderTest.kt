@@ -38,7 +38,6 @@ class DownloaderTest {
     assertThat(fractions).containsNoDuplicates()
     assertThat(fractions.size).isAtLeast(4) // based on buffer size of 5120
     assertThat(fractions.last()).isEqualTo(1.0)
-    assertThat(hashResult)
-      .isEqualTo("28b4f41a7f3ee6d8cc87272db6e09c6d3566551fd4d18702b041a21658272a85")
+    assertThat(hashResult).isEqualTo("28b4f41a7f3ee6d8cc87272db6e09c6d3566551fd4d18702b041a21658272a85")
   }
 }

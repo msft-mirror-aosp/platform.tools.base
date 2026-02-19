@@ -91,11 +91,11 @@ class RegistrationActionTest {
       temporaryFolderRule.newFile().apply {
         writeText(
           """
-                {
-                    "client_id": "test_client_id",
-                    "quota_project_id": "test_quota_project_id"
-                }
-                """
+          {
+              "client_id": "test_client_id",
+              "quota_project_id": "test_quota_project_id"
+          }
+          """
             .trimIndent()
         )
       }

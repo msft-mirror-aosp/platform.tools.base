@@ -20,6 +20,5 @@ import org.gradle.api.Incubating
 
 interface ScreenshotTestOptions {
 
-    @get:Incubating
-    var imageDifferenceThreshold: Float
+  @get:Incubating var imageDifferenceThreshold: Float
 }

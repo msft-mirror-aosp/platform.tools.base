@@ -25,9 +25,7 @@ import org.junit.Test
 
 /** Unit tests for [UtpTestSuiteResultMerger]. */
 class UtpTestSuiteResultMergerTest {
-  private fun merge(
-    vararg results: TestSuiteResultProto.TestSuiteResult
-  ): TestSuiteResultProto.TestSuiteResult {
+  private fun merge(vararg results: TestSuiteResultProto.TestSuiteResult): TestSuiteResultProto.TestSuiteResult {
     val merger = UtpTestSuiteResultMerger()
     results.forEach(merger::merge)
     return merger.result
@@ -36,19 +34,19 @@ class UtpTestSuiteResultMergerTest {
   private val passedResult =
     TextFormat.parse(
       """
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: PASSED
-            test_result {
-              test_case {
-                test_class: "ExamplePassedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: PASSED
-            }
-        """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: PASSED
+      test_result {
+        test_case {
+          test_class: "ExamplePassedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: PASSED
+      }
+      """
         .trimIndent(),
       TestSuiteResultProto.TestSuiteResult::class.java,
     )
@@ -56,19 +54,19 @@ class UtpTestSuiteResultMergerTest {
   private val skippedResult =
     TextFormat.parse(
       """
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: SKIPPED
-            test_result {
-              test_case {
-                test_class: "ExampleSkippedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: SKIPPED
-            }
-        """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: SKIPPED
+      test_result {
+        test_case {
+          test_class: "ExampleSkippedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: SKIPPED
+      }
+      """
         .trimIndent(),
       TestSuiteResultProto.TestSuiteResult::class.java,
     )
@@ -76,19 +74,19 @@ class UtpTestSuiteResultMergerTest {
   private val failedResult =
     TextFormat.parse(
       """
-            test_suite_meta_data {
-              scheduled_test_case_count: 1
-            }
-            test_status: FAILED
-            test_result {
-              test_case {
-                test_class: "ExampleFailedInstrumentedTest"
-                test_package: "com.example.application"
-                test_method: "useAppContext"
-              }
-              test_status: FAILED
-            }
-        """
+      test_suite_meta_data {
+        scheduled_test_case_count: 1
+      }
+      test_status: FAILED
+      test_result {
+        test_case {
+          test_class: "ExampleFailedInstrumentedTest"
+          test_package: "com.example.application"
+          test_method: "useAppContext"
+        }
+        test_status: FAILED
+      }
+      """
         .trimIndent(),
       TestSuiteResultProto.TestSuiteResult::class.java,
     )

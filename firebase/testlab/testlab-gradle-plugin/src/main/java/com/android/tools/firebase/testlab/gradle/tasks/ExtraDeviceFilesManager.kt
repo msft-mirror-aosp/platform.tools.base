@@ -23,8 +23,7 @@ import java.io.File
 /**
  * Handles all extra device files uploaded/tracked by the DSL and the [ExtraDeviceFilesUploadTask]
  *
- * Internally this is handled by a internal map of deviceFile to the Google Cloud Storage link and
- * associated hash value.
+ * Internally this is handled by a internal map of deviceFile to the Google Cloud Storage link and associated hash value.
  */
 class ExtraDeviceFilesManager(deviceFile: File? = null) {
 
@@ -43,9 +42,7 @@ class ExtraDeviceFilesManager(deviceFile: File? = null) {
 
   /** Two managers are considered equal if their internal maps are equal */
   override fun equals(other: Any?): Boolean {
-    return other != null &&
-      other is ExtraDeviceFilesManager &&
-      devicePathToInfo == other.devicePathToInfo
+    return other != null && other is ExtraDeviceFilesManager && devicePathToInfo == other.devicePathToInfo
   }
 
   /** Hashing is done via the internal mapping as well */
@@ -55,8 +52,7 @@ class ExtraDeviceFilesManager(deviceFile: File? = null) {
     devicePathToInfo[devicePath] = FileInfo(storageObject.toUrl(), storageObject.md5Hash)
   }
 
-  fun devicePathsToUrls(): Map<String, String> =
-    devicePathToInfo.entries.associate { it.key to it.value.gsUrl }
+  fun devicePathsToUrls(): Map<String, String> = devicePathToInfo.entries.associate { it.key to it.value.gsUrl }
 
   fun toFile(file: File) {
     if (devicePathToInfo.isEmpty()) {
@@ -65,9 +61,7 @@ class ExtraDeviceFilesManager(deviceFile: File? = null) {
     }
 
     val outputContents = StringBuilder()
-    devicePathToInfo.toSortedMap().forEach { entry ->
-      outputContents.appendLine("${entry.key}\t${entry.value}")
-    }
+    devicePathToInfo.toSortedMap().forEach { entry -> outputContents.appendLine("${entry.key}\t${entry.value}") }
     file.writeText(outputContents.substring(0, outputContents.length - 1))
   }
 }

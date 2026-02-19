@@ -19,35 +19,32 @@ package com.android.build.gradle.internal.scope
 import com.android.build.api.dsl.LibraryAndroidResources
 
 /**
- * We don't expose public build features dsl, however we use this class internally to indicate
- * whether a component supports a certain feature. For kmp, we support only compiling sources
- * so all feature values are overridden to false.
+ * We don't expose public build features dsl, however we use this class internally to indicate whether a component supports a certain
+ * feature. For kmp, we support only compiling sources so all feature values are overridden to false.
  */
 open class KotlinMultiplatformBuildFeaturesValuesImpl(
-    androidResources: LibraryAndroidResources,
-    legacyAndroidResourceEnabledValue: Boolean, // for backwards compatibility for users setting the experimental property
-): BuildFeatureValues {
+  androidResources: LibraryAndroidResources,
+  legacyAndroidResourceEnabledValue: Boolean, // for backwards compatibility for users setting the experimental property
+) : BuildFeatureValues {
 
-    override val androidResources = if (androidResources.enable) androidResources.enable else legacyAndroidResourceEnabledValue
+  override val androidResources = if (androidResources.enable) androidResources.enable else legacyAndroidResourceEnabledValue
 
-    override val aidl: Boolean = false
-    override val buildConfig: Boolean = false
-    override val prefab: Boolean = false
-    override val renderScript: Boolean = false
-    override val shaders: Boolean = false
-    override val prefabPublishing: Boolean = false
-    override val compose: Boolean = false
-    override val dataBinding: Boolean = false
-    override val mlModelBinding: Boolean = false
-    override val resValues: Boolean = false
-    override val viewBinding: Boolean = false
-    override val buildType: Boolean = false
+  override val aidl: Boolean = false
+  override val buildConfig: Boolean = false
+  override val prefab: Boolean = false
+  override val renderScript: Boolean = false
+  override val shaders: Boolean = false
+  override val prefabPublishing: Boolean = false
+  override val compose: Boolean = false
+  override val dataBinding: Boolean = false
+  override val mlModelBinding: Boolean = false
+  override val resValues: Boolean = false
+  override val viewBinding: Boolean = false
+  override val buildType: Boolean = false
 }
 
-class KotlinMultiplatformHostTestBuildFeaturesValuesImpl(
-    buildFeatures: LibraryAndroidResources,
-    includeAndroidResources: Boolean
-) : KotlinMultiplatformBuildFeaturesValuesImpl(buildFeatures, false) {
+class KotlinMultiplatformHostTestBuildFeaturesValuesImpl(buildFeatures: LibraryAndroidResources, includeAndroidResources: Boolean) :
+  KotlinMultiplatformBuildFeaturesValuesImpl(buildFeatures, false) {
 
-    override val androidResources: Boolean = includeAndroidResources
+  override val androidResources: Boolean = includeAndroidResources
 }

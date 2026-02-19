@@ -21,9 +21,7 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidHostTestCompilation
 import org.jetbrains.kotlin.gradle.ExternalKotlinTargetApi
 
 @OptIn(ExternalKotlinTargetApi::class)
-class KotlinMultiplatformAndroidHostTestCompilationImpl(
-    private val testOnJvm: KotlinMultiplatformAndroidHostTest,
-    delegate: Delegate,
-) : KotlinMultiplatformAndroidCompilationImpl(delegate),
-    KotlinMultiplatformAndroidHostTestCompilation,
-    KotlinMultiplatformAndroidHostTest by testOnJvm
+class KotlinMultiplatformAndroidHostTestCompilationImpl(private val testOnJvm: KotlinMultiplatformAndroidHostTest, delegate: Delegate) :
+  KotlinMultiplatformAndroidCompilationImpl(delegate),
+  KotlinMultiplatformAndroidHostTestCompilation,
+  KotlinMultiplatformAndroidHostTest by testOnJvm

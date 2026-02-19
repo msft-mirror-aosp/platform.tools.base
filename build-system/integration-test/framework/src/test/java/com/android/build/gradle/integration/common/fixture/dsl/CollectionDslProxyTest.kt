@@ -25,79 +25,90 @@ import com.google.common.truth.Truth
 import org.junit.Test
 
 class CollectionDslProxyTest {
-    private val dslRecorder = DefaultDslRecorder()
+  private val dslRecorder = DefaultDslRecorder()
 
-    @Test
-    fun listAdd() {
-        dslRecorder.runNestedBlock("town", listOf(), Town::class.java) {
-            places += "Post Office"
+  @Test
+  fun listAdd() {
+    dslRecorder.runNestedBlock("town", listOf(), Town::class.java) { places += "Post Office" }
+
+    val writer = GroovyBuildWriter()
+    dslRecorder.writeContent(writer)
+    Truth.assertThat(writer.toString())
+      .isEqualTo(
+        """
+        town {
+          places.add('Post Office')
         }
 
-        val writer = GroovyBuildWriter()
-        dslRecorder.writeContent(writer)
-        Truth.assertThat(writer.toString()).isEqualTo("""
-            town {
-              places.add('Post Office')
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun listAddAll() {
+    dslRecorder.runNestedBlock("town", listOf(), Town::class.java) { places += listOf("Post Office", "City Hall") }
 
-    @Test
-    fun listAddAll() {
-        dslRecorder.runNestedBlock("town", listOf(), Town::class.java) {
-            places += listOf("Post Office", "City Hall")
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        town {
+          places += ['Post Office', 'City Hall']
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            town {
-              places += ['Post Office', 'City Hall']
-            }
+        """
+          .trimIndent()
+      )
 
-        """.trimIndent())
-
-        val kts = KtsBuildWriter()
-        dslRecorder.writeContent(kts)
-        Truth.assertThat(kts.toString()).isEqualTo("""
-            town {
-              places += listOf("Post Office", "City Hall")
-            }
-
-        """.trimIndent())
-
-    }
-
-    @Test
-    fun chainedListUsage() {
-        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
-            mountainView.places += listOf("Post Office", "City Hall")
+    val kts = KtsBuildWriter()
+    dslRecorder.writeContent(kts)
+    Truth.assertThat(kts.toString())
+      .isEqualTo(
+        """
+        town {
+          places += listOf("Post Office", "City Hall")
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            california {
-              mountainView.places += ['Post Office', 'City Hall']
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun chainedListUsage() {
+    dslRecorder.runNestedBlock("california", listOf(), California::class.java) { mountainView.places += listOf("Post Office", "City Hall") }
 
-    @Test
-    fun mapPut() {
-        dslRecorder.runNestedBlock("address", listOf(), Address::class.java) {
-            properties["foo"] = "bar"
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        california {
+          mountainView.places += ['Post Office', 'City Hall']
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            address {
-              properties['foo'] = 'bar'
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun mapPut() {
+    dslRecorder.runNestedBlock("address", listOf(), Address::class.java) { properties["foo"] = "bar" }
+
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        address {
+          properties['foo'] = 'bar'
+        }
+
+        """
+          .trimIndent()
+      )
+  }
 }

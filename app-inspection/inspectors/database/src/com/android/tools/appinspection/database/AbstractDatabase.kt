@@ -22,10 +22,7 @@ import java.io.File
 /** Placeholder `%x` is for database's hashcode */
 private const val IN_MEMORY_DATABASE_NAME_FORMAT = "$IN_MEMORY_DATABASE_PATH {hashcode=0x%x}"
 
-internal abstract class AbstractDatabase<T : AutoCloseable>(
-  protected val delegate: T,
-  final override val path: String,
-) : Database {
+internal abstract class AbstractDatabase<T : AutoCloseable>(protected val delegate: T, final override val path: String) : Database {
   final override val isInMemory = path == IN_MEMORY_DATABASE_PATH
 
   final override val key: String =
@@ -35,8 +32,7 @@ internal abstract class AbstractDatabase<T : AutoCloseable>(
     }
 
   /** Equality is delegated to the [SQLiteDatabase] because this object is stored in a [Set] */
-  final override fun equals(other: Any?): Boolean =
-    delegate == (other as? AbstractDatabase<*>)?.delegate
+  final override fun equals(other: Any?): Boolean = delegate == (other as? AbstractDatabase<*>)?.delegate
 
   /** Hash code is delegated to the [SQLiteDatabase] because this object is stored in a [Set] */
   final override fun hashCode(): Int = delegate.hashCode()

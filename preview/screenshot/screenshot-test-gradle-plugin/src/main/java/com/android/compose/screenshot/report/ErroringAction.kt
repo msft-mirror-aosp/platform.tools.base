@@ -18,30 +18,26 @@ package com.android.compose.screenshot.report
 
 import org.gradle.api.Action
 
-
-
 /**
  * Action adapter/implementation for action code that may throw exceptions.
  *
- * Implementations implement doExecute() (instead of execute()) which is allowed to throw checked
- * exceptions.
- * Any checked exceptions thrown will be wrapped as unchecked exceptions and re-thrown.
+ * Implementations implement doExecute() (instead of execute()) which is allowed to throw checked exceptions. Any checked exceptions thrown
+ * will be wrapped as unchecked exceptions and re-thrown.
  *
- * @param <T> The type of object which this action accepts.
-</T> */
+ * @param <T> The type of object which this action accepts. </T>
+ */
 abstract class ErroringAction<T> : Action<T & Any> {
 
-    override fun execute(objectToExecute: T & Any) {
-        try {
-            doExecute(objectToExecute)
-        } catch (e: Exception) {
-            if (e is RuntimeException) {
-                throw e
-            }
-            throw RuntimeException(e)
-        }
+  override fun execute(objectToExecute: T & Any) {
+    try {
+      doExecute(objectToExecute)
+    } catch (e: Exception) {
+      if (e is RuntimeException) {
+        throw e
+      }
+      throw RuntimeException(e)
     }
+  }
 
-    @Throws(Exception::class)
-    protected abstract fun doExecute(objectToExecute: T)
+  @Throws(Exception::class) protected abstract fun doExecute(objectToExecute: T)
 }

@@ -19,39 +19,34 @@ package com.android.build.gradle.integration.lint
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /**
- * Integration test for the bug scenario in issue https://issuetracker.google.com/152539667.
- * where a project is configured without Java sources and with BuildConfig generation
- * turned off, such that the javac output folder does not exist. This test
- * makes sure that we handle the classpath correctly such that type resolution to
- * Kotlin libraries works correctly.
+ * Integration test for the bug scenario in issue https://issuetracker.google.com/152539667. where a project is configured without Java
+ * sources and with BuildConfig generation turned off, such that the javac output folder does not exist. This test makes sure that we handle
+ * the classpath correctly such that type resolution to Kotlin libraries works correctly.
  */
 class LintNoJavaClassesTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestProject("lintNoJavaClasses")
-            .disableBuiltInKotlin()
-            .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("lintNoJavaClasses").create()
 
-    @Test
-    @Throws(Exception::class)
-    fun checkNoMissingClass() {
-        val executor = project.executor()
-            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-        // Run twice to catch issues with configuration caching
-        executor.run(":app:clean", ":app:lintDebug")
-        executor.run(":app:clean", ":app:lintDebug")
-        project.buildResult.assertConfigurationCacheHit()
-        val app = project.getSubproject("app")
-        val file = File(app.projectDir, "lint-results.txt")
-        assertThat(file).exists()
-        assertThat(file).contentWithUnixLineSeparatorsIsExactly("No issues found.")
-    }
+  @Test
+  @Throws(Exception::class)
+  fun checkNoMissingClass() {
+    val executor =
+      project
+        .executor()
+        // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+        .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+    // Run twice to catch issues with configuration caching
+    executor.run(":app:clean", ":app:lintDebug")
+    executor.run(":app:clean", ":app:lintDebug")
+    project.buildResult.assertConfigurationCacheHit()
+    val app = project.getSubproject("app")
+    val file = File(app.projectDir, "lint-results.txt")
+    assertThat(file).exists()
+    assertThat(file).contentWithUnixLineSeparatorsIsExactly("No issues found.")
+  }
 }

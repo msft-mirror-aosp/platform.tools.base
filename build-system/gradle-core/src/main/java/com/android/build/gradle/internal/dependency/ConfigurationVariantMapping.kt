@@ -21,27 +21,26 @@ import org.gradle.api.artifacts.ConfigurationVariant
 import org.gradle.api.component.ConfigurationVariantDetails
 import org.gradle.api.plugins.JavaBasePlugin
 
-class ConfigurationVariantMapping(private val scope: String, private val optional: Boolean) :
-    Action<ConfigurationVariantDetails> {
+class ConfigurationVariantMapping(private val scope: String, private val optional: Boolean) : Action<ConfigurationVariantDetails> {
 
-    override fun execute(details: ConfigurationVariantDetails) {
-        val variant = details.configurationVariant
-        if (checkValidArtifact(variant)) {
-            details.mapToMavenScope(this.scope)
-            if (this.optional) {
-                details.mapToOptional()
-            }
-        } else {
-            details.skip()
-        }
+  override fun execute(details: ConfigurationVariantDetails) {
+    val variant = details.configurationVariant
+    if (checkValidArtifact(variant)) {
+      details.mapToMavenScope(this.scope)
+      if (this.optional) {
+        details.mapToOptional()
+      }
+    } else {
+      details.skip()
     }
+  }
 
-    private fun checkValidArtifact(element: ConfigurationVariant): Boolean {
-        for (artifact in element.artifacts) {
-            if (JavaBasePlugin.UNPUBLISHABLE_VARIANT_ARTIFACTS.contains(artifact.type)) {
-                return false
-            }
-        }
-        return true
+  private fun checkValidArtifact(element: ConfigurationVariant): Boolean {
+    for (artifact in element.artifacts) {
+      if (JavaBasePlugin.UNPUBLISHABLE_VARIANT_ARTIFACTS.contains(artifact.type)) {
+        return false
+      }
     }
+    return true
+  }
 }

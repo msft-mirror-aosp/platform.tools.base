@@ -55,18 +55,14 @@ internal class LocalVariablesFrameListener : FrameListener {
     }
 
     sb.append("====== Local Variables ==================================================\n")
-    frame
-      .visibleVariables()
-      .map { it as LocalVariableImpl }
-      .forEach { sb.append(it.toSummaryLine()) }
+    frame.visibleVariables().map { it as LocalVariableImpl }.forEach { sb.append(it.toSummaryLine()) }
     sb.append('\n')
   }
 }
 
 private fun Field.toSummaryLine() = "%-10s: %s\n".format(name(), typeName())
 
-private fun LocalVariableImpl.toSummaryLine() =
-  "%-2d %s: %-30s: %s\n".format(getSlot(), getScopes(), name(), typeName())
+private fun LocalVariableImpl.toSummaryLine() = "%-2d %s: %-30s: %s\n".format(getSlot(), getScopes(), name(), typeName())
 
 private fun LocalVariableImpl.getScopes(): String {
   val scopeStart = scopeStart

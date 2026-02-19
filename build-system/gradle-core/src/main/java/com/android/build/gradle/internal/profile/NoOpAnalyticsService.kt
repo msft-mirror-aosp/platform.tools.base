@@ -26,79 +26,66 @@ import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleTransformExecution
-import org.gradle.api.Project
-import org.gradle.tooling.events.FinishEvent
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
+import org.gradle.api.Project
+import org.gradle.tooling.events.FinishEvent
 
-/**
- * No-op implementation of [AnalyticsService], which is used when analytics is disabled.
- */
+/** No-op implementation of [AnalyticsService], which is used when analytics is disabled. */
 abstract class NoOpAnalyticsService : AnalyticsService() {
 
-    override fun initializeUsageTracker() {}
+  override fun initializeUsageTracker() {}
 
-    override fun initializeResourceManager(): AnalyticsResourceManager {
-        return AnalyticsResourceManager(
-            GradleBuildProfile.newBuilder(),
-            ConcurrentHashMap(),
-            false,
-            null,
-            ConcurrentHashMap(),
-            null,
-            null,
-        )
-    }
+  override fun initializeResourceManager(): AnalyticsResourceManager {
+    return AnalyticsResourceManager(GradleBuildProfile.newBuilder(), ConcurrentHashMap(), false, null, ConcurrentHashMap(), null, null)
+  }
 
-    override fun close() {}
+  override fun close() {}
 
-    override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder? = null
+  override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder? = null
 
-    override fun getVariantBuilder(
-        projectPath: String,
-        variantName: String
-    ): GradleBuildVariant.Builder? {
-        return null
-    }
+  override fun getVariantBuilder(projectPath: String, variantName: String): GradleBuildVariant.Builder? {
+    return null
+  }
 
-    override fun onFinish(finishEvent: FinishEvent?) {}
+  override fun onFinish(finishEvent: FinishEvent?) {}
 
-    override fun getTaskRecord(taskPath: String): TaskProfilingRecord? = null
+  override fun getTaskRecord(taskPath: String): TaskProfilingRecord? = null
 
-    override fun recordBlock(
-        executionType: GradleBuildProfileSpan.ExecutionType,
-        transform: GradleTransformExecution?,
-        projectPath: String,
-        variantName: String,
-        block: Recorder.VoidBlock
+  override fun recordBlock(
+    executionType: GradleBuildProfileSpan.ExecutionType,
+    transform: GradleTransformExecution?,
+    projectPath: String,
+    variantName: String,
+    block: Recorder.VoidBlock,
+  ) {
+    block.call()
+  }
+
+  override fun recordEvent(event: AndroidStudioEvent.Builder) {}
+
+  override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {}
+
+  override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {}
+
+  override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {}
+
+  override fun workerAdded(taskPath: String, workerKey: String) {}
+
+  override fun workerFinished(taskPath: String, workerKey: String) {}
+
+  override fun workerStarted(taskPath: String, workerKey: String) {}
+
+  /**
+   * Registers [NoOpAnalyticsService] service. The name of the service needs to match the [AnalyticsService] ones, as we fetch them by name,
+   * and they should be interchangeable.
+   */
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<NoOpAnalyticsService, Params>(
+      project,
+      NoOpAnalyticsService::class.java,
+      name = getBuildServiceName(AnalyticsService::class.java),
     ) {
-        block.call()
-    }
-
-    override fun recordEvent(event: AndroidStudioEvent.Builder) {}
-
-    override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {}
-
-    override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {}
-
-    override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {}
-
-    override fun workerAdded(taskPath: String, workerKey: String) {}
-
-    override fun workerFinished(taskPath: String, workerKey: String) {}
-
-    override fun workerStarted(taskPath: String, workerKey: String) {}
-
-    /**
-     * Registers [NoOpAnalyticsService] service. The name of the service needs to match the
-     * [AnalyticsService] ones, as we fetch them by name, and they should be interchangeable.
-     */
-    class RegistrationAction(project: Project)
-        : ServiceRegistrationAction<NoOpAnalyticsService, Params>(
-        project,
-        NoOpAnalyticsService::class.java,
-        name = getBuildServiceName(AnalyticsService::class.java),
-    ) {
-        override fun configure(parameters: Params) {}
-    }
+    override fun configure(parameters: Params) {}
+  }
 }

@@ -13,19 +13,22 @@
         manifests="src/main/AndroidManifest.xml"
         javaDirectories="src/main/java:src/release/java:src/main/kotlin:src/release/kotlin"
         resDirectories="src/main/res:src/release/res"
-        assetsDirectories="src/main/assets:src/release/assets"/>
+        assetsDirectories="src/main/assets:src/release/assets"
+        keepRulesDirectories="src/main/keepRules:src/release/keepRules"/>
   </sourceProviders>
   <testSourceProviders>
     <sourceProvider
         manifests="src/test/AndroidManifest.xml"
         javaDirectories="src/test/java:src/testRelease/java:src/test/kotlin:src/testRelease/kotlin"
         assetsDirectories="src/test/assets:src/testRelease/assets"
+        keepRulesDirectories="src/test/keepRules:src/testRelease/keepRules"
         unitTest="true"/>
     <sourceProvider
         manifests="src/androidTest/AndroidManifest.xml"
         javaDirectories="src/androidTest/java:src/androidTestRelease/java:src/androidTest/kotlin:src/androidTestRelease/kotlin"
         resDirectories="src/androidTest/res:src/androidTestRelease/res"
         assetsDirectories="src/androidTest/assets:src/androidTestRelease/assets"
+        keepRulesDirectories="src/androidTest/keepRules:src/androidTestRelease/keepRules"
         androidTest="true"/>
   </testSourceProviders>
   <testFixturesSourceProviders>
@@ -33,10 +36,11 @@
         manifests="src/testFixtures/AndroidManifest.xml"
         javaDirectories="src/testFixtures/java:src/testFixturesRelease/java:src/testFixtures/kotlin:src/testFixturesRelease/kotlin"
         assetsDirectories="src/testFixtures/assets:src/testFixturesRelease/assets"
+        keepRulesDirectories="src/testFixtures/keepRules:src/testFixturesRelease/keepRules"
         testFixture="true"/>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
+      classOutputs="build/intermediates/javac/release/compileReleaseJavaWithJavac/classes:build/intermediates/built_in_kotlinc/release/compileReleaseKotlin/classes:build/intermediates/compile_r_class_jar/release/generateReleaseRFile/R.jar"
       type="MAIN"
       applicationId="com.example.app"
       generatedSourceFolders="build/generated/ap_generated_sources/release/out"
@@ -47,7 +51,7 @@
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">
   </androidTestArtifact>
   <testFixturesArtifact
-      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes"
+      classOutputs="build/intermediates/javac/releaseTestFixtures/compileReleaseTestFixturesJavaWithJavac/classes:build/intermediates/built_in_kotlinc/releaseTestFixtures/<digest>/classes"
       applicationId="com.example.app.testFixtures"
       generatedSourceFolders="build/generated/ap_generated_sources/releaseTestFixtures/out"
       desugaredMethodsFiles="${gradleCacheDir}/<digest>/transformed/D8BackportedDesugaredMethods.txt">

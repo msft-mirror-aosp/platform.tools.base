@@ -24,19 +24,12 @@ import org.junit.Test
 
 class AppWithClassifierDepTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithClassifierDep")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithClassifierDep").disableBuiltInKotlin().create()
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

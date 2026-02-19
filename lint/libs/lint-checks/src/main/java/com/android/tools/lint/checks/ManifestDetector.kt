@@ -398,8 +398,7 @@ class ManifestDetector : Detector(), XmlScanner {
         category = Category.PERFORMANCE,
         priority = 6,
         severity = Severity.FATAL,
-        moreInfo =
-          "https://android-developers.googleblog.com/2016/04/deprecation-of-bindlistener.html",
+        moreInfo = "https://android-developers.googleblog.com/2016/04/deprecation-of-bindlistener.html",
         implementation = IMPLEMENTATION,
       )
 
@@ -417,8 +416,7 @@ class ManifestDetector : Detector(), XmlScanner {
         category = Category.CORRECTNESS,
         priority = 4,
         severity = Severity.WARNING,
-        moreInfo =
-          "https://firebase.google.com/docs/app-indexing/android/personal-content#add-a-broadcast-receiver-to-your-app",
+        moreInfo = "https://firebase.google.com/docs/app-indexing/android/personal-content#add-a-broadcast-receiver-to-your-app",
         implementation = IMPLEMENTATION,
       )
 
@@ -438,9 +436,7 @@ class ManifestDetector : Detector(), XmlScanner {
         implementation = IMPLEMENTATION,
       )
 
-    @JvmStatic
-    fun isLaunchableActivity(activity: Element): Boolean =
-      findLaunchableCategoryNode(activity) != null
+    @JvmStatic fun isLaunchableActivity(activity: Element): Boolean = findLaunchableCategoryNode(activity) != null
 
     @JvmStatic
     fun findLaunchableCategoryNode(activity: Element): Attr? {
@@ -467,8 +463,7 @@ class ManifestDetector : Detector(), XmlScanner {
     const val MOCK_LOCATION_PERMISSION = "android.permission.ACCESS_MOCK_LOCATION"
 
     private val MIN_WEARABLE_GMS_VERSION = Version.parse("8.2.0")
-    private const val PLAY_SERVICES_WEARABLE =
-      GradleDetector.GMS_GROUP_ID + ":play-services-wearable"
+    private const val PLAY_SERVICES_WEARABLE = GradleDetector.GMS_GROUP_ID + ":play-services-wearable"
     private const val ATTR_DATA_EXTRACTION_RULES = "dataExtractionRules"
   }
 
@@ -497,8 +492,8 @@ class ManifestDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Should we look at `<application>` tags in the source file? If true, yes, analyze source
-   * elements, if false, look at the merged manifest instead.
+   * Should we look at `<application>` tags in the source file? If true, yes, analyze source elements, if false, look at the merged manifest
+   * instead.
    */
   private fun onlyCheckSourceManifest(context: Context): Boolean {
     // When analyzing a single file in the IDE, limit the search to
@@ -524,18 +519,13 @@ class ManifestDetector : Detector(), XmlScanner {
     val root = mergedManifest.documentElement ?: return
     val application = XmlUtils.getFirstSubTagByName(root, TAG_APPLICATION)
     // Just an injected <application/> node from the manifest merger?
-    if (
-      application == null || application.firstChild == null && application.attributes.length == 0
-    ) {
+    if (application == null || application.firstChild == null && application.attributes.length == 0) {
       return
     }
     checkApplication(context, application)
   }
 
-  /**
-   * Checks that the main `<application>` tag specifies both an icon and allowBackup, possibly
-   * merged from some upstream dependency
-   */
+  /** Checks that the main `<application>` tag specifies both an icon and allowBackup, possibly merged from some upstream dependency */
   private fun checkApplication(context: Context, application: Element) {
     if (context.project.isLibrary) {
       return
@@ -549,8 +539,7 @@ class ManifestDetector : Detector(), XmlScanner {
       return
     }
     val allowBackupNode = application.getAttributeNodeNS(ANDROID_URI, ATTR_ALLOW_BACKUP)
-    val dataExtractionRules =
-      application.getAttributeNodeNS(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES)
+    val dataExtractionRules = application.getAttributeNodeNS(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES)
     val fullBackupNode = application.getAttributeNodeNS(ANDROID_URI, ATTR_FULL_BACKUP_CONTENT)
 
     val project = context.mainProject
@@ -594,15 +583,12 @@ class ManifestDetector : Detector(), XmlScanner {
         )
       }
     } else if (min >= 31 && dataExtractionRules == null) {
-      if (
-        allowBackupNode != null && fullBackupNode == null && allowBackupNode.value == VALUE_TRUE
-      ) {
+      if (allowBackupNode != null && fullBackupNode == null && allowBackupNode.value == VALUE_TRUE) {
         reportFromManifest(
           context,
           DATA_EXTRACTION_RULES,
           allowBackupNode,
-          "The attribute `android:allowBackup` is deprecated from Android 12 and the default " +
-            "allows backup",
+          "The attribute `android:allowBackup` is deprecated from Android 12 and the default " + "allows backup",
           LocationType.VALUE,
           fix().unset(ANDROID_URI, ATTR_ALLOW_BACKUP).build(),
         )
@@ -675,10 +661,7 @@ class ManifestDetector : Detector(), XmlScanner {
       return null
     }
     val removeAttributes = mutableListOf<Attr>()
-    val clientSideEncryption =
-      root.visitAttributes {
-        it.name == "requireFlags" && it.value.contains("clientSideEncryption")
-      }
+    val clientSideEncryption = root.visitAttributes { it.name == "requireFlags" && it.value.contains("clientSideEncryption") }
 
     val prefix = xml.substring(0, rootStart)
     var childContent = xml.substring(firstStart, lastEnd)
@@ -687,8 +670,7 @@ class ManifestDetector : Detector(), XmlScanner {
         val start = parser.getNodeStartOffset(client, xmlFile, attr)
         val end = parser.getNodeEndOffset(client, xmlFile, attr)
         if (start != -1 && end != -1) {
-          childContent =
-            childContent.substring(0, start - firstStart) + childContent.substring(end - firstStart)
+          childContent = childContent.substring(0, start - firstStart) + childContent.substring(end - firstStart)
         }
       }
     }
@@ -716,12 +698,7 @@ class ManifestDetector : Detector(), XmlScanner {
         val start = parser.getNodeStartOffset(client, xmlFile, element)
         val end = parser.getNodeEndOffset(client, xmlFile, element)
         if (start != -1 && end != -1) {
-          descriptor =
-            descriptor.substring(0, start) +
-              "<!-- " +
-              descriptor.substring(start, end) +
-              " -->" +
-              descriptor.substring(end)
+          descriptor = descriptor.substring(0, start) + "<!-- " + descriptor.substring(start, end) + " -->" + descriptor.substring(end)
         }
       }
     }
@@ -739,8 +716,7 @@ class ManifestDetector : Detector(), XmlScanner {
         val client = context.client
         val project = context.project
         val resources = client.getResources(project, ResourceRepositoryScope.LOCAL_DEPENDENCIES)
-        val item =
-          resources.getResources(ResourceNamespace.TODO(), url.type, url.name).firstOrNull()?.source
+        val item = resources.getResources(ResourceNamespace.TODO(), url.type, url.name).firstOrNull()?.source
         item?.toFile()?.let { file ->
           getExtraction(client, file)?.let {
             return it
@@ -755,43 +731,43 @@ class ManifestDetector : Detector(), XmlScanner {
     @Language("XML")
     val descriptor =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <!--
-               Sample data extraction rules file; uncomment and customize as necessary.
-               See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-               for details.
-            -->
-            <data-extraction-rules>
-                <cloud-backup>
-                    <!--
-                    TODO: Use <include> and <exclude> to control what is backed up.
-                    The domain can be file, database, sharedpref, external or root.
-                    Examples:
+      <?xml version="1.0" encoding="utf-8"?>
+      <!--
+         Sample data extraction rules file; uncomment and customize as necessary.
+         See https://developer.android.com/about/versions/12/backup-restore#xml-changes
+         for details.
+      -->
+      <data-extraction-rules>
+          <cloud-backup>
+              <!--
+              TODO: Use <include> and <exclude> to control what is backed up.
+              The domain can be file, database, sharedpref, external or root.
+              Examples:
 
-                    <include domain="file" path="file_to_include"/>
-                    <exclude domain="file" path="file_to_exclude"/>
-                    <include domain="file" path="include_folder"/>
-                    <exclude domain="file" path="include_folder/file_to_exclude"/>
-                    <exclude domain="file" path="exclude_folder"/>
-                    <include domain="file" path="exclude_folder/file_to_include"/>
+              <include domain="file" path="file_to_include"/>
+              <exclude domain="file" path="file_to_exclude"/>
+              <include domain="file" path="include_folder"/>
+              <exclude domain="file" path="include_folder/file_to_exclude"/>
+              <exclude domain="file" path="exclude_folder"/>
+              <include domain="file" path="exclude_folder/file_to_include"/>
 
-                    <include domain="sharedpref" path="include_shared_pref1.xml"/>
-                    <include domain="database" path="db_name/file_to_include"/>
-                    <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
-                    <include domain="external" path="file_to_include"/>
-                    <exclude domain="external" path="file_to_exclude"/>
-                    <include domain="root" path="file_to_include"/>
-                    <exclude domain="root" path="file_to_exclude"/>
-                    -->
-                </cloud-backup>
-                <!--
-                <device-transfer>
-                    <include .../>
-                    <exclude .../>
-                </device-transfer>
-                -->
-            </data-extraction-rules>
-            """
+              <include domain="sharedpref" path="include_shared_pref1.xml"/>
+              <include domain="database" path="db_name/file_to_include"/>
+              <exclude domain="database" path="db_name/include_folder/file_to_exclude"/>
+              <include domain="external" path="file_to_include"/>
+              <exclude domain="external" path="file_to_exclude"/>
+              <include domain="root" path="file_to_include"/>
+              <exclude domain="root" path="file_to_exclude"/>
+              -->
+          </cloud-backup>
+          <!--
+          <device-transfer>
+              <include .../>
+              <exclude .../>
+          </device-transfer>
+          -->
+      </data-extraction-rules>
+      """
         .trimIndent()
 
     return descriptor
@@ -807,18 +783,14 @@ class ManifestDetector : Detector(), XmlScanner {
     }
 
     val descriptor = getDataExtractionFileContent(context, fullBackupNode)
-    val select =
-      if (descriptor.contains("TODO:")) " ()TODO:"
-      else if (descriptor.contains("<include")) "()<include" else "()"
+    val select = if (descriptor.contains("TODO:")) " ()TODO:" else if (descriptor.contains("<include")) "()<include" else "()"
     val createFix = fix().newFile(file, descriptor).select(select).build()
     val setAttributeFix = fix().set(ANDROID_URI, ATTR_DATA_EXTRACTION_RULES, "@xml/$name").build()
     return fix().name("Create $name.xml").composite(createFix, setAttributeFix)
   }
 
   private fun checkIcon(application: Element, context: Context) {
-    if (
-      !application.hasAttributeNS(ANDROID_URI, ATTR_ICON) && context.isEnabled(APPLICATION_ICON)
-    ) {
+    if (!application.hasAttributeNS(ANDROID_URI, ATTR_ICON) && context.isEnabled(APPLICATION_ICON)) {
       val fix = fix().set(ANDROID_URI, ATTR_ICON, "@mipmap/").caretEnd().build()
       reportFromManifest(
         context,
@@ -833,11 +805,7 @@ class ManifestDetector : Detector(), XmlScanner {
 
   private fun checkDocumentElement(context: XmlContext, element: Element) {
     val codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_VERSION_CODE)
-    if (
-      codeNode != null &&
-        codeNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-        context.isEnabled(ILLEGAL_REFERENCE)
-    ) {
+    if (codeNode != null && codeNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
       context.report(
         ILLEGAL_REFERENCE,
         element,
@@ -888,21 +856,13 @@ class ManifestDetector : Detector(), XmlScanner {
           GRADLE_OVERRIDES,
           pkgNode,
           context.getLocation(pkgNode),
-          "Cannot use placeholder for the package in the manifest; " +
-            "set `applicationId` in `build.gradle` instead",
+          "Cannot use placeholder for the package in the manifest; " + "set `applicationId` in `build.gradle` instead",
         )
       }
     }
   }
 
-  private fun reportFromManifest(
-    context: Context,
-    issue: Issue,
-    node: Node?,
-    message: String,
-    type: LocationType,
-    fix: LintFix? = null,
-  ) {
+  private fun reportFromManifest(context: Context, issue: Issue, node: Node?, message: String, type: LocationType, fix: LintFix? = null) {
     val location = context.getLocation(node, type)
     if (location.start == null) {
       // Couldn't find a specific location in the merged manifest. That means
@@ -1003,9 +963,7 @@ class ManifestDetector : Detector(), XmlScanner {
         if (nameNode != null) {
           var name = nameNode.value
           if (name.isNotEmpty()) {
-            val pkg =
-              context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value
-                ?: context.project.getPackage()
+            val pkg = context.document.documentElement.getAttributeNode(ATTR_PACKAGE)?.value ?: context.project.getPackage()
             if (name[0] == '.') {
               name = pkg + name
             } else if (name.indexOf('.') == -1) {
@@ -1030,8 +988,7 @@ class ManifestDetector : Detector(), XmlScanner {
                   "`UPDATE_INDEX` is configured as a service in your app, " +
                     "which is no longer supported for the API level you're targeting. " +
                     "Use a `BroadcastReceiver` instead."
-                val incident =
-                  Incident(APP_INDEXING_SERVICE, attr, context.getLocation(attr), message)
+                val incident = Incident(APP_INDEXING_SERVICE, attr, context.getLocation(attr), message)
                 context.report(incident, targetSdkAtLeast(26))
                 break
               }
@@ -1074,13 +1031,7 @@ class ManifestDetector : Detector(), XmlScanner {
               " of play-services-wearable 8.2.0 or later"
           if (repository != null) {
             val max =
-              MavenRepositories.getHighestInstalledVersion(
-                GradleDetector.GMS_GROUP_ID,
-                "play-services-wearable",
-                repository,
-                null,
-                false,
-              )
+              MavenRepositories.getHighestInstalledVersion(GradleDetector.GMS_GROUP_ID, "play-services-wearable", repository, null, false)
             if (max != null && max.version > MIN_WEARABLE_GMS_VERSION) {
               message =
                 "The `com.google.android.gms.wearable.BIND_LISTENER` " +
@@ -1095,11 +1046,7 @@ class ManifestDetector : Detector(), XmlScanner {
       return
     }
     if (tag == TAG_PROVIDER) {
-      if (
-        TAG_APPLICATION != parentNode.nodeName &&
-          TAG_QUERIES != parentNode.nodeName &&
-          context.isEnabled(WRONG_PARENT)
-      ) {
+      if (TAG_APPLICATION != parentNode.nodeName && TAG_QUERIES != parentNode.nodeName && context.isEnabled(WRONG_PARENT)) {
         context.report(
           WRONG_PARENT,
           element,
@@ -1109,11 +1056,7 @@ class ManifestDetector : Detector(), XmlScanner {
       }
       return
     }
-    if (
-      parentNode !== element.ownerDocument.documentElement &&
-        tag.indexOf(':') == -1 &&
-        context.isEnabled(WRONG_PARENT)
-    ) {
+    if (parentNode !== element.ownerDocument.documentElement && tag.indexOf(':') == -1 && context.isEnabled(WRONG_PARENT)) {
       context.report(
         WRONG_PARENT,
         element,
@@ -1144,25 +1087,19 @@ class ManifestDetector : Detector(), XmlScanner {
             MULTIPLE_USES_SDK,
             element,
             location,
-            "There should only be a single `<uses-sdk>` element in the manifest:" +
-              " merge these together",
+            "There should only be a single `<uses-sdk>` element in the manifest:" + " merge these together",
           )
         }
         return
       }
       if (element.hasAttributeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)) {
         val codeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_MIN_SDK_VERSION)
-        if (
-          codeNode != null &&
-            codeNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-            context.isEnabled(ILLEGAL_REFERENCE)
-        ) {
+        if (codeNode != null && codeNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
           context.report(
             ILLEGAL_REFERENCE,
             element,
             context.getLocation(codeNode),
-            "The `android:minSdkVersion` cannot be a resource url, it must be " +
-              "a literal integer (or string if a preview codename)",
+            "The `android:minSdkVersion` cannot be a resource url, it must be " + "a literal integer (or string if a preview codename)",
           )
         }
         checkOverride(context, element, ATTR_MIN_SDK_VERSION)
@@ -1171,17 +1108,12 @@ class ManifestDetector : Detector(), XmlScanner {
         checkOverride(context, element, ATTR_TARGET_SDK_VERSION)
       }
       val nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_TARGET_SDK_VERSION)
-      if (
-        nameNode != null &&
-          nameNode.value.startsWith(PREFIX_RESOURCE_REF) &&
-          context.isEnabled(ILLEGAL_REFERENCE)
-      ) {
+      if (nameNode != null && nameNode.value.startsWith(PREFIX_RESOURCE_REF) && context.isEnabled(ILLEGAL_REFERENCE)) {
         context.report(
           ILLEGAL_REFERENCE,
           element,
           context.getLocation(nameNode),
-          "The `android:targetSdkVersion` cannot be a resource url, it must be " +
-            "a literal integer (or string if a preview codename)",
+          "The `android:targetSdkVersion` cannot be a resource url, it must be " + "a literal integer (or string if a preview codename)",
         )
       }
     }
@@ -1217,12 +1149,7 @@ class ManifestDetector : Detector(), XmlScanner {
       }
     } else if (seenApplication) {
       if (context.isEnabled(ORDER)) {
-        context.report(
-          ORDER,
-          element,
-          context.getNameLocation(element),
-          "`<$tag>` tag appears after `<application>` tag",
-        )
+        context.report(ORDER, element, context.getNameLocation(element), "`<$tag>` tag appears after `<application>` tag")
       }
 
       // Don't complain for *every* element following the <application> tag
@@ -1233,8 +1160,7 @@ class ManifestDetector : Detector(), XmlScanner {
       if (nameNode != null) {
         val name = nameNode.value
         if (name.isNotEmpty()) {
-          val usesFeatures =
-            this.usesFeatures ?: mutableSetOf<String>().also { this.usesFeatures = it }
+          val usesFeatures = this.usesFeatures ?: mutableSetOf<String>().also { this.usesFeatures = it }
           if (!usesFeatures.add(name)) {
             val message = "Duplicate declaration of uses-feature `$name`"
             context.report(DUPLICATE_USES_FEATURE, element, context.getLocation(nameNode), message)
@@ -1256,18 +1182,11 @@ class ManifestDetector : Detector(), XmlScanner {
     checkedUniquePermissions = true
     val mainProject = context.mainProject
     val mergedManifest =
-      mainProject
-        .mergedManifest // This only happens when there is a parse error, for example if user
+      mainProject.mergedManifest // This only happens when there is a parse error, for example if user
         // is editing the manifest in the IDE and it's currently invalid
         ?: return
     lookForNonUniqueNames(context, mainProject, mergedManifest, "permission", TAG_PERMISSION)
-    lookForNonUniqueNames(
-      context,
-      mainProject,
-      mergedManifest,
-      "permission group",
-      TAG_PERMISSION_GROUP,
-    )
+    lookForNonUniqueNames(context, mainProject, mergedManifest, "permission group", TAG_PERMISSION_GROUP)
   }
 
   override fun checkMergedProject(context: Context) {
@@ -1291,9 +1210,7 @@ class ManifestDetector : Detector(), XmlScanner {
       val nameNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME) ?: continue
       var name = nameNode.value
       val base = name.substring(name.lastIndexOf('.') + 1)
-      val pkg =
-        mergedManifest.documentElement.getAttributeNode(ATTR_PACKAGE)?.value
-          ?: mainProject.getPackage()
+      val pkg = mergedManifest.documentElement.getAttributeNode(ATTR_PACKAGE)?.value ?: mainProject.getPackage()
 
       if (!mainProject.isLibrary && pkg != null && name.contains("\${applicationId}")) {
         name = name.replace("\${applicationId}", pkg)
@@ -1330,8 +1247,7 @@ class ManifestDetector : Detector(), XmlScanner {
               }
               i++
             }
-            val message =
-              "${humanReadableName.usLocaleCapitalize()} name `$base` is not unique (appears in both `$prevName` and `$name`)"
+            val message = "${humanReadableName.usLocaleCapitalize()} name `$base` is not unique (appears in both `$prevName` and `$name`)"
             val incident = Incident(UNIQUE_PERMISSION, element, location, message)
             context.report(incident)
             if (context.isGlobalAnalysis()) {
@@ -1346,9 +1262,7 @@ class ManifestDetector : Detector(), XmlScanner {
     }
   }
 
-  /**
-   * Returns true if the manifest merger will skip this element due to a tools:node action attribute
-   */
+  /** Returns true if the manifest merger will skip this element due to a tools:node action attribute */
   private fun manifestMergerSkips(element: Element): Boolean {
     val operation = element.getAttributeNodeNS(TOOLS_URI, "node")
     if (operation != null) {
@@ -1363,9 +1277,7 @@ class ManifestDetector : Detector(), XmlScanner {
   // Method to check if the app has a gms wearable dependency that
   // matches the specific criteria i.e >= MIN_WEARABLE_GMS_VERSION
   private fun hasWearableGmsDependency(variant: LintModelVariant): Boolean {
-    val library =
-      variant.artifact.findCompileDependency(PLAY_SERVICES_WEARABLE) as? LintModelExternalLibrary
-        ?: return false
+    val library = variant.artifact.findCompileDependency(PLAY_SERVICES_WEARABLE) as? LintModelExternalLibrary ?: return false
     val mc = library.resolvedCoordinates
     val version = Version.parse(mc.version)
     return version >= MIN_WEARABLE_GMS_VERSION
@@ -1382,12 +1294,7 @@ class ManifestDetector : Detector(), XmlScanner {
         context.isEnabled(MIPMAP) && // Only complain if this app is skipping some densities
           context.project.applicableDensities != null
       ) {
-        context.report(
-          MIPMAP,
-          element,
-          context.getLocation(attribute),
-          "Should use `@mipmap` instead of `@drawable` for launcher icons",
-        )
+        context.report(MIPMAP, element, context.getLocation(attribute), "Should use `@mipmap` instead of `@drawable` for launcher icons")
       }
     }
   }
@@ -1399,19 +1306,11 @@ class ManifestDetector : Detector(), XmlScanner {
     val applicationLabel = applicationElement.getAttributeNS(ANDROID_URI, ATTR_LABEL) ?: return
     if (labelAttribute.value == applicationLabel) {
       val fix = fix().unset(ANDROID_URI, ATTR_LABEL).build()
-      context.report(
-        REDUNDANT_LABEL,
-        context.getLocation(labelAttribute),
-        "Redundant label can be removed",
-        fix,
-      )
+      context.report(REDUNDANT_LABEL, context.getLocation(labelAttribute), "Redundant label can be removed", fix)
     }
   }
 
-  /**
-   * Returns true iff the given manifest file is in a debug-specific source set, or a test source
-   * set
-   */
+  /** Returns true iff the given manifest file is in a debug-specific source set, or a test source set */
   private fun isDebugOrTestManifest(context: XmlContext, manifestFile: File): Boolean {
     val variant = context.project.buildVariant
     if (variant != null) {

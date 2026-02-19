@@ -19,7 +19,4 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.models.AssetsTestSuiteSource
 import java.io.File
 
-class AssetsTestSuiteSourceImpl(
-    override val name: String,
-    override val directories: Collection<File>
-): AssetsTestSuiteSource
+class AssetsTestSuiteSourceImpl(override val name: String, override val directories: Collection<File>) : AssetsTestSuiteSource

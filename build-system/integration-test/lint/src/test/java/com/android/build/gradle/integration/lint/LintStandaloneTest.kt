@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.lint
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.runner.FilterableParameterized
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.OptionalBooleanOption
@@ -34,183 +33,156 @@ import org.junit.runners.Parameterized
  * Test for the standalone lint plugin.
  *
  * <p>Tip: To execute just this test run:
- *
  * <pre>
  *     $ cd tools
  *     $ ./gradlew :base:build-system:integration-test:lint:test --tests=LintStandaloneTest
  * </pre>
  */
 @RunWith(FilterableParameterized::class)
-class LintStandaloneTest(
-    private val runLintInProcess: Boolean,
-    private val lintAnalysisPerComponent: Boolean
-) {
+class LintStandaloneTest(private val runLintInProcess: Boolean, private val lintAnalysisPerComponent: Boolean) {
 
-    companion object {
-        @Parameterized.Parameters(name = "runLintInProcess_{0}_lintAnalysisPerComponent_{1}")
-        @JvmStatic
-        fun params() = listOf(
-            arrayOf(true, true),
-            arrayOf(true, false),
-            arrayOf(false, false),
-        )
+  companion object {
+    @Parameterized.Parameters(name = "runLintInProcess_{0}_lintAnalysisPerComponent_{1}")
+    @JvmStatic
+    fun params() = listOf(arrayOf(true, true), arrayOf(true, false), arrayOf(false, false))
+  }
+
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("lintStandalone").create()
+
+  @Test
+  fun checkStandaloneLint() {
+    getExecutor().run(":lint")
+
+    val file = project.file("lint-results.txt")
+    assertThat(file).exists()
+    assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
+    assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
+    assertThat(file).contains("0 errors, 3 warnings")
+
+    // Check that lint copies the result to the new location if that is changed
+    // But the analysis itself is not re-run in the new integration
+    TestFileUtils.searchAndReplace(project.buildFile, "textOutput = file(\"lint-results.txt\")", "textOutput = file(\"lint-results2.txt\")")
+    // Run twice to catch issues with configuration caching
+    getExecutor().run(":lint")
+    getExecutor().run(":lint")
+    project.buildResult.assertConfigurationCacheHit()
+    val secondFile = project.file("lint-results2.txt")
+    assertThat(secondFile).exists()
+    assertThat(secondFile).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
+    assertThat(secondFile).contains("build.gradle:4: Warning: no Java language level directives")
+    assertThat(secondFile).contains("0 errors, 3 warnings")
+  }
+
+  @Test
+  fun checkStandaloneLintFailure() {
+    TestFileUtils.appendToFile(project.buildFile, "\n\nlintOptions.error 'UseValueOf'\n\n")
+    getExecutor().expectFailure().run(":lint").apply {
+      assertErrorContains("Lint found errors in the project; aborting build.")
+      assertTask(":lintJvm").failed()
+      assertTask(":lintReportJvm").didWork()
     }
+    assertThat(project.buildResult.failedTasks).doesNotContain(":lintReportJvm")
+  }
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder().fromTestProject("lintStandalone").create()
+  /** Regression test for b/253219347 */
+  @Test
+  fun checkAddedSrcDirFromBuildDirectory() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      // language=groovy
+      """
 
-    @Test
-    fun checkStandaloneLint() {
-        getExecutor().run( ":lint")
+      def fooTask = tasks.register("foo", com.example.FooTask.class) {
+          getOutputDir().set(project.layout.buildDirectory.dir("fooOut"))
+      }
 
-        val file = project.file("lint-results.txt")
-        assertThat(file).exists()
-        assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
-        assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
-        assertThat(file).contains("0 errors, 3 warnings")
+      java {
+          sourceSets {
+              main {
+                  resources.srcDir(fooTask.map { it.getOutputDir().get().getAsFile() })
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Check that lint copies the result to the new location if that is changed
-        // But the analysis itself is not re-run in the new integration
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "textOutput = file(\"lint-results.txt\")",
-            "textOutput = file(\"lint-results2.txt\")"
-        )
-        // Run twice to catch issues with configuration caching
-        getExecutor().run(":lint")
-        getExecutor().run(":lint")
-        project.buildResult.assertConfigurationCacheHit()
-        val secondFile = project.file("lint-results2.txt")
-        assertThat(secondFile).exists()
-        assertThat(secondFile).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
-        assertThat(secondFile).contains("build.gradle:4: Warning: no Java language level directives")
-        assertThat(secondFile).contains("0 errors, 3 warnings")
+    getExecutor().run(":foo", ":lint").apply {
+      assertOutputDoesNotContain("Gradle detected a problem")
+      assertErrorDoesNotContain("Gradle detected a problem")
     }
+  }
 
-    @Test
-    fun checkStandaloneLintFailure()  {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "\n\nlintOptions.error 'UseValueOf'\n\n"
-        )
-        getExecutor().expectFailure().run( ":lint").apply {
-            assertErrorContains("Lint found errors in the project; aborting build.")
-            assertTask(":lintJvm").failed()
-            assertTask(":lintReportJvm").didWork()
-        }
-        assertThat(project.buildResult.failedTasks).doesNotContain(":lintReportJvm")
-    }
+  @Test
+  fun checkK2Uast() {
+    getExecutor().with(OptionalBooleanOption.LINT_USE_K2_UAST, true).run(":lint")
 
-    /**
-     * Regression test for b/253219347
-     */
-    @Test
-    fun checkAddedSrcDirFromBuildDirectory() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            // language=groovy
-            """
+    val file = project.file("lint-results.txt")
+    assertThat(file).exists()
+    assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
+    assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
+    assertThat(file).contains("0 errors, 3 warnings")
+  }
 
-                def fooTask = tasks.register("foo", com.example.FooTask.class) {
-                    getOutputDir().set(project.layout.buildDirectory.dir("fooOut"))
-                }
+  /** Regression test for b/294385251 */
+  @Test
+  fun checkDuplicatePlatformClasses() {
+    TestFileUtils.searchAndReplace(project.buildFile, "ignoreTestSources = true", "ignoreTestSources = false")
 
-                java {
-                    sourceSets {
-                        main {
-                            resources.srcDir(fooTask.map { it.getOutputDir().get().getAsFile() })
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
+    // We expect no DuplicatePlatformClasses issue for testImplementation dependency.
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      lint {
+          enable 'DuplicatePlatformClasses'
+      }
+      dependencies {
+          testImplementation 'commons-logging:commons-logging:1.2'
+      }
+      """
+        .trimIndent(),
+    )
+    getExecutor().run(":lint")
+    val lintReport = project.file("lint-results.txt")
+    assertThat(lintReport).exists()
+    assertThat(lintReport).doesNotContain("DuplicatePlatformClasses")
 
-        getExecutor().run(":foo", ":lint").apply {
-            assertOutputDoesNotContain("Gradle detected a problem")
-            assertErrorDoesNotContain("Gradle detected a problem")
-        }
-    }
+    // We expect a DuplicatePlatformClasses issue for implementation dependency.
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      dependencies {
+          implementation 'commons-logging:commons-logging:1.2'
+      }
+      """
+        .trimIndent(),
+    )
+    getExecutor().expectFailure().run(":lint")
+    assertThat(lintReport).exists()
+    assertThat(lintReport).contains("DuplicatePlatformClasses")
+  }
 
-    @Test
-    fun checkK2Uast() {
-        getExecutor().with(OptionalBooleanOption.LINT_USE_K2_UAST, true).run( ":lint")
+  /** Regression test for b/330911660 */
+  @Test
+  fun checkExternalKmpDependency() {
+    TestFileUtils.searchAndReplace(project.buildFile, "ignoreTestSources = true", "ignoreTestSources = false")
 
-        val file = project.file("lint-results.txt")
-        assertThat(file).exists()
-        assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
-        assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
-        assertThat(file).contains("0 errors, 3 warnings")
-    }
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      dependencies {
+          testImplementation 'org.jetbrains.skiko:skiko:0.7.7'
+      }
+      """
+        .trimIndent(),
+    )
 
-    /**
-     * Regression test for b/294385251
-     */
-    @Test
-    fun checkDuplicatePlatformClasses() {
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "ignoreTestSources = true",
-            "ignoreTestSources = false"
-        )
+    getExecutor().run(":lint")
+  }
 
-        // We expect no DuplicatePlatformClasses issue for testImplementation dependency.
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                lint {
-                    enable 'DuplicatePlatformClasses'
-                }
-                dependencies {
-                    testImplementation 'commons-logging:commons-logging:1.2'
-                }
-            """.trimIndent()
-        )
-        getExecutor().run(":lint")
-        val lintReport = project.file("lint-results.txt")
-        assertThat(lintReport).exists()
-        assertThat(lintReport).doesNotContain("DuplicatePlatformClasses")
-
-        // We expect a DuplicatePlatformClasses issue for implementation dependency.
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                dependencies {
-                    implementation 'commons-logging:commons-logging:1.2'
-                }
-            """.trimIndent()
-        )
-        getExecutor().expectFailure().run(":lint")
-        assertThat(lintReport).exists()
-        assertThat(lintReport).contains("DuplicatePlatformClasses")
-    }
-
-    /**
-     * Regression test for b/330911660
-     */
-    @Test
-    fun checkExternalKmpDependency() {
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "ignoreTestSources = true",
-            "ignoreTestSources = false"
-        )
-
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                dependencies {
-                    testImplementation 'org.jetbrains.skiko:skiko:0.7.7'
-                }
-            """.trimIndent()
-        )
-
-        getExecutor().run(":lint")
-    }
-
-    private fun getExecutor(): GradleTaskExecutor =
-        project.executor()
-            .with(BooleanOption.RUN_LINT_IN_PROCESS, runLintInProcess)
-            .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
-
+  private fun getExecutor(): GradleTaskExecutor =
+    project
+      .executor()
+      .with(BooleanOption.RUN_LINT_IN_PROCESS, runLintInProcess)
+      .with(BooleanOption.LINT_ANALYSIS_PER_COMPONENT, lintAnalysisPerComponent)
 }

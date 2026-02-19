@@ -18,7 +18,7 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <application android:label="RsHelloCompute">
-        <activity android:name="HelloCompute">
+        <activity android:name="HelloCompute" android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

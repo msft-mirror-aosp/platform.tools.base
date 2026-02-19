@@ -47,19 +47,15 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /**
- * A lint baseline is a collection of warnings for a project that have been obtained from a previous
- * run of lint. These warnings are then exempt from reporting. This lets you set a "baseline" with a
- * known set of issues that you haven't attempted to fix yet, but then be alerted whenever new
- * issues crop up.
+ * A lint baseline is a collection of warnings for a project that have been obtained from a previous run of lint. These warnings are then
+ * exempt from reporting. This lets you set a "baseline" with a known set of issues that you haven't attempted to fix yet, but then be
+ * alerted whenever new issues crop up.
  */
 class LintBaseline(
   /** Client to use for file reading, path variables, logging, etc */
   private val client: LintClient,
 
-  /**
-   * The file to read the baselines from, and if [writeOnClose] is set, to write to when the
-   * baseline is [close]'ed.
-   */
+  /** The file to read the baselines from, and if [writeOnClose] is set, to write to when the baseline is [close]'ed. */
   var file: File,
 ) {
 
@@ -98,10 +94,9 @@ class LintBaseline(
   }
 
   /**
-   * Whether we should write the baseline file when the baseline is closed, if the baseline file
-   * doesn't already exist. We don't always do this because for example when lint is run from
-   * Gradle, and it's analyzing multiple variants, it does its own merging (across variants) of the
-   * results first and then writes that, via the XML reporter.
+   * Whether we should write the baseline file when the baseline is closed, if the baseline file doesn't already exist. We don't always do
+   * this because for example when lint is run from Gradle, and it's analyzing multiple variants, it does its own merging (across variants)
+   * of the results first and then writes that, via the XML reporter.
    */
   var writeOnClose: Boolean = false
     set(writeOnClose) {
@@ -113,25 +108,19 @@ class LintBaseline(
     }
 
   /**
-   * Whether the baseline, when configured to write results into the file, will include all found
-   * issues, or only issues that are already known. The difference here is whether we're initially
-   * creating the baseline (or resetting it), or whether we're trying to only remove fixed issues.
+   * Whether the baseline, when configured to write results into the file, will include all found issues, or only issues that are already
+   * known. The difference here is whether we're initially creating the baseline (or resetting it), or whether we're trying to only remove
+   * fixed issues.
    */
   var removeFixed: Boolean = false
 
   /** If true, line numbers are omitted when writing out the baseline file. */
   var omitLineNumbers: Boolean = false
 
-  /**
-   * If non-null, a list of issues to write back out to the baseline file when the baseline is
-   * closed.
-   */
+  /** If non-null, a list of issues to write back out to the baseline file when the baseline is closed. */
   var entriesToWrite: MutableList<ReportedEntry>? = null
 
-  /**
-   * Returns the number of issues that appear to have been fixed (e.g. are present in the baseline
-   * but have not been matched.)
-   */
+  /** Returns the number of issues that appear to have been fixed (e.g. are present in the baseline but have not been matched.) */
   val fixedCount: Int
     get() = totalCount - foundErrorCount - foundWarningCount - foundHintCount
 
@@ -144,29 +133,14 @@ class LintBaseline(
     readBaselineFile()
   }
 
-  /**
-   * Checks if we should report baseline activity (filtered out issues, found fixed issues etc and
-   * if so reports them.)
-   */
+  /** Checks if we should report baseline activity (filtered out issues, found fixed issues etc and if so reports them.) */
   internal fun reportBaselineIssues(driver: LintDriver, project: Project) {
     if (foundErrorCount > 0 || foundWarningCount > 0 || foundHintCount > 0) {
       val client = driver.client
       val baselineFile = file
       val message =
-        describeBaselineFilter(
-          foundErrorCount,
-          foundWarningCount,
-          foundHintCount,
-          getDisplayPath(client, project, baselineFile),
-        )
-      LintClient.report(
-        client,
-        IssueRegistry.BASELINE_USED,
-        message,
-        file = baselineFile,
-        project = project,
-        driver = driver,
-      )
+        describeBaselineFilter(foundErrorCount, foundWarningCount, foundHintCount, getDisplayPath(client, project, baselineFile))
+      LintClient.report(client, IssueRegistry.BASELINE_USED, message, file = baselineFile, project = project, driver = driver)
     }
 
     val fixedCount = fixedCount
@@ -214,11 +188,7 @@ class LintBaseline(
           fixedCount,
           TextFormat.TEXT.convertTo(getDisplayPath(client, project, baselineFile), TextFormat.RAW),
         )
-      if (
-        LintClient.isGradle &&
-          project.buildModule != null &&
-          project.buildModule?.lintOptions?.checkDependencies == false
-      ) {
+      if (LintClient.isGradle && project.buildModule != null && project.buildModule?.lintOptions?.checkDependencies == false) {
         message +=
           " Another possible explanation is that lint recently stopped " +
             "analyzing (and including results from) dependent projects by default. " +
@@ -227,28 +197,18 @@ class LintBaseline(
       }
       message += " Unmatched issue types: $issueTypes"
 
-      LintClient.report(
-        client,
-        IssueRegistry.BASELINE_FIXED,
-        message,
-        file = baselineFile,
-        project = project,
-        driver = driver,
-      )
+      LintClient.report(client, IssueRegistry.BASELINE_FIXED, message, file = baselineFile, project = project, driver = driver)
     }
   }
 
   /**
-   * Checks whether the given [incident] is present in this baseline, and if so marks it as used
-   * such that a second call will not find it.
+   * Checks whether the given [incident] is present in this baseline, and if so marks it as used such that a second call will not find it.
    *
-   * When issue analysis is done you can call [foundErrorCount] and [foundWarningCount] to get a
-   * count of the warnings or errors that were matched during the run, and [fixedCount] to get a
-   * count of the issues that were present in the baseline that were not matched (e.g. have been
-   * fixed.)
+   * When issue analysis is done you can call [foundErrorCount] and [foundWarningCount] to get a count of the warnings or errors that were
+   * matched during the run, and [fixedCount] to get a count of the issues that were present in the baseline that were not matched (e.g.
+   * have been fixed.)
    *
-   * Returns true if this error was found in the baseline and marked as used, and false if this
-   * issue is not already part of the baseline.
+   * Returns true if this error was found in the baseline and marked as used, and false if this issue is not already part of the baseline.
    */
   fun findAndMark(incident: Incident): Boolean {
     val issue = incident.issue
@@ -281,10 +241,7 @@ class LintBaseline(
     if (entries.isEmpty()) {
       // Sometimes messages are changed in lint; try to gracefully handle this via #sameMessage
       val messages = idToMessages[issue.id]
-      if (
-        !messages.isNullOrEmpty() &&
-          (messages.size > 1 || messages.size == 1 && messages.first() != message)
-      ) {
+      if (!messages.isNullOrEmpty() && (messages.size > 1 || messages.size == 1 && messages.first() != message)) {
         val checked = alreadyChecked ?: mutableSetOf<String>().apply { add(message) }
         for (oldMessage in messages) {
           if (checked.add(oldMessage) && sameMessage(issue, message, oldMessage)) {
@@ -305,20 +262,14 @@ class LintBaseline(
     // poor perf (and redundant re-computation for `path`) when there are many entries and many path
     // variables. So we instead explicitly just look for the Gradle caches directory prefix, when
     // necessary, and avoid re-computing this for `path` inside the loop.
-    val pathWithinGradleCaches =
-      lazy(LazyThreadSafetyMode.NONE) { tryGetPathWithinGradleCaches(path) }
+    val pathWithinGradleCaches = lazy(LazyThreadSafetyMode.NONE) { tryGetPathWithinGradleCaches(path) }
     val issueId = issue.id
     for (entry in entries) {
       entry ?: continue
-      if (
-        entry.issueId == issueId ||
-          IssueRegistry.isDeletedIssueId(entry.issueId) &&
-            IssueRegistry.getNewId(entry.issueId) == issueId
-      ) {
+      if (entry.issueId == issueId || IssueRegistry.isDeletedIssueId(entry.issueId) && IssueRegistry.getNewId(entry.issueId) == issueId) {
         if (
           isSamePathSuffix(path, entry.path) ||
-            (pathWithinGradleCaches.value != null &&
-              isSimilarGradleCachePath(pathWithinGradleCaches.value!!, entry.path))
+            (pathWithinGradleCaches.value != null && isSimilarGradleCachePath(pathWithinGradleCaches.value!!, entry.path))
         ) {
           // Remove all linked entries. We don't loop through all the locations;
           // they're allowed to vary over time, we just assume that all entries
@@ -353,10 +304,7 @@ class LintBaseline(
 
     if (hasUntrimmedMessages) {
       val messages = idToMessages[issue.id]
-      if (
-        !messages.isNullOrEmpty() &&
-          (messages.size > 1 || messages.size == 1 && messages.first() != message)
-      ) {
+      if (!messages.isNullOrEmpty() && (messages.size > 1 || messages.size == 1 && messages.first() != message)) {
         val checked = alreadyChecked ?: mutableSetOf<String>().apply { add(message) }
         for (oldMessage in messages) {
           if (checked.add(oldMessage) && sameMessage(issue, message, oldMessage)) {
@@ -372,8 +320,7 @@ class LintBaseline(
   }
 
   /**
-   * Returns true if [otherPath] is within the Gradle caches directory and both paths differ by 0 or
-   * 1 parts.
+   * Returns true if [otherPath] is within the Gradle caches directory and both paths differ by 0 or 1 parts.
    *
    * For example:
    * ```
@@ -383,13 +330,9 @@ class LintBaseline(
    *
    * would return true. See https://issuetracker.google.com/238892319
    *
-   * [pathWithinGradleCaches] must have already been simplified via [tryGetPathWithinGradleCaches].
-   * [otherPath] should be a full path.
+   * [pathWithinGradleCaches] must have already been simplified via [tryGetPathWithinGradleCaches]. [otherPath] should be a full path.
    */
-  private fun isSimilarGradleCachePath(
-    pathWithinGradleCaches: CharSequence,
-    otherPath: String,
-  ): Boolean {
+  private fun isSimilarGradleCachePath(pathWithinGradleCaches: CharSequence, otherPath: String): Boolean {
     val otherPathWithinGradleCaches = tryGetPathWithinGradleCaches(otherPath) ?: return false
     // Gradle cache paths have an ID somewhere in them that changes across test runs/machines
     // Like transforms-3/ID/transformed/leakcanary-android-core-2.8.1/jars/classes.jar
@@ -397,8 +340,7 @@ class LintBaseline(
     // We don't want to be too tightly coupled to exactly where this ID shows up in the path,
     // so we take the two paths and see if they differ by either zero or one directory names.
 
-    val chunks =
-      listOf(pathWithinGradleCaches, otherPathWithinGradleCaches).map { it.split("/", "\\") }
+    val chunks = listOf(pathWithinGradleCaches, otherPathWithinGradleCaches).map { it.split("/", "\\") }
     if (chunks[0].size != chunks[1].size) return false
 
     var diffFound = false
@@ -413,9 +355,8 @@ class LintBaseline(
   }
 
   /**
-   * If [path] starts with the Gradle caches directory then returns [path] with that prefix removed
-   * (in other words, returns a relative path within the Gradle caches directory). Otherwise,
-   * returns null.
+   * If [path] starts with the Gradle caches directory then returns [path] with that prefix removed (in other words, returns a relative path
+   * within the Gradle caches directory). Otherwise, returns null.
    */
   private fun tryGetPathWithinGradleCaches(path: String): CharSequence? {
     for (gradleCachePath in gradleCachePaths) {
@@ -427,12 +368,11 @@ class LintBaseline(
   }
 
   /**
-   * Sometimes the exact message format for a given error shifts over time, for example when we
-   * decide to make it clearer. Since baselines are primarily matched by the error message, any
-   * format change would mean the recorded issue in the baseline no longer matches the error, and
-   * the same error is now shown as a new error. To prevent this, the baseline mechanism will call
-   * this method to check if two messages represent the same error, and if so, we'll continue to
-   * match them. This jump table should record the various changes in error messages over time.
+   * Sometimes the exact message format for a given error shifts over time, for example when we decide to make it clearer. Since baselines
+   * are primarily matched by the error message, any format change would mean the recorded issue in the baseline no longer matches the
+   * error, and the same error is now shown as a new error. To prevent this, the baseline mechanism will call this method to check if two
+   * messages represent the same error, and if so, we'll continue to match them. This jump table should record the various changes in error
+   * messages over time.
    */
   fun sameMessage(issue: Issue, new: String, old: String): Boolean {
     return when (issue.id) {
@@ -478,20 +418,14 @@ class LintBaseline(
             old.regionMatches(0, new, 0, 4)
         ) {
           true
-        } else if (
-          old ==
-            "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35"
-        ) {
+        } else if (old == "This Kotlin extension function will be hidden by java.util.SequencedCollection starting in API 35") {
           // Unfortunately the previous message didn't include the symbol name so we can't tell
           // removeFirst and removeLast apart
           return new.startsWith(old)
         } else {
           val suffix = " (called from "
-          stringsEquivalent(old.substringBeforeLast(suffix), new.substringBeforeLast(suffix)) { s, i
-            ->
-            s.tokenPrecededBy("min is ", i) ||
-              s.tokenPrecededBy("API level ", i) ||
-              s.tokenPrecededBy("version ", i)
+          stringsEquivalent(old.substringBeforeLast(suffix), new.substringBeforeLast(suffix)) { s, i ->
+            s.tokenPrecededBy("min is ", i) || s.tokenPrecededBy("API level ", i) || s.tokenPrecededBy("version ", i)
           }
         }
       }
@@ -501,11 +435,7 @@ class LintBaseline(
         // In some cases we now include the expression itself rather than the plain "SDK_INT is
         // never X" message;
         // treat these the same
-        if (
-          (old.startsWith(s1) || old.startsWith(s2)) &&
-            old.contains(" is never ") &&
-            !(new.startsWith(s1) || new.startsWith(s2))
-        ) {
+        if ((old.startsWith(s1) || old.startsWith(s2)) && old.contains(" is never ") && !(new.startsWith(s1) || new.startsWith(s2))) {
           new.contains(" is never ")
         } else {
           stringsEquivalent(old, new)
@@ -514,10 +444,8 @@ class LintBaseline(
       "MinSdkTooLow" -> true // Normally unique per file, we don't have to match on the current one
       "WebpUnsupported",
       "OverrideAbstract",
-      "GetLocales" ->
-        stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("minSdkVersion is ", i) }
-      "FontValidation" ->
-        stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("`minSdkVersion`", i, '=') }
+      "GetLocales" -> stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("minSdkVersion is ", i) }
+      "FontValidation" -> stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("`minSdkVersion`", i, '=') }
       "RestrictedApi" -> {
         val index1 = old.indexOf('(')
         val index2 = new.indexOf('(')
@@ -533,8 +461,7 @@ class LintBaseline(
       "MissingQuantity" -> {
         sameSuffixFrom("should also be defined", new, old)
       }
-      "RtlCompat" ->
-        stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("project specifies ", i) }
+      "RtlCompat" -> stringsEquivalent(old, new) { s, i -> s.tokenPrecededBy("project specifies ", i) }
       "LintError",
       "LintWarning",
       "UnknownIssueId",
@@ -562,10 +489,7 @@ class LintBaseline(
           // far, but keep the try/catch just in case there are additional cases
           // added in the future which runs into this.)
           try {
-            issue.implementation.detectorClass
-              .getDeclaredConstructor()
-              .newInstance()
-              .sameMessage(issue, new, old)
+            issue.implementation.detectorClass.getDeclaredConstructor().newInstance().sameMessage(issue, new, old)
           } catch (_: Throwable) {
             false
           }
@@ -578,10 +502,7 @@ class LintBaseline(
     return attributes?.get(name)
   }
 
-  /**
-   * Set a custom attribute on this baseline (which is persisted and can be retrieved later with
-   * [getAttribute])
-   */
+  /** Set a custom attribute on this baseline (which is persisted and can be retrieved later with [getAttribute]) */
   fun setAttribute(name: String, value: String) {
     val attributes =
       attributes
@@ -626,14 +547,9 @@ class LintBaseline(
               entry.previous = currentEntry
               currentEntry = entry
               messageToEntry.put(entry.message, entry)
-              val messages: MutableSet<String> =
-                idToMessages[issue] ?: HashSet<String>().also { idToMessages[issue] = it }
+              val messages: MutableSet<String> = idToMessages[issue] ?: HashSet<String>().also { idToMessages[issue] = it }
               messages.add(message)
-              if (
-                message[0].isWhitespace() &&
-                  !hasUntrimmedMessages &&
-                  message != message.trimIndent()
-              ) {
+              if (message[0].isWhitespace() && !hasUntrimmedMessages && message != message.trimIndent()) {
                 hasUntrimmedMessages = true
               }
             }
@@ -657,8 +573,7 @@ class LintBaseline(
           val value = parser.getAttributeValue(i)
           when (name) {
             ATTR_ID -> issue = value
-            ATTR_MESSAGE ->
-              if (parser.depth == 2) message = value // else: depth=3: location-specific message
+            ATTR_MESSAGE -> if (parser.depth == 2) message = value // else: depth=3: location-specific message
             ATTR_FILE -> path = value
             // For now not reading ATTR_LINE; not used for baseline entry matching
             // ATTR_LINE -> line = value
@@ -708,10 +623,7 @@ class LintBaseline(
           writer.write(String.format(" by=\"lint %1\$s\"", revision))
         }
         attributes?.let { map ->
-          map
-            .asSequence()
-            .sortedBy { it.key }
-            .forEach { writer.write(" ${it.key}=\"${toXmlAttributeValue(it.value)}\"") }
+          map.asSequence().sortedBy { it.key }.forEach { writer.write(" ${it.key}=\"${toXmlAttributeValue(it.value)}\"") }
         }
         writer.write(">\n")
 
@@ -735,9 +647,8 @@ class LintBaseline(
   }
 
   /**
-   * Entries that have been reported during this lint run. We only create these when we need to
-   * write a baseline file (since we need to sort them before writing out the result file, to ensure
-   * stable files.)
+   * Entries that have been reported during this lint run. We only create these when we need to write a baseline file (since we need to sort
+   * them before writing out the result file, to ensure stable files.)
    */
   class ReportedEntry(incident: Incident) : Comparable<ReportedEntry> {
     val incident = incident.copySafe().apply { project = incident.project }
@@ -879,13 +790,13 @@ class LintBaseline(
   }
 
   /**
-   * Entry loaded from the baseline file. Note that for an error with multiple locations, there may
-   * be multiple entries; these are linked by next/previous fields.
+   * Entry loaded from the baseline file. Note that for an error with multiple locations, there may be multiple entries; these are linked by
+   * next/previous fields.
    */
   private class Entry(val issueId: String, val message: String, val path: String) {
     /**
-     * An issue can have multiple locations; we create a separate entry for each but we link them
-     * together such that we can mark them all fixed.
+     * An issue can have multiple locations; we create a separate entry for each but we link them together such that we can mark them all
+     * fixed.
      */
     var next: Entry? = null
     var previous: Entry? = null
@@ -895,10 +806,7 @@ class LintBaseline(
     const val VARIANT_ALL = "all"
     const val VARIANT_FATAL = "fatal"
 
-    /**
-     * Given an issue, determines whether it should be included in a baseline. Lint errors should
-     * not be baselined - see b/297095583.
-     */
+    /** Given an issue, determines whether it should be included in a baseline. Lint errors should not be baselined - see b/297095583. */
     fun shouldBaseline(id: String): Boolean {
       return id != IssueRegistry.LINT_ERROR.id &&
         id != IssueRegistry.LINT_WARNING.id &&
@@ -906,12 +814,7 @@ class LintBaseline(
         id != IssueRegistry.BASELINE_FIXED.id
     }
 
-    fun describeBaselineFilter(
-      errors: Int,
-      warnings: Int,
-      hints: Int,
-      baselineDisplayPath: String,
-    ): String {
+    fun describeBaselineFilter(errors: Int, warnings: Int, hints: Int, baselineDisplayPath: String): String {
       val counts = describeCounts(errors, warnings, hints, comma = false, capitalize = true)
       val escapedPath = TextFormat.TEXT.convertTo(baselineDisplayPath, TextFormat.RAW)
       return if (errors + warnings == 1) {
@@ -961,8 +864,8 @@ class LintBaseline(
     }
 
     /**
-     * Similar to String.startsWith, but considers / and \ identical, and returns false if the last
-     * part of [prefix] is only a prefix of the corresponding part in [this].
+     * Similar to String.startsWith, but considers / and \ identical, and returns false if the last part of [prefix] is only a prefix of the
+     * corresponding part in [this].
      *
      * For example, "/abc/de" is not a prefix of "/abc/def".
      */
@@ -1024,31 +927,18 @@ class LintBaseline(
     private fun sameSuffixFrom(target: String, new: String, old: String): Boolean {
       val i1 = new.indexOf(target)
       val i2 = old.indexOf(target)
-      return i1 != -1 &&
-        i2 != -1 &&
-        stringsEquivalent(new, old, i1 + target.length, i2 + target.length)
+      return i1 != -1 && i2 != -1 && stringsEquivalent(new, old, i1 + target.length, i2 + target.length)
     }
 
     /**
-     * Returns true if these two strings appear to be the same except the [full] string has a single
-     * absolute path somewhere in the middle which is only a relative path in the [relative] string.
-     * For example, `relative="The file res does not exist"` and `full="The file C:\path\to\res does
-     * not exist"`.
+     * Returns true if these two strings appear to be the same except the [full] string has a single absolute path somewhere in the middle
+     * which is only a relative path in the [relative] string. For example, `relative="The file res does not exist"` and `full="The file
+     * C:\path\to\res does not exist"`.
      *
      * If [prefix] and or [suffix] are non-empty, they must also be matched in the strings.
      */
-    fun sameWithAbsolutePath(
-      relative: String,
-      full: String,
-      prefix: String = "",
-      suffix: String = "",
-    ): Boolean {
-      if (
-        !relative.startsWith(prefix) ||
-          !full.startsWith(prefix) ||
-          !relative.endsWith(suffix) ||
-          !full.endsWith(suffix)
-      ) {
+    fun sameWithAbsolutePath(relative: String, full: String, prefix: String = "", suffix: String = ""): Boolean {
+      if (!relative.startsWith(prefix) || !full.startsWith(prefix) || !relative.endsWith(suffix) || !full.endsWith(suffix)) {
         return false
       }
       if (relative.length > full.length) {
@@ -1057,12 +947,7 @@ class LintBaseline(
       val first = prefixMatchLength(relative, full)
       val last = suffixMatchLength(relative, full)
       val relativeLength = relative.length - first - last
-      return relative.regionMatches(
-        first,
-        full,
-        full.length - last - relativeLength,
-        relativeLength,
-      )
+      return relative.regionMatches(first, full, full.length - last - relativeLength, relativeLength)
     }
 
     /** Return the index of the first character where the strings [a] and [b] differ */
@@ -1080,10 +965,7 @@ class LintBaseline(
       return a.length
     }
 
-    /**
-     * Return the index **from the end of both strings** where the first characters in the strings
-     * [a] and [b] differ.
-     */
+    /** Return the index **from the end of both strings** where the first characters in the strings [a] and [b] differ. */
     fun suffixMatchLength(a: String, b: String): Int {
       var ai = a.length - 1
       var bi = b.length - 1
@@ -1100,12 +982,11 @@ class LintBaseline(
     }
 
     /**
-     * Compares two string messages from lint and returns true if they're equivalent, which will be
-     * true if they only vary by suffix or presence of ` characters or spaces. This is done to
-     * handle the case where we tweak the message format over time to either append extra
-     * information or to add better formatting (e.g. to put backticks around symbols) or to remove
-     * trailing periods from single sentence error messages. Lint is recently suggesting these edits
-     * to lint checks -- and we want baselines to continue to match in the presence of these edits.
+     * Compares two string messages from lint and returns true if they're equivalent, which will be true if they only vary by suffix or
+     * presence of ` characters or spaces. This is done to handle the case where we tweak the message format over time to either append
+     * extra information or to add better formatting (e.g. to put backticks around symbols) or to remove trailing periods from single
+     * sentence error messages. Lint is recently suggesting these edits to lint checks -- and we want baselines to continue to match in the
+     * presence of these edits.
      */
     fun stringsEquivalent(s1: String, s2: String, start1: Int = 0, start2: Int = 0): Boolean {
       var i1 = start1
@@ -1161,9 +1042,8 @@ class LintBaseline(
     }
 
     /**
-     * If a string contains symbols (such as a method name or a fully qualified name, possibly with
-     * dots or # as separators) then make sure that both strings contain the same symbols in the
-     * same order.
+     * If a string contains symbols (such as a method name or a fully qualified name, possibly with dots or # as separators) then make sure
+     * that both strings contain the same symbols in the same order.
      */
     fun symbolsMatch(s1: String, s2: String): Boolean {
       var symbolStart = s1.indexOf('`')
@@ -1214,9 +1094,8 @@ class LintBaseline(
     }
 
     /**
-     * Compares two error messages and whenever there is a difference, it consults the [skipTokenAt]
-     * function to ask whether the next token (letters and digits) can be skipped in each before
-     * resuming the comparison
+     * Compares two error messages and whenever there is a difference, it consults the [skipTokenAt] function to ask whether the next token
+     * (letters and digits) can be skipped in each before resuming the comparison
      */
     fun stringsEquivalent(s1: String, s2: String, skipTokenAt: (String, Int) -> Boolean): Boolean {
       var i1 = 0

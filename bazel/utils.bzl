@@ -200,11 +200,13 @@ def _dir_archive_impl(ctx):
         zipper_args.add("%s=%s" % (ctx.attr.stamp, stamp.path))
         files.append(stamp)
 
+    compression = "cC" if ctx.attr.compress else "c"
+
     ctx.actions.run(
         inputs = files,
         outputs = [ctx.outputs.out],
         executable = ctx.executable._zipper,
-        arguments = ["c", ctx.outputs.out.path, zipper_args],
+        arguments = [compression, ctx.outputs.out.path, zipper_args],
         progress_message = "Creating archive...",
         mnemonic = "archiver",
     )
@@ -218,6 +220,7 @@ dir_archive = rule(
         "dir_relative_to_repository": attr.bool(default = False),
         "stamp": attr.string(),
         "ext": attr.string(default = "zip"),
+        "compress": attr.bool(default = False),
         "_status_reader": attr.label(
             default = Label("//tools/base/bazel:status_reader"),
             cfg = "host",

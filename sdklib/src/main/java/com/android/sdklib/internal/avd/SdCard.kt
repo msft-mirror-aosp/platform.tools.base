@@ -71,9 +71,8 @@ const val SDCARD_MIN_BYTE_SIZE = 9L shl 20
 const val SDCARD_MAX_BYTE_SIZE = 1023L shl 30
 
 /**
- * Parses an [SdCard] from the provided String. If the string matches [SDCARD_SIZE_PATTERN], returns
- * an [InternalSdCard] of the parsed size. Otherwise, the string is assumed to be a path to an
- * external SD card.
+ * Parses an [SdCard] from the provided String. If the string matches [SDCARD_SIZE_PATTERN], returns an [InternalSdCard] of the parsed size.
+ * Otherwise, the string is assumed to be a path to an external SD card.
  *
  * @throws IllegalArgumentException if the size is out of range
  */
@@ -96,9 +95,7 @@ fun parseSdCard(sdcard: String): SdCard {
   } catch (e: NumberFormatException) {
     // Fall through: this can only happen if the number is too large to fit in a long.
   }
-  throw IllegalArgumentException(
-    "SD card size must be in the range ${SDCARD_MIN_BYTE_SIZE shr 20}M..${SDCARD_MAX_BYTE_SIZE shr 20}M"
-  )
+  throw IllegalArgumentException("SD card size must be in the range ${SDCARD_MIN_BYTE_SIZE shr 20}M..${SDCARD_MAX_BYTE_SIZE shr 20}M")
 }
 
 /**
@@ -109,12 +106,7 @@ fun parseSdCard(sdcard: String): SdCard {
  * @param location The path of the new sdcard image file to generate.
  * @return True if the sdcard could be created.
  */
-fun createSdCard(
-  logger: ILogger,
-  toolLocation: String,
-  sizeSpec: String,
-  location: String,
-): Boolean {
+fun createSdCard(logger: ILogger, toolLocation: String, sizeSpec: String, location: String): Boolean {
   val process =
     try {
       Runtime.getRuntime().exec(arrayOf(toolLocation, sizeSpec, location))
@@ -143,7 +135,8 @@ fun createSdCard(
             }
           }
         },
-        null, null
+        null,
+        null,
       )
 
     if (status == 0) {

@@ -29,13 +29,16 @@ fun fullscreenFragmentJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(layoutName)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$layoutName, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$layoutName, container, false);"
 
   return """
 package ${packageName};
@@ -166,12 +169,12 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "fullscreen_content_controls",
-          parentView = "view")};
+          parentView = "view",)};
         mContentView = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "fullscreen_content",
-          parentView = "view")};
+          parentView = "view",)};
 
         // Set up the user interaction to manually show or hide the system UI.
         mContentView.setOnClickListener(new View.OnClickListener() {
@@ -188,7 +191,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
           id = "dummy_button",
-          parentView = "view")}.setOnTouchListener(mDelayHideTouchListener);
+          parentView = "view",)}.setOnTouchListener(mDelayHideTouchListener);
     }
 
     @Override

@@ -245,15 +245,9 @@ class ProguardConsumerRulesDetectorTest : AbstractCheckTest() {
   }
 
   private val dontOptimize =
-    proguard(
-      "build/intermediates/exploded-aar/com.example.badkeep/badkeep/1.0.1/proguard.pro",
-      proguard = "-dontoptimize",
-    )
+    proguard("build/intermediates/exploded-aar/com.example.badkeep/badkeep/1.0.1/proguard.pro", proguard = "-dontoptimize")
   private val repackageclasses =
-    proguard(
-      "build/intermediates/exploded-aar/com.example.badkeep/badkeep/1.0.1/proguard.pro",
-      proguard = "-repackageclasses",
-    )
+    proguard("build/intermediates/exploded-aar/com.example.badkeep/badkeep/1.0.1/proguard.pro", proguard = "-repackageclasses")
   private val benign =
     proguard(
       // "com.example.badkeep:badkeep:1.0.1"

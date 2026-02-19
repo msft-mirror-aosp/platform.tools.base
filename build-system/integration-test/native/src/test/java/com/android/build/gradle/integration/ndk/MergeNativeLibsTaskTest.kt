@@ -21,41 +21,31 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/** Test behavior of [MergeNativeLibsTask]*/
+/** Test behavior of [MergeNativeLibsTask] */
 class MergeNativeLibsTaskTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder().fromTestProject("multiproject").create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("multiproject").create()
 
-    @Test
-    fun testTaskSkippedWhenNoNativeLibs() {
-        val executor = project.executor()
-        val result1 = executor.run("app:mergeDebugNativeLibs")
-        assertThat(result1.skippedTasks).contains(":app:mergeDebugNativeLibs")
-        // then test that the task does work after adding native libraries.
-        createAbiFile(project.getSubproject(":baseLibrary"), ABI_ARMEABI_V7A, "foo.so")
-        val result2 = executor.run("app:mergeDebugNativeLibs")
-        assertThat(result2.didWorkTasks).contains(":app:mergeDebugNativeLibs")
-    }
+  @Test
+  fun testTaskSkippedWhenNoNativeLibs() {
+    val executor = project.executor()
+    val result1 = executor.run("app:mergeDebugNativeLibs")
+    assertThat(result1.skippedTasks).contains(":app:mergeDebugNativeLibs")
+    // then test that the task does work after adding native libraries.
+    createAbiFile(project.getSubproject(":baseLibrary"), ABI_ARMEABI_V7A, "foo.so")
+    val result2 = executor.run("app:mergeDebugNativeLibs")
+    assertThat(result2.didWorkTasks).contains(":app:mergeDebugNativeLibs")
+  }
 
-    private fun createAbiFile(
-        project: GradleTestProject,
-        abiName: String,
-        libName: String
-    ) {
-        val abiFolder = File(project.getMainSrcDir("jniLibs"), abiName)
-        FileUtils.mkdirs(abiFolder)
-        MergeNativeLibsTaskTest::class.java.getResourceAsStream(
-            "/nativeLibs/libhello-jni.so"
-        ).use { inputStream ->
-            File(abiFolder, libName).outputStream().use { outputStream ->
-                inputStream.copyTo(outputStream)
-            }
-        }
+  private fun createAbiFile(project: GradleTestProject, abiName: String, libName: String) {
+    val abiFolder = File(project.getMainSrcDir("jniLibs"), abiName)
+    FileUtils.mkdirs(abiFolder)
+    MergeNativeLibsTaskTest::class.java.getResourceAsStream("/nativeLibs/libhello-jni.so").use { inputStream ->
+      File(abiFolder, libName).outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
     }
+  }
 }

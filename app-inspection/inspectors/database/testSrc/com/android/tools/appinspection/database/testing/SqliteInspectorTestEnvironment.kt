@@ -23,6 +23,9 @@ import androidx.inspection.ArtTooling
 import androidx.inspection.testing.DefaultTestInspectorEnvironment
 import androidx.inspection.testing.InspectorTester
 import androidx.inspection.testing.TestInspectorExecutors
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.bundled.SQLITE_OPEN_MEMORY
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Command
 import androidx.sqlite.inspection.SqliteInspectorProtocol.Command.OneOfCase.TRACK_DATABASES
 import androidx.sqlite.inspection.SqliteInspectorProtocol.DatabaseOpenedEvent
@@ -38,6 +41,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.coroutines.CoroutineContext
 import kotlin.test.fail
+import kotlin.time.Duration
 import kotlinx.coroutines.*
 import org.junit.rules.ExternalResource
 import org.junit.rules.TemporaryFolder
@@ -63,11 +67,9 @@ internal const val OPEN_DATABASE_COMMAND_SIGNATURE_API27: String =
     "Landroid/database/sqlite/SQLiteDatabase;"
 
 internal const val CREATE_IN_MEMORY_DATABASE_COMMAND_SIGNATURE_API27 =
-  "createInMemory" +
-    "(" +
-    "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" +
-    ")" +
-    "Landroid/database/sqlite/SQLiteDatabase;"
+  "createInMemory" + "(" + "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" + ")" + "Landroid/database/sqlite/SQLiteDatabase;"
+
+private const val ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG = "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
 
 private const val RELEASE_REFERENCE_COMMAND_SIGNATURE = "releaseReference()V"
 private const val ALL_REFERENCES_RELEASED_COMMAND_SIGNATURE = "onAllReferencesReleased()V"
@@ -78,13 +80,13 @@ class SqliteInspectorTestEnvironment(
 ) : ExternalResource(), AutoCloseable {
   private val artTooling = FakeArtTooling()
   private val job = Job()
-  private val inspectorEnvironment =
-    DefaultTestInspectorEnvironment(TestInspectorExecutors(job, ioExecutorOverride), artTooling)
+  private val inspectorEnvironment = DefaultTestInspectorEnvironment(TestInspectorExecutors(job, ioExecutorOverride), artTooling)
   private val inspectorFactory = TestInspectorFactory(ioCoroutineContextOverride)
   private val inspectorTester: InspectorTester = runBlocking {
     InspectorTester(SQLITE_INSPECTOR_ID, inspectorEnvironment, inspectorFactory)
   }
   private val databases = mutableListOf<SQLiteDatabase>()
+  private val androidXDatabases = mutableListOf<SQLiteConnection>()
   private var trackingStarted = false
   private val temporaryFolder: TemporaryFolder = TemporaryFolder()
 
@@ -134,7 +136,11 @@ class SqliteInspectorTestEnvironment(
     }
   }
 
-  fun registerAlreadyOpenDatabases(databases: List<SQLiteDatabase>) {
+  suspend fun receiveEvent(timeout: Duration): Event {
+    return withTimeout(timeout) { receiveEvent() }
+  }
+
+  fun registerAlreadyOpenDatabases(databases: List<Any>) {
     artTooling.registerInstancesToFind(databases)
   }
 
@@ -145,11 +151,9 @@ class SqliteInspectorTestEnvironment(
   fun registerApplication(vararg databases: SQLiteDatabase) {
     val application =
       object : Application() {
-        override fun databaseList(): Array<String> =
-          databases.map { it.absolutePath }.toTypedArray()
+        override fun databaseList(): Array<String> = databases.map { it.absolutePath }.toTypedArray()
 
-        override fun getDatabasePath(name: String?) =
-          InstrumentationRegistry.getInstrumentation().context.getDatabasePath(name)
+        override fun getDatabasePath(name: String?) = InstrumentationRegistry.getInstrumentation().context.getDatabasePath(name)
       }
 
     artTooling.registerInstancesToFind(listOf(application))
@@ -161,8 +165,7 @@ class SqliteInspectorTestEnvironment(
 
   fun getRegisteredHooks(): List<Hook> = artTooling.registeredHooks
 
-  suspend fun inspectDatabases(vararg databases: SQLiteDatabase) =
-    inspectDatabases(databases.toList())
+  suspend fun inspectDatabases(vararg databases: SQLiteDatabase) = inspectDatabases(databases.toList())
 
   suspend fun inspectDatabases(databases: List<SQLiteDatabase>): List<Int> {
     registerAlreadyOpenDatabases(databases)
@@ -188,6 +191,12 @@ class SqliteInspectorTestEnvironment(
     }
   }
 
+  fun triggerOnOpenedExit(connection: SQLiteConnection) {
+    if (trackingStarted) {
+      artTooling.triggerOnOpenedExit(connection)
+    }
+  }
+
   fun triggerReleaseReference(db: SQLiteDatabase) {
     if (trackingStarted) {
       artTooling.triggerReleaseReference(db)
@@ -202,10 +211,7 @@ class SqliteInspectorTestEnvironment(
 
   fun openDatabase(path: String?) = openDatabase(DatabaseModel(path))
 
-  fun openDatabase(
-    database: DatabaseModel,
-    writeAheadLoggingEnabled: Boolean = false,
-  ): SQLiteDatabase {
+  fun openDatabase(database: DatabaseModel, writeAheadLoggingEnabled: Boolean = false): SQLiteDatabase {
     if (database.name != null) {
       // If database.name is null, this is an inMemory database, and we don't hook entry
       triggerOnOpenedEntry(database.name)
@@ -214,6 +220,13 @@ class SqliteInspectorTestEnvironment(
     triggerOnOpenedExit(db)
     databases.add(db)
     return db
+  }
+
+  fun openAndroidXDatabase(database: DatabaseModel): SQLiteConnection {
+    val connection = database.createAndroidXInstance(temporaryFolder)
+    triggerOnOpenedExit(connection)
+    androidXDatabases.add(connection)
+    return connection
   }
 
   fun closeDatabase(database: SQLiteDatabase) {
@@ -235,11 +248,7 @@ class SqliteInspectorTestEnvironment(
   }
 }
 
-suspend fun SqliteInspectorTestEnvironment.issueQuery(
-  databaseId: Int,
-  command: String,
-  queryParams: List<String?>? = null,
-): QueryResponse {
+suspend fun SqliteInspectorTestEnvironment.issueQuery(databaseId: Int, command: String, queryParams: List<String?>? = null): QueryResponse {
   val response = sendCommand(MessageFactory.createQueryCommand(databaseId, command, queryParams))
   if (response.hasErrorOccurred()) {
     fail("Unexpected error: $${response.errorOccurred.content.stackTrace}")
@@ -250,8 +259,7 @@ suspend fun SqliteInspectorTestEnvironment.issueQuery(
 /**
  * Fake inspector environment with the following behaviour:
  * - [findInstances] returns pre-registered values from [registerInstancesToFind].
- * - [registerEntryHook] and [registerExitHook] record the calls which can later be retrieved in
- *   [consumeRegisteredHooks].
+ * - [registerEntryHook] and [registerExitHook] record the calls which can later be retrieved in [consumeRegisteredHooks].
  */
 class FakeArtTooling : ArtTooling {
   private val instancesToFind = mutableListOf<Any>()
@@ -269,24 +277,24 @@ class FakeArtTooling : ArtTooling {
   }
 
   fun triggerOnOpenedEntry(path: String) {
-    val onOpen =
-      registeredHooks.filterIsInstance<Hook.EntryHook>().filter {
-        it.originMethod == OPEN_DATABASE_COMMAND_SIGNATURE_API11
-      }
+    val onOpen = registeredHooks.filterIsInstance<Hook.EntryHook>().filter { it.originMethod == OPEN_DATABASE_COMMAND_SIGNATURE_API11 }
     assertThat(onOpen).named("hooks").hasSize(1)
     val hook = onOpen.first().asEntryHook
     hook.onEntry(null, arrayOf<Any>(path).asList())
   }
 
   fun triggerOnOpenedExit(db: SQLiteDatabase) {
-    val onOpen =
-      registeredHooks.filterIsInstance<Hook.ExitHook>().filter {
-        it.originMethod == OPEN_DATABASE_COMMAND_SIGNATURE_API11
-      }
+    val onOpen = registeredHooks.filterIsInstance<Hook.ExitHook>().filter { it.originMethod == OPEN_DATABASE_COMMAND_SIGNATURE_API11 }
     assertThat(onOpen).named("hooks").hasSize(1)
-    @Suppress("UNCHECKED_CAST")
-    val hook = onOpen.first().asExitHook as ArtTooling.ExitHook<SQLiteDatabase>
+    @Suppress("UNCHECKED_CAST") val hook = onOpen.first().asExitHook as ArtTooling.ExitHook<SQLiteDatabase>
     hook.onExit(db)
+  }
+
+  fun triggerOnOpenedExit(connection: SQLiteConnection) {
+    val onOpen = registeredHooks.filterIsInstance<Hook.ExitHook>().filter { it.originMethod == ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG }
+    assertThat(onOpen).named("hooks").hasSize(1)
+    @Suppress("UNCHECKED_CAST") val hook = onOpen.first().asExitHook as ArtTooling.ExitHook<SQLiteConnection>
+    hook.onExit(connection)
   }
 
   fun triggerReleaseReference(db: SQLiteDatabase) {
@@ -297,8 +305,7 @@ class FakeArtTooling : ArtTooling {
   }
 
   fun triggerOnAllReferencesReleased(db: SQLiteDatabase) {
-    val onReleasedHooks =
-      registeredHooks.filter { it.originMethod == ALL_REFERENCES_RELEASED_COMMAND_SIGNATURE }
+    val onReleasedHooks = registeredHooks.filter { it.originMethod == ALL_REFERENCES_RELEASED_COMMAND_SIGNATURE }
     assertThat(onReleasedHooks).named("hooks").hasSize(2)
     val entryHook = (onReleasedHooks.first { it is Hook.EntryHook }.asEntryHook)
     val exitHook = (onReleasedHooks.first { it is Hook.ExitHook }.asExitHook)
@@ -307,19 +314,15 @@ class FakeArtTooling : ArtTooling {
   }
 
   /**
-   * Returns instances pre-registered in [registerInstancesToFind]. By design crashes in case of the
-   * wrong setup - indicating an issue with test code.
+   * Returns instances pre-registered in [registerInstancesToFind]. By design crashes in case of the wrong setup - indicating an issue with
+   * test code.
    */
   @Suppress("UNCHECKED_CAST")
   // TODO: implement actual findInstances behaviour
   override fun <T : Any?> findInstances(clazz: Class<T>): MutableList<T> =
     instancesToFind.filter { clazz.isInstance(it) }.map { it as T }.toMutableList()
 
-  override fun registerEntryHook(
-    originClass: Class<*>,
-    originMethod: String,
-    entryHook: ArtTooling.EntryHook,
-  ) {
+  override fun registerEntryHook(originClass: Class<*>, originMethod: String, entryHook: ArtTooling.EntryHook) {
     if (invalidClasses.contains(originClass.name)) {
       throw NoClassDefFoundError("Class ${originClass.name} registered as invalid415408962")
     }
@@ -328,31 +331,19 @@ class FakeArtTooling : ArtTooling {
     registeredHooks.add(Hook.EntryHook(originClass, originMethod, entryHook))
   }
 
-  override fun <T : Any?> registerExitHook(
-    originClass: Class<*>,
-    originMethod: String,
-    exitHook: ArtTooling.ExitHook<T>,
-  ) {
+  override fun <T : Any?> registerExitHook(originClass: Class<*>, originMethod: String, exitHook: ArtTooling.ExitHook<T>) {
     // TODO: implement actual registerExitHook behaviour
     registeredHooks.add(Hook.ExitHook(originClass, originMethod, exitHook))
   }
 
-  fun consumeRegisteredHooks(): List<Hook> =
-    registeredHooks.toList().also { registeredHooks.clear() }
+  fun consumeRegisteredHooks(): List<Hook> = registeredHooks.toList().also { registeredHooks.clear() }
 }
 
 sealed class Hook(val originClass: Class<*>, val originMethod: String) {
-  class ExitHook(
-    originClass: Class<*>,
-    originMethod: String,
-    val exitHook: ArtTooling.ExitHook<*>,
-  ) : Hook(originClass, originMethod)
+  class ExitHook(originClass: Class<*>, originMethod: String, val exitHook: ArtTooling.ExitHook<*>) : Hook(originClass, originMethod)
 
-  class EntryHook(
-    originClass: Class<*>,
-    originMethod: String,
-    @Suppress("unused") val entryHook: ArtTooling.EntryHook,
-  ) : Hook(originClass, originMethod)
+  class EntryHook(originClass: Class<*>, originMethod: String, @Suppress("unused") val entryHook: ArtTooling.EntryHook) :
+    Hook(originClass, originMethod)
 
   override fun toString() = "Hook(originClass=${originClass.name}, originMethod='$originMethod')"
 }
@@ -362,10 +353,7 @@ val Hook.asEntryHook
 val Hook.asExitHook
   get() = (this as Hook.ExitHook).exitHook
 
-private fun DatabaseModel.createInstance(
-  temporaryFolder: TemporaryFolder,
-  writeAheadLoggingEnabled: Boolean? = null,
-): SQLiteDatabase {
+private fun DatabaseModel.createInstance(temporaryFolder: TemporaryFolder, writeAheadLoggingEnabled: Boolean? = null): SQLiteDatabase {
   val path =
     if (name == null) null
     else
@@ -385,4 +373,34 @@ private fun DatabaseModel.createInstance(
   val db = openHelper.readableDatabase
   tables.forEach { t -> db.addTable(t) }
   return db
+}
+
+private fun DatabaseModel.createAndroidXInstance(temporaryFolder: TemporaryFolder): SQLiteConnection {
+  val path =
+    when (name == null) {
+      true -> ""
+      false -> File(temporaryFolder.root, name).also { it.createNewFile() }.absolutePath
+    }
+
+  val driver = BundledSQLiteDriver()
+  val connection =
+    when (name == null) {
+      true -> driver.open(path, SQLITE_OPEN_MEMORY)
+      else -> driver.open(path)
+    }
+  tables.forEach { t -> connection.addTable(t) }
+  return connection
+}
+
+fun SQLiteConnection.getDatabaseName(): String {
+  prepare("PRAGMA database_list;").use { statement ->
+    while (statement.step()) {
+      val name = statement.getText(1)
+      if (name == "main") {
+        val path = statement.getText(2)
+        return path.takeIf { it.isNotEmpty() } ?: ":memory"
+      }
+    }
+  }
+  throw RuntimeException("Failed to get database name")
 }

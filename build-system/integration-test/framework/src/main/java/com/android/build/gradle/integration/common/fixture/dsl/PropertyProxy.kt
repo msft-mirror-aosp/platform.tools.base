@@ -16,108 +16,100 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
+import java.util.function.BiFunction
 import org.gradle.api.Transformer
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
 import org.gradle.api.specs.Spec
-import java.util.function.BiFunction
 
-/**
- * Proxy class used to implement Gradle's Property. This wraps a [DslRecorder] to record
- * the calls we care about.
- */
-class PropertyProxy<T>(
-    private val dslRecorder: DslRecorder
-) : Property<T> {
+/** Proxy class used to implement Gradle's Property. This wraps a [DslRecorder] to record the calls we care about. */
+class PropertyProxy<T>(private val dslRecorder: DslRecorder) : Property<T> {
 
-    override fun set(value: T?) {
-        dslRecorder.call("set", listOf(value), isVarArgs = false)
-    }
+  override fun set(value: T?) {
+    dslRecorder.call("set", listOf(value), isVarArgs = false)
+  }
 
-    override fun get(): T {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun get(): T {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun getOrNull(): T? {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun getOrNull(): T? {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun isPresent(): Boolean {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun isPresent(): Boolean {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun finalizeValue() {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun finalizeValue() {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun finalizeValueOnRead() {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun finalizeValueOnRead() {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun disallowChanges() {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun disallowChanges() {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun disallowUnsafeRead() {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun disallowUnsafeRead() {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun unset(): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun unset(): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun unsetConvention(): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun unsetConvention(): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun convention(provider: Provider<out T>): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun convention(provider: Provider<out T>): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun convention(value: T?): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun convention(value: T?): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun value(provider: Provider<out T>): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun value(provider: Provider<out T>): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun value(value: T?): Property<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun value(value: T?): Property<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun set(provider: Provider<out T>) {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun set(provider: Provider<out T>) {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun <U : Any?, R : Any?> zip(
-        right: Provider<U>,
-        combiner: BiFunction<in T, in U, out R?>
-    ): Provider<R> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun <U : Any?, R : Any?> zip(right: Provider<U>, combiner: BiFunction<in T, in U, out R?>): Provider<R> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun orElse(provider: Provider<out T>): Provider<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun orElse(provider: Provider<out T>): Provider<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun orElse(value: T): Provider<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun orElse(value: T): Provider<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun <S : Any?> flatMap(transformer: Transformer<out Provider<out S>?, in T>): Provider<S> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun filter(spec: Spec<in T>): Provider<T> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun filter(spec: Spec<in T>): Provider<T> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun <S : Any?> map(transformer: Transformer<out S?, in T>): Provider<S> {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun <S : Any?> map(transformer: Transformer<out S?, in T>): Provider<S> {
+    throw RuntimeException("Not yet implemented")
+  }
 
-    override fun getOrElse(defaultValue: T): T {
-        throw RuntimeException("Not yet implemented")
-    }
+  override fun getOrElse(defaultValue: T): T {
+    throw RuntimeException("Not yet implemented")
+  }
 }

@@ -46,7 +46,7 @@ maven_repository(
         "@maven//:android.arch.persistence.room.runtime_1.0.0",
         "@maven//:com.android.support.test.rules_1.0.2",
         "@maven//:com.android.support.test.runner_1.0.2",
-        "@maven//:org.jacoco.org.jacoco.ant_0.8.13",
+        "@maven//:org.jacoco.org.jacoco.ant_0.8.14",
     ],
     visibility = [":__subpackages__"],
 )
@@ -126,7 +126,7 @@ maven_repository(
     visibility = ["//visibility:public"],
 )
 
-LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.3.20-dev-825"
+LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.3.20-dev-6126"
 
 maven_repository(
     name = "latest_kotlin_gradle_plugin_prebuilts_for_sync_benchmarks",

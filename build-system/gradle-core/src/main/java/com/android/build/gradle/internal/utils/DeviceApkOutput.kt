@@ -21,15 +21,12 @@ import com.android.build.api.variant.DeviceSpec
 import org.gradle.api.tasks.TaskInputs
 
 interface DeviceApkOutput {
-    /**
-     * Returns an ordered collection of co-installable APK batches targeted for a specific device.
-     *
-     * @param deviceSpec An object that describes the device on which we intend to install Apks.
-     */
-    fun getApks(deviceSpec: DeviceSpec): List<ApkInstallGroup>
+  /**
+   * Returns an ordered collection of co-installable APK batches targeted for a specific device.
+   *
+   * @param deviceSpec An object that describes the device on which we intend to install Apks.
+   */
+  fun getApks(deviceSpec: DeviceSpec): List<ApkInstallGroup>
 
-    fun setInputs(inputs: TaskInputs, deviceSpec: DeviceSpec)
+  fun setInputs(inputs: TaskInputs, deviceSpec: DeviceSpec)
 }
-
-
-

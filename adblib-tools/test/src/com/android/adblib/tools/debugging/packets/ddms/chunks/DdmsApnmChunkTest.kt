@@ -16,99 +16,75 @@
 package com.android.adblib.tools.debugging.packets.ddms.chunks
 
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
-import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.tools.debugging.packets.ddms.DdmsChunkType
 import com.android.adblib.tools.debugging.packets.ddms.EphemeralDdmsChunk
+import com.android.adblib.tools.debugging.packets.impl.PayloadProvider
 import com.android.adblib.utils.ResizableBuffer
 import org.junit.Assert
 import org.junit.Test
 
 class DdmsApnmChunkTest {
 
-    @Test
-    fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsApnmChunk.writePayload(
-                buffer,
-                processName = "foo",
-                userId = 10,
-                packageName = "bar"
-            )
-            buffer.forChannelWrite()
-        }
-
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.APNM,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
-
-        // Act
-        val apnmChunk = DdmsApnmChunk.parse(chunk)
-
-        // Assert
-        Assert.assertEquals("foo", apnmChunk.processName)
-        Assert.assertEquals(10, apnmChunk.userId)
-        Assert.assertEquals("bar", apnmChunk.packageName)
+  @Test
+  fun testParsingWithAllFieldsWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsApnmChunk.writePayload(buffer, processName = "foo", userId = 10, packageName = "bar")
+      buffer.forChannelWrite()
     }
 
-    @Test
-    fun testParsingWithMissingPackageNameWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsApnmChunk.writePayload(
-                buffer,
-                processName = "foo2",
-                userId = 10,
-                packageName = null
-            )
-            buffer.forChannelWrite()
-        }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.APNM, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.APNM,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val apnmChunk = DdmsApnmChunk.parse(chunk)
 
-        // Act
-        val apnmChunk = DdmsApnmChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals("foo", apnmChunk.processName)
+    Assert.assertEquals(10, apnmChunk.userId)
+    Assert.assertEquals("bar", apnmChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals("foo2", apnmChunk.processName)
-        Assert.assertEquals(10, apnmChunk.userId)
-        Assert.assertEquals(null, apnmChunk.packageName)
+  @Test
+  fun testParsingWithMissingPackageNameWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsApnmChunk.writePayload(buffer, processName = "foo2", userId = 10, packageName = null)
+      buffer.forChannelWrite()
     }
 
-    @Test
-    fun testParsingWithMissingUsedIDWorks() = runBlockingWithTimeout {
-        // Prepare
-        val payload = run {
-            val buffer = ResizableBuffer()
-            DdmsApnmChunk.writePayload(
-                buffer,
-                processName = "foo2",
-                userId = null,
-                packageName = null
-            )
-            buffer.forChannelWrite()
-        }
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.APNM, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
 
-        val chunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.APNM,
-            length = payload.remaining(),
-            payloadProvider = PayloadProvider.forByteBuffer(payload)
-        )
+    // Act
+    val apnmChunk = DdmsApnmChunk.parse(chunk)
 
-        // Act
-        val apnmChunk = DdmsApnmChunk.parse(chunk)
+    // Assert
+    Assert.assertEquals("foo2", apnmChunk.processName)
+    Assert.assertEquals(10, apnmChunk.userId)
+    Assert.assertEquals(null, apnmChunk.packageName)
+  }
 
-        // Assert
-        Assert.assertEquals("foo2", apnmChunk.processName)
-        Assert.assertEquals(null, apnmChunk.userId)
-        Assert.assertEquals(null, apnmChunk.packageName)
+  @Test
+  fun testParsingWithMissingUsedIDWorks() = runBlockingWithTimeout {
+    // Prepare
+    val payload = run {
+      val buffer = ResizableBuffer()
+      DdmsApnmChunk.writePayload(buffer, processName = "foo2", userId = null, packageName = null)
+      buffer.forChannelWrite()
     }
+
+    val chunk =
+      EphemeralDdmsChunk(type = DdmsChunkType.APNM, length = payload.remaining(), payloadProvider = PayloadProvider.forByteBuffer(payload))
+
+    // Act
+    val apnmChunk = DdmsApnmChunk.parse(chunk)
+
+    // Assert
+    Assert.assertEquals("foo2", apnmChunk.processName)
+    Assert.assertEquals(null, apnmChunk.userId)
+    Assert.assertEquals(null, apnmChunk.packageName)
+  }
 }

@@ -96,10 +96,7 @@ class LintClientTest {
 
     assertEquals(file("../../d/e/f").path, client.getRelativePath(file("a/b/c"), file("d/e/f")))
     assertEquals(file("../d/e/f").path, client.getRelativePath(file("a/b/c"), file("a/d/e/f")))
-    assertEquals(
-      file("../d/e/f").path,
-      client.getRelativePath(file("1/2/3/a/b/c"), file("1/2/3/a/d/e/f")),
-    )
+    assertEquals(file("../d/e/f").path, client.getRelativePath(file("1/2/3/a/b/c"), file("1/2/3/a/d/e/f")))
     assertEquals(file("c").path, client.getRelativePath(file("a/b/c"), file("a/b/c")))
     assertEquals(file("../../e").path, client.getRelativePath(file("a/b/c/d/e/f"), file("a/b/c/e")))
     assertEquals(file("d/e/f").path, client.getRelativePath(file("a/b/c/e"), file("a/b/c/d/e/f")))
@@ -288,16 +285,11 @@ class LintClientTest {
         Issue.create(
           id = "_ResourceRepositoryXmlPArsing",
           briefDescription = "Lint check for testing out XML parsing",
-          explanation =
-            "Triggers specific XML parsing and IO errors and makes sure they're gracefully handled",
+          explanation = "Triggers specific XML parsing and IO errors and makes sure they're gracefully handled",
           category = Category.TESTING,
           priority = 10,
           severity = Severity.WARNING,
-          implementation =
-            Implementation(
-              TestXmlParsingDetector::class.java,
-              EnumSet.of(Scope.JAVA_FILE, Scope.RESOURCE_FILE),
-            ),
+          implementation = Implementation(TestXmlParsingDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.RESOURCE_FILE)),
         )
     }
   }
@@ -311,10 +303,7 @@ class LintClientTest {
     override fun getApplicableElements() = setOf(SdkConstants.TAG_STRING)
 
     override fun visitElement(context: XmlContext, element: Element) {
-      context
-        .getPartialResults(ISSUE)
-        .map()
-        .put("Added by: ${context.project.name}; Tag: ${element.getAttribute("name")}", true)
+      context.getPartialResults(ISSUE).map().put("Added by: ${context.project.name}; Tag: ${element.getAttribute("name")}", true)
     }
 
     override fun checkPartialResults(context: Context, partialResults: PartialResult) {
@@ -322,11 +311,7 @@ class LintClientTest {
         partialResults.mapFor(project).forEach { key ->
           // Example message:
           //  Found in LintMap for: project_a; Added by: project_a; Tag: project_a_string
-          context.report(
-            issue = ISSUE,
-            location = Location.create(context.file),
-            message = "Found in LintMap for: ${project.name}; $key",
-          )
+          context.report(issue = ISSUE, location = Location.create(context.file), message = "Found in LintMap for: ${project.name}; $key")
         }
       }
     }
@@ -337,16 +322,11 @@ class LintClientTest {
         Issue.create(
           id = "TestXmlFakeIssueDetector",
           briefDescription = "Fake lint check for testing partial analysis",
-          explanation =
-            "Stores data to each project's PartialResult via context.getPartialResults(ISSUE).map()",
+          explanation = "Stores data to each project's PartialResult via context.getPartialResults(ISSUE).map()",
           category = Category.TESTING,
           priority = 10,
           severity = Severity.ERROR,
-          implementation =
-            Implementation(
-              TestXmlFakeIssueDetector::class.java,
-              EnumSet.of(Scope.ALL_RESOURCE_FILES),
-            ),
+          implementation = Implementation(TestXmlFakeIssueDetector::class.java, EnumSet.of(Scope.ALL_RESOURCE_FILES)),
         )
     }
   }

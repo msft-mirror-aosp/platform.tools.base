@@ -46,18 +46,9 @@ class FullBackupContentDetector : ResourceXmlDetector() {
         // For each <cloud-backup>, <device-transfer>, <cross-platform-transfer> section.
 
         // Specific check for <cross-platform-transfer>.
-        if (
-          child.tagName == TAG_CROSS_PLATFORM_TRANSFER &&
-            child.getAttribute(ATTR_PLATFORM).isEmpty()
-        ) {
+        if (child.tagName == TAG_CROSS_PLATFORM_TRANSFER && child.getAttribute(ATTR_PLATFORM).isEmpty()) {
           val quickfix = fix().set().todo(namespace = null, attribute = ATTR_PLATFORM).build()
-          context.report(
-            ISSUE,
-            child,
-            context.getNameLocation(child),
-            "Missing required attribute `$ATTR_PLATFORM`",
-            quickfix,
-          )
+          context.report(ISSUE, child, context.getNameLocation(child), "Missing required attribute `$ATTR_PLATFORM`", quickfix)
         }
 
         // Non-specific checks.
@@ -84,13 +75,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
           TAG_CROSS_PLATFORM_TRANSFER == root.tagName && TAG_PLATFORM_SPECIFIC_PARAMS == tag -> {
             // No validation of <platform-specific-params>, for now.
           }
-          else ->
-            context.report(
-              ISSUE,
-              element,
-              context.getNameLocation(element),
-              "Unexpected element `<$tag>`",
-            )
+          else -> context.report(ISSUE, element, context.getNameLocation(element), "Unexpected element `<$tag>`")
         }
       }
       i++
@@ -127,11 +112,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
             for (include in includes) {
               val includePathNode = include.getAttributeNode(ATTR_PATH)
               val includeDomain = include.getAttribute(ATTR_DOMAIN)
-              if (
-                includePathNode != null &&
-                  excludePath == includePathNode.value &&
-                  domain == includeDomain
-              ) {
+              if (includePathNode != null && excludePath == includePathNode.value && domain == includeDomain) {
                 val earlier = context.getLocation(includePathNode)
                 earlier.message = "Unnecessary/conflicting <include>"
                 location.secondary = earlier
@@ -145,12 +126,7 @@ class FullBackupContentDetector : ResourceXmlDetector() {
       }
       if (!hasPrefix) {
         val pathNode = exclude.getAttributeNode(ATTR_PATH)
-        context.report(
-          ISSUE,
-          exclude,
-          context.getValueLocation(pathNode),
-          "`$excludePath` is not in an included path",
-        )
+        context.report(ISSUE, exclude, context.getValueLocation(pathNode), "`$excludePath` is not in an included path")
       }
     }
   }
@@ -159,28 +135,13 @@ class FullBackupContentDetector : ResourceXmlDetector() {
     val pathNode = element.getAttributeNode(ATTR_PATH) ?: return ""
     val value = pathNode.value
     if (value.contains("//")) {
-      context.report(
-        ISSUE,
-        element,
-        context.getValueLocation(pathNode),
-        "Paths are not allowed to contain `//`",
-      )
+      context.report(ISSUE, element, context.getValueLocation(pathNode), "Paths are not allowed to contain `//`")
     } else if (value.contains("..")) {
-      context.report(
-        ISSUE,
-        element,
-        context.getValueLocation(pathNode),
-        "Paths are not allowed to contain `..`",
-      )
+      context.report(ISSUE, element, context.getValueLocation(pathNode), "Paths are not allowed to contain `..`")
     } else if (value.contains("/")) {
       val domain = element.getAttribute(ATTR_DOMAIN)
       if (DOMAIN_SHARED_PREF == domain || DOMAIN_DATABASE == domain) {
-        context.report(
-          ISSUE,
-          element,
-          context.getValueLocation(pathNode),
-          "Subdirectories are not allowed for domain `$domain`",
-        )
+        context.report(ISSUE, element, context.getValueLocation(pathNode), "Subdirectories are not allowed for domain `$domain`")
       }
     }
     return value
@@ -227,10 +188,8 @@ class FullBackupContentDetector : ResourceXmlDetector() {
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.FATAL,
-        moreInfo =
-          "https://android-developers.googleblog.com/2015/07/auto-backup-for-apps-made-simple.html",
-        implementation =
-          Implementation(FullBackupContentDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        moreInfo = "https://android-developers.googleblog.com/2015/07/auto-backup-for-apps-made-simple.html",
+        implementation = Implementation(FullBackupContentDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
 
     private const val DOMAIN_SHARED_PREF = "sharedpref"

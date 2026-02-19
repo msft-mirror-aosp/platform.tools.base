@@ -29,6 +29,7 @@ import com.android.resources.ScreenRatio;
 import com.android.resources.ScreenRound;
 import com.android.resources.ScreenSize;
 import com.android.resources.TouchScreen;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.devices.Storage.Unit;
 
 import com.google.common.collect.ImmutableMap;
@@ -343,7 +344,7 @@ public class DeviceParserTest extends TestCase {
         try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
             Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals(
-                    "Parsing devices.xml produces the wrong number of devices", 2, devices.size());
+                    "Parsing devices.xml produces the wrong number of devices", 3, devices.size());
 
             Device device0 = devices.get("no_abis", "Generic");
             assertThat(device0.getDefaultHardware().getSupportedAbis()).isEmpty();
@@ -353,6 +354,39 @@ public class DeviceParserTest extends TestCase {
                     .containsExactly(Abi.ARM64_V8A, Abi.ARMEABI_V7A);
             assertThat(device1.getDefaultHardware().getTranslatedAbis())
                     .containsExactly(Abi.RISCV64);
+        }
+    }
+
+    public void testDevices_v8() throws Exception {
+        try (InputStream stream = DeviceSchemaTest.class.getResourceAsStream("devices_v8.xml")) {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(
+                    "Parsing devices.xml produces the wrong number of devices", 3, devices.size());
+
+            Device device0 = devices.get("glasses_like", "Generic");
+            Hardware hw = device0.getDefaultHardware();
+            Touchpad t = hw.getTouchpad();
+            assertNotNull(t);
+            assertEquals(200, t.getWidth());
+            assertEquals(100, t.getHeight());
+            assertEquals(ScreenType.NOTOUCH, hw.getScreen().getScreenType());
+
+            assertEquals(2, hw.getCameras().size());
+            Camera c = hw.getCamera(CameraLocation.FRONT);
+            assertNotNull(c);
+            assertEquals(CameraLocation.FRONT, c.getLocation());
+            assertEquals(270, c.getSensorOrientation());
+            assertFalse(c.hasFlash());
+            assertTrue(c.hasAutofocus());
+            c = hw.getCamera(CameraLocation.BACK);
+            assertNotNull(c);
+            assertEquals(CameraLocation.BACK, c.getLocation());
+            assertEquals(90, c.getSensorOrientation());
+            assertTrue(c.hasFlash());
+            assertTrue(c.hasAutofocus());
+
+            Device device1 = devices.get("various_abis", "Generic");
+            assertNull(device1.getDefaultHardware().getTouchpad());
         }
     }
 
@@ -384,6 +418,43 @@ public class DeviceParserTest extends TestCase {
             device = DeviceParser.parse(stream).get("Galaxy Nexus", "Samsung");
             assertTrue(device.getSoftware(0) != null);
             assertTrue(device.getSoftware(15) != null);
+        } finally {
+            stream.close();
+        }
+    }
+
+    public void testApiMinorRange() throws Exception {
+        Map<String, String> replacements = new HashMap<String, String>();
+        replacements.put("name", "Generic Device");
+        replacements.put("manufacturer", "Generic Manufacturer");
+        replacements.put("api-level", "36.1-");
+        InputStream stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+        try {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(1, devices.size());
+            Device device = devices.get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(35) == null);
+
+            replacements.put("api-level", "36.1-36.2");
+            stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+            device = DeviceParser.parse(stream).get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 2)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 3)) == null);
+
+            replacements.put("api-level", "36.1-38");
+            stream = DeviceSchemaTest.getReplacedStream(replacements, 9);
+            device = DeviceParser.parse(stream).get("Generic Device", "Generic Manufacturer");
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(37, 1)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(38)) != null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(36, 0)) == null);
+            assertTrue(device.getSoftware(new AndroidApiLevel(39)) == null);
         } finally {
             stream.close();
         }

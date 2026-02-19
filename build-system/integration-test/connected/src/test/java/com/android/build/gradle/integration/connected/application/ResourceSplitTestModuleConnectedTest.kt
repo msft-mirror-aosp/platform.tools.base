@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.connected.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.ClassRule
 import org.junit.Rule
@@ -27,35 +26,31 @@ import org.junit.Test
 
 class ResourceSplitTestModuleConnectedTest {
 
-    companion object {
-        @JvmField @ClassRule
-        val emulator = getEmulator()
-    }
+  companion object {
+    @JvmField @ClassRule val emulator = getEmulator()
+  }
 
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("separateTestModule")
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-        .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("separateTestModule").create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
-                android.splits {
-                    abi {
-                        enable = true
-                        reset()
-                        include("x86", "x86_64", "arm64-v8a")
-                        universalApk = true
-                    }
-                }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("test").buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
+      android.splits {
+          abi {
+              enable = true
+              reset()
+              include("x86", "x86_64", "arm64-v8a")
+              universalApk = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("test").buildFile,
+      """
                 android {
                     defaultConfig {
                         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
@@ -66,25 +61,21 @@ class ResourceSplitTestModuleConnectedTest {
                         })
                     }
                 }
-            """
-        )
+            """,
+    )
 
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor().run("uninstallAll")
-    }
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project.executor().run("uninstallAll")
+  }
 
-    // Regression test for b/341266993
-    @Test
-    fun resourceSplitWithTestModuleAndroidTest() {
-        project.executor().run(":test:connectedCheck")
-        TestFileUtils.searchAndReplace(
-            project.getSubproject(":app").buildFile,
-            "universalApk = true",
-            "universalApk = false"
-        )
-        project.executor().run(":test:connectedCheck")
-    }
+  // Regression test for b/341266993
+  @Test
+  fun resourceSplitWithTestModuleAndroidTest() {
+    project.executor().run(":test:connectedCheck")
+    TestFileUtils.searchAndReplace(project.getSubproject(":app").buildFile, "universalApk = true", "universalApk = false")
+    project.executor().run(":test:connectedCheck")
+  }
 }

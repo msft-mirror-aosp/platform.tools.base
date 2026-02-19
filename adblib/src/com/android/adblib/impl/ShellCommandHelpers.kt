@@ -18,74 +18,70 @@ package com.android.adblib.impl
 import com.android.adblib.ShellCollector
 import com.android.adblib.ShellCollectorCapabilities
 import com.android.adblib.ShellV2Collector
-import kotlinx.coroutines.flow.FlowCollector
 import java.nio.ByteBuffer
+import kotlinx.coroutines.flow.FlowCollector
 
 internal object ShellCommandHelpers {
-    fun <T> mapToLegacyCollector(shellV2Collector: ShellV2Collector<T>): ShellCollector<T> {
-        return if (shellV2Collector is LegacyShellToShellV2Collector) {
-            shellV2Collector.legacyShellCollector
-        } else {
-            ShellV2ToLegacyCollector(shellV2Collector)
-        }
+  fun <T> mapToLegacyCollector(shellV2Collector: ShellV2Collector<T>): ShellCollector<T> {
+    return if (shellV2Collector is LegacyShellToShellV2Collector) {
+      shellV2Collector.legacyShellCollector
+    } else {
+      ShellV2ToLegacyCollector(shellV2Collector)
     }
+  }
 
-    fun <T> mapToShellV2Collector(shellCollector: ShellCollector<T>): ShellV2Collector<T> {
-        return if (shellCollector is ShellV2ToLegacyCollector) {
-            shellCollector.shellV2Collector
-        } else {
-            return LegacyShellToShellV2Collector(shellCollector)
-        }
+  fun <T> mapToShellV2Collector(shellCollector: ShellCollector<T>): ShellV2Collector<T> {
+    return if (shellCollector is ShellV2ToLegacyCollector) {
+      shellCollector.shellV2Collector
+    } else {
+      return LegacyShellToShellV2Collector(shellCollector)
     }
-
+  }
 }
 
 internal val <T> ShellV2Collector<T>.isSingleOutputCollector: Boolean
-    get() {
-        return (this as? ShellCollectorCapabilities)?.isSingleOutput ?: false
-    }
+  get() {
+    return (this as? ShellCollectorCapabilities)?.isSingleOutput ?: false
+  }
 
-internal class LegacyShellToShellV2Collector<T>(
-    internal val legacyShellCollector: ShellCollector<T>
-) : ShellV2Collector<T>, ShellCollectorCapabilities {
+internal class LegacyShellToShellV2Collector<T>(internal val legacyShellCollector: ShellCollector<T>) :
+  ShellV2Collector<T>, ShellCollectorCapabilities {
 
-    override val isSingleOutput: Boolean
-        get() = (legacyShellCollector as? ShellCollectorCapabilities)?.isSingleOutput ?: false
+  override val isSingleOutput: Boolean
+    get() = (legacyShellCollector as? ShellCollectorCapabilities)?.isSingleOutput ?: false
 
-    override suspend fun start(collector: FlowCollector<T>) {
-        legacyShellCollector.start(collector)
-    }
+  override suspend fun start(collector: FlowCollector<T>) {
+    legacyShellCollector.start(collector)
+  }
 
-    override suspend fun collectStdout(collector: FlowCollector<T>, stdout: ByteBuffer) {
-        legacyShellCollector.collect(collector, stdout)
-    }
+  override suspend fun collectStdout(collector: FlowCollector<T>, stdout: ByteBuffer) {
+    legacyShellCollector.collect(collector, stdout)
+  }
 
-    override suspend fun collectStderr(collector: FlowCollector<T>, stderr: ByteBuffer) {
-        legacyShellCollector.collect(collector, stderr)
-    }
+  override suspend fun collectStderr(collector: FlowCollector<T>, stderr: ByteBuffer) {
+    legacyShellCollector.collect(collector, stderr)
+  }
 
-    override suspend fun end(collector: FlowCollector<T>, exitCode: Int) {
-        legacyShellCollector.end(collector)
-    }
-
+  override suspend fun end(collector: FlowCollector<T>, exitCode: Int) {
+    legacyShellCollector.end(collector)
+  }
 }
 
-internal class ShellV2ToLegacyCollector<T>(
-    internal val shellV2Collector: ShellV2Collector<T>
-) : ShellCollector<T>, ShellCollectorCapabilities {
+internal class ShellV2ToLegacyCollector<T>(internal val shellV2Collector: ShellV2Collector<T>) :
+  ShellCollector<T>, ShellCollectorCapabilities {
 
-    override val isSingleOutput: Boolean
-        get() = (shellV2Collector as? ShellCollectorCapabilities)?.isSingleOutput ?: false
+  override val isSingleOutput: Boolean
+    get() = (shellV2Collector as? ShellCollectorCapabilities)?.isSingleOutput ?: false
 
-    override suspend fun start(collector: FlowCollector<T>) {
-        shellV2Collector.start(collector)
-    }
+  override suspend fun start(collector: FlowCollector<T>) {
+    shellV2Collector.start(collector)
+  }
 
-    override suspend fun collect(collector: FlowCollector<T>, stdout: ByteBuffer) {
-        shellV2Collector.collectStdout(collector, stdout)
-    }
+  override suspend fun collect(collector: FlowCollector<T>, stdout: ByteBuffer) {
+    shellV2Collector.collectStdout(collector, stdout)
+  }
 
-    override suspend fun end(collector: FlowCollector<T>) {
-        shellV2Collector.end(collector, 0)
-    }
+  override suspend fun end(collector: FlowCollector<T>) {
+    shellV2Collector.end(collector, 0)
+  }
 }

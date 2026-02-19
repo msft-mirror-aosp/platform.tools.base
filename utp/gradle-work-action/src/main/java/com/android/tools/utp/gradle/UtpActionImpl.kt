@@ -16,97 +16,72 @@
 
 package com.android.tools.utp.gradle
 
+import com.android.ddmlib.AndroidDebugBridge
 import com.android.tools.utp.gradle.api.RunUtpWorkParameters
 import com.android.tools.utp.gradle.api.UtpAction
-import com.google.common.io.Files
 import org.gradle.api.provider.ProviderFactory
 
 class UtpActionImpl : UtpAction {
 
-    override fun run(
-        parameters: RunUtpWorkParameters,
-        provider: ProviderFactory
-    ) {
-        // This Gradle property key is hard coded in Android Studio.
-        // We will remove it once Android Studio can consume test report using
-        // the tooling api.
-        val enableUtpTestReportingForAndroidStudio =
-            provider.gradleProperty(
-                "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
-            ).orNull?.toBoolean() ?: false
+  init {
+    // ADB should be initialized only once when this ADB classes are loaded.
+    // UTP may assume that ADB classes are initialized.
+    AndroidDebugBridge.init(false)
+  }
 
-        UtpTestResultListenerServerRunner().use { server ->
-            val utpRunConfigs = parameters.utpRunConfigs.get()
+  override fun run(parameters: RunUtpWorkParameters, provider: ProviderFactory) {
+    // This Gradle property key is hard coded in Android Studio.
+    // We will remove it once Android Studio can consume test report using
+    // the tooling api.
+    val enableUtpTestReportingForAndroidStudio =
+      provider.gradleProperty("com.android.tools.utp.GradleAndroidProjectResolverExtension.enable").orNull?.toBoolean() ?: false
 
-            val utpRunnerConfigFileList = utpRunConfigs.map {
-                val utpRunConfigProto = createRunnerConfigProtoForLocalDevice(
-                    it.deviceId.get(),
-                    it.deviceSerialNumber.get(),
-                    it.testData.get(),
-                    it.targetApkConfigBundle.get(),
-                    it.additionalInstallOptions.get(),
-                    it.helperApks.toList(),
-                    it.uninstallIncompatibleApks.get(),
-                    parameters.utpDependencies.get(),
-                    parameters.androidSdkDirectory.get().asFile.absolutePath,
-                    parameters.adbExecutable.get().asFile.absolutePath,
-                    parameters.aaptExecutable.get().asFile.absolutePath,
-                    parameters.dexdumpExecutable.get().asFile.absolutePath,
-                    it.outputDir.get().asFile,
-                    createUtpTempDirectory("utpRunTemp"),
-                    it.emulatorControlConfig.get(),
-                    it.coverageOutputDir.get().asFile,
-                    it.useOrchestrator.get(),
-                    it.forceCompilation.get(),
-                    it.additionalTestOutputDir.orNull?.asFile,
-                    it.additionalTestOutputOnDeviceDir.orNull,
-                    it.installApkTimeout.orNull,
-                    it.extractedSdkApks.get().map { it.map { it.toPath() } },
-                    it.uninstallApksAfterTest.get(),
-                    it.reinstallIncompatibleApksBeforeTest.get(),
-                    it.shardConfig.orNull,
-                    server.metadata,
-                )
+    val utpRunConfigs = parameters.utpRunConfigs.get()
 
-                createUtpTempFile("runnerConfig", ".pb").also { file ->
-                    file.writeBytes(utpRunConfigProto.toByteArray())
-                }
-            }
+    val utpRunnerConfigList =
+      utpRunConfigs.map {
+        createRunnerConfigProtoForLocalDevice(
+          it.deviceId.get(),
+          it.deviceName.get(),
+          it.deviceShardName.get(),
+          parameters.projectPath.get(),
+          parameters.variantName.get(),
+          it.deviceSerialNumber.get(),
+          it.testData.get(),
+          it.targetApkConfigBundle.get(),
+          it.additionalInstallOptions.get(),
+          it.helperApks.toList(),
+          it.uninstallIncompatibleApks.get(),
+          parameters.utpDependencies.get(),
+          parameters.androidSdkDirectory.get().asFile.absolutePath,
+          parameters.adbExecutable.get().asFile.absolutePath,
+          parameters.aaptExecutable.get().asFile.absolutePath,
+          parameters.dexdumpExecutable.get().asFile.absolutePath,
+          it.outputDir.get().asFile,
+          createUtpTempDirectory("utpRunTemp"),
+          it.emulatorControlConfig.get(),
+          it.coverageOutputDir.get().asFile,
+          it.useOrchestrator.get(),
+          it.forceCompilation.get(),
+          it.additionalTestOutputDir.orNull?.asFile,
+          it.additionalTestOutputOnDeviceDir.orNull,
+          it.installApkTimeout.orNull,
+          it.dependencyApks.get().map { it.map { it.toPath() } },
+          it.uninstallApksAfterTest.get(),
+          it.reinstallIncompatibleApksBeforeTest.get(),
+          it.shardConfig.orNull,
+          enableUtpTestReportingForAndroidStudio,
+          parameters.xmlTestReportOutputDirectory.get().asFile,
+          it.utpResultProtoOutputFile.get().asFile,
+        )
+      }
 
-            val loggingPropertiesFileList = utpRunConfigs.map {
-                createUtpTempFile("logging", "properties").also { file ->
-                    Files.asCharSink(file, Charsets.UTF_8).write("""
-                        .level=INFO
-                        .handlers=java.util.logging.ConsoleHandler,java.util.logging.FileHandler
-                        java.util.logging.ConsoleHandler.level=${it.loggingLevel.get().name}
-                        java.util.logging.SimpleFormatter.format=%4${'$'}s: %5${'$'}s%n
-                        java.util.logging.FileHandler.level=INFO
-                        java.util.logging.FileHandler.pattern=${it.outputDir.get().asFile.invariantSeparatorsPath}/utp.%u.log
-                        java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter
-                    """.trimIndent())
-                }
-            }
-
-            val utpRunner = UtpRunner(
-                parameters.jvm.asFile.get(),
-                parameters.utpDependencies.get(),
-                enableUtpTestReportingForAndroidStudio,
-                server,
-            )
-
-            utpRunner.execute(
-                utpRunnerConfigFileList,
-                loggingPropertiesFileList,
-                utpRunConfigs.map { it.deviceId.get() },
-                utpRunConfigs.map { it.deviceName.get() },
-                utpRunConfigs.map { it.deviceShardName.get() },
-                parameters.projectPath.get(),
-                parameters.variantName.get(),
-                parameters.xmlTestReportOutputDirectory.asFile.get(),
-                parameters.mergedUtpResultProtoOutputFile.asFile.get(),
-                parameters.testResultExitCodeFile.asFile.get(),
-                utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
-            )
-        }
-    }
+    UtpRunner(parameters.utpDependencies.get())
+      .execute(
+        utpRunnerConfigList,
+        utpRunConfigs.map { it.utpResultProtoOutputFile.get().asFile },
+        parameters.mergedUtpResultProtoOutputFile.get().asFile,
+        parameters.testResultExitCodeFile.get().asFile,
+      )
+  }
 }

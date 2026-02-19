@@ -21,6 +21,6 @@ package com.android.build.api.variant
  * [com.android.build.api.variant.AndroidComponentsExtension#onVariants]
  */
 interface DependenciesInfo {
-    val includedInApk: Boolean
-    val includedInBundle: Boolean
+  val includedInApk: Boolean
+  val includedInBundle: Boolean
 }

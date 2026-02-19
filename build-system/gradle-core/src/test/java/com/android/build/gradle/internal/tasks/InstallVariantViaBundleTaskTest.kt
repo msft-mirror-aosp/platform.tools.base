@@ -16,14 +16,10 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.apksig.apk.ApkUtils
-import com.android.build.api.variant.impl.BuiltArtifactImpl
-import com.android.build.api.variant.impl.BuiltArtifactsImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.fixtures.FakeGradleProperty
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.android.build.gradle.internal.profile.AnalyticsService
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceProvider
 import com.android.bundle.Devices
@@ -31,6 +27,9 @@ import com.android.sdklib.AndroidVersion
 import com.android.utils.ILogger
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import org.gradle.api.Project
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.RegularFileProperty
@@ -48,136 +47,137 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
 
 @RunWith(Parameterized::class)
 class InstallVariantViaBundleTaskTest(private val sdkVersion: AndroidVersion) {
 
-    @JvmField
-    @Rule
-    var tmp = TemporaryFolder()
+  @JvmField @Rule var tmp = TemporaryFolder()
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        @Parameterized.Parameters
-        fun sdkVersion() = arrayOf(
-                AndroidVersion(21),
-                AndroidVersion(34)
-        )
+    @JvmStatic @Parameterized.Parameters fun sdkVersion() = arrayOf(AndroidVersion(21), AndroidVersion(34))
+  }
+
+  private lateinit var project: Project
+
+  private val deviceConnector: DeviceConnector = mock()
+
+  @Before
+  fun setUp() {
+    project = ProjectBuilder.builder().withProjectDir(tmp.newFolder()).build()
+    whenever(deviceConnector.name).thenReturn("Test Device")
+    whenever(deviceConnector.apiLevel).thenReturn(sdkVersion.apiLevel)
+    whenever(deviceConnector.apiCodeName).thenReturn(sdkVersion.codename)
+    whenever(deviceConnector.abis).thenReturn(listOf("x86_64"))
+    whenever(deviceConnector.density).thenReturn(-1)
+    whenever(deviceConnector.supportsPrivacySandbox).thenReturn(sdkVersion.apiLevel >= 33)
+  }
+
+  private fun getParams(privacySandboxSdkApksFiles: List<File> = emptyList()) =
+    object : InstallVariantViaBundleTask.Params() {
+      override val adbExe: RegularFileProperty
+        get() = project.objects.fileProperty().fileValue(File("adb.exe"))
+
+      override val apkBundle: RegularFileProperty
+        get() = project.objects.fileProperty().fileValue(File("bundle.aab"))
+
+      override val timeOutInMs: Property<Int>
+        get() = project.objects.property(Int::class.java).value(0)
+
+      override val installOptions: ListProperty<String>
+        get() = project.objects.listProperty(String::class.java)
+
+      override val variantName: Property<String>
+        get() = project.objects.property(String::class.java).value("variantName")
+
+      override val minApiCodeName: Property<String>
+        get() = project.objects.property(String::class.java)
+
+      override val minSdkVersion: Property<Int>
+        get() = project.objects.property(Int::class.java).value(21)
+
+      override val projectPath: Property<String>
+        get() = project.objects.property(String::class.java).value("projectName")
+
+      override val taskOwner: Property<String>
+        get() = project.objects.property(String::class.java).value("taskOwner")
+
+      override val workerKey: Property<String>
+        get() = project.objects.property(String::class.java).value("workerKey")
+
+      override val analyticsService: Property<AnalyticsService>
+        get() = FakeGradleProperty(FakeNoOpAnalyticsService())
+
+      override val privacySandboxSdkApksFiles: ConfigurableFileCollection
+        get() = project.objects.fileCollection().from(privacySandboxSdkApksFiles)
     }
 
-    private lateinit var project: Project
+  @Test
+  fun installSingle() {
 
-    private val deviceConnector: DeviceConnector = mock()
+    val outputPath = Files.createTempFile("extract-apk", "")
+    val runnable = TestInstallRunnable(getParams(), deviceConnector, listOf(outputPath))
+    runnable.run()
+    var apkArgumentCaptor = argumentCaptor<File>()
+    var timeoutArgumentCaptor = argumentCaptor<Int>()
+    var optionsArgumentCaptor = argumentCaptor<Collection<String>>()
+    var loggerArgumentCaptor = argumentCaptor<LoggerWrapper>()
+    verify(deviceConnector, times(1))
+      .installPackage(
+        apkArgumentCaptor.capture(),
+        optionsArgumentCaptor.capture(),
+        timeoutArgumentCaptor.capture(),
+        loggerArgumentCaptor.capture(),
+      )
+    assertThat(apkArgumentCaptor.value.name).contains("extract-apk")
+    assertThat(timeoutArgumentCaptor.value).isEqualTo(0)
+    assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
+  }
 
-    @Before
-    fun setUp() {
-        project = ProjectBuilder.builder().withProjectDir(tmp.newFolder()).build()
-        whenever(deviceConnector.name).thenReturn("Test Device")
-        whenever(deviceConnector.apiLevel).thenReturn(sdkVersion.apiLevel)
-        whenever(deviceConnector.apiCodeName).thenReturn(sdkVersion.codename)
-        whenever(deviceConnector.abis).thenReturn(listOf("x86_64"))
-        whenever(deviceConnector.density).thenReturn(-1)
-        whenever(deviceConnector.supportsPrivacySandbox).thenReturn(sdkVersion.apiLevel >= 33)
+  @Test
+  fun installMultiple() {
+    val outputPath = Files.createTempFile("extract-apk", "")
+    val outputPath2 = Files.createTempFile("extract-apk", "")
+
+    val runnable = TestInstallRunnable(getParams(), deviceConnector, listOf(outputPath, outputPath2))
+    runnable.run()
+    var apkArgumentCaptor = argumentCaptor<List<File>>()
+    var timeoutArgumentCaptor = argumentCaptor<Int>()
+    var optionsArgumentCaptor = argumentCaptor<Collection<String>>()
+    var loggerArgumentCaptor = argumentCaptor<LoggerWrapper>()
+
+    verify(deviceConnector, times(1))
+      .installPackages(
+        apkArgumentCaptor.capture(),
+        optionsArgumentCaptor.capture(),
+        timeoutArgumentCaptor.capture(),
+        loggerArgumentCaptor.capture(),
+      )
+    assertThat(apkArgumentCaptor.value.size).isEqualTo(2)
+    assertThat(apkArgumentCaptor.value).containsExactly(outputPath.toFile(), outputPath2.toFile())
+    assertThat(timeoutArgumentCaptor.value).isEqualTo(0)
+    assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
+  }
+
+  private class TestInstallRunnable(
+    val params: InstallVariantViaBundleTask.Params,
+    private val deviceConnector: DeviceConnector,
+    private val outputPaths: List<Path>,
+  ) : InstallVariantViaBundleTask.InstallRunnable() {
+
+    override fun createDeviceProvider(iLogger: ILogger): DeviceProvider =
+      InstallVariantTaskTest.FakeDeviceProvider(ImmutableList.of(deviceConnector))
+
+    override fun getApkFiles(apkBundles: Collection<Path>, deviceSpec: Devices.DeviceSpec): List<Path> {
+      return ImmutableList.copyOf(outputPaths)
     }
 
-    private fun getParams(privacySandboxSdkApksFiles: List<File> = emptyList()) =
-        object : InstallVariantViaBundleTask.Params() {
-            override val adbExe: RegularFileProperty
-                get() = project.objects.fileProperty().fileValue(File("adb.exe"))
-            override val apkBundle: RegularFileProperty
-                get() = project.objects.fileProperty().fileValue(File("bundle.aab"))
-            override val timeOutInMs: Property<Int>
-                get() = project.objects.property(Int::class.java).value(0)
-            override val installOptions: ListProperty<String>
-                get() = project.objects.listProperty(String::class.java)
-            override val variantName: Property<String>
-                get() = project.objects.property(String::class.java).value("variantName")
-            override val minApiCodeName: Property<String>
-                get() = project.objects.property(String::class.java)
-            override val minSdkVersion: Property<Int>
-                get() = project.objects.property(Int::class.java).value(21)
-            override val projectPath: Property<String>
-                get() = project.objects.property(String::class.java).value("projectName")
-            override val taskOwner: Property<String>
-                get() = project.objects.property(String::class.java).value("taskOwner")
-            override val workerKey: Property<String>
-                get() = project.objects.property(String::class.java).value("workerKey")
-            override val analyticsService: Property<AnalyticsService>
-                get() = FakeGradleProperty(FakeNoOpAnalyticsService())
-            override val privacySandboxSdkApksFiles: ConfigurableFileCollection
-                get() = project.objects.fileCollection().from(privacySandboxSdkApksFiles)
-        }
-
-    @Test
-    fun installSingle() {
-
-        val outputPath = Files.createTempFile(
-            "extract-apk",
-            ""
-        )
-        val runnable = TestInstallRunnable(getParams(), deviceConnector, listOf(outputPath))
-        runnable.run()
-        var apkArgumentCaptor = argumentCaptor<File>()
-        var timeoutArgumentCaptor = argumentCaptor<Int>()
-        var optionsArgumentCaptor = argumentCaptor<Collection<String>>()
-        var loggerArgumentCaptor = argumentCaptor<LoggerWrapper>()
-        verify(deviceConnector, times(1)).installPackage(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
-        assertThat(apkArgumentCaptor.value.name).contains("extract-apk")
-        assertThat(timeoutArgumentCaptor.value).isEqualTo(0)
-        assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
+    override fun getParameters(): InstallVariantViaBundleTask.Params {
+      return params
     }
-
-    @Test
-    fun installMultiple() {
-        val outputPath = Files.createTempFile(
-            "extract-apk",
-            ""
-        )
-        val outputPath2 = Files.createTempFile(
-            "extract-apk",
-            ""
-        )
-
-        val runnable = TestInstallRunnable(getParams(), deviceConnector, listOf(outputPath, outputPath2))
-        runnable.run()
-        var apkArgumentCaptor = argumentCaptor<List<File>>()
-        var timeoutArgumentCaptor = argumentCaptor<Int>()
-        var optionsArgumentCaptor = argumentCaptor<Collection<String>>()
-        var loggerArgumentCaptor = argumentCaptor<LoggerWrapper>()
-
-        verify(deviceConnector, times(1)).installPackages(apkArgumentCaptor.capture(), optionsArgumentCaptor.capture(), timeoutArgumentCaptor.capture(), loggerArgumentCaptor.capture())
-        assertThat(apkArgumentCaptor.value.size).isEqualTo(2)
-        assertThat(apkArgumentCaptor.value).containsExactly(outputPath.toFile(), outputPath2.toFile())
-        assertThat(timeoutArgumentCaptor.value).isEqualTo(0)
-        assertThat(optionsArgumentCaptor.value).isEqualTo(emptyList<String>())
-    }
-
-    private class TestInstallRunnable(
-        val params: InstallVariantViaBundleTask.Params,
-        private val deviceConnector: DeviceConnector,
-        private val outputPaths: List<Path>
-    ) : InstallVariantViaBundleTask.InstallRunnable() {
-
-        override fun createDeviceProvider(iLogger: ILogger): DeviceProvider =
-            InstallVariantTaskTest.FakeDeviceProvider(ImmutableList.of(deviceConnector))
-
-        override fun getApkFiles(apkBundles: Collection<Path>, deviceSpec: Devices.DeviceSpec)
-                : List<Path> {
-            return ImmutableList.copyOf(outputPaths)
-        }
-
-        override fun getParameters(): InstallVariantViaBundleTask.Params {
-            return params
-        }
-    }
+  }
 }
 
 internal inline fun <reified T : Any> argumentCaptor(): ArgumentCaptor<T> {
-    return ArgumentCaptor.forClass(T::class.java)
+  return ArgumentCaptor.forClass(T::class.java)
 }

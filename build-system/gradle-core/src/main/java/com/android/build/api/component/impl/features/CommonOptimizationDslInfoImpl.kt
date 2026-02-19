@@ -22,19 +22,14 @@ import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
 
-abstract class CommonOptimizationDslInfoImpl(
-    private val services: VariantServices,
-): OptimizationDslInfo {
+abstract class CommonOptimizationDslInfoImpl(private val services: VariantServices) : OptimizationDslInfo {
 
-    override fun getProguardFiles(into: ListProperty<RegularFile>) {
-        val explicitProguardFiles = mutableListOf<RegularFile>()
-        gatherProguardFiles(ProguardFileType.EXPLICIT, explicitProguardFiles)
-        if (explicitProguardFiles.isEmpty()) {
-            postProcessingOptions.getDefaultProguardFiles().forEach {
-                into.add(services.toRegularFileProvider(it))
-            }
-        } else {
-            into.set(explicitProguardFiles)
-        }
+  override fun getProguardFiles(into: ListProperty<RegularFile>, newR8ApiInUse: Boolean, includeDefault: Boolean) {
+    val explicitProguardFiles = mutableListOf<RegularFile>()
+    gatherProguardFiles(ProguardFileType.EXPLICIT, explicitProguardFiles)
+    if ((newR8ApiInUse && includeDefault) || (!newR8ApiInUse && explicitProguardFiles.isEmpty())) {
+      postProcessingOptions.getDefaultProguardFiles().forEach { into.add(services.toRegularFileProvider(it)) }
     }
+    into.addAll(explicitProguardFiles)
+  }
 }

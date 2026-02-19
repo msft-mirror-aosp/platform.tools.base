@@ -75,10 +75,7 @@ class LintBatchAnalytics {
       val clientName = client.getClientDisplayName()
       val clientVersion = client.getClientDisplayRevision() ?: "unknown"
       UsageTracker.version = "$clientName $clientVersion"
-      if (
-        java.lang.Boolean.getBoolean("idea.is.internal") ||
-          ApplicationManager.getApplication().isInternal
-      ) {
+      if (java.lang.Boolean.getBoolean("idea.is.internal") || ApplicationManager.getApplication().isInternal) {
         UsageTracker.ideaIsInternal = true
       }
     }
@@ -180,11 +177,7 @@ class LintBatchAnalytics {
       }
       .build()
 
-  private fun recordSeverityOverride(
-    map: HashMap<String, LintIssueId.Builder>,
-    id: String,
-    lintSeverity: Severity,
-  ) {
+  private fun recordSeverityOverride(map: HashMap<String, LintIssueId.Builder>, id: String, lintSeverity: Severity) {
     val builder = map[id]
     if (builder != null) {
       // already got severity from ProblemData entry
@@ -209,11 +202,7 @@ class LintBatchAnalytics {
       else -> LintIssueId.LintSeverity.UNKNOWN_SEVERITY
     }
 
-  private fun computeIssueData(
-    incidents: List<Incident>,
-    flags: LintCliFlags,
-    registry: IssueRegistry,
-  ): Map<String, LintIssueId.Builder> {
+  private fun computeIssueData(incidents: List<Incident>, flags: LintCliFlags, registry: IssueRegistry): Map<String, LintIssueId.Builder> {
     val map = LinkedHashMap<String, LintIssueId.Builder>(registry.issues.size)
     for (incident in incidents) {
       val issue = incident.issue

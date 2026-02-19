@@ -22,12 +22,11 @@ import org.gradle.api.Project
 @Suppress("unused")
 class AndroidKaptPlugin : Plugin<Project> {
 
-    override fun apply(project: Project) {
-        // Nothing to do here.
-        // This plugin only serves as an indication of whether the user wants to have built-in
-        // Kapt support.
-        // The handling of built-in Kapt support is done in the main Android Gradle plugin
-        // (see BuiltInKotlinServicesKt.initBuiltInKaptSupportIfRequired).
-    }
+  override fun apply(project: Project) {
+    // Nothing to do here.
+    // This plugin only serves as an indication of whether the user wants to have built-in
+    // Kapt support.
+    // The handling of built-in Kapt support is done in the main Android Gradle plugin
+    // (see BuiltInKotlinServicesKt.initBuiltInKaptSupportIfRequired).
+  }
 }
-

@@ -28,20 +28,21 @@ import com.android.tools.sdk.AndroidPlatform
 import com.android.tools.sdk.CompatibilityRenderTarget
 import com.android.tools.sdk.EmbeddedRenderTarget
 
-/** [ConfigurationModelModule] for standalone rendering.*/
+/** [ConfigurationModelModule] for standalone rendering. */
 internal class StandaloneConfigurationModelModule(
-    override val resourceRepositoryManager: ResourceRepositoryManager,
-    override val androidModuleInfo: AndroidModuleInfo,
-    override val androidPlatform: AndroidPlatform,
-    override val moduleKey: ModuleKey,
-    override val dependencies: ModuleDependencies,
-    override val resourcePackage: String,
-    override val layoutlibContext: LayoutlibContext,
-    private val layoutlibPath: String,
+  override val resourceRepositoryManager: ResourceRepositoryManager,
+  override val androidModuleInfo: AndroidModuleInfo,
+  override val androidPlatform: AndroidPlatform,
+  override val moduleKey: ModuleKey,
+  override val dependencies: ModuleDependencies,
+  override val resourcePackage: String,
+  override val layoutlibContext: LayoutlibContext,
+  private val layoutlibPath: String,
 ) : ConfigurationModelModule {
-    override val themeInfoProvider: ThemeInfoProvider = StandaloneThemeInfoProvider()
-    override val name: String = "Fake Module"
-    override fun getCompatibilityTarget(target: IAndroidTarget): CompatibilityRenderTarget {
-        return EmbeddedRenderTarget.getCompatibilityTarget(target) { layoutlibPath }
-    }
+  override val themeInfoProvider: ThemeInfoProvider = StandaloneThemeInfoProvider()
+  override val name: String = "Fake Module"
+
+  override fun getCompatibilityTarget(target: IAndroidTarget): CompatibilityRenderTarget {
+    return EmbeddedRenderTarget.getCompatibilityTarget(target) { layoutlibPath }
+  }
 }

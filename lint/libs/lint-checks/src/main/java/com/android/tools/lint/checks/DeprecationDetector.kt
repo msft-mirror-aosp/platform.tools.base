@@ -177,16 +177,12 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
       }
       ATTR_AUTO_REVOKE_PERMISSIONS -> {
         // Flag added in R previews (March 2020), removed/deprecated in June
-        val message =
-          "$name has no effect; this flag was only used in preview versions of Android 11"
+        val message = "$name has no effect; this flag was only used in preview versions of Android 11"
         context.report(ISSUE, attribute, context.getLocation(attribute), message)
         return
       }
       ATTR_PERMISSION -> {
-        if (
-          TAG_SERVICE == attribute.ownerElement.tagName &&
-            CHOOSER_TARGET_SERVICE_PERM == attribute.value
-        ) {
+        if (TAG_SERVICE == attribute.ownerElement.tagName && CHOOSER_TARGET_SERVICE_PERM == attribute.value) {
           context.report(
             ISSUE,
             attribute,
@@ -204,8 +200,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
               ISSUE,
               attribute,
               context.getLocation(attribute),
-              "App actions via actions.xml is deprecated; Please migrate to " +
-                "shortcuts.xml. See $APP_ACTIONS_MIGRATION_URL.",
+              "App actions via actions.xml is deprecated; Please migrate to " + "shortcuts.xml. See $APP_ACTIONS_MIGRATION_URL.",
               fix().url(APP_ACTIONS_MIGRATION_URL).build(),
             )
           context.report(incident, targetSdkAtLeast(21))
@@ -239,13 +234,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
         minSdk = 3
       }
     }
-    val incident =
-      Incident(
-        ISSUE,
-        attribute,
-        context.getLocation(attribute),
-        "`${attribute.name}` is deprecated: $fix",
-      )
+    val incident = Incident(ISSUE, attribute, context.getLocation(attribute), "`${attribute.name}` is deprecated: $fix")
     context.report(incident, minSdkAtLeast(minSdk))
   }
 
@@ -255,11 +244,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
     return listOf(FIREBASE_JOB_DISPATCHER_CLASS)
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val url = "https://developer.android.com/topic/libraries/architecture/workmanager/migrating-fb"
     context.report(
       ISSUE,
@@ -314,13 +299,11 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
   }
 
   private fun JavaEvaluator.inheritsFromWatchFaceService(declaration: UClass) =
-    inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_ANDROIDX, true) ||
-      inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_WSL, true)
+    inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_ANDROIDX, true) || inheritsFrom(declaration.javaPsi, CLASS_WATCHFACE_WSL, true)
 
   companion object {
     @Suppress("SpellCheckingInspection")
-    private const val FIREBASE_JOB_DISPATCHER_CLASS =
-      "com.firebase.jobdispatcher.FirebaseJobDispatcher"
+    private const val FIREBASE_JOB_DISPATCHER_CLASS = "com.firebase.jobdispatcher.FirebaseJobDispatcher"
 
     private const val GCM_NETWORK_MANAGER_CLASS = "com.google.android.gms.gcm.GcmNetworkManager"
 
@@ -333,8 +316,7 @@ class DeprecationDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     private const val APP_ACTIONS = "com.google.android.actions"
 
-    private const val APP_ACTIONS_MIGRATION_URL =
-      "https://developers.google.com/assistant/app/legacy/migration-guide"
+    private const val APP_ACTIONS_MIGRATION_URL = "https://developers.google.com/assistant/app/legacy/migration-guide"
 
     private const val ATTR_USER_SHARED_ID = "sharedUserId"
     private const val ATTR_SHARED_USER_MAX_SDK_VERSION = "sharedUserMaxSdkVersion"

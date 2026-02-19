@@ -85,25 +85,17 @@ class AvdManagerTest {
     gradleManagedDeviceAvdManager =
       AvdManager.createInstance(
         androidSdkHandler,
-        prefsRoot
-          .resolve(AbstractAndroidLocations.FOLDER_AVD)
-          .resolve(AbstractAndroidLocations.FOLDER_GRADLE_AVD),
+        prefsRoot.resolve(AbstractAndroidLocations.FOLDER_AVD).resolve(AbstractAndroidLocations.FOLDER_GRADLE_AVD),
         DeviceManager.createInstance(androidSdkHandler, NullLogger.getLogger()),
         NullLogger.getLogger(),
       )
-    gradleManagedDeviceAvdFolder =
-      AvdInfo.getDefaultAvdFolder(gradleManagedDeviceAvdManager, name.methodName, false)
+    gradleManagedDeviceAvdFolder = AvdInfo.getDefaultAvdFolder(gradleManagedDeviceAvdManager, name.methodName, false)
   }
 
   @Test
   fun getPidHardwareQemuIniLockScannerHasNextLong() {
     // Arrange
-    val avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val file = avdManager.resolveLockFile(avd, "hardware-qemu.ini.lock")
     Files.createDirectories(file.parent)
     Files.write(file, "412503".toByteArray())
@@ -118,12 +110,7 @@ class AvdManagerTest {
   @Test
   fun getPidHardwareQemuIniLockIsEmpty() {
     // Arrange
-    val avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val file = avdManager.resolveLockFile(avd, "hardware-qemu.ini.lock")
     Files.createDirectories(file.parent)
     Files.createFile(file)
@@ -138,12 +125,7 @@ class AvdManagerTest {
   @Test
   fun getPidHardwareQemuIniLockScannerDoesntHaveNextLong() {
     // Arrange
-    val avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val file = avdManager.resolveLockFile(avd, "hardware-qemu.ini.lock")
     Files.createDirectories(file.parent)
     Files.write(file, "notlong".toByteArray())
@@ -158,12 +140,7 @@ class AvdManagerTest {
   @Test
   fun getPidUserdataQemuImgLockScannerHasNextLong() {
     // Arrange
-    val avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val file = avdManager.resolveLockFile(avd, "userdata-qemu.img.lock")
     Files.createDirectories(file.parent)
     Files.write(file, "412503".toByteArray())
@@ -178,12 +155,7 @@ class AvdManagerTest {
   @Test
   fun getPid() {
     // Arrange
-    val avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
 
     // Act
     val pid = avdManager.getPid(avd)
@@ -194,19 +166,14 @@ class AvdManagerTest {
 
   @Test
   fun createAvdWithoutSnapshot() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api23.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val metadataIniFile = avdFolder.parent.resolve(name.methodName + ".ini")
     val metadata = AvdManager.parseIniFile(PathFileWrapper(metadataIniFile), null)!!
     assertThat(metadata["target"]).isEqualTo("android-23")
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", CancellableFileIo.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
-    assertThat(properties["image.sysdir.1"])
-      .isEqualTo("system-images/android-23/default/x86/".replace('/', File.separatorChar))
+    assertThat(properties["image.sysdir.1"]).isEqualTo("system-images/android-23/default/x86/".replace('/', File.separatorChar))
     assertNull(properties["snapshot.present"])
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder,
@@ -216,38 +183,24 @@ class AvdManagerTest {
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       CancellableFileIo.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
     )
-    assertFalse(
-      "Expected NO snapshots.img in " + avdFolder,
-      CancellableFileIo.exists(avdFolder.resolve("snapshots.img")),
-    )
+    assertFalse("Expected NO snapshots.img in " + avdFolder, CancellableFileIo.exists(avdFolder.resolve("snapshots.img")))
   }
 
   @Test
   fun createAvdWithUserdata() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api21.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api21.image)
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
     assertFalse(Files.exists(avdFolder.resolve("boot.prop")))
-    assertThat(properties["image.sysdir.1"])
-      .isEqualTo("system-images/android-21/default/x86/".replace('/', File.separatorChar))
+    assertThat(properties["image.sysdir.1"]).isEqualTo("system-images/android-21/default/x86/".replace('/', File.separatorChar))
     assertNull(properties["snapshot.present"])
-    assertTrue(
-      "Expected " + AvdManager.USERDATA_IMG + " in " + avdFolder,
-      Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)),
-    )
+    assertTrue("Expected " + AvdManager.USERDATA_IMG + " in " + avdFolder, Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)))
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
     )
-    assertFalse(
-      "Expected NO snapshots.img in " + avdFolder,
-      Files.exists(avdFolder.resolve("snapshots.img")),
-    )
+    assertFalse("Expected NO snapshots.img in " + avdFolder, Files.exists(avdFolder.resolve("snapshots.img")))
   }
 
   @Test
@@ -262,8 +215,7 @@ class AvdManagerTest {
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", CancellableFileIo.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
-    assertThat(properties["image.sysdir.1"])
-      .isEqualTo("system-images/android-23/default/x86/".replace('/', File.separatorChar))
+    assertThat(properties["image.sysdir.1"]).isEqualTo("system-images/android-23/default/x86/".replace('/', File.separatorChar))
     assertNull(properties["snapshot.present"])
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder,
@@ -273,10 +225,7 @@ class AvdManagerTest {
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       CancellableFileIo.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
     )
-    assertFalse(
-      "Expected NO snapshots.img in " + avdFolder,
-      CancellableFileIo.exists(avdFolder.resolve("snapshots.img")),
-    )
+    assertFalse("Expected NO snapshots.img in " + avdFolder, CancellableFileIo.exists(avdFolder.resolve("snapshots.img")))
     val userSettingsIniFile = AvdInfo.getUserSettingsPath(avdFolder)
     assertTrue("Expected user-settings.ini in $avdFolder", Files.exists(userSettingsIniFile))
   }
@@ -304,11 +253,7 @@ class AvdManagerTest {
 
   @Test
   fun createChromeOsAvd() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.chromeOs.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.chromeOs.image)
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
@@ -318,11 +263,7 @@ class AvdManagerTest {
 
   @Test
   fun createNonChromeOsAvd() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api23.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
@@ -347,11 +288,7 @@ class AvdManagerTest {
 
   @Test
   fun createTabletAvd() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api34TabletPlayStore.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api34TabletPlayStore.image)
     val avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
@@ -381,8 +318,7 @@ class AvdManagerTest {
 
   @Test
   fun moveAvd() {
-    val hardwareConfig =
-      ImmutableMap.of("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
+    val hardwareConfig = ImmutableMap.of("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
     val userSettings = ImmutableMap.of("abi.type.preferred", "x86")
     val bootProps = ImmutableMap.of("ro.emulator.circular", "true")
     val backgroundFile = mockFs.someRoot.resolve("tmp").resolve("img1.png")
@@ -422,45 +358,29 @@ class AvdManagerTest {
     // The contents of the metadata .ini reflect the new paths
     val metadata = AvdManager.parseIniFile(PathFileWrapper(newMetadataIniPath), null)!!
     assertThat(metadata[MetadataKey.ABS_PATH]).isEqualTo(newAvdFolder.toString())
-    assertThat(metadata[MetadataKey.REL_PATH])
-      .isEqualTo(newAvdFolder.parent.parent.relativize(newAvdFolder).toString())
-    val movedBootProps =
-      AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("boot.prop")), null)!!
+    assertThat(metadata[MetadataKey.REL_PATH]).isEqualTo(newAvdFolder.parent.parent.relativize(newAvdFolder).toString())
+    val movedBootProps = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("boot.prop")), null)!!
     movedBootProps.remove(ENCODING)
     assertThat(movedBootProps).isEqualTo(bootProps)
-    val movedUserSettings =
-      AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("user-settings.ini")), null)!!
+    val movedUserSettings = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("user-settings.ini")), null)!!
     movedUserSettings.remove(ENCODING)
     assertThat(movedUserSettings).isEqualTo(userSettings)
-    val movedConfig =
-      AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("config.ini")), null)!!
+    val movedConfig = AvdManager.parseIniFile(PathFileWrapper(newAvdFolder.resolve("config.ini")), null)!!
     movedConfig.remove(ENCODING)
-    assertThat(movedConfig)
-      .containsEntry("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
+    assertThat(movedConfig).containsEntry("ro.build.display.id", "sdk-eng 4.3 JB_MR2 774058 test-keys")
   }
 
   @Test
   fun renameAvd() {
     // Create an AVD
-    val origAvd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    val origAvd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     assertNotNull("Could not create AVD", origAvd)
     var avdConfigFile = avdFolder.resolve("config.ini")
     assertTrue("Expected config.ini in $avdFolder", Files.exists(avdConfigFile))
     assertFalse(Files.exists(avdFolder.resolve("boot.prop")))
     val properties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
-    assertEquals(
-      "system-images/android-23/default/x86/".replace('/', File.separatorChar),
-      properties["image.sysdir.1"],
-    )
-    assertFalse(
-      "Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder,
-      Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)),
-    )
+    assertEquals("system-images/android-23/default/x86/".replace('/', File.separatorChar), properties["image.sysdir.1"])
+    assertFalse("Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder, Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)))
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
@@ -486,14 +406,8 @@ class AvdManagerTest {
     assertFalse(Files.exists(avdFolder.resolve("boot.prop")))
     avdConfigFile = avdFolder.resolve("config.ini")
     val baseProperties = AvdManager.parseIniFile(PathFileWrapper(avdConfigFile), null)!!
-    assertEquals(
-      "system-images/android-23/default/x86/".replace('/', File.separatorChar),
-      baseProperties["image.sysdir.1"],
-    )
-    assertFalse(
-      "Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder,
-      Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)),
-    )
+    assertEquals("system-images/android-23/default/x86/".replace('/', File.separatorChar), baseProperties["image.sysdir.1"])
+    assertFalse("Expected NO " + AvdManager.USERDATA_IMG + " in " + avdFolder, Files.exists(avdFolder.resolve(AvdManager.USERDATA_IMG)))
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
@@ -528,12 +442,7 @@ class AvdManagerTest {
     val device = deviceManager.getDevice("ai_glasses_device", "Google")!!
     val builder = avdManager.createAvdBuilder(device)
     builder.systemImage = systemImages.api33ext4.image
-    val backgroundPath =
-      mockFs.someRoot
-        .resolve("temp")
-        .resolve("background1.png")
-        .createParentDirectories()
-        .createFile()
+    val backgroundPath = mockFs.someRoot.resolve("temp").resolve("background1.png").createParentDirectories().createFile()
     builder.environment = backgroundPath
     val initialAvdInfo = avdManager.createAvd(builder)
     assertThat(initialAvdInfo).isNotNull()
@@ -599,29 +508,22 @@ class AvdManagerTest {
     assertTrue(Files.exists(newFolder.resolve("foo.bar")))
     assertFalse(Files.exists(newFolder.resolve("boot.prop")))
     // Check the config.ini file
-    val configProperties =
-      AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("config.ini")), null)!!
+    val configProperties = AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("config.ini")), null)!!
     assertThat(configProperties["image.sysdir.1"])
-      .isEqualTo(
-        "system-images/android-24/google_apis_playstore/x86_64/".replace('/', File.separatorChar)
-      )
+      .isEqualTo("system-images/android-24/google_apis_playstore/x86_64/".replace('/', File.separatorChar))
     assertEquals(newName, configProperties["AvdId"])
     assertEquals(newName, configProperties["avd.ini.displayname"])
     assertEquals("222M", configProperties["sdcard.size"])
     assertEquals("originalValue1", configProperties["testKey1"])
     assertEquals("newValue2", configProperties["testKey2"])
-    assertFalse(
-      "Expected NO " + AvdManager.USERDATA_IMG + " in " + newFolder,
-      Files.exists(newFolder.resolve(AvdManager.USERDATA_IMG)),
-    )
+    assertFalse("Expected NO " + AvdManager.USERDATA_IMG + " in " + newFolder, Files.exists(newFolder.resolve(AvdManager.USERDATA_IMG)))
     assertFalse(
       "Expected NO " + AvdManager.USERDATA_QEMU_IMG + " in " + avdFolder,
       Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
     )
 
     // Check the hardware-qemu.ini file
-    val hardwareProperties =
-      AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("hardware-qemu.ini")), null)!!
+    val hardwareProperties = AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("hardware-qemu.ini")), null)!!
     assertEquals(newName, hardwareProperties["avd.name"])
     assertEquals(
       avdFolder.parent.toAbsolutePath().toString() + File.separator + newName + ".avd/sdcard.img",
@@ -632,8 +534,7 @@ class AvdManagerTest {
     assertTrue(Files.exists(avdFolder.resolve("foo.bar")))
     assertTrue(Files.exists(avdFolder.resolve("config.ini")))
     assertTrue(Files.exists(avdFolder.resolve("hardware-qemu.ini")))
-    val baseConfigProperties =
-      AvdManager.parseIniFile(PathFileWrapper(avdFolder.resolve("config.ini")), null)!!
+    val baseConfigProperties = AvdManager.parseIniFile(PathFileWrapper(avdFolder.resolve("config.ini")), null)!!
     assertThat(baseConfigProperties["AvdId"]).isNotEqualTo(newName) // Different or null
   }
 
@@ -667,8 +568,7 @@ class AvdManagerTest {
     newBuilder.backCamera = AvdCamera.WEBCAM
     newBuilder.displayName = "Copy of ${initialAvdInfo.displayName}"
     newBuilder.avdName = "Copy_of_${name.methodName}"
-    newBuilder.avdFolder =
-      initialAvdInfo.dataFolderPath.resolveSibling("Copy_of_${name.methodName}.avd")
+    newBuilder.avdFolder = initialAvdInfo.dataFolderPath.resolveSibling("Copy_of_${name.methodName}.avd")
     val duplicatedAvd = avdManager.duplicateAvd(initialAvdInfo, newBuilder)
 
     // Verify that the duplicated AVD is correct
@@ -684,55 +584,37 @@ class AvdManagerTest {
     assertTrue(Files.exists(newFolder.resolve("foo.bar")))
     assertFalse(Files.exists(newFolder.resolve("boot.prop")))
     // Check the config.ini file
-    val configProperties =
-      AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("config.ini")), null)!!
+    val configProperties = AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("config.ini")), null)!!
     assertEquals(
-      "system-images/android-33-ext4/google_apis_playstore/x86_64/"
-        .replace('/', File.separatorChar),
+      "system-images/android-33-ext4/google_apis_playstore/x86_64/".replace('/', File.separatorChar),
       configProperties["image.sysdir.1"],
     )
     assertEquals(newName, configProperties["AvdId"])
     assertEquals(newBuilder.displayName, configProperties["avd.ini.displayname"])
-    assertThat(configProperties[ConfigKey.SDCARD_PATH])
-      .isEqualTo(newFolder.resolve("custom_sdcard.img").toString())
+    assertThat(configProperties[ConfigKey.SDCARD_PATH]).isEqualTo(newFolder.resolve("custom_sdcard.img").toString())
     assertEquals(AvdCamera.NONE.asParameter, configProperties[ConfigKey.CAMERA_FRONT])
     assertEquals(AvdCamera.WEBCAM.asParameter, configProperties[ConfigKey.CAMERA_BACK])
-    assertFalse(
-      "Expected NO ${AvdManager.USERDATA_IMG} in $newFolder",
-      Files.exists(newFolder.resolve(AvdManager.USERDATA_IMG)),
-    )
-    assertFalse(
-      "Expected NO ${AvdManager.USERDATA_QEMU_IMG} in $avdFolder",
-      Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)),
-    )
+    assertFalse("Expected NO ${AvdManager.USERDATA_IMG} in $newFolder", Files.exists(newFolder.resolve(AvdManager.USERDATA_IMG)))
+    assertFalse("Expected NO ${AvdManager.USERDATA_QEMU_IMG} in $avdFolder", Files.exists(avdFolder.resolve(AvdManager.USERDATA_QEMU_IMG)))
 
     // Check the hardware-qemu.ini file
-    val hardwareProperties =
-      AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("hardware-qemu.ini")), null)!!
+    val hardwareProperties = AvdManager.parseIniFile(PathFileWrapper(newFolder.resolve("hardware-qemu.ini")), null)!!
     assertThat(hardwareProperties["avd.name"]).isEqualTo(newName)
     assertThat(hardwareProperties["hw.sdCard.path"])
-      .isEqualTo(
-        avdFolder.parent.toAbsolutePath().resolve("$newName.avd").resolve("sdcard.img").toString()
-      )
+      .isEqualTo(avdFolder.parent.toAbsolutePath().resolve("$newName.avd").resolve("sdcard.img").toString())
 
     // Quick check that the original AVD directory still exists
     assertTrue(Files.exists(avdFolder.resolve("foo.bar")))
     assertTrue(Files.exists(avdFolder.resolve("config.ini")))
     assertTrue(Files.exists(avdFolder.resolve("hardware-qemu.ini")))
-    val baseConfigProperties =
-      AvdManager.parseIniFile(PathFileWrapper(avdFolder.resolve("config.ini")), null)!!
+    val baseConfigProperties = AvdManager.parseIniFile(PathFileWrapper(avdFolder.resolve("config.ini")), null)!!
     assertThat(baseConfigProperties["AvdId"]).isNotEqualTo(newName) // Different or null
   }
 
   @Test
   fun reloadAvds() {
     // Create an AVD.
-    var avd =
-      avdManager.createAvd(
-        avdFolder = avdFolder,
-        avdName = name.methodName,
-        systemImage = systemImages.api23.image,
-      )
+    var avd = avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
     assertNotNull("Could not create AVD", avd)
     assertEquals(AvdInfo.AvdStatus.OK, avd.status)
 
@@ -873,11 +755,7 @@ class AvdManagerTest {
 
   @Test
   fun parseAvdInfo() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api23.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
 
     // Check a valid AVD .ini file
     val parentFolder = avdFolder.parent
@@ -892,9 +770,7 @@ class AvdManagerTest {
     // Check a bad AVD .ini file.
     // Append garbage to make the file invalid.
     Files.newOutputStream(avdIniFile, StandardOpenOption.APPEND).use { corruptedStream ->
-      BufferedWriter(OutputStreamWriter(corruptedStream)).use { corruptedWriter ->
-        corruptedWriter.write("[invalid syntax]\n")
-      }
+      BufferedWriter(OutputStreamWriter(corruptedStream)).use { corruptedWriter -> corruptedWriter.write("[invalid syntax]\n") }
     }
     val corruptedInfo = avdManager.parseAvdInfo(avdIniFile)
     assertThat(corruptedInfo.status).isEqualTo(AvdInfo.AvdStatus.ERROR_CORRUPTED_INI)
@@ -935,11 +811,7 @@ class AvdManagerTest {
 
   @Test
   fun parseAvdInfoWithoutDisplayName() {
-    avdManager.createAvd(
-      avdFolder = avdFolder,
-      avdName = name.methodName,
-      systemImage = systemImages.api23.image,
-    )
+    avdManager.createAvd(avdFolder = avdFolder, avdName = name.methodName, systemImage = systemImages.api23.image)
 
     // Remove the display name property from the .ini file
     val parentFolder = avdFolder.parent

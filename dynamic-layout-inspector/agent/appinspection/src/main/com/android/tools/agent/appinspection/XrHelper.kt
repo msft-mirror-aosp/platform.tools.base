@@ -21,19 +21,18 @@ import androidx.inspection.InspectorEnvironment
 import com.android.tools.agent.appinspection.xr.getXrViews
 
 /**
- * Handle with care: this class is accessed through reflection by the compose inspector,
- * so any changes to either package name, class name or signature of [getXrViews] will break
- * the compose inspector.
+ * Handle with care: this class is accessed through reflection by the compose inspector, so any changes to either package name, class name
+ * or signature of [getXrViews] will break the compose inspector.
  */
 class XrHelper(private val environment: InspectorEnvironment) {
-    var enabled = false
+  var enabled = false
 
-    /** Get all the views from XR. */
-    fun getXrViews(): List<View> {
-        if (!enabled) {
-            return emptyList()
-        }
-
-        return runCatching { getXrViews(environment) }.getOrNull() ?: emptyList()
+  /** Get all the views from XR. */
+  fun getXrViews(): List<View> {
+    if (!enabled) {
+      return emptyList()
     }
+
+    return runCatching { getXrViews(environment) }.getOrNull() ?: emptyList()
+  }
 }

@@ -16,32 +16,23 @@
 package com.android.build.gradle.internal.test
 
 import com.android.build.api.variant.impl.BuiltArtifactsImpl
-import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.ide.common.build.GenericBuiltArtifactsSplitOutputMatcher
 import java.io.File
 
 object BuiltArtifactsSplitOutputMatcher {
 
-    /**
-     * Determines and return the list of APKs to use based on given device abis.
-     *
-     * @param deviceAbis the device abis.
-     * @param builtArtifacts the tested variant built artifacts.
-     * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place
-     * of the outputs, if there is a single output with no abi filters. If the list is
-     * empty, then the variant does not restrict ABI packaging.
-     * @return the list of APK files to install.
-     */    fun computeBestOutput(
-        deviceAbis: List<String>,
-        builtArtifacts: BuiltArtifactsImpl,
-        variantAbiFilters: Collection<String>
-    ): List<File> {
-        val adaptedBuiltArtifactType = builtArtifacts.toGenericBuiltArtifacts()
-        // now look for a matching output file
-        return GenericBuiltArtifactsSplitOutputMatcher.computeBestOutput(
-            adaptedBuiltArtifactType,
-            variantAbiFilters,
-            deviceAbis
-        )
-    }
+  /**
+   * Determines and return the list of APKs to use based on given device abis.
+   *
+   * @param deviceAbis the device abis.
+   * @param builtArtifacts the tested variant built artifacts.
+   * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place of the outputs, if there is a single
+   *   output with no abi filters. If the list is empty, then the variant does not restrict ABI packaging.
+   * @return the list of APK files to install.
+   */
+  fun computeBestOutput(deviceAbis: List<String>, builtArtifacts: BuiltArtifactsImpl, variantAbiFilters: Collection<String>): List<File> {
+    val adaptedBuiltArtifactType = builtArtifacts.toGenericBuiltArtifacts()
+    // now look for a matching output file
+    return GenericBuiltArtifactsSplitOutputMatcher.computeBestOutput(adaptedBuiltArtifactType, variantAbiFilters, deviceAbis)
+  }
 }

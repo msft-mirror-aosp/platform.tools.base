@@ -55,15 +55,10 @@ class TestRunner(
   private val storageManager: StorageManager,
   private val testResultProcessor: TestResultProcessor,
   private val testMatrixGenerator: TestMatrixGenerator = TestMatrixGenerator(projectSettings),
-  private val matrixRunProcessTracker: TestMatrixRunProcessTracker =
-    TestMatrixRunProcessTracker(testingManager, projectSettings.name),
+  private val matrixRunProcessTracker: TestMatrixRunProcessTracker = TestMatrixRunProcessTracker(testingManager, projectSettings.name),
   private val deviceInfoFileManager: DeviceInfoFileManager = DeviceInfoFileManager(),
-  private val testSuiteMergerFactory: () -> UtpTestSuiteResultMerger = {
-    UtpTestSuiteResultMerger()
-  },
-  private val xmlHandlerFactory: (TestDeviceData) -> TestResultsXmlHandler = {
-    getDefaultHandler(it)
-  },
+  private val testSuiteMergerFactory: () -> UtpTestSuiteResultMerger = { UtpTestSuiteResultMerger() },
+  private val xmlHandlerFactory: (TestDeviceData) -> TestResultsXmlHandler = { getDefaultHandler(it) },
 ) {
 
   companion object {
@@ -75,16 +70,12 @@ class TestRunner(
           val builder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
           val document = builder.parse(xml)
           val testSuiteElements =
-            document.getElementsByTagName("testsuite").let { nodeList ->
-              List(nodeList.length) { index -> nodeList.item(index) }
-            }
+            document.getElementsByTagName("testsuite").let { nodeList -> List(nodeList.length) { index -> nodeList.item(index) } }
           testSuiteElements.forEach { testSuite ->
             val propertyNode =
               testSuite.childNodes
                 .let { nodeList -> List(nodeList.length) { index -> nodeList.item(index) } }
-                .firstOrNull { node ->
-                  node.nodeType == Node.ELEMENT_NODE && node.nodeName.lowercase() == "properties"
-                }
+                .firstOrNull { node -> node.nodeType == Node.ELEMENT_NODE && node.nodeName.lowercase() == "properties" }
 
             val propertyElement =
               if (propertyNode == null) {
@@ -130,13 +121,11 @@ class TestRunner(
 
     val runRequestId = UUID.randomUUID().toString()
 
-    val testHistoryName =
-      projectSettings.testHistoryName ?: testData.testedApplicationId ?: testData.applicationId
+    val testHistoryName = projectSettings.testHistoryName ?: testData.testedApplicationId ?: testData.applicationId
 
     val historyId = toolResultsManager.getOrCreateHistory(projectSettings.name, testHistoryName)
 
-    val testRunStorage =
-      storageManager.testRunStorage(runRequestId, projectSettings.storageBucket, historyId)
+    val testRunStorage = storageManager.testRunStorage(runRequestId, projectSettings.storageBucket, historyId)
 
     val testApkStorageObject =
       storageManager.retrieveOrUploadSharedFile(
@@ -167,13 +156,7 @@ class TestRunner(
     val testMatrix =
       testingManager.createTestMatrixRun(
         projectSettings.name,
-        testMatrixGenerator.createTestMatrix(
-          device,
-          testData,
-          testRunStorage,
-          testApkStorageObject,
-          appApkStorageObject,
-        ),
+        testMatrixGenerator.createTestMatrix(device, testData, testRunStorage, testApkStorageObject, appApkStorageObject),
         runRequestId,
       )
 
@@ -227,9 +210,7 @@ class TestRunner(
       val executionStep = toolResultsManager.requestStep(requestInfo)
       executionStep.testExecutionStep.testSuiteOverviews?.forEach { suiteOverview ->
         testRunStorage
-          .downloadFromStorage(suiteOverview.xmlSource.fileUri) {
-            File(resultsOutDir, "TEST-${it.replace("/", "_")}")
-          }
+          .downloadFromStorage(suiteOverview.xmlSource.fileUri) { File(resultsOutDir, "TEST-${it.replace("/", "_")}") }
           ?.also { xmlHandler.updateXml(it, projectPath, variantName) }
       }
 

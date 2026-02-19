@@ -18,19 +18,19 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class GetMergedNativeLibsTest: VariantApiBaseTest(TestType.Script) {
+class GetMergedNativeLibsTest : VariantApiBaseTest(TestType.Script) {
 
-    @Test
-    fun getMergedNativeLibsTest() {
-        given {
-            tasksToInvoke.add(":lib:checkDebugNativeLibs")
-            addModule(":lib") {
-                buildFile =
-                        // language=kotlin
-                    """
+  @Test
+  fun getMergedNativeLibsTest() {
+    given {
+      tasksToInvoke.add(":lib:checkDebugNativeLibs")
+      addModule(":lib") {
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.library")
                     kotlin("android")
@@ -67,32 +67,34 @@ class GetMergedNativeLibsTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest(this)
-                addSource("src/main/jniLibs/x86/foo.so", "foo")
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# artifacts.get in Kotlin
-
-This sample shows how to obtain the merged native libraries folder from the AGP.
-
-The [onVariants] block will wire the [CheckNativeLibsTask] input property (nativeLibsDir) by using
-the [Artifacts.get] call with the right [SingleArtifact]:
-`nativeLibsDir.set(artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))`
-## To Run
-./gradlew checkDebugNativeLibs
-
-expected result : "Checking native libs in .... " message.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("Checking native libs")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+        addSource("src/main/jniLibs/x86/foo.so", "foo")
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+
+        This sample shows how to obtain the merged native libraries folder from the AGP.
+
+        The [onVariants] block will wire the [CheckNativeLibsTask] input property (nativeLibsDir) by using
+        the [Artifacts.get] call with the right [SingleArtifact]:
+        `nativeLibsDir.set(artifacts.get(SingleArtifact.MERGED_NATIVE_LIBS))`
+        ## To Run
+        ./gradlew checkDebugNativeLibs
+
+        expected result : "Checking native libs in .... " message.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("Checking native libs")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

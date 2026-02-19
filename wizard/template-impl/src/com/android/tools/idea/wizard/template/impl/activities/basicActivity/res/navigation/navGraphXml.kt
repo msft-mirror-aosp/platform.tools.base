@@ -16,12 +16,12 @@
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.res.navigation
 
 fun navGraphXml(
-  packageName:String,
+  packageName: String,
   firstFragmentClass: String,
   secondFragmentClass: String,
   firstFragmentLayoutName: String,
   secondFragmentLayoutName: String,
-  navGraphName: String
+  navGraphName: String,
 ) =
   """<?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"

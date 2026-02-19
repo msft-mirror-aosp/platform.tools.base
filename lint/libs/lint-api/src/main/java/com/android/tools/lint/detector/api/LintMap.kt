@@ -21,9 +21,8 @@ import java.util.HashMap
 import org.jetbrains.annotations.Contract
 
 /**
- * A [LintMap] represents a collection of key value pairs used in lint. The map can be serialized,
- * and this is the main use-case for it: storing and retrieving additional information as part of
- * incidents for incremental build purposes.
+ * A [LintMap] represents a collection of key value pairs used in lint. The map can be serialized, and this is the main use-case for it:
+ * storing and retrieving additional information as part of incidents for incremental build purposes.
  *
  * The specific types of values that are currently allowed are:
  * - [String]
@@ -38,18 +37,12 @@ class LintMap : Iterable<String> {
   /** Internal untyped map storage. */
   private val map: MutableMap<String, Any> = HashMap()
 
-  /**
-   * Simple string get operator to be able to use Kotlin array syntax; this is short for [getString]
-   * with a null default.
-   */
+  /** Simple string get operator to be able to use Kotlin array syntax; this is short for [getString] with a null default. */
   operator fun get(key: String): String? {
     return getString(key, null)
   }
 
-  /**
-   * Simple string set operator to be able to use Kotlin array syntax; this is mapped to the [put]
-   * method for strings.
-   */
+  /** Simple string set operator to be able to use Kotlin array syntax; this is mapped to the [put] method for strings. */
   operator fun set(key: String, value: String): LintMap {
     return put(key, value)
   }
@@ -203,10 +196,7 @@ class LintMap : Iterable<String> {
   override fun toString() = "[${map.asSequence().joinToString { (k, v) -> "$k ↦ $v" }}]"
 
   companion object {
-    /**
-     * Returns the internal map. This is **only** intended for use by lint to be able to persist and
-     * restore the data.
-     */
+    /** Returns the internal map. This is **only** intended for use by lint to be able to persist and restore the data. */
     fun getInternalMap(map: LintMap): MutableMap<String, Any> = map.map
   }
 

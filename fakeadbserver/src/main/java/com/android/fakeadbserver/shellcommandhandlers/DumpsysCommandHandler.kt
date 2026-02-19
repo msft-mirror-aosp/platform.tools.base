@@ -21,31 +21,31 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-class DumpsysCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType,"dumpsys") {
+class DumpsysCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "dumpsys") {
 
-    override fun execute(
-      fakeAdbServer: FakeAdbServer,
-      statusWriter: StatusWriter,
-      shellCommandOutput: ShellCommandOutput,
-      device: DeviceState,
-      shellCommand: String,
-      shellCommandArgs: String?
-    ) {
-        if (shellCommandArgs == null) {
-            statusWriter.writeFail()
-            return
-        }
-
-        statusWriter.writeOk()
-
-        val response: String = when {
-            shellCommandArgs.startsWith("package") -> packageCommandHandler()
-            else -> ""
-        }
-
-        shellCommandOutput.writeStdout(response)
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    if (shellCommandArgs == null) {
+      statusWriter.writeFail()
+      return
     }
+
+    statusWriter.writeOk()
+
+    val response: String =
+      when {
+        shellCommandArgs.startsWith("package") -> packageCommandHandler()
+        else -> ""
+      }
+
+    shellCommandOutput.writeStdout(response)
+  }
 
   private fun packageCommandHandler(): String {
     // Treat all packages as not installed:

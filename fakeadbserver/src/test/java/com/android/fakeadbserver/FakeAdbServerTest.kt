@@ -21,34 +21,32 @@ import org.junit.Test
 
 class FakeAdbServerTest {
 
-    /** Very basic test example. Remove `@Ignore` if you wish to run an interactive server.  */
-    @Test
-    @Ignore
-    fun testInteractiveServer() {
-        // Build the server and configure it to use the default ADB command handlers.
-        val builder = FakeAdbServer.Builder()
-        builder.installDefaultCommandHandlers()
-        builder.build().use { server ->
-            // Connect a test device to simulate device connection before server bring-up.
-            server.connectDevice(
-                SERIAL, MANUFACTURER, MODEL, RELEASE, SDK, DeviceState.HostConnectionType.USB
-            )
+  /** Very basic test example. Remove `@Ignore` if you wish to run an interactive server. */
+  @Test
+  @Ignore
+  fun testInteractiveServer() {
+    // Build the server and configure it to use the default ADB command handlers.
+    val builder = FakeAdbServer.Builder()
+    builder.installDefaultCommandHandlers()
+    builder.build().use { server ->
+      // Connect a test device to simulate device connection before server bring-up.
+      server.connectDevice(SERIAL, MANUFACTURER, MODEL, RELEASE, SDK, DeviceState.HostConnectionType.USB)
 
-            // Start server execution.
-            server.start()
+      // Start server execution.
+      server.start()
 
-            // Optional: Since the server lives on a separate thread, we can pause the test to poke at
-            // the server.
-            server.awaitServerTermination()
-        }
+      // Optional: Since the server lives on a separate thread, we can pause the test to poke at
+      // the server.
+      server.awaitServerTermination()
     }
+  }
 
-    companion object {
+  companion object {
 
-        private const val SERIAL = "test_device_001"
-        private const val MANUFACTURER = "Google"
-        private const val MODEL = "Nexus Silver"
-        private const val RELEASE = "8.0"
-        private val SDK = AndroidApiLevel(26)
-    }
+    private const val SERIAL = "test_device_001"
+    private const val MANUFACTURER = "Google"
+    private const val MODEL = "Nexus Silver"
+    private const val RELEASE = "8.0"
+    private val SDK = AndroidApiLevel(26)
+  }
 }

@@ -56,26 +56,18 @@ internal class KlibLightFieldForEnumEntry(
   private val _modifierList by lazyPub {
     SymbolLightMemberModifierList(
       containingDeclaration = this,
-      modifiersBox =
-        InitializedModifiersBox(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.PUBLIC),
+      modifiersBox = InitializedModifiersBox(PsiModifier.STATIC, PsiModifier.FINAL, PsiModifier.PUBLIC),
       annotationsBox =
         GranularAnnotationsBox(
-          annotationsProvider =
-            SymbolAnnotationsProvider(
-              ktModule = ktModule,
-              annotatedSymbolPointer = enumEntrySymbolPointer,
-            )
+          annotationsProvider = SymbolAnnotationsProvider(ktModule = ktModule, annotatedSymbolPointer = enumEntrySymbolPointer)
         ),
     )
   }
 
   private val _type: PsiType by lazyPub {
     enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
-      enumEntrySymbol.returnType.asPsiType(
-        this@KlibLightFieldForEnumEntry,
-        allowErrorTypes = true,
-        allowNonJvmPlatforms = true,
-      ) ?: nonExistentType()
+      enumEntrySymbol.returnType.asPsiType(this@KlibLightFieldForEnumEntry, allowErrorTypes = true, allowNonJvmPlatforms = true)
+        ?: nonExistentType()
     }
   }
 
@@ -96,10 +88,7 @@ internal class KlibLightFieldForEnumEntry(
       enumEntrySymbol.deprecationStatus != null
     }
 
-  override fun getName(): String =
-    enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
-      enumEntrySymbol.name.asString()
-    }
+  override fun getName(): String = enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol -> enumEntrySymbol.name.asString() }
 
   override fun getModifierList(): PsiModifierList = _modifierList
 
@@ -112,8 +101,7 @@ internal class KlibLightFieldForEnumEntry(
   // TODO: This is definitely wrong.
   override fun getInitializingClass(): PsiEnumConstantInitializer? = null
 
-  override fun getOrCreateInitializingClass(): PsiEnumConstantInitializer =
-    initializingClass ?: cannotModify()
+  override fun getOrCreateInitializingClass(): PsiEnumConstantInitializer = initializingClass ?: cannotModify()
 
   override fun resolveConstructor(): PsiMethod? = null
 

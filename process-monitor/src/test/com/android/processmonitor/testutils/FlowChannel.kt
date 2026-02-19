@@ -15,12 +15,12 @@
  */
 package com.android.processmonitor.testutils
 
+import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import java.io.Closeable
 
 /**
  * A Channel created from a [Flow]
@@ -39,27 +39,24 @@ import java.io.Closeable
  */
 internal class FlowChannel<E>(scope: CoroutineScope, flow: Flow<E>) : Closeable {
 
-    private val channel = Channel<E>(10)
-    private val job = scope.launch { flow.collect { channel.send(it) } }
+  private val channel = Channel<E>(10)
+  private val job = scope.launch { flow.collect { channel.send(it) } }
 
-    suspend fun receive(): E = channel.receive()
+  suspend fun receive(): E = channel.receive()
 
-    suspend fun receiveOrNull(timeout: Long = 1000): E? =
-        withTimeoutOrNull(timeout) { channel.receive() }
+  suspend fun receiveOrNull(timeout: Long = 1000): E? = withTimeoutOrNull(timeout) { channel.receive() }
 
-    suspend fun take(count: Int): List<E> {
-        val list = mutableListOf<E>()
-        repeat(count) {
-            list.add(receive())
-        }
-        return list
-    }
+  suspend fun take(count: Int): List<E> {
+    val list = mutableListOf<E>()
+    repeat(count) { list.add(receive()) }
+    return list
+  }
 
-    override fun close() {
-        job.cancel()
-    }
+  override fun close() {
+    job.cancel()
+  }
 }
 
 internal fun <T> Flow<T>.toChannel(scope: CoroutineScope): FlowChannel<T> {
-    return FlowChannel(scope, this)
+  return FlowChannel(scope, this)
 }

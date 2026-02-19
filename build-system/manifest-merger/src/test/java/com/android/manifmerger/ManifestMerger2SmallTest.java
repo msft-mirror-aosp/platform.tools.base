@@ -48,6 +48,7 @@ import com.android.utils.Pair;
 import com.android.utils.XmlUtils;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
@@ -55,6 +56,7 @@ import com.google.common.truth.Truth;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -72,6 +74,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -82,6 +85,8 @@ public class ManifestMerger2SmallTest {
     private final ManifestModel mModel = new ManifestModel();
 
     @Rule public MockitoRule rule = MockitoJUnit.rule();
+
+    @Rule public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Mock
     private ActionRecorder mActionRecorder;
@@ -261,6 +266,62 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
+    public void testReplaceRequiredWithGeneratedFileForAndroidTest() throws Exception {
+        MockLog mockLog = new MockLog();
+        String generatedXml =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    package=\"com.example.mylibrary.test\">\n"
+                    + "\n"
+                    + "    <uses-sdk android:minSdkVersion=\"36\" android:targetSdkVersion=\"36\""
+                    + " />\n"
+                    + "\n"
+                    + "    <instrumentation"
+                    + " android:name=\"androidx.test.runner.AndroidJUnitRunner\"\n"
+                    + "                     android:targetPackage=\"com.example.mylibrary.test\"\n"
+                    + "                     android:handleProfiling=\"false\"\n"
+                    + "                     android:functionalTest=\"false\"\n"
+                    + "                     android:label=\"Tests for"
+                    + " com.example.mylibrary.test\"/>\n"
+                    + "</manifest>";
+
+        File generatedFile = TestUtils.inputAsFile("testReplaceRequiredIsOk", generatedXml);
+
+        String testInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\""
+                        + "    package = \"org.example.test\">\n"
+                        + "\n"
+                        + "    <application> \n"
+                        + "      <uses-library\n"
+                        + "            android:name=\"wear-sdk\"\n"
+                        + "            android:required=\"false\"\n"
+                        + "            tools:replace=\"android:required\" />\n"
+                        + "     </application>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        File testFile = TestUtils.inputAsFile("testReplaceRequiredIsOk", testInput);
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    testFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(generatedFile)
+                            .setNamespace("org.example.adnroidTest")
+                            .withFeatures(
+                                    ManifestMerger2.Invoker.Feature.DISABLE_REPLACE_WARNING,
+                                    ManifestMerger2.Invoker.Feature.DISABLE_MINSDKLIBRARY_CHECK)
+                            .merge();
+            assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
+        } finally {
+            assertTrue(generatedFile.delete());
+            assertTrue(testFile.delete());
+        }
+    }
+
+    @Test
     public void testToolsAnnotationPresence() throws Exception {
 
         MockLog mockLog = new MockLog();
@@ -297,6 +358,77 @@ public class ManifestMerger2SmallTest {
         }
     }
 
+    /**
+     * Regression test for b/474638851.
+     *
+     * <p>Verifies that the merger is robust against whitespace in {@code tools:replace} attributes.
+     * Specifically checks handling of whitespace padding (e.g., " attr1 , attr2 ").
+     *
+     * <p>Previously, whitespace padding caused the merger to treat " attr1" and "attr1" as distinct
+     * keys, leading to a crash when it attempted to merge them. This test ensures the input keys
+     * are trimmed and de-duplicated before processing.
+     */
+    @Test
+    public void testToolsReplaceRobustness_WithSpaces() throws Exception {
+
+        MockLog mockLog = new MockLog();
+
+        String mainInput =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.app\">\n"
+                        + "    <application android:allowBackup=\"true\" android:label=\"foo\" \n"
+                        + "        tools:replace=\"android:allowBackup,  android:label\"/>\n"
+                        + "</manifest>";
+
+        String libInput =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                    + "    package=\"com.example.lib\">\n"
+                    + "    <application android:label=\"bar\" tools:replace=\"android:label\"/>\n"
+                    + "</manifest>";
+
+        File mainFile = temporaryFolder.newFile("mainManifest.xml");
+        File libFile = temporaryFolder.newFile("libManifest.xml");
+        Files.writeString(mainFile.toPath(), mainInput);
+        Files.writeString(libFile.toPath(), libInput);
+
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(mainFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .addLibraryManifest(libFile)
+                        .merge();
+
+        assertThat(mergingReport.getResult()).isEqualTo(MergingReport.Result.WARNING);
+
+        // Warning content safety check
+        java.util.List<MergingReport.Record> warnings =
+                mergingReport.getLoggingRecords().stream()
+                        .filter(r -> r.getSeverity() == MergingReport.Record.Severity.WARNING)
+                        .collect(java.util.stream.Collectors.toList());
+
+        assertThat(warnings).hasSize(1);
+        assertThat(warnings.get(0).getMessage())
+                .contains("application@android:allowBackup was tagged");
+
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+        NodeList applications = xmlDocument.getElementsByTagName(SdkConstants.TAG_APPLICATION);
+
+        assertThat(applications.getLength()).named("application tag count").isEqualTo(1);
+
+        Node replaceNode =
+                applications
+                        .item(0)
+                        .getAttributes()
+                        .getNamedItemNS(SdkConstants.TOOLS_URI, "replace");
+        assertThat(replaceNode).named("tools:replace attribute").isNotNull();
+
+        String replaceValue = replaceNode.getNodeValue();
+        Iterable<String> attributes = Splitter.on(',').trimResults().split(replaceValue);
+
+        assertThat(attributes).contains("android:label");
+        assertThat(attributes).contains("android:allowBackup");
+        assertThat(attributes).hasSize(2);
+    }
 
     @Test
     public void testPackageOverride() throws Exception {

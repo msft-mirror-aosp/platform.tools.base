@@ -23,68 +23,52 @@ import com.android.build.gradle.internal.services.getBuildService
 import com.android.builder.model.level2.DependencyGraphs
 import com.android.builder.model.level2.GraphItem
 import com.google.common.collect.ImmutableList
+import java.io.File
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.services.BuildServiceRegistry
-import java.io.File
 
-class Level2DependencyModelBuilder(buildServiceRegistry: BuildServiceRegistry) :
-    DependencyModelBuilder<DependencyGraphs> {
+class Level2DependencyModelBuilder(buildServiceRegistry: BuildServiceRegistry) : DependencyModelBuilder<DependencyGraphs> {
 
-    private val compileItems = ImmutableList.builder<GraphItem>()
-    private val runtimeItems = ImmutableList.builder<GraphItem>()
-    private val providedLibraries = ImmutableList.builder<String>()
+  private val compileItems = ImmutableList.builder<GraphItem>()
+  private val runtimeItems = ImmutableList.builder<GraphItem>()
+  private val providedLibraries = ImmutableList.builder<String>()
 
-    private val libraryDependencyCache =
-        getBuildService(
-            buildServiceRegistry,
-            LibraryDependencyCacheBuildService::class.java
-        )
-            .get()
+  private val libraryDependencyCache = getBuildService(buildServiceRegistry, LibraryDependencyCacheBuildService::class.java).get()
 
-    private val mavenCoordinatesCacheBuildService =
-        getBuildService(
-            buildServiceRegistry,
-            MavenCoordinatesCacheBuildService::class.java
-        )
-            .get()
+  private val mavenCoordinatesCacheBuildService = getBuildService(buildServiceRegistry, MavenCoordinatesCacheBuildService::class.java).get()
 
-    override fun createModel() : DependencyGraphs = FullDependencyGraphsImpl(
-        compileItems.build(),
-        runtimeItems.build(),
-        providedLibraries.build(),
-        ImmutableList.of() /* skipped items*/
-    )
+  override fun createModel(): DependencyGraphs =
+    FullDependencyGraphsImpl(compileItems.build(), runtimeItems.build(), providedLibraries.build(), ImmutableList.of() /* skipped items*/)
 
-    override fun addArtifact(
-        artifact: ResolvedArtifact,
-        isProvided: Boolean,
-        lintJarMap: Map<ComponentIdentifier, File>?,
-        type: ClasspathType
-    ) {
-        val graphItem = GraphItemImpl(
-            artifact.computeModelAddress(mavenCoordinatesCacheBuildService),
-            ImmutableList.of())
+  override fun addArtifact(
+    artifact: ResolvedArtifact,
+    isProvided: Boolean,
+    lintJarMap: Map<ComponentIdentifier, File>?,
+    type: ClasspathType,
+  ) {
+    val graphItem = GraphItemImpl(artifact.computeModelAddress(mavenCoordinatesCacheBuildService), ImmutableList.of())
 
-        when (type) {
-            ClasspathType.COMPILE -> {
-                compileItems.add(graphItem)
-                if (isProvided) {
-                    providedLibraries.add(graphItem.artifactAddress)
-                }
-            }
-            ClasspathType.RUNTIME -> runtimeItems.add(graphItem)
+    when (type) {
+      ClasspathType.COMPILE -> {
+        compileItems.add(graphItem)
+        if (isProvided) {
+          providedLibraries.add(graphItem.artifactAddress)
         }
-
-        // force creation of the Library instance
-        libraryDependencyCache.libraryCache[artifact]
+      }
+      ClasspathType.RUNTIME -> runtimeItems.add(graphItem)
     }
 
-    override val needFullRuntimeClasspath: Boolean
-        get() = true
-    override val needRuntimeOnlyClasspath: Boolean
-        get() = false
+    // force creation of the Library instance
+    libraryDependencyCache.libraryCache[artifact]
+  }
 
-    override fun setRuntimeOnlyClasspath(files: ImmutableList<File>) {
-        throw RuntimeException("Level2 does not support runtimeOnlyClasspath")
-    }
+  override val needFullRuntimeClasspath: Boolean
+    get() = true
+
+  override val needRuntimeOnlyClasspath: Boolean
+    get() = false
+
+  override fun setRuntimeOnlyClasspath(files: ImmutableList<File>) {
+    throw RuntimeException("Level2 does not support runtimeOnlyClasspath")
+  }
 }

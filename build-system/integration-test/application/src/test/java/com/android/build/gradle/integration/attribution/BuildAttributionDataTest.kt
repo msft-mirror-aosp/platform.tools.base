@@ -30,80 +30,80 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class BuildAttributionDataTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-        .create()
+  @get:Rule
+  var project =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
 
-    private fun setUpProject() {
-        TestFileUtils.appendToFile(project.buildFile, """
-          abstract class SampleTask extends DefaultTask {
-              @OutputDirectory
-              abstract DirectoryProperty getOutputDir()
+  private fun setUpProject() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      abstract class SampleTask extends DefaultTask {
+          @OutputDirectory
+          abstract DirectoryProperty getOutputDir()
 
-              @TaskAction
-              def run() {
-                  // do nothing
-              }
+          @TaskAction
+          def run() {
+              // do nothing
           }
+      }
 
-          task sample1(type: SampleTask) {
-              outputDir = file("${"$"}buildDir/outputs/shared_output")
+      task sample1(type: SampleTask) {
+          outputDir = file("${"$"}buildDir/outputs/shared_output")
+      }
+
+      task sample2(type: SampleTask) {
+          outputDir = file("${"$"}buildDir/outputs/shared_output")
+      }
+
+      afterEvaluate { project ->
+          android.applicationVariants.all { variant ->
+              def mergeResourcesTask = tasks.getByPath("merge${"$"}{variant.name.capitalize()}Resources")
+              mergeResourcesTask.dependsOn sample1
+              mergeResourcesTask.dependsOn sample2
           }
+          sample2.dependsOn sample1
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-          task sample2(type: SampleTask) {
-              outputDir = file("${"$"}buildDir/outputs/shared_output")
-          }
+  @Test
+  fun testBuildAttributionReport() {
+    setUpProject()
 
-          afterEvaluate { project ->
-              android.applicationVariants.all { variant ->
-                  def mergeResourcesTask = tasks.getByPath("merge${"$"}{variant.name.capitalize()}Resources")
-                  mergeResourcesTask.dependsOn sample1
-                  mergeResourcesTask.dependsOn sample2
-              }
-              sample2.dependsOn sample1
-          }
-        """.trimIndent())
-    }
+    val attributionFileLocation = temporaryFolder.newFolder()
 
-    @Test
-    fun testBuildAttributionReport() {
-        setUpProject()
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionFileLocation.absolutePath)
+      .run("mergeDebugResources")
 
-        val attributionFileLocation = temporaryFolder.newFolder()
+    val originalAttributionData = AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
 
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION,
-                        attributionFileLocation.absolutePath)
-                .run("mergeDebugResources")
+    assertThat(originalAttributionData.taskNameToTaskInfoMap).isNotEmpty()
+    assertThat(originalAttributionData.tasksSharingOutput).isNotEmpty()
 
-        val originalAttributionData =
-                AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
+    // delete the report and re-run
 
-        assertThat(originalAttributionData.taskNameToTaskInfoMap).isNotEmpty()
-        assertThat(originalAttributionData.tasksSharingOutput).isNotEmpty()
+    FileUtils.deleteDirectoryContents(attributionFileLocation)
 
-        // delete the report and re-run
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionFileLocation.absolutePath)
+      .run("mergeDebugResources")
 
-        FileUtils.deleteDirectoryContents(attributionFileLocation)
+    val newAttributionData = AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
 
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION,
-                        attributionFileLocation.absolutePath)
-                .run("mergeDebugResources")
-
-        val newAttributionData =
-                AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
-
-        assertThat(newAttributionData.taskNameToTaskInfoMap).containsExactlyEntriesIn(
-                originalAttributionData.taskNameToTaskInfoMap)
-        assertThat(newAttributionData.tasksSharingOutput).containsExactlyEntriesIn(
-                originalAttributionData.tasksSharingOutput)
-    }
+    assertThat(newAttributionData.taskNameToTaskInfoMap).containsExactlyEntriesIn(originalAttributionData.taskNameToTaskInfoMap)
+    assertThat(newAttributionData.tasksSharingOutput).containsExactlyEntriesIn(originalAttributionData.tasksSharingOutput)
+  }
 }

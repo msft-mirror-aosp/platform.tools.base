@@ -30,43 +30,45 @@ import com.android.build.gradle.options.StringOption
 import com.android.builder.errors.IssueReporter
 
 /**
- * This function checks if the build is targeting Riscv platform and fails the build if the project
- * includes use of RenderScript. This is to prevent runtime failure as RenderScript is not supported on Riscv.
+ * This function checks if the build is targeting Riscv platform and fails the build if the project includes use of RenderScript. This is to
+ * prevent runtime failure as RenderScript is not supported on Riscv.
  */
 fun restrictRenderScriptOnRiscv(
-    dslServices: DslServices,
-    creationConfig: ConsumableCreationConfig,
-    buildFeatures: BuildFeatureValues,
-    globalConfig: GlobalTaskCreationConfig
+  dslServices: DslServices,
+  creationConfig: ConsumableCreationConfig,
+  buildFeatures: BuildFeatureValues,
+  globalConfig: GlobalTaskCreationConfig,
 ) {
-    if (!buildFeatures.renderScript) {
-        return
-    }
-    val nativeBuildCreationConfig = creationConfig.nativeBuildCreationConfig ?: return
-    val projectOptions = dslServices.projectOptions
-    if (!globalConfig.versionedNdkHandler.ndkPlatform.isConfigured) {
-        return
-    }
-    val ndk = globalConfig.versionedNdkHandler.ndkPlatform.getOrThrow()
-    val ndkMetaAbiList = NdkAbiFile(ndkMetaAbisFile(ndk.ndkDirectory)).abiInfoList
-    val validAbiList =
-        AbiConfigurator(
-            AbiConfigurationKey(
-                ndkMetaAbiList = ndkMetaAbiList,
-                ndkHandlerSupportedAbis = ndk.supportedAbis.toSet(),
-                ndkHandlerDefaultAbis = ndk.defaultAbis.toSet(),
-                externalNativeBuildAbiFilters = nativeBuildCreationConfig.externalNativeBuild?.abiFilters?.get() ?: setOf(),
-                nativeBuildCreationConfig.ndkConfig.abiFilters,
-                globalConfig.splits.abiFilters.toSet(),
-                projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI],
-                projectOptions[StringOption.IDE_BUILD_TARGET_ABI]
-            )
-        ).validAbis.toList()
-    val riscvAbis = validAbiList.filter{ it.contains(SdkConstants.ABI_RISCV64, true) }
-    if (riscvAbis.isNotEmpty()) {
-        dslServices.issueReporter.reportError(
-            IssueReporter.Type.GENERIC,
-            "Project ${dslServices.projectInfo.name} uses RenderScript. Cannot build for ABIs: $riscvAbis because RenderScript is not supported on Riscv."
+  if (!buildFeatures.renderScript) {
+    return
+  }
+  val nativeBuildCreationConfig = creationConfig.nativeBuildCreationConfig ?: return
+  val projectOptions = dslServices.projectOptions
+  if (!globalConfig.versionedNdkHandler.ndkPlatform.isConfigured) {
+    return
+  }
+  val ndk = globalConfig.versionedNdkHandler.ndkPlatform.getOrThrow()
+  val ndkMetaAbiList = NdkAbiFile(ndkMetaAbisFile(ndk.ndkDirectory)).abiInfoList
+  val validAbiList =
+    AbiConfigurator(
+        AbiConfigurationKey(
+          ndkMetaAbiList = ndkMetaAbiList,
+          ndkHandlerSupportedAbis = ndk.supportedAbis.toSet(),
+          ndkHandlerDefaultAbis = ndk.defaultAbis.toSet(),
+          externalNativeBuildAbiFilters = nativeBuildCreationConfig.externalNativeBuild?.abiFilters?.get() ?: setOf(),
+          nativeBuildCreationConfig.ndkConfig.abiFilters,
+          globalConfig.splits.abiFilters.toSet(),
+          projectOptions[BooleanOption.BUILD_ONLY_TARGET_ABI],
+          projectOptions[StringOption.IDE_BUILD_TARGET_ABI],
         )
-    }
+      )
+      .validAbis
+      .toList()
+  val riscvAbis = validAbiList.filter { it.contains(SdkConstants.ABI_RISCV64, true) }
+  if (riscvAbis.isNotEmpty()) {
+    dslServices.issueReporter.reportError(
+      IssueReporter.Type.GENERIC,
+      "Project ${dslServices.projectInfo.name} uses RenderScript. Cannot build for ABIs: $riscvAbis because RenderScript is not supported on Riscv.",
+    )
+  }
 }

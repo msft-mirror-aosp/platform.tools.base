@@ -17,19 +17,16 @@ package com.android.tools.leakcanarylib
 
 import com.android.tools.leakcanarylib.data.Analysis
 
-/**
- * This class provides a method to parse LeakCanary logcat messages into structured `Analysis` object.
- */
+/** This class provides a method to parse LeakCanary logcat messages into structured `Analysis` object. */
 class LeakCanaryParser {
 
-    /**
-     * Parses a LeakCanary logcat message into an `Analysis` object.
-     *
-     * @param message The LeakCanary logcat message to parse.
-     * @return An `Analysis` object representing the parsed analysis result, which can be either an `AnalysisSuccess` or an
-     * `AnalysisFailure`.
-     */
-    fun parseLogcatMessage(message: String): Analysis? {
-        return Analysis.fromString(message)
-    }
+  /**
+   * Parses a LeakCanary logcat message into an `Analysis` object.
+   *
+   * @param message The LeakCanary logcat message to parse.
+   * @return An `Analysis` object representing the parsed analysis result, which can be either an `AnalysisSuccess` or an `AnalysisFailure`.
+   */
+  fun parseLogcatMessage(message: String): Analysis? {
+    return Analysis.fromString(message)
+  }
 }

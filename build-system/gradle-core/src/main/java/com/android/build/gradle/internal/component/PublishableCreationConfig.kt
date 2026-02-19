@@ -19,5 +19,5 @@ package com.android.build.gradle.internal.component
 import com.android.build.gradle.internal.publishing.VariantPublishingInfo
 
 interface PublishableCreationConfig {
-    val publishInfo: VariantPublishingInfo?
+  val publishInfo: VariantPublishingInfo?
 }

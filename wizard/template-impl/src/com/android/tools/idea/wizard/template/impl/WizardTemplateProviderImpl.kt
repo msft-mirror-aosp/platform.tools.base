@@ -32,6 +32,7 @@ import com.android.tools.idea.wizard.template.impl.activities.composeWearActivit
 import com.android.tools.idea.wizard.template.impl.activities.cppEmptyActivity.cppEmptyActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.cppGameActivity.cppGameActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.emptyActivity.emptyActivityTemplate
+import com.android.tools.idea.wizard.template.impl.activities.firebaseAiLogicActivity.firebaseAiLogicActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.fullscreenActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.googleAdMobAdsActivityTemplate
 import com.android.tools.idea.wizard.template.impl.activities.googleMapsActivity.googleMapsActivityTemplate
@@ -64,7 +65,6 @@ import com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.broad
 import com.android.tools.idea.wizard.template.impl.other.contentProvider.contentProviderTemplate
 import com.android.tools.idea.wizard.template.impl.other.customView.customViewTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.aidlFile.aidlFileTemplate
-import com.android.tools.idea.wizard.template.impl.other.files.journeyFile.journeyFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.layoutResourceFile.layoutResourceFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.shortcutResourceFile.shortcutsResourceFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.valueResourceFile.valueResourceFileTemplate
@@ -79,6 +79,7 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
   override fun getTemplates(): List<Template> =
     listOf(
       composeActivityMaterial3Template,
+      firebaseAiLogicActivityTemplate,
       composeNavigationUiActivityMaterial3Template,
       archStarterActivityTemplate,
       aiStarterTemplate,
@@ -129,12 +130,5 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       wearDeclarativeWatchFaceTemplate,
     ) + folderTemplates + fileTemplates
 
-  private val fileTemplates =
-    listOf(
-      aidlFileTemplate,
-      layoutResourceFileTemplate,
-      shortcutsResourceFileTemplate,
-      valueResourceFileTemplate,
-      journeyFileTemplate,
-    )
+  private val fileTemplates = listOf(aidlFileTemplate, layoutResourceFileTemplate, shortcutsResourceFileTemplate, valueResourceFileTemplate)
 }

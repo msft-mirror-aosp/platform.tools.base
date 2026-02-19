@@ -419,7 +419,8 @@ class SyntheticAccessorDetectorTest : AbstractCheckTest() {
                 """
       )
       .expectFixDiffs(
-        // TODO: Here I shouldn't make the private class public, I should add a new package private
+        // TODO: Here I shouldn't make the private class public, I should add a new package
+        // private
         // constructor!
         """
                 Autofix for src/test/pkg/AccessTest3.java line 7: Make package protected:

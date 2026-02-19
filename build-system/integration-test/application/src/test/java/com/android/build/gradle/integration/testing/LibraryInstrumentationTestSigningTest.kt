@@ -29,31 +29,28 @@ import org.junit.Test
  */
 class LibraryInstrumentationTestSigningTest {
 
-    private val lib = MinimalSubProject.lib("com.example.lib")
+  private val lib = MinimalSubProject.lib("com.example.lib")
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(lib).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(lib).create()
 
-    @Test
-    fun checkDebugSigning() {
-        project.executor().run("assembleDebugAndroidTest")
-        project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG).use { testApk ->
-            assertThat(testApk).containsApkSigningBlock()
-        }
-    }
+  @Test
+  fun checkDebugSigning() {
+    project.executor().run("assembleDebugAndroidTest")
+    project.getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG).use { testApk -> assertThat(testApk).containsApkSigningBlock() }
+  }
 
-    @Test
-    fun checkReleaseSigning() {
-        project.buildFile.appendText("""
+  @Test
+  fun checkReleaseSigning() {
+    project.buildFile.appendText(
+      """
             android.testBuildType = 'release'
-            """)
-        project.executor().run("assembleReleaseAndroidTest")
-        project.getApk(ANDROIDTEST_RELEASE).use { testApk ->
-            assertThat(testApk).containsApkSigningBlock()
-        }
-    }
+            """
+    )
+    project.executor().run("assembleReleaseAndroidTest")
+    project.getApk(ANDROIDTEST_RELEASE).use { testApk -> assertThat(testApk).containsApkSigningBlock() }
+  }
 
-    companion object {
-        val ANDROIDTEST_RELEASE = GradleTestProject.ApkType.of("release", "androidTest", true)
-    }
+  companion object {
+    val ANDROIDTEST_RELEASE = GradleTestProject.ApkType.of("release", "androidTest", true)
+  }
 }

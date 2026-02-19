@@ -67,11 +67,7 @@ class IntentDetector : Detector(), SourceCodeScanner {
     return listOf(INTENT_CLASS)
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     var seenInConstructor = false
     var seenData: UElement? = null
     var seenType: UElement? = null
@@ -80,10 +76,7 @@ class IntentDetector : Detector(), SourceCodeScanner {
     for (topArgument in node.valueArguments) {
       val argument = topArgument.skipParenthesizedExprDown() ?: continue
       val type = argument.getExpressionType() ?: continue
-      if (
-        type.canonicalText == ANDROID_NET_URI &&
-          !(argument is ULiteralExpression && argument.isNull)
-      ) {
+      if (type.canonicalText == ANDROID_NET_URI && !(argument is ULiteralExpression && argument.isNull)) {
         seenInConstructor = true
         seenData = argument
         break
@@ -116,7 +109,8 @@ class IntentDetector : Detector(), SourceCodeScanner {
           val dataParent = findParent(seenData)
           val typeParent = findParent(seenType)
 
-          // If it is not obvious that both "set" calls were made in the same block (approximately)
+          // If it is not obvious that both "set" calls were made in the same block
+          // (approximately)
           // then we return early to avoid false-positives. But if the data was set in the
           // constructor then we can skip this check, because the constructor must have been
           // executed.
@@ -145,8 +139,7 @@ class IntentDetector : Detector(), SourceCodeScanner {
             context
               .getCallLocation(call, includeReceiver = false, includeArguments = true)
               .withSecondary(context.getLocation(prev), "Originally set here")
-          val message =
-            "Calling `$name` after $prevDesc will clear the $data: Call `setDataAndType` instead?"
+          val message = "Calling `$name` after $prevDesc will clear the $data: Call `setDataAndType` instead?"
           context.report(ISSUE, call, location, message, null)
           seenData = null
           seenType = null

@@ -23,74 +23,76 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Integration test for generating Java docs from pure java library projects.
- */
+/** Integration test for generating Java docs from pure java library projects. */
 class JavaDocGenerationJavaSourceTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(MinimalSubProject.lib("com.example.lib"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.lib("com.example.lib")).create()
 
-    @Before
-    fun setUp() {
+  @Before
+  fun setUp() {
 
-        val javaSource = project.mainSrcDir.resolve("com/example/HelloWorld.java")
-        FileUtils.createFile(javaSource, """
-            package com.example;
+    val javaSource = project.mainSrcDir.resolve("com/example/HelloWorld.java")
+    FileUtils.createFile(
+      javaSource,
+      """
+      package com.example;
 
-            /**
-            * See {@link android.app.Activity}
-            */
-            public class HelloWorld {
-                public void sayHelloInJava() {}
+      /**
+      * See {@link android.app.Activity}
+      */
+      public class HelloWorld {
+          public void sayHelloInJava() {}
 
-                public Greeting getGreeting() {
-                    return new Greeting();
-                }
-            }
-        """.trimIndent())
+          public Greeting getGreeting() {
+              return new Greeting();
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        val javaSource2 = project.mainSrcDir.resolve("com/example/Greeting.java")
-        FileUtils.createFile(javaSource2, """
-            package com.example;
+    val javaSource2 = project.mainSrcDir.resolve("com/example/Greeting.java")
+    FileUtils.createFile(
+      javaSource2,
+      """
+      package com.example;
 
-            public class Greeting {}
-        """.trimIndent())
-    }
+      public class Greeting {}
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun testJavaDocGeneration() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Test
+  fun testJavaDocGeneration() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
 
-                android {
-                    publishing {
-                        singleVariant('debug') {
-                            withJavadocJar()
-                        }
-                    }
-                }
-            """.trimIndent()
-        )
-        project.execute("clean", "javaDocDebugGeneration")
+      android {
+          publishing {
+              singleVariant('debug') {
+                  withJavadocJar()
+              }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+    project.execute("clean", "javaDocDebugGeneration")
 
-        val docDirectory = InternalArtifactType.JAVA_DOC_DIR.getOutputDir(project.buildDir)
-            .resolve("debug" + File.separator + "javaDocDebugGeneration")
-        val javaSourceDoc = docDirectory.resolve("com/example/HelloWorld.html")
-        val javaSourceDoc2 = docDirectory.resolve("com/example/Greeting.html")
+    val docDirectory =
+      InternalArtifactType.JAVA_DOC_DIR.getOutputDir(project.buildDir).resolve("debug" + File.separator + "javaDocDebugGeneration")
+    val javaSourceDoc = docDirectory.resolve("com/example/HelloWorld.html")
+    val javaSourceDoc2 = docDirectory.resolve("com/example/Greeting.html")
 
-        PathSubject.assertThat(javaSourceDoc.toPath()).isFile()
-        PathSubject.assertThat(javaSourceDoc2.toPath()).isFile()
-        PathSubject.assertThat(javaSourceDoc).contains(
-            "<a href=Greeting.html>Greeting</a>"
-        )
-    }
+    PathSubject.assertThat(javaSourceDoc.toPath()).isFile()
+    PathSubject.assertThat(javaSourceDoc2.toPath()).isFile()
+    PathSubject.assertThat(javaSourceDoc).contains("<a href=Greeting.html>Greeting</a>")
+  }
 }

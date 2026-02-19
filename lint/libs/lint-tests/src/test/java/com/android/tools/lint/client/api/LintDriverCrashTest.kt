@@ -82,20 +82,18 @@ class LintDriverCrashTest : AbstractCheckTest() {
             "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
           )
         assertThat(it)
-          .contains(
-            "The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector."
-          )
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
         assertThat(it)
           .contains(
             """
-                        The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
-                        You can try disabling it with something like this:
-                            android {
-                                lint {
-                                    disable "_TestCrash"
-                                }
-                            }
-                        """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrash"
+                    }
+                }
+            """
               .trimIndent()
           )
 
@@ -112,9 +110,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         }
 
         assertThat(it)
-          .contains(
-            "ArithmeticException:LintDriverCrashTest＄CrashingDetector＄createUastHandler＄1.visitFile(LintDriverCrashTest.kt:"
-          )
+          .contains("ArithmeticException:LintDriverCrashTest＄CrashingDetector＄createUastHandler＄1.visitFile(LintDriverCrashTest.kt:")
         assertThat(it).contains("1 error")
       })
     LintDriver.clearCrashCount()
@@ -142,12 +138,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         .testModes(TestMode.DEFAULT)
         .clientFactory {
           object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-            override fun log(
-              severity: Severity,
-              exception: Throwable?,
-              format: String?,
-              vararg args: Any,
-            ) {
+            override fun log(severity: Severity, exception: Throwable?, format: String?, vararg args: Any) {
               sb.append("Severity = ${severity.toName()}\n")
               sb.append("Message = ${String.format(format ?: "", *args)}\n")
               sb.append("Stack:\n").append(exception?.stackTraceToString()).append("\n")
@@ -260,14 +251,14 @@ class LintDriverCrashTest : AbstractCheckTest() {
         assertThat(it)
           .contains(
             """
-                        The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector.
-                        You can try disabling it with something like this:
-                            android {
-                                lint {
-                                    disable "_TestCrashImplementer"
-                                }
-                            }
-                        """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingImplementationDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrashImplementer"
+                    }
+                }
+            """
               .trimIndent()
           )
       })
@@ -304,20 +295,18 @@ class LintDriverCrashTest : AbstractCheckTest() {
             "Foo.java: Error: Unexpected failure during lint analysis of Foo.java (this is a bug in lint or one of the libraries it depends on)"
           )
         assertThat(it)
-          .contains(
-            "The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector."
-          )
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
         assertThat(it)
           .contains(
             """
-                        The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
-                        You can try disabling it with something like this:
-                            android {
-                                lint {
-                                    disable "_TestCrashInheritor", "_TestCrashInheritor2"
-                                }
-                            }
-                        """
+            The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.
+            You can try disabling it with something like this:
+                android {
+                    lint {
+                        disable "_TestCrashInheritor", "_TestCrashInheritor2"
+                    }
+                }
+            """
               .trimIndent()
           )
       })
@@ -354,9 +343,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         assertThat(it).contains("Unexpected failure during lint analysis")
         assertThat(it).contains("(this is a bug in lint or one of the libraries it depends on)")
         assertThat(it)
-          .contains(
-            "The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector."
-          )
+          .contains("The crash seems to involve the detector com.android.tools.lint.client.api.LintDriverCrashTest＄CrashingDetector.")
         assertThat(it)
           .contains(
             """
@@ -434,9 +421,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
             "app: Error: Can't initialize detector com.android.tools.lint.client.api.LintDriverCrashTest＄BrokenInitializationDetector."
           )
         assertThat(message)
-          .contains(
-            "Unexpected failure during lint analysis (this is a bug in lint or one of the libraries it depends on)"
-          )
+          .contains("Unexpected failure during lint analysis (this is a bug in lint or one of the libraries it depends on)")
         assertThat(message)
           .containsMatch(
             "Stack: InvocationTargetException:(NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
@@ -474,10 +459,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
           *lintApiStubs,
           bytecode(
             "lint.jar",
-            source(
-              "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-              "test.pkg.MyIssueRegistry",
-            ),
+            source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry"),
             0x70522285,
           ),
           bytecode(
@@ -551,8 +533,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         .issueIds("MyIssueId")
         .run()
         .check({ message ->
-          assertThat(message)
-            .contains("app/lint.jar: Error: Could not load custom lint check jar file.")
+          assertThat(message).contains("app/lint.jar: Error: Could not load custom lint check jar file.")
           assertThat(message)
             .containsMatch(
               "The issue registry class is test.pkg.MyIssueRegistry. The initialization problem is (NativeConstructorAccessorImpl.newInstance0|DirectConstructorHandleAccessor.newInstance)"
@@ -576,15 +557,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
       val root = temporaryFolder.root
 
       lint()
-        .files(
-          jar(
-            "lint.jar",
-            source(
-              "META-INF/services/com.android.tools.lint.client.api.IssueRegistry",
-              "test.pkg.MyIssueRegistry",
-            ),
-          )
-        )
+        .files(jar("lint.jar", source("META-INF/services/com.android.tools.lint.client.api.IssueRegistry", "test.pkg.MyIssueRegistry")))
         .testModes(TestMode.DEFAULT)
         .createProjects(root)
 
@@ -607,12 +580,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
 
       val messages = log.toString()
       assertTrue(messages, messages.contains("Could not load custom lint check jar file"))
-      assertTrue(
-        messages,
-        messages.contains(
-          "←JarFileIssueRegistry\$Factory.loadIssueRegistry(JarFileIssueRegistry.kt"
-        ),
-      )
+      assertTrue(messages, messages.contains("←JarFileIssueRegistry\$Factory.loadIssueRegistry(JarFileIssueRegistry.kt"))
 
       // Now make sure that the `android.lint.log-jar-problems` flag can be used to
       // turn off logging of these problems.
@@ -623,9 +591,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
         log.clear()
         lint()
           .files(kotlin("fun test() { }"))
-          .clientFactory {
-            createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') })
-          }
+          .clientFactory { createGlobalLintJarClient(lintJar, log = { log.append(it).append('\n') }) }
           .testModes(TestMode.DEFAULT)
           .allowSystemErrors(true)
           .allowExceptions(true)
@@ -904,11 +870,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
     override fun appliesTo(folderType: ResourceFolderType) = true
 
     override fun afterCheckFile(context: Context) {
-      context.report(
-        ABS_PATH_ISSUE,
-        Location.create(context.file),
-        "found error in " + context.file + "!",
-      )
+      context.report(ABS_PATH_ISSUE, Location.create(context.file), "found error in " + context.file + "!")
     }
 
     companion object {
@@ -946,13 +908,7 @@ class LintDriverCrashTest : AbstractCheckTest() {
               .autoFix()
               .build()
 
-          context.report(
-            ISSUE_COLOR_CASING,
-            it,
-            context.getValueLocation(it as Attr),
-            "Should be using uppercase letters",
-            fix,
-          )
+          context.report(ISSUE_COLOR_CASING, it, context.getValueLocation(it as Attr), "Should be using uppercase letters", fix)
         }
     }
 

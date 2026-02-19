@@ -23,41 +23,33 @@ import com.android.build.gradle.internal.tasks.mlkit.codegen.getProcessorName
 import com.android.tools.mlkit.TensorInfo
 import com.squareup.javapoet.MethodSpec
 
-/** Injector to init a image postprocessor, which does data de-quantization.  */
+/** Injector to init a image postprocessor, which does data de-quantization. */
 class ImagePostprocessorInitInjector : CodeBlockInjector() {
-    override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
-        methodBuilder.addCode(
-            "\$T.Builder \$L = new \$T.Builder()\n",
-            ClassNames.IMAGE_PROCESSOR,
-            getProcessorBuilderName(tensorInfo),
-            ClassNames.IMAGE_PROCESSOR
-        )
-        val quantizationParams = tensorInfo.quantizationParams
-        methodBuilder.addCode(
-            "  .add(new \$T((float)\$L, (float)\$L))\n",
-            ClassNames.DEQUANTIZE_OP,
-            quantizationParams.zeroPoint,
-            quantizationParams.scale
-        )
+  override fun inject(methodBuilder: MethodSpec.Builder, tensorInfo: TensorInfo) {
+    methodBuilder.addCode(
+      "\$T.Builder \$L = new \$T.Builder()\n",
+      ClassNames.IMAGE_PROCESSOR,
+      getProcessorBuilderName(tensorInfo),
+      ClassNames.IMAGE_PROCESSOR,
+    )
+    val quantizationParams = tensorInfo.quantizationParams
+    methodBuilder.addCode(
+      "  .add(new \$T((float)\$L, (float)\$L))\n",
+      ClassNames.DEQUANTIZE_OP,
+      quantizationParams.zeroPoint,
+      quantizationParams.scale,
+    )
 
-        val normalizationParams = tensorInfo.normalizationParams
-        methodBuilder.addCode(
-            "  .add(new \$T(\$L, \$L))\n",
-            ClassNames.NORMALIZE_OP,
-            getFloatArrayString(normalizationParams.mean),
-            getFloatArrayString(normalizationParams.std)
-        )
+    val normalizationParams = tensorInfo.normalizationParams
+    methodBuilder.addCode(
+      "  .add(new \$T(\$L, \$L))\n",
+      ClassNames.NORMALIZE_OP,
+      getFloatArrayString(normalizationParams.mean),
+      getFloatArrayString(normalizationParams.std),
+    )
 
-        methodBuilder.addCode(
-            "  .add(new \$T(\$T.UINT8));\n",
-            ClassNames.CAST_OP,
-            ClassNames.DATA_TYPE
-        )
+    methodBuilder.addCode("  .add(new \$T(\$T.UINT8));\n", ClassNames.CAST_OP, ClassNames.DATA_TYPE)
 
-        methodBuilder.addStatement(
-            "\$L = \$L.build()",
-            getProcessorName(tensorInfo),
-            getProcessorBuilderName(tensorInfo)
-        )
-    }
+    methodBuilder.addStatement("\$L = \$L.build()", getProcessorName(tensorInfo), getProcessorBuilderName(tensorInfo))
+  }
 }

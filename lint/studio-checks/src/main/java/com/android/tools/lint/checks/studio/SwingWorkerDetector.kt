@@ -31,8 +31,7 @@ import org.jetbrains.uast.ULambdaExpression
 class SwingWorkerDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(SwingWorkerDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(SwingWorkerDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =

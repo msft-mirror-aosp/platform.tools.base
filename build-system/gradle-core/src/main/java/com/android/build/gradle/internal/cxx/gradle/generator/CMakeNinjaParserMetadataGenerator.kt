@@ -21,10 +21,10 @@ import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.additionalProjectFilesIndexFile
 import com.android.build.gradle.internal.cxx.model.compileCommandsJsonBinFile
 import com.android.build.gradle.internal.cxx.model.compileCommandsJsonFile
-import com.android.build.gradle.internal.cxx.model.jsonFile
-import com.android.build.gradle.internal.cxx.model.ninjaBuildFile
 import com.android.build.gradle.internal.cxx.model.createNinjaCommand
+import com.android.build.gradle.internal.cxx.model.jsonFile
 import com.android.build.gradle.internal.cxx.model.name
+import com.android.build.gradle.internal.cxx.model.ninjaBuildFile
 import com.android.build.gradle.internal.cxx.ninja.adaptNinjaToCxxBuild
 import com.android.build.gradle.internal.cxx.process.ExecuteProcessCommand
 import com.android.build.gradle.internal.cxx.process.ExecuteProcessType.CONFIGURE_PROCESS
@@ -34,67 +34,55 @@ import com.android.build.gradle.tasks.ExternalNativeJsonGenerator
 import com.android.build.gradle.tasks.cmakeMakefileChecks
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule
+import java.io.File
 import org.gradle.api.tasks.Internal
 import org.gradle.process.ExecOperations
-import java.io.File
 
 /**
- * Build with CMake and use [adaptNinjaToCxxBuild] to construct build system metadata.
- * This should work with any version of CMake that can produce a Ninja project (which is all of
- * them).
+ * Build with CMake and use [adaptNinjaToCxxBuild] to construct build system metadata. This should work with any version of CMake that can
+ * produce a Ninja project (which is all of them).
  */
-internal class CMakeNinjaParserMetadataGenerator(
-    abi: CxxAbiModel,
-    @get:Internal override val variantBuilder: GradleBuildVariant.Builder?
-) : ExternalNativeJsonGenerator(abi, variantBuilder) {
-    init {
-        variantBuilder?.nativeBuildSystemType = GradleNativeAndroidModule.NativeBuildSystemType.CMAKE
-        cmakeMakefileChecks(abi.variant)
-    }
-    override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
-        // Execute CMake
-        abi.executeProcess(
-            processType = CONFIGURE_PROCESS,
-            command = getProcessBuilder(abi),
-            ops = ops
-        )
+internal class CMakeNinjaParserMetadataGenerator(abi: CxxAbiModel, @get:Internal override val variantBuilder: GradleBuildVariant.Builder?) :
+  ExternalNativeJsonGenerator(abi, variantBuilder) {
+  init {
+    variantBuilder?.nativeBuildSystemType = GradleNativeAndroidModule.NativeBuildSystemType.CMAKE
+    cmakeMakefileChecks(abi.variant)
+  }
 
-        // Build expected metadata
-        val config = adaptNinjaToCxxBuild(
-            ninjaBuildFile = abi.ninjaBuildFile,
-            abi = abi.name,
-            cxxBuildFolder = abi.cxxBuildFolder,
-            createNinjaCommand = abi::createNinjaCommand,
-            compileCommandsJsonBin = abi.compileCommandsJsonBinFile,
-            buildFileFilter = filterBuildFile(
-                abi.variant.module.project.rootBuildGradleFolder,
-                abi.cxxBuildFolder)
-        )
-        writeNativeBuildMiniConfigValueToJsonFile(abi.jsonFile, config)
-        abi.additionalProjectFilesIndexFile.parentFile.mkdirs()
-        abi.additionalProjectFilesIndexFile.writeText("")
-        if (abi.compileCommandsJsonFile.isFile) {
-            abi.compileCommandsJsonFile.delete()
-        }
-    }
+  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+    // Execute CMake
+    abi.executeProcess(processType = CONFIGURE_PROCESS, command = getProcessBuilder(abi), ops = ops)
 
-    private fun filterBuildFile(
-        rootSourceFolder : File,
-        rootBuildFolder : File
-    ) : (File) -> Boolean {
-        // Keep only the files named CMakeLists.txt or files in this project that aren't in
-        // a build output folder
-        return { input ->
-            input.name.equals("CMakeLists.txt", ignoreCase = true)
-                    || (input.path.startsWith(rootSourceFolder.path, ignoreCase = true)
-                    && !input.path.startsWith(rootBuildFolder.path, ignoreCase = true))
-        }
+    // Build expected metadata
+    val config =
+      adaptNinjaToCxxBuild(
+        ninjaBuildFile = abi.ninjaBuildFile,
+        abi = abi.name,
+        cxxBuildFolder = abi.cxxBuildFolder,
+        createNinjaCommand = abi::createNinjaCommand,
+        compileCommandsJsonBin = abi.compileCommandsJsonBinFile,
+        buildFileFilter = filterBuildFile(abi.variant.module.project.rootBuildGradleFolder, abi.cxxBuildFolder),
+      )
+    writeNativeBuildMiniConfigValueToJsonFile(abi.jsonFile, config)
+    abi.additionalProjectFilesIndexFile.parentFile.mkdirs()
+    abi.additionalProjectFilesIndexFile.writeText("")
+    if (abi.compileCommandsJsonFile.isFile) {
+      abi.compileCommandsJsonFile.delete()
     }
+  }
 
-    override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
-        return createExecuteProcessCommand(abi.variant.module.cmake!!.cmakeExe!!)
-            .addArgs(abi.configurationArguments)
+  private fun filterBuildFile(rootSourceFolder: File, rootBuildFolder: File): (File) -> Boolean {
+    // Keep only the files named CMakeLists.txt or files in this project that aren't in
+    // a build output folder
+    return { input ->
+      input.name.equals("CMakeLists.txt", ignoreCase = true) ||
+        (input.path.startsWith(rootSourceFolder.path, ignoreCase = true) && !input.path.startsWith(rootBuildFolder.path, ignoreCase = true))
     }
+  }
 
-    override fun checkPrefabConfig() { }
+  override fun getProcessBuilder(abi: CxxAbiModel): ExecuteProcessCommand {
+    return createExecuteProcessCommand(abi.variant.module.cmake!!.cmakeExe!!).addArgs(abi.configurationArguments)
+  }
+
+  override fun checkPrefabConfig() {}
 }

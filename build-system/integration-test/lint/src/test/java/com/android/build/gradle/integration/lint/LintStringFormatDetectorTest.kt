@@ -16,9 +16,7 @@
 
 package com.android.build.gradle.integration.lint
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.testutils.truth.PathSubject
 import com.android.utils.FileUtils
 import org.junit.Rule
@@ -26,12 +24,15 @@ import org.junit.Test
 
 class LintStringFormatDetectorTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.app")
-            .withFile(
-                "src/main/java/com/example/app/MainActivity.java",
-                // language=java
-                """package com.example.app;
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(":app") {
+        files {
+          add(
+            "src/main/java/com/example/app/MainActivity.java",
+            // language=java
+            """package com.example.app;
 
                 import android.app.Activity;
 
@@ -39,60 +40,48 @@ class LintStringFormatDetectorTest {
                     public void foo() {
                         String.format(getString(com.example.lib.R.string.hello), 5);
                     }
-                }""")
-            .appendToBuild(
-                // language=groovy
-                """
-                    android {
-                        lint {
-                            abortOnError = false
-                            textOutput = file("lint-results.txt")
-                        }
-                    }
-                """.trimIndent()
-            )
-
-    private val lib =
-        MinimalSubProject.lib("com.example.lib")
-            .withFile(
-                "src/main/res/values/strings.xml",
-                // language=XML
-                """<?xml version="1.0" encoding="utf-8"?>
+                }""",
+          )
+        }
+        android {
+          lint {
+            abortOnError = false
+            textOutput = projectDotFile("lint-results.txt")
+          }
+          namespace = "com.example.app"
+        }
+        dependencies { implementation(project(":lib")) }
+      }
+      androidLibrary(":lib") {
+        files {
+          add(
+            "src/main/res/values/strings.xml",
+            // language=XML
+            """<?xml version="1.0" encoding="utf-8"?>
                 <resources>
                     <string name="hello">hello %s</string>
-                </resources>""")
-
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            )
-            .create()
-
-    /**
-     * Regression test for b/303215439.
-     *
-     * Previously, this scenario would result in a LintError because lint would try to resolve the
-     * library module's strings.xml source file during the app's lint analysis.
-     */
-    @Test
-    fun testNoLintError() {
-        project.executor().run(":app:lintDebug")
-
-        val file = project.getSubproject("app").file("lint-results.txt")
-        PathSubject.assertThat(file).exists()
-        PathSubject.assertThat(file).contains(
-            "MainActivity.java:7: Error: Suspicious argument type for formatting argument"
-        )
-        val expectedPath = FileUtils.toSystemDependentPath("lib/src/main/res/values/strings.xml")
-        PathSubject.assertThat(file).contains(
-            "$expectedPath:3: Conflicting argument declaration here"
-        )
-        PathSubject.assertThat(file).contains("1 error")
+                </resources>""",
+          )
+        }
+        android { namespace = "com.example.lib" }
+      }
     }
+
+  /**
+   * Regression test for b/303215439.
+   *
+   * Previously, this scenario would result in a LintError because lint would try to resolve the library module's strings.xml source file
+   * during the app's lint analysis.
+   */
+  @Test
+  fun testNoLintError() {
+    rule.build.executor.run(":app:lintDebug")
+
+    val file = rule.build.androidApplication(":app").resolve("lint-results.txt")
+    PathSubject.assertThat(file).exists()
+    PathSubject.assertThat(file).contains("MainActivity.java:7: Error: Suspicious argument type for formatting argument")
+    val expectedPath = FileUtils.toSystemDependentPath("lib/src/main/res/values/strings.xml")
+    PathSubject.assertThat(file).contains("$expectedPath:3: Conflicting argument declaration here")
+    PathSubject.assertThat(file).contains("1 error")
+  }
 }

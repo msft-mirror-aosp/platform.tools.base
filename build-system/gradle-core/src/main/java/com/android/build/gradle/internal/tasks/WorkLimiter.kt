@@ -16,29 +16,25 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.google.common.annotations.VisibleForTesting
 import java.util.concurrent.Callable
 import java.util.concurrent.Semaphore
 
-/**
- * Class to limit concurrent heavyweight tasks.
- */
+/** Class to limit concurrent heavyweight tasks. */
 class WorkLimiter internal constructor(concurrencyLimit: Int) {
 
-    private val semaphore: Semaphore = Semaphore(concurrencyLimit, true)
+  private val semaphore: Semaphore = Semaphore(concurrencyLimit, true)
 
-    /**
-     * Run the given callable, blocking in a fair way if needed to keep the number of concurrent
-     * tasks down to the `concurrencyLimit` passed in the constructor.
-     */
-    @Throws(InterruptedException::class)
-    fun limit(task: Callable<Void>) {
-        semaphore.acquire()
-        try {
-            task.call()
-        } finally {
-            semaphore.release()
-        }
+  /**
+   * Run the given callable, blocking in a fair way if needed to keep the number of concurrent tasks down to the `concurrencyLimit` passed
+   * in the constructor.
+   */
+  @Throws(InterruptedException::class)
+  fun limit(task: Callable<Void>) {
+    semaphore.acquire()
+    try {
+      task.call()
+    } finally {
+      semaphore.release()
     }
-
+  }
 }

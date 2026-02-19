@@ -55,14 +55,12 @@ import org.jetbrains.uast.util.isConstructorCall
 import org.jetbrains.uast.util.isNewArray
 
 /**
- * Detector warning about private inner classes and constructors which require a synthetic accessor
- * to be generated, thereby unnecessarily increasing overhead (methods, extra dispatch). Relevant
- * only in large projects and especially libraries.
+ * Detector warning about private inner classes and constructors which require a synthetic accessor to be generated, thereby unnecessarily
+ * increasing overhead (methods, extra dispatch). Relevant only in large projects and especially libraries.
  */
 class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(SyntheticAccessorDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(SyntheticAccessorDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** The main issue discovered by this detector. */
     @JvmField
@@ -103,7 +101,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
         val containingClass = node.getContainingUClass() ?: return
 
         val method = node.resolve()
-        if (method == null) {
+        if (method == null || method.isDefaultConstructor) {
           // default constructor
           val classRef = node.classReference ?: return
           val target = classRef.resolve() as? PsiClass ?: return
@@ -232,12 +230,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun reportError(
-    context: JavaContext,
-    node: UElement,
-    member: PsiMember,
-    target: PsiClass,
-  ) {
+  private fun reportError(context: JavaContext, node: UElement, member: PsiMember, target: PsiClass) {
     val location =
       if (node is UCallExpression) {
         context.getCallLocation(node, true, false)
@@ -258,15 +251,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
       }
 
     val fix =
-      fix()
-        .replace()
-        .name(name)
-        .sharedName(name)
-        .range(fixRange)
-        .text("private ")
-        .with(if (isKotlin) "internal " else "")
-        .autoFix()
-        .build()
+      fix().replace().name(name).sharedName(name).range(fixRange).text("private ").with(if (isKotlin) "internal " else "").autoFix().build()
 
     val memberType =
       if (member is PsiField) {
@@ -292,8 +277,7 @@ class SyntheticAccessorDetector : Detector(), SourceCodeScanner {
       } else {
         "member"
       }
-    val message =
-      "Access to `private` $memberType of class `${target.name}` requires synthetic accessor"
+    val message = "Access to `private` $memberType of class `${target.name}` requires synthetic accessor"
     context.report(ISSUE, node, location, message, fix)
   }
 }

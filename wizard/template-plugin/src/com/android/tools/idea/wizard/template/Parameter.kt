@@ -18,20 +18,18 @@ package com.android.tools.idea.wizard.template
 import kotlin.reflect.KClass
 
 /**
- * Constraints that can be applied to a parameter which helps the UI add a validator etc. for user
- * input. These are typically combined into a set of constraints via an EnumSet.
+ * Constraints that can be applied to a parameter which helps the UI add a validator etc. for user input. These are typically combined into
+ * a set of constraints via an EnumSet.
  */
 enum class Constraint {
   /**
-   * This value must be unique. This constraint usually only makes sense when other constraints are
-   * specified, such as [LAYOUT], which means that the parameter should designate a name that does
-   * not represent an existing layout resource name.
+   * This value must be unique. This constraint usually only makes sense when other constraints are specified, such as [LAYOUT], which means
+   * that the parameter should designate a name that does not represent an existing layout resource name.
    */
   UNIQUE,
   /**
-   * This value must already exist. This constraint usually only makes sense when other constraints
-   * are specified, such as [LAYOUT], which means that the parameter should designate a name that
-   * already exists as a resource name.
+   * This value must already exist. This constraint usually only makes sense when other constraints are specified, such as [LAYOUT], which
+   * means that the parameter should designate a name that already exists as a resource name.
    */
   EXISTS,
   /** The associated value must not be empty. */
@@ -62,16 +60,14 @@ enum class Constraint {
   URI_AUTHORITY,
   /** The associated value should represent a package-level Kotlin function. */
   KOTLIN_FUNCTION,
-  /** The associated value should represent a valid Journeys file name. */
-  JOURNEY,
 }
 
 /**
  * This is a parameter which is a part of [Template].
  *
- * Each parameter will be rendered to its own field when rendering UI from [Template], albeit
- * possibly disabled or hidden. A user should provide [value]s to all parameters via interacting
- * with UI. Later this data is passed to the [Recipe] and used to render actual template files.
+ * Each parameter will be rendered to its own field when rendering UI from [Template], albeit possibly disabled or hidden. A user should
+ * provide [value]s to all parameters via interacting with UI. Later this data is passed to the [Recipe] and used to render actual template
+ * files.
  */
 sealed class Parameter<T> {
   /** Name of the parameter. Should be unique. */
@@ -85,18 +81,14 @@ sealed class Parameter<T> {
   /**
    * Tells if the [Parameter] should be shown in UI.
    *
-   * We do not show parameters which are not visible in UI, but use them (fill with data and send to
-   * the [Recipe]).
+   * We do not show parameters which are not visible in UI, but use them (fill with data and send to the [Recipe]).
    *
    * @see enabled
    */
   val isVisibleAndEnabled: Boolean
     get() = enabled && visible
 
-  /**
-   * Returns false if the [Parameter] should be completely ignored (will sometimes be rendered in
-   * gray in UI).
-   */
+  /** Returns false if the [Parameter] should be completely ignored (will sometimes be rendered in gray in UI). */
   abstract val enabled: Boolean
   abstract val visible: Boolean
   abstract val loggable: Boolean
@@ -137,9 +129,8 @@ data class StringParameter(
   override var value: String = defaultValue
 
   /**
-   * Value suggested by the Studio. If it was evaluated to null, then [defaultValue] is used. Often
-   * calculated using different parameters, e.g. "activity_super" layout name generated from
-   * "SuperActivity".
+   * Value suggested by the Studio. If it was evaluated to null, then [defaultValue] is used. Often calculated using different parameters,
+   * e.g. "activity_super" layout name generated from "SuperActivity".
    */
   fun suggest() = wizardParameterData._suggest()
 }

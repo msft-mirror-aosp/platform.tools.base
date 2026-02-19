@@ -18,91 +18,80 @@ package com.android.adblib.tools.debugging.utils
 import com.android.adblib.tools.debugging.packets.copy
 import java.nio.ByteBuffer
 
-/**
- * A wrapper for a [ByteBuffer] that behaves like a [ByteBuffer] but can also grow by calling
- * [ensureCapacity]
- */
+/** A wrapper for a [ByteBuffer] that behaves like a [ByteBuffer] but can also grow by calling [ensureCapacity] */
 internal class ByteBufferHolder(initialCapacity: Int = 16) {
-    private var buffer: ByteBuffer = ByteBuffer.allocate(initialCapacity).limit(0)
+  private var buffer: ByteBuffer = ByteBuffer.allocate(initialCapacity).limit(0)
 
-    /**
-     * Resets [position] to `0` and [limit] to [capacity], keeping the underlying
-     * [ByteBuffer] content untouched
-     */
-    fun clear() {
-        buffer.clear()
+  /** Resets [position] to `0` and [limit] to [capacity], keeping the underlying [ByteBuffer] content untouched */
+  fun clear() {
+    buffer.clear()
+  }
+
+  fun position(value: Int) {
+    buffer.position(value)
+  }
+
+  fun position(): Int {
+    return buffer.position()
+  }
+
+  fun limit(value: Int) {
+    buffer.limit(value)
+  }
+
+  fun limit(): Int {
+    return buffer.limit()
+  }
+
+  fun remaining(): Int {
+    return buffer.remaining()
+  }
+
+  fun slice(): ByteBuffer {
+    return buffer.slice()
+  }
+
+  fun put(buffer: ByteBuffer): ByteBuffer {
+    return this.buffer.put(buffer)
+  }
+
+  fun duplicate(): ByteBuffer {
+    return buffer.duplicate()
+  }
+
+  fun capacity(): Int {
+    return buffer.capacity()
+  }
+
+  fun ensureCapacity(minCapacity: Int) {
+    require(minCapacity >= 0) { "Capacity should be a positive value" }
+    val newCapacity = nextCapacity(minCapacity)
+    if (newCapacity != buffer.capacity()) {
+      // `buffer` has data from [0, limit]
+      val newBuffer = ByteBuffer.allocate(newCapacity)
+      newBuffer.order(buffer.order())
+
+      // `buffer` has data from [0, limit]
+      assert(buffer.position() == buffer.limit())
+      buffer.position(0)
+      newBuffer.put(buffer)
+      assert(buffer.position() == buffer.limit())
+      newBuffer.position(buffer.limit())
+      newBuffer.limit(buffer.limit())
+      buffer = newBuffer
     }
+  }
 
-    fun position(value: Int) {
-        buffer.position(value)
+  private fun nextCapacity(minCapacity: Int): Int {
+    var newCapacity = buffer.capacity()
+    while (newCapacity < minCapacity) {
+      newCapacity *= 2
     }
+    return newCapacity
+  }
 
-    fun position(): Int {
-        return buffer.position()
-    }
-
-    fun limit(value: Int) {
-        buffer.limit(value)
-    }
-
-    fun limit(): Int {
-        return buffer.limit()
-    }
-
-    fun remaining(): Int {
-        return buffer.remaining()
-    }
-
-    fun slice(): ByteBuffer {
-        return buffer.slice()
-    }
-
-    fun put(buffer: ByteBuffer): ByteBuffer {
-        return this.buffer.put(buffer)
-    }
-
-    fun duplicate(): ByteBuffer {
-        return buffer.duplicate()
-    }
-
-    fun capacity(): Int {
-        return buffer.capacity()
-    }
-
-    fun ensureCapacity(minCapacity: Int) {
-        require(minCapacity >= 0) {
-            "Capacity should be a positive value"
-        }
-        val newCapacity = nextCapacity(minCapacity)
-        if (newCapacity != buffer.capacity()) {
-            // `buffer` has data from [0, limit]
-            val newBuffer = ByteBuffer.allocate(newCapacity)
-            newBuffer.order(buffer.order())
-
-            // `buffer` has data from [0, limit]
-            assert(buffer.position() == buffer.limit())
-            buffer.position(0)
-            newBuffer.put(buffer)
-            assert(buffer.position() == buffer.limit())
-            newBuffer.position(buffer.limit())
-            newBuffer.limit(buffer.limit())
-            buffer = newBuffer
-        }
-    }
-
-    private fun nextCapacity(minCapacity: Int): Int {
-        var newCapacity = buffer.capacity()
-        while (newCapacity < minCapacity) {
-            newCapacity *= 2
-        }
-        return newCapacity
-    }
-
-    /**
-     * Returns a new [ByteBuffer] containing the content of the underlying [ByteBuffer]
-     * from [position] to [limit]
-     */
-    fun copyBuffer(): ByteBuffer {
-        return buffer.copy()
-    }
+  /** Returns a new [ByteBuffer] containing the content of the underlying [ByteBuffer] from [position] to [limit] */
+  fun copyBuffer(): ByteBuffer {
+    return buffer.copy()
+  }
 }

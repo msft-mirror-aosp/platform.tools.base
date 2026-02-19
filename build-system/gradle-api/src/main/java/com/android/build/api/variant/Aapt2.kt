@@ -27,7 +27,6 @@ import org.gradle.api.tasks.Internal
  * An instance of [Aapt2] can be obtained via [AndroidComponentsExtension.sdkComponents]
  *
  * For example, this is the structure of a [org.gradle.api.Task] that runs aapt2:
- *
  * ```kotlin
  *  abstract class MyTaskUsingAapt2: DefaultTask() {
  *    @get:Nested
@@ -57,18 +56,9 @@ import org.gradle.api.tasks.Internal
  */
 interface Aapt2 {
 
-    /**
-     * Path to the [AAPT2](https://developer.android.com/tools/aapt2)
-     * executable file from the Android SDK
-     */
-    @get:Internal
-    val executable: Provider<RegularFile>
+  /** Path to the [AAPT2](https://developer.android.com/tools/aapt2) executable file from the Android SDK */
+  @get:Internal val executable: Provider<RegularFile>
 
-    /**
-     * Version of build tools.
-     * It is used as an input to allow correct build cache behaviour across different platforms
-     */
-    @get:Input
-    val version: Provider<String>
+  /** Version of build tools. It is used as an input to allow correct build cache behaviour across different platforms */
+  @get:Input val version: Provider<String>
 }
-

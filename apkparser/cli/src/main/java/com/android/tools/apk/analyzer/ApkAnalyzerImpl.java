@@ -45,23 +45,24 @@ import com.android.tools.smali.dexlib2.iface.reference.FieldReference;
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference;
 import com.android.tools.smali.dexlib2.iface.reference.Reference;
 import com.android.tools.smali.dexlib2.immutable.reference.ImmutableTypeReference;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.ByteStreams;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceFile;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.Chunk;
 import com.google.devrel.gmscore.tools.apk.arsc.PackageChunk;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceTableChunk;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.StringPoolChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.TypeChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.TypeSpecChunk;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeModel;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -83,10 +84,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeModel;
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tool for getting all kinds of information about an APK, including: - basic package info, sizes
@@ -193,7 +190,7 @@ public class ApkAnalyzerImpl {
             byte[] resContents =
                     Files.readAllBytes(
                             archiveContext.getArchive().getContentRoot().resolve("resources.arsc"));
-            BinaryResourceFile binaryRes = new BinaryResourceFile(resContents);
+            ResourceFile binaryRes = new ResourceFile(resContents);
             List<Chunk> chunks = binaryRes.getChunks();
             if (chunks.isEmpty()) {
                 throw new IOException("no chunks");
@@ -234,7 +231,7 @@ public class ApkAnalyzerImpl {
             byte[] resContents =
                     Files.readAllBytes(
                             archiveContext.getArchive().getContentRoot().resolve("resources.arsc"));
-            BinaryResourceFile binaryRes = new BinaryResourceFile(resContents);
+            ResourceFile binaryRes = new ResourceFile(resContents);
             List<Chunk> chunks = binaryRes.getChunks();
             if (chunks.isEmpty()) {
                 throw new IOException("no chunks");
@@ -247,7 +244,7 @@ public class ApkAnalyzerImpl {
             ResourceTableChunk resourceTableChunk = (ResourceTableChunk) chunks.get(0);
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }
@@ -285,7 +282,7 @@ public class ApkAnalyzerImpl {
             byte[] resContents =
                     Files.readAllBytes(
                             archiveContext.getArchive().getContentRoot().resolve("resources.arsc"));
-            BinaryResourceFile binaryRes = new BinaryResourceFile(resContents);
+            ResourceFile binaryRes = new ResourceFile(resContents);
             List<Chunk> chunks = binaryRes.getChunks();
             if (chunks.isEmpty()) {
                 throw new IOException("no chunks");
@@ -299,7 +296,7 @@ public class ApkAnalyzerImpl {
             StringPoolChunk stringPoolChunk = resourceTableChunk.getStringPool();
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }
@@ -316,12 +313,12 @@ public class ApkAnalyzerImpl {
                 if (config.equals(typeChunk.getConfiguration().toString())) {
                     for (TypeChunk.Entry typeEntry : typeChunk.getEntries().values()) {
                         if (name.equals(typeEntry.key())) {
-                            BinaryResourceValue value = typeEntry.value();
+                            ResourceValue value = typeEntry.value();
                             String valueString = null;
                             if (value != null) {
                                 valueString = formatValue(value, stringPoolChunk);
                             } else {
-                                Map<Integer, BinaryResourceValue> values = typeEntry.values();
+                                Map<Integer, ResourceValue> values = typeEntry.values();
                                 if (values != null) {
                                     valueString =
                                             values.values()
@@ -353,7 +350,7 @@ public class ApkAnalyzerImpl {
             byte[] resContents =
                     Files.readAllBytes(
                             archiveContext.getArchive().getContentRoot().resolve("resources.arsc"));
-            BinaryResourceFile binaryRes = new BinaryResourceFile(resContents);
+            ResourceFile binaryRes = new ResourceFile(resContents);
             List<Chunk> chunks = binaryRes.getChunks();
             if (chunks.isEmpty()) {
                 throw new IOException("no chunks");
@@ -366,7 +363,7 @@ public class ApkAnalyzerImpl {
             ResourceTableChunk resourceTableChunk = (ResourceTableChunk) chunks.get(0);
             Optional<PackageChunk> packageChunk;
             if (packageName != null) {
-                packageChunk = Optional.ofNullable(resourceTableChunk.getPackage(packageName));
+                packageChunk = resourceTableChunk.getPackages(packageName).stream().findFirst();
             } else {
                 packageChunk = resourceTableChunk.getPackages().stream().findFirst();
             }
@@ -1017,8 +1014,8 @@ public class ApkAnalyzerImpl {
 
     @NotNull
     private static String formatValue(
-            @NotNull BinaryResourceValue value, @NotNull StringPoolChunk stringPoolChunk) {
-        if (value.type() == BinaryResourceValue.Type.STRING) {
+            @NotNull ResourceValue value, @NotNull StringPoolChunk stringPoolChunk) {
+        if (value.type() == ResourceValue.Type.STRING) {
             return stringPoolChunk.getString(value.data());
         }
         return BinaryXmlParser.formatValue(value, stringPoolChunk);

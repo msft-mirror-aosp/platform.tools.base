@@ -18,12 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.scrollActivity.re
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun contentScrollingXml(
-  activityClass: String,
-  layoutName: String,
-  packageName: String,
-  useAndroidX: Boolean
-) =
+fun contentScrollingXml(activityClass: String, layoutName: String, packageName: String, useAndroidX: Boolean) =
   """<?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.v4.widget.NestedScrollView", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

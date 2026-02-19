@@ -158,8 +158,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     )
 
   // Include all types, including equality and comparisons
-  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-    type != AnnotationUsageType.DEFINITION
+  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type != AnnotationUsageType.DEFINITION
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -183,8 +182,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             return
           }
 
-          val expression =
-            skipParenthesizedExprUp(element.getParentOfType(UExpression::class.java, true))
+          val expression = skipParenthesizedExprUp(element.getParentOfType(UExpression::class.java, true))
           // Crap - how do we avoid double-checking here, we can't limit ourselves
           // to just left or right because what if the other one doesn't have
           // data?
@@ -232,8 +230,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   private fun isResourceAnnotation(signature: String): Boolean {
     return ResourceEvaluator.getTypeFromAnnotationSignature(signature) != null ||
       ANY_RES_ANNOTATION.isEquals(signature) ||
-      isPlatformAnnotation(signature) &&
-        ResourceEvaluator.getTypeFromAnnotationSignature(toAndroidxAnnotation(signature)) != null
+      isPlatformAnnotation(signature) && ResourceEvaluator.getTypeFromAnnotationSignature(toAndroidxAnnotation(signature)) != null
   }
 
   private fun checkColor(context: JavaContext, argument: UElement) {
@@ -255,8 +252,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     if (types != null && types.contains(COLOR)) {
       val message =
         String.format(
-          "Should pass resolved color instead of resource id here: " +
-            "`getResources().getColor(%1\$s)`",
+          "Should pass resolved color instead of resource id here: " + "`getResources().getColor(%1\$s)`",
           argument.asSourceString(),
         )
       report(context, COLOR_USAGE, argument, context.getLocation(argument), message)
@@ -266,14 +262,12 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   /**
    * Checks for the following constraints regarding half float annotated shorts:
    *
-   * (1) you're not passing literals; this is fraught with danger and there are a lot of constants
-   * available in the android.util.Half class already
+   * (1) you're not passing literals; this is fraught with danger and there are a lot of constants available in the android.util.Half class
+   * already
    *
-   * (2) you're not performing arithmetic on these operands; there are utility methods in
-   * android.util.Half that should be used instead
+   * (2) you're not performing arithmetic on these operands; there are utility methods in android.util.Half that should be used instead
    *
-   * (3) when you're operating on Half float variables, none of the operations are accidentally
-   * widening the result to int
+   * (3) when you're operating on Half float variables, none of the operations are accidentally widening the result to int
    */
   private fun checkHalfFloat(context: JavaContext, argument: UElement) {
     if (argument is UIfExpression) {
@@ -314,22 +308,14 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
       val expressionType = curr.getExpressionType()
       if (expressionType != null && PsiTypes.shortType() != expressionType) {
-        if (
-          PsiTypes.voidType() == expressionType ||
-            PsiTypes.booleanType() == expressionType ||
-            PsiTypes.byteType() == expressionType
-        ) {
+        if (PsiTypes.voidType() == expressionType || PsiTypes.booleanType() == expressionType || PsiTypes.byteType() == expressionType) {
           break
         }
         if (expressionType.canonicalText == "android.util.Half") {
           break
         }
 
-        val message =
-          String.format(
-            "Half-float type in expression widened to %1\$s",
-            expressionType.canonicalText,
-          )
+        val message = String.format("Half-float type in expression widened to %1\$s", expressionType.canonicalText)
         report(context, HALF_FLOAT, argument, context.getLocation(argument), message)
         break
       }
@@ -361,8 +347,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       report(context, RESOURCE_TYPE, argument, context.getLocation(argument), message)
     } else {
       val unit = ResourceEvaluator.getTypeFromAnnotation(annotation) ?: return
-      val typeUnit =
-        ResourceEvaluator.DIMENSION_MARKERS.firstOrNull { types.contains(it) } ?: return
+      val typeUnit = ResourceEvaluator.DIMENSION_MARKERS.firstOrNull { types.contains(it) } ?: return
       if (unit != typeUnit && unit.isDimension()) {
         reportUnitMismatch(unit, typeUnit, context, argument)
       } else {
@@ -370,15 +355,9 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         if (argument === outer.receiver.findSelector()) {
           val selector = outer.findSelector()
           if (selector is USimpleNameReferenceExpression) {
-            if (
-              unit != DIMENSION_DP_MARKER_TYPE &&
-                (selector.identifier == "dp" || selector.resolvedName == "getDp")
-            ) {
+            if (unit != DIMENSION_DP_MARKER_TYPE && (selector.identifier == "dp" || selector.resolvedName == "getDp")) {
               reportUnitMismatch(DIMENSION_DP_MARKER_TYPE, unit, context, argument)
-            } else if (
-              unit != DIMENSION_SP_MARKER_TYPE &&
-                (selector.identifier == "sp" || selector.resolvedName == "getSp")
-            ) {
+            } else if (unit != DIMENSION_SP_MARKER_TYPE && (selector.identifier == "sp" || selector.resolvedName == "getSp")) {
               reportUnitMismatch(DIMENSION_SP_MARKER_TYPE, unit, context, argument)
             }
           }
@@ -390,18 +369,12 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   private fun UElement.outermostQualified(): UQualifiedReferenceExpression? {
     var curr = skipParenthesizedExprUp(uastParent) as? UQualifiedReferenceExpression ?: return null
     while (true) {
-      val parent =
-        skipParenthesizedExprUp(curr.uastParent) as? UQualifiedReferenceExpression ?: return curr
+      val parent = skipParenthesizedExprUp(curr.uastParent) as? UQualifiedReferenceExpression ?: return curr
       curr = parent
     }
   }
 
-  private fun reportUnitMismatch(
-    unit: ResourceType,
-    typeUnit: ResourceType,
-    context: JavaContext,
-    argument: UElement,
-  ) {
+  private fun reportUnitMismatch(unit: ResourceType, typeUnit: ResourceType, context: JavaContext, argument: UElement) {
     val expected = unit.getMarkerTypeDescription()
     val actual = typeUnit.getMarkerTypeDescription()
     val message = "Mismatched @Dimension units here; expected $expected but received $actual"
@@ -409,25 +382,13 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   private fun ResourceType.isDimension(): Boolean {
-    return this == DIMENSION_MARKER_TYPE ||
-      this == DIMENSION_DP_MARKER_TYPE ||
-      this == DIMENSION_SP_MARKER_TYPE
+    return this == DIMENSION_MARKER_TYPE || this == DIMENSION_DP_MARKER_TYPE || this == DIMENSION_SP_MARKER_TYPE
   }
 
-  private fun checkResourceType(
-    context: JavaContext,
-    argument: UElement,
-    expectedTypes: EnumSet<ResourceType>,
-    calledMethod: PsiMethod?,
-  ) {
+  private fun checkResourceType(context: JavaContext, argument: UElement, expectedTypes: EnumSet<ResourceType>, calledMethod: PsiMethod?) {
     val actual = ResourceEvaluator.getResourceTypes(context.evaluator, argument)
 
-    if (
-      actual == null &&
-        (!UastLintUtils.isNumber(argument) ||
-          UastLintUtils.isZero(argument) ||
-          UastLintUtils.isMinusOne(argument))
-    ) {
+    if (actual == null && (!UastLintUtils.isNumber(argument) || UastLintUtils.isZero(argument) || UastLintUtils.isMinusOne(argument))) {
       return
     } else if (
       actual != null &&
@@ -444,10 +405,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
         context.evaluator.isMemberInClass(calledMethod, "android.content.res.TypedArray")
     ) {
       val call = argument.getParentOfType<UExpression>(UCallExpression::class.java, false)
-      if (
-        call is UCallExpression &&
-          typeArrayFromArrayLiteral(call.receiver?.skipParenthesizedExprDown(), context)
-      ) {
+      if (call is UCallExpression && typeArrayFromArrayLiteral(call.receiver?.skipParenthesizedExprDown(), context)) {
         // You're generally supposed to provide a styleable to the TypedArray methods,
         // but you're also allowed to supply an integer array
         return
@@ -460,15 +418,13 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           "Expected a color resource id (`R.color.`) but received ${COLOR_INT_MARKER_TYPE.getMarkerTypeDescription()}"
         }
         expectedTypes.contains(COLOR_INT_MARKER_TYPE) -> {
-          "Should pass resolved color instead of resource id here: " +
-            "`getResources().getColor(${argument.asSourceString()})`"
+          "Should pass resolved color instead of resource id here: " + "`getResources().getColor(${argument.asSourceString()})`"
         }
         actual != null && actual.size == 1 && actual.contains(DIMENSION_MARKER_TYPE) -> {
           "Expected a dimension resource id (`R.dimen.`) but received ${DIMENSION_MARKER_TYPE.getMarkerTypeDescription()}"
         }
         expectedTypes.contains(DIMENSION_MARKER_TYPE) -> {
-          "Should pass resolved pixel size instead of resource id here: " +
-            "`getResources().getDimension*(${argument.asSourceString()})`"
+          "Should pass resolved pixel size instead of resource id here: " + "`getResources().getDimension*(${argument.asSourceString()})`"
         }
         actual != null && actual.size == 1 && actual.contains(DIMENSION_SP_MARKER_TYPE) -> {
           "Expected a dimension resource id (`R.dimen.`) but received ${DIMENSION_SP_MARKER_TYPE.getMarkerTypeDescription()}"
@@ -505,10 +461,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
   }
 
-  /**
-   * Returns true if the node is pointing to a TypedArray whose value was obtained from an array
-   * literal.
-   */
+  /** Returns true if the node is pointing to a TypedArray whose value was obtained from an array literal. */
   private fun typeArrayFromArrayLiteral(node: UElement?, context: JavaContext): Boolean {
     if (node == null) {
       return false
@@ -588,8 +541,7 @@ class ResourceTypeDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(ResourceTypeDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ResourceTypeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Attempting pass the wrong type of resource. */
     @JvmField

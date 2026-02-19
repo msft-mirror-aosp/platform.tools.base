@@ -19,130 +19,114 @@ import com.android.adblib.ByteBufferAdbInputChannel
 import com.android.adblib.readRemaining
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.utils.ResizableBuffer
+import java.nio.ByteBuffer
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.nio.ByteBuffer
 
 class PayloadProviderTest {
 
-    @Test
-    fun testEmptyPayload(): Unit = runBlockingWithTimeout {
-        // Act
-        val provider = PayloadProvider.emptyPayload()
+  @Test
+  fun testEmptyPayload(): Unit = runBlockingWithTimeout {
+    // Act
+    val provider = PayloadProvider.emptyPayload()
 
-        // Assert
-        assertSame(PayloadProvider.emptyPayload(), provider.toOffline())
-        assertEquals(0, provider.toByteArray().size)
-        assertTrue(provider.isThreadSafeAndImmutable)
+    // Assert
+    assertSame(PayloadProvider.emptyPayload(), provider.toOffline())
+    assertEquals(0, provider.toByteArray().size)
+    assertTrue(provider.isThreadSafeAndImmutable)
+  }
+
+  @Test
+  fun testForByteBufferPayload(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val bytes = byteArrayOf(4, 5, 6, 7)
+    val buffer = ByteBuffer.allocate(bytes.size + 6)
+    buffer.position(3)
+    buffer.put(bytes)
+    buffer.position(3)
+    buffer.limit(3 + bytes.size)
+
+    // Act
+    val provider = PayloadProvider.forByteBuffer(buffer)
+
+    // Assert
+    assertTrue(provider.isThreadSafeAndImmutable)
+    assertArrayEquals(bytes, provider.toByteArray())
+    assertArrayEquals("2nd access to payload should work too", bytes, provider.toByteArray())
+  }
+
+  @Test
+  fun testForByteBufferPayloadIsStillValidAfterClose(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val bytes = byteArrayOf(4, 5, 6, 7)
+    val buffer = ByteBuffer.allocate(bytes.size + 6)
+    buffer.position(3)
+    buffer.put(bytes)
+    buffer.position(3)
+    buffer.limit(3 + bytes.size)
+
+    // Act
+    val provider = PayloadProvider.forByteBuffer(buffer)
+    provider.close()
+
+    // Assert
+    assertTrue(provider.isThreadSafeAndImmutable)
+    assertArrayEquals(bytes, provider.toByteArray())
+    assertArrayEquals("2nd access to payload should work too", bytes, provider.toByteArray())
+  }
+
+  @Test
+  fun testForByteBufferPayloadIsStillValidAfterShutdown(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val bytes = byteArrayOf(4, 5, 6, 7)
+    val buffer = ByteBuffer.allocate(bytes.size + 6)
+    buffer.position(3)
+    buffer.put(bytes)
+    buffer.position(3)
+    buffer.limit(3 + bytes.size)
+
+    // Act
+    val provider = PayloadProvider.forByteBuffer(buffer)
+    provider.shutdown(ResizableBuffer())
+
+    // Assert
+    assertTrue(provider.isThreadSafeAndImmutable)
+    assertArrayEquals(bytes, provider.toByteArray())
+    assertArrayEquals("2nd access to payload should work too", bytes, provider.toByteArray())
+  }
+
+  @Test
+  fun testForInputChannelPayload(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val bytes = byteArrayOf(4, 5, 6, 7)
+    val buffer = ByteBuffer.allocate(bytes.size + 6)
+    buffer.position(3)
+    buffer.put(bytes)
+    buffer.position(3)
+    buffer.limit(3 + bytes.size)
+    val inputChannel = ByteBufferAdbInputChannel(buffer)
+
+    // Act
+    val provider = PayloadProvider.forInputChannel(inputChannel)
+
+    // Assert
+    assertFalse(provider.isThreadSafeAndImmutable)
+    assertArrayEquals(bytes, provider.toByteArray())
+    assertArrayEquals("2nd access to payload should work too", bytes, provider.toByteArray())
+  }
+
+  private suspend fun PayloadProvider.toByteArray(): ByteArray {
+    val workBuffer = ResizableBuffer()
+    return withPayload {
+      it.readRemaining(workBuffer)
+      val buffer = workBuffer.afterChannelRead(false)
+      val bytes = ByteArray(buffer.remaining())
+      buffer.get(bytes)
+      bytes
     }
-
-    @Test
-    fun testForByteBufferPayload(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val bytes = byteArrayOf(4, 5, 6, 7)
-        val buffer = ByteBuffer.allocate(bytes.size + 6)
-        buffer.position(3)
-        buffer.put(bytes)
-        buffer.position(3)
-        buffer.limit(3 + bytes.size)
-
-        // Act
-        val provider = PayloadProvider.forByteBuffer(buffer)
-
-        // Assert
-        assertTrue(provider.isThreadSafeAndImmutable)
-        assertArrayEquals(bytes, provider.toByteArray())
-        assertArrayEquals(
-            "2nd access to payload should work too",
-            bytes,
-            provider.toByteArray()
-        )
-    }
-
-    @Test
-    fun testForByteBufferPayloadIsStillValidAfterClose(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val bytes = byteArrayOf(4, 5, 6, 7)
-        val buffer = ByteBuffer.allocate(bytes.size + 6)
-        buffer.position(3)
-        buffer.put(bytes)
-        buffer.position(3)
-        buffer.limit(3 + bytes.size)
-
-        // Act
-        val provider = PayloadProvider.forByteBuffer(buffer)
-        provider.close()
-
-        // Assert
-        assertTrue(provider.isThreadSafeAndImmutable)
-        assertArrayEquals(bytes, provider.toByteArray())
-        assertArrayEquals(
-            "2nd access to payload should work too",
-            bytes,
-            provider.toByteArray()
-        )
-    }
-
-    @Test
-    fun testForByteBufferPayloadIsStillValidAfterShutdown(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val bytes = byteArrayOf(4, 5, 6, 7)
-        val buffer = ByteBuffer.allocate(bytes.size + 6)
-        buffer.position(3)
-        buffer.put(bytes)
-        buffer.position(3)
-        buffer.limit(3 + bytes.size)
-
-        // Act
-        val provider = PayloadProvider.forByteBuffer(buffer)
-        provider.shutdown(ResizableBuffer())
-
-        // Assert
-        assertTrue(provider.isThreadSafeAndImmutable)
-        assertArrayEquals(bytes, provider.toByteArray())
-        assertArrayEquals(
-            "2nd access to payload should work too",
-            bytes,
-            provider.toByteArray()
-        )
-    }
-
-    @Test
-    fun testForInputChannelPayload(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val bytes = byteArrayOf(4, 5, 6, 7)
-        val buffer = ByteBuffer.allocate(bytes.size + 6)
-        buffer.position(3)
-        buffer.put(bytes)
-        buffer.position(3)
-        buffer.limit(3 + bytes.size)
-        val inputChannel = ByteBufferAdbInputChannel(buffer)
-
-        // Act
-        val provider = PayloadProvider.forInputChannel(inputChannel)
-
-        // Assert
-        assertFalse(provider.isThreadSafeAndImmutable)
-        assertArrayEquals(bytes, provider.toByteArray())
-        assertArrayEquals(
-            "2nd access to payload should work too",
-            bytes,
-            provider.toByteArray()
-        )
-    }
-
-    private suspend fun PayloadProvider.toByteArray(): ByteArray {
-        val workBuffer = ResizableBuffer()
-        return withPayload {
-            it.readRemaining(workBuffer)
-            val buffer = workBuffer.afterChannelRead(false)
-            val bytes = ByteArray(buffer.remaining())
-            buffer.get(bytes)
-            bytes
-        }
-    }
+  }
 }

@@ -21,49 +21,40 @@ import com.android.build.api.dsl.TestTaskContext
 import com.android.build.api.variant.JUnitEngineSpec
 import com.android.build.api.variant.TestSuite
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
+import com.android.build.gradle.internal.manifest.ManifestDataProvider
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
+import java.io.File
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
-interface TestSuiteCreationConfig: TestSuite {
+interface TestSuiteCreationConfig : TestSuite {
 
-    val global: GlobalTaskCreationConfig
+  val global: GlobalTaskCreationConfig
 
-    /**
-     * Runs all the registered config actions on the test tasks for this suite.
-     */
-    fun runTestTaskConfigurationActions(
-        context: TestTaskContext,
-        testTaskProvider: TaskProvider<out Test>
-    )
+  /** Runs all the registered config actions on the test tasks for this suite. */
+  fun runTestTaskConfigurationActions(context: TestTaskContext, testTaskProvider: TaskProvider<out Test>)
 
-    /**
-     * Returns information on the junit engines to run the tests with or null if no junit test
-     * engine needs to be configured.
-     */
-    override val junitEngineSpec: JUnitEngineSpec
+  /** Returns information on the junit engines to run the tests with or null if no junit test engine needs to be configured. */
+  override val junitEngineSpec: JUnitEngineSpec
 
-    // Internal delegates.
-    val services: TaskCreationServices
+  // Internal delegates.
+  val services: TaskCreationServices
 
-    /**
-     * Tested variant, should be only read-only at this point.
-     */
-    val testedVariant: VariantCreationConfig
+  /** Tested variant, should be only read-only at this point. */
+  val testedVariant: VariantCreationConfig
 
-    /**
-     * Returns the sources for this test suite.
-     */
-    override val sources: Collection<TestSuiteSourceContainer>
+  /** Returns the sources for this test suite. */
+  val sourceContainers: Collection<TestSuiteSourceContainer>
 
-    /**
-     * Artifacts specific to this Test suite.
-     */
-    val artifacts: ArtifactsImpl
+  /** Artifacts specific to this Test suite. */
+  val artifacts: ArtifactsImpl
 
-    /**
-     * Target of this test suite.
-     */
-    override val targets: Map<String, TestSuiteTargetCreationConfig>
+  /** Target of this test suite. */
+  override val targets: Map<String, TestSuiteTargetCreationConfig>
+
+  val variantServices: VariantServices
+
+  val manifestDataProviderBuilder: (File) -> ManifestDataProvider
 }

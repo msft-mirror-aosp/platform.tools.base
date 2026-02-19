@@ -41,12 +41,10 @@ import com.google.common.collect.Lists
 import com.google.common.io.Files
 import java.io.File
 import java.io.IOException
+import kotlin.sequences.forEach
 import org.w3c.dom.Document
 
-/**
- * Lint project for a project backed by a [LintModelModule] (which could be an app, a library,
- * dynamic feature, etc.)
- */
+/** Lint project for a project backed by a [LintModelModule] (which could be an app, a library, dynamic feature, etc.) */
 open class LintModelModuleProject(
   client: LintClient,
   dir: File,
@@ -75,8 +73,7 @@ open class LintModelModuleProject(
     // to the Gradle DSL minSdkVersion instead. Once we have a Gradle DSL, we should unconditionally
     // initialize this from the Gradle model.
     if (manifestMinSdks.getConstraints().size <= 1) {
-      manifestMinSdks =
-        manifestMinSdk?.let { ApiConstraint.get(it.featureLevel) } ?: ApiConstraint.ALL
+      manifestMinSdks = manifestMinSdk?.let { ApiConstraint.get(it.featureLevel) } ?: ApiConstraint.ALL
     }
     manifestTargetSdk = variant.targetSdkVersion
   }
@@ -85,8 +82,7 @@ open class LintModelModuleProject(
     super.readManifest(document)
 
     // Make sure the minSdkVersion is picked up from the build model, not the manifest
-    manifestMinSdks =
-      max(manifestMinSdks, ApiConstraint.get(minSdkVersion.featureLevel), either = false)
+    manifestMinSdks = max(manifestMinSdks, ApiConstraint.get(minSdkVersion.featureLevel), either = false)
   }
 
   override fun toString(): String {
@@ -134,21 +130,17 @@ open class LintModelModuleProject(
 
   override fun getBuildVariant(): LintModelVariant = variant
 
-  override fun isLibrary(): Boolean =
-    model.type === LintModelModuleType.LIBRARY || model.type === LintModelModuleType.JAVA_LIBRARY
+  override fun isLibrary(): Boolean = model.type === LintModelModuleType.LIBRARY || model.type === LintModelModuleType.JAVA_LIBRARY
 
   override fun isAndroidProject(): Boolean = type != LintModelModuleType.JAVA_LIBRARY
 
-  override fun hasDynamicFeatures(): Boolean =
-    model.type === LintModelModuleType.APP && model.dynamicFeatures.isNotEmpty()
+  override fun hasDynamicFeatures(): Boolean = model.type === LintModelModuleType.APP && model.dynamicFeatures.isNotEmpty()
 
   override fun getManifestFiles(): List<File> {
     if (manifestFiles == null) {
       manifestFiles =
         sourceProviders.flatMap { provider ->
-          provider.manifestFiles.filter {
-            it.exists()
-          } // model returns path whether or not it exists
+          provider.manifestFiles.filter { it.exists() } // model returns path whether or not it exists
         }
     }
     return manifestFiles
@@ -156,10 +148,22 @@ open class LintModelModuleProject(
 
   override fun getProguardFiles(): List<File> {
     if (proguardFiles == null) {
-      proguardFiles = variant.proguardFiles + variant.consumerProguardFiles
+      proguardFiles = Lists.newArrayList()
+      proguardFiles.addAll(variant.proguardFiles)
+      proguardFiles.addAll(variant.consumerProguardFiles)
       // proguardFiles.addAll(container.config.getTestProguardFiles())
     }
     return proguardFiles
+  }
+
+  override fun getKeepRulesSourceFolders(): List<File> {
+    if (keepRulesFolders == null) {
+      keepRulesFolders = Lists.newArrayList()
+      sourceProviders.forEach { provider ->
+        provider.keepRulesDirectories.asSequence().filter { it.exists() }.forEach { keepRulesFolders.add(it) }
+      }
+    }
+    return keepRulesFolders
   }
 
   override fun getResourceFolders(): List<File> {
@@ -167,10 +171,7 @@ open class LintModelModuleProject(
       resourceFolders = Lists.newArrayList()
       sourceProviders.forEach { provider ->
         // model returns path whether or not it exists
-        provider.resDirectories
-          .asSequence()
-          .filter { it.exists() }
-          .forEach { resourceFolders.add(it) }
+        provider.resDirectories.asSequence().filter { it.exists() }.forEach { resourceFolders.add(it) }
       }
     }
     return resourceFolders
@@ -194,10 +195,7 @@ open class LintModelModuleProject(
       assetFolders = Lists.newArrayList()
       sourceProviders.forEach { provider ->
         // model returns path whether or not it exists
-        provider.assetsDirectories
-          .asSequence()
-          .filter { it.exists() }
-          .forEach { assetFolders.add(it) }
+        provider.assetsDirectories.asSequence().filter { it.exists() }.forEach { assetFolders.add(it) }
       }
     }
     return assetFolders
@@ -208,10 +206,7 @@ open class LintModelModuleProject(
       javaSourceFolders = Lists.newArrayList()
       sourceProviders.forEach { provider ->
         // model returns path whether or not it exists
-        provider.javaDirectories
-          .asSequence()
-          .filter { it.exists() }
-          .forEach { javaSourceFolders.add(it) }
+        provider.javaDirectories.asSequence().filter { it.exists() }.forEach { javaSourceFolders.add(it) }
       }
     }
     return javaSourceFolders
@@ -238,10 +233,7 @@ open class LintModelModuleProject(
         .filter { !it.isInstrumentationTest() && !it.isUnitTest() }
         .forEach { provider ->
           // model returns path whether or not it exists
-          provider.javaDirectories
-            .asSequence()
-            .filter { it.exists() }
-            .forEach { testSourceFolders.add(it) }
+          provider.javaDirectories.asSequence().filter { it.exists() }.forEach { testSourceFolders.add(it) }
         }
     }
     return testSourceFolders
@@ -254,10 +246,7 @@ open class LintModelModuleProject(
         .filter { it.isInstrumentationTest() }
         .forEach { provider ->
           // model returns path whether or not it exists
-          provider.javaDirectories
-            .asSequence()
-            .filter { it.exists() }
-            .forEach { instrumentationTestSourceFolders.add(it) }
+          provider.javaDirectories.asSequence().filter { it.exists() }.forEach { instrumentationTestSourceFolders.add(it) }
         }
     }
     return instrumentationTestSourceFolders
@@ -270,10 +259,7 @@ open class LintModelModuleProject(
         .filter { it.isUnitTest() }
         .forEach { provider ->
           // model returns path whether or not it exists
-          provider.javaDirectories
-            .asSequence()
-            .filter { it.exists() }
-            .forEach { unitTestSourceFolders.add(it) }
+          provider.javaDirectories.asSequence().filter { it.exists() }.forEach { unitTestSourceFolders.add(it) }
         }
     }
     return unitTestSourceFolders
@@ -369,9 +355,7 @@ open class LintModelModuleProject(
       testFixturesSourceFolders = Lists.newArrayList()
       testFixturesSourceProviders.forEach { provider ->
         // model returns path whether or not it exists
-        provider.javaDirectories
-          .filter { it.exists() }
-          .forEach { testFixturesSourceFolders.add(it) }
+        provider.javaDirectories.filter { it.exists() }.forEach { testFixturesSourceFolders.add(it) }
       }
     }
     return testFixturesSourceFolders
@@ -381,9 +365,7 @@ open class LintModelModuleProject(
     if (testFixturesLibraries == null) {
       testFixturesLibraries = Lists.newArrayList()
       variant.testFixturesArtifact?.let { artifact ->
-        artifact.dependencies.getAll().filterIsInstance<LintModelExternalLibrary>().forEach {
-          it.addJars(testFixturesLibraries, false)
-        }
+        artifact.dependencies.getAll().filterIsInstance<LintModelExternalLibrary>().forEach { it.addJars(testFixturesLibraries, false) }
       }
     }
     return testFixturesLibraries
@@ -414,9 +396,7 @@ open class LintModelModuleProject(
         // TODO: When Gradle DSL supports extension levels switch to initializing these here.
         // (Note that we also initialize this in init {} where we consult the merged manifest
         // for extra tags.
-        val minSdks =
-          variant.minSdkVersion?.let { ApiConstraint.get(it.featureLevel) }
-            ?: super.getMinSdkVersions() // from manifest
+        val minSdks = variant.minSdkVersion?.let { ApiConstraint.get(it.featureLevel) } ?: super.getMinSdkVersions() // from manifest
         manifestMinSdks = minSdks
         minSdks
       }
@@ -458,22 +438,18 @@ open class LintModelModuleProject(
         if (appCompat == null) {
           val a = variant.artifact
           appCompat =
-            a.findCompileDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) != null ||
-              a.findCompileDependency(APPCOMPAT_LIB_ARTIFACT) != null
+            a.findCompileDependency(ANDROIDX_APPCOMPAT_LIB_ARTIFACT) != null || a.findCompileDependency(APPCOMPAT_LIB_ARTIFACT) != null
         }
         appCompat
       }
       ANDROIDX_LEANBACK_ARTIFACT -> {
         if (leanback == null) {
           val a = variant.artifact
-          leanback =
-            a.findCompileDependency(ANDROIDX_LEANBACK_ARTIFACT) != null ||
-              a.findCompileDependency(LEANBACK_V17_ARTIFACT) != null
+          leanback = a.findCompileDependency(ANDROIDX_LEANBACK_ARTIFACT) != null || a.findCompileDependency(LEANBACK_V17_ARTIFACT) != null
         }
         leanback
       }
-      else ->
-        if (variant.artifact.findCompileDependency(artifact) != null) true else super.dependsOn(id)
+      else -> if (variant.artifact.findCompileDependency(artifact) != null) true else super.dependsOn(id)
     }
   }
 
@@ -508,8 +484,7 @@ open class LintModelModuleProject(
       if (thisPartialResultsDir == null) {
         otherPartialResultDir == null
       } else {
-        otherPartialResultDir != null &&
-          FileUtils.isSameFile(thisPartialResultsDir, otherPartialResultDir)
+        otherPartialResultDir != null && FileUtils.isSameFile(thisPartialResultsDir, otherPartialResultDir)
       }
 
     return super.equals(other) && samePartialResultsDir
@@ -517,14 +492,11 @@ open class LintModelModuleProject(
 
   companion object {
     /**
-     * Given a collection of model projects, set up the lint project dependency lists based on the
-     * dependencies found in the underlying models.
+     * Given a collection of model projects, set up the lint project dependency lists based on the dependencies found in the underlying
+     * models.
      */
     @JvmStatic
-    fun resolveDependencies(
-      projects: Collection<LintModelModuleProject>,
-      reporting: Boolean,
-    ): List<LintModelModuleProject> {
+    fun resolveDependencies(projects: Collection<LintModelModuleProject>, reporting: Boolean): List<LintModelModuleProject> {
       // Record project names such that we can resolve dependencies once all the
       // projects have been initialized
       val projectMap: MutableMap<String, LintModelModuleProject> = HashMap()
@@ -547,9 +519,7 @@ open class LintModelModuleProject(
           projectMap[modulePath]?.addDirectLibrary(project)
           continue
         }
-        val roots =
-          variant.artifact.dependencies.compileDependencies.roots +
-            variant.artifact.dependencies.packageDependencies.roots
+        val roots = variant.artifact.dependencies.compileDependencies.roots + variant.artifact.dependencies.packageDependencies.roots
         val visitedProjectPaths: MutableSet<String> = mutableSetOf()
         for (dependency: LintModelDependency in roots) {
           val library = dependency.findLibrary()
@@ -559,9 +529,7 @@ open class LintModelModuleProject(
             }
             val dependsOn = projectMap[library.projectPath]
             if (dependsOn != null) {
-              if (
-                reporting && project.type == DYNAMIC_FEATURE && dependsOn.type != DYNAMIC_FEATURE
-              ) {
+              if (reporting && project.type == DYNAMIC_FEATURE && dependsOn.type != DYNAMIC_FEATURE) {
                 // When reporting, reverse the dependencies such that
                 // we treat the consuming app module as the root and we merge
                 // dynamic feature lint results into it instead of the other way.
@@ -587,10 +555,7 @@ open class LintModelModuleProject(
   }
 }
 
-/**
- * Adds all the jar files from this library into the given list, skipping provided libraries if
- * requested.
- */
+/** Adds all the jar files from this library into the given list, skipping provided libraries if requested. */
 fun LintModelExternalLibrary.addJars(list: MutableList<File>, skipProvided: Boolean) {
   if (skipProvided && provided) {
     return

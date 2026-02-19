@@ -30,69 +30,51 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.work.DisableCachingByDefault
 
-/**
- * [org.gradle.api.Task] that produces the IDE listing file that will be passed through the model.
- */
+/** [org.gradle.api.Task] that produces the IDE listing file that will be passed through the model. */
 @DisableCachingByDefault(because = FAST_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.SYNC)
 abstract class BundleIdeModelProducerTask : NonIncrementalTask() {
-    @get:InputFile
-    @get:PathSensitive(PathSensitivity.NAME_ONLY)
-    abstract val finalBundleFile: RegularFileProperty
+  @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) abstract val finalBundleFile: RegularFileProperty
 
-    @get:OutputFile
-    abstract val bundleIdeModel: RegularFileProperty
+  @get:OutputFile abstract val bundleIdeModel: RegularFileProperty
 
-    @get:Input
-    abstract val applicationId: Property<String>
+  @get:Input abstract val applicationId: Property<String>
 
-    override fun doTaskAction() {
-        // This task is fast-running, so we should not use a worker as the worker overhead could
-        // outweigh its benefit.
-        BuiltArtifactsImpl(
-                artifactType = SingleArtifact.BUNDLE,
-                applicationId = applicationId.get(),
-                variantName = variantName,
-                elements = listOf(
-                        BuiltArtifactImpl.make(outputFile = finalBundleFile.asFile.get().absolutePath))
-        ).saveToFile(bundleIdeModel.asFile.get())
+  override fun doTaskAction() {
+    // This task is fast-running, so we should not use a worker as the worker overhead could
+    // outweigh its benefit.
+    BuiltArtifactsImpl(
+        artifactType = SingleArtifact.BUNDLE,
+        applicationId = applicationId.get(),
+        variantName = variantName,
+        elements = listOf(BuiltArtifactImpl.make(outputFile = finalBundleFile.asFile.get().absolutePath)),
+      )
+      .saveToFile(bundleIdeModel.asFile.get())
+  }
+
+  /** CreateAction for a task that will sign the bundle artifact. */
+  class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<BundleIdeModelProducerTask, ApkCreationConfig>(creationConfig) {
+    override val name: String
+      get() = computeTaskName("produce", "BundleIdeListingFile")
+
+    override val type: Class<BundleIdeModelProducerTask>
+      get() = BundleIdeModelProducerTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<BundleIdeModelProducerTask>) {
+      super.handleProvider(taskProvider)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, BundleIdeModelProducerTask::bundleIdeModel)
+        .withName(BuiltArtifactsImpl.METADATA_FILE_NAME)
+        .on(InternalArtifactType.BUNDLE_IDE_MODEL)
     }
 
+    override fun configure(task: BundleIdeModelProducerTask) {
+      super.configure(task)
 
-    /**
-     * CreateAction for a task that will sign the bundle artifact.
-     */
-    class CreationAction(creationConfig: ApkCreationConfig) :
-            VariantTaskCreationAction<BundleIdeModelProducerTask, ApkCreationConfig>(
-                    creationConfig
-            ) {
-        override val name: String
-            get() = computeTaskName("produce", "BundleIdeListingFile")
-
-        override val type: Class<BundleIdeModelProducerTask>
-            get() = BundleIdeModelProducerTask::class.java
-
-        override fun handleProvider(
-                taskProvider: TaskProvider<BundleIdeModelProducerTask>
-        ) {
-            super.handleProvider(taskProvider)
-
-            creationConfig.artifacts.setInitialProvider(
-                    taskProvider,
-                    BundleIdeModelProducerTask::bundleIdeModel
-            ).withName(BuiltArtifactsImpl.METADATA_FILE_NAME)
-                    .on(InternalArtifactType.BUNDLE_IDE_MODEL)
-        }
-
-        override fun configure(
-                task: BundleIdeModelProducerTask
-        ) {
-            super.configure(task)
-
-            creationConfig.artifacts.setTaskInputToFinalProduct(
-                    SingleArtifact.BUNDLE,
-                    task.finalBundleFile)
-            task.applicationId.setDisallowChanges(creationConfig.applicationId)
-        }
+      creationConfig.artifacts.setTaskInputToFinalProduct(SingleArtifact.BUNDLE, task.finalBundleFile)
+      task.applicationId.setDisallowChanges(creationConfig.applicationId)
     }
+  }
 }

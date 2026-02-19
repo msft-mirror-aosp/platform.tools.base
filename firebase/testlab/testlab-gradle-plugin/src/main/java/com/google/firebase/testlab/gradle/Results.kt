@@ -32,8 +32,8 @@ interface Results {
   /**
    * History name of test results.
    *
-   * All tests with the same history name will have their results grouped together in the Firebase
-   * console in a time-ordered test history list.
+   * All tests with the same history name will have their results grouped together in the Firebase console in a time-ordered test history
+   * list.
    *
    * If unspecified, the application label in Android manifest is used.
    */
@@ -42,8 +42,7 @@ interface Results {
   /**
    * List of paths that will be copied from the test device's storage to the test result folder.
    *
-   * This will copy from GCloud to local storage. These must be absolute paths under /sdcard or
-   * /data/local/tmp.
+   * This will copy from GCloud to local storage. These must be absolute paths under /sdcard or /data/local/tmp.
    */
   @get:Incubating val directoriesToPull: ListProperty<String>
 
@@ -55,8 +54,7 @@ interface Results {
   @get:Incubating @set:Incubating var recordVideo: Boolean
 
   /**
-   * Whether performance metrics are enabled. Monitor and record performance metrics: CPU, memory,
-   * network usage, etc.
+   * Whether performance metrics are enabled. Monitor and record performance metrics: CPU, memory, network usage, etc.
    *
    * Default value is false.
    */

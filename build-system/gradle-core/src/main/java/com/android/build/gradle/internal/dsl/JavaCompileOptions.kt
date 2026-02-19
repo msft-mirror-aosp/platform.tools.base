@@ -19,13 +19,10 @@ package com.android.build.gradle.internal.dsl
 import com.google.common.base.MoreObjects
 
 /** DSL object for javaCompileOptions. */
-abstract class JavaCompileOptions: com.android.build.gradle.api.JavaCompileOptions,
-    com.android.build.api.dsl.JavaCompileOptions {
-    abstract override val annotationProcessorOptions: AnnotationProcessorOptions
+abstract class JavaCompileOptions : com.android.build.gradle.api.JavaCompileOptions, com.android.build.api.dsl.JavaCompileOptions {
+  abstract override val annotationProcessorOptions: AnnotationProcessorOptions
 
-    override fun toString(): String {
-        return MoreObjects.toStringHelper(this)
-            .add("annotationProcessorOptions", annotationProcessorOptions)
-            .toString()
-    }
+  override fun toString(): String {
+    return MoreObjects.toStringHelper(this).add("annotationProcessorOptions", annotationProcessorOptions).toString()
+  }
 }

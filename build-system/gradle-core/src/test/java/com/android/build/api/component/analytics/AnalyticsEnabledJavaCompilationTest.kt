@@ -25,41 +25,34 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 internal class AnalyticsEnabledJavaCompilationTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: JavaCompilation = mock()
+  private val delegate: JavaCompilation = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledJavaCompilation by lazy {
-        AnalyticsEnabledJavaCompilation(delegate, stats, FakeObjectFactory.factory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledJavaCompilation by lazy { AnalyticsEnabledJavaCompilation(delegate, stats, FakeObjectFactory.factory) }
 
-    @Test
-    fun getAnnotationProcessor() {
-        val annotationProcessor = mock<AnnotationProcessor>()
-        whenever(delegate.annotationProcessor).thenReturn(annotationProcessor)
+  @Test
+  fun getAnnotationProcessor() {
+    val annotationProcessor = mock<AnnotationProcessor>()
+    whenever(delegate.annotationProcessor).thenReturn(annotationProcessor)
 
-        val annotationProcessorProxy = proxy.annotationProcessor
-        Truth.assertThat(annotationProcessorProxy.javaClass)
-            .`is`(AnalyticsEnabledAnnotationProcessor::class.java)
-        Truth.assertThat((annotationProcessorProxy as AnalyticsEnabledAnnotationProcessor).delegate)
-            .isEqualTo(annotationProcessor)
+    val annotationProcessorProxy = proxy.annotationProcessor
+    Truth.assertThat(annotationProcessorProxy.javaClass).`is`(AnalyticsEnabledAnnotationProcessor::class.java)
+    Truth.assertThat((annotationProcessorProxy as AnalyticsEnabledAnnotationProcessor).delegate).isEqualTo(annotationProcessor)
 
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_VALUE)
-        verify(delegate, times(1))
-            .annotationProcessor
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_VALUE)
+    verify(delegate, times(1)).annotationProcessor
+  }
 }

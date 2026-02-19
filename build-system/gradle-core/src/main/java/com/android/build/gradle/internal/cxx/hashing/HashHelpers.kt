@@ -21,18 +21,15 @@ import com.android.build.gradle.internal.cxx.json.jsonStringOf
 import java.security.MessageDigest
 
 /**
- * Compute a hash of the value. Output base 36 similar to git style.
- * By default, includes the current gradle version in the hash since that's safer.
+ * Compute a hash of the value. Output base 36 similar to git style. By default, includes the current gradle version in the hash since
+ * that's safer.
  */
-fun <T> sha256Of(value : T, includeGradleVersionInHash : Boolean = true) : String {
-    val digest = MessageDigest.getInstance("SHA-256")
-    digest.update(jsonStringOf(value))
-    if (includeGradleVersionInHash) digest.update(Version.ANDROID_GRADLE_PLUGIN_VERSION)
-    return digest.toBase36()
+fun <T> sha256Of(value: T, includeGradleVersionInHash: Boolean = true): String {
+  val digest = MessageDigest.getInstance("SHA-256")
+  digest.update(jsonStringOf(value))
+  if (includeGradleVersionInHash) digest.update(Version.ANDROID_GRADLE_PLUGIN_VERSION)
+  return digest.toBase36()
 }
 
-/**
- * Compute a hash of the value. Output first few chars base 36 similar.
- */
-fun <T> shortSha256Of(value : T, includeGradleVersionInHash : Boolean = true) =
-    sha256Of(value, includeGradleVersionInHash).substring(0, 8)
+/** Compute a hash of the value. Output first few chars base 36 similar. */
+fun <T> shortSha256Of(value: T, includeGradleVersionInHash: Boolean = true) = sha256Of(value, includeGradleVersionInHash).substring(0, 8)

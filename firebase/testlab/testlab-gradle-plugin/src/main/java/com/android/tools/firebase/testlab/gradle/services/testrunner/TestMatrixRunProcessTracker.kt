@@ -68,10 +68,7 @@ class TestMatrixRunProcessTracker(
             } else {
               "$resultsUrl/details"
             }
-          logger.lifecycle(
-            "Test request for device $deviceName has been submitted to " +
-              "Firebase TestLab: $resultDetailsUrl"
-          )
+          logger.lifecycle("Test request for device $deviceName has been submitted to " + "Firebase TestLab: $resultDetailsUrl")
           printResultsUrl = false
         }
       }
@@ -90,6 +87,5 @@ class TestMatrixRunProcessTracker(
     }
   }
 
-  private fun lifecycleExecution(message: String, device: String) =
-    logger.lifecycle("Firebase Testlab Test for $device: $message")
+  private fun lifecycleExecution(message: String, device: String) = logger.lifecycle("Firebase Testlab Test for $device: $message")
 }

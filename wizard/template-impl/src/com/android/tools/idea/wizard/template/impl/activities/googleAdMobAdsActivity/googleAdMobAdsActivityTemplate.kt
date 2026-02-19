@@ -84,11 +84,12 @@ val googleAdMobAdsActivityTemplate
       loggable = true
     }
 
-    val adFormat = enumParameter<AdFormat> {
-      name = "Ad Format"
-      default = AdFormat.Interstitial
-      help = "Select Interstitial Ad or Banner Ad"
-    }
+    val adFormat =
+      enumParameter<AdFormat> {
+        name = "Ad Format"
+        default = AdFormat.Interstitial
+        help = "Select Interstitial Ad or Banner Ad"
+      }
 
     val isLauncher = booleanParameter {
       name = "Launcher Activity"
@@ -105,15 +106,20 @@ val googleAdMobAdsActivityTemplate
       EnumWidget(adFormat),
       CheckBoxWidget(isLauncher),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("google-admob-ads-activity").resolve("template_admob_activity_" + adFormat.value.name.lowercase(Locale.US) + ".png") }
 
     recipe = { data: TemplateData ->
       googleAdMobAdsActivityRecipe(
-        data as ModuleTemplateData, activityClass.value, layoutName.value, menuName.value, adFormat.value,
-        isLauncher.value, packageName.value)
+        data as ModuleTemplateData,
+        activityClass.value,
+        layoutName.value,
+        menuName.value,
+        adFormat.value,
+        isLauncher.value,
+        packageName.value,
+      )
     }
-
   }

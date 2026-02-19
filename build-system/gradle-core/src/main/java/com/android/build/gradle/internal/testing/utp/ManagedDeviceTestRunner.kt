@@ -33,169 +33,141 @@ import com.android.tools.utp.gradle.api.TargetApkConfigBundle
 import com.android.tools.utp.gradle.api.UtpDependencies
 import com.android.utils.ILogger
 import com.google.common.base.Preconditions
+import java.io.File
 import org.gradle.api.logging.Logger
 import org.gradle.api.model.ObjectFactory
 import org.gradle.workers.WorkerExecutor
-import java.io.File
-import java.nio.file.Path
-import java.util.logging.Level
 
 class ManagedDeviceTestRunner(
-    private val workerExecutor: WorkerExecutor,
-    private val objectFactory: ObjectFactory,
-    private val utpDependencies: UtpDependencies,
-    private val utpJvmExecutable: File,
-    private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
-    private val emulatorControlConfig: EmulatorControlConfig,
-    private val useOrchestrator: Boolean,
-    private val forceCompilation: Boolean,
-    private val numShards: Int?,
-    private val avdComponents: AvdComponentsBuildService,
-    private val installApkTimeout: Int?,
-    private val enableEmulatorDisplay: Boolean,
-    private val utpLoggingLevel: Level,
-    private val targetIsSplitApk: Boolean,
+  private val workerExecutor: WorkerExecutor,
+  private val objectFactory: ObjectFactory,
+  private val utpDependencies: UtpDependencies,
+  private val versionedSdkLoader: SdkComponentsBuildService.VersionedSdkLoader,
+  private val emulatorControlConfig: EmulatorControlConfig,
+  private val useOrchestrator: Boolean,
+  private val forceCompilation: Boolean,
+  private val numShards: Int?,
+  private val avdComponents: AvdComponentsBuildService,
+  private val installApkTimeout: Int?,
+  private val enableEmulatorDisplay: Boolean,
+  private val targetIsSplitApk: Boolean,
 ) {
 
-    /**
-     * @param additionalTestOutputDir output directory for additional test output, or null if disabled
-     * @param dependencyApks are the private sandbox SDK APKs
-     */
-    fun runTests(
-        managedDevice: Device,
-        runId: String,
-        outputDirectory: File,
-        coverageOutputDirectory: File,
-        additionalTestOutputDir: File?,
-        projectPath: String,
-        variantName: String,
-        testData: StaticTestData,
-        additionalInstallOptions: List<String>,
-        helperApks: Set<File>,
-        logger: Logger,
-        dependencyApks: Set<File>
-    ): Boolean {
-        managedDevice as ManagedVirtualDevice
-        val logger = LoggerWrapper(logger)
-        val emulatorProvider = avdComponents.emulatorDirectory
-        Preconditions.checkArgument(
-            emulatorProvider.isPresent(),
-            "The emulator is missing. Download the emulator in order to use managed devices.")
-        val abi = computeAbiFromArchitecture(managedDevice)
-        val utpManagedDevice = UtpManagedDevice(
-            managedDevice.name,
-            computeAvdName(managedDevice),
-            managedDevice.apiLevel,
-            computeAbiFromArchitecture(managedDevice),
-            managedDevice.testedAbi ?: abi,
-            avdComponents.avdFolder.get().asFile.absolutePath,
-            runId,
-            emulatorProvider.get().asFile.resolve(FN_EMULATOR).absolutePath,
-            enableEmulatorDisplay
+  /** @param additionalTestOutputDir output directory for additional test output, or null if disabled */
+  fun runTests(
+    managedDevice: Device,
+    runId: String,
+    outputDirectory: File,
+    coverageOutputDirectory: File,
+    additionalTestOutputDir: File?,
+    projectPath: String,
+    variantName: String,
+    testData: StaticTestData,
+    additionalInstallOptions: List<String>,
+    helperApks: Set<File>,
+    logger: Logger,
+  ): Boolean {
+    managedDevice as ManagedVirtualDevice
+    val logger = LoggerWrapper(logger)
+    val emulatorProvider = avdComponents.emulatorDirectory
+    Preconditions.checkArgument(
+      emulatorProvider.isPresent(),
+      "The emulator is missing. Download the emulator in order to use managed devices.",
+    )
+    val abi = computeAbiFromArchitecture(managedDevice)
+    val utpManagedDevice =
+      UtpManagedDevice(
+        managedDevice.name,
+        computeAvdName(managedDevice),
+        managedDevice.apiLevel,
+        computeAbiFromArchitecture(managedDevice),
+        managedDevice.testedAbi ?: abi,
+        avdComponents.avdFolder.get().asFile.absolutePath,
+        runId,
+        emulatorProvider.get().asFile.resolve(FN_EMULATOR).absolutePath,
+        enableEmulatorDisplay,
+      )
+    val testedApks = getTestedApks(testData, utpManagedDevice, logger)
+
+    return avdComponents.runWithAvds(utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
+      val devicesAcquired = deviceSerials.size
+      if (devicesAcquired != (numShards ?: 1)) {
+        logger.warning(
+          "Unable to retrieve $numShards devices, only " +
+            "$devicesAcquired available. Proceeding to run tests on " +
+            "$devicesAcquired shards."
         )
-        val testedApks = getTestedApks(testData, utpManagedDevice, logger)
-        val extractedSdkApks = getExtractedSdkApks(testData, utpManagedDevice)
+      }
 
-        return avdComponents.runWithAvds(
-            utpManagedDevice.avdName, numShards ?: 1) { deviceSerials ->
-            val devicesAcquired = deviceSerials.size
-            if (devicesAcquired != (numShards ?: 1)) {
-                logger.warning(
-                    "Unable to retrieve $numShards devices, only " +
-                            "$devicesAcquired available. Proceeding to run tests on " +
-                            "$devicesAcquired shards."
-                )
+      val runnerConfigs =
+        deviceSerials.mapIndexed { currentShard, deviceSerial ->
+          val shardConfig = numShards?.let { ShardConfig(totalCount = devicesAcquired, index = currentShard) }
+          val utpOutputDir =
+            if (shardConfig == null) {
+                outputDirectory
+              } else {
+                File(outputDirectory, "shard_$currentShard")
+              }
+              .apply {
+                if (!exists()) {
+                  mkdirs()
+                }
+              }
+          val shardedManagedDevice =
+            if (numShards == null) {
+              utpManagedDevice
+            } else {
+              utpManagedDevice.forShard(currentShard)
             }
 
-            val runnerConfigs = deviceSerials.mapIndexed { currentShard, deviceSerial ->
-                val shardConfig = numShards?.let {
-                    ShardConfig(totalCount = devicesAcquired, index = currentShard)
-                }
-                val utpOutputDir = if (shardConfig == null) {
-                    outputDirectory
-                } else {
-                    File(outputDirectory, "shard_$currentShard")
-                }.apply {
-                    if (!exists()) {
-                        mkdirs()
-                    }
-                }
-                val shardedManagedDevice = if (numShards == null) {
-                    utpManagedDevice
-                } else {
-                    utpManagedDevice.forShard(currentShard)
-                }
-
-                createUtpRunConfig(
-                    objectFactory,
-                    shardedManagedDevice.id,
-                    shardedManagedDevice.deviceName,
-                    deviceSerial,
-                    testData,
-                    TargetApkConfigBundle(testedApks, targetIsSplitApk),
-                    additionalInstallOptions,
-                    helperApks,
-                    uninstallIncompatibleApks = true,
-                    utpOutputDir,
-                    emulatorControlConfig,
-                    coverageOutputDirectory,
-                    useOrchestrator,
-                    forceCompilation,
-                    additionalTestOutputDir,
-                    findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
-                    installApkTimeout,
-                    extractedSdkApks,
-                    uninstallApksAfterTest = false,
-                    reinstallIncompatibleApksBeforeTest = true,
-                    shardConfig,
-                    utpLoggingLevel,
-                )
-            }
-
-            runUtpTestSuiteAndWait(
-                runnerConfigs,
-                workerExecutor,
-                utpJvmExecutable,
-                projectPath,
-                variantName,
-                outputDirectory,
-                utpDependencies,
-                versionedSdkLoader,
-            )
+          createUtpRunConfig(
+            objectFactory,
+            shardedManagedDevice.id,
+            shardedManagedDevice.deviceName,
+            deviceSerial,
+            testData,
+            TargetApkConfigBundle(testedApks, targetIsSplitApk),
+            additionalInstallOptions,
+            helperApks,
+            uninstallIncompatibleApks = true,
+            utpOutputDir,
+            emulatorControlConfig,
+            coverageOutputDirectory,
+            useOrchestrator,
+            forceCompilation,
+            additionalTestOutputDir,
+            findAdditionalTestOutputDirectoryOnManagedDevice(utpManagedDevice, testData),
+            installApkTimeout,
+            uninstallApksAfterTest = false,
+            reinstallIncompatibleApksBeforeTest = true,
+            shardConfig,
+          )
         }
+
+      runUtpTestSuiteAndWait(runnerConfigs, workerExecutor, projectPath, variantName, outputDirectory, utpDependencies, versionedSdkLoader)
     }
+  }
 
-    companion object {
-        /**
-         * Returns the tested apk for the given managed device and test data.
-         */
-        fun getTestedApks(
-            testData: StaticTestData, device: UtpManagedDevice, logger: ILogger): List<File> {
+  companion object {
+    /** Returns the tested apk for the given managed device and test data. */
+    fun getTestedApks(testData: StaticTestData, device: UtpManagedDevice, logger: ILogger): List<File> {
 
-            val minSdk = testData.minSdkVersion.apiLevel
-            if (device.api < minSdk) {
-                throw TestException(
-                    DeviceException(
-                        "Device ${device.deviceName} invalid: minSdkVersion $minSdk > deviceApiLevel " +
-                                "${device.api}"))
-            }
-            val deviceConfigProvider = ManagedDeviceConfigProvider(device)
-            if (!testData.isLibrary) {
-                val testedApks =
-                    testData.testedApkFinder.invoke(deviceConfigProvider)
+      val minSdk = testData.minSdkVersion.apiLevel
+      if (device.api < minSdk) {
+        throw TestException(
+          DeviceException("Device ${device.deviceName} invalid: minSdkVersion $minSdk > deviceApiLevel " + "${device.api}")
+        )
+      }
+      val deviceConfigProvider = ManagedDeviceConfigProvider(device)
+      if (!testData.isLibrary) {
+        val testedApks = testData.testedApkFinder.invoke(deviceConfigProvider)
 
-                if (testedApks.isEmpty()) {
-                    logger.warning("No matching Apks found for ${device.deviceName}.")
-                }
-                return testedApks
-            }
-            return listOf()
+        if (testedApks.isEmpty()) {
+          logger.warning("No matching Apks found for ${device.deviceName}.")
         }
-
-        fun getExtractedSdkApks(
-                testData: StaticTestData, device: UtpManagedDevice): List<List<Path>> {
-            val deviceConfigProvider = ManagedDeviceConfigProvider(device)
-            return testData.privacySandboxInstallBundlesFinder(deviceConfigProvider)
-        }
+        return testedApks
+      }
+      return listOf()
     }
+  }
 }

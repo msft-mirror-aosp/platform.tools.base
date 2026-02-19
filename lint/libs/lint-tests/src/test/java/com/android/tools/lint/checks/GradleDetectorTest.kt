@@ -59,6 +59,7 @@ import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_GEN
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_NON_COMPLIANT
 import com.android.tools.lint.checks.GradleDetector.Companion.PLAY_SDK_INDEX_VULNERABILITY
 import com.android.tools.lint.checks.GradleDetector.Companion.PLUS
+import com.android.tools.lint.checks.GradleDetector.Companion.R8_GRADUAL_API
 import com.android.tools.lint.checks.GradleDetector.Companion.REMOTE_VERSION
 import com.android.tools.lint.checks.GradleDetector.Companion.RISKY_LIBRARY
 import com.android.tools.lint.checks.GradleDetector.Companion.STRING_INTEGER
@@ -69,6 +70,7 @@ import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VE
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VERSION_YEAR
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_WEAR_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.TargetSdkRequirements.PREVIOUS_MINIMUM_TARGET_SDK_VERSION
+import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kts
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
 import com.android.tools.lint.checks.infrastructure.TestIssueRegistry
 import com.android.tools.lint.checks.infrastructure.TestLintTask
@@ -77,7 +79,11 @@ import com.android.tools.lint.checks.infrastructure.platformPath
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Implementation
+import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Scope
+import com.android.tools.lint.model.DefaultLintModelLintOptions
+import com.android.tools.lint.model.LintModelLintOptions
+import com.android.tools.lint.model.LintModelModule
 import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
@@ -85,15 +91,26 @@ import java.io.File
 import java.io.IOException
 import java.net.URL
 import java.net.URLConnection
-import java.util.Calendar
+import java.util.*
 import java.util.zip.GZIPOutputStream
 import junit.framework.TestCase
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
+
+val SDK_ISSUES =
+  arrayOf(
+    DEPENDENCY,
+    MIN_SDK_TOO_LOW,
+    STRING_INTEGER,
+    ACCIDENTAL_OCTAL,
+    EXPIRING_TARGET_SDK_VERSION,
+    EXPIRED_TARGET_SDK_VERSION,
+    TARGET_NEWER,
+  )
 
 /**
- * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom
- * GradleDetector subclass, LintIdeGradleDetector, which customizes some behavior to be based on top
- * of PSI rather than the Groovy parser.
+ * NOTE: Many of these tests are duplicated in the Android Studio plugin to test the custom GradleDetector subclass, LintIdeGradleDetector,
+ * which customizes some behavior to be based on top of PSI rather than the Groovy parser.
  */
 class GradleDetectorTest : AbstractCheckTest() {
 
@@ -395,18 +412,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented()
       )
       .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
-      .mavenMetadata(
-        "com.squareup.dagger:dagger",
-        "1.0.0",
-        "1.0.1",
-        "1.1.0",
-        "1.2.0",
-        "1.2.1",
-        "1.2.2",
-        "1.2.3",
-        "1.2.4",
-        "1.2.5",
-      )
+      .mavenMetadata("com.squareup.dagger:dagger", "1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3", "1.2.4", "1.2.5")
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(
@@ -1856,6 +1862,11 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
+        Fix for build.gradle.kts line 6: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -21 +21 @@
+        -keys-tsv = "34"            # ERROR 14
+        +keys-tsv = "$HIGHEST_KNOWN_STABLE_API"            # ERROR 14
         Fix for gradle/libs.versions.toml line 4: Update targetSdkVersion to $HIGHEST_KNOWN_STABLE_API:
         @@ -4 +4 @@
         -target_sdk_version = "34"  # ERROR 3
@@ -1868,6 +1879,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -12 +12 @@
         -targetSdk = "34"           # ERROR 9
         +targetSdk = "$HIGHEST_KNOWN_STABLE_API"           # ERROR 9
+        Fix for build.gradle.kts line 2: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -2 +2 @@
+        -compile_sdk_version = "34" # ERROR 1
+        +compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API" # ERROR 1
         Fix for build.gradle.kts line 3: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
         gradle/libs.versions.toml:
         @@ -19 +19 @@
@@ -2158,8 +2174,8 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testVersionsFromGradleCache() {
     val expected =
       "" +
-        "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.4.0-alpha3 is available: 4.5.0. (There is also a newer version of 4.4.\uD835\uDC65 available, if upgrading to 4.5.0 is difficult: 4.4.1) [AndroidGradlePluginVersion]\n" +
-        "        classpath 'com.android.tools.build:gradle:4.4.0-alpha3'\n" +
+        "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha3 is available: 7.5.0. (There is also a newer version of 7.4.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.4.1) [AndroidGradlePluginVersion]\n" +
+        "        classpath 'com.android.tools.build:gradle:7.4.0-alpha3'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "build.gradle:11: Warning: A newer version of org.apache.httpcomponents:httpcomponents-core than 4.2 is available: 4.4 [GradleDependency]\n" +
         "    compile 'org.apache.httpcomponents:httpcomponents-core:4.2'\n" +
@@ -2182,7 +2198,7 @@ class GradleDetectorTest : AbstractCheckTest() {
             "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
-            "        classpath 'com.android.tools.build:gradle:4.4.0-alpha3'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.0-alpha3'\n" +
             "    }\n" +
             "}\n" +
             "dependencies {\n" +
@@ -2197,14 +2213,14 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         "" +
-          "Autofix for build.gradle line 7: Replace with 4.4.1:\n" +
+          "Autofix for build.gradle line 7: Replace with 7.4.1:\n" +
           "@@ -7 +7\n" +
-          "-         classpath 'com.android.tools.build:gradle:4.4.0-alpha3'\n" +
-          "+         classpath 'com.android.tools.build:gradle:4.4.1'\n" +
-          "Fix for build.gradle line 7: Replace with 4.5.0:\n" +
+          "-         classpath 'com.android.tools.build:gradle:7.4.0-alpha3'\n" +
+          "+         classpath 'com.android.tools.build:gradle:7.4.1'\n" +
+          "Fix for build.gradle line 7: Replace with 7.5.0:\n" +
           "@@ -7 +7\n" +
-          "-         classpath 'com.android.tools.build:gradle:4.4.0-alpha3'\n" +
-          "+         classpath 'com.android.tools.build:gradle:4.5.0'\n" +
+          "-         classpath 'com.android.tools.build:gradle:7.4.0-alpha3'\n" +
+          "+         classpath 'com.android.tools.build:gradle:7.5.0'\n" +
           "Fix for build.gradle line 11: Change to 4.4:\n" +
           "@@ -11 +11\n" +
           "-     compile 'org.apache.httpcomponents:httpcomponents-core:4.2'\n" +
@@ -2381,9 +2397,9 @@ class GradleDetectorTest : AbstractCheckTest() {
             "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
-            "        classpath 'com.android.tools.build:gradle:4.3.0'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.3.+'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.+'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.0.0'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.0.+'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.+'\n" +
             "    }\n" +
             "}\n"
         )
@@ -2393,8 +2409,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.3.0 is available: 4.5.0. (There is also a newer version of 4.3.𝑥 available, if upgrading to 4.5.0 is difficult: 4.3.2) [AndroidGradlePluginVersion]
-                classpath 'com.android.tools.build:gradle:4.3.0'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.0.0 is available: 7.5.0. (There is also a newer version of 7.0.𝑥 available, if upgrading to 7.5.0 is difficult: 7.0.1) [AndroidGradlePluginVersion]
+                classpath 'com.android.tools.build:gradle:7.0.0'
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
@@ -2402,14 +2418,14 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         // Make sure we put the safe fix first (patch-update only)
         """
-        Autofix for build.gradle line 7: Replace with 4.3.2:
+        Autofix for build.gradle line 7: Replace with 7.0.1:
         @@ -7 +7 @@
-        -        classpath 'com.android.tools.build:gradle:4.3.0'
-        +        classpath 'com.android.tools.build:gradle:4.3.2'
-        Fix for build.gradle line 7: Replace with 4.5.0:
+        -        classpath 'com.android.tools.build:gradle:7.0.0'
+        +        classpath 'com.android.tools.build:gradle:7.0.1'
+        Fix for build.gradle line 7: Replace with 7.5.0:
         @@ -7 +7 @@
-        -        classpath 'com.android.tools.build:gradle:4.3.0'
-        +        classpath 'com.android.tools.build:gradle:4.5.0'
+        -        classpath 'com.android.tools.build:gradle:7.0.0'
+        +        classpath 'com.android.tools.build:gradle:7.5.0'
         """
       )
   }
@@ -2560,44 +2576,40 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testDependenciesWithOtherArtifacts() {
     // Regression test for b/124415929
 
-    listOf("implementation", "testImplementation", "androidTestImplementation").forEach {
-      configuration ->
-      listOf(
-          "com.android.support:appcompat-v7" to ("13.0.0" to "25.3.1"),
-          "com.google.guava:guava" to ("11.0.2" to "17.0"),
-        )
-        .forEach { libraryInfo ->
-          val library = libraryInfo.first
-          val version = libraryInfo.second.first
-          val expectedVersion = libraryInfo.second.second
-          listOf(false, true).forEach {
-            val versionString = if (it) "\$version" else version
-            val dependencyString = "$configuration(\"$library:$versionString\")"
-            val source =
-              gradle(
-                "" +
-                  "ext.version = '$version'\n" +
-                  "\n" +
-                  "buildscript {\n" +
-                  "    repositories {\n" +
-                  "        mavenCentral()\n" +
-                  "    }\n" +
-                  "}\n" +
-                  "dependencies {\n" +
-                  "    $dependencyString\n" +
-                  "}\n"
-              )
-            val expected =
+    listOf("implementation", "testImplementation", "androidTestImplementation").forEach { configuration ->
+      listOf("com.android.support:appcompat-v7" to ("13.0.0" to "25.3.1"), "com.google.guava:guava" to ("11.0.2" to "17.0")).forEach {
+        libraryInfo ->
+        val library = libraryInfo.first
+        val version = libraryInfo.second.first
+        val expectedVersion = libraryInfo.second.second
+        listOf(false, true).forEach {
+          val versionString = if (it) "\$version" else version
+          val dependencyString = "$configuration(\"$library:$versionString\")"
+          val source =
+            gradle(
               "" +
-                "build.gradle:9: Warning: A newer version of $library than $version is available: $expectedVersion [GradleDependency]\n" +
+                "ext.version = '$version'\n" +
+                "\n" +
+                "buildscript {\n" +
+                "    repositories {\n" +
+                "        mavenCentral()\n" +
+                "    }\n" +
+                "}\n" +
+                "dependencies {\n" +
                 "    $dependencyString\n" +
-                "    ${" ".repeat(configuration.length + 1)}" +
-                "${"~".repeat(library.length + versionString.length + 3)}\n" +
-                "0 errors, 1 warnings"
+                "}\n"
+            )
+          val expected =
+            "" +
+              "build.gradle:9: Warning: A newer version of $library than $version is available: $expectedVersion [GradleDependency]\n" +
+              "    $dependencyString\n" +
+              "    ${" ".repeat(configuration.length + 1)}" +
+              "${"~".repeat(library.length + versionString.length + 3)}\n" +
+              "0 errors, 1 warnings"
 
-            lint().files(source).issues(DEPENDENCY).run().expect(expected)
-          }
+          lint().files(source).issues(DEPENDENCY).run().expect(expected)
         }
+      }
     }
   }
 
@@ -2655,28 +2667,28 @@ class GradleDetectorTest : AbstractCheckTest() {
       .networkData(
         "https://maven.google.com/master-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <metadata>
-                  <androidx.core/>
-                  <androidx.work/>
-                </metadata>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <metadata>
+          <androidx.core/>
+          <androidx.work/>
+        </metadata>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/work/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.7.0-alpha06,2.6.0-alpha06"/>
-                  <work-runtime-ktx versions="2.5.0,2.7.0-alpha05,2.6.0-alpha05"/>
-                  <work-rxjava2 versions="2.7.0,2.6.0-alpha06"/>
-                  <work-rxjava3 versions="2.7.0-alpha06"/>
-                  <work-gcm versions="2.7.0-alpha05"/>
-                  <work-testing versions="2.8.0-alpha01,2.7.0"/>
-                  <work-multiprocess versions="2.7.0-alpha06,2.6.0"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.7.0-alpha06,2.6.0-alpha06"/>
+          <work-runtime-ktx versions="2.5.0,2.7.0-alpha05,2.6.0-alpha05"/>
+          <work-rxjava2 versions="2.7.0,2.6.0-alpha06"/>
+          <work-rxjava3 versions="2.7.0-alpha06"/>
+          <work-gcm versions="2.7.0-alpha05"/>
+          <work-testing versions="2.8.0-alpha01,2.7.0"/>
+          <work-multiprocess versions="2.7.0-alpha06,2.6.0"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .run()
@@ -2744,40 +2756,40 @@ class GradleDetectorTest : AbstractCheckTest() {
       .networkData(
         "https://maven.google.com/master-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <metadata>
-                  <androidx.work/>
-                  <androidx.test/>
-                </metadata>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <metadata>
+          <androidx.work/>
+          <androidx.test/>
+        </metadata>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/work/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
-                  <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
-                  <work-gcm versions="2.6.0-SNAPSHOT"/>
-                  <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
-                  <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
+          <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
+          <work-gcm versions="2.6.0-SNAPSHOT"/>
+          <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
+          <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .networkData(
         "https://maven.google.com/androidx/test/group-index.xml",
         """
-                <?xml version='1.0' encoding='UTF-8'?>
-                <androidx.work>
-                  <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
-                  <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
-                  <work-gcm versions="2.6.0-SNAPSHOT"/>
-                  <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
-                  <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
-                </androidx.work>
-                """
+        <?xml version='1.0' encoding='UTF-8'?>
+        <androidx.work>
+          <work-runtime versions="2.6.0-beta05,2.7.0-alpha06,3.0.0-SNAPSHOT"/>
+          <work-runtime-ktx versions="2.5.0,2.6.0-alpha05"/>
+          <work-gcm versions="2.6.0-SNAPSHOT"/>
+          <work-rxjava2 versions="3.0.0-SNAPSHOT,3.0.0"/>
+          <work-rxjava3 versions="3.0.0-SNAPSHOT,3.1.0-alpha01"/>
+        </androidx.work>
+        """
           .trimIndent(),
       )
       .run()
@@ -2946,50 +2958,383 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testMinSdkVersion() {
-    val expected =
-      "" +
-        "build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
-        "        minSdkVersion 7\n" +
-        "        ~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]\n" +
-        "        minSdk 7\n" +
-        "        ~~~~~~~~\n" +
-        "0 errors, 2 warnings"
-
     lint()
       .files(
         gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion 19\n" +
-            "    buildToolsVersion \"19.0.0\"\n" +
-            "\n" +
-            "    defaultConfig {\n" +
-            "        minSdkVersion 7\n" +
-            "        minSdk 7\n" +
-            "        targetSdkVersion 19\n" +
-            "        versionCode 1\n" +
-            "        versionName \"1.0\"\n" +
-            "    }\n" +
-            "}\n"
-        )
+            """
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion 19
+                buildToolsVersion "19.0.0"
+
+                defaultConfig {
+                    minSdkVersion 7
+                    minSdkVersion "ECLAIR"
+                    minSdk 7
+                    minSdk ''
+                    targetSdkVersion 19
+                    versionCode 1
+                    versionName "1.0"
+                }
+            }
+            """
+          )
+          .indented()
       )
-      .issues(MIN_SDK_TOO_LOW)
+      .issues(MIN_SDK_TOO_LOW, STRING_INTEGER)
       .run()
-      .expect(expected)
+      .expect(
+        """
+        build.gradle:11: Error: minSdk does not support strings; did you mean minSdkPreview ? [StringShouldBeInt]
+                minSdk ''
+                ~~~~~~~~~
+        build.gradle:8: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdkVersion 7
+                ~~~~~~~~~~~~~~~
+        build.gradle:9: Warning: The value of minSdkVersion (5) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdkVersion "ECLAIR"
+                ~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle:10: Warning: The value of minSdkVersion (7) is too low. It can be incremented without noticeably reducing the number of supported devices. [MinSdkTooLow]
+                minSdk 7
+                ~~~~~~~~
+        1 error, 3 warnings
+        """
+      )
       .expectFixDiffs(
         """
-            Fix for build.gradle line 8: Update minSdkVersion to $LOWEST_ACTIVE_API:
-            @@ -8 +8
-            -         minSdkVersion 7
-            +         minSdkVersion $LOWEST_ACTIVE_API
-            Fix for build.gradle line 9: Update minSdkVersion to $LOWEST_ACTIVE_API:
-            @@ -9 +9
-            -         minSdk 7
-            +         minSdk $LOWEST_ACTIVE_API
+        Fix for build.gradle line 11: Replace with minSdkPreview:
+        @@ -11 +11 @@
+        -        minSdk ''
+        +        minSdkPreview ''
+        Fix for build.gradle line 8: Update minSdkVersion to 16:
+        @@ -8 +8 @@
+        -        minSdkVersion 7
+        +        minSdkVersion 16
+        Fix for build.gradle line 10: Update minSdkVersion to 16:
+        @@ -10 +10 @@
+        -        minSdk 7
+        +        minSdk 16
+        """
+      )
+  }
+
+  fun testCompileSdkVersionNewDslKotlin() {
+    lint()
+      .files(
+        kts(
             """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            compileSdk {
+              version = release($HIGHEST_KNOWN_STABLE_API)
+              version = release("20")
+              version = release(  20)
+              version = release("android-S")
+              version = release(  "S")
+              version = release(1000)
+
+              version = preview($HIGHEST_KNOWN_STABLE_API)
+              version = preview("20")
+              version = preview(  20)
+              version = preview("android-S")
+              version = preview(  "S")
+              version = preview(1000)
+
+
+              version = release( // 1
+                  version = "S",
+              ) {
+                sdkExtension = 12
+              }
+
+              version = preview( // 2
+                  codeName = "S",
+              )
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:8: Error: Use an integer rather than a string here (replace "20" with just 20) [StringShouldBeInt]
+            version = release("20")
+                      ~~~~~~~~~~~~~
+        build.gradle.kts:10: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release("android-S")
+                      ~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:11: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle.kts:22: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release( // 1
+                      ^
+        build.gradle.kts:9: Warning: A newer version of compileSdk than 20 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(  20)
+                      ~~~~~~~~~~~~~
+        build.gradle.kts:18: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle.kts:28: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview( // 2
+                      ^
+        4 errors, 3 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 8: Replace with integer:
+        @@ -8 +8 @@
+        -    version = release("20")
+        +    version = release(20)
+        Fix for build.gradle.kts line 10: Replace with preview:
+        @@ -10 +10 @@
+        -    version = release("android-S")
+        +    version = preview("android-S")
+        Fix for build.gradle.kts line 11: Replace with preview:
+        @@ -11 +11 @@
+        -    version = release(  "S")
+        +    version = preview(  "S")
+        Fix for build.gradle.kts line 22: Replace with preview:
+        @@ -22 +22 @@
+        -    version = release( // 1
+        +    version = preview( // 1
+        Fix for build.gradle.kts line 9: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -9 +9 @@
+        -    version = release(  20)
+        +    version = release(  $HIGHEST_KNOWN_STABLE_API)
+        """
+      )
+  }
+
+  fun testCompileSdkVersionNewDslGroovy() {
+    lint()
+      .files(
+        gradle(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            compileSdk {
+              version = release(010)
+
+              version = release($HIGHEST_KNOWN_STABLE_API)
+              version = release(  20)
+              version = release(  "20")
+              version = release(  "S")
+
+              version = release( // 1
+                  "S",
+              ) {
+                sdkExtension = 12
+              }
+
+              version = preview( // 2
+                  "S",
+              )
+
+              // Different syntax.
+              version(release(35))
+              version(release 35)
+              version release(35)
+              version = release 35
+
+              // Invalid. Lint will not see it, and project will not build:
+              // version release 35
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle:11: Error: Use an integer rather than a string here (replace "20" with just 20) [StringShouldBeInt]
+            version = release(  "20")
+                      ~~~~~~~~~~~~~~~
+        build.gradle:12: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release(  "S")
+                      ~~~~~~~~~~~~~~
+        build.gradle:14: Error: release does not support strings; did you mean preview? [StringShouldBeInt]
+            version = release( // 1
+                      ^
+        build.gradle:7: Warning: A newer version of compileSdk than 8 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(010)
+                      ~~~~~~~~~~~~
+        build.gradle:10: Warning: A newer version of compileSdk than 20 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release(  20)
+                      ~~~~~~~~~~~~~
+        build.gradle:20: Warning: A newer version of compileSdkPreview than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = preview( // 2
+                      ^
+        build.gradle:25: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version(release(35))
+                    ~~~~~~~~~~~
+        build.gradle:26: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version(release 35)
+                   ~~~~~~~~~~~~
+        build.gradle:27: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version release(35)
+                    ~~~~~~~~~~~
+        build.gradle:28: Warning: A newer version of compileSdk than 35 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            version = release 35
+                      ~~~~~~~~~~
+        build.gradle:7: Error: The leading 0 turns this number into octal which is probably not what was intended (interpreted as 8) [AccidentalOctal]
+            version = release(010)
+                      ~~~~~~~~~~~~
+        4 errors, 7 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 11: Replace with integer:
+        @@ -11 +11 @@
+        -    version = release(  "20")
+        +    version = release(  20)
+        Fix for build.gradle line 12: Replace with preview:
+        @@ -12 +12 @@
+        -    version = release(  "S")
+        +    version = preview(  "S")
+        Fix for build.gradle line 14: Replace with preview:
+        @@ -14 +14 @@
+        -    version = release( // 1
+        +    version = preview( // 1
+        Fix for build.gradle line 10: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -10 +10 @@
+        -    version = release(  20)
+        +    version = release(  $HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 25: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -25 +25 @@
+        -    version(release(35))
+        +    version(release($HIGHEST_KNOWN_STABLE_API))
+        Fix for build.gradle line 26: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -26 +26 @@
+        -    version(release 35)
+        +    version(release $HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 27: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -27 +27 @@
+        -    version release(35)
+        +    version release($HIGHEST_KNOWN_STABLE_API)
+        Fix for build.gradle line 28: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -28 +28 @@
+        -    version = release 35
+        +    version = release $HIGHEST_KNOWN_STABLE_API
+        """
+      )
+  }
+
+  fun testTargetSdkVersionNewDslKotlin() {
+    lint()
+      .files(
+        kts(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            defaultConfig {
+              targetSdk {
+                version = release(35)
+                version = release("35")
+                version = preview("S")
+              }
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle.kts:9: Error: Use an integer rather than a string here (replace "35" with just 35) [StringShouldBeInt]
+              version = release("35")
+                        ~~~~~~~~~~~~~
+        build.gradle.kts:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+              version = release(35)
+                        ~~~~~~~~~~~
+        build.gradle.kts:10: Error: Google Play requires that apps target API level $MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+              version = preview("S")
+                        ~~~~~~~~~~~~
+        2 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle.kts line 9: Replace with integer:
+        @@ -9 +9 @@
+        -      version = release("35")
+        +      version = release(35)
+        Fix for build.gradle.kts line 8: Update targetSdkVersion to 36:
+        @@ -8 +8 @@
+        -      version = release(35)
+        +      version = release(36)
+        """
+      )
+  }
+
+  fun testTargetSdkVersionNewDslGroovy() {
+    lint()
+      .files(
+        gradle(
+            """
+          plugins {
+            id("com.android.application")
+          }
+
+          android {
+            defaultConfig {
+              targetSdk {
+                version release(35)
+                version = release("35")
+                version preview("S")
+              }
+            }
+          }
+          """
+          )
+          .indented()
+      )
+      .issues(*SDK_ISSUES)
+      .run()
+      .expect(
+        """
+        build.gradle:9: Error: Use an integer rather than a string here (replace "35" with just 35) [StringShouldBeInt]
+              version = release("35")
+                        ~~~~~~~~~~~~~
+        build.gradle:8: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+              version release(35)
+                      ~~~~~~~~~~~
+        build.gradle:10: Error: Google Play requires that apps target API level 33 or higher. [ExpiredTargetSdkVersion]
+              version preview("S")
+                      ~~~~~~~~~~~~
+        2 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 9: Replace with integer:
+        @@ -9 +9 @@
+        -      version = release("35")
+        +      version = release(35)
+        Fix for build.gradle line 8: Update targetSdkVersion to 36:
+        @@ -8 +8 @@
+        -      version release(35)
+        +      version release(36)
+        """
       )
   }
 
@@ -3034,7 +3379,7 @@ class GradleDetectorTest : AbstractCheckTest() {
     // Regression test for https://issuetracker.google.com/119210741
     // Don't offer Gradle plugin versions newer than the IDE (when running in the IDE)
     // Same (older) version of Studio and Gradle:
-    // Studio 4.3, gradle: 4.3.0-alpha04: Offer latest 4.3.0, not 4.4 etc
+    // Studio 7.3, gradle: 7.3.0-alpha04: Offer latest 7.3.0, not 7.4 etc
     lint()
       .files(
         gradle(
@@ -3045,7 +3390,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
+                    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
                   }
                 }
 
@@ -3063,25 +3408,25 @@ class GradleDetectorTest : AbstractCheckTest() {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.3.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "4.3.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.3.0" else null
           }
         }
       })
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha04 is available: 4.3.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-        Autofix for build.gradle line 7: Replace with 4.3.2:
+        Autofix for build.gradle line 7: Replace with 7.3.2:
         @@ -7 +7 @@
-        -    classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
-        +    classpath 'com.android.tools.build:gradle:4.3.2'
+        -    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
+        +    classpath 'com.android.tools.build:gradle:7.3.2'
         """
       )
   }
@@ -3089,8 +3434,8 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testTooRecentVersionInVersionCatalog() {
     val expected =
       """
-      ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha04 is available: 4.3.2 [AndroidGradlePluginVersion]
-      gradle = "  com.android.tools.build:gradle:4.3.0-alpha04  "
+      ../gradle/libs.versions.toml:2: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
+      gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       0 errors, 1 warning
       """
@@ -3100,7 +3445,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         gradleToml(
             """
                 [libraries]
-                gradle = "  com.android.tools.build:gradle:4.3.0-alpha04  "
+                gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
                 """
           )
           .indented()
@@ -3108,9 +3453,9 @@ class GradleDetectorTest : AbstractCheckTest() {
       .issues(AGP_DEPENDENCY)
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-          // Studio 3.3.0
+          // Studio 7.3.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "4.3.0.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.3.0" else null
           }
         }
       }
@@ -3118,10 +3463,10 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
       .expectFixDiffs(
         """
-        Autofix for gradle/libs.versions.toml line 2: Replace with 4.3.2:
+        Autofix for gradle/libs.versions.toml line 2: Replace with 7.3.2:
         @@ -2 +2 @@
-        -gradle = "  com.android.tools.build:gradle:4.3.0-alpha04  "
-        +gradle = "  com.android.tools.build:gradle:4.3.2  "
+        -gradle = "  com.android.tools.build:gradle:7.3.0-alpha04  "
+        +gradle = "  com.android.tools.build:gradle:7.3.2  "
         """
       )
   }
@@ -3130,7 +3475,7 @@ class GradleDetectorTest : AbstractCheckTest() {
     // Regression test for https://issuetracker.google.com/119210741
     // Don't offer Gradle plugin versions newer than the IDE (when running in the IDE)
     // Newer Studio than Gradle:
-    // Studio 4.4, Gradle 4.3: Offer 4.4
+    // Studio 7.4, Gradle 7.3: Offer 7.4
     lint()
       .files(
         gradle(
@@ -3141,7 +3486,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:4.3.0-alpha01'
+                    classpath 'com.android.tools.build:gradle:7.3.0-alpha01'
                   }
                 }
 
@@ -3159,15 +3504,15 @@ class GradleDetectorTest : AbstractCheckTest() {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
           // Studio 3.4.0
           override fun getClientProperty(key: String): Any? {
-            return if (key == KEY_IDE_AGP_VERSION) "4.4.0" else null
+            return if (key == KEY_IDE_AGP_VERSION) "7.4.0" else null
           }
         }
       }
       .run()
       .expect(
         "" +
-          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha01 is available: 4.4.1. (There is also a newer version of 4.3.\uD835\uDC65 available, if upgrading to 4.4.1 is difficult: 4.3.2) [AndroidGradlePluginVersion]\n" +
-          "    classpath 'com.android.tools.build:gradle:4.3.0-alpha01'\n" +
+          "build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha01 is available: 7.4.1. (There is also a newer version of 7.3.\uD835\uDC65 available, if upgrading to 7.4.1 is difficult: 7.3.2) [AndroidGradlePluginVersion]\n" +
+          "    classpath 'com.android.tools.build:gradle:7.3.0-alpha01'\n" +
           "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
           "0 errors, 1 warnings"
       )
@@ -3176,7 +3521,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   fun testTooRecentVersion3() {
     // Regression test for https://issuetracker.google.com/119210741
     // Older Studio than Gradle:
-    // Studio 3.3, gradle: 4.0.0-alpha4: Already using Gradle 4.0: offer latest version of it
+    // Studio 3.3, gradle: 7.0.0-alpha4: Already using Gradle 7.0: offer latest version of it
     lint()
       .files(
         gradle(
@@ -3187,7 +3532,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                     mavenCentral()
                   }
                   dependencies {
-                    classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
+                    classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
                   }
                 }
 
@@ -3212,8 +3557,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha04 is available: 4.3.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:4.3.0-alpha04'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.3.0-alpha04 is available: 7.3.2 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.3.0-alpha04'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
@@ -3274,7 +3619,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 mavenCentral()
               }
               dependencies {
-                classpath 'com.android.tools.build:gradle:4.2.0'
+                classpath 'com.android.tools.build:gradle:7.2.0'
               }
             }
             """
@@ -3287,7 +3632,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "" +
           "<?xml version='1.0' encoding='UTF-8'?>\n" +
           "<com.android.tools.build>\n" +
-          "  <gradle versions=\"4.2.0,7.4.2,8.1.0-alpha05\"/>\n" +
+          "  <gradle versions=\"7.2.0,7.4.2,8.1.0-alpha05\"/>\n" +
           "</com.android.tools.build>",
       )
       .issues(AGP_DEPENDENCY)
@@ -3301,8 +3646,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 4.2.0 is available: 7.4.2 [AndroidGradlePluginVersion]
-            classpath 'com.android.tools.build:gradle:4.2.0'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.2.0 is available: 7.4.2 [AndroidGradlePluginVersion]
+            classpath 'com.android.tools.build:gradle:7.2.0'
                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warning
         """
@@ -3462,6 +3807,128 @@ class GradleDetectorTest : AbstractCheckTest() {
             +testRunner2 = { module = "com.android.support.test:runner", version = { strictly ="0.5" } }
             """
       )
+  }
+
+  fun testR8NewApiWithFalseFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+          # comments
+          android.r8.gradual.support=false
+          android.r8.optimizedResourceShrinking=true
+          """
+            .trimIndent(),
+        ),
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Replace flag value with true:
+          gradle.properties:
+          @@ -2 +2 @@
+          -android.r8.gradual.support=false
+          +android.r8.gradual.support=true"""
+      )
+  }
+
+  fun testR8NewApiWithNoFlag() {
+    lint()
+      .files(
+        propertyFile(
+          "gradle.properties",
+          """
+          # comments
+          """
+            .trimIndent(),
+        ),
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+      )
+      .issues(R8_GRADUAL_API)
+      .clientFactory { clientFactoryWithR8FalseProject.create() }
+      .run()
+      .expect(
+        """
+        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        enable = true
+                        ~~~~~~
+        0 errors, 1 warning
+        """
+      )
+      .expectFixDiffs(
+        """
+          Autofix for build.gradle line 5: Add android.r8.gradual.support=true flag:
+          gradle.properties:
+          @@ -1 +1,2 @@
+          -# comments
+          +# comments
+          +android.r8.gradual.support=true
+          """
+      )
+  }
+
+  fun testR8NewApiWithFlag() {
+    lint()
+      .files(
+        gradle(
+            """
+         android {
+             buildTypes {
+                 release {
+                     optimization {
+                         enable = true
+                     }
+                 }
+             }
+         }"""
+          )
+          .indented(),
+        propertyFile(
+          "gradle.properties",
+          """
+          android.r8.gradual.support=true
+          """,
+        ),
+      )
+      .issues(R8_GRADUAL_API)
+      .run()
+      .expectClean()
   }
 
   fun testLongHandDependencies() {
@@ -4056,32 +4523,14 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testSuppressLine2() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "//noinspection GradleDeprecated\n" +
-            "apply plugin: 'android'\n" +
-            "\n" +
-            "android {\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "//noinspection GradleDeprecated\n" + "apply plugin: 'android'\n" + "\n" + "android {\n" + "}\n"))
       .run()
       .expectClean()
   }
 
   fun testSuppressWithAnnotation() {
     lint()
-      .files(
-        kts(
-          "" +
-            "@Suppress(\"GradleDeprecated\")\n" +
-            "plugins { id(\"android\") }\n" +
-            "\n" +
-            "android {\n" +
-            "}\n"
-        )
-      )
+      .files(kts("" + "@Suppress(\"GradleDeprecated\")\n" + "plugins { id(\"android\") }\n" + "\n" + "android {\n" + "}\n"))
       .run()
       .expectClean()
   }
@@ -4183,6 +4632,98 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expect(expected)
   }
 
+  fun testTrickyReplacementCompileSdk() {
+    // This test ensures:
+    //  - We decode octal version numbers correctly, even though we warn against it.
+    //  - We only provide a quick-fix to update the version number when the text exactly matches the
+    //    decoded version number.
+    //  - ...except for TOML, where we replace the version number within the string literal, if we
+    //    can find it.
+    lint()
+      .files(
+        gradleToml(
+            """
+            [versions]
+            compile_sdk_version = "34"
+            aaa = "34"
+            """
+          )
+          .indented(),
+        gradle(
+            """
+            plugins {
+              id("com.android.application")
+            }
+
+            android {
+              compileSdk = 31
+              compileSdk = 010
+              compileSdk = 07
+              compileSdkVersion = "S"
+            }
+            """
+          )
+          .indented(),
+        kts(
+            """
+            plugins {
+              id("com.android.application")
+            }
+
+            android {
+              compileSdk = libs.versions.aaa.get().toInt()
+            }
+            """
+          )
+          .indented(),
+      )
+      .issues(ACCIDENTAL_OCTAL, DEPENDENCY)
+      .run()
+      .expect(
+        """
+        build.gradle:6: Warning: A newer version of compileSdk than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 31
+          ~~~~~~~~~~~~~~~
+        build.gradle:7: Warning: A newer version of compileSdk than 8 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 010
+          ~~~~~~~~~~~~~~~~
+        build.gradle:8: Warning: A newer version of compileSdk than 7 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = 07
+          ~~~~~~~~~~~~~~~
+        build.gradle:9: Warning: A newer version of compileSdkVersion than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdkVersion = "S"
+          ~~~~~~~~~~~~~~~~~~~~~~~
+        build.gradle.kts:6: Warning: A newer version of compileSdk than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+          compileSdk = libs.versions.aaa.get().toInt()
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        ../gradle/libs.versions.toml:2: Warning: A newer version of compile_sdk_version than 34 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+        compile_sdk_version = "34"
+                              ~~~~
+        build.gradle:7: Error: The leading 0 turns this number into octal which is probably not what was intended (interpreted as 8) [AccidentalOctal]
+          compileSdk = 010
+                       ~~~
+        1 error, 6 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Fix for build.gradle line 6: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        @@ -6 +6 @@
+        -  compileSdk = 31
+        +  compileSdk = $HIGHEST_KNOWN_STABLE_API
+        Fix for build.gradle.kts line 6: Set compileSdk to $HIGHEST_KNOWN_STABLE_API:
+        gradle/libs.versions.toml:
+        @@ -3 +3 @@
+        -aaa = "34"
+        +aaa = "$HIGHEST_KNOWN_STABLE_API"
+        Fix for gradle/libs.versions.toml line 2: Set compile_sdk_version to $HIGHEST_KNOWN_STABLE_API:
+        @@ -2 +2 @@
+        -compile_sdk_version = "34"
+        +compile_sdk_version = "$HIGHEST_KNOWN_STABLE_API"
+        """
+      )
+  }
+
   fun testBadPlayServicesVersion() {
     val expected =
       "" +
@@ -4239,18 +4780,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         )
       )
       .mavenMetadata("joda-time:joda-time", "0.95", "1.0", "2.9.7", "2.9.8", "2.9.9")
-      .mavenMetadata(
-        "com.squareup.dagger:dagger",
-        "1.0.0",
-        "1.0.1",
-        "1.1.0",
-        "1.2.0",
-        "1.2.1",
-        "1.2.2",
-        "1.2.3",
-        "1.2.4",
-        "1.2.5",
-      )
+      .mavenMetadata("com.squareup.dagger:dagger", "1.0.0", "1.0.1", "1.1.0", "1.2.0", "1.2.1", "1.2.2", "1.2.3", "1.2.4", "1.2.5")
       .issues(REMOTE_VERSION, DEPENDENCY)
       .run()
       .expect(expected)
@@ -4329,11 +4859,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         " [GradlePluginVersion]\n" +
         "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:8: Warning: A newer version of com.android.tools.build:gradle than 4.2.1 is available: 4.5.0 [AndroidGradlePluginVersion]\n" +
-        "        classpath 'com.android.tools.build:gradle:4.2.1'\n" +
+        "build.gradle:8: Warning: A newer version of com.android.tools.build:gradle than 7.0.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
+        "        classpath 'com.android.tools.build:gradle:7.0.1'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha04 is available: 4.5.0. (There is also a newer version of 4.3.\uD835\uDC65 available, if upgrading to 4.5.0 is difficult: 4.3.2) [AndroidGradlePluginVersion]\n" +
-        "        classpath 'com.android.tools.build:gradle:4.3.0-alpha04'\n" +
+        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 7.1.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.1.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.1.0) [AndroidGradlePluginVersion]\n" +
+        "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
 
@@ -4348,8 +4878,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.2.1'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.3.0-alpha04'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.0.1'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4375,11 +4905,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         " [GradlePluginVersion]\n" +
         "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle.kts:8: Warning: A newer version of com.android.tools.build:gradle than 4.2.1 is available: 4.5.0 [AndroidGradlePluginVersion]\n" +
-        "        classpath(\"com.android.tools.build:gradle:4.2.1\")\n" +
+        "build.gradle.kts:8: Warning: A newer version of com.android.tools.build:gradle than 7.0.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
+        "        classpath(\"com.android.tools.build:gradle:7.0.1\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 4.3.0-alpha04 is available: 4.5.0. (There is also a newer version of 4.3.\uD835\uDC65 available, if upgrading to 4.5.0 is difficult: 4.3.2) [AndroidGradlePluginVersion]\n" +
-        "        classpath(\"com.android.tools.build:gradle:4.3.0-alpha04\")\n" +
+        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 7.1.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.1.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.1.0) [AndroidGradlePluginVersion]\n" +
+        "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
 
@@ -4394,8 +4924,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:4.2.1\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:4.3.0-alpha04\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.0.1\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4435,8 +4965,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.3.0'\n" +
-            "        classpath 'com.android.tools.build:gradle:4.4.0-alpha04'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.0.0'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4478,8 +5008,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:4.3.0\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:4.4.0-alpha04\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.0.0\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4771,25 +5301,18 @@ class GradleDetectorTest : AbstractCheckTest() {
       "com.android.support:support-v4:21.0.+",
       getNamedDependency("name:'support-v4', group: \"com.android.support\", version: '21.0.+'"),
     )
-    TestCase.assertEquals(
-      "junit:junit:4.+",
-      getNamedDependency("group: 'junit', name: 'junit', version: '4.+'"),
-    )
+    TestCase.assertEquals("junit:junit:4.+", getNamedDependency("group: 'junit', name: 'junit', version: '4.+'"))
     TestCase.assertEquals(
       "com.android.support:support-v4:19.0.+",
       getNamedDependency("group: 'com.android.support', name: 'support-v4', version: '19.0.+'"),
     )
     TestCase.assertEquals(
       "com.google.guava:guava:11.0.1",
-      getNamedDependency(
-        "group: 'com.google.guava', name: 'guava', version: '11.0.1', transitive: false"
-      ),
+      getNamedDependency("group: 'com.google.guava', name: 'guava', version: '11.0.1', transitive: false"),
     )
     TestCase.assertEquals(
       "com.google.api-client:google-api-client:1.6.0-beta",
-      getNamedDependency(
-        "group: 'com.google.api-client', name: 'google-api-client', version: '1.6.0-beta', transitive: false"
-      ),
+      getNamedDependency("group: 'com.google.api-client', name: 'google-api-client', version: '1.6.0-beta', transitive: false"),
     )
     TestCase.assertEquals(
       "org.robolectric:robolectric:2.3-SNAPSHOT",
@@ -4821,14 +5344,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testBundledGmsDependency() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "dependencies {\n" +
-            "    compile 'com.google.android.gms:play-services:8.5.6'\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "dependencies {\n" + "    compile 'com.google.android.gms:play-services:8.5.6'\n" + "}\n"))
       .issues(BUNDLED_GMS)
       .run()
       .expect(
@@ -4842,14 +5358,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testUnbundledGmsDependency() {
     lint()
-      .files(
-        gradle(
-          "" +
-            "dependencies {\n" +
-            "    compile 'com.google.android.gms:play-services-auth:9.2.1'\n" +
-            "}\n"
-        )
-      )
+      .files(gradle("" + "dependencies {\n" + "    compile 'com.google.android.gms:play-services-auth:9.2.1'\n" + "}\n"))
       .issues(BUNDLED_GMS)
       .run()
       .expectClean()
@@ -5242,9 +5751,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .issues(EDITED_TARGET_SDK_VERSION)
           .incremental(name)
           .clientFactory {
-            com.android.tools.lint.checks.infrastructure
-              .TestLintClient(LintClient.CLIENT_STUDIO)
-              .apply { addCleanupDir(rootDirectory) }
+            com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.CLIENT_STUDIO).apply { addCleanupDir(rootDirectory) }
           }
           .testModes(TestMode.DEFAULT)
       }
@@ -5316,9 +5823,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .issues(EDITED_TARGET_SDK_VERSION)
           .incremental(name)
           .clientFactory {
-            com.android.tools.lint.checks.infrastructure
-              .TestLintClient(LintClient.CLIENT_STUDIO)
-              .apply { addCleanupDir(rootDirectory) }
+            com.android.tools.lint.checks.infrastructure.TestLintClient(LintClient.CLIENT_STUDIO).apply { addCleanupDir(rootDirectory) }
           }
           .testModes(TestMode.DEFAULT)
       }
@@ -5454,26 +5959,32 @@ class GradleDetectorTest : AbstractCheckTest() {
       lint()
         .files(
           gradle(
-            "" +
-              "apply plugin: 'com.android.application'\n" +
-              "\n" +
-              "android {\n" +
-              "    defaultConfig {\n" +
-              "        targetSdkVersion 17\n" +
-              "    }\n" +
-              "}\n"
-          )
+              """
+              apply plugin: 'com.android.application'
+
+              android {
+                  defaultConfig {
+                      targetSdkVersion 17
+                      targetSdkVersion "JELLY_BEAN"
+                  }
+              }
+              """
+            )
+            .indented()
         )
         .issues(EXPIRED_TARGET_SDK_VERSION, EXPIRING_TARGET_SDK_VERSION)
         .sdkHome(mockSupportLibraryInstallation)
         .run()
         .expect(
           """
-                    build.gradle:5: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
-                            targetSdkVersion 17
-                            ~~~~~~~~~~~~~~~~~~~
-                    1 errors, 0 warnings
-                    """
+          build.gradle:5: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+                  targetSdkVersion 17
+                  ~~~~~~~~~~~~~~~~~~~
+          build.gradle:6: Error: Google Play requires that apps target API level $PREVIOUS_MINIMUM_TARGET_SDK_VERSION or higher. [ExpiredTargetSdkVersion]
+                  targetSdkVersion "JELLY_BEAN"
+                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+          2 errors
+          """
         )
     } finally {
       GradleDetector.calendar = null
@@ -6296,10 +6807,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  /**
-   * Test that version upgrade quickfix is shown if the suggested version does not have errors or
-   * warnings from SDK Index
-   */
+  /** Test that version upgrade quickfix is shown if the suggested version does not have errors or warnings from SDK Index */
   fun testSdkIndexLibraryUpgradeToVersionWithoutWarningOrError() {
     lint()
       .files(
@@ -6419,10 +6927,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  /**
-   * Test that version upgrade quickfix is not shown if the suggested version has errors or warnings
-   * from SDK Index
-   */
+  /** Test that version upgrade quickfix is not shown if the suggested version has errors or warnings from SDK Index */
   fun testSdkIndexLibraryNoUpgradeToVersionWithWarningOrError() {
     val expectedFixes =
       """
@@ -6514,10 +7019,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(expectedFixes)
   }
 
-  /**
-   * Test that version upgrade quickfix is shown if there is a custom message (even if the current
-   * version has errors or warnings)
-   */
+  /** Test that version upgrade quickfix is shown if there is a custom message (even if the current version has errors or warnings) */
   fun testSdkIndexLibraryUpgradeToVersionWithCustomMessage() {
     val expectedFixes =
       """
@@ -6584,10 +7086,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(expectedFixes)
   }
 
-  /**
-   * Tests that the navigation libraries are not considered as part of androidx even when their name
-   * does start with "androidx."
-   */
+  /** Tests that the navigation libraries are not considered as part of androidx even when their name does start with "androidx." */
   fun testAndroidxMixedDependenciesWithNavigation() {
     lint()
       .files(
@@ -7978,15 +8477,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testJavaLanguageLevelNoDirectives() {
-    val plugins =
-      listOf(
-        "java",
-        "java-library",
-        "application",
-        "org.gradle.java",
-        "org.gradle.java-library",
-        "org.gradle.application",
-      )
+    val plugins = listOf("java", "java-library", "application", "org.gradle.java", "org.gradle.java-library", "org.gradle.application")
     plugins.forEach { plugin ->
       lint()
         .files(
@@ -8053,15 +8544,9 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelCleanKts() {
     val sourceCompatibility =
-      listOf(
-        "java.sourceCompatibility = JavaVersion.VERSION_1_8",
-        "java { sourceCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.sourceCompatibility = JavaVersion.VERSION_1_8", "java { sourceCompatibility = JavaVersion.VERSION_1_8 }")
     val targetCompatibility =
-      listOf(
-        "java.targetCompatibility = JavaVersion.VERSION_1_8",
-        "java { targetCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.targetCompatibility = JavaVersion.VERSION_1_8", "java { targetCompatibility = JavaVersion.VERSION_1_8 }")
     sourceCompatibility.forEach { sc ->
       targetCompatibility.forEach { tc ->
         lint()
@@ -8085,10 +8570,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelNoSourceCompatibilityKts() {
     val targetCompatibility =
-      listOf(
-        "java.targetCompatibility = JavaVersion.VERSION_1_8",
-        "java { targetCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.targetCompatibility = JavaVersion.VERSION_1_8", "java { targetCompatibility = JavaVersion.VERSION_1_8 }")
     targetCompatibility.forEach { tc ->
       lint()
         .files(
@@ -8124,10 +8606,7 @@ class GradleDetectorTest : AbstractCheckTest() {
 
   fun testJavaLanguageLevelNoTargetCompatibilityKts() {
     val sourceCompatibility =
-      listOf(
-        "java.sourceCompatibility = JavaVersion.VERSION_1_8",
-        "java { sourceCompatibility = JavaVersion.VERSION_1_8 }",
-      )
+      listOf("java.sourceCompatibility = JavaVersion.VERSION_1_8", "java { sourceCompatibility = JavaVersion.VERSION_1_8 }")
     sourceCompatibility.forEach { sc ->
       lint()
         .files(
@@ -8162,15 +8641,7 @@ class GradleDetectorTest : AbstractCheckTest() {
   }
 
   fun testJavaLanguageLevelNoDirectivesKts() {
-    val plugins =
-      listOf(
-        "java",
-        "java-library",
-        "application",
-        "org.gradle.java",
-        "org.gradle.java-library",
-        "org.gradle.application",
-      )
+    val plugins = listOf("java", "java-library", "application", "org.gradle.java", "org.gradle.java-library", "org.gradle.application")
     plugins.forEach { plugin ->
       lint()
         .files(
@@ -8545,6 +9016,51 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testGradleDetectorFindPropertyValue() {
+    val str =
+      """
+         # comments
+      some.property = true
+      """
+        .trimIndent()
+    assertEquals(ValueOffset(29, 34), findPropertyValue(str, "some.property"))
+
+    val str2 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = true
+      """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 80), findPropertyValue(str2, "some.property"))
+
+    val str3 =
+      """
+         ! comments
+      prop = \
+        some some.property = true \
+        some
+      some.property = multi \
+        line
+      """
+        .trimIndent()
+    assertEquals(ValueOffset(75, 90), findPropertyValue(str3, "some.property"))
+
+    // where multiline property has #symbol
+    val str4 =
+      """
+         ! comments
+      prop = \
+        #some some.property = true
+      some.property = multi \
+        line
+      """
+        .trimIndent()
+    assertEquals(ValueOffset(67, 82), findPropertyValue(str4, "some.property"))
+  }
+
   fun testCachedFilter() {
     // Regression test for b/282127516
     lint()
@@ -8909,15 +9425,18 @@ class GradleDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         gradle(
-          "" +
-            "apply plugin: 'com.android.application'\n" +
-            "\n" +
-            "android {\n" +
-            "    compileSdkVersion 28\n" +
-            "    compileSdkVersion 1000 // OK\n" +
-            "    compileSdkPreview = \"android-S\" // OK\n" +
-            "}\n"
-        )
+            """
+            apply plugin: 'com.android.application'
+
+            android {
+                compileSdkVersion 28
+                compileSdkVersion "android-S"
+                compileSdkVersion 1000 // OK
+                compileSdkPreview = "S" // OK
+            }
+            """
+          )
+          .indented()
       )
       .issues(DEPENDENCY)
       .run()
@@ -8926,7 +9445,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         build.gradle:4: Warning: A newer version of compileSdkVersion than 28 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
             compileSdkVersion 28
             ~~~~~~~~~~~~~~~~~~~~
-        0 errors, 1 warnings
+        build.gradle:5: Warning: A newer version of compileSdkVersion than 31 is available: $HIGHEST_KNOWN_STABLE_API [GradleDependency]
+            compileSdkVersion "android-S"
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
         """
       )
       .expectFixDiffs(
@@ -8965,15 +9487,7 @@ class GradleDetectorTest : AbstractCheckTest() {
           .indented(),
       )
       .issues(DEPENDENCY, REMOTE_VERSION)
-      .mavenMetadata(
-        "org.jetbrains.kotlin.android",
-        "1.7.0",
-        "1.7.10",
-        "1.7.20-Beta",
-        "1.8.0",
-        "1.8.10",
-        "1.9.0",
-      )
+      .mavenMetadata("org.jetbrains.kotlin.android", "1.7.0", "1.7.10", "1.7.20-Beta", "1.8.0", "1.8.10", "1.9.0")
       .run()
       .expect(
         """
@@ -9078,10 +9592,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         "1.0",
         "1.5",
       )
-      .networkData(
-        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
-        404,
-      )
+      .networkData("https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml", 404)
       .networkData(
         "https://jitpack.io/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
         // language=XML
@@ -9133,10 +9644,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       // No response from maven central for this unknown URL; make sure
       // we don't access jitpack (if we did, this would throw an exception that
       // the test client is accessing a URL without prepared URL results
-      .networkData(
-        "https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml",
-        404,
-      )
+      .networkData("https://repo1.maven.org/maven2/com/github/android-lint-jitpack/android-lint/maven-metadata.xml", 404)
       .run()
       .expectClean()
   }
@@ -9163,19 +9671,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val group = "this.dependency.does"
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
-    val version =
-      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
+    val version = GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
     GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenVersion(
-      client,
-      group,
-      "other-artifact",
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, "other-artifact", currentVersion, allowCache = true)
     assertEquals(2, networkHitCount)
     tempFolder.delete()
   }
@@ -9206,19 +9707,12 @@ class GradleDetectorTest : AbstractCheckTest() {
     val group = "this.dependency.does"
     val artifact = "not-exist"
     val currentVersion = Version.parse("1.0")
-    val version =
-      GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
+    val version = GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertNull(version)
     assertEquals(1, networkHitCount)
     GradleDetector.getMavenVersion(client, group, artifact, currentVersion, allowCache = true)
     assertEquals(1, networkHitCount)
-    GradleDetector.getMavenVersion(
-      client,
-      group,
-      "other-artifact",
-      currentVersion,
-      allowCache = true,
-    )
+    GradleDetector.getMavenVersion(client, group, "other-artifact", currentVersion, allowCache = true)
     assertEquals(2, networkHitCount)
     tempFolder.delete()
   }
@@ -9237,13 +9731,9 @@ class GradleDetectorTest : AbstractCheckTest() {
         false,
         gmaven,
       )
-    assertEquals(
-      "2.8.1, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 2.9.6, 2.9.7",
-      versions1?.joinToString() { it.toString() },
-    )
+    assertEquals("2.8.1, 2.9.0, 2.9.1, 2.9.2, 2.9.3, 2.9.4, 2.9.5, 2.9.6, 2.9.7", versions1?.joinToString() { it.toString() })
 
-    val versions2 =
-      GradleDetector.getAllMavenVersions(client, "org.gradle", "gradle-tooling-api", false, gmaven)
+    val versions2 = GradleDetector.getAllMavenVersions(client, "org.gradle", "gradle-tooling-api", false, gmaven)
     assertEquals(
       "7.0, 7.0.1, 7.0.2, 7.6-rc-4, 7.6, 7.6.1, 7.6.2, 7.6.3, 7.6.4, 8.0-milestone-6, 8.0-rc-1, 8.0-rc-2, 8.0-rc-3, 8.0-rc-4, 8.0-rc-5, 8.0, 8.0.1, 8.0.2, 8.1-rc-1, 8.1-rc-2, 8.1-rc-3, 8.1-rc-4, 8.1, 8.1.1, 8.2-milestone-1, 8.2-milestone-2, 8.2-rc-1, 8.2-rc-1",
       versions2?.joinToString() { it.toString() },
@@ -9433,10 +9923,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       }
     }
 
-    private fun TestLintTask.mavenMetadata(
-      coordinate: String,
-      vararg versions: String,
-    ): TestLintTask {
+    private fun TestLintTask.mavenMetadata(coordinate: String, vararg versions: String): TestLintTask {
       val group: String
       val artifact: String
       if (coordinate.contains(":")) {
@@ -9629,14 +10116,13 @@ class GradleDetectorTest : AbstractCheckTest() {
         "" +
           "<?xml version='1.0' encoding='UTF-8'?>\n" +
           "<com.android.tools.build>\n" +
-          "  <gradle versions=\"4.0.0-alpha1,4.0.0-alpha2,4.0.0-alpha3,4.0.0-alpha4,4.0.0-alpha5,4.0.0-alpha6,4.0.0-alpha7,4.0.0-alpha8,4.0.0-alpha9,4.0.0-beta1,4.0.0-beta2,4.0.0-beta3,4.0.0-beta4,4.0.0-beta5,4.0.0-beta6,4.0.0-beta7,4.0.0-rc1,4.0.0-rc2,4.0.0,4.0.1," +
-          "4.1.0-alpha01,4.1.0-alpha02,4.1.0-alpha03,4.1.0-alpha04,4.1.0-alpha05,4.1.0-alpha06,4.1.0-alpha07,4.1.0-alpha08,4.1.0-alpha09,4.1.0-beta1,4.1.0-beta2,4.1.0-beta3,4.1.0-beta4,4.1.0-rc1,4.1.0," +
-          "4.2.0-alpha01,4.2.0-alpha02,4.2.0-alpha03,4.2.0-alpha04,4.2.0-alpha05,4.2.0-alpha06,4.2.0-alpha07,4.2.0-alpha08,4.2.0-alpha09,4.2.0-alpha10,4.2.0-alpha11,4.2.0-alpha12,4.2.0-alpha13,4.2.0-alpha14,4.2.0-alpha15,4.2.0-alpha16,4.2.0-alpha17,4.2.0-alpha18,4.2.0-beta01,4.2.0-beta02,4.2.0-beta03,4.2.0-beta04,4.2.0-beta05,4.2.0-rc01,4.2.0-rc02,4.2.0-rc03,4.2.0,4.2.1," +
-          "4.3.0-alpha01,4.3.0-alpha02,4.3.0-alpha03,4.3.0-alpha04,4.3.0-alpha05,4.3.0-alpha06,4.3.0-alpha07,4.3.0-alpha08,4.3.0-alpha09,4.3.0-alpha10,4.3.0-alpha11,4.3.0-alpha12,4.3.0-alpha13,4.3.0-beta01,4.3.0-beta02,4.3.0-beta03,4.3.0-beta04,4.3.0-rc01,4.3.0-rc02,4.3.0-rc03,4.3.0,4.3.1,4.3.2," +
-          "4.4.0-alpha01,4.4.0-alpha02,4.4.0-alpha03,4.4.0-alpha04,4.4.0-alpha05,4.4.0-alpha06,4.4.0-alpha07,4.4.0-alpha08,4.4.0-alpha09,4.4.0-alpha10,4.4.0-beta01,4.4.0-beta02,4.4.0-beta03,4.4.0-beta04,4.4.0-beta05,4.4.0-rc01,4.4.0-rc02,4.4.0-rc03,4.4.0,4.4.1," +
-          "4.5.0-alpha01,4.5.0-alpha02,4.5.0-alpha03,4.5.0-alpha04a,4.5.0-alpha05,4.5.0-alpha06,4.5.0-alpha07,4.5.0-alpha08,4.5.0-alpha09,4.5.0-alpha10,4.5.0," +
-          "" +
-          "4.6.0-alpha01\"/>\n" +
+          "  <gradle versions=\"7.0.0-alpha1,7.0.0-alpha2,7.0.0-alpha3,7.0.0-alpha4,7.0.0-alpha5,7.0.0-alpha6,7.0.0-alpha7,7.0.0-alpha8,7.0.0-alpha9,7.0.0-beta1,7.0.0-beta2,7.0.0-beta3,7.0.0-beta4,7.0.0-beta5,7.0.0-beta6,7.0.0-beta7,7.0.0-rc1,7.0.0-rc2,7.0.0,7.0.1," +
+          "7.1.0-alpha01,7.1.0-alpha02,7.1.0-alpha03,7.1.0-alpha04,7.1.0-alpha05,7.1.0-alpha06,7.1.0-alpha07,7.1.0-alpha08,7.1.0-alpha09,7.1.0-beta1,7.1.0-beta2,7.1.0-beta3,7.1.0-beta4,7.1.0-rc1,7.1.0," +
+          "7.2.0-alpha01,7.2.0-alpha02,7.2.0-alpha03,7.2.0-alpha04,7.2.0-alpha05,7.2.0-alpha06,7.2.0-alpha07,7.2.0-alpha08,7.2.0-alpha09,7.2.0-alpha10,7.2.0-alpha11,7.2.0-alpha12,7.2.0-alpha13,7.2.0-alpha14,7.2.0-alpha15,7.2.0-alpha16,7.2.0-alpha17,7.2.0-alpha18,7.2.0-beta01,7.2.0-beta02,7.2.0-beta03,7.2.0-beta04,7.2.0-beta05,7.2.0-rc01,7.2.0-rc02,7.2.0-rc03,7.2.0,7.2.1," +
+          "7.3.0-alpha01,7.3.0-alpha02,7.3.0-alpha03,7.3.0-alpha04,7.3.0-alpha05,7.3.0-alpha06,7.3.0-alpha07,7.3.0-alpha08,7.3.0-alpha09,7.3.0-alpha10,7.3.0-alpha11,7.3.0-alpha12,7.3.0-alpha13,7.3.0-beta01,7.3.0-beta02,7.3.0-beta03,7.3.0-beta04,7.3.0-rc01,7.3.0-rc02,7.3.0-rc03,7.3.0,7.3.1,7.3.2," +
+          "7.4.0-alpha01,7.4.0-alpha02,7.4.0-alpha03,7.4.0-alpha04,7.4.0-alpha05,7.4.0-alpha06,7.4.0-alpha07,7.4.0-alpha08,7.4.0-alpha09,7.4.0-alpha10,7.4.0-beta01,7.4.0-beta02,7.4.0-beta03,7.4.0-beta04,7.4.0-beta05,7.4.0-rc01,7.4.0-rc02,7.4.0-rc03,7.4.0,7.4.1," +
+          "7.5.0-alpha01,7.5.0-alpha02,7.5.0-alpha03,7.5.0-alpha04a,7.5.0-alpha05,7.5.0-alpha06,7.5.0-alpha07,7.5.0-alpha08,7.5.0-alpha09,7.5.0-alpha10,7.5.0," +
+          "7.6.0-alpha01\"/>\n" +
           "</com.android.tools.build>",
       )
       task.networkData(
@@ -9788,21 +10274,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("log4j")
-                          .setArtifactId("log4j")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("log4j").setArtifactId("log4j").build())
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.18").setIsLatestVersion(true))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.17").setIsLatestVersion(false))
                   // Critical NON_BLOCKING
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -9831,8 +10308,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                       .setVersionString("1.2.14")
                       .setIsLatestVersion(false)
                       .setVersionLabels(
-                        LibraryVersionLabels.newBuilder()
-                          .setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
+                        LibraryVersionLabels.newBuilder().setPolicyIssuesInfo(LibraryVersionLabels.PolicyIssuesInfo.newBuilder())
                       )
                   )
                   // Critical BLOCKING
@@ -9855,14 +10331,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder()
-                                  .setLowerBound("1.2.17")
-                                  .setUpperBound("1.2.17")
-                              )
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.2.18")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.2.17").setUpperBound("1.2.17"))
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.2.18"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -9878,25 +10348,14 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.ads.third.party")
-                          .setArtifactId("example")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.ads.third.party").setArtifactId("example").build())
                   )
                   // Ok, latest
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("8.0.0").setIsLatestVersion(true))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.2").setIsLatestVersion(false))
                   // Ok
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("7.2.1").setIsLatestVersion(false))
                   // Outdated & non compliant (user data) & Critical & Vulnerability
                   // (UNSAFE_TRUST_MANAGER)
                   .addVersions(
@@ -9909,15 +10368,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setOutdatedIssueInfo(LibraryVersionLabels.OutdatedIssueInfo.newBuilder())
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
                           )
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_TRUST_MANAGER
                               )
                           )
@@ -9932,9 +10388,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_ADS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -9948,10 +10402,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_DEVICE_AND_NETWORK_ABUSE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DEVICE_AND_NETWORK_ABUSE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -9965,10 +10416,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_DECEPTIVE_BEHAVIOR
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_DECEPTIVE_BEHAVIOR)
                           )
                       )
                   )
@@ -9981,9 +10429,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -9997,10 +10443,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10014,10 +10457,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_MOBILE_UNWANTED_SOFTWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MOBILE_UNWANTED_SOFTWARE)
                           )
                       )
                   )
@@ -10030,9 +10470,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10046,16 +10484,9 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10069,12 +10500,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_USER_DATA)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10088,13 +10515,8 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                       )
                   )
@@ -10108,8 +10530,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_HOSTNAME_VERIFIER
                               )
                           )
@@ -10127,18 +10548,15 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_SSL_ERROR_HANDLER
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_ZIP_PATH_TRAVERSAL
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_WEBVIEW_OAUTH
                               )
                           )
@@ -10155,73 +10573,59 @@ class GradleDetectorTest : AbstractCheckTest() {
                           .setSecurityVulnerabilitiesInfo(
                             LibraryVersionLabels.SecurityVulnerabilitiesInfo.newBuilder()
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_CIPHER_MODE
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_UNSAFE_ENCRYPTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_PENDING_INTENT
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_IMPLICIT_INTERNAL_INTENT
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_CROSS_APP_SCRIPTING
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_FILE_BASED_XSS
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_SCHEME_HIJACKING
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_JS_INTERFACE_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_INTENT_REDIRECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_FRAGMENT_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_PATH_TRAVERSAL
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_SQL_INJECTION
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_LEAKED_GCP_KEYS
                               )
                               .addVulnerabilities(
-                                LibraryVersionLabels.SecurityVulnerabilitiesInfo
-                                  .SdkSecurityVulnerabilityType
+                                LibraryVersionLabels.SecurityVulnerabilitiesInfo.SdkSecurityVulnerabilityType
                                   .SDK_SECURITY_VULNERABILITY_TYPE_VULNERABLE_LIBS
                               )
                           )
@@ -10241,20 +10645,13 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.google.android.gms")
-                          .setArtifactId("play-services-maps")
-                          .build()
+                        MavenIdentifier.newBuilder().setGroupId("com.google.android.gms").setArtifactId("play-services-maps").build()
                       )
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("18.3.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("18.3.0").setIsLatestVersion(true))
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("18.2.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("18.2.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10264,9 +10661,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("18.3.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("18.3.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10277,16 +10672,11 @@ class GradleDetectorTest : AbstractCheckTest() {
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
                       .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("androidx.slidingpanelayout")
-                          .setArtifactId("slidingpanelayout")
-                          .build()
+                        MavenIdentifier.newBuilder().setGroupId("androidx.slidingpanelayout").setArtifactId("slidingpanelayout").build()
                       )
                   )
                   // Ok, latest, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.2.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.0").setIsLatestVersion(true))
                   // Policy issue (error)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10296,10 +10686,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy
-                                  .SDK_POLICY_PERMISSIONS
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_PERMISSIONS)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
@@ -10316,12 +10703,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("issues-on-latest")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("issues-on-latest").build())
                   )
                   // Latest, has blocking issues
                   .addVersions(
@@ -10332,17 +10714,13 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setPolicyIssuesInfo(
                             LibraryVersionLabels.PolicyIssuesInfo.newBuilder()
-                              .addViolatedSdkPolicies(
-                                LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE
-                              )
+                              .addViolatedSdkPolicies(LibraryVersionLabels.PolicyIssuesInfo.SdkPolicy.SDK_POLICY_MALWARE)
                           )
                           .setSeverity(LibraryVersionLabels.Severity.BLOCKING_SEVERITY)
                       )
                   )
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.9.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.9.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10352,9 +10730,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.9.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.9.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10365,17 +10741,10 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("deprecated")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("deprecated").build())
                   )
                   // Latest, has no other issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("2.0.0").setIsLatestVersion(true))
                   .setLibraryDeprecation(
                     LibraryDeprecation.newBuilder()
                       .setDeprecationTimestampSeconds(
@@ -10384,19 +10753,11 @@ class GradleDetectorTest : AbstractCheckTest() {
                       .addAlternativeLibraries(
                         AlternativeLibrary.newBuilder()
                           .setSdkName("Alternative 1")
-                          .setMavenSdkId(
-                            MavenIdentifier.newBuilder()
-                              .setGroupId("first")
-                              .setArtifactId("alternative")
-                          )
+                          .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("first").setArtifactId("alternative"))
                       )
                       .addAlternativeLibraries(
                         AlternativeLibrary.newBuilder()
-                          .setMavenSdkId(
-                            MavenIdentifier.newBuilder()
-                              .setGroupId("second")
-                              .setArtifactId("alternative")
-                          )
+                          .setMavenSdkId(MavenIdentifier.newBuilder().setGroupId("second").setArtifactId("alternative"))
                       )
                   )
               )
@@ -10411,23 +10772,12 @@ class GradleDetectorTest : AbstractCheckTest() {
                 Library.newBuilder()
                   .setLibraryId(
                     LibraryIdentifier.newBuilder()
-                      .setMavenId(
-                        MavenIdentifier.newBuilder()
-                          .setGroupId("com.example.issues")
-                          .setArtifactId("latest-is-preview")
-                          .build()
-                      )
+                      .setMavenId(MavenIdentifier.newBuilder().setGroupId("com.example.issues").setArtifactId("latest-is-preview").build())
                   )
                   // Latest, Ok but is preview version
-                  .addVersions(
-                    LibraryVersion.newBuilder()
-                      .setVersionString("1.2.0-dev")
-                      .setIsLatestVersion(true)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.2.0-dev").setIsLatestVersion(true))
                   // Ok, no issues
-                  .addVersions(
-                    LibraryVersion.newBuilder().setVersionString("1.1.0").setIsLatestVersion(false)
-                  )
+                  .addVersions(LibraryVersion.newBuilder().setVersionString("1.1.0").setIsLatestVersion(false))
                   // Outdated version (Warning)
                   .addVersions(
                     LibraryVersion.newBuilder()
@@ -10437,9 +10787,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                         LibraryVersionLabels.newBuilder()
                           .setOutdatedIssueInfo(
                             LibraryVersionLabels.OutdatedIssueInfo.newBuilder()
-                              .addRecommendedVersions(
-                                LibraryVersionRange.newBuilder().setLowerBound("1.1.0")
-                              )
+                              .addRecommendedVersions(LibraryVersionRange.newBuilder().setLowerBound("1.1.0"))
                           )
                           .setSeverity(LibraryVersionLabels.Severity.NON_BLOCKING_SEVERITY)
                       )
@@ -10458,10 +10806,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       bos.close()
 
       // Also ensure we don't have a stale cache on disk.
-      val cacheDir =
-        com.android.tools.lint.checks.infrastructure
-          .TestLintClient()
-          .getCacheDir(MAVEN_GOOGLE_CACHE_DIR_KEY, true)
+      val cacheDir = com.android.tools.lint.checks.infrastructure.TestLintClient().getCacheDir(MAVEN_GOOGLE_CACHE_DIR_KEY, true)
       if (cacheDir != null && cacheDir.isDirectory) {
         try {
           FileUtils.deleteDirectoryContents(cacheDir)
@@ -10482,9 +10827,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       })
 
       val cacheDir2 =
-        com.android.tools.lint.checks.infrastructure
-          .TestLintClient()
-          .getCacheDir(GooglePlaySdkIndex.GOOGLE_PLAY_SDK_INDEX_KEY, true)
+        com.android.tools.lint.checks.infrastructure.TestLintClient().getCacheDir(GooglePlaySdkIndex.GOOGLE_PLAY_SDK_INDEX_KEY, true)
       if (cacheDir2 != null && cacheDir2.isDirectory) {
         try {
           FileUtils.deleteDirectoryContents(cacheDir2)
@@ -10496,8 +10839,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       return task
     }
 
-    private val IMPLEMENTATION =
-      Implementation(GroovyGradleDetector::class.java, Scope.GRADLE_SCOPE)
+    private val IMPLEMENTATION = Implementation(GroovyGradleDetector::class.java, Scope.GRADLE_SCOPE)
 
     init {
       LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
@@ -10505,11 +10847,7 @@ class GradleDetectorTest : AbstractCheckTest() {
         if (issue.implementation.detectorClass == GradleDetector::class.java) {
           if (issue.implementation.scope.size > 1) {
             issue.implementation =
-              Implementation(
-                GroovyGradleDetector::class.java,
-                issue.implementation.scope,
-                *issue.implementation.analysisScopes,
-              )
+              Implementation(GroovyGradleDetector::class.java, issue.implementation.scope, *issue.implementation.analysisScopes)
           } else {
             issue.implementation = IMPLEMENTATION
           }
@@ -10518,3 +10856,21 @@ class GradleDetectorTest : AbstractCheckTest() {
     }
   }
 }
+
+val clientFactoryWithR8FalseProject: TestLintTask.ClientFactory =
+  object : TestLintTask.ClientFactory {
+    override fun create(): com.android.tools.lint.checks.infrastructure.TestLintClient {
+      return object : com.android.tools.lint.checks.infrastructure.TestLintClient() {
+        override fun createProject(dir: File, referenceDir: File): Project {
+          return object : Project(this, dir, referenceDir) {
+            override fun getBuildModule(): LintModelModule {
+              val model = Mockito.mock(LintModelModule::class.java)
+              Mockito.`when`<Boolean?>(model.highlightGradualR8Api).thenReturn(true)
+              Mockito.`when`<LintModelLintOptions>(model.lintOptions).thenReturn(DefaultLintModelLintOptions())
+              return model
+            }
+          }
+        }
+      }
+    }
+  }

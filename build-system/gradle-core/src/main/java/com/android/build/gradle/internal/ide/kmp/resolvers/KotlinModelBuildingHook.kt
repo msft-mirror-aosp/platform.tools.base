@@ -27,37 +27,37 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeAdditionalArtifactResolver
 
 /**
- * An [IdeAdditionalArtifactResolver] that serves as a hook to register models as kotlin extras so
- * that we can run during the model building phase.
+ * An [IdeAdditionalArtifactResolver] that serves as a hook to register models as kotlin extras so that we can run during the model building
+ * phase.
  *
  * This is a workaround until the kotlin plugin provides an API with that functionality.
  */
 @OptIn(ExternalKotlinTargetApi::class)
 internal class KotlinModelBuildingHook(
-    private val project: Project,
-    private val mainVariant: Lazy<KmpVariantImpl>,
-    private val androidTarget: Lazy<KotlinMultiplatformAndroidLibraryTarget>,
-    private val androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl
-): IdeAdditionalArtifactResolver {
-    private var registered = false
+  private val project: Project,
+  private val mainVariant: Lazy<KmpVariantImpl>,
+  private val androidTarget: Lazy<KotlinMultiplatformAndroidLibraryTarget>,
+  private val androidExtension: KotlinMultiplatformAndroidLibraryExtensionImpl,
+) : IdeAdditionalArtifactResolver {
+  private var registered = false
 
-    override fun resolve(sourceSet: KotlinSourceSet, dependencies: Set<IdeaKotlinDependency>) {
-        if (!registered) {
-            registered = true
+  override fun resolve(sourceSet: KotlinSourceSet, dependencies: Set<IdeaKotlinDependency>) {
+    if (!registered) {
+      registered = true
 
-            KotlinModelBuildingConfigurator.setupAndroidTargetModels(
-                project,
-                mainVariant.value,
-                androidTarget.value,
-                mainVariant.value.services.projectOptions,
-                mainVariant.value.services.issueReporter
-            )
+      KotlinModelBuildingConfigurator.setupAndroidTargetModels(
+        project,
+        mainVariant.value,
+        androidTarget.value,
+        mainVariant.value.services.projectOptions,
+        mainVariant.value.services.issueReporter,
+      )
 
-            KotlinModelBuildingConfigurator.setupAndroidCompilations(
-                components = listOfNotNull(mainVariant.value, mainVariant.value.androidDeviceTest, mainVariant.value.unitTest),
-                androidExtension.androidTestOnDeviceOptions?.instrumentationRunner,
-                androidExtension.androidTestOnDeviceOptions?.instrumentationRunnerArguments ?: emptyMap(),
-            )
-        }
+      KotlinModelBuildingConfigurator.setupAndroidCompilations(
+        components = listOfNotNull(mainVariant.value, mainVariant.value.androidDeviceTest, mainVariant.value.unitTest),
+        androidExtension.androidTestOnDeviceOptions?.instrumentationRunner,
+        androidExtension.androidTestOnDeviceOptions?.instrumentationRunnerArguments ?: emptyMap(),
+      )
     }
+  }
 }

@@ -20,6 +20,6 @@ import com.android.tools.preview.ConfigurablePreviewElement
 
 /** Interface required to be implemented for a [PreviewScreenshot] to be rendered. */
 interface ScreenshotPreviewElement : ConfigurablePreviewElement<Unit> {
-    /** This method returns a sequence of XML layouts for each preview. */
-    fun resolveXmlLayouts(): Sequence<String>
+  /** This method returns a sequence of XML layouts for each preview. */
+  fun resolveXmlLayouts(): Sequence<String>
 }

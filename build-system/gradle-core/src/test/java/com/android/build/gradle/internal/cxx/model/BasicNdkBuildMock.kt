@@ -23,41 +23,27 @@ import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
-/**
- * Set up a basic environment that will result in an ndk-build [CxxModuleModel]
- */
+/** Set up a basic environment that will result in an ndk-build [CxxModuleModel] */
 open class BasicNdkBuildMock : BasicModuleModelMock() {
 
-    // Walk all vals in the model and invoke them
-    val module by lazy {
-        createCxxModuleModel(
-            sdkComponents,
-            configurationParameters,
-        )
-    }
-    val variant by lazy { createCxxVariantModel(configurationParameters, module) }
-    val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
+  // Walk all vals in the model and invoke them
+  val module by lazy { createCxxModuleModel(sdkComponents, configurationParameters) }
+  val variant by lazy { createCxxVariantModel(configurationParameters, module) }
+  val abi by lazy { createCxxAbiModel(sdkComponents, configurationParameters, variant, "x86") }
 
-    init {
-        doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
-        doReturn(makeListProperty(listOf("APP_STL=c++_shared"))).whenever(variantExternalNativeBuild).arguments
-        doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
-        doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
-        doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).targets
-        val makefile = FileUtils.join(allPlatformsProjectRootDir, "Android.mk")
-        doReturn(makefile).whenever(ndkBuild).path
-        projectRootDir.mkdirs()
-        makefile.writeText("# written by ${BasicNdkBuildMock::class}")
-    }
+  init {
+    doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).abiFilters
+    doReturn(makeListProperty(listOf("APP_STL=c++_shared"))).whenever(variantExternalNativeBuild).arguments
+    doReturn(makeListProperty(listOf("-DC_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cFlags
+    doReturn(makeListProperty(listOf("-DCPP_FLAG_DEFINED"))).whenever(variantExternalNativeBuild).cppFlags
+    doReturn(makeSetProperty(setOf())).whenever(variantExternalNativeBuild).targets
+    val makefile = FileUtils.join(allPlatformsProjectRootDir, "Android.mk")
+    doReturn(makefile).whenever(ndkBuild).path
+    projectRootDir.mkdirs()
+    makefile.writeText("# written by ${BasicNdkBuildMock::class}")
+  }
 
-    private fun makeListProperty(values: List<String>): ListProperty<*> =
-        mock<ListProperty<*>>().also {
-            doReturn(values).whenever(it).get()
-        }
+  private fun makeListProperty(values: List<String>): ListProperty<*> = mock<ListProperty<*>>().also { doReturn(values).whenever(it).get() }
 
-    private fun makeSetProperty(values: Set<String>): SetProperty<*> =
-            mock<SetProperty<*>>().also {
-                doReturn(values).whenever(it).get()
-            }
-
+  private fun makeSetProperty(values: Set<String>): SetProperty<*> = mock<SetProperty<*>>().also { doReturn(values).whenever(it).get() }
 }

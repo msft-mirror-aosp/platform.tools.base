@@ -18,9 +18,12 @@ package com.android.tools.apk.analyzer;
 
 import static com.android.tools.apk.analyzer.ZipEntryInfo.Alignment.ALIGNMENT_NONE;
 
+import com.android.ide.common.pagealign.AlignmentProblem;
+
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.file.Path;
+import java.util.List;
 
 public abstract class ArchiveEntry {
     /** The archive containing this entry. */
@@ -62,15 +65,14 @@ public abstract class ArchiveEntry {
         return ALIGNMENT_NONE;
     }
 
-    public void setElfMinimumLoadSectionAlignment(long loadAlignment) {}
+    public void setElfAlignmentProblems(List<AlignmentProblem> loadAlignment) {}
 
     /**
-     * For ELF files only, the minimum alignment (within the ELF file) of the PT_LOAD sections. The
-     * value is in units of byte. So, for example, a value of 4096 indicates 4 KB alignment. -1L is
-     * used to for non-ELF files.
+     * A null list means, this is not an ELF file. An empty list means it's an ELF file but no
+     * alignment problems were found.
      */
-    public long getElfMinimumLoadSectionAlignment() {
-        return -1L;
+    public List<AlignmentProblem> getElfAlignmentProblems() {
+        return null;
     }
 
     public boolean getSelfOrChild16kbIncompatible() {
@@ -78,12 +80,6 @@ public abstract class ArchiveEntry {
     }
 
     public void setSelfOrChild16kbIncompatible(Boolean value) {}
-
-    public void setIsElf(boolean isElf) {}
-
-    public boolean getIsElf() {
-        return false;
-    }
 
     public void setIsFileCompressed(boolean isCompressed) {}
 

@@ -18,93 +18,89 @@ package com.android.sdklib
 import com.google.common.truth.StringSubject
 import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import kotlin.test.fail
+import org.junit.Test
 
 class AndroidVersionTest {
 
-    /** Regression test for Issue 216736348 */
-    @Test
-    fun testAllowedCodenames() {
-        val codenames = listOf("Tiramisu", "O_MR1", "S")
-        codenames.forEach {
-            val androidVersion = AndroidVersion.fromString(it)
-            Truth.assertThat(androidVersion.codename).isEqualTo(it)
-        }
+  /** Regression test for Issue 216736348 */
+  @Test
+  fun testAllowedCodenames() {
+    val codenames = listOf("Tiramisu", "O_MR1", "S")
+    codenames.forEach {
+      val androidVersion = AndroidVersion.fromString(it)
+      Truth.assertThat(androidVersion.codename).isEqualTo(it)
     }
+  }
 
-    @Test
-    fun testDisallowedCodenames() {
-        val codenames = listOf("tiramisu", "1S", "s")
-        codenames.forEach {
-            try {
-                AndroidVersion.fromString(it)
-                fail("expecting exception")
-            } catch (expectedException: IllegalArgumentException) {
-                // do nothing
-            }
-        }
+  @Test
+  fun testDisallowedCodenames() {
+    val codenames = listOf("tiramisu", "1S", "s")
+    codenames.forEach {
+      try {
+        AndroidVersion.fromString(it)
+        fail("expecting exception")
+      } catch (expectedException: IllegalArgumentException) {
+        // do nothing
+      }
     }
+  }
 
-    @Test
-    fun testMinorVersionNormalization() {
-        fun assertAndroidVersionNormalized(from: String): StringSubject {
-            return assertThat(AndroidVersion.fromString(from).getApiStringWithExtension())
-                .named("AndroidVersion.fromString(\"%s\").getApiStringWithExtension()", from)
-        }
-        assertAndroidVersionNormalized("36").isEqualTo("36.0")
-        assertAndroidVersionNormalized("36.0").isEqualTo("36.0")
-        assertAndroidVersionNormalized("36.00").isEqualTo("36.0")
-        assertAndroidVersionNormalized("36.1").isEqualTo("36.1")
-        assertAndroidVersionNormalized("36.01").isEqualTo("36.1")
-        assertAndroidVersionNormalized("37").isEqualTo("37.0")
-        assertAndroidVersionNormalized("37.0").isEqualTo("37.0")
-        assertAndroidVersionNormalized("37.00").isEqualTo("37.0")
-        assertAndroidVersionNormalized("37.1").isEqualTo("37.1")
-        assertAndroidVersionNormalized("37.01").isEqualTo("37.1")
+  @Test
+  fun testMinorVersionNormalization() {
+    fun assertAndroidVersionNormalized(from: String): StringSubject {
+      return assertThat(AndroidVersion.fromString(from).getApiStringWithExtension())
+        .named("AndroidVersion.fromString(\"%s\").getApiStringWithExtension()", from)
     }
+    assertAndroidVersionNormalized("36").isEqualTo("36.0")
+    assertAndroidVersionNormalized("36.0").isEqualTo("36.0")
+    assertAndroidVersionNormalized("36.00").isEqualTo("36.0")
+    assertAndroidVersionNormalized("36.1").isEqualTo("36.1")
+    assertAndroidVersionNormalized("36.01").isEqualTo("36.1")
+    assertAndroidVersionNormalized("37").isEqualTo("37.0")
+    assertAndroidVersionNormalized("37.0").isEqualTo("37.0")
+    assertAndroidVersionNormalized("37.00").isEqualTo("37.0")
+    assertAndroidVersionNormalized("37.1").isEqualTo("37.1")
+    assertAndroidVersionNormalized("37.01").isEqualTo("37.1")
+  }
 
-    @Test
-    fun testToStringWithMinorVersions() {
-        fun assertAndroidVersionToString(from: String) =
-            assertThat(AndroidVersion.fromString(from).toString())
-                .named("AndroidVersion.fromString(\"%s\").toString()", from)
-        assertAndroidVersionToString("36.0").isEqualTo("API 36.0")
-        assertAndroidVersionToString("36.1").isEqualTo("API 36.1")
-        assertAndroidVersionToString("37").isEqualTo("API 37.0")
-        assertAndroidVersionToString("37.1").isEqualTo("API 37.1")
-    }
+  @Test
+  fun testToStringWithMinorVersions() {
+    fun assertAndroidVersionToString(from: String) =
+      assertThat(AndroidVersion.fromString(from).toString()).named("AndroidVersion.fromString(\"%s\").toString()", from)
+    assertAndroidVersionToString("36.0").isEqualTo("API 36.0")
+    assertAndroidVersionToString("36.1").isEqualTo("API 36.1")
+    assertAndroidVersionToString("37").isEqualTo("API 37.0")
+    assertAndroidVersionToString("37.1").isEqualTo("API 37.1")
+  }
 
-    @Test
-    fun testBaseExtensionLevel() {
-        fun assertBaseExtensionLevel(api: AndroidApiLevel) =
-            assertThat(AndroidVersion.getBaseExtensionLevel(api))
-                .named("AndroidVersion.getBaseExtensionLevel(\"%s\")", api)
-        fun assertBaseExtensionLevel(api: Int) = assertBaseExtensionLevel(AndroidApiLevel(api))
-        assertBaseExtensionLevel(30).isEqualTo(0)
-        assertBaseExtensionLevel(31).isEqualTo(1)
-        assertBaseExtensionLevel(32).isEqualTo(1)
-        assertBaseExtensionLevel(33).isEqualTo(3)
-        assertBaseExtensionLevel(34).isEqualTo(7)
-        assertBaseExtensionLevel(35).isEqualTo(13)
-        assertBaseExtensionLevel(36).isEqualTo(17)
-        assertBaseExtensionLevel(AndroidApiLevel(36, 1)).isEqualTo(20)
-    }
+  @Test
+  fun testBaseExtensionLevel() {
+    fun assertBaseExtensionLevel(api: AndroidApiLevel) =
+      assertThat(AndroidVersion.getBaseExtensionLevel(api)).named("AndroidVersion.getBaseExtensionLevel(\"%s\")", api)
+    fun assertBaseExtensionLevel(api: Int) = assertBaseExtensionLevel(AndroidApiLevel(api))
+    assertBaseExtensionLevel(30).isEqualTo(0)
+    assertBaseExtensionLevel(31).isEqualTo(1)
+    assertBaseExtensionLevel(32).isEqualTo(1)
+    assertBaseExtensionLevel(33).isEqualTo(3)
+    assertBaseExtensionLevel(34).isEqualTo(7)
+    assertBaseExtensionLevel(35).isEqualTo(13)
+    assertBaseExtensionLevel(36).isEqualTo(17)
+    assertBaseExtensionLevel(AndroidApiLevel(36, 1)).isEqualTo(20)
+  }
 
-    @Test
-    fun testBaseExtensionDetection() {
-        fun assertFromStringBaseExtension(apiString: String) =
-            assertThat(AndroidVersion.fromString(apiString).isBaseExtension)
-                .named("AndroidVersion.fromString(\"%s\").isBaseExtension", apiString)
+  @Test
+  fun testBaseExtensionDetection() {
+    fun assertFromStringBaseExtension(apiString: String) =
+      assertThat(AndroidVersion.fromString(apiString).isBaseExtension).named("AndroidVersion.fromString(\"%s\").isBaseExtension", apiString)
 
-        assertFromStringBaseExtension("36.0").isTrue()
-        assertFromStringBaseExtension("36.0-ext16").isTrue()
-        assertFromStringBaseExtension("36.0-ext17").isTrue()
-        assertFromStringBaseExtension("36.0-ext18").isFalse()
-        assertFromStringBaseExtension("36.1").isTrue()
-        assertFromStringBaseExtension("36.1-ext19").isTrue()
-        assertFromStringBaseExtension("36.1-ext20").isTrue()
-        assertFromStringBaseExtension("36.1-ext21").isFalse()
-    }
-
+    assertFromStringBaseExtension("36.0").isTrue()
+    assertFromStringBaseExtension("36.0-ext16").isTrue()
+    assertFromStringBaseExtension("36.0-ext17").isTrue()
+    assertFromStringBaseExtension("36.0-ext18").isFalse()
+    assertFromStringBaseExtension("36.1").isTrue()
+    assertFromStringBaseExtension("36.1-ext19").isTrue()
+    assertFromStringBaseExtension("36.1-ext20").isTrue()
+    assertFromStringBaseExtension("36.1-ext21").isFalse()
+  }
 }

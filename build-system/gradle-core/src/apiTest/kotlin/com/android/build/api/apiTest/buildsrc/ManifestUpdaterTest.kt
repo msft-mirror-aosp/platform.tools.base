@@ -17,82 +17,79 @@
 package com.android.build.api.apiTest.buildsrc
 
 import com.google.common.truth.Truth
+import kotlin.test.assertNotNull
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
-import kotlin.test.assertNotNull
 
-class ManifestUpdaterTest: BuildSrcScriptApiTest() {
+class ManifestUpdaterTest : BuildSrcScriptApiTest() {
 
-    @Test
-    fun manifestUpdaterTest() {
-        given {
-            addBuildSrc() {
-                testingElements.addGitVersionTask(this)
-                testingElements.addManifestTransformerTask(this)
-                testingElements.addManifestVerifierTask(this)
-                addSource(
-                    "src/main/kotlin/ExamplePlugin.kt",
-                    // language=kotlin
-                    """
-                import com.android.build.api.artifact.SingleArtifact
-                import org.gradle.api.Plugin
-                import org.gradle.api.Project
-                import java.io.File
-                import com.android.build.api.variant.AndroidComponentsExtension
+  @Test
+  fun manifestUpdaterTest() {
+    given {
+      addBuildSrc() {
+        testingElements.addGitVersionTask(this)
+        testingElements.addManifestTransformerTask(this)
+        testingElements.addManifestVerifierTask(this)
+        addSource(
+          "src/main/kotlin/ExamplePlugin.kt",
+          // language=kotlin
+          """
+          import com.android.build.api.artifact.SingleArtifact
+          import org.gradle.api.Plugin
+          import org.gradle.api.Project
+          import java.io.File
+          import com.android.build.api.variant.AndroidComponentsExtension
 
-                abstract class ExamplePlugin: Plugin<Project> {
+          abstract class ExamplePlugin: Plugin<Project> {
 
-                    override fun apply(project: Project) {
-                        val gitVersionProvider =
-                            project.tasks.register("gitVersionProvider", GitVersionTask::class.java) {
-                                it.gitVersionOutputFile.set(
-                                    File(project.buildDir, "intermediates/gitVersionProvider/output")
-                                )
-                                it.outputs.upToDateWhen { false }
-                            }
+              override fun apply(project: Project) {
+                  val gitVersionProvider =
+                      project.tasks.register("gitVersionProvider", GitVersionTask::class.java) {
+                          it.gitVersionOutputFile.set(
+                              File(project.buildDir, "intermediates/gitVersionProvider/output")
+                          )
+                          it.outputs.upToDateWhen { false }
+                      }
 
-                        val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+                  val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
-                        androidComponents.onVariants { variant ->
+                  androidComponents.onVariants { variant ->
 
-                            val manifestUpdater =
-                                project.tasks.register(variant.name + "ManifestUpdater", ManifestTransformerTask::class.java) {
-                                    it.gitInfoFile.set(gitVersionProvider.flatMap(GitVersionTask::gitVersionOutputFile))
-                                }
-                            variant.artifacts.use(manifestUpdater)
-                                .wiredWithFiles(
-                                    ManifestTransformerTask::mergedManifest,
-                                    ManifestTransformerTask::updatedManifest)
-                                .toTransform(SingleArtifact.MERGED_MANIFEST)
+                      val manifestUpdater =
+                          project.tasks.register(variant.name + "ManifestUpdater", ManifestTransformerTask::class.java) {
+                              it.gitInfoFile.set(gitVersionProvider.flatMap(GitVersionTask::gitVersionOutputFile))
+                          }
+                      variant.artifacts.use(manifestUpdater)
+                          .wiredWithFiles(
+                              ManifestTransformerTask::mergedManifest,
+                              ManifestTransformerTask::updatedManifest)
+                          .toTransform(SingleArtifact.MERGED_MANIFEST)
 
-                            project.tasks.register(variant.name + "Verifier", VerifyManifestTask::class.java) {
-                                it.apkFolder.set(variant.artifacts.get(SingleArtifact.APK))
-                                it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
-                            }
-                        }
-                    }
-                }
-                """.trimIndent()
-                )
-            }
-            addModule(":app") {
-                addCommonBuildFile(this)
-                testingElements.addManifest(this)
-                testingElements.addMainActivity(this)
-            }
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            arrayOf(
-                ":app:debugManifestUpdater",
-                ":app:processDebugMainManifest",
-                ":app:gitVersionProvider"
-            ).forEach {
-                val task = task(it)
-                assertNotNull(task)
-                Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-            }
-        }
+                      project.tasks.register(variant.name + "Verifier", VerifyManifestTask::class.java) {
+                          it.apkFolder.set(variant.artifacts.get(SingleArtifact.APK))
+                          it.builtArtifactsLoader.set(variant.artifacts.getBuiltArtifactsLoader())
+                      }
+                  }
+              }
+          }
+          """
+            .trimIndent(),
+        )
+      }
+      addModule(":app") {
+        addCommonBuildFile(this)
+        testingElements.addManifest(this)
+        testingElements.addMainActivity(this)
+      }
     }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      arrayOf(":app:debugManifestUpdater", ":app:processDebugMainManifest", ":app:gitVersionProvider").forEach {
+        val task = task(it)
+        assertNotNull(task)
+        Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      }
+    }
+  }
 }

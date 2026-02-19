@@ -20,54 +20,47 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.tools.debugging.utils.ConcurrentAutoCloseableCollection
 import kotlinx.coroutines.flow.Flow
 
-/**
- * A component that produces a [Flow] of [JdwpProcessProperties] as the properties of
- * a given [process] change over time.
- */
+/** A component that produces a [Flow] of [JdwpProcessProperties] as the properties of a given [process] change over time. */
 interface ExternalJdwpProcessPropertiesCollector {
 
-    /**
-     * The [JdwpProcess] this collector is attached to
-     */
-    val process: JdwpProcess
+  /** The [JdwpProcess] this collector is attached to */
+  val process: JdwpProcess
 
-    /**
-     * The [Flow] of [JdwpProcessProperties] this collector produces when
-     * the associated external source is notifying of process properties changes.
-     */
-    fun trackProperties(): Flow<JdwpProcessProperties>
+  /**
+   * The [Flow] of [JdwpProcessProperties] this collector produces when the associated external source is notifying of process properties
+   * changes.
+   */
+  fun trackProperties(): Flow<JdwpProcessProperties>
 }
 
 /**
- * A factory of [ExternalJdwpProcessPropertiesCollector], typically injected into an
- * [AdbSession] with the [AdbSession.addExternalJdwpProcessPropertiesCollectorFactory]
+ * A factory of [ExternalJdwpProcessPropertiesCollector], typically injected into an [AdbSession] with the
+ * [AdbSession.addExternalJdwpProcessPropertiesCollectorFactory]
  */
-interface ExternalJdwpProcessPropertiesCollectorFactory: AutoCloseable {
+interface ExternalJdwpProcessPropertiesCollectorFactory : AutoCloseable {
 
-    /**
-     * Creates an [ExternalJdwpProcessPropertiesCollector] for the given [process] if appropriate,
-     * or returns `null` if this factory does not want to provide one.
-     */
-    suspend fun create(process: JdwpProcess): ExternalJdwpProcessPropertiesCollector?
+  /**
+   * Creates an [ExternalJdwpProcessPropertiesCollector] for the given [process] if appropriate, or returns `null` if this factory does not
+   * want to provide one.
+   */
+  suspend fun create(process: JdwpProcess): ExternalJdwpProcessPropertiesCollector?
 }
 
-/**
- * The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessPropertiesCollectorFactory]
- */
+/** The [CoroutineScopeCache.Key] for the list of [ExternalJdwpProcessPropertiesCollectorFactory] */
 private val ExternalJdwpProcessPropertiesCollectorFactoryListKey =
-    CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>>("ExternalJdwpProcessPropertiesCollectorFactoryListKey")
+  CoroutineScopeCache.Key<ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>>(
+    "ExternalJdwpProcessPropertiesCollectorFactoryListKey"
+  )
 
-/**
- * The list of [ExternalJdwpProcessPropertiesCollectorFactory] associated to this [AdbSession]
- */
-internal val AdbSession.externalJdwpProcessPropertiesCollectorFactoryList: ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>
-    get() = this.cache.getOrPut(ExternalJdwpProcessPropertiesCollectorFactoryListKey) {
-        ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>()
+/** The list of [ExternalJdwpProcessPropertiesCollectorFactory] associated to this [AdbSession] */
+internal val AdbSession.externalJdwpProcessPropertiesCollectorFactoryList:
+  ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>
+  get() =
+    this.cache.getOrPut(ExternalJdwpProcessPropertiesCollectorFactoryListKey) {
+      ConcurrentAutoCloseableCollection<ExternalJdwpProcessPropertiesCollectorFactory>()
     }
 
-/**
- * Adds a [ExternalJdwpProcessPropertiesCollectorFactory] to this [AdbSession]
- */
+/** Adds a [ExternalJdwpProcessPropertiesCollectorFactory] to this [AdbSession] */
 fun AdbSession.addExternalJdwpProcessPropertiesCollectorFactory(factory: ExternalJdwpProcessPropertiesCollectorFactory) {
-    externalJdwpProcessPropertiesCollectorFactoryList.add(factory)
+  externalJdwpProcessPropertiesCollectorFactoryList.add(factory)
 }

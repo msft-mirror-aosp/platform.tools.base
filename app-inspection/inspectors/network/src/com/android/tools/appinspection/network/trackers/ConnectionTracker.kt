@@ -23,17 +23,13 @@ import java.io.OutputStream
 import studio.network.inspection.NetworkInspectorProtocol.HttpConnectionEvent.HttpTransport
 
 /**
- * This is the concrete AndroidStudio implementation of the public HTTP tracking interface. We're
- * passing the HTTP events and content to the network inspector.
+ * This is the concrete AndroidStudio implementation of the public HTTP tracking interface. We're passing the HTTP events and content to the
+ * network inspector.
  *
- * Note that the HTTP stacks using [HttpConnectionTracker] should not care or know about the details
- * of the implementation of the interface.
+ * Note that the HTTP stacks using [HttpConnectionTracker] should not care or know about the details of the implementation of the interface.
  */
-internal class ConnectionTracker(
-  private val myUrl: String,
-  private val callstack: String,
-  private val reporter: ConnectionReporter,
-) : HttpConnectionTracker {
+internal class ConnectionTracker(private val myUrl: String, private val callstack: String, private val reporter: ConnectionReporter) :
+  HttpConnectionTracker {
 
   override fun disconnect() {}
 
@@ -45,11 +41,7 @@ internal class ConnectionTracker(
     return OutputStreamTracker(stream, reporter.createOutputStreamReporter())
   }
 
-  override fun trackRequest(
-    method: String,
-    headers: Map<String, List<String>>,
-    transport: HttpTransport,
-  ) {
+  override fun trackRequest(method: String, headers: Map<String, List<String>>, transport: HttpTransport) {
     reporter.onRequest(myUrl, callstack, method, headers, transport)
     reporter.reportCurrentThread()
   }

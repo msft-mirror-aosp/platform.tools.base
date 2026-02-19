@@ -16,33 +16,31 @@
 package com.android.builder.internal
 
 import com.android.testutils.truth.PathSubject
+import java.lang.Exception
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.lang.Exception
 
 class InstrumentedTestManifestGeneratorTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    /**
-     * Tests the common case, making sure the template resource is packaged correctly.
-     */
-    @Test
-    @kotlin.jvm.Throws(Exception::class)
-    fun generate() {
-        val destination = temporaryFolder.newFile()
-        val generator = InstrumentedTestManifestGenerator(
-            outputFile = destination,
-            packageName = "com.example.test",
-            minSdkVersion = "19",
-            targetSdkVersion = "24",
-            testedPackageName = "com.example",
-            testRunnerName = "android.support.test.runner.AndroidJUnitRunner",
-            handleProfiling = false,
-            functionalTest = false
-        )
-        generator.generate()
-        PathSubject.assertThat(destination).isFile()
-    }
+  /** Tests the common case, making sure the template resource is packaged correctly. */
+  @Test
+  @kotlin.jvm.Throws(Exception::class)
+  fun generate() {
+    val destination = temporaryFolder.newFile()
+    val generator =
+      InstrumentedTestManifestGenerator(
+        outputFile = destination,
+        packageName = "com.example.test",
+        minSdkVersion = "19",
+        targetSdkVersion = "24",
+        testedPackageName = "com.example",
+        testRunnerName = "android.support.test.runner.AndroidJUnitRunner",
+        handleProfiling = false,
+        functionalTest = false,
+      )
+    generator.generate()
+    PathSubject.assertThat(destination).isFile()
+  }
 }

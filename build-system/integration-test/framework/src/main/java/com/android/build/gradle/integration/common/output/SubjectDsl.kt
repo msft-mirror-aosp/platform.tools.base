@@ -16,6 +16,4 @@
 
 package com.android.build.gradle.integration.common.output
 
-@DslMarker
-@Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE)
-annotation class SubjectDsl()
+@DslMarker @Target(AnnotationTarget.CLASS, AnnotationTarget.TYPE) annotation class SubjectDsl()

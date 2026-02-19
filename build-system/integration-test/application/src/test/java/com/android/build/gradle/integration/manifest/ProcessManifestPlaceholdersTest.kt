@@ -25,45 +25,35 @@ import org.junit.Test
 
 class ProcessManifestPlaceholdersTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-               pluginCallbacks += ManifestPlaceHolderProviderCallback::class.java
-            }
-        }.dependencies {
-            api(project(":lib"))
-        }
-        androidLibrary {
-            android {
-                namespace="com.example.text"
-            }
-        }.files {
-            add("src/main/AndroidManifest.xml",
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <meta-data android:name="example_meta" android:value="${'$'}{exampleDataPlaceholder}" />
-                        <application />
-                    </manifest>
-                """.trimIndent())
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { android { pluginCallbacks += ManifestPlaceHolderProviderCallback::class.java } }
+        .dependencies { api(project(":lib")) }
+      androidLibrary { android { namespace = "com.example.text" } }
+        .files {
+          add(
+            "src/main/AndroidManifest.xml",
+            """
+            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                <meta-data android:name="example_meta" android:value="${'$'}{exampleDataPlaceholder}" />
+                <application />
+            </manifest>
+            """
+              .trimIndent(),
+          )
         }
     }
 
-    @Test
-    fun testBuild() {
-        rule.build.executor.run("assembleDebug")
-    }
+  @Test
+  fun testBuild() {
+    rule.build.executor.run("assembleDebug")
+  }
 }
 
-class ManifestPlaceHolderProviderCallback: ApplicationComponentCallback {
+class ManifestPlaceHolderProviderCallback : ApplicationComponentCallback {
 
-    override fun handleExtension(
-        project: Project,
-        androidComponents: ApplicationAndroidComponentsExtension
-    ) {
-        androidComponents.onVariants {
-            it.manifestPlaceholders.put("exampleDataPlaceholder", "exampleDataValue")
-        }
-    }
-
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants { it.manifestPlaceholders.put("exampleDataPlaceholder", "exampleDataValue") }
+  }
 }

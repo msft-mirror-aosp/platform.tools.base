@@ -19,14 +19,9 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.ide.ApiVersion
 import java.io.Serializable
 
-data class ApiVersionImpl(
-    override val apiLevel: Int,
-    override val codename: String?
-): ApiVersion, Serializable {
+data class ApiVersionImpl(override val apiLevel: Int, override val codename: String?) : ApiVersion, Serializable {
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }
-

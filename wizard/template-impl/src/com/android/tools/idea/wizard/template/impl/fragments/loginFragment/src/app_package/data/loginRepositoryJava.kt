@@ -16,10 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.app_package.data
 
-
-fun loginRepositoryJava(
-  packageName: String
-) = """
+fun loginRepositoryJava(packageName: String) =
+  """
 package ${packageName}.data;
 
 import ${packageName}.data.model.LoggedInUser;

@@ -95,8 +95,7 @@ internal val SymbolLightMethodBase.extractSymbolPointer: KaSymbolPointer<KaFunct
       is SymbolLightAccessorMethod -> {
         // TODO: What about containingPropertySymbolPointer?
         // this.propertyAccessorSymbolPointer
-        val field =
-          SymbolLightAccessorMethod::class.java.getDeclaredField("propertyAccessorSymbolPointer")
+        val field = SymbolLightAccessorMethod::class.java.getDeclaredField("propertyAccessorSymbolPointer")
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         field.get(this) as KaSymbolPointer<KaFunctionSymbol>
@@ -104,8 +103,7 @@ internal val SymbolLightMethodBase.extractSymbolPointer: KaSymbolPointer<KaFunct
       is SymbolLightNoArgConstructor -> {
         // Can be null.
         // this.functionSymbolPointer
-        val field =
-          SymbolLightNoArgConstructor::class.java.getDeclaredField("functionSymbolPointer")
+        val field = SymbolLightNoArgConstructor::class.java.getDeclaredField("functionSymbolPointer")
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         field.get(this) as KaSymbolPointer<KaFunctionSymbol>
@@ -120,8 +118,7 @@ internal val SymbolLightField.extractSymbolPointer: KaSymbolPointer<KaDeclaratio
     when (this) {
       is SymbolLightFieldForProperty -> {
         // this.propertySymbolPointer
-        val field =
-          SymbolLightFieldForProperty::class.java.getDeclaredField("propertySymbolPointer")
+        val field = SymbolLightFieldForProperty::class.java.getDeclaredField("propertySymbolPointer")
         field.isAccessible = true
         @Suppress("UNCHECKED_CAST")
         field.get(this) as KaSymbolPointer<KaDeclarationSymbol>
@@ -142,8 +139,7 @@ internal val SymbolLightField.extractSymbolPointer: KaSymbolPointer<KaDeclaratio
 internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): PsiFile? {
   // If we end up using PSI stubs, this hack shouldn't be needed.
   val containerSource =
-    (symbol as? KaClassLikeSymbol)?.firSymbol?.sourceElement
-      ?: (symbol as? KaCallableSymbol)?.firSymbol?.fir?.containerSource
+    (symbol as? KaClassLikeSymbol)?.firSymbol?.sourceElement ?: (symbol as? KaCallableSymbol)?.firSymbol?.fir?.containerSource
 
   if (containerSource == null) {
     // This hack sort of works for the built-ins module.
@@ -166,8 +162,7 @@ internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): Psi
 
   val virtualFile =
     when {
-      klibFile.isDirectory ->
-        VirtualFileManager.getInstance().findFileByNioPath(Paths.get(klibFile.toString()))
+      klibFile.isDirectory -> VirtualFileManager.getInstance().findFileByNioPath(Paths.get(klibFile.toString()))
       else -> VirtualFileManager.getInstance().getFileSystem("jar").findFileByPath("$klibFile!/")
     } ?: throw IllegalStateException("Could not get virtual file for klib: $klibFile")
 

@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.res.values
 
-fun themesXml(themeName: String) = """
+fun themesXml(themeName: String) =
+  """
 <resources>
     <style name="$themeName" parent="@style/Theme.Leanback" />
 </resources>

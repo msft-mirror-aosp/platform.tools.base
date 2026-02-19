@@ -22,47 +22,44 @@ import org.junit.Test
 import org.junit.rules.ExpectedException
 
 class CollectionUtilsTest {
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    @Test
-    fun toImmutableDoesNotAllowCastToMutable() {
-        // Prepare
-        val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
+  @Test
+  fun toImmutableDoesNotAllowCastToMutable() {
+    // Prepare
+    val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
 
-        // Act
-        exceptionRule.expect(ClassCastException::class.java)
-        (map as MutableMap)["10"] = 5
+    // Act
+    exceptionRule.expect(ClassCastException::class.java)
+    (map as MutableMap)["10"] = 5
 
-        // Assert
-        fail("Should not be reached")
-    }
+    // Assert
+    fail("Should not be reached")
+  }
 
-    @Test
-    fun toImmutableDoesNotNestMaps() {
-        // Prepare
-        val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
+  @Test
+  fun toImmutableDoesNotNestMaps() {
+    // Prepare
+    val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
 
-        // Act
-        val map2 = map.toImmutableMap()
+    // Act
+    val map2 = map.toImmutableMap()
 
-        // Assert
-        assertSame(map, map2)
-   }
+    // Assert
+    assertSame(map, map2)
+  }
 
-    @Test
-    fun toImmutableDoesNotAllowInsertingValues() {
-        // Prepare
-        val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
+  @Test
+  fun toImmutableDoesNotAllowInsertingValues() {
+    // Prepare
+    val map = mapOf("5" to 6, "6" to 7, "7" to 8).toImmutableMap()
 
-        // Act
-        exceptionRule.expect(UnsupportedOperationException::class.java)
-        @Suppress("UNCHECKED_CAST", "PLATFORM_CLASS_MAPPED_TO_KOTLIN")
-        val javaMap = map as java.util.Map<String,Int>
-        javaMap.put("10", 5)
+    // Act
+    exceptionRule.expect(UnsupportedOperationException::class.java)
+    @Suppress("UNCHECKED_CAST", "PLATFORM_CLASS_MAPPED_TO_KOTLIN") val javaMap = map as java.util.Map<String, Int>
+    javaMap.put("10", 5)
 
-        // Assert
-        fail("Should not be reached")
-    }
+    // Assert
+    fail("Should not be reached")
+  }
 }

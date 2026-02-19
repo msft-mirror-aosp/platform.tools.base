@@ -119,9 +119,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Reports incidents for intent filter [intentFilter]. Note that intent filters inside an
-   * <activity> (as opposed to those inside a <service>, <receiver>, etc.) have additional
-   * restrictions/requirements, which are not checked here.
+   * Reports incidents for intent filter [intentFilter]. Note that intent filters inside an <activity> (as opposed to those inside a
+   * <service>, <receiver>, etc.) have additional restrictions/requirements, which are not checked here.
    */
   private fun checkIntentFilter(context: XmlContext, intentFilter: Element) {
     val intentFilterData = getIntentFilterData(ElementWrapper(intentFilter, context))
@@ -135,31 +134,27 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       val location = context.getLocation(node)
       val indentAmount = location.start?.column ?: 4
       val subTags = mutableListOf<String>()
-      dataTag.getAttributeWrapper(ATTR_SCHEME)?.rawValue?.let {
-        subTags.add("""<data $namespace:scheme="$it" />""")
-      }
+      dataTag.getAttributeWrapper(ATTR_SCHEME)?.rawValue?.let { subTags.add("""<data $namespace:scheme="$it" />""") }
       dataTag.getAttributeWrapper(ATTR_HOST)?.rawValue?.let { host ->
         val port = dataTag.getAttributeWrapper(ATTR_PORT)?.rawValue
         val portIfNeeded = if (port == null) "" else """ $namespace:port="$port""""
         subTags.add("""<data $namespace:host="$host"$portIfNeeded />""")
       }
       for (pathAttribute in PATH_ATTRIBUTES) {
-        dataTag.getAttributeWrapper(pathAttribute)?.rawValue?.let {
-          subTags.add("""<data $namespace:$pathAttribute="$it" />""")
-        }
+        dataTag.getAttributeWrapper(pathAttribute)?.rawValue?.let { subTags.add("""<data $namespace:$pathAttribute="$it" />""") }
       }
       if (subTags.size > 1) {
         context.report(
           INTENT_FILTER_UNIQUE_DATA_ATTRIBUTES,
           node,
           context.getLocation(node),
-          "Consider splitting $TAG_DATA tag into multiple tags with individual" +
-            " attributes to avoid confusion",
+          "Consider splitting $TAG_DATA tag into multiple tags with individual" + " attributes to avoid confusion",
           fix()
             .replace()
             .with(subTags.joinToString("\n" + indentation(indentAmount)))
             .robot(true)
-            // This quick-fix copies data elements, so it may be affected by other quick-fixes or
+            // This quick-fix copies data elements, so it may be affected by other quick-fixes
+            // or
             // generate new problems.
             .independent(false)
             .build(),
@@ -169,23 +164,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
   }
 
   private fun checkActivity(context: XmlContext, element: Element) {
-    val infos =
-      XmlUtils.getSubTagsByName(element, TAG_INTENT_FILTER).map {
-        handleIntentFilterInActivity(context, it)
-      }
+    val infos = XmlUtils.getSubTagsByName(element, TAG_INTENT_FILTER).map { handleIntentFilterInActivity(context, it) }
     // Check that if any intent filter uses ACTION_VIEW, the activity is exported
-    val isExported =
-      element.getAttributeNodeNS(ANDROID_URI, ATTR_EXPORTED)?.value.let {
-        it.isNullOrBlank() || it == VALUE_TRUE
-      }
+    val isExported = element.getAttributeNodeNS(ANDROID_URI, ATTR_EXPORTED)?.value.let { it.isNullOrBlank() || it == VALUE_TRUE }
     if (!isExported && infos.any { it.actionSet.contains(ACTION_VIEW) }) {
       // Report error if the activity supporting action view is not exported.
-      reportUrlError(
-        context,
-        element,
-        context.getLocation(element),
-        "Activity supporting ACTION_VIEW is not exported",
-      )
+      reportUrlError(context, element, context.getLocation(element), "Activity supporting ACTION_VIEW is not exported")
     }
     // Check that any tools:testUrl tags match at least one intent filter
     var current = XmlUtils.getFirstSubTagByName(element, TAG_VALIDATION)
@@ -201,21 +185,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             val testUrl = URL(testUrlString)
             val reason = checkTestUrlMatchesAtLeastOneInfo(testUrl, infos)
             if (reason != null) {
-              reportTestUrlFailure(
-                context,
-                testUrlAttr,
-                context.getValueLocation(testUrlAttr),
-                reason,
-              )
+              reportTestUrlFailure(context, testUrlAttr, context.getValueLocation(testUrlAttr), reason)
             }
           } catch (e: MalformedURLException) {
             val message = "Invalid test URL: " + e.localizedMessage
-            reportTestUrlFailure(
-              context,
-              testUrlAttr,
-              context.getValueLocation(testUrlAttr),
-              message,
-            )
+            reportTestUrlFailure(context, testUrlAttr, context.getValueLocation(testUrlAttr), message)
           }
         }
       } else {
@@ -223,21 +197,14 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           context,
           current,
           context.getNameLocation(current),
-          "Validation nodes should be in the `tools:` namespace to " +
-            "ensure they are removed from the manifest at build time",
+          "Validation nodes should be in the `tools:` namespace to " + "ensure they are removed from the manifest at build time",
         )
       }
       current = XmlUtils.getNextTagByName(current, TAG_VALIDATION)
     }
   }
 
-  private fun reportUrlError(
-    context: XmlContext,
-    node: Node,
-    location: Location,
-    message: String,
-    quickfixData: LintFix? = null,
-  ) {
+  private fun reportUrlError(context: XmlContext, node: Node, location: Location, message: String, quickfixData: LintFix? = null) {
     // Validation errors were reported here before
     if (context.driver.isSuppressed(context, _OLD_ISSUE_URL, node)) {
       return
@@ -245,28 +212,17 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     context.report(VALIDATION, node, location, message, quickfixData)
   }
 
-  private fun reportUrlWarning(
-    context: XmlContext,
-    node: Node,
-    location: Location,
-    message: String,
-    quickfixData: LintFix? = null,
-  ) {
+  private fun reportUrlWarning(context: XmlContext, node: Node, location: Location, message: String, quickfixData: LintFix? = null) {
     context.report(APP_LINK_WARNING, node, location, message, quickfixData)
   }
 
-  private fun reportTestUrlFailure(
-    context: XmlContext,
-    node: Node,
-    location: Location,
-    message: String,
-  ) {
+  private fun reportTestUrlFailure(context: XmlContext, node: Node, location: Location, message: String) {
     context.report(TEST_URL, node, location, message)
   }
 
   /**
-   * Given a test URL and a list of [IntentFilterData], this method checks whether the URL matches,
-   * and if so returns null, otherwise returning the reason for the mismatch.
+   * Given a test URL and a list of [IntentFilterData], this method checks whether the URL matches, and if so returns null, otherwise
+   * returning the reason for the mismatch.
    *
    * @param testUrl the URL to test
    * @param infos the URL information
@@ -289,20 +245,15 @@ class AppLinksValidDetector : Detector(), XmlScanner {
   }
 
   /**
-   * Processes an intent filter element ([intentFilter]), inside an activity element, in the
-   * [XmlContext] [context].
+   * Processes an intent filter element ([intentFilter]), inside an activity element, in the [XmlContext] [context].
    *
-   * Note that intent filters inside an <activity> (as opposed to those inside a <service>,
-   * <receiver>, etc.) have additional restrictions/requirements. As a result, this function is only
-   * called for intent filters inside an activity, whereas [checkIntentFilter] is called for all
-   * intent filters (including those inside a <service>, <receiver>, etc.).
+   * Note that intent filters inside an <activity> (as opposed to those inside a <service>, <receiver>, etc.) have additional
+   * restrictions/requirements. As a result, this function is only called for intent filters inside an activity, whereas [checkIntentFilter]
+   * is called for all intent filters (including those inside a <service>, <receiver>, etc.).
    *
    * @return the [IntentFilterData] for this intent filter
    */
-  private fun handleIntentFilterInActivity(
-    context: XmlContext,
-    intentFilter: Element,
-  ): IntentFilterData {
+  private fun handleIntentFilterInActivity(context: XmlContext, intentFilter: Element): IntentFilterData {
     val intentFilterData = getIntentFilterData(ElementWrapper(intentFilter, context))
 
     // --- Check "missing data node" (Intent filter has ACTION_VIEW & CATEGORY_BROWSABLE, but no
@@ -314,17 +265,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // a likely mistake.
     // Also, don't report this error if autoVerify is true. If autoVerify is true, then we provide a
     // quick-fix to help the user populate the necessary data elements (see below).
-    if (
-      intentFilterData.dataTags.isEmpty &&
-        hasCategoryBrowsable &&
-        intentFilterData.autoVerify != VALUE_TRUE
-    ) {
-      reportUrlError(
-        context,
-        intentFilter,
-        context.getLocation(intentFilter),
-        "Missing data element",
-      )
+    if (intentFilterData.dataTags.isEmpty && hasCategoryBrowsable && intentFilterData.autoVerify != VALUE_TRUE) {
+      reportUrlError(context, intentFilter, context.getLocation(intentFilter), "Missing data element")
     }
 
     // --- Check mimeType ---
@@ -362,12 +304,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         continue
       }
       if (value.endsWith(":")) {
-        reportUrlError(
-          context,
-          node,
-          context.getValueLocation(node),
-          "Don't include trailing colon in the `scheme` declaration",
-        )
+        reportUrlError(context, node, context.getValueLocation(node), "Don't include trailing colon in the `scheme` declaration")
       } else if (value.any(Char::isUpperCase)) {
         reportUrlError(
           context,
@@ -404,12 +341,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         continue
       }
       if (value.lastIndexOf('*') > 0) {
-        reportUrlError(
-          context,
-          node,
-          context.getValueLocation(node),
-          "The host wildcard (`*`) can only be the first character",
-        )
+        reportUrlError(context, node, context.getValueLocation(node), "The host wildcard (`*`) can only be the first character")
       } else if (value.any(Char::isUpperCase)) {
         reportUrlError(
           context,
@@ -418,15 +350,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           "Host matching is case sensitive and should only use lower-case characters",
         )
       }
-      if (
-        intentFilterData.autoVerify == VALUE_TRUE && !isSubstituted(value) && !value.contains(".")
-      ) {
-        reportUrlError(
-          context,
-          node,
-          context.getValueLocation(node),
-          "Android App Links' `host` attributes must be valid web domains",
-        )
+      if (intentFilterData.autoVerify == VALUE_TRUE && !isSubstituted(value) && !value.contains(".")) {
+        reportUrlError(context, node, context.getValueLocation(node), "Android App Links' `host` attributes must be valid web domains")
       }
     }
 
@@ -483,10 +408,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         listOf(ATTR_SCHEME, ATTR_HOST, ATTR_PORT, ATTR_MIME_TYPE),
         "Attributes not starting with `path`, `query`, or `fragment` in `uri-relative-filter-group` are ignored",
       ) {
-        it in PATH_ATTRIBUTES ||
-          it in QUERY_ATTRIBUTES ||
-          it in FRAGMENT_ATTRIBUTES ||
-          it == ATTR_IGNORE
+        it in PATH_ATTRIBUTES || it in QUERY_ATTRIBUTES || it in FRAGMENT_ATTRIBUTES || it == ATTR_IGNORE
       }
       for (dataTag in group.dataTagInfo) {
         for (path in PATH_ATTRIBUTES.mapNotNull { dataTag.getAttributeWrapper(it) }) {
@@ -496,23 +418,13 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       for (query in group.queryElements) {
         val node = (query as? AttrWrapper) ?: continue
         if (node.substitutedValue.isNullOrBlank()) {
-          context.report(
-            URI_RELATIVE_FILTER_GROUP,
-            node.attr,
-            context.getLocation(node.attr),
-            "`${node.name}` cannot be empty",
-          )
+          context.report(URI_RELATIVE_FILTER_GROUP, node.attr, context.getLocation(node.attr), "`${node.name}` cannot be empty")
         }
       }
       for (fragment in group.fragmentElements) {
         val node = (fragment as? AttrWrapper) ?: continue
         if (node.substitutedValue.isNullOrBlank()) {
-          context.report(
-            URI_RELATIVE_FILTER_GROUP,
-            node.attr,
-            context.getLocation(node.attr),
-            "`${node.name}` cannot be empty",
-          )
+          context.report(URI_RELATIVE_FILTER_GROUP, node.attr, context.getLocation(node.attr), "`${node.name}` cannot be empty")
         }
       }
     }
@@ -538,13 +450,15 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         context,
         intentFilter,
         context.getNameLocation(intentFilter),
-        """This intent filter has the format of an Android App Link but is \
-            |missing the `autoVerify` attribute; add `android:autoVerify="true"` \
-            |to ensure your domain will be validated and enable App Link-related \
-            |Lint warnings. If you do not want clicked URLs to bring the user to \
-            |your app, remove the `android.intent.category.BROWSABLE` category, or \
-            |set `android:autoVerify="false"` to make it clear this is not intended \
-            |to be an Android App Link."""
+        """
+        |This intent filter has the format of an Android App Link but is \
+        |missing the `autoVerify` attribute; add `android:autoVerify="true"` \
+        |to ensure your domain will be validated and enable App Link-related \
+        |Lint warnings. If you do not want clicked URLs to bring the user to \
+        |your app, remove the `android.intent.category.BROWSABLE` category, or \
+        |set `android:autoVerify="false"` to make it clear this is not intended \
+        |to be an Android App Link.
+        """
           .trimMargin(),
         fix().set(ANDROID_URI, ATTR_AUTO_VERIFY, VALUE_TRUE).autoFix().build(),
       )
@@ -566,19 +480,13 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       val namespace = intentFilter.lookupPrefix(ANDROID_URI) ?: ANDROID_NS_NAME
 
       if (!intentFilterData.actionSet.contains(ACTION_VIEW)) {
-        contentToInsert
-          .append(newLineAndInnerIndent)
-          .append("""<$TAG_ACTION $namespace:$ATTRIBUTE_NAME="$ACTION_VIEW" />""")
+        contentToInsert.append(newLineAndInnerIndent).append("""<$TAG_ACTION $namespace:$ATTRIBUTE_NAME="$ACTION_VIEW" />""")
         insertionDescriptions.add("VIEW action")
       }
       for (categoryName in sequenceOf(CATEGORY_BROWSABLE, CATEGORY_DEFAULT)) {
         if (!intentFilterData.categorySet.contains(categoryName)) {
-          contentToInsert
-            .append(newLineAndInnerIndent)
-            .append("""<$TAG_CATEGORY $namespace:$ATTRIBUTE_NAME="$categoryName" />""")
-          insertionDescriptions.add(
-            "${categoryName.substringAfter("android.intent.category.")} category"
-          )
+          contentToInsert.append(newLineAndInnerIndent).append("""<$TAG_CATEGORY $namespace:$ATTRIBUTE_NAME="$categoryName" />""")
+          insertionDescriptions.add("${categoryName.substringAfter("android.intent.category.")} category")
         }
       }
       // Provide a quick-fix to add schemes
@@ -586,8 +494,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         intentFilterData.dataTags.schemes.none { isSubstituted(it) || isWebScheme(it) } &&
           // If an existing "needs scheme" fix comes from a host with no scheme, don't create a
           // redundant fix
-          !(intentFilterData.dataTags.schemes.isEmpty() &&
-            intentFilterData.dataTags.hostPortPairs.isNotEmpty())
+          !(intentFilterData.dataTags.schemes.isEmpty() && intentFilterData.dataTags.hostPortPairs.isNotEmpty())
       ) {
         contentToInsert
           .append(newLineAndInnerIndent)
@@ -604,9 +511,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             it.getAttributeWrapper(ATTR_PORT) != null && it.getAttributeWrapper(ATTR_HOST) == null
           }
       if (needsHostFix) {
-        contentToInsert
-          .append(newLineAndInnerIndent)
-          .append("""<$TAG_DATA $namespace:$ATTR_HOST="$TODO" />""")
+        contentToInsert.append(newLineAndInnerIndent).append("""<$TAG_DATA $namespace:$ATTR_HOST="$TODO" />""")
         insertionDescriptions.add("`host` attribute")
       }
 
@@ -619,12 +524,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       if (contentToInsert.isNotEmpty() && firstChildStart != null) {
         val message =
           when (insertionDescriptions.size) {
-            1 ->
-              "${insertionDescriptions.single()} is missing, but is required for Android App Links"
-            2 ->
-              "${insertionDescriptions.first()} and ${insertionDescriptions.last()} are missing, but are required for Android App Links"
-            else ->
-              "Several elements/attributes (such as ${insertionDescriptions.first()}) required for Android App Links are missing"
+            1 -> "${insertionDescriptions.single()} is missing, but is required for Android App Links"
+            2 -> "${insertionDescriptions.first()} and ${insertionDescriptions.last()} are missing, but are required for Android App Links"
+            else -> "Several elements/attributes (such as ${insertionDescriptions.first()}) required for Android App Links are missing"
           }
         val fixName =
           when (insertionDescriptions.size) {
@@ -643,11 +545,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                 select(TODO)
               }
             }
-            .range(
-              Location.create(context.file, firstChildStart, firstChildStart)
-                .withSource(intentFilter)
-            )
-            // If the host is required, the user needs to fill it in. Otherwise, no user input is
+            .range(Location.create(context.file, firstChildStart, firstChildStart).withSource(intentFilter))
+            // If the host is required, the user needs to fill it in. Otherwise, no user input
+            // is
             // needed.
             .robot(!needsHostFix)
             .independent(true)
@@ -682,17 +582,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       // --- Check for splitting web and non-web schemes ---
       val webSchemes = intentFilterData.dataTags.schemes.filter { isWebScheme(it) }
       val customSchemes = intentFilterData.dataTags.schemes.filterNot { isWebScheme(it) }
-      if (
-        webSchemes.isNotEmpty() &&
-          customSchemes.isNotEmpty() &&
-          intentFilterData.dataTags.hostPortPairs.isNotEmpty()
-      ) {
+      if (webSchemes.isNotEmpty() && customSchemes.isNotEmpty() && intentFilterData.dataTags.hostPortPairs.isNotEmpty()) {
         // Intent filter contains both web and non-web schemes
         val intentFilterIndentAmount = context.getLocation(intentFilter).start?.column ?: 0
         val intentFilterChildIndentAmount =
-          ((intentFilterData.dataTags.dataTagElements.first() as? ElementWrapper)?.element)?.let {
-            context.getLocation(it).start?.column
-          } ?: DEFAULT_INDENT_AMOUNT
+          ((intentFilterData.dataTags.dataTagElements.first() as? ElementWrapper)?.element)?.let { context.getLocation(it).start?.column }
+            ?: DEFAULT_INDENT_AMOUNT
         val indentDiff = intentFilterChildIndentAmount - intentFilterIndentAmount
         val startIndent = indentation(intentFilterIndentAmount)
         val intentFilterChildIndent = indentation(intentFilterChildIndentAmount)
@@ -736,9 +631,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         }
         val intentFilterTextAfterSchemes = StringBuilder()
         for ((host, port) in
-          intentFilterData.dataTags.hostPortPairs.sortedWith(
-            compareBy<Pair<String?, String?>> { it.first }.thenBy { it.second }
-          )) {
+          intentFilterData.dataTags.hostPortPairs.sortedWith(compareBy<Pair<String?, String?>> { it.first }.thenBy { it.second })) {
           intentFilterTextAfterSchemes.append("\n")
           intentFilterTextAfterSchemes.append(intentFilterChildIndent)
           intentFilterTextAfterSchemes.append("""<data $namespace:host="$host"""")
@@ -750,9 +643,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         for (path in intentFilterData.dataTags.rawPaths.sorted()) {
           intentFilterTextAfterSchemes.append("\n")
           intentFilterTextAfterSchemes.append(intentFilterChildIndent)
-          intentFilterTextAfterSchemes.append(
-            """<data $namespace:${path.attributeName}="${xmlEscape(path.attributeValue)}" />"""
-          )
+          intentFilterTextAfterSchemes.append("""<data $namespace:${path.attributeName}="${xmlEscape(path.attributeValue)}" />""")
         }
         for (mimeType in intentFilterData.dataTags.rawMimeTypes.sorted()) {
           intentFilterTextAfterSchemes.append("\n")
@@ -779,16 +670,14 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           // appears in both (host1, port1) and (host1, port2). This is because ports do not matter
           // for domain verification.
           // Also note that commas cannot appear in valid domain names.
-          val hosts =
-            intentFilterData.dataTags.hostPortPairs
-              .mapTo(mutableSetOf()) { it.first }
-              .joinToString(",")
+          val hosts = intentFilterData.dataTags.hostPortPairs.mapTo(mutableSetOf()) { it.first }.joinToString(",")
 
           val map = context.getPartialResults(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM).map()
           map.put(
             "${map.size}",
             map()
-              // Serialization and deserialization of Incidents is not allowed, so we store all the
+              // Serialization and deserialization of Incidents is not allowed, so we store all
+              // the
               // information that we'll need to create and report the Incident (from
               // checkPartialResults).
               .put(KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION, context.getNameLocation(intentFilter))
@@ -802,12 +691,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
     val showMissingSchemeCheck =
       intentFilterData.dataTags.schemes.isEmpty() &&
-        (intentFilterData.dataTags.paths.isNotEmpty() ||
-          intentFilterData.dataTags.hostPortPairs.isNotEmpty())
+        (intentFilterData.dataTags.paths.isNotEmpty() || intentFilterData.dataTags.hostPortPairs.isNotEmpty())
 
-    val firstData =
-      (intentFilterData.dataTags.firstOrNull() as? ElementWrapper)?.element
-        ?: return intentFilterData
+    val firstData = (intentFilterData.dataTags.firstOrNull() as? ElementWrapper)?.element ?: return intentFilterData
 
     // --- Check "missing scheme" ---
     // If there are hosts, paths, or ports, then there should be a scheme.
@@ -840,50 +726,27 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         firstData,
         context.getLocation(firstData),
         "VIEW actions require a URI",
-        fix()
-          .alternatives(
-            fix().set().todo(ANDROID_URI, ATTR_SCHEME).build(),
-            fix().set().todo(ANDROID_URI, ATTR_MIME_TYPE).build(),
-          ),
+        fix().alternatives(fix().set().todo(ANDROID_URI, ATTR_SCHEME).build(), fix().set().todo(ANDROID_URI, ATTR_MIME_TYPE).build()),
       )
     }
 
     // --- Check "missing host" (Hosts are required when a path is used. ) ---
     // We insist on this because paths will be ignored if there is no host, which makes the intent
     // filter very misleading.
-    if (
-      intentFilterData.dataTags.paths.isNotEmpty() &&
-        intentFilterData.dataTags.hostPortPairs.isEmpty()
-    ) {
+    if (intentFilterData.dataTags.paths.isNotEmpty() && intentFilterData.dataTags.hostPortPairs.isEmpty()) {
       val fix = LintFix.create().set().todo(ANDROID_URI, ATTR_HOST).build()
-      reportUrlError(
-        context,
-        firstData,
-        context.getLocation(firstData),
-        "At least one `host` must be specified",
-        fix,
-      )
+      reportUrlError(context, firstData, context.getLocation(firstData), "At least one `host` must be specified", fix)
     }
 
     // --- Check "view + browsable" (If this intent filter has an ACTION_VIEW action, and it has a
     // http URL but doesn't have BROWSABLE, it may be a mistake, so we will report a warning.) ---
-    if (
-      hasActionView && intentFilterData.dataTags.schemes.any(::isWebScheme) && !hasCategoryBrowsable
-    ) {
-      reportUrlError(
-        context,
-        intentFilter,
-        context.getLocation(intentFilter),
-        "Activity supporting ACTION_VIEW is not set as BROWSABLE",
-      )
+    if (hasActionView && intentFilterData.dataTags.schemes.any(::isWebScheme) && !hasCategoryBrowsable) {
+      reportUrlError(context, intentFilter, context.getLocation(intentFilter), "Activity supporting ACTION_VIEW is not set as BROWSABLE")
     }
     return intentFilterData
   }
 
-  /**
-   * Performs checks on path* tags. Note that the parent can be <data> or
-   * <uri-relative-filter-group>.
-   */
+  /** Performs checks on path* tags. Note that the parent can be <data> or <uri-relative-filter-group>. */
   private fun handlePath(
     intentFilterData: IntentFilterData,
     intentFilter: Element,
@@ -900,12 +763,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     val rawValue = path.rawValue
     val substitutedValue = path.substitutedValue
     if (rawValue.isNullOrBlank() || substitutedValue.isNullOrBlank()) {
-      reportUrlError(
-        context,
-        attribute,
-        context.getLocation(attribute),
-        "`${attribute.name}` cannot be empty",
-      )
+      reportUrlError(context, attribute, context.getLocation(attribute), "`${attribute.name}` cannot be empty")
       return
     }
     // Ignore cases where resolving string resource or manifest placeholder failed,
@@ -921,10 +779,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         fix,
       )
     }
-    if (
-      !(substitutedValue.startsWith("/") || substitutedValue.startsWith(".*")) &&
-        name == ATTR_PATH_PATTERN
-    ) {
+    if (!(substitutedValue.startsWith("/") || substitutedValue.startsWith(".*")) && name == ATTR_PATH_PATTERN) {
       reportUrlError(
         context,
         attribute,
@@ -953,8 +808,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           .filter { it.isNotBlank() }
           .toSet()
       // Android treats the fragment as a single section.
-      val fragmentInUri =
-        substitutedValue.split('#').let { if (it.size == 2) it[1] else "" }.substringBefore('?')
+      val fragmentInUri = substitutedValue.split('#').let { if (it.size == 2) it[1] else "" }.substringBefore('?')
 
       if (queryParameters.isNotEmpty() || fragmentInUri.isNotBlank()) {
         // The query/fragment string, as specified in the Android manifest, should not be
@@ -978,15 +832,12 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             otherAttributesInThisDataTag.isEmpty() -> ""
             else ->
               "<data " +
-                otherAttributesInThisDataTag.joinToString(" ") {
-                  "$namespace:${it.name}=\"${it.rawValue}\""
-                } +
+                otherAttributesInThisDataTag.joinToString(" ") { "$namespace:${it.name}=\"${it.rawValue}\"" } +
                 " />$newLineAndDataIndent"
           }
         val message =
           when (parent.tagName) {
-            TAG_URI_RELATIVE_FILTER_GROUP ->
-              "`path` attributes do not support query parameters or fragments"
+            TAG_URI_RELATIVE_FILTER_GROUP -> "`path` attributes do not support query parameters or fragments"
             else ->
               "App link matching does not support query parameters or fragments, " +
                 "unless using `<uri-relative-filter-group>` (introduced in Android 15)"
@@ -1044,15 +895,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // --- Check for ? in pathPattern and pathAdvancedPattern ---
     // Neither pathPattern nor pathAdvancedPattern supports ? as a regex character:
     // https://developer.android.com/guide/topics/manifest/data-element
-    if (
-      substitutedValue.contains("?") && name in setOf(ATTR_PATH_PATTERN, ATTR_PATH_ADVANCED_PATTERN)
-    ) {
-      reportUrlError(
-        context,
-        attribute,
-        context.getValueLocation(attribute),
-        "$name does not support `?` as a Regex character",
-      )
+    if (substitutedValue.contains("?") && name in setOf(ATTR_PATH_PATTERN, ATTR_PATH_ADVANCED_PATTERN)) {
+      reportUrlError(context, attribute, context.getValueLocation(attribute), "$name does not support `?` as a Regex character")
     }
   }
 
@@ -1108,8 +952,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     if (partialResults.issue != APP_LINK_SPLIT_TO_WEB_AND_CUSTOM) return
 
     // Analyze the merged manifest to see which hosts request autoVerify
-    val mergedManifestDocumentElement =
-      context.mainProject.mergedManifest?.documentElement ?: return
+    val mergedManifestDocumentElement = context.mainProject.mergedManifest?.documentElement ?: return
 
     val hostsThatRequestAutoVerify = mutableSetOf<String>()
     for (node in mergedManifestDocumentElement) {
@@ -1132,15 +975,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     for (lintMap in partialResults.maps()) {
       for (incidentIdx in lintMap) {
         val partialResult = lintMap.getMap(incidentIdx) ?: continue
-        val hosts =
-          partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS)?.split(",") ?: continue
+        val hosts = partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS)?.split(",") ?: continue
         if (hosts.any { it !in hostsThatRequestAutoVerify }) {
-          val nameLocation =
-            partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION) ?: continue
-          val replacementRange =
-            partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE) ?: continue
-          val replacementText =
-            partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT) ?: continue
+          val nameLocation = partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION) ?: continue
+          val replacementRange = partialResult.getLocation(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE) ?: continue
+          val replacementText = partialResult.getString(KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT) ?: continue
           context.report(
             Incident(context)
               .issue(APP_LINK_SPLIT_TO_WEB_AND_CUSTOM)
@@ -1152,7 +991,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
                   .with(replacementText.toString())
                   .range(replacementRange)
                   .robot(true)
-                  // This quick-fix copies data elements, so it may be affected by other quick-fixes
+                  // This quick-fix copies data elements, so it may be affected by other
+                  // quick-fixes
                   // or generate new problems.
                   .independent(false)
                   .build()
@@ -1178,30 +1018,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     // "If the filter has a data type set (the mimeType attribute) but no scheme, the
     //  content: and file: schemes are assumed."
     internal val IMPLICIT_SCHEMES = setOf("file", "content")
-    internal val PATH_ATTRIBUTES =
-      listOf(
-        ATTR_PATH,
-        ATTR_PATH_PREFIX,
-        ATTR_PATH_PATTERN,
-        ATTR_PATH_ADVANCED_PATTERN,
-        ATTR_PATH_SUFFIX,
-      )
+    internal val PATH_ATTRIBUTES = listOf(ATTR_PATH, ATTR_PATH_PREFIX, ATTR_PATH_PATTERN, ATTR_PATH_ADVANCED_PATTERN, ATTR_PATH_SUFFIX)
     internal val QUERY_ATTRIBUTES =
-      listOf(
-        ATTR_QUERY,
-        ATTR_QUERY_PREFIX,
-        ATTR_QUERY_PATTERN,
-        ATTR_QUERY_ADVANCED_PATTERN,
-        ATTR_QUERY_SUFFIX,
-      )
+      listOf(ATTR_QUERY, ATTR_QUERY_PREFIX, ATTR_QUERY_PATTERN, ATTR_QUERY_ADVANCED_PATTERN, ATTR_QUERY_SUFFIX)
     internal val FRAGMENT_ATTRIBUTES =
-      listOf(
-        ATTR_FRAGMENT,
-        ATTR_FRAGMENT_PREFIX,
-        ATTR_FRAGMENT_PATTERN,
-        ATTR_FRAGMENT_ADVANCED_PATTERN,
-        ATTR_FRAGMENT_SUFFIX,
-      )
+      listOf(ATTR_FRAGMENT, ATTR_FRAGMENT_PREFIX, ATTR_FRAGMENT_PATTERN, ATTR_FRAGMENT_ADVANCED_PATTERN, ATTR_FRAGMENT_SUFFIX)
     private const val HTTP = "http"
     private const val HTTPS = "https"
     private const val DEFAULT_INDENT_AMOUNT = 4
@@ -1244,10 +1065,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         ATTR_PATH_SUFFIX,
         ATTR_QUERY_SUFFIX,
         ATTR_FRAGMENT_SUFFIX -> PATTERN_SUFFIX
-        else ->
-          throw AssertionError(
-            "Input was required to be one of the <data> path attributes, but was $attr"
-          )
+        else -> throw AssertionError("Input was required to be one of the <data> path attributes, but was $attr")
       }
     }
 
@@ -1258,10 +1076,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         PATTERN_SIMPLE_GLOB -> ATTR_PATH_PATTERN
         PATTERN_ADVANCED_GLOB -> ATTR_PATH_ADVANCED_PATTERN
         PATTERN_SUFFIX -> ATTR_PATH_SUFFIX
-        else ->
-          throw AssertionError(
-            "Input was required to be an AndroidPatternMatcher constant but was $androidPatternMatcherConstant"
-          )
+        else -> throw AssertionError("Input was required to be an AndroidPatternMatcher constant but was $androidPatternMatcherConstant")
       }
     }
 
@@ -1287,10 +1102,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           ATTR_PATH_PATTERN -> "glob "
           ATTR_PATH_SUFFIX -> "suffix "
           ATTR_PATH_ADVANCED_PATTERN -> "advanced "
-          else ->
-            throw AssertionError(
-              "Expected attributeName to be a path attribute but was $attributeName"
-            )
+          else -> throw AssertionError("Expected attributeName to be a path attribute but was $attributeName")
         } + attributeValue
       }
     }
@@ -1313,8 +1125,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       fun match(queryString: String): Boolean {
         // See
         // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/content/UriRelativeFilter.java;l=150;drc=36303b838229bcd21b0d72278dd6879497bc285b
-        val patternMatcher =
-          AndroidPatternMatcher(attributeValue, attrToAndroidPatternMatcher(attributeName))
+        val patternMatcher = AndroidPatternMatcher(attributeValue, attrToAndroidPatternMatcher(attributeName))
         var paramsToMatch = queryString.split("&amp;", "&")
         if (paramsToMatch.size == 1) paramsToMatch = queryString.split(';')
         return paramsToMatch.any { patternMatcher.match(URLDecoder.decode(it, Charsets.UTF_8)) }
@@ -1327,8 +1138,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
     }
 
-    data class Fragment(val attributeValue: String, val attributeName: String) :
-      Comparable<Fragment> {
+    data class Fragment(val attributeValue: String, val attributeName: String) : Comparable<Fragment> {
       private val patternTypeString =
         when (attributeName) {
           ATTR_FRAGMENT -> "LITERAL"
@@ -1382,20 +1192,16 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       override val subTags = XmlUtils.getSubTags(element).map { ElementWrapper(it, context) }
 
       override val attributes =
-        (0 until element.attributes.length).mapNotNull { idx ->
-          (element.attributes.item(idx) as? Attr)?.let { AttrWrapper(it, context) }
-        }
+        (0 until element.attributes.length).mapNotNull { idx -> (element.attributes.item(idx) as? Attr)?.let { AttrWrapper(it, context) } }
 
       override fun getAttributeWrapper(attrName: String): AttrWrapper? =
         element.getAttributeNodeNS(ANDROID_URI, attrName)?.let { AttrWrapper(it, context) }
     }
 
     class AttrWrapper(val attr: Attr, private val context: Context) : AttributeWrapper {
-      override val name: String =
-        attr.localName /* Exclude the namespace prefix */ ?: attr.name ?: ""
+      override val name: String = attr.localName /* Exclude the namespace prefix */ ?: attr.name ?: ""
 
-      override val rawValue: String? by
-        lazy(LazyThreadSafetyMode.NONE) { attr.value?.let { xmlEscape(it) } }
+      override val rawValue: String? by lazy(LazyThreadSafetyMode.NONE) { attr.value?.let { xmlEscape(it) } }
 
       override val substitutedValue: String? by
         lazy(LazyThreadSafetyMode.NONE) {
@@ -1419,17 +1225,15 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       val actions: List<AttributeWrapper>,
       val categories: List<AttributeWrapper>,
       val dataTags: DataTagInfo,
-      // uri-relative-filter-groups need to be a list because they're evaluated in declaration order
+      // uri-relative-filter-groups need to be a list because they're evaluated in declaration
+      // order
       val uriRelativeFilterGroups: List<UriRelativeFilterGroup>,
     ) {
-      val actionSet by
-        lazy(LazyThreadSafetyMode.NONE) { actions.mapTo(mutableSetOf()) { it.substitutedValue } }
-      val categorySet by
-        lazy(LazyThreadSafetyMode.NONE) { categories.mapTo(mutableSetOf()) { it.substitutedValue } }
+      val actionSet by lazy(LazyThreadSafetyMode.NONE) { actions.mapTo(mutableSetOf()) { it.substitutedValue } }
+      val categorySet by lazy(LazyThreadSafetyMode.NONE) { categories.mapTo(mutableSetOf()) { it.substitutedValue } }
 
       /**
-       * Matches a URL against this info, and returns null if successful or the failure reason if
-       * not a match
+       * Matches a URL against this info, and returns null if successful or the failure reason if not a match
        *
        * @param testUrl the URL to match
        * @return null for a successful match or the failure reason
@@ -1440,10 +1244,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
             dataTags.schemes.isEmpty() && dataTags.mimeTypes.isNotEmpty() -> IMPLICIT_SCHEMES
             else -> dataTags.schemes
           }
-        val schemeOk =
-          schemesIncludingImplicitSchemes.any { scheme: String ->
-            scheme == testUrl.protocol || isSubstituted(scheme)
-          }
+        val schemeOk = schemesIncludingImplicitSchemes.any { scheme: String -> scheme == testUrl.protocol || isSubstituted(scheme) }
         if (!schemeOk) {
           return "did not match scheme ${Joiner.on(", ").join(dataTags.schemes)}"
         }
@@ -1465,10 +1266,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           // First, check to see whether any paths specified in the intent-filter's direct <data>
           // children match the URI.
           // This is evaluated before any URI relative filter group is evaluated.
-          val pathMatchFound =
-            dataTags.paths.any {
-              isSubstituted(it.attributeValue) || it.toPatternMatcher().match(testPath)
-            }
+          val pathMatchFound = dataTags.paths.any { isSubstituted(it.attributeValue) || it.toPatternMatcher().match(testPath) }
           if (pathMatchFound) return null // OK
 
           // uri-relative-filter-groups are evaluated in order, so we find the first matching one
@@ -1493,9 +1291,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           }
           var message = "did not match $sb"
           if (
-            dataTags.paths.any {
-              !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase)
-            } || uriRelativeFilterGroups.any { it.hasUppercase } || testPath.any(::isUpperCase)
+            dataTags.paths.any { !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase) } ||
+              uriRelativeFilterGroups.any { it.hasUppercase } ||
+              testPath.any(::isUpperCase)
           ) {
             message += " Note that matching is case sensitive."
           }
@@ -1505,9 +1303,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
 
       /**
-       * Check whether a given host matches the hostRegex. The hostRegex could be a regular host
-       * name, or it could contain only one '*', such as *.example.com, where '*' matches any string
-       * whose length is at least 1.
+       * Check whether a given host matches the hostRegex. The hostRegex could be a regular host name, or it could contain only one '*',
+       * such as *.example.com, where '*' matches any string whose length is at least 1.
        *
        * @param actualHost The actual host we want to check.
        * @param hostPattern The criteria host, which could contain a '*'.
@@ -1533,31 +1330,15 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     /** Information collected from all data tags within the parent. */
     data class DataTagInfo(val dataTagElements: List<TagWrapper>) : Iterable<TagWrapper> {
       val isEmpty = dataTagElements.isEmpty()
-      val schemeElements by
-        lazy(LazyThreadSafetyMode.NONE) {
-          dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_SCHEME) }
-        }
-      val schemes by
-        lazy(LazyThreadSafetyMode.NONE) {
-          schemeElements.mapNotNullTo(mutableSetOf()) { it.substitutedValue }
-        }
-      val rawSchemes by
-        lazy(LazyThreadSafetyMode.NONE) {
-          schemeElements.mapNotNullTo(mutableSetOf()) { it.rawValue }
-        }
-      val hostElements by
-        lazy(LazyThreadSafetyMode.NONE) {
-          dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_HOST) }
-        }
-      val portElements by
-        lazy(LazyThreadSafetyMode.NONE) {
-          dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_PORT) }
-        }
+      val schemeElements by lazy(LazyThreadSafetyMode.NONE) { dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_SCHEME) } }
+      val schemes by lazy(LazyThreadSafetyMode.NONE) { schemeElements.mapNotNullTo(mutableSetOf()) { it.substitutedValue } }
+      val rawSchemes by lazy(LazyThreadSafetyMode.NONE) { schemeElements.mapNotNullTo(mutableSetOf()) { it.rawValue } }
+      val hostElements by lazy(LazyThreadSafetyMode.NONE) { dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_HOST) } }
+      val portElements by lazy(LazyThreadSafetyMode.NONE) { dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_PORT) } }
       val hostPortPairs by
         lazy(LazyThreadSafetyMode.NONE) {
           dataTagElements.mapNotNullTo(mutableSetOf()) {
-            val host =
-              it.getAttributeWrapper(ATTR_HOST)?.substitutedValue ?: return@mapNotNullTo null
+            val host = it.getAttributeWrapper(ATTR_HOST)?.substitutedValue ?: return@mapNotNullTo null
             Pair(host, it.getAttributeWrapper(ATTR_PORT)?.substitutedValue)
           }
         }
@@ -1586,22 +1367,11 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         }
       val rawPaths by
         lazy(LazyThreadSafetyMode.NONE) {
-          pathElements.mapNotNullTo(mutableSetOf()) { attr ->
-            attr.rawValue?.let { Path(attributeValue = it, attributeName = attr.name) }
-          }
+          pathElements.mapNotNullTo(mutableSetOf()) { attr -> attr.rawValue?.let { Path(attributeValue = it, attributeName = attr.name) } }
         }
-      val mimeTypeElements by
-        lazy(LazyThreadSafetyMode.NONE) {
-          dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_MIME_TYPE) }
-        }
-      val mimeTypes by
-        lazy(LazyThreadSafetyMode.NONE) {
-          mimeTypeElements.mapNotNullTo(mutableSetOf()) { it.substitutedValue }
-        }
-      val rawMimeTypes by
-        lazy(LazyThreadSafetyMode.NONE) {
-          mimeTypeElements.mapNotNullTo(mutableSetOf()) { it.rawValue }
-        }
+      val mimeTypeElements by lazy(LazyThreadSafetyMode.NONE) { dataTagElements.mapNotNull { it.getAttributeWrapper(ATTR_MIME_TYPE) } }
+      val mimeTypes by lazy(LazyThreadSafetyMode.NONE) { mimeTypeElements.mapNotNullTo(mutableSetOf()) { it.substitutedValue } }
+      val rawMimeTypes by lazy(LazyThreadSafetyMode.NONE) { mimeTypeElements.mapNotNullTo(mutableSetOf()) { it.rawValue } }
 
       override fun iterator(): Iterator<TagWrapper> = dataTagElements.iterator()
     }
@@ -1609,14 +1379,9 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     data class UriRelativeFilterGroup(private val tagWrapper: TagWrapper) {
       val allow: Boolean by
         lazy(LazyThreadSafetyMode.NONE) {
-          tagWrapper.getAttributeWrapper(ATTR_ALLOW)?.substitutedValue.let {
-            it == null || it == VALUE_TRUE
-          }
+          tagWrapper.getAttributeWrapper(ATTR_ALLOW)?.substitutedValue.let { it == null || it == VALUE_TRUE }
         }
-      val dataTagInfo: DataTagInfo by
-        lazy(LazyThreadSafetyMode.NONE) {
-          DataTagInfo(tagWrapper.subTags.filter { it.name == TAG_DATA })
-        }
+      val dataTagInfo: DataTagInfo by lazy(LazyThreadSafetyMode.NONE) { DataTagInfo(tagWrapper.subTags.filter { it.name == TAG_DATA }) }
       val queries: Set<Query> by
         lazy(LazyThreadSafetyMode.NONE) {
           queryElements.mapNotNullTo(mutableSetOf()) { attr ->
@@ -1663,44 +1428,26 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         }
       val hasUppercase by
         lazy(LazyThreadSafetyMode.NONE) {
-          dataTagInfo.paths.any {
-            !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase)
-          } ||
-            queries.any {
-              !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase)
-            } ||
-            fragments.any {
-              !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase)
-            }
+          dataTagInfo.paths.any { !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase) } ||
+            queries.any { !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase) } ||
+            fragments.any { !isSubstituted(it.attributeValue) && it.attributeValue.any(::isUpperCase) }
         }
 
       /** Returns whether this matches the path + query + fragment part of [url]. */
       fun match(url: URL): Boolean {
         val pathOk =
-          dataTagInfo.paths.all {
-            isSubstituted(it.attributeValue) ||
-              (url.path != null && it.toPatternMatcher().match(url.path))
-          }
+          dataTagInfo.paths.all { isSubstituted(it.attributeValue) || (url.path != null && it.toPatternMatcher().match(url.path)) }
         if (!pathOk) return false
-        val queryOk =
-          queries.all {
-            isSubstituted(it.attributeValue) || (url.query != null && it.match(url.query))
-          }
+        val queryOk = queries.all { isSubstituted(it.attributeValue) || (url.query != null && it.match(url.query)) }
         if (!queryOk) return false
-        val fragmentOk =
-          fragments.all {
-            isSubstituted(it.attributeValue) || (url.ref != null && it.match(url.ref))
-          }
+        val fragmentOk = fragments.all { isSubstituted(it.attributeValue) || (url.ref != null && it.match(url.ref)) }
         return fragmentOk
       }
 
       // See
       // https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/core/java/android/content/UriRelativeFilterGroup.java;l=225;drc=53969265f52c07741c3dba5365be231ce3c55817
       override fun toString(): String {
-        val sb =
-          StringBuilder("UriRelativeFilterGroup { allow = ")
-            .append(allow)
-            .append(", uri_filters = ")
+        val sb = StringBuilder("UriRelativeFilterGroup { allow = ").append(allow).append(", uri_filters = ")
         dataTagInfo.paths.forEach { sb.append(it).append(", ") }
         queries.forEach { sb.append(it).append(", ") }
         fragments.forEach { sb.append(it).append(", ") }
@@ -1712,18 +1459,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
 
     fun getIntentFilterData(intentFilter: TagWrapper): IntentFilterData {
       val autoVerify = intentFilter.getAttributeWrapper(ATTR_AUTO_VERIFY)?.substitutedValue
-      val order =
-        intentFilter
-          .getAttributeWrapper(ATTR_ORDER)
-          ?.substitutedValue
-          ?.ifEmpty { VALUE_0 }
-          ?.toIntOrNull() ?: 0
-      val priority =
-        intentFilter
-          .getAttributeWrapper(ATTR_PRIORITY)
-          ?.substitutedValue
-          ?.ifEmpty { VALUE_0 }
-          ?.toIntOrNull() ?: 0
+      val order = intentFilter.getAttributeWrapper(ATTR_ORDER)?.substitutedValue?.ifEmpty { VALUE_0 }?.toIntOrNull() ?: 0
+      val priority = intentFilter.getAttributeWrapper(ATTR_PRIORITY)?.substitutedValue?.ifEmpty { VALUE_0 }?.toIntOrNull() ?: 0
       val actions = mutableListOf<AttributeWrapper>()
       val categories = mutableListOf<AttributeWrapper>()
       val dataTagElements = mutableListOf<TagWrapper>()
@@ -1733,19 +1470,10 @@ class AppLinksValidDetector : Detector(), XmlScanner {
           TAG_ACTION -> subTag.getAttributeWrapper(ATTRIBUTE_NAME)?.let { actions.add(it) }
           TAG_CATEGORY -> subTag.getAttributeWrapper(ATTRIBUTE_NAME)?.let { categories.add(it) }
           TAG_DATA -> dataTagElements.add(subTag)
-          TAG_URI_RELATIVE_FILTER_GROUP ->
-            uriRelativeFilterGroups.add(UriRelativeFilterGroup(subTag))
+          TAG_URI_RELATIVE_FILTER_GROUP -> uriRelativeFilterGroups.add(UriRelativeFilterGroup(subTag))
         }
       }
-      return IntentFilterData(
-        autoVerify,
-        order,
-        priority,
-        actions,
-        categories,
-        DataTagInfo(dataTagElements),
-        uriRelativeFilterGroups,
-      )
+      return IntentFilterData(autoVerify, order, priority, actions, categories, DataTagInfo(dataTagElements), uriRelativeFilterGroups)
     }
 
     fun hasAutoVerifyButInvalidAppLink(intentFilter: TagWrapper): Boolean {
@@ -1753,8 +1481,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     }
 
     fun hasAutoVerifyButInvalidAppLink(data: IntentFilterData): Boolean {
-      return data.autoVerify == VALUE_TRUE &&
-        (!hasElementsRequiredForAppLinks(data) || !hasNoElementsForbiddenForAppLinks(data))
+      return data.autoVerify == VALUE_TRUE && (!hasElementsRequiredForAppLinks(data) || !hasNoElementsForbiddenForAppLinks(data))
     }
 
     private fun hasElementsRequiredForAppLinks(data: IntentFilterData): Boolean {
@@ -1766,20 +1493,14 @@ class AppLinksValidDetector : Detector(), XmlScanner {
     }
 
     private fun hasNoElementsForbiddenForAppLinks(data: IntentFilterData): Boolean {
-      return data.dataTags.schemes.all { isSubstituted(it) || isWebScheme(it) } &&
-        data.dataTags.mimeTypes.isEmpty()
+      return data.dataTags.schemes.all { isSubstituted(it) || isWebScheme(it) } && data.dataTags.mimeTypes.isEmpty()
     }
 
     private fun isValidAppLink(data: IntentFilterData): Boolean {
-      return data.autoVerify == VALUE_TRUE &&
-        hasElementsRequiredForAppLinks(data) &&
-        hasNoElementsForbiddenForAppLinks(data)
+      return data.autoVerify == VALUE_TRUE && hasElementsRequiredForAppLinks(data) && hasNoElementsForbiddenForAppLinks(data)
     }
 
-    private fun concatenateWithIndent(
-      inputs: List<String>,
-      newLineAndIndentString: String,
-    ): String {
+    private fun concatenateWithIndent(inputs: List<String>, newLineAndIndentString: String): String {
       return when {
         inputs.isEmpty() -> ""
         else -> inputs.joinToString(newLineAndIndentString, prefix = newLineAndIndentString)
@@ -1798,12 +1519,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       }
     }
 
-    private fun recursivelyCopy(
-      element: Element,
-      startingIndentAmount: Int,
-      indentDiff: Int,
-      sb: StringBuilder = StringBuilder(),
-    ) {
+    private fun recursivelyCopy(element: Element, startingIndentAmount: Int, indentDiff: Int, sb: StringBuilder = StringBuilder()) {
       sb.append("<")
       copyTagWithAttributes(element, sb)
       if (element.subtagCount() == 0) {
@@ -1832,8 +1548,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       return toXmlAttributeValue(fromXmlAttributeValue(s))
     }
 
-    private val IMPLEMENTATION =
-      Implementation(AppLinksValidDetector::class.java, Scope.MANIFEST_SCOPE)
+    private val IMPLEMENTATION = Implementation(AppLinksValidDetector::class.java, Scope.MANIFEST_SCOPE)
 
     @JvmField
     val TEST_URL =
@@ -1876,8 +1591,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         explanation = """Ensure that your URI relative filter group is correctly configured.""",
         category = Category.CORRECTNESS,
         priority = 5,
-        moreInfo =
-          "https://developer.android.com/guide/topics/manifest/uri-relative-filter-group-element?utm_source=lint",
+        moreInfo = "https://developer.android.com/guide/topics/manifest/uri-relative-filter-group-element?utm_source=lint",
         severity = Severity.ERROR,
         implementation = IMPLEMENTATION,
       )
@@ -1902,10 +1616,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         )
         .addMoreInfo("https://g.co/AppIndexing/AndroidStudio")
 
-    /**
-     * Only used for compatibility issue lookup (the driver suppression check takes an issue, not an
-     * id)
-     */
+    /** Only used for compatibility issue lookup (the driver suppression check takes an issue, not an id) */
     private val _OLD_ISSUE_URL =
       Issue.create(
         id = "GoogleAppIndexingUrlError",
@@ -1969,9 +1680,8 @@ class AppLinksValidDetector : Detector(), XmlScanner {
       )
 
     /**
-     * Intent filter with autoVerify uses both web and custom schemes, and there is at least one
-     * host where no other intent filters trigger domain verification (i.e. there are no other
-     * intent filters with autoVerify, only web schemes, and the host).
+     * Intent filter with autoVerify uses both web and custom schemes, and there is at least one host where no other intent filters trigger
+     * domain verification (i.e. there are no other intent filters with autoVerify, only web schemes, and the host).
      */
     @JvmField
     val APP_LINK_SPLIT_TO_WEB_AND_CUSTOM =
@@ -1989,19 +1699,15 @@ class AppLinksValidDetector : Detector(), XmlScanner {
         """,
         category = Category.CORRECTNESS,
         severity = Severity.ERROR,
-        moreInfo =
-          "https://developer.android.com/training/app-links/verify-android-applinks#add-intent-filters",
+        moreInfo = "https://developer.android.com/training/app-links/verify-android-applinks#add-intent-filters",
         implementation = IMPLEMENTATION,
       )
 
     private const val TAG_VALIDATION = "validation"
 
-    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION =
-      "SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION"
-    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE =
-      "SPLIT_TO_WEB_AND_CUSTOM_RANGE"
-    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT =
-      "SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION = "SPLIT_TO_WEB_AND_CUSTOM_NAME_LOCATION"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_RANGE = "SPLIT_TO_WEB_AND_CUSTOM_RANGE"
+    private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT = "SPLIT_TO_WEB_AND_CUSTOM_REPLACEMENT_TEXT"
     private const val KEY_SPLIT_TO_WEB_AND_CUSTOM_HOSTS = "SPLIT_TO_WEB_AND_CUSTOM_HOSTS"
     const val KEY_SHOW_APP_LINKS_ASSISTANT = "SHOW_APP_LINKS_ASSISTANT"
 
@@ -2027,8 +1733,7 @@ class AppLinksValidDetector : Detector(), XmlScanner {
   }
 
   override fun sameMessage(issue: Issue, new: String, old: String): Boolean {
-    if (issue == VALIDATION && old == "Missing URL" && new == "VIEW actions require a URI")
-      return true // See commit 406811b
+    if (issue == VALIDATION && old == "Missing URL" && new == "VIEW actions require a URI") return true // See commit 406811b
     if (
       issue == VALIDATION &&
         old == "Missing required elements/attributes for Android App Links" &&

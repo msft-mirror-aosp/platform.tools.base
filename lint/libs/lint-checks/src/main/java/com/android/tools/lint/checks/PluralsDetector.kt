@@ -39,8 +39,7 @@ import org.w3c.dom.Node
 /**
  * Checks for issues with quantity strings
  *
- * https://code.google.com/p/android/issues/detail?id=53015 53015: lint could report incorrect usage
- * of Resource.getQuantityString
+ * https://code.google.com/p/android/issues/detail?id=53015 53015: lint could report incorrect usage of Resource.getQuantityString
  */
 class PluralsDetector : ResourceXmlDetector() {
   override fun appliesTo(folderType: ResourceFolderType) = folderType == VALUES
@@ -93,9 +92,7 @@ class PluralsDetector : ResourceXmlDetector() {
       }
       defined.add(quantity)
       if (
-        plurals.hasMultipleValuesForQuantity(language, quantity) &&
-          !haveFormattingParameter(child) &&
-          context.isEnabled(IMPLIED_QUANTITY)
+        plurals.hasMultipleValuesForQuantity(language, quantity) && !haveFormattingParameter(child) && context.isEnabled(IMPLIED_QUANTITY)
       ) {
         val example = plurals.findIntegerExamples(language, quantity)
         val append =
@@ -163,8 +160,7 @@ class PluralsDetector : ResourceXmlDetector() {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(PluralsDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(PluralsDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** This locale should define a quantity string for the given quantity */
     @JvmField
@@ -188,8 +184,7 @@ class PluralsDetector : ResourceXmlDetector() {
         priority = 8,
         severity = Severity.ERROR,
         implementation = IMPLEMENTATION,
-        moreInfo =
-          "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
       )
 
     /** This translation is not needed in this locale */
@@ -213,8 +208,7 @@ class PluralsDetector : ResourceXmlDetector() {
         priority = 3,
         severity = Severity.WARNING,
         implementation = IMPLEMENTATION,
-        moreInfo =
-          "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
       )
 
     /** This plural does not use the quantity value */
@@ -236,13 +230,12 @@ class PluralsDetector : ResourceXmlDetector() {
         priority = 5,
         severity = Severity.ERROR,
         implementation = IMPLEMENTATION,
-        moreInfo =
-          "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
+        moreInfo = "https://developer.android.com/guide/topics/resources/string-resource.html#Plurals",
       )
 
     /**
-     * Returns true if the given string/plurals item element contains a formatting parameter,
-     * possibly within HTML markup or xliff metadata tags
+     * Returns true if the given string/plurals item element contains a formatting parameter, possibly within HTML markup or xliff metadata
+     * tags
      */
     private fun haveFormattingParameter(element: Element): Boolean {
       val children = element.childNodes

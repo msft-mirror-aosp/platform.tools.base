@@ -21,27 +21,23 @@ import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 
-/** shell:write-no-stop continuously write to the output stream without stopping.  */
-class WriteNoStopCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleShellHandler(
-    shellProtocolType!!,
-    "write-no-stop"
-) {
+/** shell:write-no-stop continuously write to the output stream without stopping. */
+class WriteNoStopCommandHandler(shellProtocolType: ShellProtocolType?) : SimpleShellHandler(shellProtocolType!!, "write-no-stop") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        try {
-            statusWriter.writeOk() // Send ok first.
-            while (true) {
-                shellCommandOutput.writeStdout("write-no-stop test in progress\n")
-                Thread.sleep(200)
-            }
-        } catch (ignored: InterruptedException) {
-        }
-    }
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    try {
+      statusWriter.writeOk() // Send ok first.
+      while (true) {
+        shellCommandOutput.writeStdout("write-no-stop test in progress\n")
+        Thread.sleep(200)
+      }
+    } catch (ignored: InterruptedException) {}
+  }
 }

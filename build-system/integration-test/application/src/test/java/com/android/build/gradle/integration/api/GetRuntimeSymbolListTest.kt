@@ -24,50 +24,45 @@ import org.junit.Test
 
 class GetRuntimeSymbolListTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun getRuntimeSymbolListTest() {
-        project.buildFile.appendText(
-            """
+  @Test
+  fun getRuntimeSymbolListTest() {
+    project.buildFile.appendText(
+      """
 
-       import org.gradle.api.DefaultTask
-       import org.gradle.api.file.RegularFileProperty
-       import org.gradle.api.tasks.InputFiles
-       import org.gradle.api.tasks.TaskAction
-       import org.gradle.api.tasks.Optional
-       import com.android.build.api.artifact.SingleArtifact
+      import org.gradle.api.DefaultTask
+      import org.gradle.api.file.RegularFileProperty
+      import org.gradle.api.tasks.InputFiles
+      import org.gradle.api.tasks.TaskAction
+      import org.gradle.api.tasks.Optional
+      import com.android.build.api.artifact.SingleArtifact
 
-       abstract class CheckRuntimeSymbolListTask extends DefaultTask {
+      abstract class CheckRuntimeSymbolListTask extends DefaultTask {
 
-           @InputFiles
-           abstract RegularFileProperty getRuntimeSymbolListFile()
+          @InputFiles
+          abstract RegularFileProperty getRuntimeSymbolListFile()
 
-           @TaskAction
-           void taskAction() {
-                System.out.println("Checking symbol list in " + runtimeSymbolListFile.getAsFile().get().absolutePath)
-           }
-       }
+          @TaskAction
+          void taskAction() {
+               System.out.println("Checking symbol list in " + runtimeSymbolListFile.getAsFile().get().absolutePath)
+          }
+      }
 
-       androidComponents {
-           onVariants(selector().all(), { variant ->
-               project.tasks.register("check" + variant.name + "SymbolList", CheckRuntimeSymbolListTask.class) {
-                   runtimeSymbolListFile.set(
-                       variant.artifacts.get(SingleArtifact.RUNTIME_SYMBOL_LIST.INSTANCE)
-                   )
-               }
-           })
-       }
-   """.trimIndent()
-        )
+      androidComponents {
+          onVariants(selector().all(), { variant ->
+              project.tasks.register("check" + variant.name + "SymbolList", CheckRuntimeSymbolListTask.class) {
+                  runtimeSymbolListFile.set(
+                      variant.artifacts.get(SingleArtifact.RUNTIME_SYMBOL_LIST.INSTANCE)
+                  )
+              }
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        val result = project.executor().run("checkDebugSymbolList")
-        ScannerSubject.assertThat(result.stdout).contains(
-            "Checking symbol list"
-        )
-    }
+    val result = project.executor().run("checkDebugSymbolList")
+    ScannerSubject.assertThat(result.stdout).contains("Checking symbol list")
+  }
 }

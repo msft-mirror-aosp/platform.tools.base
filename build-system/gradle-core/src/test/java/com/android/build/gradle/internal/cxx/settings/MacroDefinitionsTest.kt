@@ -28,104 +28,92 @@ import org.junit.Test
 
 class MacroDefinitionsTest {
 
-    @Test
-    fun `macro lookup checks`() {
-        assertThat(Macro.lookup("thisFile")).isEqualTo(Macro.ENV_THIS_FILE)
-        assertThat(Macro.lookup("env.thisFile")).isEqualTo(Macro.ENV_THIS_FILE)
-        assertThat(Macro.lookup("ndk.moduleNdkVersion")).isEqualTo(Macro.NDK_MODULE_NDK_VERSION)
-    }
+  @Test
+  fun `macro lookup checks`() {
+    assertThat(Macro.lookup("thisFile")).isEqualTo(Macro.ENV_THIS_FILE)
+    assertThat(Macro.lookup("env.thisFile")).isEqualTo(Macro.ENV_THIS_FILE)
+    assertThat(Macro.lookup("ndk.moduleNdkVersion")).isEqualTo(Macro.NDK_MODULE_NDK_VERSION)
+  }
 
-    @Test
-    fun `descriptions must end in period`() {
-        Macro.values().forEach { macro->
-            assertThat(macro.description)
-                .endsWith(".")
+  @Test
+  fun `descriptions must end in period`() {
+    Macro.values().forEach { macro -> assertThat(macro.description).endsWith(".") }
+  }
+
+  @Test
+  fun `only allow forward slashes in example`() {
+    Macro.values().forEach { macro -> assertThat(macro.description).doesNotContain("\\") }
+  }
+
+  @Test
+  fun `ensure all qualified names are distinct`() {
+    val seen = mutableSetOf<String>()
+    Macro.values().map { macro ->
+      if (seen.contains(macro.tag)) {
+        throw RuntimeException("Tag ${macro.qualifiedName} seen twice")
+      }
+      seen += macro.qualifiedName
+    }
+  }
+
+  /** Enforces a naming convention that connects [Macro] values to fields on the [CxxAbiModel] object model. */
+  @Test
+  fun `ensure kotlin enum names match object model names`() {
+    Macro.values().map { macro ->
+      assertThat(macro.name.endsWith("DIRECTORY")).named(macro.name).isFalse() // Should be _DIR
+      assertThat(macro.name.endsWith("FOLDER")).named(macro.name).isFalse() // Should be _DIR
+      when (macro.environment) {
+        NDK_ABI -> assertThat(macro.name).startsWith("NDK_ABI_")
+        MICROSOFT_BUILT_IN -> assertThat(macro.name).startsWith("ENV_")
+        NDK_EXPOSED_BY_HOST -> assertThat(macro.name).startsWith("NDK_ANDROID_GRADLE_")
+        NDK -> {
+          assertThat(macro.name).startsWith("NDK_")
+          assertThat(macro.name.startsWith("NDK_VARIANT")).named(macro.name).isFalse()
+          assertThat(macro.name.startsWith("NDK_MODULE")).named(macro.name).isFalse()
+          assertThat(macro.name.startsWith("NDK_PROJECT")).named(macro.name).isFalse()
         }
-    }
-
-    @Test
-    fun `only allow forward slashes in example`() {
-        Macro.values().forEach { macro->
-            assertThat(macro.description)
-                .doesNotContain("\\")
-        }
-    }
-
-    @Test
-    fun `ensure all qualified names are distinct`() {
-        val seen = mutableSetOf<String>()
-        Macro.values().map { macro->
-            if (seen.contains(macro.tag)) {
-                throw RuntimeException("Tag ${macro.qualifiedName} seen twice")
+        NDK_PLATFORM -> assertThat(macro.name).startsWith("NDK_PLATFORM")
+        GRADLE -> {
+          when {
+            // Macro::class -> macro.takeFrom(macro) ?: fail()
+            macro.bind.toString().startsWith("CXX_CMAKE_ABI_MODEL") || macro.bind.toString().startsWith("CXX_ABI_MODEL") -> {
+              assertThat(macro.name).startsWith("NDK_")
+              assertThat(macro.name.startsWith("NDK_VARIANT")).isFalse()
+              assertThat(macro.name.startsWith("NDK_MODULE")).isFalse()
+              assertThat(macro.name.startsWith("NDK_PROJECT")).isFalse()
             }
-            seen += macro.qualifiedName
+            macro.bind.toString().startsWith("CXX_VARIANT_MODEL") -> assertThat(macro.name).startsWith("NDK_VARIANT_")
+            macro.bind.toString().startsWith("CXX_CMAKE_MODULE_MODEL") || macro.bind.toString().startsWith("CXX_MODULE_MODEL") ->
+              assertThat(macro.name).startsWith("NDK_MODULE_")
+            macro.bind.toString().startsWith("CXX_PROJECT_MODEL") -> assertThat(macro.name).startsWith("NDK_PROJECT_")
+            else -> error("$macro")
+          }
         }
+        else -> error(macro.environment)
+      }
     }
+  }
 
-    /**
-     * Enforces a naming convention that connects [Macro] values to fields on the [CxxAbiModel]
-     * object model.
-     */
-    @Test
-    fun `ensure kotlin enum names match object model names`() {
-        Macro.values()
-            .map { macro->
-                assertThat(macro.name.endsWith("DIRECTORY")).named(macro.name).isFalse() // Should be _DIR
-                assertThat(macro.name.endsWith("FOLDER")).named(macro.name).isFalse() // Should be _DIR
-                when(macro.environment) {
-                    NDK_ABI -> assertThat(macro.name).startsWith("NDK_ABI_")
-                    MICROSOFT_BUILT_IN -> assertThat(macro.name).startsWith("ENV_")
-                    NDK_EXPOSED_BY_HOST -> assertThat(macro.name).startsWith("NDK_ANDROID_GRADLE_")
-                    NDK -> {
-                        assertThat(macro.name).startsWith("NDK_")
-                        assertThat(macro.name.startsWith("NDK_VARIANT")).named(macro.name).isFalse()
-                        assertThat(macro.name.startsWith("NDK_MODULE")).named(macro.name).isFalse()
-                        assertThat(macro.name.startsWith("NDK_PROJECT")).named(macro.name).isFalse()
-                    }
-                    NDK_PLATFORM -> assertThat(macro.name).startsWith("NDK_PLATFORM")
-                    GRADLE -> {
-                        when  {
-                            //Macro::class -> macro.takeFrom(macro) ?: fail()
-                            macro.bind.toString().startsWith("CXX_CMAKE_ABI_MODEL") ||
-                            macro.bind.toString().startsWith("CXX_ABI_MODEL") -> {
-                                assertThat(macro.name).startsWith("NDK_")
-                                assertThat(macro.name.startsWith("NDK_VARIANT")).isFalse()
-                                assertThat(macro.name.startsWith("NDK_MODULE")).isFalse()
-                                assertThat(macro.name.startsWith("NDK_PROJECT")).isFalse()
-                            }
-                            macro.bind.toString().startsWith("CXX_VARIANT_MODEL") -> assertThat(macro.name).startsWith("NDK_VARIANT_")
-                            macro.bind.toString().startsWith("CXX_CMAKE_MODULE_MODEL") ||
-                            macro.bind.toString().startsWith("CXX_MODULE_MODEL") -> assertThat(macro.name).startsWith("NDK_MODULE_")
-                            macro.bind.toString().startsWith("CXX_PROJECT_MODEL") -> assertThat(macro.name).startsWith("NDK_PROJECT_")
-                            else -> error("$macro")
-                        }
-                    }
-                    else -> error(macro.environment)
-                }
-        }
-    }
-
-    @Test
-    fun `ensure kotlin enum names match environment names`() {
-        Macro.values().map { macro->
-
-            val sb = StringBuilder()
-            var lastWasDigit = false
-            for (c in macro.qualifiedName) {
-                when {
-                    c.isDigit() -> {
-                        if (!lastWasDigit) {
-                            sb.append("_")
-                        }
-                        sb.append(c)
-                    }
-                    c.isUpperCase() -> sb.append("_$c")
-                    c == '.' -> sb.append("_")
-                    else -> sb.append(c.toUpperCase())
-                }
-                lastWasDigit = c.isDigit()
+  @Test
+  fun `ensure kotlin enum names match environment names`() {
+    Macro.values().map { macro ->
+      val sb = StringBuilder()
+      var lastWasDigit = false
+      for (c in macro.qualifiedName) {
+        when {
+          c.isDigit() -> {
+            if (!lastWasDigit) {
+              sb.append("_")
             }
-            assertThat(macro.toString()).isEqualTo(sb.toString())
+            sb.append(c)
+          }
+          c.isUpperCase() -> sb.append("_$c")
+          c == '.' -> sb.append("_")
+          else -> sb.append(c.toUpperCase())
         }
+        lastWasDigit = c.isDigit()
+      }
+      assertThat(macro.toString()).isEqualTo(sb.toString())
     }
+  }
 }

@@ -39,138 +39,124 @@ import com.android.adblib.tools.debugging.packets.ddms.isDdmsCommand
 import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.tools.debugging.processEmptyDdmsReplyPacket
 import com.android.adblib.tools.debugging.receiveUntil
-import com.android.adblib.withPrefix
 import com.android.adblib.withProcessPrefix
 import java.util.concurrent.TimeUnit
 
-internal class JdwpProcessProfilerImpl(
-    override val process: JdwpProcess
-) : JdwpProcessProfiler {
+internal class JdwpProcessProfilerImpl(override val process: JdwpProcess) : JdwpProcessProfiler {
 
-    private val device: ConnectedDevice
-        get() = process.device
+  private val device: ConnectedDevice
+    get() = process.device
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, process.pid)
+  private val logger = adbLogger(device.session).withProcessPrefix(device, process.pid)
 
-    override suspend fun queryStatus(progress: JdwpCommandProgress?): ProfilerStatus {
-        return process.withJdwpSession {
-            when (handleDdmsMPRQ(progress)) {
-                0 -> ProfilerStatus.Off
-                1 -> ProfilerStatus.InstrumentationProfilerRunning
-                2 -> ProfilerStatus.SamplingProfilerRunning
-                else -> throw DdmsCommandException("Unknown profiler status value")
+  override suspend fun queryStatus(progress: JdwpCommandProgress?): ProfilerStatus {
+    return process.withJdwpSession {
+      when (handleDdmsMPRQ(progress)) {
+        0 -> ProfilerStatus.Off
+        1 -> ProfilerStatus.InstrumentationProfilerRunning
+        2 -> ProfilerStatus.SamplingProfilerRunning
+        else -> throw DdmsCommandException("Unknown profiler status value")
+      }
+    }
+  }
+
+  override suspend fun startInstrumentationProfiling(bufferSize: Int, progress: JdwpCommandProgress?) {
+    process.withJdwpSession {
+      val requestPacket = createDdmsMPSS(bufferSize)
+      handleDdmsCommandWithEmptyReply(requestPacket, DdmsChunkType.MPSS, progress)
+    }
+  }
+
+  override suspend fun <R> stopInstrumentationProfiling(
+    progress: JdwpCommandProgress?,
+    block: suspend (data: AdbInputChannel, dataLength: Int) -> R,
+  ): R {
+    return process.withJdwpSession {
+      logger.debug { "Stopping method profiling session" }
+      val requestPacket = createDdmsMPSE()
+      handleMPSEReply(requestPacket, DdmsChunkType.MPSE, progress, block)
+    }
+  }
+
+  override suspend fun startSampleProfiling(interval: Long, intervalUnit: TimeUnit, bufferSize: Int, progress: JdwpCommandProgress?) {
+    process.withJdwpSession {
+      logger.debug { "Starting sampling profiling session" }
+      val requestPacket = createDdmsSPSS(bufferSize, interval, intervalUnit)
+      handleDdmsCommandWithEmptyReply(requestPacket, DdmsChunkType.SPSS, progress)
+    }
+  }
+
+  override suspend fun <R> stopSampleProfiling(
+    progress: JdwpCommandProgress?,
+    block: suspend (data: AdbInputChannel, dataLength: Int) -> R,
+  ): R {
+    return process.withJdwpSession {
+      logger.debug { "Stopping sampling profiling session" }
+      val requestPacket = createDdmsSPSE()
+      handleMPSEReply(requestPacket, DdmsChunkType.SPSE, progress, block)
+    }
+  }
+
+  private suspend fun <R> SharedJdwpSession.handleMPSEReply(
+    requestPacket: JdwpPacketView,
+    chunkType: DdmsChunkType,
+    progress: JdwpCommandProgress?,
+    block: suspend (data: AdbInputChannel, dataLength: Int) -> R,
+  ): R {
+    return handleDdmsCommandAndReplyProtocol(progress) { signal -> handleMPSEReplyImpl(requestPacket, chunkType, progress, signal, block) }
+  }
+
+  private suspend fun <R> SharedJdwpSession.handleMPSEReplyImpl(
+    requestPacket: JdwpPacketView,
+    chunkType: DdmsChunkType,
+    progress: JdwpCommandProgress?,
+    signal: Signal<R>,
+    block: suspend (data: AdbInputChannel, dataLength: Int) -> R,
+  ) {
+    assert(chunkType == DdmsChunkType.MPSE || chunkType == DdmsChunkType.SPSE)
+
+    // Send an "MPSE" (or "SPSE") DDMS command to the VM. Note that the AndroidVM treats "MPSE"
+    // in a special way: the profiling data comes back as an "MPSE" command (with the
+    // profiling data as the payload), then we get back an empty reply packet to the "MPSE"
+    // command we sent.
+    //   Debugger        |  AndroidVM
+    //   ----------------+-----------------------------------------
+    //   MPSE command => |
+    //                   | (collects data)
+    //                   | <=  MPSE command (with data as payload)
+    //                   | <=  MPSE reply (empty payload)
+    //                   | OR
+    //                   | <=  FAIL command (with error code and message)
+
+    this.newPacketReceiver()
+      .withName("handleMPSEReply")
+      .withActivation {
+        progress?.beforeSend(requestPacket)
+        sendPacket(requestPacket)
+        progress?.afterSend(requestPacket)
+      }
+      .receiveUntil { packet ->
+        logger.verbose { "Receiving packet: $packet" }
+
+        if (packet.isDdmsCommand) {
+          packet.ddmsChunks().collect { chunk ->
+            if (chunk.type == DdmsChunkType.MPSE) {
+              val blockResult = chunk.withPayload { payload -> block(payload, chunk.length) }
+
+              // We got the result we want, signal so that the timeout waiting for
+              // reply packet starts now.
+              signal.complete(blockResult)
             }
+          }
         }
-    }
 
-    override suspend fun startInstrumentationProfiling(
-        bufferSize: Int,
-        progress: JdwpCommandProgress?
-    ) {
-        process.withJdwpSession {
-            val requestPacket = createDdmsMPSS(bufferSize)
-            handleDdmsCommandWithEmptyReply(requestPacket, DdmsChunkType.MPSS, progress)
+        // Stop when we receive the reply to our MPSE command
+        val isReply = (packet.isReply && packet.id == requestPacket.id)
+        if (isReply) {
+          progress?.onReply(packet)
+          processEmptyDdmsReplyPacket(packet, chunkType)
         }
-    }
-
-    override suspend fun <R> stopInstrumentationProfiling(
-        progress: JdwpCommandProgress?,
-        block: suspend (data: AdbInputChannel, dataLength: Int) -> R
-    ): R {
-        return process.withJdwpSession {
-            logger.debug { "Stopping method profiling session" }
-            val requestPacket = createDdmsMPSE()
-            handleMPSEReply(requestPacket, DdmsChunkType.MPSE, progress, block)
-        }
-    }
-
-    override suspend fun startSampleProfiling(
-        interval: Long,
-        intervalUnit: TimeUnit,
-        bufferSize: Int,
-        progress: JdwpCommandProgress?,
-    ) {
-        process.withJdwpSession {
-            logger.debug { "Starting sampling profiling session" }
-            val requestPacket = createDdmsSPSS(bufferSize, interval, intervalUnit)
-            handleDdmsCommandWithEmptyReply(requestPacket, DdmsChunkType.SPSS, progress)
-        }
-    }
-
-    override suspend fun <R> stopSampleProfiling(
-        progress: JdwpCommandProgress?,
-        block: suspend (data: AdbInputChannel, dataLength: Int) -> R
-    ): R {
-        return process.withJdwpSession {
-            logger.debug { "Stopping sampling profiling session" }
-            val requestPacket = createDdmsSPSE()
-            handleMPSEReply(requestPacket, DdmsChunkType.SPSE, progress, block)
-        }
-    }
-
-    private suspend fun <R> SharedJdwpSession.handleMPSEReply(
-        requestPacket: JdwpPacketView,
-        chunkType: DdmsChunkType,
-        progress: JdwpCommandProgress?,
-        block: suspend (data: AdbInputChannel, dataLength: Int) -> R
-    ): R {
-        return handleDdmsCommandAndReplyProtocol(progress) { signal ->
-            handleMPSEReplyImpl(requestPacket, chunkType, progress, signal, block)
-        }
-    }
-
-    private suspend fun <R> SharedJdwpSession.handleMPSEReplyImpl(
-        requestPacket: JdwpPacketView,
-        chunkType: DdmsChunkType,
-        progress: JdwpCommandProgress?,
-        signal: Signal<R>,
-        block: suspend (data: AdbInputChannel, dataLength: Int) -> R
-    ) {
-        assert(chunkType == DdmsChunkType.MPSE || chunkType == DdmsChunkType.SPSE)
-
-        // Send an "MPSE" (or "SPSE") DDMS command to the VM. Note that the AndroidVM treats "MPSE"
-        // in a special way: the profiling data comes back as an "MPSE" command (with the
-        // profiling data as the payload), then we get back an empty reply packet to the "MPSE"
-        // command we sent.
-        //   Debugger        |  AndroidVM
-        //   ----------------+-----------------------------------------
-        //   MPSE command => |
-        //                   | (collects data)
-        //                   | <=  MPSE command (with data as payload)
-        //                   | <=  MPSE reply (empty payload)
-        //                   | OR
-        //                   | <=  FAIL command (with error code and message)
-
-        this.newPacketReceiver()
-            .withName("handleMPSEReply")
-            .withActivation {
-                progress?.beforeSend(requestPacket)
-                sendPacket(requestPacket)
-                progress?.afterSend(requestPacket)
-            }.receiveUntil { packet ->
-                logger.verbose { "Receiving packet: $packet" }
-
-                if (packet.isDdmsCommand) {
-                    packet.ddmsChunks().collect { chunk ->
-                        if (chunk.type == DdmsChunkType.MPSE) {
-                            val blockResult = chunk.withPayload {
-                                payload -> block(payload, chunk.length)
-                            }
-
-                            // We got the result we want, signal so that the timeout waiting for
-                            // reply packet starts now.
-                            signal.complete(blockResult)
-                        }
-                    }
-                }
-
-                // Stop when we receive the reply to our MPSE command
-                val isReply = (packet.isReply && packet.id == requestPacket.id)
-                if (isReply) {
-                    progress?.onReply(packet)
-                    processEmptyDdmsReplyPacket(packet, chunkType)
-                }
-                isReply
-            }
-    }
+        isReply
+      }
+  }
 }

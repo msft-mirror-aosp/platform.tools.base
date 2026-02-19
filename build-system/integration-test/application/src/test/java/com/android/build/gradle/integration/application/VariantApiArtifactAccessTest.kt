@@ -21,79 +21,76 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth
+import java.io.File
+import kotlin.test.assertNotNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import kotlin.test.assertNotNull
 
 class VariantApiArtifactAccessTest {
 
-    @JvmField
-    @Rule
-    val tmp = TemporaryFolder()
+  @JvmField @Rule val tmp = TemporaryFolder()
 
-    val app = MinimalSubProject.app("com.example.test")
-        .appendToBuild("""
-import com.android.build.api.artifact.SingleArtifact
+  val app =
+    MinimalSubProject.app("com.example.test")
+      .appendToBuild(
+        """
+        import com.android.build.api.artifact.SingleArtifact
 
-abstract class CustomTask extends DefaultTask {
+        abstract class CustomTask extends DefaultTask {
 
-    @OutputFile
-    abstract RegularFileProperty getOutputFile()
+            @OutputFile
+            abstract RegularFileProperty getOutputFile()
 
-    @InputFiles
-    abstract DirectoryProperty getApkLocation()
+            @InputFiles
+            abstract DirectoryProperty getApkLocation()
 
-    @TaskAction
-    public void provideVersionCode() {
-      System.out.println("Custom Task invoked, writing at " + getOutputFile().getAsFile().get().getAbsolutePath())
-      FileWriter fw = new FileWriter(getOutputFile().getAsFile().get())
-      apkLocation.asFile.get().listFiles().each { file ->
-        if (file.getName().endsWith(".apk")) {
-          fw.write(file.getAbsolutePath())
+            @TaskAction
+            public void provideVersionCode() {
+              System.out.println("Custom Task invoked, writing at " + getOutputFile().getAsFile().get().getAbsolutePath())
+              FileWriter fw = new FileWriter(getOutputFile().getAsFile().get())
+              apkLocation.asFile.get().listFiles().each { file ->
+                if (file.getName().endsWith(".apk")) {
+                  fw.write(file.getAbsolutePath())
+                }
+              }
+              fw.write()
+              fw.close()
+            }
         }
-      }
-      fw.write()
-      fw.close()
-    }
-}
 
 
-androidComponents {
-    onVariants(selector().all(), {
-        TaskProvider customTaskProvider = tasks.register(name + "CustomTask", CustomTask.class)
-        customTaskProvider.configure {
-            task ->
-                task.getApkLocation().set(artifacts.get(SingleArtifact.APK.INSTANCE))
-                Provider<Directory> outputDir = getProject().getLayout().getBuildDirectory()
-                task.getOutputFile().set(outputDir.file(name + "/out.txt"))
+        androidComponents {
+            onVariants(selector().all(), {
+                TaskProvider customTaskProvider = tasks.register(name + "CustomTask", CustomTask.class)
+                customTaskProvider.configure {
+                    task ->
+                        task.getApkLocation().set(artifacts.get(SingleArtifact.APK.INSTANCE))
+                        Provider<Directory> outputDir = getProject().getLayout().getBuildDirectory()
+                        task.getOutputFile().set(outputDir.file(name + "/out.txt"))
+                }
+            })
         }
-    })
-}
-    """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .build()
-        ).create()
+  @JvmField
+  @Rule
+  val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
-    /**
-     * Test that exercise the [artifacts.get()] API to wire a [Task] that will consume the
-     * SingleArtifact.APK and list the files into an output text file.
-     */
-    @Test
-    fun listApk() {
+  /**
+   * Test that exercise the [artifacts.get()] API to wire a [Task] that will consume the SingleArtifact.APK and list the files into an
+   * output text file.
+   */
+  @Test
+  fun listApk() {
 
-        assertNotNull(project)
-        project.execute("clean", "debugCustomTask")
-        val outFile = File(project.projectDir, "app/build/debugCustomTask/out.txt")
-        println("out is ${outFile.absolutePath}")
-        assertThat(outFile).exists()
-        Truth.assertThat(outFile.readText()).contains("app-debug.apk")
-    }
+    assertNotNull(project)
+    project.execute("clean", "debugCustomTask")
+    val outFile = File(project.projectDir, "app/build/debugCustomTask/out.txt")
+    println("out is ${outFile.absolutePath}")
+    assertThat(outFile).exists()
+    Truth.assertThat(outFile.readText()).contains("app-debug.apk")
+  }
 }

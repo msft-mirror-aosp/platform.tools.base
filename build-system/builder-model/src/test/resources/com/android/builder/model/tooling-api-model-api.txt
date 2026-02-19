@@ -4,7 +4,7 @@ ATTENTION REVIEWER: If this needs to be changed, please make sure changes
 below are backwards compatible.
 -------------------------------------------------------------------------
 Sha256 of below classes:
-db4294915f7bf02d3d343f3dd48fff457691484fab1ccd9a5ce1d9fa62f33055
+97a71f7fdaa6ecf065bade581bd47bcd8f3bed1efe8f98e44079d11fbc2df95a
 -------------------------------------------------------------------------
 com.android.builder.model.AaptOptions
 com.android.builder.model.AaptOptions$Namespacing extends java.lang.Enum
@@ -27,7 +27,6 @@ com.android.builder.model.AndroidArtifact.getGeneratedResourceFolders: java.util
 com.android.builder.model.AndroidArtifact.getGeneratedSourceFolders: java.util.Collection<java.io.File> ()
 com.android.builder.model.AndroidArtifact.getInstantRun: com.android.builder.model.InstantRun ()
 com.android.builder.model.AndroidArtifact.getInstrumentedTestTaskName: java.lang.String ()
-com.android.builder.model.AndroidArtifact.getNativeLibraries: java.util.Collection<com.android.builder.model.NativeLibrary> ()
 com.android.builder.model.AndroidArtifact.getOutputs: java.util.Collection<com.android.builder.model.AndroidArtifactOutput> ()
 com.android.builder.model.AndroidArtifact.getResValues: java.util.Map<java.lang.String, com.android.builder.model.ClassField> ()
 com.android.builder.model.AndroidArtifact.getSigningConfigName: java.lang.String ()
@@ -91,7 +90,6 @@ com.android.builder.model.AndroidProject.getLintRuleJars: java.util.List<java.io
 com.android.builder.model.AndroidProject.getModelVersion: java.lang.String ()
 com.android.builder.model.AndroidProject.getName: java.lang.String ()
 com.android.builder.model.AndroidProject.getNamespace: java.lang.String ()
-com.android.builder.model.AndroidProject.getNativeToolchains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
 com.android.builder.model.AndroidProject.getNdkVersion: java.lang.String ()
 com.android.builder.model.AndroidProject.getPluginGeneration: int ()
 com.android.builder.model.AndroidProject.getProductFlavors: java.util.Collection<com.android.builder.model.ProductFlavorContainer> ()
@@ -101,7 +99,6 @@ com.android.builder.model.AndroidProject.getSigningConfigs: java.util.Collection
 com.android.builder.model.AndroidProject.getSyncIssues: java.util.Collection<com.android.builder.model.SyncIssue> ()
 com.android.builder.model.AndroidProject.getUnresolvedDependencies: java.util.Collection<java.lang.String> ()
 com.android.builder.model.AndroidProject.getVariantNames: java.util.Collection<java.lang.String> ()
-com.android.builder.model.AndroidProject.getVariants: java.util.Collection<com.android.builder.model.Variant> ()
 com.android.builder.model.AndroidProject.getVariantsBuildInformation: java.util.Collection<com.android.builder.model.VariantBuildInformation> ()
 com.android.builder.model.AndroidProject.getViewBindingOptions: com.android.builder.model.ViewBindingOptions ()
 com.android.builder.model.AndroidProject.isBaseSplit: boolean ()
@@ -274,64 +271,6 @@ com.android.builder.model.ModelBuilderParameter.setShouldGenerateSources: void (
 com.android.builder.model.ModelBuilderParameter.setVariantName: void (java.lang.String)
 com.android.builder.model.Named
 com.android.builder.model.Named.getName: java.lang.String ()
-com.android.builder.model.NativeAndroidProject
-com.android.builder.model.NativeAndroidProject.getApiVersion: int ()
-com.android.builder.model.NativeAndroidProject.getArtifacts: java.util.Collection<com.android.builder.model.NativeArtifact> ()
-com.android.builder.model.NativeAndroidProject.getBuildFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeAndroidProject.getBuildSystems: java.util.Collection<java.lang.String> ()
-com.android.builder.model.NativeAndroidProject.getDefaultNdkVersion: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getFileExtensions: java.util.Map<java.lang.String, java.lang.String> ()
-com.android.builder.model.NativeAndroidProject.getModelVersion: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getName: java.lang.String ()
-com.android.builder.model.NativeAndroidProject.getSettings: java.util.Collection<com.android.builder.model.NativeSettings> ()
-com.android.builder.model.NativeAndroidProject.getToolChains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
-com.android.builder.model.NativeAndroidProject.getVariantInfos: java.util.Map<java.lang.String, com.android.builder.model.NativeVariantInfo> ()
-com.android.builder.model.NativeArtifact
-com.android.builder.model.NativeArtifact.getAbi: java.lang.String ()
-com.android.builder.model.NativeArtifact.getAssembleTaskName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getExportedHeaders: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeArtifact.getGroupName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getOutputFile: java.io.File ()
-com.android.builder.model.NativeArtifact.getRuntimeFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeArtifact.getSourceFiles: java.util.Collection<com.android.builder.model.NativeFile> ()
-com.android.builder.model.NativeArtifact.getTargetName: java.lang.String ()
-com.android.builder.model.NativeArtifact.getToolChain: java.lang.String ()
-com.android.builder.model.NativeFile
-com.android.builder.model.NativeFile.getFilePath: java.io.File ()
-com.android.builder.model.NativeFile.getSettingsName: java.lang.String ()
-com.android.builder.model.NativeFile.getWorkingDirectory: java.io.File ()
-com.android.builder.model.NativeLibrary
-com.android.builder.model.NativeLibrary.getAbi: java.lang.String ()
-com.android.builder.model.NativeLibrary.getCCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCDefines: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCSystemIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCppCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCppDefines: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeLibrary.getCppIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getCppSystemIncludeDirs: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getDebuggableLibraryFolders: java.util.List<java.io.File> ()
-com.android.builder.model.NativeLibrary.getName: java.lang.String ()
-com.android.builder.model.NativeLibrary.getToolchainName: java.lang.String ()
-com.android.builder.model.NativeSettings
-com.android.builder.model.NativeSettings.getCompilerFlags: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeSettings.getName: java.lang.String ()
-com.android.builder.model.NativeToolchain
-com.android.builder.model.NativeToolchain.getCCompilerExecutable: java.io.File ()
-com.android.builder.model.NativeToolchain.getCppCompilerExecutable: java.io.File ()
-com.android.builder.model.NativeToolchain.getName: java.lang.String ()
-com.android.builder.model.NativeVariantAbi implements java.io.Serializable
-com.android.builder.model.NativeVariantAbi.getAbi: java.lang.String ()
-com.android.builder.model.NativeVariantAbi.getArtifacts: java.util.Collection<com.android.builder.model.NativeArtifact> ()
-com.android.builder.model.NativeVariantAbi.getBuildFiles: java.util.Collection<java.io.File> ()
-com.android.builder.model.NativeVariantAbi.getFileExtensions: java.util.Map<java.lang.String, java.lang.String> ()
-com.android.builder.model.NativeVariantAbi.getSettings: java.util.Collection<com.android.builder.model.NativeSettings> ()
-com.android.builder.model.NativeVariantAbi.getToolChains: java.util.Collection<com.android.builder.model.NativeToolchain> ()
-com.android.builder.model.NativeVariantAbi.getVariantName: java.lang.String ()
-com.android.builder.model.NativeVariantInfo implements java.io.Serializable
-com.android.builder.model.NativeVariantInfo.getAbiNames: java.util.List<java.lang.String> ()
-com.android.builder.model.NativeVariantInfo.getBuildRootFolderMap: java.util.Map<java.lang.String, java.io.File> ()
 com.android.builder.model.OptionalCompilationStep extends java.lang.Enum
 com.android.builder.model.OptionalCompilationStep.valueOf: com.android.builder.model.OptionalCompilationStep (java.lang.String)
 com.android.builder.model.OptionalCompilationStep.values: com.android.builder.model.OptionalCompilationStep[] ()
@@ -382,8 +321,6 @@ com.android.builder.model.SigningConfig.isV2SigningEnabled: boolean ()
 com.android.builder.model.SourceProvider
 com.android.builder.model.SourceProvider.getAidlDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getAssetsDirectories: java.util.Collection<java.io.File> ()
-com.android.builder.model.SourceProvider.getCDirectories: java.util.Collection<java.io.File> ()
-com.android.builder.model.SourceProvider.getCppDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
 com.android.builder.model.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()
@@ -590,7 +527,6 @@ com.android.builder.model.v2.ide.AndroidArtifact.getMappingR8PartitionFile: java
 com.android.builder.model.v2.ide.AndroidArtifact.getMappingR8TextFile: java.io.File ()
 com.android.builder.model.v2.ide.AndroidArtifact.getMaxSdkVersion: java.lang.Integer ()
 com.android.builder.model.v2.ide.AndroidArtifact.getMinSdkVersion: com.android.builder.model.v2.ide.ApiVersion ()
-com.android.builder.model.v2.ide.AndroidArtifact.getPrivacySandboxSdkInfo: com.android.builder.model.v2.ide.PrivacySandboxSdkInfo ()
 com.android.builder.model.v2.ide.AndroidArtifact.getResGenTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.AndroidArtifact.getSigningConfigName: java.lang.String ()
 com.android.builder.model.v2.ide.AndroidArtifact.getSourceGenTaskName: java.lang.String ()
@@ -747,13 +683,6 @@ com.android.builder.model.v2.ide.LintOptions.getWarning: java.util.Set<java.lang
 com.android.builder.model.v2.ide.LintOptions.getWarningsAsErrors: boolean ()
 com.android.builder.model.v2.ide.LintOptions.getXmlOutput: java.io.File ()
 com.android.builder.model.v2.ide.LintOptions.getXmlReport: boolean ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo implements com.android.builder.model.v2.AndroidModel
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getAdditionalApkSplitFile: java.io.File ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getAdditionalApkSplitTask: java.lang.String ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getOutputListingFile: java.io.File ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getOutputListingLegacyFile: java.io.File ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getTask: java.lang.String ()
-com.android.builder.model.v2.ide.PrivacySandboxSdkInfo.getTaskLegacy: java.lang.String ()
 com.android.builder.model.v2.ide.ProjectInfo implements com.android.builder.model.v2.ide.ComponentInfo
 com.android.builder.model.v2.ide.ProjectInfo.getBuildId: java.lang.String ()
 com.android.builder.model.v2.ide.ProjectInfo.getProjectPath: java.lang.String ()
@@ -768,6 +697,7 @@ com.android.builder.model.v2.ide.SourceProvider.getBaselineProfileDirectories: j
 com.android.builder.model.v2.ide.SourceProvider.getCustomDirectories: java.util.Collection<com.android.builder.model.v2.CustomSourceDirectory> ()
 com.android.builder.model.v2.ide.SourceProvider.getJavaDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getJniLibsDirectories: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.ide.SourceProvider.getKeepRulesDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getKotlinDirectories: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.ide.SourceProvider.getManifestFile: java.io.File ()
 com.android.builder.model.v2.ide.SourceProvider.getMlModelsDirectories: java.util.Collection<java.io.File> ()
@@ -803,6 +733,9 @@ com.android.builder.model.v2.ide.TestInfo.getAnimationsDisabled: boolean ()
 com.android.builder.model.v2.ide.TestInfo.getExecution: com.android.builder.model.v2.ide.TestInfo$Execution ()
 com.android.builder.model.v2.ide.TestInfo.getInstrumentedTestTaskName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuite implements com.android.builder.model.v2.AndroidModel
+com.android.builder.model.v2.ide.TestSuite.getGeneratedAssets: java.util.Collection<com.android.builder.model.v2.models.AssetsTestSuiteSource> ()
+com.android.builder.model.v2.ide.TestSuite.getGeneratedHostJars: java.util.Collection<com.android.builder.model.v2.models.HostJarTestSuiteSource> ()
+com.android.builder.model.v2.ide.TestSuite.getGeneratedTestApks: java.util.Collection<com.android.builder.model.v2.models.TestApkTestSuiteSource> ()
 com.android.builder.model.v2.ide.TestSuite.getJunitEngineInfo: com.android.builder.model.v2.ide.JUnitEngineInfo ()
 com.android.builder.model.v2.ide.TestSuite.getName: java.lang.String ()
 com.android.builder.model.v2.ide.TestSuiteArtifact implements com.android.builder.model.v2.ide.AbstractArtifact, com.android.builder.model.v2.AndroidModel
@@ -902,8 +835,10 @@ com.android.builder.model.v2.models.HostJarTestSuiteSource implements com.androi
 com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls
 com.android.builder.model.v2.models.HostJarTestSuiteSource$DefaultImpls.getType: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
 com.android.builder.model.v2.models.HostJarTestSuiteSource.access$getType$jd: com.android.builder.model.v2.models.SourceType (com.android.builder.model.v2.models.HostJarTestSuiteSource)
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getDefaultTopLevel: java.io.File ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getJava: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getKotlin: java.util.Collection<java.io.File> ()
+com.android.builder.model.v2.models.HostJarTestSuiteSource.getManifestFile: java.io.File ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getResources: java.util.Collection<java.io.File> ()
 com.android.builder.model.v2.models.HostJarTestSuiteSource.getType: com.android.builder.model.v2.models.SourceType ()
 com.android.builder.model.v2.models.ModelBuilderParameter

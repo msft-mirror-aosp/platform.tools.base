@@ -18,9 +18,9 @@ package com.android.testutils
 import org.junit.rules.ExternalResource
 
 class MockitoCleanerRule : ExternalResource() {
-    private val mockitoCleaner = MockitoThreadLocalsCleaner()
+  private val mockitoCleaner = MockitoThreadLocalsCleaner()
 
-    override fun after() {
-        mockitoCleaner.cleanupAndTearDown()
-    }
+  override fun after() {
+    mockitoCleaner.cleanupAndTearDown()
+  }
 }

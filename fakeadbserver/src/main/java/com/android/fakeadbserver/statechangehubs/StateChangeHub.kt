@@ -16,48 +16,41 @@
 package com.android.fakeadbserver.statechangehubs
 
 /**
- * This class is the base multiplexer for events that need to be propagated to existing
- * client/server connections.
+ * This class is the base multiplexer for events that need to be propagated to existing client/server connections.
  *
- * @param FactoryType This is the class type of the factory that will create the handlers that
- * this hub will serve.
+ * @param FactoryType This is the class type of the factory that will create the handlers that this hub will serve.
  */
 abstract class StateChangeHub<FactoryType : StateChangeHandlerFactory> {
 
-    @JvmField
-    protected val mHandlers: MutableMap<StateChangeQueue, FactoryType> = HashMap()
+  @JvmField protected val mHandlers: MutableMap<StateChangeQueue, FactoryType> = HashMap()
 
-    @Volatile
-    protected var mStopped = false
+  @Volatile protected var mStopped = false
 
-    /**
-     * Cleanly shuts down the hub and closes all existing connections.
-     */
-    fun stop() {
-        synchronized(mHandlers) {
-            mStopped = true
-            mHandlers.forEach { (stateChangeQueue: StateChangeQueue, changeHandlerFactory: FactoryType) ->
-                stateChangeQueue
-                    .add { StateChangeHandlerFactory.HandlerResult(false) }
-            }
-        }
+  /** Cleanly shuts down the hub and closes all existing connections. */
+  fun stop() {
+    synchronized(mHandlers) {
+      mStopped = true
+      mHandlers.forEach { (stateChangeQueue: StateChangeQueue, changeHandlerFactory: FactoryType) ->
+        stateChangeQueue.add { StateChangeHandlerFactory.HandlerResult(false) }
+      }
     }
+  }
 
-    fun subscribe(handlerFactory: FactoryType): StateChangeQueue? {
-        synchronized(mHandlers) {
-            if (mStopped) {
-                return null
-            }
-            val queue = StateChangeQueue()
-            mHandlers[queue] = handlerFactory
-            return queue
-        }
+  fun subscribe(handlerFactory: FactoryType): StateChangeQueue? {
+    synchronized(mHandlers) {
+      if (mStopped) {
+        return null
+      }
+      val queue = StateChangeQueue()
+      mHandlers[queue] = handlerFactory
+      return queue
     }
+  }
 
-    fun unsubscribe(queue: StateChangeQueue) {
-        synchronized(mHandlers) {
-            assert(mHandlers.containsKey(queue))
-            mHandlers.remove(queue)
-        }
+  fun unsubscribe(queue: StateChangeQueue) {
+    synchronized(mHandlers) {
+      assert(mHandlers.containsKey(queue))
+      mHandlers.remove(queue)
     }
+  }
 }

@@ -111,6 +111,9 @@ class Agent {
 
   bool IsProfilerInitalized();
 
+  // Returns true if the agent is still connected to the daemon.
+  bool IsConnectedToDaemon() const { return grpc_target_initialized_; }
+
   // Registers a handler for the given command type.
   // Newer registration overwrites prior registrations of the same type.
   void RegisterCommandHandler(proto::Command::CommandType type,

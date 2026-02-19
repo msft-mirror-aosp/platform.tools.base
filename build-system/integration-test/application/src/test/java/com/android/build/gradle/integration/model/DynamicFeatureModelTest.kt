@@ -30,179 +30,114 @@ import org.junit.Rule
 import org.junit.Test
 
 class HelloWorldDynamicFeatureModelTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-                dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          enableKotlin = false
+          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
         }
-        androidFeature {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_APP_PATH))
-            }
-        }
+      }
+      androidFeature {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(DEFAULT_APP_PATH) }
+    val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(DEFAULT_APP_PATH) }
 
-        with(result).compareAndroidProject(
-            projectAction = appModelAction,
-            goldenFile = "_app_AndroidProject"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = appModelAction,
-            goldenFile = "_app_VariantDependencies"
-        )
+    with(result).compareAndroidProject(projectAction = appModelAction, goldenFile = "_app_AndroidProject")
+    with(result).compareVariantDependencies(projectAction = appModelAction, goldenFile = "_app_VariantDependencies")
 
-        val featureModelAction:  ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(DEFAULT_FEATURE_PATH) }
+    val featureModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(DEFAULT_FEATURE_PATH) }
 
-        with(result).compareAndroidProject(
-            projectAction = featureModelAction,
-            goldenFile = "_feature_AndroidProject"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = featureModelAction,
-            goldenFile = "_feature_" +
-                    "VariantDependencies"
-        )
-    }
+    with(result).compareAndroidProject(projectAction = featureModelAction, goldenFile = "_feature_AndroidProject")
+    with(result).compareVariantDependencies(projectAction = featureModelAction, goldenFile = "_feature_" + "VariantDependencies")
+  }
 }
 
-/**
- * Similar to [HelloWorldDynamicFeatureModelTest], but with an app -> lib dependency
- */
+/** Similar to [HelloWorldDynamicFeatureModelTest], but with an app -> lib dependency */
 class HelloWorldWithLibDynamicFeatureModelTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-                dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          enableKotlin = false
+          dynamicFeatures += listOf(DEFAULT_FEATURE_PATH)
         }
-        androidFeature {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_APP_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-        }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidFeature {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_APP_PATH)) }
+      }
+      androidLibrary { android { enableKotlin = false } }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(DEFAULT_APP_PATH) }
+    val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(DEFAULT_APP_PATH) }
 
-        with(result).compareVariantDependencies(
-            projectAction = appModelAction,
-            goldenFile = "_app_VariantDependencies"
-        )
+    with(result).compareVariantDependencies(projectAction = appModelAction, goldenFile = "_app_VariantDependencies")
 
-        val featureModelAction:  ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(DEFAULT_FEATURE_PATH) }
+    val featureModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(DEFAULT_FEATURE_PATH) }
 
-        with(result).compareVariantDependencies(
-            projectAction = featureModelAction,
-            goldenFile = "_feature_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = featureModelAction, goldenFile = "_feature_VariantDependencies")
+  }
 }
 
 class CompileSdkViaSettingsInDynamicFeatureModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-        }
-        androidFeature(createMinimumProject = false) {
-            android {
-                namespace = "com.example.feature"
-            }
-            files.setupMinimumManifest()
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
+      }
+      androidFeature(createMinimumProject = false) {
+        android { namespace = "com.example.feature" }
+        files.setupMinimumManifest()
+      }
     }
 
-    @Test
-    fun `test compileTarget`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test compileTarget`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidDsl = result.container.getProject().androidDsl
-            ?: throw RuntimeException("Failed to get AndroidDsl Model")
-        Truth
-            .assertWithMessage("compile target hash")
-            .that(androidDsl.compileTarget)
-            .isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
-    }
+    val androidDsl = result.container.getProject().androidDsl ?: throw RuntimeException("Failed to get AndroidDsl Model")
+    Truth.assertWithMessage("compile target hash").that(androidDsl.compileTarget).isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
+  }
 }
 
 class MinSdkViaSettingsInDynamicFeatureModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                minSdk = 23
-            }
-        }
-        androidFeature { }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { minSdk = 23 }
+      }
+      androidFeature {}
     }
 
-    @Test
-    fun `test minSdkVersion`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test minSdkVersion`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidDsl = result.container.getProject().androidDsl
-            ?: throw RuntimeException("Failed to get AndroidDsl Model")
+    val androidDsl = result.container.getProject().androidDsl ?: throw RuntimeException("Failed to get AndroidDsl Model")
 
-        Truth
-            .assertWithMessage("minSdkVersion")
-            .that(androidDsl.defaultConfig?.minSdkVersion)
-            .isNotNull()
+    Truth.assertWithMessage("minSdkVersion").that(androidDsl.defaultConfig?.minSdkVersion).isNotNull()
 
-        Truth
-            .assertWithMessage("minSdkVersion.apiLevel")
-            .that(androidDsl.defaultConfig?.minSdkVersion?.apiLevel)
-            .isEqualTo(23)
+    Truth.assertWithMessage("minSdkVersion.apiLevel").that(androidDsl.defaultConfig?.minSdkVersion?.apiLevel).isEqualTo(23)
 
-        Truth
-            .assertWithMessage("minSdkVersion.codename")
-            .that(androidDsl.defaultConfig?.minSdkVersion?.codename)
-            .isNull()
-    }
+    Truth.assertWithMessage("minSdkVersion.codename").that(androidDsl.defaultConfig?.minSdkVersion?.codename).isNull()
+  }
 }

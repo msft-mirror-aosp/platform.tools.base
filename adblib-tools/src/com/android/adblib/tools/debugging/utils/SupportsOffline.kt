@@ -18,30 +18,27 @@ package com.android.adblib.tools.debugging.utils
 import com.android.adblib.utils.ResizableBuffer
 
 /**
- * An object implements the [SupportsOffline] interface to indicate that it allows creating an
- * in-memory copy of itself that can be used after the object has been disconnected from the
- * underlying ephemeral resource the object is bound to (e.g. a network connection or a file).
+ * An object implements the [SupportsOffline] interface to indicate that it allows creating an in-memory copy of itself that can be used
+ * after the object has been disconnected from the underlying ephemeral resource the object is bound to (e.g. a network connection or a
+ * file).
  */
 internal interface SupportsOffline<out T> {
 
-    /**
-     * Returns a copy of this [SupportsOffline] object that can be used after the object
-     * has been disconnected from the underlying resource it is bound to.
-     */
-    suspend fun toOffline(workBuffer: ResizableBuffer = ResizableBuffer()): T
+  /**
+   * Returns a copy of this [SupportsOffline] object that can be used after the object has been disconnected from the underlying resource it
+   * is bound to.
+   */
+  suspend fun toOffline(workBuffer: ResizableBuffer = ResizableBuffer()): T
 }
 
 /**
- * Returns a copy of this object that can be used after the object has been disconnected
- * from the underlying resource it is bound to, or `null` if this object does not implement
- * the [SupportsOffline] interface.
+ * Returns a copy of this object that can be used after the object has been disconnected from the underlying resource it is bound to, or
+ * `null` if this object does not implement the [SupportsOffline] interface.
  */
-internal suspend inline fun <reified T> T.toOfflineOrNull(
-    workBuffer: ResizableBuffer
-): T? {
-    return if (this is SupportsOffline<*>) {
-        return this.toOffline(workBuffer) as T
-    } else {
-        null
-    }
+internal suspend inline fun <reified T> T.toOfflineOrNull(workBuffer: ResizableBuffer): T? {
+  return if (this is SupportsOffline<*>) {
+    return this.toOffline(workBuffer) as T
+  } else {
+    null
+  }
 }

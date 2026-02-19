@@ -18,27 +18,23 @@ package com.android.builder.errors
 
 import com.android.utils.ILogger
 
-/**
- * Basic implementation of [IssueReporter] that throws errors and log warnings to a
- * provider [ILogger.warning]
- */
-class DefaultIssueReporter(
-    private val logger: ILogger
-) : IssueReporter() {
-    private val warnings = mutableSetOf<Type>()
-    override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
-        if (severity == Severity.ERROR) {
-            throw exception
-        }
+/** Basic implementation of [IssueReporter] that throws errors and log warnings to a provider [ILogger.warning] */
+class DefaultIssueReporter(private val logger: ILogger) : IssueReporter() {
+  private val warnings = mutableSetOf<Type>()
 
-        // record warnings
-        // since this reporter always throws on error, there's no need to record errors as
-        // code that check for them would not be reachable.
-        warnings.add(type)
-        val stringBuilder = StringBuilder(exception.message)
-        exception.multilineMessage?.joinTo(buffer = stringBuilder, separator = "\n")
-        logger.warning(stringBuilder.toString())
+  override fun reportIssue(type: Type, severity: Severity, exception: EvalIssueException) {
+    if (severity == Severity.ERROR) {
+      throw exception
     }
 
-    override fun hasIssue(type: Type): Boolean = warnings.contains(type)
+    // record warnings
+    // since this reporter always throws on error, there's no need to record errors as
+    // code that check for them would not be reachable.
+    warnings.add(type)
+    val stringBuilder = StringBuilder(exception.message)
+    exception.multilineMessage?.joinTo(buffer = stringBuilder, separator = "\n")
+    logger.warning(stringBuilder.toString())
+  }
+
+  override fun hasIssue(type: Type): Boolean = warnings.contains(type)
 }

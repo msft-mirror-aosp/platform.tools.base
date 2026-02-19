@@ -16,6 +16,7 @@
 
 package com.android.tools.apk.analyzer;
 
+import com.android.ide.common.pagealign.AlignmentProblem;
 import com.android.tools.apk.analyzer.internal.ArchiveTreeNode;
 
 import org.jetbrains.annotations.NotNull;
@@ -146,11 +147,7 @@ public class ArchiveTreeStructure {
                                 data.setRawFileSize(info.size);
                                 data.setIsFileCompressed(info.isCompressed);
                                 data.setFileAlignment(info.zipAlignment);
-                                data.setIsElf(info.isElf);
-                                if (info.isElf) {
-                                    data.setElfMinimumLoadSectionAlignment(
-                                            info.elfLoadSectionAlignment);
-                                }
+                                data.setElfAlignmentProblems(info.elfAlignmentProblems);
                             }
                         });
 
@@ -174,8 +171,9 @@ public class ArchiveTreeStructure {
                 .forEach(
                         node -> {
                             ArchiveEntry data = node.getData();
-                            long loadSectionAlignment = data.getElfMinimumLoadSectionAlignment();
-                            if (loadSectionAlignment == -1) {
+                            List<AlignmentProblem> elfAlignmentProblems =
+                                    data.getElfAlignmentProblems();
+                            if (elfAlignmentProblems == null) {
                                 // This file or folder is not an ELF file.
                                 // Set selfOrChild16kbIncompatible to true only if one of its
                                 // children are incompatible with 16 KB devices.
@@ -188,13 +186,11 @@ public class ArchiveTreeStructure {
                                 return;
                             }
                             // At this point, we know we're dealing with an ELF file. Do the checks
-                            // for compatibility with 16 KB devices, which are:
-                            // 1) ALL ELF files must have LOAD sections that are aligned at a 16 KB
-                            //    boundary.
-                            // 2) If the ELF file is stored uncompressed in the zip then it is
-                            //    intended to be directly memmap'd rather than extracted. So it must
-                            //    be stored at a 16 KB boundary within the zip.
-                            if (loadSectionAlignment % (16L * 1024) != 0L) {
+                            // for compatibility with 16 KB devices. Since we only surface bit
+                            // (boolean) information to the UI, we flag it as incompatible if
+                            // *any* alignment problem is found (LOAD section, RELRO section, or
+                            // zip entry alignment).
+                            if (!elfAlignmentProblems.isEmpty()) {
                                 // .so file contains LOAD sections that are not aligned at a
                                 // 16 KB boundary.
                                 // It doesn't matter if the .so file was stored compressed or

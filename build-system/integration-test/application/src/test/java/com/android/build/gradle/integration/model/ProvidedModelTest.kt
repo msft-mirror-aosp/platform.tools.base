@@ -26,129 +26,119 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * This compares the list of provided libraries returned by v1 and v2.
- */
+/** This compares the list of provided libraries returned by v1 and v2. */
 class ProvidedModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            dependencies {
-                api("com.android.support:appcompat-v7:+")
-                api("com.google.guava:guava:19.0")
-                api("com.android.support.constraint:constraint-layout:1.0.2")
-                testImplementation("junit:junit:4.12")
-                androidTestImplementation("com.android.support.test:runner:+")
-                androidTestImplementation("com.android.support.test.espresso:espresso-core:+")
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        dependencies {
+          api("com.android.support:appcompat-v7:+")
+          api("com.google.guava:guava:19.0")
+          api("com.android.support.constraint:constraint-layout:1.0.2")
+          testImplementation("junit:junit:4.12")
+          androidTestImplementation("com.android.support.test:runner:+")
+          androidTestImplementation("com.android.support.test.espresso:espresso-core:+")
         }
+      }
     }
 
-    companion object {
-        private val providedAndroidLibraries = listOf(
-            "com.android.support:appcompat-v7:28.0.0",
-            "com.android.support.constraint:constraint-layout:1.0.2",
-            "com.android.support:support-fragment:28.0.0",
-            "com.android.support:animated-vector-drawable:28.0.0",
-            "com.android.support:support-core-ui:28.0.0",
-            "com.android.support:support-core-utils:28.0.0",
-            "com.android.support:support-vector-drawable:28.0.0",
-            "com.android.support:loader:28.0.0",
-            "com.android.support:viewpager:28.0.0",
-            "com.android.support:coordinatorlayout:28.0.0",
-            "com.android.support:drawerlayout:28.0.0",
-            "com.android.support:slidingpanelayout:28.0.0",
-            "com.android.support:customview:28.0.0",
-            "com.android.support:swiperefreshlayout:28.0.0",
-            "com.android.support:asynclayoutinflater:28.0.0",
-            "com.android.support:support-compat:28.0.0",
-            "com.android.support:versionedparcelable:28.0.0",
-            "com.android.support:cursoradapter:28.0.0",
-            "android.arch.lifecycle:runtime:1.1.1",
-            "com.android.support:documentfile:28.0.0",
-            "com.android.support:localbroadcastmanager:28.0.0",
-            "com.android.support:print:28.0.0",
-            "android.arch.lifecycle:viewmodel:1.1.1",
-            "android.arch.lifecycle:livedata:1.1.1",
-            "android.arch.lifecycle:livedata-core:1.1.1",
-            "android.arch.core:runtime:1.1.1",
-            "com.android.support:interpolator:28.0.0"
-        )
+  companion object {
+    private val providedAndroidLibraries =
+      listOf(
+        "com.android.support:appcompat-v7:28.0.0",
+        "com.android.support.constraint:constraint-layout:1.0.2",
+        "com.android.support:support-fragment:28.0.0",
+        "com.android.support:animated-vector-drawable:28.0.0",
+        "com.android.support:support-core-ui:28.0.0",
+        "com.android.support:support-core-utils:28.0.0",
+        "com.android.support:support-vector-drawable:28.0.0",
+        "com.android.support:loader:28.0.0",
+        "com.android.support:viewpager:28.0.0",
+        "com.android.support:coordinatorlayout:28.0.0",
+        "com.android.support:drawerlayout:28.0.0",
+        "com.android.support:slidingpanelayout:28.0.0",
+        "com.android.support:customview:28.0.0",
+        "com.android.support:swiperefreshlayout:28.0.0",
+        "com.android.support:asynclayoutinflater:28.0.0",
+        "com.android.support:support-compat:28.0.0",
+        "com.android.support:versionedparcelable:28.0.0",
+        "com.android.support:cursoradapter:28.0.0",
+        "android.arch.lifecycle:runtime:1.1.1",
+        "com.android.support:documentfile:28.0.0",
+        "com.android.support:localbroadcastmanager:28.0.0",
+        "com.android.support:print:28.0.0",
+        "android.arch.lifecycle:viewmodel:1.1.1",
+        "android.arch.lifecycle:livedata:1.1.1",
+        "android.arch.lifecycle:livedata-core:1.1.1",
+        "android.arch.core:runtime:1.1.1",
+        "com.android.support:interpolator:28.0.0",
+      )
 
-        private val providedJavaLibraries = listOf(
-            "android.arch.lifecycle:common:1.1.1",
-            "android.arch.core:common:1.1.1",
-            "com.android.support:collections:28.0.0",
-            "com.android.support.constraint:constraint-layout-solver:1.0.2",
-            "org.jetbrains:annotations:13.0",
-            "com.google.guava:guava:19.0",
-            "org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION"
-        )
+    private val providedJavaLibraries =
+      listOf(
+        "android.arch.lifecycle:common:1.1.1",
+        "android.arch.core:common:1.1.1",
+        "com.android.support:collections:28.0.0",
+        "com.android.support.constraint:constraint-layout-solver:1.0.2",
+        "org.jetbrains:annotations:13.0",
+        "com.google.guava:guava:19.0",
+        "org.jetbrains.kotlin:kotlin-stdlib:$BUILT_IN_KOTLIN_VERSION",
+      )
+  }
+
+  @Test
+  fun `test v2 isProvided`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+
+    val variantDependencies =
+      result.container.rootInfoMap[":app"]?.variantDependencies ?: throw RuntimeException("Cannot find model for :app")
+    val dependencies = variantDependencies.androidTestArtifact ?: throw RuntimeException("No AndroidTest artifact for :app")
+
+    // gather the compile and runtime Graphitem (ie flatten the graph)
+    val compileItems: Set<GraphItem> = dependencies.compileDependencies.flatten()
+    val runtimeItems: Set<GraphItem> = dependencies.runtimeDependencies.flatten()
+
+    // convert to keys, using the library map
+    val map = variantDependencies.libraries
+
+    // Test the Android Libraries
+    checkLibraries(compileItems, runtimeItems, LibraryType.ANDROID_LIBRARY, map, providedAndroidLibraries)
+
+    // Test the Java Libraries
+    checkLibraries(compileItems, runtimeItems, LibraryType.JAVA_LIBRARY, map, providedJavaLibraries)
+  }
+
+  private fun checkLibraries(
+    compileItems: Set<GraphItem>,
+    runtimeItems: Set<GraphItem>,
+    libraryType: LibraryType,
+    libraryMap: Map<String, Library>,
+    actualProvidedList: List<String>,
+  ) {
+    val compileIdentityItems = compileItems.mapNotNull { it.convert(libraryMap, libraryType) }
+    val runtimeIdentityItems = runtimeItems.mapNotNull { it.convert(libraryMap, libraryType) }
+
+    // get provided list
+    val providedList = compileIdentityItems.minus(runtimeIdentityItems)
+    Truth.assertThat(providedList.map { it.coordinates }).containsExactlyElementsIn(actualProvidedList)
+  }
+
+  private fun List<GraphItem>?.flatten(): Set<GraphItem> {
+    return this?.let { list -> (list.flatMap { it.dependencies.flatten() } + list).toSet() } ?: setOf()
+  }
+
+  private fun GraphItem.convert(libraryMap: Map<String, Library>, type: LibraryType): Identity? {
+    val library = libraryMap[key] ?: return null
+
+    if (library.type != type) {
+      return null
     }
 
-    @Test
-    fun `test v2 isProvided`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+    val info = library.libraryInfo ?: throw RuntimeException("No library info")
 
-        val variantDependencies = result.container.rootInfoMap[":app"]?.variantDependencies
-            ?: throw RuntimeException("Cannot find model for :app")
-        val dependencies = variantDependencies.androidTestArtifact
-            ?: throw RuntimeException("No AndroidTest artifact for :app")
+    return Identity("${info.group}:${info.name}:${info.version}", info.capabilities)
+  }
 
-        // gather the compile and runtime Graphitem (ie flatten the graph)
-        val compileItems: Set<GraphItem> = dependencies.compileDependencies.flatten()
-        val runtimeItems: Set<GraphItem> = dependencies.runtimeDependencies.flatten()
-
-        // convert to keys, using the library map
-        val map = variantDependencies.libraries
-
-        // Test the Android Libraries
-        checkLibraries(compileItems, runtimeItems, LibraryType.ANDROID_LIBRARY, map, providedAndroidLibraries)
-
-        // Test the Java Libraries
-        checkLibraries(compileItems, runtimeItems, LibraryType.JAVA_LIBRARY, map, providedJavaLibraries)
-    }
-
-    private fun checkLibraries(
-        compileItems: Set<GraphItem>,
-        runtimeItems: Set<GraphItem>,
-        libraryType: LibraryType,
-        libraryMap: Map<String, Library>,
-        actualProvidedList: List<String>
-    ) {
-        val compileIdentityItems = compileItems.mapNotNull { it.convert(libraryMap, libraryType) }
-        val runtimeIdentityItems = runtimeItems.mapNotNull { it.convert(libraryMap, libraryType) }
-
-        // get provided list
-        val providedList = compileIdentityItems.minus(runtimeIdentityItems)
-        Truth.assertThat(providedList.map { it.coordinates }).containsExactlyElementsIn(actualProvidedList)
-    }
-
-    private fun List<GraphItem>?.flatten(): Set<GraphItem> {
-        return this?.let { list ->
-            (list.flatMap { it.dependencies.flatten() } + list).toSet()
-        } ?: setOf()
-    }
-
-    private fun GraphItem.convert(libraryMap: Map<String, Library>, type: LibraryType): Identity? {
-        val library = libraryMap[key] ?: return null
-
-        if (library.type != type) {
-            return null
-        }
-
-        val info = library.libraryInfo ?: throw RuntimeException("No library info")
-
-        return Identity(
-            "${info.group}:${info.name}:${info.version}",
-            info.capabilities
-        )
-    }
-
-    private data class Identity(
-        val coordinates: String,
-        val capabilities: List<String>
-    )
+  private data class Identity(val coordinates: String, val capabilities: List<String>)
 }

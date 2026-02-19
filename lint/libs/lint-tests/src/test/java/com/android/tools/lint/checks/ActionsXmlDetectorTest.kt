@@ -758,10 +758,7 @@ class ActionsXmlDetectorTest : AbstractCheckTest() {
     assertEquals("[hello, x, y]", getUriTemplateParameters("{x,hello,y}").sorted().toString())
     assertEquals("[path]", getUriTemplateParameters("{+path:6}/here").sorted().toString())
     assertEquals("[path]", getUriTemplateParameters("{#path:6}/here").sorted().toString())
-    assertEquals(
-      "[list, path]",
-      getUriTemplateParameters("prefix{/list*,path:4}suffix").sorted().toString(),
-    )
+    assertEquals("[list, path]", getUriTemplateParameters("prefix{/list*,path:4}suffix").sorted().toString())
     assertEquals("[who]", getUriTemplateParameters("{.who,who}").sorted().toString())
     assertEquals("[who]", getUriTemplateParameters("{.who,who}").sorted().toString())
     assertEquals("[who]", getUriTemplateParameters("{.who,who}").sorted().toString())

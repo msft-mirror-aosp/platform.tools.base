@@ -29,17 +29,15 @@ import org.junit.Test
 
 class ApplicationIdReset {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.noBuildFile())
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-        .create()
+  @get:Rule
+  var project =
+    GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
             |apply plugin: "com.android.application"
             |
             |android {
@@ -86,23 +84,20 @@ class ApplicationIdReset {
             |       variant.mergedFlavor.setApplicationId(applicationId)
             |    }
             |}
-            |""".trimMargin("|")
-        )
-    }
+            |"""
+        .trimMargin("|"),
+    )
+  }
 
-    @Test
-    fun checkApplicationIdDebug() {
-        project.execute("assembleApp1FreeDebug")
-        val androidProject = project.modelV2()
-            .allowOptionWarning(BooleanOption.USE_NEW_DSL)
-            .fetchModels().container.getProject().androidProject!!
+  @Test
+  fun checkApplicationIdDebug() {
+    project.execute("assembleApp1FreeDebug")
+    val androidProject =
+      project.modelV2().allowOptionWarning(BooleanOption.USE_NEW_DSL).fetchModels().container.getProject().androidProject!!
 
-        val listingFile = ListingFileRedirect.getListingFile(
-            androidProject.getVariantByName("app1FreeDebug").mainArtifact.assembleTaskOutputListingFile!!
-        )
+    val listingFile =
+      ListingFileRedirect.getListingFile(androidProject.getVariantByName("app1FreeDebug").mainArtifact.assembleTaskOutputListingFile!!)
 
-        Truth.assertThat(listingFile.readText(Charsets.UTF_8)).contains(
-            "  \"applicationId\": \"com.flavors.app1.free\""
-        )
-    }
+    Truth.assertThat(listingFile.readText(Charsets.UTF_8)).contains("  \"applicationId\": \"com.flavors.app1.free\"")
+  }
 }

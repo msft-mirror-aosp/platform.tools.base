@@ -19,48 +19,44 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.fixtures.FakeNoOpAnalyticsService
 import com.google.common.truth.Truth
+import java.io.File
+import kotlin.test.assertNotNull
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
-import kotlin.test.assertNotNull
 
 class BundleIdeModelProducerTaskTest {
 
-    @get: Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private lateinit var task: BundleIdeModelProducerTask
-    private lateinit var outputFile: File
+  private lateinit var task: BundleIdeModelProducerTask
+  private lateinit var outputFile: File
 
-    @Test
-    fun testModelProduction() {
-        val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
-        task = project.tasks.register(
-                "bundleModelProducer",
-                BundleIdeModelProducerTask::class.java).get()
-        task.analyticsService.set(FakeNoOpAnalyticsService())
-        outputFile = temporaryFolder.newFile()
-        task.bundleIdeModel.set(temporaryFolder.newFile())
-        task.applicationId.set("some.application")
-        task.variantName = "debug"
-        val bundleFile = temporaryFolder.newFile("file.aab")
-        task.finalBundleFile.set(bundleFile)
+  @Test
+  fun testModelProduction() {
+    val project = ProjectBuilder.builder().withProjectDir(temporaryFolder.root).build()
+    task = project.tasks.register("bundleModelProducer", BundleIdeModelProducerTask::class.java).get()
+    task.analyticsService.set(FakeNoOpAnalyticsService())
+    outputFile = temporaryFolder.newFile()
+    task.bundleIdeModel.set(temporaryFolder.newFile())
+    task.applicationId.set("some.application")
+    task.variantName = "debug"
+    val bundleFile = temporaryFolder.newFile("file.aab")
+    task.finalBundleFile.set(bundleFile)
 
-        task.taskAction()
+    task.taskAction()
 
-        val modelFile = task.bundleIdeModel.get().asFile
-        Truth.assertThat(modelFile.exists()).isTrue()
+    val modelFile = task.bundleIdeModel.get().asFile
+    Truth.assertThat(modelFile.exists()).isTrue()
 
-        val builtArtifacts = BuiltArtifactsLoaderImpl.loadFromFile(modelFile)
-        assertNotNull(builtArtifacts)
-        Truth.assertThat(builtArtifacts.elements).hasSize(1)
-        Truth.assertThat(builtArtifacts.applicationId).isEqualTo("some.application")
-        Truth.assertThat(builtArtifacts.variantName).isEqualTo("debug")
-        val bundleModel = builtArtifacts.elements.single()
-        Truth.assertThat(bundleModel.filters).isEmpty()
-        Truth.assertThat(File(bundleModel.outputFile).absolutePath).isEqualTo(
-                bundleFile.absolutePath)
-    }
+    val builtArtifacts = BuiltArtifactsLoaderImpl.loadFromFile(modelFile)
+    assertNotNull(builtArtifacts)
+    Truth.assertThat(builtArtifacts.elements).hasSize(1)
+    Truth.assertThat(builtArtifacts.applicationId).isEqualTo("some.application")
+    Truth.assertThat(builtArtifacts.variantName).isEqualTo("debug")
+    val bundleModel = builtArtifacts.elements.single()
+    Truth.assertThat(bundleModel.filters).isEmpty()
+    Truth.assertThat(File(bundleModel.outputFile).absolutePath).isEqualTo(bundleFile.absolutePath)
+  }
 }

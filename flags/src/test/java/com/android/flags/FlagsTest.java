@@ -176,7 +176,8 @@ public class FlagsTest {
 
     @Test
     public void canSpecifyCustomUserOveriddes() throws Exception {
-        InMemoryFlagValueContainer customMutableOverrides = new InMemoryFlagValueContainer();
+        InMemoryFlagValueContainer customMutableOverrides =
+                new InMemoryFlagValueContainer("customMutableOverrides");
         Flags flags = new Flags(customMutableOverrides);
         FlagGroup group = new FlagGroup(flags, "test", "Test Group");
         Flag<String> flagStr = new StringFlag(group, "str", "Unused", "Unused", "Default value");
@@ -282,5 +283,61 @@ public class FlagsTest {
                     .isEqualTo(
                             "Flag \"Id 2\" shares duplicate ID \"test.id\" with flag \" wrong\"");
         }
+    }
+
+    @Test
+    public void toStringNoOverrides() {
+        PropertyOverrides propertyOverrides = new PropertyOverrides(new Properties());
+        Flags flags = new Flags(propertyOverrides);
+        FlagGroup group = new FlagGroup(flags, "test", "Test Group");
+        new BooleanFlag(group, "a", "Unused", "Unused");
+        assertThat(flags.toString()).isEqualTo("Flags: No current overrides");
+    }
+
+    @Test
+    public void toStringWithOverrides() {
+        FlagValueContainer userOverrides = new InMemoryFlagValueContainer("user_overrides");
+        FlagValueContainer fallback1 = new InMemoryFlagValueContainer("fallback1");
+        FlagValueContainer fallback2 = new InMemoryFlagValueContainer("fallback2");
+        FlagValueContainer fallback3 = new InMemoryFlagValueContainer("fallback3");
+        FlagValueContainer fileBasedDefaultProvider = new InMemoryFlagValueContainer("file-based");
+
+        Flags flags =
+                new Flags(fileBasedDefaultProvider, userOverrides, fallback1, fallback2, fallback3);
+        FlagGroup group = new FlagGroup(flags, "test", "Test Group");
+        StringFlag flagA = new StringFlag(group, "a", "Unused", "Unused", "defaultA");
+        StringFlag flagB = new StringFlag(group, "b", "Unused", "Unused", "defaultB");
+        StringFlag flagC = new StringFlag(group, "c", "Unused", "Unused", "defaultC");
+        StringFlag flagD = new StringFlag(group, "d", "Unused", "Unused", "defaultD");
+
+        flags.getUserOverrides().put(flagA, "user override");
+        fallback1.put(flagA, "fallback1_a"); // Hidden by the user override
+        fallback1.put(flagB, "fallback1_b");
+        fallback3.put(flagA, "fallback3_a"); // Hidden by the user override and fallback 1
+        fallback3.put(flagB, "fallback3_b"); // Hidden by fallback 1
+        fallback3.put(flagC, "fallback3_c");
+        fileBasedDefaultProvider.put(flagD, "file-based default"); // Should not be displayed
+
+        // consistency check for the flags themselves
+        assertThat(flagA.get()).isEqualTo("user override");
+        assertThat(flagB.get()).isEqualTo("fallback1_b");
+        assertThat(flagC.get()).isEqualTo("fallback3_c");
+        assertThat(flagD.get()).isEqualTo("file-based default");
+
+        assertThat(flags.toString())
+                .isEqualTo(
+                        """
+                        Flags with current overrides:
+                          InMemoryFlagValueContainer(user_overrides):
+                            test.a=user override
+                          InMemoryFlagValueContainer(fallback1):
+                            (test.a=fallback1_a overridden above by InMemoryFlagValueContainer(user_overrides))
+                            test.b=fallback1_b
+                          InMemoryFlagValueContainer(fallback2):
+                          InMemoryFlagValueContainer(fallback3):
+                            (test.a=fallback3_a overridden above by InMemoryFlagValueContainer(user_overrides))
+                            (test.b=fallback3_b overridden above by InMemoryFlagValueContainer(fallback1))
+                            test.c=fallback3_c\
+                        """);
     }
 }

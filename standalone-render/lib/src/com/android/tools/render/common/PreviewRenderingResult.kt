@@ -16,7 +16,7 @@
 package com.android.tools.render.common
 
 data class PreviewRenderingResult(
-    // Exception that is not bound to a particular screenshot
-    val globalError: String?,
-    val screenshotResults: List<PreviewScreenshotResult>
+  // Exception that is not bound to a particular screenshot
+  val globalError: String?,
+  val screenshotResults: List<PreviewScreenshotResult>,
 )

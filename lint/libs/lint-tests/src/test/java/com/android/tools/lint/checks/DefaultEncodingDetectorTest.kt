@@ -311,12 +311,7 @@ class DefaultEncodingDetectorTest {
   @Test
   fun negative() {
     // From errorprone's `negative` and `ignoreFileDescriptor` unit tests
-    @Suppress(
-      "ResultOfMethodCallIgnored",
-      "RedundantThrows",
-      "EmptyTryBlock",
-      "CharsetObjectCanBeUsed",
-    )
+    @Suppress("ResultOfMethodCallIgnored", "RedundantThrows", "EmptyTryBlock", "CharsetObjectCanBeUsed")
     lint()
       .files(
         java(
@@ -712,7 +707,8 @@ class DefaultEncodingDetectorTest {
                 """
           )
           .indented(),
-        // Set Java language level to 1.8; quickfixes for FileReader/FileWriter in Java depend on
+        // Set Java language level to 1.8; quickfixes for FileReader/FileWriter in Java depend
+        // on
         // the language
         // level since the best replacement isn't available before Java 11
         gradle(

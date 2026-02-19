@@ -36,199 +36,163 @@ import com.android.tools.idea.wizard.template.template
 import java.io.File
 
 val composeWearActivityTemplate
-    get() = template {
-        name = "Empty Wear App"
-        minApi = 26
-        description = "Creates an empty app using Compose for Wear OS"
+  get() = template {
+    name = "Empty Wear App"
+    minApi = 30
+    description = "Creates an empty app using Compose for Wear OS"
 
-        constraints = listOf(
-                TemplateConstraint.AndroidX,
-                TemplateConstraint.Kotlin,
-                TemplateConstraint.Compose)
-        category = Category.Wear
-        formFactor = FormFactor.Wear
-        screens =
-                listOf(WizardUiContext.MenuEntry,
-                        WizardUiContext.NewProject,
-                        WizardUiContext.NewModule)
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Compose)
+    category = Category.Wear
+    formFactor = FormFactor.Wear
+    screens = listOf(WizardUiContext.MenuEntry, WizardUiContext.NewProject, WizardUiContext.NewModule)
 
-        val activityClass = stringParameter {
-            name = "Activity Name"
-            default = "MainActivity"
-            help = "The name of the activity class to create"
-            constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-            loggable = true
-        }
-
-        val packageName = defaultPackageNameParameter
-
-        val isLauncher = booleanParameter {
-            name = "Launcher Activity"
-            default = false
-            help =
-                    "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
-        }
-
-        val greeting = stringParameter {
-            name = "Greeting function name"
-            default = "Greeting"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        val wearAppName = stringParameter {
-            name = "WearApp function name"
-            default = "WearApp"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        val defaultPreview = stringParameter {
-            name = "Default Preview function name"
-            default = "DefaultPreview"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        widgets(
-                TextFieldWidget(activityClass),
-                PackageNameWidget(packageName),
-                CheckBoxWidget(isLauncher),
-                // Invisible widgets to pass data
-                TextFieldWidget(greeting),
-                TextFieldWidget(defaultPreview),
-        )
-
-        thumb { File("compose-wear-activity").resolve("templates-wear-app.png") }
-
-        recipe = { data: TemplateData ->
-            composeWearActivityRecipe(
-                    data as ModuleTemplateData,
-                    activityClass.value,
-                    packageName.value,
-                    isLauncher.value,
-                    greeting.value,
-                    wearAppName.value,
-                    defaultPreview.value
-            )
-        }
+    val activityClass = stringParameter {
+      name = "Activity Name"
+      default = "MainActivity"
+      help = "The name of the activity class to create"
+      constraints = listOf(CLASS, UNIQUE, NONEMPTY)
+      loggable = true
     }
+
+    val packageName = defaultPackageNameParameter
+
+    val isLauncher = booleanParameter {
+      name = "Launcher Activity"
+      default = false
+      help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
+    }
+
+    val wearAppName = stringParameter {
+      name = "WearApp function name"
+      default = "WearApp"
+      help = "Used for deduplication"
+      visible = { false }
+      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
+      loggable = true
+    }
+
+    val defaultPreview = stringParameter {
+      name = "Default Preview function name"
+      default = "DefaultPreview"
+      help = "Used for deduplication"
+      visible = { false }
+      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
+      loggable = true
+    }
+
+    widgets(
+      TextFieldWidget(activityClass),
+      PackageNameWidget(packageName),
+      CheckBoxWidget(isLauncher),
+      // Invisible widgets to pass data
+      TextFieldWidget(defaultPreview),
+    )
+
+    thumb { File("compose-wear-activity").resolve("templates-wear-app.png") }
+
+    recipe = { data: TemplateData ->
+      composeWearActivityRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        packageName.value,
+        isLauncher.value,
+        wearAppName.value,
+        defaultPreview.value,
+      )
+    }
+  }
 
 val composeWearActivityWithTileAndComplicationTemplate
-    get() = template {
-        name = "Empty Wear App With Tile And Complication"
-        minApi = 26
-        description = "Creates an empty app using Compose for Wear OS, including a Tile and Complication"
+  get() = template {
+    name = "Empty Wear App With Tile And Complication"
+    minApi = 30
+    description = "Creates an empty app using Compose for Wear OS, including a Tile and Complication"
 
-        constraints = listOf(
-            TemplateConstraint.AndroidX,
-            TemplateConstraint.Kotlin,
-            TemplateConstraint.Compose)
-        category = Category.Wear
-        formFactor = FormFactor.Wear
-        screens =
-            listOf(WizardUiContext.MenuEntry,
-                   WizardUiContext.NewProject,
-                   WizardUiContext.NewModule)
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Compose)
+    category = Category.Wear
+    formFactor = FormFactor.Wear
+    screens = listOf(WizardUiContext.MenuEntry, WizardUiContext.NewProject, WizardUiContext.NewModule)
 
-        val activityClass = stringParameter {
-            name = "Activity Name"
-            default = "MainActivity"
-            help = "The name of the activity class to create"
-            constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-            loggable = true
-        }
-        val tileServiceClass = stringParameter {
-            name = "Tile Service Name"
-            default = "MainTileService"
-            help = "The name of the tile service class to create"
-            constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-            loggable = true
-        }
-        val complicationServiceClass = stringParameter {
-            name = "Complication Service Name"
-            default = "MainComplicationService"
-            help = "The name of the complication service class to create"
-            constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-            loggable = true
-        }
-
-        val packageName = defaultPackageNameParameter
-
-        val isLauncher = booleanParameter {
-            name = "Launcher Activity"
-            default = false
-            help =
-                "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
-        }
-
-        val greeting = stringParameter {
-            name = "Greeting function name"
-            default = "Greeting"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        val wearAppName = stringParameter {
-            name = "WearApp function name"
-            default = "WearApp"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        val defaultPreview = stringParameter {
-            name = "Default Preview function name"
-            default = "DefaultPreview"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-        val tilePreview = stringParameter {
-            name = "Tile Default Preview function name"
-            default = "tilePreview"
-            help = "Used for deduplication"
-            visible = { false }
-            constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
-            loggable = true
-        }
-
-        widgets(
-            TextFieldWidget(activityClass),
-            TextFieldWidget(tileServiceClass),
-            TextFieldWidget(complicationServiceClass),
-            PackageNameWidget(packageName),
-            CheckBoxWidget(isLauncher),
-            // Invisible widgets to pass data
-            TextFieldWidget(greeting),
-            TextFieldWidget(defaultPreview),
-            TextFieldWidget(tilePreview),
-        )
-
-        thumb { File("compose-wear-activity").resolve("templates-wear-app-with-tile-complication.png") }
-
-        recipe = { data: TemplateData ->
-            composeWearActivityWithTileAndComplicationRecipe(
-                data as ModuleTemplateData,
-                activityClass.value,
-                tileServiceClass.value,
-                tilePreview.value,
-                complicationServiceClass.value,
-                packageName.value,
-                isLauncher.value,
-                greeting.value,
-                wearAppName.value,
-                defaultPreview.value
-            )
-        }
+    val activityClass = stringParameter {
+      name = "Activity Name"
+      default = "MainActivity"
+      help = "The name of the activity class to create"
+      constraints = listOf(CLASS, UNIQUE, NONEMPTY)
+      loggable = true
     }
+    val tileServiceClass = stringParameter {
+      name = "Tile Service Name"
+      default = "MainTileService"
+      help = "The name of the tile service class to create"
+      constraints = listOf(CLASS, UNIQUE, NONEMPTY)
+      loggable = true
+    }
+    val complicationServiceClass = stringParameter {
+      name = "Complication Service Name"
+      default = "MainComplicationService"
+      help = "The name of the complication service class to create"
+      constraints = listOf(CLASS, UNIQUE, NONEMPTY)
+      loggable = true
+    }
+
+    val packageName = defaultPackageNameParameter
+
+    val isLauncher = booleanParameter {
+      name = "Launcher Activity"
+      default = false
+      help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
+    }
+
+    val wearAppName = stringParameter {
+      name = "WearApp function name"
+      default = "WearApp"
+      help = "Used for deduplication"
+      visible = { false }
+      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
+      loggable = true
+    }
+
+    val defaultPreview = stringParameter {
+      name = "Default Preview function name"
+      default = "DefaultPreview"
+      help = "Used for deduplication"
+      visible = { false }
+      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
+      loggable = true
+    }
+    val tilePreview = stringParameter {
+      name = "Tile Default Preview function name"
+      default = "tilePreview"
+      help = "Used for deduplication"
+      visible = { false }
+      constraints = listOf(UNIQUE, Constraint.KOTLIN_FUNCTION)
+      loggable = true
+    }
+
+    widgets(
+      TextFieldWidget(activityClass),
+      TextFieldWidget(tileServiceClass),
+      TextFieldWidget(complicationServiceClass),
+      PackageNameWidget(packageName),
+      CheckBoxWidget(isLauncher),
+      // Invisible widgets to pass data
+      TextFieldWidget(defaultPreview),
+      TextFieldWidget(tilePreview),
+    )
+
+    thumb { File("compose-wear-activity").resolve("templates-wear-app-with-tile-complication.png") }
+
+    recipe = { data: TemplateData ->
+      composeWearActivityWithTileAndComplicationRecipe(
+        data as ModuleTemplateData,
+        activityClass.value,
+        tileServiceClass.value,
+        tilePreview.value,
+        complicationServiceClass.value,
+        packageName.value,
+        isLauncher.value,
+        wearAppName.value,
+        defaultPreview.value,
+      )
+    }
+  }

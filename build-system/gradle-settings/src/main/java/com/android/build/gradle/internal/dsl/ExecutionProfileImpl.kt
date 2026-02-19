@@ -18,25 +18,24 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ExecutionProfile
 import com.android.build.api.dsl.ToolOptions
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-open class ExecutionProfileImpl @Inject constructor(private val name: String, objectFactory: ObjectFactory): ExecutionProfile {
+open class ExecutionProfileImpl @Inject constructor(private val name: String, objectFactory: ObjectFactory) : ExecutionProfile {
 
-    /**
-     * Name of this profile.
-     */
-    override fun getName(): String {
-        return name
-    }
+  /** Name of this profile. */
+  override fun getName(): String {
+    return name
+  }
 
-    override val r8: ToolOptions = objectFactory.newInstance(ToolOptionsImpl::class.java)
+  override val r8: ToolOptions = objectFactory.newInstance(ToolOptionsImpl::class.java)
 
-    fun r8(action: Action<ToolOptions>) {
-        action.execute(r8)
-    }
-    override fun r8(action: ToolOptions.() -> Unit) {
-        action.invoke(r8)
-    }
+  fun r8(action: Action<ToolOptions>) {
+    action.execute(r8)
+  }
+
+  override fun r8(action: ToolOptions.() -> Unit) {
+    action.invoke(r8)
+  }
 }

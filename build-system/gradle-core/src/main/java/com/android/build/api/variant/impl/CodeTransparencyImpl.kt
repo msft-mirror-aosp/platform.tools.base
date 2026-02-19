@@ -19,13 +19,11 @@ package com.android.build.api.variant.impl
 import com.android.build.api.dsl.SigningConfig
 import com.android.build.api.variant.CodeTransparency
 
-class CodeTransparencyImpl(
-    dslSigningConfig: SigningConfig?
-): CodeTransparency {
+class CodeTransparencyImpl(dslSigningConfig: SigningConfig?) : CodeTransparency {
 
-    internal var signingConfiguration: SigningConfig? = dslSigningConfig
+  internal var signingConfiguration: SigningConfig? = dslSigningConfig
 
-    override fun setSigningConfig(signingConfig: SigningConfig) {
-        this.signingConfiguration = signingConfig
-    }
+  override fun setSigningConfig(signingConfig: SigningConfig) {
+    this.signingConfiguration = signingConfig
+  }
 }

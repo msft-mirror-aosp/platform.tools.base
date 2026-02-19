@@ -34,11 +34,7 @@ fun stripComments(source: String, extension: String, stripLineComments: Boolean 
 }
 
 @Suppress("LocalVariableName")
-private fun stripJavaLikeComments(
-  source: String,
-  extension: String,
-  stripLineComments: Boolean = true,
-): String {
+private fun stripJavaLikeComments(source: String, extension: String, stripLineComments: Boolean = true): String {
   val sb = StringBuilder(source.length)
   var state = 0
   val INIT = 0

@@ -16,19 +16,12 @@
 
 package com.android.build.api.dsl
 
-/**
- * Configures the compile sdk version when a released API level is used. See [CompileSdkSpec.release]
- */
+/** Configures the compile sdk version when a released API level is used. See [CompileSdkSpec.release] */
 interface CompileSdkReleaseSpec {
 
-    /**
-     * Set minor API version for compile SDK. This should be used with the main API version to
-     * specify a full SDK version.
-     */
-    var minorApiLevel: Int?
+  /** Set minor API version for compile SDK. This should be used with the main API version to specify a full SDK version. */
+  var minorApiLevel: Int?
 
-    /**
-     * Set the SDK Extension level to compile your project against.
-     */
-    var sdkExtension: Int?
+  /** Set the SDK Extension level to compile your project against. */
+  var sdkExtension: Int?
 }

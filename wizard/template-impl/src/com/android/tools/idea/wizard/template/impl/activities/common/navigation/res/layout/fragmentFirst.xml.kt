@@ -17,9 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.common.navigation
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun fragmentFirstXml(
-  packageName: String, navFragmentPrefix: String, fragmentClass: String, useAndroidX: Boolean
-) = """
+fun fragmentFirstXml(packageName: String, navFragmentPrefix: String, fragmentClass: String, useAndroidX: Boolean) =
+  """
 <${getMaterialComponentName("android.support.constraint.ConstraintLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"

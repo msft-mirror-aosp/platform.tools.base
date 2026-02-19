@@ -25,8 +25,6 @@ import org.gradle.api.internal.plugins.software.RegistersSoftwareTypes
 @RegistersSoftwareTypes(AppPlugin::class, LibraryPlugin::class)
 class InternalAndroidEcosystemPlugin : Plugin<Settings> {
 
-    override fun apply(target: Settings) {
-        target.dependencyResolutionManagement.repositories.mavenCentral();
-        target.dependencyResolutionManagement.repositories.google()
-    }
+  override fun apply(target: Settings) {
+  }
 }

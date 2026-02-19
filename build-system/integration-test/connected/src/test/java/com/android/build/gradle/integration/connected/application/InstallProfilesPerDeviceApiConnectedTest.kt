@@ -37,323 +37,269 @@ import org.junit.Rule
 import org.junit.Test
 
 class InstallProfilesPerDeviceApiConnectedTest {
-    companion object {
-        @JvmField
-        @ClassRule
-        val emulator = getEmulator()
-    }
+  companion object {
+    @JvmField @ClassRule val emulator = getEmulator()
+  }
 
-    @get:Rule
-    val rule = GradleRule.fromProject(BasicSpec()) {
-        androidApplication(":app") {
-            android {
-                defaultConfig {
-                    minSdk {
-                        version = release(27)
-                    }
-                    targetSdk {
-                        version = release(28)
-                    }
-                }
+  @get:Rule
+  val rule =
+    GradleRule.fromProject(BasicSpec()) {
+      androidApplication(":app") {
+        android {
+          defaultConfig {
+            minSdk { version = release(27) }
+            targetSdk { version = release(28) }
+          }
 
-                signingConfigs {
-                    create("myConfig") {
-                        it.storeFile = projectDotFile("../debug.keystore")
-                        it.storePassword = "android"
-                        it.keyAlias = "androiddebugkey"
-                        it.keyPassword = "android"
-                    }
-                }
-
-                buildTypes {
-                    named("release") {
-                        it.signingConfig = signingConfigs.getByName("myConfig")
-                    }
-                }
+          signingConfigs {
+            create("myConfig") {
+              it.storeFile = projectDotFile("../debug.keystore")
+              it.storePassword = "android"
+              it.keyAlias = "androiddebugkey"
+              it.keyPassword = "android"
             }
-            files {
-                add("src/main/baselineProfiles/file.txt",
-                    """
-                        HSPLcom/google/Foo;->mainMethod(II)I
-                        HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-                    """.trimIndent()
-                )
-                add("src/release/baselineProfiles/file.txt",
-                    """
-                        HSPLcom/google/Foo;->releaseMethod(II)I
-                        HSPLcom/google/Foo;->releaseMethod-name-with-hyphens(II)I
-                    """.trimIndent()
-                )
-            }
+          }
+
+          buildTypes { named("release") { it.signingConfig = signingConfigs.getByName("myConfig") } }
         }
-    }
-
-    @Test
-    fun `install base baseline profile`() {
-        val build = rule.build
-        val app = build.androidApplication(":app")
-
-        val result = build.executor.run("assembleRelease", "installRelease")
-
-        val dexMetadataProperties = app
-            .intermediatesDir
-            .resolve(
-                "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
-            )
-
-        PathSubject.assertThat(dexMetadataProperties).contentWithUnixLineSeparatorsIsExactly(
+        files {
+          add(
+            "src/main/baselineProfiles/file.txt",
             """
-                31=0/.dm
-                2147483647=0/.dm
-                28=1/.dm
-                29=1/.dm
-                30=1/.dm
-            """.trimIndent()
-        )
-
-        result.assertOutputContains("Installing APK 'app-release.apk, app-release.dm'")
-
-        // Validate that renamed baseline profile file is present
-        val renamedBaselineProfile= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-release.dm"
-            )
-        PathSubject.assertThat(renamedBaselineProfile).exists()
-
-        // Validate that baseline profile is in app metadata file
-        val appMetadataJson= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}"
-            )
-        PathSubject.assertThat(appMetadataJson).apply {
-            contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
-            contains("app-release.dm")
+            HSPLcom/google/Foo;->mainMethod(II)I
+            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+            """
+              .trimIndent(),
+          )
+          add(
+            "src/release/baselineProfiles/file.txt",
+            """
+            HSPLcom/google/Foo;->releaseMethod(II)I
+            HSPLcom/google/Foo;->releaseMethod-name-with-hyphens(II)I
+            """
+              .trimIndent(),
+          )
         }
-
-        val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(
-            appMetadataJson.toFile(),
-            NullLogger()
-        )
-        val baselineProfileFile =
-            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
-        Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile.toFile())
+      }
     }
 
-    @Test
-    fun `install baseline profile with splits`() {
-        val build = rule.build {
-            androidApplication(":app") {
-                android {
-                    splits {
-                        abi {
-                            isEnable = true
-                            reset()
-                            include("x86", "x86_64")
-                            isUniversalApk = false
-                        }
+  @Test
+  fun `install base baseline profile`() {
+    val build = rule.build
+    val app = build.androidApplication(":app")
 
-                    }
-                }
-            }
-        }
-        val app = build.androidApplication(":app")
+    val result = build.executor.run("assembleRelease", "installRelease")
 
-        val result = build.executor.run("assembleRelease", "installRelease")
+    val dexMetadataProperties =
+      app.intermediatesDir.resolve(
+        "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
+      )
 
-        val dexMetadataProperties = app
-            .intermediatesDir
-            .resolve(
-                "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
-            )
+    PathSubject.assertThat(dexMetadataProperties)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        31=0/.dm
+        2147483647=0/.dm
+        28=1/.dm
+        29=1/.dm
+        30=1/.dm
+        """
+          .trimIndent()
+      )
 
-        PathSubject.assertThat(dexMetadataProperties).contentWithUnixLineSeparatorsIsExactly(
-                """
-                31=0/.dm
-                2147483647=0/.dm
-                28=1/.dm
-                29=1/.dm
-                30=1/.dm
-            """.trimIndent()
-        )
+    result.assertOutputContains("Installing APK 'app-release.apk, app-release.dm'")
 
-        result.assertOutputContains("Installing APK 'app-x86_64-release.apk, app-x86_64-release.dm'")
+    // Validate that renamed baseline profile file is present
+    val renamedBaselineProfile =
+      app.outputsDir.resolve("${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-release.dm")
+    PathSubject.assertThat(renamedBaselineProfile).exists()
 
-        // Validate that renamed baseline profile file is present
-        val renamedBaselineProfile= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-x86_64-release.dm"
-            )
-        PathSubject.assertThat(renamedBaselineProfile).exists()
-
-        // Validate that baseline profile is in app metadata file
-        val appMetadataJson= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}"
-            )
-        PathSubject.assertThat(appMetadataJson).apply {
-            contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
-            contains("app-x86-release.dm")
-            contains("app-x86_64-release.dm")
-        }
-
-        val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(
-            appMetadataJson.toFile(),
-            NullLogger()
-        )
-        val baselineProfileFile =
-            builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
-        Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile.toFile())
+    // Validate that baseline profile is in app metadata file
+    val appMetadataJson = app.outputsDir.resolve("${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}")
+    PathSubject.assertThat(appMetadataJson).apply {
+      contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
+      contains("app-release.dm")
     }
 
-    @Test
-    fun validateOptOut() {
-        val build = rule.build {
-            androidApplication(":app") {
-                files.add(
-                    "src/main/baseline-prof.txt",
-                    """
-                        HSPLcom/google/Foo;->mainMethod(II)I
-                        HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-                    """.trimIndent()
-                )
+    val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(appMetadataJson.toFile(), NullLogger())
+    val baselineProfileFile = builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
+    Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile.toFile())
+  }
+
+  @Test
+  fun `install baseline profile with splits`() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          android {
+            splits {
+              abi {
+                isEnable = true
+                reset()
+                include("x86", "x86_64")
+                isUniversalApk = false
+              }
             }
+          }
         }
-        val app = build.androidApplication(":app")
+      }
+    val app = build.androidApplication(":app")
 
-        val result = build.executor.run("assembleRelease")
+    val result = build.executor.run("assembleRelease", "installRelease")
 
-        val dexMetadataProperties = app
-            .intermediatesDir
-            .resolve(
-                "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
-            )
-        PathSubject.assertThat(dexMetadataProperties).exists()
+    val dexMetadataProperties =
+      app.intermediatesDir.resolve(
+        "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
+      )
 
-        app.reconfigure {
-            android {
-                installation {
-                    enableBaselineProfile = true
-                }
-            }
-        }
+    PathSubject.assertThat(dexMetadataProperties)
+      .contentWithUnixLineSeparatorsIsExactly(
+        """
+        31=0/.dm
+        2147483647=0/.dm
+        28=1/.dm
+        29=1/.dm
+        30=1/.dm
+        """
+          .trimIndent()
+      )
 
-        build.executor.run("clean", "assembleRelease")
-        PathSubject.assertThat(dexMetadataProperties).exists()
+    result.assertOutputContains("Installing APK 'app-x86_64-release.apk, app-x86_64-release.dm'")
 
-        app.reconfigure {
-            android {
-                installation {
-                    enableBaselineProfile = false
-                }
-            }
-        }
+    // Validate that renamed baseline profile file is present
+    val renamedBaselineProfile =
+      app.outputsDir.resolve(
+        "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-x86_64-release.dm"
+      )
+    PathSubject.assertThat(renamedBaselineProfile).exists()
 
-        build.executor.run("clean", "assembleRelease")
-        PathSubject.assertThat(dexMetadataProperties).doesNotExist()
+    // Validate that baseline profile is in app metadata file
+    val appMetadataJson = app.outputsDir.resolve("${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}")
+    PathSubject.assertThat(appMetadataJson).apply {
+      contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
+      contains("app-x86-release.dm")
+      contains("app-x86_64-release.dm")
     }
 
-    @Test
-    fun validateConfigurationCacheUsed() {
-        val build = rule.build
-        val app = build.androidApplication(":app")
+    val builtArtifacts = GenericBuiltArtifactsLoader.loadFromFile(appMetadataJson.toFile(), NullLogger())
+    val baselineProfileFile = builtArtifacts?.baselineProfiles?.lastOrNull()?.baselineProfileFiles?.firstOrNull()
+    Truth.assertThat(baselineProfileFile).isEqualTo(renamedBaselineProfile.toFile())
+  }
 
-        // Run twice to verify configuration cache compatibility
-        build.executor.run("clean", "assembleRelease")
-        val result = build.executor.run("clean", "assembleRelease")
-        result.assertOutputContains("Configuration cache entry reused.")
-
-        // Validate that renamed baseline profile file is present
-        val renamedBaselineProfile= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-release.dm"
-            )
-        PathSubject.assertThat(renamedBaselineProfile).exists()
-
-        // Validate that baseline profile is in app metadata file
-        val appMetadataJson= app
-            .outputsDir
-            .resolve(
-                "${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}"
-            )
-        PathSubject.assertThat(appMetadataJson).apply {
-            contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
-            contains("app-release.dm")
+  @Test
+  fun validateOptOut() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          files.add(
+            "src/main/baseline-prof.txt",
+            """
+            HSPLcom/google/Foo;->mainMethod(II)I
+            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+            """
+              .trimIndent(),
+          )
         }
+      }
+    val app = build.androidApplication(":app")
+
+    val result = build.executor.run("assembleRelease")
+
+    val dexMetadataProperties =
+      app.intermediatesDir.resolve(
+        "${InternalArtifactType.DEX_METADATA_DIRECTORY.getFolderName()}/release/compileReleaseArtProfile/${SdkConstants.FN_DEX_METADATA_PROP}"
+      )
+    PathSubject.assertThat(dexMetadataProperties).exists()
+
+    app.reconfigure { android { installation { enableBaselineProfile = true } } }
+
+    build.executor.run("clean", "assembleRelease")
+    PathSubject.assertThat(dexMetadataProperties).exists()
+
+    app.reconfigure { android { installation { enableBaselineProfile = false } } }
+
+    build.executor.run("clean", "assembleRelease")
+    PathSubject.assertThat(dexMetadataProperties).doesNotExist()
+  }
+
+  @Test
+  fun validateConfigurationCacheUsed() {
+    val build = rule.build
+    val app = build.androidApplication(":app")
+
+    // Run twice to verify configuration cache compatibility
+    build.executor.run("clean", "assembleRelease")
+    val result = build.executor.run("clean", "assembleRelease")
+    result.assertOutputContains("Configuration cache entry reused.")
+
+    // Validate that renamed baseline profile file is present
+    val renamedBaselineProfile =
+      app.outputsDir.resolve("${SdkConstants.EXT_ANDROID_PACKAGE}/release/${SdkConstants.FN_OUTPUT_BASELINE_PROFILES}/0/app-release.dm")
+    PathSubject.assertThat(renamedBaselineProfile).exists()
+
+    // Validate that baseline profile is in app metadata file
+    val appMetadataJson = app.outputsDir.resolve("${SdkConstants.EXT_ANDROID_PACKAGE}/release/${BuiltArtifactsImpl.METADATA_FILE_NAME}")
+    PathSubject.assertThat(appMetadataJson).apply {
+      contains(SdkConstants.FN_OUTPUT_BASELINE_PROFILES)
+      contains("app-release.dm")
     }
+  }
 
-    // Regression test for b/330593433
-    @Test
-    fun apkZipPackagingTest() {
-        val build = rule.build {
-            androidApplication(":app") {
-                applyPlugin(PluginType.MAVEN_PUBLISH)
-                android {
-                    publishing {
-                        singleVariant("release") {
-                            publishApk()
-                        }
-                    }
-                }
-                pluginCallbacks += MavenPublishPluginCallback::class.java
-            }
+  // Regression test for b/330593433
+  @Test
+  fun apkZipPackagingTest() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          applyPlugin(PluginType.MAVEN_PUBLISH)
+          android { publishing { singleVariant("release") { publishApk() } } }
+          pluginCallbacks += MavenPublishPluginCallback::class.java
         }
-        val app = build.androidApplication(":app")
+      }
+    val app = build.androidApplication(":app")
 
-        build.executor.run("publishAppPublicationToMavenRepository")
+    build.executor.run("publishAppPublicationToMavenRepository")
 
-        val apkFile = app.buildDir.resolve("testRepo/test/basic/app/1.0/app-1.0.zip")
-        PathSubject.assertThat(apkFile).isFile()
+    val apkFile = app.buildDir.resolve("testRepo/test/basic/app/1.0/app-1.0.zip")
+    PathSubject.assertThat(apkFile).isFile()
 
-        ApkSubject.assertThat(apkFile) {
-            javaResources().folder(SdkConstants.FN_OUTPUT_BASELINE_PROFILES).hasSize(2)
+    ApkSubject.assertThat(apkFile) { javaResources().folder(SdkConstants.FN_OUTPUT_BASELINE_PROFILES).hasSize(2) }
+  }
+
+  class MavenPublishPluginCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.extensions.getByType(PublishingExtension::class.java).apply {
+        publications.register("app", MavenPublication::class.java) { publication ->
+          publication.groupId = "test.basic"
+          publication.artifactId = "app"
+          publication.version = "1.0"
+
+          repositories { repo -> repo.maven { it.url = project.uri(project.projectDir.resolve("build/testRepo")) } }
+          project.afterEvaluate { publication.from(project.components.getByName("release")) }
         }
+      }
     }
+  }
 
-    class MavenPublishPluginCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.extensions.getByType(PublishingExtension::class.java).apply {
-                publications.register("app", MavenPublication::class.java) { publication ->
-                    publication.groupId = "test.basic"
-                    publication.artifactId = "app"
-                    publication.version = "1.0"
-
-                    repositories { repo ->
-                        repo.maven {
-                            it.url = project.uri(project.projectDir.resolve("build/testRepo"))
-                        }
-                    }
-                    project.afterEvaluate {
-                        publication.from(project.components.getByName("release"))
-                    }
-                }
-            }
+  // This test is disabled and should only be run locally with an API level lower than 28
+  // @Test
+  fun apiLevelNotSupportedForBaselineProfile() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          files.add(
+            "src/main/baseline-prof.txt",
+            """
+            HSPLcom/google/Foo;->mainMethod(II)I
+            HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
+            """
+              .trimIndent(),
+          )
         }
-    }
+      }
 
+    val result = build.executor.run("assembleRelease", "installRelease")
 
-    // This test is disabled and should only be run locally with an API level lower than 28
-    //@Test
-    fun apiLevelNotSupportedForBaselineProfile() {
-        val build = rule.build {
-            androidApplication(":app") {
-                files.add(
-                    "src/main/baseline-prof.txt",
-                    """
-                        HSPLcom/google/Foo;->mainMethod(II)I
-                        HSPLcom/google/Foo;->mainMethod-name-with-hyphens(II)I
-                    """.trimIndent()
-
-                )
-            }
-        }
-
-        val result = build.executor.run("assembleRelease", "installRelease")
-
-        result.assertOutputContains("Baseline Profile not found for API level ")
-    }
+    result.assertOutputContains("Baseline Profile not found for API level ")
+  }
 }

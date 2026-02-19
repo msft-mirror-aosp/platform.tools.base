@@ -17,9 +17,7 @@ package com.android.tools.idea.wizard.template.impl.activities.googleWalletActiv
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun samplePassKt(
-    packageName: String
-): String {
+fun samplePassKt(packageName: String): String {
   return """
 package ${escapeKotlinIdentifier(packageName)}
 

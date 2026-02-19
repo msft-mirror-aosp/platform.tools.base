@@ -29,48 +29,34 @@ import org.junit.Rule
 import org.junit.Test
 
 class JavaPlatformDependencyTest : ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(platform(project(":lib")))
-            }
-        }
-        genericProject(":lib") {
-            applyPlugin(PluginType.JAVA_PLATFORM)
-            pluginCallbacks += PlatformCallback::class.java
-            dependencies {
-                api(MavenRepoGenerator.Library("com.bar:foo:1.0"))
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(platform(project(":lib"))) }
+      }
+      genericProject(":lib") {
+        applyPlugin(PluginType.JAVA_PLATFORM)
+        pluginCallbacks += PlatformCallback::class.java
+        dependencies { api(MavenRepoGenerator.Library("com.bar:foo:1.0")) }
+      }
     }
 
-    class PlatformCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            val javaPlatform = project.extensions.findByType(JavaPlatformExtension::class.java)
-                ?: throw RuntimeException("Unable to find JavaPlatformExtension")
-            javaPlatform.apply {
-                allowDependencies()
-            }
-        }
+  class PlatformCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      val javaPlatform =
+        project.extensions.findByType(JavaPlatformExtension::class.java) ?: throw RuntimeException("Unable to find JavaPlatformExtension")
+      javaPlatform.apply { allowDependencies() }
     }
+  }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo =
-            { getProject(":app") }
+    val appModelAction: ModelContainerV2.() -> ModelContainerV2.ModelInfo = { getProject(":app") }
 
-        with(result).compareVariantDependencies(
-            projectAction = appModelAction,
-            goldenFile = "_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = appModelAction, goldenFile = "_VariantDependencies")
+  }
 }

@@ -51,11 +51,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
 
     const val MIN_PREVIEW_SIZE = 384
 
-    val IMPLEMENTATION =
-      Implementation(
-        TileProviderDetector::class.java,
-        EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST),
-      )
+    val IMPLEMENTATION = Implementation(TileProviderDetector::class.java, EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST))
 
     @JvmField
     val TILE_PROVIDER_PERMISSIONS =
@@ -91,9 +87,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
           implementation = IMPLEMENTATION,
           androidSpecific = true,
         )
-        .addMoreInfo(
-          "https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews"
-        )
+        .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
 
     @JvmField
     val TILE_PREVIEW_IMAGE_FORMAT =
@@ -110,12 +104,9 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
           implementation = IMPLEMENTATION,
           androidSpecific = true,
         )
-        .addMoreInfo(
-          "https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews"
-        )
+        .addMoreInfo("https://developer.android.com/design/ui/wear/guides/surfaces/tiles#tile-previews")
 
-    const val BIND_TILE_PROVIDER_PERMISSION =
-      "com.google.android.wearable.permission.BIND_TILE_PROVIDER"
+    const val BIND_TILE_PROVIDER_PERMISSION = "com.google.android.wearable.permission.BIND_TILE_PROVIDER"
     const val TILES_PREVIEW_ATTR_NAME = "androidx.wear.tiles.PREVIEW"
     const val BIND_TILE_PROVIDER_ACTION = "androidx.wear.tiles.action.BIND_TILE_PROVIDER"
 
@@ -168,12 +159,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
       }
       if (metadata.wrongAspectRatio) {
         context.report(
-          Incident(
-            TILE_PREVIEW_IMAGE_FORMAT,
-            metadata.issueScope,
-            metadata.issueLocation,
-            "Tile previews should have 1:1 aspect ratio",
-          )
+          Incident(TILE_PREVIEW_IMAGE_FORMAT, metadata.issueScope, metadata.issueLocation, "Tile previews should have 1:1 aspect ratio")
         )
       }
       if (metadata.smallImageSize) {
@@ -202,8 +188,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
     }
   }
 
-  override fun appliesTo(folderType: ResourceFolderType) =
-    isWearProject && folderType == ResourceFolderType.DRAWABLE
+  override fun appliesTo(folderType: ResourceFolderType) = isWearProject && folderType == ResourceFolderType.DRAWABLE
 
   private fun getImageDimensions(context: Context): Pair<Int, Int> {
     val readers = ImageIO.getImageReadersBySuffix(context.file.extension)
@@ -256,19 +241,11 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
         val iconUrl = iconAttr.value
         if (!iconUrl.startsWith(DRAWABLE_PREFIX)) continue
         val iconName = iconUrl.substring(DRAWABLE_PREFIX.length)
-        this.foundIcons[iconName] =
-          IconInfo(issueScope = foundMetaData, issueLocation = context.getValueLocation(iconAttr))
+        this.foundIcons[iconName] = IconInfo(issueScope = foundMetaData, issueLocation = context.getValueLocation(iconAttr))
       }
     }
     if (foundMetaData == null) {
-      context.report(
-        Incident(
-          SQUARE_AND_ROUND_TILE_PREVIEWS,
-          service,
-          context.getLocation(service),
-          "Tiles need preview assets",
-        )
-      )
+      context.report(Incident(SQUARE_AND_ROUND_TILE_PREVIEWS, service, context.getLocation(service), "Tiles need preview assets"))
     }
   }
 
@@ -281,10 +258,7 @@ class TileProviderDetector : WearDetector(), XmlScanner, BinaryResourceScanner {
           .attribute(ATTR_PERMISSION)
           .value(BIND_TILE_PROVIDER_PERMISSION)
           .android()
-          .name(
-            if (permission.isEmpty()) "Add BIND_TILE_PROVIDER permission"
-            else "Change permission to BIND_TILE_PROVIDER"
-          )
+          .name(if (permission.isEmpty()) "Add BIND_TILE_PROVIDER permission" else "Change permission to BIND_TILE_PROVIDER")
           .build()
       context.report(
         Incident(

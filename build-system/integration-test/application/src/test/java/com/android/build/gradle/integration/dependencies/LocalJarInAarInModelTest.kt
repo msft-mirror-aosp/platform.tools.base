@@ -26,17 +26,13 @@ import org.junit.Test
 
 class LocalJarInAarInModelTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.noBuildFile())
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.noBuildFile()).disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     namespace = '${HelloWorldApp.NAMESPACE}'
@@ -51,16 +47,15 @@ class LocalJarInAarInModelTest : ModelComparator() {
                 dependencies {
                     api "com.android.support:support-v4:24.0.0"
                 }
-            """.trimIndent())
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues()
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues().fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
+  }
 }

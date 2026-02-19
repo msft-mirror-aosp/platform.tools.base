@@ -23,20 +23,17 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.job
 
 /**
- * Similar to [CoroutineScope.async], but does not propagate the exception to the parent
- * job. This is useful for unit test, where we sometimes want to test an `async` call
- * can fail with an exception, while at the same time we don't want to coroutine scope
- * of the test to fail.
+ * Similar to [CoroutineScope.async], but does not propagate the exception to the parent job. This is useful for unit test, where we
+ * sometimes want to test an `async` call can fail with an exception, while at the same time we don't want to coroutine scope of the test to
+ * fail.
  *
- * In the example below, using [CoroutineScope.async] instead of [CoroutineScope.asyncNoThrow]
- * would result in the test failing with the exception thrown by `foo`, even though the `await`
- * call runs inside a `runCatching`.
+ * In the example below, using [CoroutineScope.async] instead of [CoroutineScope.asyncNoThrow] would result in the test failing with the
+ * exception thrown by `foo`, even though the `await` call runs inside a `runCatching`.
  *
  *     fun myTest = runBlocking {
  *         val foo = asyncNoThrow() {
  *             (... code that throws...)
  *         }
- *
  *         runCatching {
  *             foo.await()
  *         }.onFailure { (...) }
@@ -44,17 +41,16 @@ import kotlinx.coroutines.job
  *     }
  */
 internal fun <T> CoroutineScope.asyncNoThrow(block: suspend CoroutineScope.() -> T): Deferred<T> {
-    // Create a supervisor job so that a failure does not affect this coroutine scope
-    val supervisor = SupervisorJob(this.coroutineContext.job)
+  // Create a supervisor job so that a failure does not affect this coroutine scope
+  val supervisor = SupervisorJob(this.coroutineContext.job)
 
-    // Run the block in the new supervisor job context
-    return async(supervisor) {
-        block()
-    }.also {
-        it.invokeOnCompletion {
-            // We cancel the supervisor job so that this coroutine scope
-            // is not blocked waiting for the supervisor job to complete.
-            supervisor.cancel("asyncNoThrow job has completed")
-        }
+  // Run the block in the new supervisor job context
+  return async(supervisor) { block() }
+    .also {
+      it.invokeOnCompletion {
+        // We cancel the supervisor job so that this coroutine scope
+        // is not blocked waiting for the supervisor job to complete.
+        supervisor.cancel("asyncNoThrow job has completed")
+      }
     }
 }

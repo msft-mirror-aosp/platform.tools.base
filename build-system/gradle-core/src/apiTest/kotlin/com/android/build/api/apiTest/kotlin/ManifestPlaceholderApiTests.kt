@@ -18,36 +18,36 @@ package com.android.build.api.apiTest.kotlin
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
-import org.junit.Test
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class ManifestPlaceholderApiTests: VariantApiBaseTest(
-    TestType.Script
-) {
-    @Test
-    fun addCustomManifestPlaceholder() {
-        given {
-            tasksToInvoke.add("debugManifestReader")
-            addModule(":app") {
-                manifest =
-                        // language=xml
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application android:label="Minimal">
-                        <activity android:name="${"$"}{MyName}">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-                """.trimIndent()
+class ManifestPlaceholderApiTests : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun addCustomManifestPlaceholder() {
+    given {
+      tasksToInvoke.add("debugManifestReader")
+      addModule(":app") {
+        manifest =
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+                          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                              <application android:label="Minimal">
+                                  <activity android:name="${"$"}{MyName}">
+                                      <intent-filter>
+                                          <action android:name="android.intent.action.MAIN" />
+                                          <category android:name="android.intent.category.LAUNCHER" />
+                                      </intent-filter>
+                                  </activity>
+                              </application>
+                          </manifest>
+          """
+            .trimIndent()
 
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -80,50 +80,54 @@ class ManifestPlaceholderApiTests: VariantApiBaseTest(
                     it.manifestPlaceholders.put("MyName", "MyRealName")
                 }
             }
-                """.trimIndent()
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# Adding a manifest file placeholder in Kotlin.
-
-See [manifest placeholder documentation](https://developer.android.com/studio/build/manifest-build-variables) for details
-This sample shows how to add a manifest placeholder value through the variant API. The value is
-known at configuration time.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+            .trimIndent()
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Adding a manifest file placeholder in Kotlin.
 
-    @Test
-    fun addManifestPlaceholderFromTask() {
-        given {
-            tasksToInvoke.add("debugManifestReader")
-            addModule(":app") {
-                manifest =
-                        // language=xml
-                    """<?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application android:label="Minimal">
-                        <activity android:name="${"$"}{MyName}">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-                """.trimIndent()
+        See [manifest placeholder documentation](https://developer.android.com/studio/build/manifest-build-variables) for details
+        This sample shows how to add a manifest placeholder value through the variant API. The value is
+        known at configuration time.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+  @Test
+  fun addManifestPlaceholderFromTask() {
+    given {
+      tasksToInvoke.add("debugManifestReader")
+      addModule(":app") {
+        manifest =
+          // language=xml
+          """
+          <?xml version="1.0" encoding="utf-8"?>
+                          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                              <application android:label="Minimal">
+                                  <activity android:name="${"$"}{MyName}">
+                                      <intent-filter>
+                                          <action android:name="android.intent.action.MAIN" />
+                                          <category android:name="android.intent.category.LAUNCHER" />
+                                      </intent-filter>
+                                  </activity>
+                              </application>
+                          </manifest>
+          """
+            .trimIndent()
+
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -172,25 +176,26 @@ known at configuration time.
                         task.outputFile.map { it.asFile.readText(Charsets.UTF_8) }
                     })
                 }
-            }""".trimIndent()
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Adding a BuildConfig field in Kotlin
-
-This sample shows how to add a field in the BuildConfig class for which the value is not known at
-configuration time.
-
-The added field is used in the MainActivity.kt file.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-        }
+            }"""
+            .trimIndent()
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Adding a BuildConfig field in Kotlin
 
+        This sample shows how to add a field in the BuildConfig class for which the value is not known at
+        configuration time.
+
+        The added field is used in the MainActivity.kt file.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+    }
+  }
 }

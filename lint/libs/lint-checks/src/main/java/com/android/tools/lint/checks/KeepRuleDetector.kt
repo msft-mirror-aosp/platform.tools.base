@@ -111,10 +111,8 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
     private const val USES_REFLECTION_TO_CONSTRUCT_NAME = "UsesReflectionToConstruct"
     private const val UNCONDITIONALLY_KEEP_NAME = "UnconditionallyKeep"
 
-    const val USES_REFLECTION_TO_ACCESS_METHOD_FQN =
-      "$PKG_PREFIX$USES_REFLECTION_TO_ACCESS_METHOD_NAME"
-    const val USES_REFLECTION_TO_ACCESS_FIELD_FQN =
-      "$PKG_PREFIX$USES_REFLECTION_TO_ACCESS_FIELD_NAME"
+    const val USES_REFLECTION_TO_ACCESS_METHOD_FQN = "$PKG_PREFIX$USES_REFLECTION_TO_ACCESS_METHOD_NAME"
+    const val USES_REFLECTION_TO_ACCESS_FIELD_FQN = "$PKG_PREFIX$USES_REFLECTION_TO_ACCESS_FIELD_NAME"
     const val USES_REFLECTION_TO_CONSTRUCT_FQN = "$PKG_PREFIX$USES_REFLECTION_TO_CONSTRUCT_NAME"
 
     const val LOAD_CLASS = "loadClass"
@@ -182,9 +180,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
               // Make sure we extract the primitive type (int.class, Integer.TYPE in Java,
               // Int::class.javaPrimitiveType in Kotlin)
               if (element is UQualifiedReferenceExpression) {
-                val identifier =
-                  (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)
-                    ?.identifier
+                val identifier = (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)?.identifier
                 if (identifier == "javaPrimitiveType" || identifier == "TYPE") {
                   clazz = it
                 }
@@ -224,10 +220,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
             return castType.first
           }
 
-          if (
-            element is UQualifiedReferenceExpression &&
-              element.selector.skipParenthesizedExprDown() is UCallExpression
-          ) {
+          if (element is UQualifiedReferenceExpression && element.selector.skipParenthesizedExprDown() is UCallExpression) {
             val call = element.selector.skipParenthesizedExprDown() as UCallExpression
             val name = call.methodName
 
@@ -235,8 +228,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
               val arguments = call.valueArguments
               if (arguments.isNotEmpty()) {
                 return ConstantEvaluator.evaluateString(null, arguments[0], false)?.let {
-                  PsiElementFactory.getInstance(context.project.ideaProject)
-                    .createTypeFromText(it, null)
+                  PsiElementFactory.getInstance(context.project.ideaProject).createTypeFromText(it, null)
                 }
               }
             }
@@ -251,12 +243,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       return null
     }
 
-    private fun addParameterType(
-      context: JavaContext,
-      argument: UExpression,
-      list: MutableList<String>,
-      isKotlin: Boolean,
-    ): Boolean {
+    private fun addParameterType(context: JavaContext, argument: UExpression, list: MutableList<String>, isKotlin: Boolean): Boolean {
       val sourcePsi = argument.sourcePsi?.parent
       if (sourcePsi is KtValueArgument && sourcePsi.isSpread) {
         // Handle Kotlin spread operator; we're referencing some variable and want
@@ -357,9 +344,8 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Returns whether we need to use a fully qualified name for the given type name; this is the
-     * case for the number classes (which for reflection purposes are not the same as the
-     * primitives; a method parameter of type java.lang.Integer should not match an Int type).
+     * Returns whether we need to use a fully qualified name for the given type name; this is the case for the number classes (which for
+     * reflection purposes are not the same as the primitives; a method parameter of type java.lang.Integer should not match an Int type).
      */
     private fun useFullyQualifiedName(fqn: String): Boolean {
       return when (fqn) {
@@ -416,8 +402,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       if (
         selector is UCallExpression &&
           selector.methodName == "asSubclass" &&
-          (selector.tryResolve() as? PsiMethod)?.containingClass?.qualifiedName ==
-            "java.lang.Class" &&
+          (selector.tryResolve() as? PsiMethod)?.containingClass?.qualifiedName == "java.lang.Class" &&
           selector.valueArguments.size == 1
       ) {
         val argument = selector.valueArguments[0]
@@ -470,18 +455,13 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
     private fun UExpression.isJavaClassAccess(): Boolean {
       return this is USimpleNameReferenceExpression &&
         this.identifier == "javaClass" &&
-        (this.tryResolve() as? PsiMethod)?.containingClass?.qualifiedName ==
-          "kotlin.jvm.JvmClassMappingKt" ||
+        (this.tryResolve() as? PsiMethod)?.containingClass?.qualifiedName == "kotlin.jvm.JvmClassMappingKt" ||
         this is UCallExpression &&
           this.methodName == "getClass" &&
           (this.tryResolve() as? PsiMethod)?.containingClass?.qualifiedName == "java.lang.Object"
     }
 
-    private fun getReflectionAnnotations(
-      context: JavaContext,
-      method: UAnnotated,
-      isKotlin: Boolean,
-    ): List<Reflection> {
+    private fun getReflectionAnnotations(context: JavaContext, method: UAnnotated, isKotlin: Boolean): List<Reflection> {
       val list = mutableListOf<Reflection>()
       var curr = method
       while (true) {
@@ -491,12 +471,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       return list
     }
 
-    private fun addReflectionAnnotations(
-      context: JavaContext,
-      method: UAnnotated,
-      isKotlin: Boolean,
-      list: MutableList<Reflection>,
-    ) {
+    private fun addReflectionAnnotations(context: JavaContext, method: UAnnotated, isKotlin: Boolean, list: MutableList<Reflection>) {
       @Suppress("ExternalAnnotations")
       for (annotation in method.uAnnotations) {
         val qualifiedName = annotation.qualifiedName
@@ -505,8 +480,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
           USES_REFLECTION_TO_ACCESS_METHOD_FQN -> {
             val (className, classNameIsConstant) = annotation.getClassName()
             val methodName =
-              if (qualifiedName != USES_REFLECTION_TO_CONSTRUCT_FQN)
-                annotation.findAttributeValue("methodName")?.evaluateString()
+              if (qualifiedName != USES_REFLECTION_TO_CONSTRUCT_FQN) annotation.findAttributeValue("methodName")?.evaluateString()
               else CONSTRUCTOR_NAME
 
             var params: List<String>? = null
@@ -620,11 +594,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         return true
       }
 
-      if (
-        className.startsWith("org.") ||
-          className.startsWith("com.android.") ||
-          className.startsWith("com.google.")
-      ) {
+      if (className.startsWith("org.") || className.startsWith("com.android.") || className.startsWith("com.google.")) {
         // e.g. org.xml.*, org.w3c.dom.*, org.json.*, org.apache.http.*, etc
         val lookup = ApiLookup.get(context.client, context.project.buildTarget)
         if (lookup != null && lookup.containsClass(className)) {
@@ -678,9 +648,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       } else {
         sb.append(" code")
       }
-      sb.append(
-        " reflectively, so it should be annotated with `@${reflectionUsage.simpleName}(...)`"
-      )
+      sb.append(" reflectively, so it should be annotated with `@${reflectionUsage.simpleName}(...)`")
 
       val message = sb.toString()
       return message
@@ -715,13 +683,11 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Checks the given [expression] node which is performing reflection on the given [className]
-     * and [methodName] for annotations guards, and if not, suggest adding them. A default error
-     * message will be provided but can be overridden with [message].
+     * Checks the given [expression] node which is performing reflection on the given [className] and [methodName] for annotations guards,
+     * and if not, suggest adding them. A default error message will be provided but can be overridden with [message].
      *
-     * Returns true if the potential problem has been handled (e.g. with an existing guard
-     * annotation or by issuing a warning.) False in cases where the check doesn't apply, such as
-     * missing annotation target or missing keep annotations on the classpath.
+     * Returns true if the potential problem has been handled (e.g. with an existing guard annotation or by issuing a warning.) False in
+     * cases where the check doesn't apply, such as missing annotation target or missing keep annotations on the classpath.
      */
     fun checkMethodUsage(
       context: JavaContext,
@@ -754,8 +720,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         return false
       }
 
-      val message =
-        message ?: createErrorMessage(className, methodName, false, reflection, expression)
+      val message = message ?: createErrorMessage(className, methodName, false, reflection, expression)
       val fix = createReferencedMemberFix(context, isKotlin, annotationTarget, reflection)
       context.report(ISSUE, expression, context.getNameLocation(expression), message, fix)
       return true
@@ -777,10 +742,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
 
     open fun canAutoFix(): Boolean = className.isNotEmpty()
 
-    abstract fun generateAttributes(
-      isKotlin: Boolean,
-      fullyQualified: Boolean,
-    ): List<Pair<String, String>>
+    abstract fun generateAttributes(isKotlin: Boolean, fullyQualified: Boolean): List<Pair<String, String>>
 
     abstract fun contains(other: Reflection): Boolean
 
@@ -851,10 +813,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       return super.canAutoFix() && fieldName.isNotEmpty()
     }
 
-    override fun generateAttributes(
-      isKotlin: Boolean,
-      fullyQualified: Boolean,
-    ): List<Pair<String, String>> {
+    override fun generateAttributes(isKotlin: Boolean, fullyQualified: Boolean): List<Pair<String, String>> {
       val attributes = mutableListOf<Pair<String, String>>()
 
       attributes.add(getClassAttribute(isKotlin))
@@ -908,14 +867,10 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
   ) : Reflection(className, classNameIsConstant) {
 
     override val simpleName: String
-      get() =
-        if (isConstructor) USES_REFLECTION_TO_CONSTRUCT_NAME
-        else USES_REFLECTION_TO_ACCESS_METHOD_NAME
+      get() = if (isConstructor) USES_REFLECTION_TO_CONSTRUCT_NAME else USES_REFLECTION_TO_ACCESS_METHOD_NAME
 
     override val fullName: String
-      get() =
-        if (isConstructor) USES_REFLECTION_TO_CONSTRUCT_FQN
-        else USES_REFLECTION_TO_ACCESS_METHOD_FQN
+      get() = if (isConstructor) USES_REFLECTION_TO_CONSTRUCT_FQN else USES_REFLECTION_TO_ACCESS_METHOD_FQN
 
     override val memberName: String?
       get() = methodName.ifEmpty { null }
@@ -969,20 +924,14 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         }
       }
 
-      if (
-        returnType.isNotEmpty() && other.returnType.isNotEmpty() && returnType != other.returnType
-      ) {
+      if (returnType.isNotEmpty() && other.returnType.isNotEmpty() && returnType != other.returnType) {
         return false
       }
 
       return true
     }
 
-    fun setParameterList(
-      context: JavaContext,
-      methodParameterTypes: List<UExpression>,
-      isKotlin: Boolean,
-    ) {
+    fun setParameterList(context: JavaContext, methodParameterTypes: List<UExpression>, isKotlin: Boolean) {
       val list = mutableListOf<String>()
       for (argument in methodParameterTypes) {
         if (!addParameterType(context, argument, list, isKotlin)) {
@@ -1000,8 +949,8 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
     }
 
     /**
-     * Given a fully qualified name, returns the index where the class name begins. For example, for
-     * java.util.Map.Entry this returns the index of the 'M'.
+     * Given a fully qualified name, returns the index where the class name begins. For example, for java.util.Map.Entry this returns the
+     * index of the 'M'.
      */
     private fun findClassNameIndex(fqn: String): Int {
       if (fqn.isEmpty()) {
@@ -1020,10 +969,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       }
     }
 
-    override fun generateAttributes(
-      isKotlin: Boolean,
-      fullyQualified: Boolean,
-    ): List<Pair<String, String>> {
+    override fun generateAttributes(isKotlin: Boolean, fullyQualified: Boolean): List<Pair<String, String>> {
       val attributes = mutableListOf<Pair<String, String>>()
 
       attributes.add(getClassAttribute(isKotlin))
@@ -1035,9 +981,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
 
       if (parameterTypes != null) {
         if (parameterTypesAreStrings) {
-          attributes.add(
-            getListAttribute("parameterTypeNames", isKotlin, parameterTypes!!) { "\"$it\"" }
-          )
+          attributes.add(getListAttribute("parameterTypeNames", isKotlin, parameterTypes!!) { "\"$it\"" })
         } else {
           attributes.add(
             getListAttribute("parameterTypes", isKotlin, parameterTypes!!) {
@@ -1045,10 +989,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
               var fqn = it
               val classNameIndex = findClassNameIndex(fqn)
               if (classNameIndex > 0) {
-                if (
-                  LintFixPerformer.implicitlyImported(fqn.substring(0, classNameIndex - 1)) &&
-                    !useFullyQualifiedName(fqn)
-                ) {
+                if (LintFixPerformer.implicitlyImported(fqn.substring(0, classNameIndex - 1)) && !useFullyQualifiedName(fqn)) {
                   fqn = fqn.substring(classNameIndex)
                 }
               }
@@ -1074,16 +1015,13 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a Class#getMethodDeclaration or getFieldDeclaration call, figure out the corresponding
-   * class name the method is being invoked on
+   * Given a Class#getMethodDeclaration or getFieldDeclaration call, figure out the corresponding class name the method is being invoked on
    *
    * @param call the [Class.getDeclaredMethod] or [Class.getDeclaredField] call
    * @return the fully qualified name of the class, if found
    */
-  private fun getJavaClassFromMemberLookup(
-    context: JavaContext,
-    call: UCallExpression,
-  ): Pair<PsiType, Boolean>? = getJavaClassType(context, call.receiver)
+  private fun getJavaClassFromMemberLookup(context: JavaContext, call: UCallExpression): Pair<PsiType, Boolean>? =
+    getJavaClassType(context, call.receiver)
 
   /** We know [element] has type java.lang.Class<T> and we try to find out the PsiType for T. */
   private fun getJavaClassType(context: JavaContext, element: UElement?): Pair<PsiType, Boolean>? {
@@ -1151,9 +1089,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
             // Make sure we extract the primitive type (int.class, Integer.TYPE in Java,
             // Int::class.javaPrimitiveType in Kotlin)
             if (element is UQualifiedReferenceExpression) {
-              val identifier =
-                (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)
-                  ?.identifier
+              val identifier = (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)?.identifier
               if (identifier == "javaPrimitiveType" || identifier == "TYPE") {
                 clazz = it
               }
@@ -1185,10 +1121,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
           }
         }
 
-        if (
-          element is UQualifiedReferenceExpression &&
-            element.selector.skipParenthesizedExprDown() is UCallExpression
-        ) {
+        if (element is UQualifiedReferenceExpression && element.selector.skipParenthesizedExprDown() is UCallExpression) {
           val call = element.selector.skipParenthesizedExprDown() as UCallExpression
           val name = call.methodName
 
@@ -1196,11 +1129,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
             val arguments = call.valueArguments
             if (arguments.isNotEmpty()) {
               return ConstantEvaluator.evaluateString(null, arguments[0], false)?.let {
-                Pair(
-                  PsiElementFactory.getInstance(context.project.ideaProject)
-                    .createTypeFromText(it, null),
-                  false,
-                )
+                Pair(PsiElementFactory.getInstance(context.project.ideaProject).createTypeFromText(it, null), false)
               }
             }
           }
@@ -1260,9 +1189,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         }
       }
 
-      val reflection =
-        MethodReflection(className = className ?: "", classNameIsConstant = classNameIsConstant)
-          .apply { this.node = node }
+      val reflection = MethodReflection(className = className ?: "", classNameIsConstant = classNameIsConstant).apply { this.node = node }
 
       // Already annotated?
       val annotations = getReflectionAnnotations(context, annotationTarget, isKotlin)
@@ -1280,8 +1207,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       return
     }
 
-    val (classType, classConstant) =
-      getJavaClassFromMemberLookup(context, node) ?: Pair(null, false)
+    val (classType, classConstant) = getJavaClassFromMemberLookup(context, node) ?: Pair(null, false)
     val className = classType?.canonicalText
     if (className != null && !isApplicableClassName(context, className)) {
       return
@@ -1304,10 +1230,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
               null
             }
           if (type != null) {
-            val invokedMethodName =
-              node.valueArguments.firstOrNull()?.let {
-                ConstantEvaluator.evaluateString(context, it, false)
-              }
+            val invokedMethodName = node.valueArguments.firstOrNull()?.let { ConstantEvaluator.evaluateString(context, it, false) }
             if (invokedMethodName != null) {
               var typeClass = ""
               var typeClassIsConstant = false
@@ -1345,35 +1268,19 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
                     typeClassIsConstant,
                   )
                 } else {
-                  createFieldReflection(
-                    call,
-                    classConstant,
-                    className ?: "",
-                    invokedMethodName,
-                    typeClass,
-                    typeClassIsConstant,
-                  )
+                  createFieldReflection(call, classConstant, className ?: "", invokedMethodName, typeClass, typeClassIsConstant)
                 }
               )
             }
           } else if (isConstructorNewInstance(methodName, call)) {
             reflections.add(
-              createMethodReflection(
-                context,
-                isKotlin,
-                call,
-                classConstant,
-                className ?: "",
-                CONSTRUCTOR_NAME,
-                node.valueArguments,
-              )
+              createMethodReflection(context, isKotlin, call, classConstant, className ?: "", CONSTRUCTOR_NAME, node.valueArguments)
             )
           } else {
             val expression = findFilter(methodName, call)
             if (
               expression is UBinaryExpression &&
-                (expression.operator == UastBinaryOperator.EQUALS ||
-                  expression.operator == UastBinaryOperator.IDENTITY_EQUALS)
+                (expression.operator == UastBinaryOperator.EQUALS || expression.operator == UastBinaryOperator.IDENTITY_EQUALS)
             ) {
               val lhs = expression.leftOperand.skipParenthesizedExprDown()
               val rhs = expression.rightOperand.skipParenthesizedExprDown()
@@ -1387,15 +1294,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
               ) {
                 val access =
                   if (!isFieldLookup) {
-                    createMethodReflection(
-                      context,
-                      isKotlin,
-                      expression,
-                      classConstant,
-                      className ?: "",
-                      rhsValue,
-                      null,
-                    )
+                    createMethodReflection(context, isKotlin, expression, classConstant, className ?: "", rhsValue, null)
                   } else {
                     createFieldReflection(expression, classConstant, className ?: "", rhsValue)
                   }
@@ -1418,20 +1317,11 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         GET_METHOD,
         GET_FIELD -> {
           if (node.valueArguments.isNotEmpty()) {
-            val memberName =
-              ConstantEvaluator.evaluateString(context, node.valueArguments.first(), false)
+            val memberName = ConstantEvaluator.evaluateString(context, node.valueArguments.first(), false)
             if (memberName != null) {
               reflections.add(
                 if (name == GET_DECLARED_METHOD || name == GET_METHOD) {
-                  createMethodReflection(
-                    context,
-                    isKotlin,
-                    node,
-                    classConstant,
-                    className ?: "",
-                    memberName,
-                    emptyList(),
-                  )
+                  createMethodReflection(context, isKotlin, node, classConstant, className ?: "", memberName, emptyList())
                 } else {
                   createFieldReflection(node, classConstant, className ?: "", memberName)
                 }
@@ -1441,45 +1331,15 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         }
         GET_DECLARED_CONSTRUCTOR,
         GET_CONSTRUCTOR -> {
-          reflections.add(
-            createMethodReflection(
-              context,
-              isKotlin,
-              node,
-              classConstant,
-              className ?: "",
-              CONSTRUCTOR_NAME,
-              emptyList(),
-            )
-          )
+          reflections.add(createMethodReflection(context, isKotlin, node, classConstant, className ?: "", CONSTRUCTOR_NAME, emptyList()))
         }
         GET_DECLARED_CONSTRUCTORS,
         GET_CONSTRUCTORS -> {
-          reflections.add(
-            createMethodReflection(
-              context,
-              isKotlin,
-              node,
-              classConstant,
-              className ?: "",
-              CONSTRUCTOR_NAME,
-              null,
-            )
-          )
+          reflections.add(createMethodReflection(context, isKotlin, node, classConstant, className ?: "", CONSTRUCTOR_NAME, null))
         }
         GET_DECLARED_METHODS,
         GET_METHODS -> {
-          reflections.add(
-            createMethodReflection(
-              context,
-              isKotlin,
-              node,
-              classConstant,
-              className ?: "",
-              "*",
-              emptyList(),
-            )
-          )
+          reflections.add(createMethodReflection(context, isKotlin, node, classConstant, className ?: "", "*", emptyList()))
         }
         GET_DECLARED_FIELDS,
         GET_FIELDS -> {
@@ -1503,8 +1363,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         return
       }
 
-      val message =
-        createErrorMessage(className, memberName, isFieldLookup, reflection, invocationNode)
+      val message = createErrorMessage(className, memberName, isFieldLookup, reflection, invocationNode)
       val fix =
         if (className != null || memberName != null) {
           createReferencedMemberFix(context, isKotlin, annotationTarget, reflection)
@@ -1572,8 +1431,7 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
       "findLast",
       "single",
       "singleOrNull" -> {
-        val lambda =
-          call.valueArguments[0].skipParenthesizedExprDown() as? ULambdaExpression ?: return null
+        val lambda = call.valueArguments[0].skipParenthesizedExprDown() as? ULambdaExpression ?: return null
         val qualifiedName = call.resolve()?.containingClass?.qualifiedName
         if (
           // CLI environment resolve:
@@ -1583,11 +1441,9 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
         ) {
           return null
         }
-        val bodyExpressions =
-          (lambda.body.skipParenthesizedExprDown() as? UBlockExpression)?.expressions ?: return null
+        val bodyExpressions = (lambda.body.skipParenthesizedExprDown() as? UBlockExpression)?.expressions ?: return null
         if (bodyExpressions.size == 1) {
-          val returnExpression =
-            bodyExpressions[0].skipParenthesizedExprDown() as? UReturnExpression ?: return null
+          val returnExpression = bodyExpressions[0].skipParenthesizedExprDown() as? UReturnExpression ?: return null
           return returnExpression.returnExpression?.skipParenthesizedExprDown()
         }
       }
@@ -1634,19 +1490,12 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableReferenceNames(): List<String> = KOTLIN_REFLECTION_METHODS
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (referenced !is PsiMethod) {
       return
     }
     val containingClass = referenced.containingClass?.qualifiedName
-    if (
-      containingClass != "kotlin.reflect.KClass" &&
-        containingClass != "kotlin.reflect.full.KClasses"
-    ) {
+    if (containingClass != "kotlin.reflect.KClass" && containingClass != "kotlin.reflect.full.KClasses") {
       return
     }
 
@@ -1676,16 +1525,13 @@ class KeepRuleDetector : Detector(), SourceCodeScanner {
   }
 
   private fun isConstructorNewInstance(methodName: String?, call: UCallExpression) =
-    methodName == "newInstance" &&
-      call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Constructor"
+    methodName == "newInstance" && call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Constructor"
 
   private fun isFieldGet(methodName: String?, call: UCallExpression) =
-    methodName == "get" &&
-      call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Field"
+    methodName == "get" && call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Field"
 
   private fun isMethodInvoke(methodName: String?, call: UCallExpression) =
-    methodName == "invoke" &&
-      call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Method"
+    methodName == "invoke" && call.resolve()?.containingClass?.qualifiedName == "java.lang.reflect.Method"
 }
 
 private fun UExpression.getAnnotationTarget(): UAnnotated? {

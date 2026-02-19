@@ -21,36 +21,29 @@ import com.android.tools.build.gradle.internal.profile.VariantMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Before
-
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import org.mockito.kotlin.times
 
-/**
- * Tests for [AnalyticsEnabledComponentBuilder]
- */
+/** Tests for [AnalyticsEnabledComponentBuilder] */
 class AnalyticsEnabledComponentBuilderTest {
 
-    private val delegate: ComponentBuilder = mock()
+  private val delegate: ComponentBuilder = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledComponentBuilder
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledComponentBuilder
 
-    @Before
-    fun setup() {
-        proxy = object: AnalyticsEnabledComponentBuilder(delegate, stats) {}
-    }
+  @Before
+  fun setup() {
+    proxy = object : AnalyticsEnabledComponentBuilder(delegate, stats) {}
+  }
 
-    @Test
-    fun setEnabled() {
-        proxy.enable = false
-        Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantAccessList.first().type
-        ).isEqualTo(VariantMethodType.ENABLED_VALUE)
-        verify(delegate, times(1)).enable = false
-    }
+  @Test
+  fun setEnabled() {
+    proxy.enable = false
+    Truth.assertThat(stats.variantApiAccess.variantAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantAccessList.first().type).isEqualTo(VariantMethodType.ENABLED_VALUE)
+    verify(delegate, times(1)).enable = false
+  }
 }

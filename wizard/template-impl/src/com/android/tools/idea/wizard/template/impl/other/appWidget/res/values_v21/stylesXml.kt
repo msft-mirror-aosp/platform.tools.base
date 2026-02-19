@@ -34,4 +34,3 @@ fun stylesXml(themesData: ThemesData) =
     </style>
 </resources>
 """
-

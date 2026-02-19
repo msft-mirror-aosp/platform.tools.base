@@ -18,23 +18,17 @@ package com.android.build.gradle.internal.cxx.logging
 
 import java.io.PrintWriter
 
-/**
- * [ThreadLoggingEnvironment] that will write lines to a [PrintWriter] and then forward to a parent
- * logger.
- */
-class PassThroughPrintWriterLoggingEnvironment(
-    val log : PrintWriter,
-    val prefix : String)
-    : PassThroughRecordingLoggingEnvironment() {
-    private val parent : LoggingEnvironment = parentLogger()
+/** [ThreadLoggingEnvironment] that will write lines to a [PrintWriter] and then forward to a parent logger. */
+class PassThroughPrintWriterLoggingEnvironment(val log: PrintWriter, val prefix: String) : PassThroughRecordingLoggingEnvironment() {
+  private val parent: LoggingEnvironment = parentLogger()
 
-    override fun log(message: LoggingMessage) {
-        log.println(prefix + message.toString())
-        parent.log(message)
-    }
+  override fun log(message: LoggingMessage) {
+    log.println(prefix + message.toString())
+    parent.log(message)
+  }
 
-    override fun close() {
-        super.close()
-        log.close()
-    }
+  override fun close() {
+    super.close()
+    log.close()
+  }
 }

@@ -68,8 +68,7 @@ class HdpiDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     if (
       (evaluator.isMemberInClass(method, "com.intellij.util.ui.JBUI") ||
-        evaluator.isMemberInClass(method, "com.intellij.ui.scale.JBUIScale")) &&
-        evaluator.getParameterCount(method) == 1
+        evaluator.isMemberInClass(method, "com.intellij.ui.scale.JBUIScale")) && evaluator.getParameterCount(method) == 1
     ) {
       // Make sure it's not stored in a field
       var curr: UElement = node.uastParent ?: return
@@ -80,11 +79,7 @@ class HdpiDetector : Detector(), SourceCodeScanner {
         report(context, node)
       } else if (curr.isAssignment()) {
         val left = (curr as UBinaryExpression).leftOperand
-        if (
-          left is UQualifiedReferenceExpression &&
-            left.receiver is UThisExpression &&
-            left.selector is USimpleNameReferenceExpression
-        ) {
+        if (left is UQualifiedReferenceExpression && left.receiver is UThisExpression && left.selector is USimpleNameReferenceExpression) {
           report(context, node)
         } else {
           val resolved = left.tryResolve()

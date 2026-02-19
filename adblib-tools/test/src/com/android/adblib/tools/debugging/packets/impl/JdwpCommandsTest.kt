@@ -15,7 +15,6 @@
  */
 package com.android.adblib.tools.debugging.packets.impl
 
-import com.android.adblib.tools.debugging.packets.impl.JdwpCommands
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands.CmdSet.SET_VM
 import com.android.adblib.tools.debugging.packets.impl.JdwpCommands.VmCmd.CMD_VM_ALLCLASSES
 import org.junit.Assert.assertEquals
@@ -23,13 +22,13 @@ import org.junit.Test
 
 class JdwpCommandsTest {
 
-    @Test
-    fun testCmdSetToStringWorks() {
-        assertEquals("SET_VM", JdwpCommands.cmdSetToString(SET_VM.cmdSet))
-    }
+  @Test
+  fun testCmdSetToStringWorks() {
+    assertEquals("SET_VM", JdwpCommands.cmdSetToString(SET_VM.cmdSet))
+  }
 
-    @Test
-    fun testCmdToStringWorks() {
-        assertEquals("CMD_VM_ALLCLASSES", JdwpCommands.cmdToString(SET_VM.cmdSet, CMD_VM_ALLCLASSES.cmd))
-    }
+  @Test
+  fun testCmdToStringWorks() {
+    assertEquals("CMD_VM_ALLCLASSES", JdwpCommands.cmdToString(SET_VM.cmdSet, CMD_VM_ALLCLASSES.cmd))
+  }
 }

@@ -18,38 +18,34 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /**
- * Regression test for 186806269: lint.xml file is ignored in AGP
- * 4.2.0-rc01
+ * Regression test for 186806269: lint.xml file is ignored in AGP 4.2.0-rc01
  *
- * The bug is that with checkAllWarnings in lintOptions, attempts to turn
- * off specific issues via lint.xml did not work.
+ * The bug is that with checkAllWarnings in lintOptions, attempts to turn off specific issues via lint.xml did not work.
  *
- * This test checks both suppressing via a default lint.xml (due to
- * location and name) as well as via a lintOption lintConfig pointer; we
+ * This test checks both suppressing via a default lint.xml (due to location and name) as well as via a lintOption lintConfig pointer; we
  * use UnusedIds for the first one and MissingClass for the second.
  */
 class LintSuppressTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("lintSuppress").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("lintSuppress").create()
 
-    @Test
-    fun checkSuppressed() {
-        // Run twice to catch issues with configuration caching
-        project.execute("clean", ":app:lintDebug")
-        project.execute("clean", ":app:lintDebug")
-        project.buildResult.assertConfigurationCacheHit()
-        val app = project.getSubproject("app")
-        val file = File(app.projectDir, "lint-report.xml")
-        assertThat(file).exists()
+  @Test
+  fun checkSuppressed() {
+    // Run twice to catch issues with configuration caching
+    project.execute("clean", ":app:lintDebug")
+    project.execute("clean", ":app:lintDebug")
+    project.buildResult.assertConfigurationCacheHit()
+    val app = project.getSubproject("app")
+    val file = File(app.projectDir, "lint-report.xml")
+    assertThat(file).exists()
 
-        assertThat(file).contains("<issues")
-        assertThat(file).doesNotContain("UnusedIds")
-        assertThat(file).doesNotContain("MissingClass")
-    }
+    assertThat(file).contains("<issues")
+    assertThat(file).doesNotContain("UnusedIds")
+    assertThat(file).doesNotContain("MissingClass")
+  }
 }

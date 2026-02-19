@@ -138,9 +138,7 @@ class TestMatrixGeneratorTest {
   @Test
   fun test_createTestMatrix_basic() {
 
-    val matrix =
-      TestMatrixGenerator(getProjectSettings())
-        .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
+    val matrix = TestMatrixGenerator(getProjectSettings()).createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
 
     verifyMatrix(matrix)
   }
@@ -153,8 +151,7 @@ class TestMatrixGeneratorTest {
 
     verifyMatrix(
       matrix,
-      testSpecInstrumentationSharding =
-        ShardingOption().apply { uniformSharding = UniformSharding().apply { numShards = 5 } },
+      testSpecInstrumentationSharding = ShardingOption().apply { uniformSharding = UniformSharding().apply { numShards = 5 } },
     )
   }
 
@@ -166,10 +163,7 @@ class TestMatrixGeneratorTest {
 
     verifyMatrix(
       matrix,
-      testSpecInstrumentationSharding =
-        ShardingOption().apply {
-          smartSharding = SmartSharding().apply { targetedShardDuration = "600s" }
-        },
+      testSpecInstrumentationSharding = ShardingOption().apply { smartSharding = SmartSharding().apply { targetedShardDuration = "600s" } },
     )
   }
 
@@ -177,18 +171,16 @@ class TestMatrixGeneratorTest {
   fun test_createTestMatrix_addingBothShardingMethodsFails() {
     val error =
       assertThrows(IllegalStateException::class.java) {
-        TestMatrixGenerator(
-            getProjectSettings(targetedShardDurationSeconds = 600, numUniformShards = 5)
-          )
+        TestMatrixGenerator(getProjectSettings(targetedShardDurationSeconds = 600, numUniformShards = 5))
           .createTestMatrix(getDeviceData(), testData, testRunStorage, testApk, testedApk)
       }
 
     assertThat(error.message)
       .isEqualTo(
         """
-                Only one sharding option should be set for "numUniformShards" or
-                "targetedShardDurationMinutes" in firebaseTestLab.testOptions.execution.
-            """
+        Only one sharding option should be set for "numUniformShards" or
+        "targetedShardDurationMinutes" in firebaseTestLab.testOptions.execution.
+        """
           .trimIndent()
       )
   }
@@ -216,12 +208,7 @@ class TestMatrixGeneratorTest {
     TestMatrixGenerator(getProjectSettings()).apply {
       val matrix1 =
         createTestMatrix(
-          getDeviceData(
-            deviceId = "hello",
-            apiLevel = 31,
-            locale = Locale.FRENCH,
-            orientation = ManagedDeviceImpl.Orientation.LANDSCAPE,
-          ),
+          getDeviceData(deviceId = "hello", apiLevel = 31, locale = Locale.FRENCH, orientation = ManagedDeviceImpl.Orientation.LANDSCAPE),
           testData,
           testRunStorage,
           testApk,
@@ -243,12 +230,7 @@ class TestMatrixGeneratorTest {
 
       val matrix2 =
         createTestMatrix(
-          getDeviceData(
-            deviceId = "world",
-            apiLevel = 28,
-            locale = Locale.JAPANESE,
-            orientation = ManagedDeviceImpl.Orientation.PORTRAIT,
-          ),
+          getDeviceData(deviceId = "world", apiLevel = 28, locale = Locale.JAPANESE, orientation = ManagedDeviceImpl.Orientation.PORTRAIT),
           testData,
           testRunStorage,
           testApk,
@@ -354,12 +336,10 @@ class TestMatrixGeneratorTest {
 
     matrix.testSpecification.also { testSpec ->
       testSpec.testSetup.also { setup ->
-        assertThat(setup.get("dontAutograntPermssions"))
-          .isEqualTo(testSpecSetupDontAutograntPermissions)
+        assertThat(setup.get("dontAutograntPermssions")).isEqualTo(testSpecSetupDontAutograntPermissions)
         assertThat(setup.networkProfile).isEqualTo(testSpecSetupNetworkProfile)
         assertThat(setup.filesToPush).containsExactlyElementsIn(testSpecSetupFilesToPush)
-        assertThat(setup.directoriesToPull)
-          .containsExactlyElementsIn(testSpecSetupDirectoriesToPull)
+        assertThat(setup.directoriesToPull).containsExactlyElementsIn(testSpecSetupDirectoriesToPull)
         assertThat(setup.environmentVariables)
           .containsExactly(
             EnvironmentVariable().apply {
@@ -374,8 +354,7 @@ class TestMatrixGeneratorTest {
         assertThat(instrumentation.appApk.gcsPath).isEqualTo(testSpecInstrumentationAppApk)
         assertThat(instrumentation.appPackageId).isEqualTo(testSpecInstrumentationAppPackageId)
         assertThat(instrumentation.testPackageId).isEqualTo(testSpecInstrumentationTestPackageId)
-        assertThat(instrumentation.orchestratorOption)
-          .isEqualTo(testSpecInstrumentationOrchestrator)
+        assertThat(instrumentation.orchestratorOption).isEqualTo(testSpecInstrumentationOrchestrator)
         assertThat(instrumentation.get("shardingOption")).isEqualTo(testSpecInstrumentationSharding)
       }
 
@@ -385,8 +364,7 @@ class TestMatrixGeneratorTest {
     }
 
     matrix.environmentMatrix.also { environment ->
-      assertThat(environment.androidDeviceList.androidDevices)
-        .containsExactlyElementsIn(environmentDevices)
+      assertThat(environment.androidDeviceList.androidDevices).containsExactlyElementsIn(environmentDevices)
     }
 
     matrix.resultStorage.also { storage ->

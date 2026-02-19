@@ -16,43 +16,53 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.TestSuiteHostJarSpec
 import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.dsl.TestSuiteHostJarSpec
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.api.HostJarTestSuiteSourceSet
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
-import org.gradle.api.Action
-import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
+import org.gradle.api.Action
+import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.model.ObjectFactory
 
-open class TestSuiteHostJarSpecImpl @Inject internal constructor(
-    objects: ObjectFactory,
-    override val name: String,
-): TestSuiteHostJarSpec, TestSuiteSourceCreationConfig {
+open class TestSuiteHostJarSpecImpl
+@Inject
+internal constructor(objects: ObjectFactory, name: String, projectDirectory: Directory, buildDirectory: DirectoryProperty) :
+  AbstractTestSuiteSpecImpl(name, projectDirectory, buildDirectory), TestSuiteHostJarSpec, TestSuiteSourceCreationConfig {
 
-    /**
-     * PUBLIC APIs
-     */
-    override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
+  /** PUBLIC APIs */
+  override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
 
-    fun dependencies(action:Action<AgpTestSuiteDependencies>) {
-        dependencies { action.execute(this) }
-    }
+  fun dependencies(action: Action<AgpTestSuiteDependencies>) {
+    dependencies { action.execute(this) }
+  }
 
-    override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
-        action.invoke(dependencies)
-    }
+  override fun dependencies(action: AgpTestSuiteDependencies.() -> Unit) {
+    action.invoke(dependencies)
+  }
 
-    override var enableAndroidResources: Boolean = false
+  private val androidResourcesFlag = objects.property(Boolean::class.java).also { it.convention(false) }
+  override var enableAndroidResources: Boolean
+    get() = androidResourcesFlag.get()
+    set(value) = androidResourcesFlag.set(value)
 
-    /**
-     * INTERNAL APIs
-     */
-    override fun createTestSuiteSourceSet(variantServices: VariantServices): TestSuiteSourceSet {
-        return HostJarTestSuiteSourceSet(
-            sourceSetName = name,
-            variantServices = variantServices,
-        )
-    }
+  /** INTERNAL APIs */
+  override fun createTestSuiteSourceSet(
+    variantServices: VariantServices,
+    javaEnabled: Boolean,
+    kotlinEnabled: Boolean,
+  ): TestSuiteSourceSet {
+    return HostJarTestSuiteSourceSet(
+      sourceSetName = name,
+      variantServices = variantServices,
+      userAddedSourceSets = userAddedSourcesSets,
+      javaEnabled = javaEnabled,
+      kotlinEnabled = kotlinEnabled,
+      androidResourcesFlag,
+      dependencies = dependencies,
+    )
+  }
 }

@@ -16,13 +16,11 @@
 
 package com.android.ide.common.util
 
-/**
- * A modifiable collection that maps [PathString] instances onto arbitrary values.
- */
+/** A modifiable collection that maps [PathString] instances onto arbitrary values. */
 interface MutablePathMap<T> : PathMap<T> {
-    /**
-     * Associates the given value with the given key in the map. If there was an existing value,
-     * it is replaced and returned from this function. If not, the function returns null.
-     */
-    fun put(key: PathString, value: T): T?
+  /**
+   * Associates the given value with the given key in the map. If there was an existing value, it is replaced and returned from this
+   * function. If not, the function returns null.
+   */
+  fun put(key: PathString, value: T): T?
 }

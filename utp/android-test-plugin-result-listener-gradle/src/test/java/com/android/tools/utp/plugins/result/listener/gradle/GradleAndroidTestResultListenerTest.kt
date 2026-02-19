@@ -17,9 +17,7 @@
 package com.android.tools.utp.plugins.result.listener.gradle
 
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerConfigProto.GradleAndroidTestResultListenerConfig
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.RecordTestResultEventResponse
 import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerProto.TestResultEvent
-import com.android.tools.utp.plugins.result.listener.gradle.proto.GradleAndroidTestResultListenerServiceGrpc.GradleAndroidTestResultListenerServiceImplBase
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Any
 import com.google.testing.platform.api.config.ProtoConfig
@@ -28,128 +26,86 @@ import com.google.testing.platform.proto.api.core.ExtensionProto
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
-import io.grpc.inprocess.InProcessChannelBuilder
-import io.grpc.inprocess.InProcessServerBuilder
-import io.grpc.stub.StreamObserver
-import io.grpc.testing.GrpcCleanupRule
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.AdditionalAnswers.delegatesTo
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 
-/**
- * Unit test for [GradleAndroidTestResultListener].
- */
+/** Unit test for [GradleAndroidTestResultListener]. */
 @RunWith(JUnit4::class)
 class GradleAndroidTestResultListenerTest {
 
-    @get:Rule
-    val grpcCleanup = GrpcCleanupRule()
+  @get:Rule var temporaryFolder = TemporaryFolder()
 
-    lateinit var testListener: GradleAndroidTestResultListener
-    var capturedPortNumber: Int? = null
-    val capturedRequests = mutableListOf<TestResultEvent>()
-    var requestCompleted = false
+  private val capturedRequests = mutableListOf<TestResultEvent>()
+  private val testListener = GradleAndroidTestResultListener { event -> capturedRequests.add(event) }
 
-    private val serviceImpl = mock(GradleAndroidTestResultListenerServiceImplBase::class.java,
-            delegatesTo<GradleAndroidTestResultListenerServiceImplBase>(
-                    object: GradleAndroidTestResultListenerServiceImplBase() {
-                        override fun recordTestResultEvent(
-                                responseObserver: StreamObserver<RecordTestResultEventResponse>):
-                                StreamObserver<TestResultEvent> {
-                    return object: StreamObserver<TestResultEvent> {
-                        override fun onNext(event: TestResultEvent) {
-                            capturedRequests.add(event)
-                        }
-
-                        override fun onError(error: Throwable) {}
-
-                        override fun onCompleted() {
-                            requestCompleted = true
-                            responseObserver.onNext(
-                                    RecordTestResultEventResponse.getDefaultInstance())
-                            responseObserver.onCompleted()
-                        }
-                    }
-                }
-            }))
-
-    @Before
-    fun setUp() {
-        val serverName = InProcessServerBuilder.generateName()
-        grpcCleanup.register(InProcessServerBuilder
-                .forName(serverName)
-                .directExecutor()
-                .addService(serviceImpl)
-                .build()
-                .start())
-
-        testListener = GradleAndroidTestResultListener { config ->
-            capturedPortNumber = config.resultListenerServerPort
-            grpcCleanup.register(
-                    InProcessChannelBuilder
-                            .forName(serverName)
-                            .directExecutor()
-                            .build())
-        }
-
-        val config = Any.pack(GradleAndroidTestResultListenerConfig.newBuilder().apply {
-            resultListenerServerPort = 1234
+  @Before
+  fun setUp() {
+    val config =
+      Any.pack(
+        GradleAndroidTestResultListenerConfig.newBuilder()
+          .apply {
             deviceId = "deviceIdString"
-        }.build())
-        val protoConfig = object: ProtoConfig {
-            override val configProto: Any
-                get() = config
-            override val configResource: ExtensionProto.ConfigResource?
-                get() = null
-        }
+            utpResultProtoOutputFilePath = temporaryFolder.newFile().absolutePath
+          }
+          .build()
+      )
+    val protoConfig =
+      object : ProtoConfig {
+        override val configProto: Any
+          get() = config
 
-        val context = mock(Context::class.java)
-        `when`(context[Context.CONFIG_KEY]).thenReturn(protoConfig)
+        override val configResource: ExtensionProto.ConfigResource?
+          get() = null
+      }
 
-        testListener.configure(context)
+    val context = mock(Context::class.java)
+    `when`(context[Context.CONFIG_KEY]).thenReturn(protoConfig)
+
+    testListener.configure(context)
+  }
+
+  @Test
+  fun testSuiteFinishedSuccessfully() {
+    testListener.apply {
+      beforeTestSuite(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
+      beforeTest(null)
+      afterTest(TestResult.getDefaultInstance())
+      afterTestSuite(TestSuiteResult.getDefaultInstance())
     }
 
-    @Test
-    fun testSuiteFinishedSuccessfully() {
-        assertThat(capturedPortNumber).isEqualTo(1234)
-
-        testListener.apply {
-            beforeTestSuite(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
-            beforeTest(null)
-            afterTest(TestResult.getDefaultInstance())
-            afterTestSuite(TestSuiteResult.getDefaultInstance())
-        }
-
-        assertThat(capturedRequests).containsExactly(
-                TestResultEvent.newBuilder().apply {
-                    deviceId = "deviceIdString"
-                    testSuiteStartedBuilder.apply {
-                        testSuiteMetadata = Any.pack(
-                                TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance())
-                    }
-                }.build(),
-                TestResultEvent.newBuilder().apply {
-                    deviceId = "deviceIdString"
-                    testCaseStarted = TestResultEvent.TestCaseStarted.getDefaultInstance()
-                }.build(),
-                TestResultEvent.newBuilder().apply {
-                    deviceId = "deviceIdString"
-                    testCaseFinishedBuilder.apply {
-                        testCaseResult = Any.pack(TestResult.getDefaultInstance())
-                    }
-                }.build(),
-                TestResultEvent.newBuilder().apply {
-                    deviceId = "deviceIdString"
-                    testSuiteFinishedBuilder.apply {
-                        testSuiteResult = Any.pack(TestSuiteResult.getDefaultInstance())
-                    }
-                }.build()
-        ).inOrder()
-        assertThat(requestCompleted).isTrue()
-    }
+    assertThat(capturedRequests)
+      .containsExactly(
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testSuiteStartedBuilder.apply { testSuiteMetadata = Any.pack(TestSuiteResultProto.TestSuiteMetaData.getDefaultInstance()) }
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testCaseStarted = TestResultEvent.TestCaseStarted.getDefaultInstance()
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testCaseFinishedBuilder.apply { testCaseResult = Any.pack(TestResult.getDefaultInstance()) }
+          }
+          .build(),
+        TestResultEvent.newBuilder()
+          .apply {
+            deviceId = "deviceIdString"
+            testSuiteFinishedBuilder.apply { testSuiteResult = Any.pack(TestSuiteResult.getDefaultInstance()) }
+          }
+          .build(),
+      )
+      .inOrder()
+  }
 }

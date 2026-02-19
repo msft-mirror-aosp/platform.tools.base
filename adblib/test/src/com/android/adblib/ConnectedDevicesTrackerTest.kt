@@ -21,6 +21,7 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -31,322 +32,275 @@ import org.junit.rules.ExpectedException
 
 class ConnectedDevicesTrackerTest {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @JvmField @Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    @JvmField
-    @Rule
-    var exceptionRule: ExpectedException = ExpectedException.none()
+  @JvmField @Rule var exceptionRule: ExpectedException = ExpectedException.none()
 
-    private val fakeAdb get() = fakeAdbRule.fakeAdb
-    private val session get() = fakeAdbRule.adbSession
+  private val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    data class TestKey(val id: String) : CoroutineScopeCache.Key<Any>("test key $id")
+  private val session
+    get() = fakeAdbRule.adbSession
 
-    @Test
-    fun constructorDoesNotStartTracking() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+  data class TestKey(val id: String) : CoroutineScopeCache.Key<Any>("test key $id")
 
-        // Act
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        delay(500)
+  @Test
+  fun constructorDoesNotStartTracking() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
-        // Assert
-        Assert.assertEquals(0, deviceCacheManager.connectedDevices.value.size)
-    }
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    delay(500)
 
-    @Test
-    fun startWorks() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // Assert
+    Assert.assertEquals(0, deviceCacheManager.connectedDevices.value.size)
+  }
 
-        // Act
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
+  @Test
+  fun startWorks() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    val connectedDevicesFlowCollections = CopyOnWriteArrayList<ConnectedDeviceList>()
+    val job = launch { deviceCacheManager.connectedDevices.collect { connectedDevicesFlowCollections.add(it) } }
+
+    // Assert
+    // We expect exactly 2 emissions:
+    // 1. Initial state: Empty list, flowStatus=StartOfFlow
+    // 2. First update: List with 1 device, flowStatus=Active
+    yieldUntil { connectedDevicesFlowCollections.size == 2 }
+    // Wait a little longer to give `deviceCacheManager.connectedDevices` a chance to emit unexpected additional values
+    delay(100)
+
+    Assert.assertEquals(2, connectedDevicesFlowCollections.size)
+    Assert.assertTrue(connectedDevicesFlowCollections[0].isEmpty())
+    Assert.assertTrue(connectedDevicesFlowCollections[0].flowStatus.isStartOfFlow)
+    Assert.assertEquals(1, connectedDevicesFlowCollections[1].size)
+    Assert.assertTrue(connectedDevicesFlowCollections[1].flowStatus.isActive)
+
+    job.cancel()
+  }
+
+  @Test
+  fun closingSessionEndsStateFlow() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevice = deviceCacheManager.connectedDevices.value.single()
+    session.close()
+    yieldUntil { deviceCacheManager.connectedDevices.value.isEmpty() }
+
+    // Assert
+    Assert.assertEquals(com.android.adblib.DeviceState.DISCONNECTED, connectedDevice.deviceInfo.deviceState)
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.isEmpty())
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow)
+  }
+
+  @Test
+  fun connectedDeviceShowsInStateFlow() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+
+    // Assert
+    Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
+    val connectedDevice = deviceCacheManager.connectedDevices.value[0]
+    Assert.assertEquals("1234", connectedDevice.serialNumber)
+    Assert.assertEquals(com.android.adblib.DeviceState.ONLINE, connectedDevice.deviceInfo.deviceState)
+  }
+
+  @Test
+  fun connectedDeviceShowsChangingDeviceStateInStateFlow() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    // Act
+    val deviceInfoList = mutableListOf<DeviceInfo>()
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevice = deviceCacheManager.connectedDevices.value.first()
+
+    // collect ONLINE state
+    deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
+
+    // collect UNAUTHORIZED state
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.UNAUTHORIZED
+    yieldUntil { deviceInfoList.last() != connectedDevice.deviceInfoFlow.value }
+    deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
+
+    // collect RECOVERY state
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.RECOVERY
+    yieldUntil { deviceInfoList.last() != connectedDevice.deviceInfoFlow.value }
+    deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
+
+    // Assert
+    Assert.assertEquals(3, deviceInfoList.size)
+    Assert.assertEquals(
+      listOf(com.android.adblib.DeviceState.ONLINE, com.android.adblib.DeviceState.UNAUTHORIZED, com.android.adblib.DeviceState.RECOVERY),
+      deviceInfoList.map { it.deviceState }.toList(),
+    )
+  }
+
+  @Test
+  fun connectedDevicesDoesNotEmitOnDeviceStateChanges() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevice = deviceCacheManager.connectedDevices.value.first()
+    connectedDevice.waitUntilOnline()
+
+    // Act
+    var connectedDevicesCollections = 0
+    val job = launch { deviceCacheManager.connectedDevices.collect { connectedDevicesCollections++ } }
+    yieldUntil { connectedDevicesCollections == 1 }
+
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.UNAUTHORIZED
+    yieldUntil { connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.UNAUTHORIZED }
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.RECOVERY
+    yieldUntil { connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.RECOVERY }
+    // Delay a little longer to allow collector to collect
+    delay(50)
+
+    // Assert: despite device state changing to `UNAUTHORIZED` and then `RECOVERY`
+    // the `connectedDevices` flow didn't emit updates
+    Assert.assertEquals(1, connectedDevicesCollections)
+    job.cancel()
+  }
+
+  @Test
+  fun connectedDeviceBecomesInactiveWhenDeviceIsDisconnected() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val cacheKey = TestKey("foo")
+
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isNotEmpty() }
+    val connectedDevice = deviceCacheManager.connectedDevices.value.first()
+    connectedDevice.cache.getOrPut(cacheKey) { 12 }
+    fakeAdb.disconnectDevice(fakeDevice.deviceId)
+    yieldUntil { deviceCacheManager.connectedDevices.value.isEmpty() }
+
+    // Assert
+    Assert.assertEquals("1234", connectedDevice.serialNumber)
+    Assert.assertFalse(connectedDevice.scope.isActive)
+    Assert.assertEquals(com.android.adblib.DeviceState.DISCONNECTED, connectedDevice.deviceInfoFlow.value.deviceState)
+    Assert.assertEquals(10, connectedDevice.cache.getOrPut(cacheKey) { 10 })
+    Assert.assertFalse(connectedDevice.cache.scope.isActive)
+  }
+
+  @Test
+  fun deviceCacheCreatesCache() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    val key = TestKey("foo")
+
+    // Act
+    val cache = deviceCacheManager.waitForDevice(fakeDevice.deviceId).cache
+    val value1 = cache.getOrPut(key) { 10 }
+    val value2 = cache.getOrPut(key) { 11 }
+    val value3 = cache.getOrPut(key) { 12 }
+
+    // Assert
+    Assert.assertEquals(10, value1)
+    Assert.assertEquals(10, value2)
+    Assert.assertEquals(10, value3)
+  }
+
+  @Test
+  fun deviceReturnsNullForUnknownDevice() = runBlockingWithTimeout {
+    // Prepare
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+
+    // Act / Assert
+    Assert.assertNull(deviceCacheManager.device("2345"))
+  }
+
+  @Test
+  fun deviceCacheIsClosedWhenDeviceDisconnected() = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = fakeAdb.connectDevice("1234", "test1", "test2", "model", sdk = AndroidApiLevel(23), DeviceState.HostConnectionType.USB)
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    val key = TestKey("foo")
+    val closeable =
+      object : AutoCloseable {
+        var closed = false
+
+        override fun close() {
+          closed = true
         }
+      }
 
-        // Assert
-        Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
-    }
+    // Act
+    val deviceCache = deviceCacheManager.waitForDevice(fakeDevice.deviceId).cache
+    deviceCache.getOrPut(key) { closeable }
+    fakeAdb.disconnectDevice(fakeDevice.deviceId)
+    yieldUntil { closeable.closed }
+    delay(100)
 
-    @Test
-    fun closingSessionEndsStateFlow() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // Assert
+    Assert.assertFalse(deviceCache.scope.isActive)
+    Assert.assertTrue(closeable.closed)
+    Assert.assertEquals(0, deviceCacheManager.connectedDevices.value.size)
+  }
 
-        // Act
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
-        }
-        session.close()
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isEmpty()
-        }
+  @Test
+  fun flowStatus_startsAsInitializing_thenBecomesActive_andEndsAsEndOfFlow() = runBlockingWithTimeout {
+    // Act
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
 
-        // Assert
-        Assert.assertTrue(deviceCacheManager.connectedDevices.value.isEmpty())
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isStartOfFlow)
 
-    }
+    // Act
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isActive }
 
-    @Test
-    fun connectedDeviceShowsInStateFlow() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isActive)
 
-        // Act
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
-        }
+    // Act
+    session.close()
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow }
 
-        // Assert
-        Assert.assertEquals(1, deviceCacheManager.connectedDevices.value.size)
-        val connectedDevice = deviceCacheManager.connectedDevices.value[0]
-        Assert.assertEquals("1234", connectedDevice.serialNumber)
-        Assert.assertEquals(
-            com.android.adblib.DeviceState.ONLINE,
-            connectedDevice.deviceInfo.deviceState
-        )
-    }
+    // Assert
+    Assert.assertTrue(deviceCacheManager.connectedDevices.value.flowStatus.isEndOfFlow)
+  }
 
-    @Test
-    fun connectedDeviceShowsChangingDeviceStateInStateFlow() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+  @Test
+  fun flowStatusBecomesRetryingWhenServerStops() = runBlockingWithTimeout {
+    // Prepare
+    val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isActive }
 
-        // Act
-        val deviceInfoList = mutableListOf<DeviceInfo>()
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
-        }
-        val connectedDevice = deviceCacheManager.connectedDevices.value.first()
+    // Act
+    fakeAdb.stop()
+    yieldUntil { deviceCacheManager.connectedDevices.value.flowStatus.isRetrying }
 
-        // collect ONLINE state
-        deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
-
-        // collect UNAUTHORIZED state
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.UNAUTHORIZED
-        yieldUntil {
-            deviceInfoList.last() != connectedDevice.deviceInfoFlow.value
-        }
-        deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
-
-        // collect RECOVERY state
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.RECOVERY
-        yieldUntil {
-            deviceInfoList.last() != connectedDevice.deviceInfoFlow.value
-        }
-        deviceInfoList.add(connectedDevice.deviceInfoFlow.value)
-
-        // Assert
-        Assert.assertEquals(3, deviceInfoList.size)
-        Assert.assertEquals(
-            listOf(
-                com.android.adblib.DeviceState.ONLINE,
-                com.android.adblib.DeviceState.UNAUTHORIZED,
-                com.android.adblib.DeviceState.RECOVERY
-            ),
-            deviceInfoList.map { it.deviceState }.toList()
-        )
-    }
-
-    @Test
-    fun connectedDevicesDoesNotEmitOnDeviceStateChanges() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
-        }
-        val connectedDevice = deviceCacheManager.connectedDevices.value.first()
-        connectedDevice.waitUntilOnline()
-
-        // Act
-        var connectedDevicesCollections = 0
-        val job = launch {
-            deviceCacheManager.connectedDevices.collect {
-                connectedDevicesCollections++
-            }
-        }
-        yieldUntil { connectedDevicesCollections == 1 }
-
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.UNAUTHORIZED
-        yieldUntil {
-            connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.UNAUTHORIZED
-        }
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.RECOVERY
-        yieldUntil {
-            connectedDevice.deviceInfoFlow.value.deviceState == com.android.adblib.DeviceState.RECOVERY
-        }
-        // Delay a little longer to allow collector to collect
-        delay(50)
-
-        // Assert: despite device state changing to `UNAUTHORIZED` and then `RECOVERY`
-        // the `connectedDevices` flow didn't emit updates
-        Assert.assertEquals(1, connectedDevicesCollections)
-        job.cancel()
-    }
-
-    @Test
-    fun connectedDeviceBecomesInactiveWhenDeviceIsDisconnected() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val cacheKey = TestKey("foo")
-
-        // Act
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isNotEmpty()
-        }
-        val connectedDevice = deviceCacheManager.connectedDevices.value.first()
-        connectedDevice.cache.getOrPut(cacheKey) { 12 }
-        fakeAdb.disconnectDevice(fakeDevice.deviceId)
-        yieldUntil {
-            deviceCacheManager.connectedDevices.value.isEmpty()
-        }
-
-        // Assert
-        Assert.assertEquals("1234", connectedDevice.serialNumber)
-        Assert.assertFalse(connectedDevice.scope.isActive)
-        Assert.assertEquals(
-            com.android.adblib.DeviceState.DISCONNECTED,
-            connectedDevice.deviceInfoFlow.value.deviceState
-        )
-        Assert.assertEquals(10, connectedDevice.cache.getOrPut(cacheKey) { 10 })
-        Assert.assertFalse(connectedDevice.cache.scope.isActive)
-    }
-
-    @Test
-    fun deviceCacheCreatesCache() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        val key = TestKey("foo")
-
-        // Act
-        val cache = deviceCacheManager.waitForDevice(fakeDevice.deviceId).cache
-        val value1 = cache.getOrPut(key) { 10 }
-        val value2 = cache.getOrPut(key) { 11 }
-        val value3 = cache.getOrPut(key) { 12 }
-
-        // Assert
-        Assert.assertEquals(10, value1)
-        Assert.assertEquals(10, value2)
-        Assert.assertEquals(10, value3)
-    }
-
-    @Test
-    fun deviceReturnsNullForUnknownDevice() = runBlockingWithTimeout {
-        // Prepare
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-
-        // Act / Assert
-        Assert.assertNull(deviceCacheManager.device("2345"))
-    }
-
-    @Test
-    fun deviceCacheIsClosedWhenDeviceDisconnected() = runBlockingWithTimeout {
-        // Prepare
-        val fakeDevice = fakeAdb.connectDevice(
-            "1234",
-            "test1",
-            "test2",
-            "model",
-            sdk = AndroidApiLevel(23),
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val deviceCacheManager = ConnectedDevicesTrackerImpl(session)
-        val key = TestKey("foo")
-        val closeable = object : AutoCloseable {
-            var closed = false
-            override fun close() {
-                closed = true
-            }
-        }
-
-        // Act
-        val deviceCache = deviceCacheManager.waitForDevice(fakeDevice.deviceId).cache
-        deviceCache.getOrPut(key) { closeable }
-        fakeAdb.disconnectDevice(fakeDevice.deviceId)
-        yieldUntil {
-            closeable.closed
-        }
-        delay(100)
-
-        // Assert
-        Assert.assertFalse(deviceCache.scope.isActive)
-        Assert.assertTrue(closeable.closed)
-        Assert.assertEquals(0, deviceCacheManager.connectedDevices.value.size)
-    }
+    // Assert
+    val flowStatus = deviceCacheManager.connectedDevices.value.flowStatus
+    Assert.assertTrue(flowStatus.isRetrying)
+    Assert.assertNotNull(flowStatus.currentError)
+  }
 }

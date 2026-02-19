@@ -49,104 +49,79 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 object FusedLibraryConstants {
-    /**
-     * Privacy sandbox doesn't have variants. However, some tasks e.g. lint may be required a variant
-     * name to be provided. In this case, we have a default name to be used when this is required.
-     */
-    const val DEFAULT_VARIANT_NAME = "main"
-    const val EXTENSION_NAME = "androidFusedLibrary"
-    const val INCLUDE_CONFIGURATION_NAME = "include"
-    const val FUSED_API_CONFIGURATION_NAME = "fusedApi"
-    const val FUSED_RUNTIME_CONFIGURATION_NAME = "fusedRuntime"
-    const val FUSED_SOURCES_CONFIGURATION_NAME = "fusedSources"
-    const val VALIDATE_DEPENDENCIES_TASK_NAME = "validateDependencies"
-    const val FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME = "fusedLibraryComponent"
+  /**
+   * Privacy sandbox doesn't have variants. However, some tasks e.g. lint may be required a variant name to be provided. In this case, we
+   * have a default name to be used when this is required.
+   */
+  const val DEFAULT_VARIANT_NAME = "main"
+  const val EXTENSION_NAME = "androidFusedLibrary"
+  const val INCLUDE_CONFIGURATION_NAME = "include"
+  const val FUSED_API_CONFIGURATION_NAME = "fusedApi"
+  const val FUSED_RUNTIME_CONFIGURATION_NAME = "fusedRuntime"
+  const val FUSED_SOURCES_CONFIGURATION_NAME = "fusedSources"
+  const val VALIDATE_DEPENDENCIES_TASK_NAME = "validateDependencies"
+  const val FUSED_LIBRARY_PUBLICATION_COMPONENT_NAME = "fusedLibraryComponent"
 }
 
 internal fun createTasks(
-        project: Project,
-        artifacts: ArtifactsImpl,
-        artifactForPublication: Artifact.Single<RegularFile>,
-        tasksCreationActions: List<TaskCreationAction<out DefaultTask>>
+  project: Project,
+  artifacts: ArtifactsImpl,
+  artifactForPublication: Artifact.Single<RegularFile>,
+  tasksCreationActions: List<TaskCreationAction<out DefaultTask>>,
 ) {
-    val taskProviders = TaskFactoryImpl(project.tasks).let { taskFactory ->
-        tasksCreationActions.map { creationAction ->
-            taskFactory.register(creationAction)
-        }
+  val taskProviders =
+    TaskFactoryImpl(project.tasks).let { taskFactory ->
+      tasksCreationActions.map { creationAction -> taskFactory.register(creationAction) }
     }
 
-    // create anchor tasks
-    project.tasks.register("assemble") { assembleTask ->
-        artifactForPublication?.let { artifactTypeForPublication ->
-            assembleTask.dependsOn(artifacts.get(artifactTypeForPublication))
-        } ?: taskProviders.forEach { assembleTask.dependsOn(it) }
-    }
+  // create anchor tasks
+  project.tasks.register("assemble") { assembleTask ->
+    artifactForPublication?.let { artifactTypeForPublication -> assembleTask.dependsOn(artifacts.get(artifactTypeForPublication)) }
+      ?: taskProviders.forEach { assembleTask.dependsOn(it) }
+  }
 }
 
-internal fun configureTransformsForFusedLibrary(
-    project: Project,
-    projectServices: ProjectServices
-): DependencyConfigurator {
-    if (projectServices.projectOptions[BooleanOption.ENABLE_PROGUARD_RULES_EXTRACTION]) {
-        project.dependencies.registerTransform(
-            FilterShrinkerRulesTransform::class.java
-        ) { reg: TransformSpec<FilterShrinkerRulesTransform.Parameters> ->
-            reg.from
-                .attribute(
-                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
-                    AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES.type
-                )
-            reg.to
-                .attribute(
-                    ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE,
-                    AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type
-                )
-            reg.parameters { params: FilterShrinkerRulesTransform.Parameters ->
-                params.shrinkerVersion.set(ShrinkerVersion.R8)
-                params.projectName.set(project.name)
-            }
-        }
+internal fun configureTransformsForFusedLibrary(project: Project, projectServices: ProjectServices): DependencyConfigurator {
+  if (projectServices.projectOptions[BooleanOption.ENABLE_PROGUARD_RULES_EXTRACTION]) {
+    project.dependencies.registerTransform(FilterShrinkerRulesTransform::class.java) {
+      reg: TransformSpec<FilterShrinkerRulesTransform.Parameters> ->
+      reg.from.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES.type)
+      reg.to.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.FILTERED_PROGUARD_RULES.type)
+      reg.parameters { params: FilterShrinkerRulesTransform.Parameters ->
+        params.shrinkerVersion.set(ShrinkerVersion.R8)
+        params.projectName.set(project.name)
+      }
     }
-    return DependencyConfigurator(project, projectServices).configureGeneralTransforms(
-        getAarOrJarTypeToConsume(projectServices.projectOptions)
-    )
+  }
+  return DependencyConfigurator(project, projectServices)
+    .configureGeneralTransforms(getAarOrJarTypeToConsume(projectServices.projectOptions))
 }
 
 internal fun getDslServices(project: Project, projectServices: ProjectServices): DslServices {
-    val sdkComponentsBuildService: Provider<SdkComponentsBuildService> =
-            SdkComponentsBuildService.RegistrationAction(
-                    project,
-                    projectServices.projectOptions
-            ).execute()
+  val sdkComponentsBuildService: Provider<SdkComponentsBuildService> =
+    SdkComponentsBuildService.RegistrationAction(project, projectServices.projectOptions).execute()
 
-    return DslServicesImpl(projectServices, sdkComponentsBuildService, ProjectType.FUSED_LIBRARY)
+  return DslServicesImpl(projectServices, sdkComponentsBuildService, ProjectType.FUSED_LIBRARY)
 }
 
 fun configureElements(
-        project: Project,
-        elements: Configuration,
-        usage: String,
-        artifacts: ArtifactsImpl,
-        publications: Map<Artifact.Single<RegularFile>, AndroidArtifacts.ArtifactType>,
+  project: Project,
+  elements: Configuration,
+  usage: String,
+  artifacts: ArtifactsImpl,
+  publications: Map<Artifact.Single<RegularFile>, AndroidArtifacts.ArtifactType>,
 ) {
-    elements.attributes.attribute(
-        Usage.USAGE_ATTRIBUTE,
-        project.objects.named(Usage::class.java, usage)
-    )
-    elements.isCanBeResolved = false
-    elements.isCanBeConsumed = true
-    elements.isTransitive = true
+  elements.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage::class.java, usage))
+  elements.isCanBeResolved = false
+  elements.isCanBeConsumed = true
+  elements.isTransitive = true
 
-    elements.outgoing.variants {
-        for (publication in publications) {
-            val artifactProvider = artifacts.get(publication.key)
-            publishArtifactToConfiguration(
-                elements,
-                artifactProvider,
-                publication.value
-            )
-        }
+  elements.outgoing.variants {
+    for (publication in publications) {
+      val artifactProvider = artifacts.get(publication.key)
+      publishArtifactToConfiguration(elements, artifactProvider, publication.value)
     }
+  }
 }
 
 /**
@@ -154,68 +129,55 @@ fun configureElements(
  *
  * @param project The Gradle project used to create the dependencies.
  * @return A provider of a List<Dependency>.
- *
  */
-internal fun Provider<Set<ModuleVersionIdentifier>>.toDependenciesProvider(
-    project: Project,
-): Provider<List<Dependency>> {
-    return map { moduleVersionIdentifierSet ->
-        moduleVersionIdentifierSet.map { id: ModuleVersionIdentifier ->
-            project.dependencies.create(id.toString())
-        }
-    }
+internal fun Provider<Set<ModuleVersionIdentifier>>.toDependenciesProvider(project: Project): Provider<List<Dependency>> {
+  return map { moduleVersionIdentifierSet ->
+    moduleVersionIdentifierSet.map { id: ModuleVersionIdentifier -> project.dependencies.create(id.toString()) }
+  }
 }
 
 /**
  * For determining dependencies that are not included in the Fused Library AAR.
  *
- * As transitive dependencies are used for fused library publication and consumption, they must be
- * added to these dependencies to each directly to each configuration that requires them.
+ * As transitive dependencies are used for fused library publication and consumption, they must be added to these dependencies to each
+ * directly to each configuration that requires them.
  *
- * @param sourceConfiguration
- *        configuration containing all dependencies (included in artifacts and dependencies).
- *        Direct/first level dependencies will be assumed to be packaged in the aar artifact.
+ * @param sourceConfiguration configuration containing all dependencies (included in artifacts and dependencies). Direct/first level
+ *   dependencies will be assumed to be packaged in the aar artifact.
  * @param issueReporter The issue reporter used to report any validation errors.
  * @return A provider of a Set<ModuleVersionIdentifier>.
  */
-internal fun getFusedLibraryDependencyModuleVersionIdentifiers(
-    sourceConfiguration: Configuration,
-) : Provider<Set<ModuleVersionIdentifier>> {
-    return sourceConfiguration.incoming.resolutionResult.rootComponent.map { sourceRootComponent ->
-        val dependenciesIncludedInFusedAar: Set<ModuleVersionIdentifier> =
-            sourceRootComponent.dependencies
-                // Unresolved dependencies cannot be published. The fused library validation tasks
-                // will a human friendly error message.
-                .filterIsInstance<ResolvedDependencyResult>()
-                .map {
-                    it.selected.moduleVersion
-                    ?: error("${it.selected} cannot have a null moduleVersion") }
-                .toSet()
+internal fun getFusedLibraryDependencyModuleVersionIdentifiers(sourceConfiguration: Configuration): Provider<Set<ModuleVersionIdentifier>> {
+  return sourceConfiguration.incoming.resolutionResult.rootComponent.map { sourceRootComponent ->
+    val dependenciesIncludedInFusedAar: Set<ModuleVersionIdentifier> =
+      sourceRootComponent.dependencies
+        // Unresolved dependencies cannot be published. The fused library validation tasks
+        // will a human friendly error message.
+        .filterIsInstance<ResolvedDependencyResult>()
+        .map { it.selected.moduleVersion ?: error("${it.selected} cannot have a null moduleVersion") }
+        .toSet()
 
-        sourceConfiguration.incoming.resolutionResult.allComponents
-            // ResolvedComponentResult's subclasses don't define `equals()` methods so we need to
-            // compare `ResolvedComponentResult`s through `ComponentIdentifier`s (which has `equals()`
-            // defined in their subclasses).
-            .asSequence()
-            .map(ResolvedComponentResult::getModuleVersion)
-            .minus(dependenciesIncludedInFusedAar)
-            .minus(sourceRootComponent.moduleVersion)
-            .toSet() as Set<ModuleVersionIdentifier>
-    }
+    sourceConfiguration.incoming.resolutionResult.allComponents
+      // ResolvedComponentResult's subclasses don't define `equals()` methods so we need to
+      // compare `ResolvedComponentResult`s through `ComponentIdentifier`s (which has `equals()`
+      // defined in their subclasses).
+      .asSequence()
+      .map(ResolvedComponentResult::getModuleVersion)
+      .minus(dependenciesIncludedInFusedAar)
+      .minus(sourceRootComponent.moduleVersion)
+      .toSet() as Set<ModuleVersionIdentifier>
+  }
 }
 
-internal class FusedLibraryTargetJvmEnvironmentCompatibilityRule
-    : AttributeCompatibilityRule<TargetJvmEnvironment> {
+internal class FusedLibraryTargetJvmEnvironmentCompatibilityRule : AttributeCompatibilityRule<TargetJvmEnvironment> {
 
-    override fun execute(details: CompatibilityCheckDetails<TargetJvmEnvironment?>) {
-        with(details) {
-            // 'standard-jvm' is acceptable when a dependency doesn't have the preferred
-            // 'android' TargetJvmEnvironment attribute value.
-            if (consumerValue?.name == TargetJvmEnvironment.ANDROID
-                && producerValue?.name == TargetJvmEnvironment.STANDARD_JVM
-            ) {
-                compatible()
-            }
-        }
+  override fun execute(details: CompatibilityCheckDetails<TargetJvmEnvironment?>) {
+    with(details) {
+      // 'standard-jvm' is acceptable when a dependency doesn't have the preferred
+      // 'android' TargetJvmEnvironment attribute value.
+      if (consumerValue?.name == TargetJvmEnvironment.ANDROID && producerValue?.name == TargetJvmEnvironment.STANDARD_JVM) {
+        compatible()
+      }
     }
+  }
 }

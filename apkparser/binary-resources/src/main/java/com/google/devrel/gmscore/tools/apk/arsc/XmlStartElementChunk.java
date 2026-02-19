@@ -1,29 +1,18 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.android.annotations.Nullable;
 import com.google.common.base.Preconditions;
+
+import javax.annotation.Nullable;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /** Represents the beginning of an XML node. */
 public final class XmlStartElementChunk extends XmlNodeChunk {
@@ -90,6 +79,40 @@ public final class XmlStartElementChunk extends XmlNodeChunk {
     return result;
   }
 
+  /**
+   * Remaps all the attribute references using the supplied remapping. If an attribute has a
+   * reference to a resourceid that is in the remapping keys, it will be updated with the
+   * corresponding value from the remapping. All attributes that do not have reference to
+   * a value in the remapping are left as is.
+   * @param remapping The original and new resource ids.
+   */
+  public void remapReferences(Map<Integer, Integer> remapping) {
+    Map<Integer, XmlAttribute> newEntries = new HashMap<>();
+    int count = 0;
+    for (XmlAttribute attribute : attributes) {
+      ResourceValue value = attribute.typedValue();
+      if (value.type() == ResourceValue.Type.REFERENCE) {
+        int valueData = value.data();
+        if (ResourceIdentifier.create(valueData).packageId() != 0x1) {
+          if (remapping.containsKey(valueData)) {
+            int data = Preconditions.checkNotNull(remapping.get(valueData));
+            XmlAttribute newAttribute = XmlAttribute.create(
+                    attribute.namespaceIndex(),
+                    attribute.nameIndex(),
+                    attribute.rawValueIndex(),
+                    attribute.typedValue().withData(data),
+                    attribute.parent());
+            newEntries.put(count, newAttribute);
+          }
+        }
+      }
+      count++;
+    }
+    for (Entry<Integer, XmlAttribute> entry : newEntries.entrySet()) {
+      attributes.set(entry.getKey(), entry.getValue());
+    }
+  }
+
   /** Returns the namespace URI, or the empty string if not present. */
   public String getNamespace() {
     return getString(namespace);
@@ -111,9 +134,9 @@ public final class XmlStartElementChunk extends XmlNodeChunk {
   }
 
   @Override
-  protected void writePayload(DataOutput output, ByteBuffer header, boolean shrink)
+  protected void writePayload(DataOutput output, ByteBuffer header, int options)
       throws IOException {
-    super.writePayload(output, header, shrink);
+    super.writePayload(output, header, options);
     output.writeInt(namespace);
     output.writeInt(name);
     output.writeShort((short) XmlAttribute.SIZE);  // attribute start
@@ -123,7 +146,7 @@ public final class XmlStartElementChunk extends XmlNodeChunk {
     output.writeShort((short) (classIndex + 1));
     output.writeShort((short) (styleIndex + 1));
     for (XmlAttribute attribute : attributes) {
-      output.write(attribute.toByteArray(shrink));
+      output.write(attribute.toByteArray(options));
     }
   }
 
@@ -138,7 +161,12 @@ public final class XmlStartElementChunk extends XmlNodeChunk {
   @Override
   public String toString() {
     return String.format(
+        Locale.US,
         "XmlStartElementChunk{line=%d, comment=%s, namespace=%s, name=%s, attributes=%s}",
-        getLineNumber(), getComment(), getNamespace(), getName(), attributes.toString());
+        getLineNumber(),
+        getComment(),
+        getNamespace(),
+        getName(),
+        attributes.toString());
   }
 }

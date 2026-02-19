@@ -22,60 +22,39 @@ import org.junit.Test
 
 class KnownVersionStabilityTest {
 
-    @Test
-    fun testComponentStability() {
-        fun component(group: String, name: String, version: String = "1.0.0") =
-            Component(group, name, Version.parse(version))
-        assertThat(component("com.android.support", "appcompat-v7").stability)
-            .isEqualTo(KnownVersionStability.INCOMPATIBLE)
-        assertThat(component("androidx.appcompat", "appcompat").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
+  @Test
+  fun testComponentStability() {
+    fun component(group: String, name: String, version: String = "1.0.0") = Component(group, name, Version.parse(version))
+    assertThat(component("com.android.support", "appcompat-v7").stability).isEqualTo(KnownVersionStability.INCOMPATIBLE)
+    assertThat(component("androidx.appcompat", "appcompat").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("com.android.support", "support-annotations").stability)
-          .isEqualTo(KnownVersionStability.STABLE)
-        assertThat(component("androidx.annotation", "annotation").stability)
-          .isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("com.android.support", "support-annotations").stability).isEqualTo(KnownVersionStability.STABLE)
+    assertThat(component("androidx.annotation", "annotation").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("com.android.support", "design").stability)
-            .isEqualTo(KnownVersionStability.INCOMPATIBLE)
-        assertThat(component("com.google.android.material", "material").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("com.android.support", "design").stability).isEqualTo(KnownVersionStability.INCOMPATIBLE)
+    assertThat(component("com.google.android.material", "material").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("com.android.support.constraint", "constraint-layout").stability)
-            .isEqualTo(KnownVersionStability.INCOMPATIBLE)
-        assertThat(component("androidx.constraintlayout", "constraintlayout").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("com.android.support.constraint", "constraint-layout").stability).isEqualTo(KnownVersionStability.INCOMPATIBLE)
+    assertThat(component("androidx.constraintlayout", "constraintlayout").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("com.google.firebase", "firebase-core", "14.3.1").stability)
-            .isEqualTo(KnownVersionStability.INCOMPATIBLE)
-        assertThat(component("com.google.firebase", "firebase-core", "15.0.1").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("com.google.firebase", "firebase-core", "14.3.1").stability).isEqualTo(KnownVersionStability.INCOMPATIBLE)
+    assertThat(component("com.google.firebase", "firebase-core", "15.0.1").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("com.google.android.gms", "play-services-ads", "14.3.1").stability)
-            .isEqualTo(KnownVersionStability.INCOMPATIBLE)
-        assertThat(component("com.google.android.gms", "play-services-ads", "15.0.1").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("com.google.android.gms", "play-services-ads", "14.3.1").stability).isEqualTo(KnownVersionStability.INCOMPATIBLE)
+    assertThat(component("com.google.android.gms", "play-services-ads", "15.0.1").stability).isEqualTo(KnownVersionStability.SEMANTIC)
 
-        assertThat(component("org.jetbrains.kotlin", "kotlin-stdlib").stability)
-            .isEqualTo(KnownVersionStability.STABLE)
-        assertThat(component("org.jetbrains.kotlin", "kotlin-reflect").stability)
-            .isEqualTo(KnownVersionStability.INCREMENTAL)
+    assertThat(component("org.jetbrains.kotlin", "kotlin-stdlib").stability).isEqualTo(KnownVersionStability.STABLE)
+    assertThat(component("org.jetbrains.kotlin", "kotlin-reflect").stability).isEqualTo(KnownVersionStability.INCREMENTAL)
 
-        assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-android").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
-        assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-core").stability)
-            .isEqualTo(KnownVersionStability.SEMANTIC)
-    }
+    assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-android").stability).isEqualTo(KnownVersionStability.SEMANTIC)
+    assertThat(component("org.jetbrains.kotlinx", "kotlinx-coroutines-core").stability).isEqualTo(KnownVersionStability.SEMANTIC)
+  }
 
-    @Test
-    fun testExpiration() {
-        assertThat(KnownVersionStability.INCOMPATIBLE.expiration(Version.parse("3.4.5")))
-            .isEqualTo(Version.prefixInfimum("3.4.6"))
-        assertThat(KnownVersionStability.INCREMENTAL.expiration(Version.parse("3.4.5")))
-            .isEqualTo(Version.prefixInfimum("3.5"))
-        assertThat(KnownVersionStability.SEMANTIC.expiration(Version.parse("3.4.5")))
-            .isEqualTo(Version.prefixInfimum("4"))
-        assertThat(KnownVersionStability.STABLE.expiration(Version.parse("3.4.5")))
-            .isEqualTo(Version.prefixInfimum("${Int.MAX_VALUE}"))
-    }
+  @Test
+  fun testExpiration() {
+    assertThat(KnownVersionStability.INCOMPATIBLE.expiration(Version.parse("3.4.5"))).isEqualTo(Version.prefixInfimum("3.4.6"))
+    assertThat(KnownVersionStability.INCREMENTAL.expiration(Version.parse("3.4.5"))).isEqualTo(Version.prefixInfimum("3.5"))
+    assertThat(KnownVersionStability.SEMANTIC.expiration(Version.parse("3.4.5"))).isEqualTo(Version.prefixInfimum("4"))
+    assertThat(KnownVersionStability.STABLE.expiration(Version.parse("3.4.5"))).isEqualTo(Version.prefixInfimum("${Int.MAX_VALUE}"))
+  }
 }

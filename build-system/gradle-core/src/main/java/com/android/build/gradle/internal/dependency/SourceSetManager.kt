@@ -36,129 +36,122 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
 class SourceSetManager(
-        project: Project,
-        publishPackage: Boolean,
-        private val dslServices : DslServices,
-        private val buildArtifactActions: DelayedActionsExecutor) {
-    val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet> = project.container(
-            AndroidSourceSet::class.java,
-            AndroidSourceSetFactory(project, publishPackage, dslServices))
-    private val configurations: ConfigurationContainer = project.configurations
-    private val logger: Logger = Logging.getLogger(this.javaClass)
+  project: Project,
+  publishPackage: Boolean,
+  private val dslServices: DslServices,
+  private val buildArtifactActions: DelayedActionsExecutor,
+) {
+  val sourceSetsContainer: NamedDomainObjectContainer<AndroidSourceSet> =
+    project.container(AndroidSourceSet::class.java, AndroidSourceSetFactory(project, publishPackage, dslServices))
+  private val configurations: ConfigurationContainer = project.configurations
+  private val logger: Logger = Logging.getLogger(this.javaClass)
 
-    private val configuredSourceSets = mutableSetOf<String>()
+  private val configuredSourceSets = mutableSetOf<String>()
 
-    private val pluginManager = project.pluginManager
+  private val pluginManager = project.pluginManager
 
-    @JvmOverloads
-    fun setUpSourceSet(name: String, componentType: ComponentType): LazyAndroidSourceSet {
-        if (!configuredSourceSets.contains(name)) {
-            createConfigurationsForSourceSet(name, componentType)
-            configuredSourceSets.add(name)
-        }
-        return LazyAndroidSourceSet(
-            sourceSetsContainer,
-            name
-        )
+  @JvmOverloads
+  fun setUpSourceSet(name: String, componentType: ComponentType): LazyAndroidSourceSet {
+    if (!configuredSourceSets.contains(name)) {
+      createConfigurationsForSourceSet(name, componentType)
+      configuredSourceSets.add(name)
+    }
+    return LazyAndroidSourceSet(sourceSetsContainer, name)
+  }
+
+  private fun createConfigurationsForSourceSet(name: String, componentType: ComponentType) {
+    val sourceSetName = AndroidSourceSetName(name)
+    val apiName = sourceSetName.apiConfigurationName
+    val implementationName = sourceSetName.implementationConfigurationName
+    val runtimeOnlyName = sourceSetName.runtimeOnlyConfigurationName
+    val compileOnlyName = sourceSetName.compileOnlyConfigurationName
+    val compileOnlyApiName = sourceSetName.compileOnlyApiConfigurationName
+
+    val api =
+      if (!componentType.isTestComponent) {
+        createConfiguration(apiName, getConfigDesc("API", name))
+      } else {
+        null
+      }
+
+    val implementation = createConfiguration(implementationName, getConfigDesc("Implementation only", name))
+    api?.let { implementation.extendsFrom(it) }
+
+    createConfiguration(runtimeOnlyName, getConfigDesc("Runtime only", name))
+    createConfiguration(compileOnlyName, getConfigDesc("Compile only", name))
+    if (!componentType.isTestComponent) {
+      createConfiguration(compileOnlyApiName, getConfigDesc("Compile only API", name))
     }
 
-    private fun createConfigurationsForSourceSet(name: String, componentType: ComponentType) {
-        val sourceSetName = AndroidSourceSetName(name)
-        val apiName = sourceSetName.apiConfigurationName
-        val implementationName = sourceSetName.implementationConfigurationName
-        val runtimeOnlyName = sourceSetName.runtimeOnlyConfigurationName
-        val compileOnlyName = sourceSetName.compileOnlyConfigurationName
-        val compileOnlyApiName = sourceSetName.compileOnlyApiConfigurationName
+    // then the secondary configurations.
+    createConfiguration(sourceSetName.annotationProcessorConfigurationName, "Classpath for the annotation processor for '$name'.")
 
-        val api = if (!componentType.isTestComponent) {
-            createConfiguration(apiName, getConfigDesc("API", name))
-        } else {
-            null
-        }
-
-        val implementation = createConfiguration(
-                implementationName,
-                getConfigDesc("Implementation only", name))
-        api?.let {
-            implementation.extendsFrom(it)
-        }
-
-        createConfiguration(runtimeOnlyName, getConfigDesc("Runtime only", name))
-        createConfiguration(compileOnlyName, getConfigDesc("Compile only", name))
-        if (!componentType.isTestComponent) {
-            createConfiguration(compileOnlyApiName, getConfigDesc("Compile only API", name))
-        }
-
-        // then the secondary configurations.
-        createConfiguration(
-            sourceSetName.annotationProcessorConfigurationName,
-            "Classpath for the annotation processor for '$name'."
-        )
-
-        val createKaptConfiguration: () -> Unit = {
-            createConfiguration(
-                sourceSetName.kaptConfigurationName,
-                "Classpath for the KAPT annotation processors for '$name'.",
-                canBeResolved = true
-            )
-        }
-        // Only create the KAPT configuration if necessary
-        pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) { createKaptConfiguration() }
-        if (componentType.isForScreenshotPreview || (componentType.isTestFixturesComponent && dslServices.projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT))) {
-            // For testFixtures and screenshotTest components, the application of the Jetbrains KAPT
-            // plugin should also enable built-in KAPT support.
-            pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) { createKaptConfiguration() }
-        }
+    val createKaptConfiguration: () -> Unit = {
+      createConfiguration(
+        sourceSetName.kaptConfigurationName,
+        "Classpath for the KAPT annotation processors for '$name'.",
+        canBeResolved = true,
+      )
     }
-
-    /**
-     * Creates a Configuration for a given source set.
-     *
-     * @param name the name of the configuration to create.
-     * @param description the configuration description.
-     * @param canBeResolved Whether the configuration can be resolved directly.
-     * @return the configuration
-     * @see Configuration.isCanBeResolved
-     */
-    private fun createConfiguration(
-            name: String, description: String, canBeResolved: Boolean = false): Configuration {
-        logger.debug("Creating configuration {}", name)
-
-        val configuration = configurations.maybeCreate(name)
-
-        configuration.isVisible = false
-        configuration.description = description
-        configuration.isCanBeConsumed = false
-        configuration.isCanBeResolved = canBeResolved
-
-        return configuration
+    // Only create the KAPT configuration if necessary
+    pluginManager.withPlugin(ANDROID_BUILT_IN_KAPT_PLUGIN_ID) { createKaptConfiguration() }
+    if (
+      componentType.isForScreenshotPreview ||
+        (componentType.isTestFixturesComponent && dslServices.projectOptions.get(BooleanOption.ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT))
+    ) {
+      // For testFixtures and screenshotTest components, the application of the Jetbrains KAPT
+      // plugin should also enable built-in KAPT support.
+      pluginManager.withPlugin(KOTLIN_KAPT_PLUGIN_ID) { createKaptConfiguration() }
     }
+  }
 
-    private fun getConfigDesc(name: String, sourceSetName: String): String {
-        return "$name dependencies for '$sourceSetName' sources."
-    }
+  /**
+   * Creates a Configuration for a given source set.
+   *
+   * @param name the name of the configuration to create.
+   * @param description the configuration description.
+   * @param canBeResolved Whether the configuration can be resolved directly.
+   * @return the configuration
+   * @see Configuration.isCanBeResolved
+   */
+  private fun createConfiguration(name: String, description: String, canBeResolved: Boolean = false): Configuration {
+    logger.debug("Creating configuration {}", name)
 
-    // Check that all sourceSets in the container have been set up with configurations.
-    // This will alert users who accidentally mistype the name of a sourceSet in their buildscript
-    fun checkForUnconfiguredSourceSets() {
-        sourceSetsContainer.forEach { sourceSet ->
-            if (!configuredSourceSets.contains(sourceSet.name)) {
-                val message = ("The SourceSet '${sourceSet.name}' is not recognized " +
-                        "by the Android Gradle Plugin. Perhaps you misspelled something?")
-                dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, message)
-            }
-        }
-    }
+    val configuration = configurations.maybeCreate(name)
 
-    fun executeAction(action: Action<NamedDomainObjectContainer<out AndroidSourceSet>>) {
-        action.execute(sourceSetsContainer)
-    }
+    configuration.isVisible = false
+    configuration.description = description
+    configuration.isCanBeConsumed = false
+    configuration.isCanBeResolved = canBeResolved
 
-    fun executeAction(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit) {
-        action.invoke(sourceSetsContainer)
-    }
+    return configuration
+  }
 
-    fun runBuildableArtifactsActions() {
-        buildArtifactActions.runAll()
+  private fun getConfigDesc(name: String, sourceSetName: String): String {
+    return "$name dependencies for '$sourceSetName' sources."
+  }
+
+  // Check that all sourceSets in the container have been set up with configurations.
+  // This will alert users who accidentally mistype the name of a sourceSet in their buildscript
+  fun checkForUnconfiguredSourceSets() {
+    sourceSetsContainer.forEach { sourceSet ->
+      if (!configuredSourceSets.contains(sourceSet.name)) {
+        val message =
+          ("The SourceSet '${sourceSet.name}' is not recognized " + "by the Android Gradle Plugin. Perhaps you misspelled something?")
+        dslServices.issueReporter.reportError(IssueReporter.Type.GENERIC, message)
+      }
     }
+  }
+
+  fun executeAction(action: Action<NamedDomainObjectContainer<out AndroidSourceSet>>) {
+    action.execute(sourceSetsContainer)
+  }
+
+  fun executeAction(action: NamedDomainObjectContainer<out AndroidSourceSet>.() -> Unit) {
+    action.invoke(sourceSetsContainer)
+  }
+
+  fun runBuildableArtifactsActions() {
+    buildArtifactActions.runAll()
+  }
 }

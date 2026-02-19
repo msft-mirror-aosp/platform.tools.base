@@ -24,8 +24,8 @@ import java.net.URL
 import java.security.Permission
 
 /**
- * An implementation of [java.net.HttpURLConnection] which delegates the method calls to a
- * [TrackedHttpURLConnection], which ensures that the appropriate methods are instrumented.
+ * An implementation of [java.net.HttpURLConnection] which delegates the method calls to a [TrackedHttpURLConnection], which ensures that
+ * the appropriate methods are instrumented.
  */
 class HttpURLConnectionWrapper(
   wrapped: HttpURLConnection,
@@ -130,8 +130,8 @@ class HttpURLConnectionWrapper(
   }
 
   /**
-   * Methods of [getHeaderFieldDate], [getHeaderFieldInt] and [getHeaderFieldLong] are derived from
-   * this method and implemented in [HttpURLConnection].
+   * Methods of [getHeaderFieldDate], [getHeaderFieldInt] and [getHeaderFieldLong] are derived from this method and implemented in
+   * [HttpURLConnection].
    */
   override fun getHeaderField(name: String?): String? {
     return trackedConnection.getHeaderField(name)
@@ -149,10 +149,7 @@ class HttpURLConnectionWrapper(
     return trackedConnection.getContent(classes)
   }
 
-  /**
-   * Fields of [responseCode] and [responseMessage] are derived from this method and implemented in
-   * [HttpURLConnection].
-   */
+  /** Fields of [responseCode] and [responseMessage] are derived from this method and implemented in [HttpURLConnection]. */
   override fun getInputStream(): InputStream {
     return trackedConnection.inputStream
   }

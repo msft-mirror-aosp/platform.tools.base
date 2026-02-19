@@ -17,23 +17,26 @@ package com.android.utils.concurrency
 
 import com.android.testutils.VirtualTimeScheduler
 import com.google.common.util.concurrent.MoreExecutors
-import org.junit.Assert.assertEquals
-import org.junit.Test
 import java.lang.UnsupportedOperationException
 import java.time.Duration
 import java.util.concurrent.AbstractExecutorService
 import java.util.concurrent.TimeUnit
+import org.junit.Assert.assertEquals
+import org.junit.Test
 
 class AsyncSupplierTest {
-  /**
-   * Executor that fails if something is scheduled
-   */
+  /** Executor that fails if something is scheduled */
   object DoNotRunExecutor : AbstractExecutorService() {
     override fun execute(command: Runnable?) = throw UnsupportedOperationException("Tried to schedule a task on the DoNotRunExecutor")
+
     override fun isTerminated(): Boolean = false
+
     override fun shutdown() = throw UnsupportedOperationException()
+
     override fun shutdownNow(): MutableList<Runnable> = throw UnsupportedOperationException()
+
     override fun isShutdown(): Boolean = false
+
     override fun awaitTermination(timeout: Long, unit: TimeUnit?): Boolean = throw UnsupportedOperationException()
   }
 
@@ -48,9 +51,7 @@ class AsyncSupplierTest {
     var counter = 0
     var upToDate = true
 
-    val supplier = CachedAsyncSupplier(compute = { ++counter },
-                                       isUpToDate = { upToDate },
-                                       executor = virtualExecutor)
+    val supplier = CachedAsyncSupplier(compute = { ++counter }, isUpToDate = { upToDate }, executor = virtualExecutor)
     supplier.get()
     virtualExecutor.advanceBy(10)
     assertEquals(1, counter)
@@ -75,10 +76,13 @@ class AsyncSupplierTest {
   fun testSupplierWithTimestamp() {
     var counter = 0
     var clock = 0L
-    val supplierWithTimestamp = CachedAsyncSupplierWithTimestamp(compute = { ++counter },
-                                                                 isUpToDate = { timestamp, _ -> clock == timestamp },
-                                                                 executor = MoreExecutors.newDirectExecutorService(),
-                                                                 timestampSource = { clock })
+    val supplierWithTimestamp =
+      CachedAsyncSupplierWithTimestamp(
+        compute = { ++counter },
+        isUpToDate = { timestamp, _ -> clock == timestamp },
+        executor = MoreExecutors.newDirectExecutorService(),
+        timestampSource = { clock },
+      )
     supplierWithTimestamp.get()
     assertEquals(1, counter)
     supplierWithTimestamp.get()
@@ -95,13 +99,11 @@ class AsyncSupplierTest {
     var counter = 0
     val virtualExecutor = VirtualTimeScheduler()
 
-    // For testing, we create a CachedAsyncSupplier that is always out of date and will always compute the new value
-    val expensiveSupplier = CachedAsyncSupplier(compute = { ++counter },
-                                                isUpToDate = { false },
-                                                executor = MoreExecutors.newDirectExecutorService())
-    AsyncSupplierRefresher(asyncSupplier = expensiveSupplier,
-                           executor = virtualExecutor,
-                           refreshDuration = Duration.ofSeconds(30))
+    // For testing, we create a CachedAsyncSupplier that is always out of date and will always
+    // compute the new value
+    val expensiveSupplier =
+      CachedAsyncSupplier(compute = { ++counter }, isUpToDate = { false }, executor = MoreExecutors.newDirectExecutorService())
+    AsyncSupplierRefresher(asyncSupplier = expensiveSupplier, executor = virtualExecutor, refreshDuration = Duration.ofSeconds(30))
 
     for (i in 0..2) {
       // Advancing 15 seconds should not trigger a refresh

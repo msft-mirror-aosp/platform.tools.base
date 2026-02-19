@@ -21,9 +21,7 @@ import com.android.tools.usb.parser.MacParser
 import com.android.tools.usb.parser.OutputParser
 import com.android.tools.usb.parser.WindowsParser
 
-/**
- * Represents OS and holds information to support that platform.
- */
+/** Represents OS and holds information to support that platform. */
 enum class Platform(val supported: Boolean, val command: String?) {
   Windows(true, "${System.getenv("WINDIR")}\\system32\\wbem\\wmic path CIM_LogicalDevice where \"DeviceID like 'USB\\\\%'\" get /value"),
   Linux(true, "lsusb -v"),
@@ -33,18 +31,20 @@ enum class Platform(val supported: Boolean, val command: String?) {
   companion object Factory {
     fun currentOS(): Platform = currentOS(System.getProperty("os.name"))
 
-    fun currentOS(os: String): Platform = when {
-      os.startsWith("Windows") -> Windows
-      os.startsWith("Linux") -> Linux
-      os.startsWith("Mac") -> Mac
-      else -> Unknown
-    }
+    fun currentOS(os: String): Platform =
+      when {
+        os.startsWith("Windows") -> Windows
+        os.startsWith("Linux") -> Linux
+        os.startsWith("Mac") -> Mac
+        else -> Unknown
+      }
   }
 
-  fun parser(): OutputParser = when (this) {
-    Windows -> WindowsParser()
-    Linux -> LinuxParser()
-    Mac -> MacParser()
-    else -> EmptyParser()
-  }
+  fun parser(): OutputParser =
+    when (this) {
+      Windows -> WindowsParser()
+      Linux -> LinuxParser()
+      Mac -> MacParser()
+      else -> EmptyParser()
+    }
 }

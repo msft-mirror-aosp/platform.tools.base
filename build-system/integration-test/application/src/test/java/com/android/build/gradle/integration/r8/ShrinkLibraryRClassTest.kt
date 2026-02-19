@@ -19,110 +19,115 @@ package com.android.build.gradle.integration.r8
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.project.AarSelector
-import com.android.build.gradle.integration.common.output.AarSubject
 import com.android.builder.symbols.exportToCompiledJava
 import com.android.ide.common.symbols.Symbol
 import com.android.ide.common.symbols.SymbolTable
 import com.android.resources.ResourceType
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.net.URLClassLoader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.zip.ZipFile
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 /** Regression test for https://buganizer.corp.google.com/issues/170922353 */
 class ShrinkLibraryRClassTest {
 
-    @get:Rule
-    val project: GradleTestProject
+  @get:Rule val project: GradleTestProject
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    init {
-        val lib = MinimalSubProject.lib("com.example.lib")
-            .withFile(
-                    "src/main/res/values/strings.xml",
-                    //language=xml
-                    """
-                        <resources>
-                            <string name="lib_string">lib string</string>
-                        </resources>
-                    """.trimIndent())
-            .withFile(
-                    "src/main/java/com/example/lib/UseR.java",
-                    //language=java
-                    """
-                        package com.example.lib;
+  init {
+    val lib =
+      MinimalSubProject.lib("com.example.lib")
+        .withFile(
+          "src/main/res/values/strings.xml",
+          // language=xml
+          """
+          <resources>
+              <string name="lib_string">lib string</string>
+          </resources>
+          """
+            .trimIndent(),
+        )
+        .withFile(
+          "src/main/java/com/example/lib/UseR.java",
+          // language=java
+          """
+          package com.example.lib;
 
-                        public class UseR {
-                            public static int getLibStringValue() {
-                                return R.string.lib_string;
-                            }
-                        }
-                    """.trimIndent())
-            .withFile("proguard-rules.pro", """
+          public class UseR {
+              public static int getLibStringValue() {
+                  return R.string.lib_string;
+              }
+          }
+          """
+            .trimIndent(),
+        )
+        .withFile(
+          "proguard-rules.pro",
+          """
 
-                -keep class com.example.lib.UseR {
-                    public static int getLibStringValue();
-                }
+          -keep class com.example.lib.UseR {
+              public static int getLibStringValue();
+          }
 
-            """.trimIndent())
-            .appendToBuild(
-                    //language=groovy
-                    """
-                    android {
-                        buildTypes {
-                            release {
-                                minifyEnabled true
-                                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                            }
-                        }
-                    }
-                    """.trimIndent())
+          """
+            .trimIndent(),
+        )
+        .appendToBuild(
+          // language=groovy
+          """
+          android {
+              buildTypes {
+                  release {
+                      minifyEnabled true
+                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                  }
+              }
+          }
+          """
+            .trimIndent()
+        )
 
-        project = GradleTestProject.builder().fromTestApp(lib).create()
+    project = GradleTestProject.builder().fromTestApp(lib).create()
+  }
+
+  @Test
+  fun testRClassEntriesNotInlined() {
+    project.executor().run(":assembleRelease")
+
+    val jarFromAar = extractAarJar()
+    val exampleRuntimeLibRClass = createExampleRuntimeLibRClass()
+
+    // Run the shrunk method against a runtime lib r class to check the reference is still present.
+    URLClassLoader(arrayOf(jarFromAar.toUri().toURL(), exampleRuntimeLibRClass.toUri().toURL())).use { classLoader ->
+      val usesR = classLoader.loadClass("com.example.lib.UseR")
+      val method = usesR.getDeclaredMethod("getLibStringValue")
+      val libStringValue = method.invoke(null) as Int
+      assertThat(libStringValue).isEqualTo(99)
     }
+  }
 
-    @Test
-    fun testRClassEntriesNotInlined() {
-        project.executor().run(":assembleRelease")
+  private fun createExampleRuntimeLibRClass(): Path {
+    val symbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.lib")
+        .add(Symbol.normalSymbol(ResourceType.STRING, "lib_string", intValue = 99))
+        .build()
+    val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
+    exportToCompiledJava(listOf(symbols), jar, true)
+    return jar
+  }
 
-        val jarFromAar = extractAarJar()
-        val exampleRuntimeLibRClass = createExampleRuntimeLibRClass()
+  private fun extractAarJar(): Path {
+    val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
+    project.assertAar(AarSelector.RELEASE) { classes().containsExactly("com/example/lib/UseR") }
+    val aarPath = project.getAarLocationForCopy(AarSelector.RELEASE)
+    ZipFile(aarPath.toFile()).use { Files.copy(it.getInputStream(it.getEntry("classes.jar")), jar) }
 
-        // Run the shrunk method against a runtime lib r class to check the reference is still present.
-        URLClassLoader(arrayOf(jarFromAar.toUri().toURL(), exampleRuntimeLibRClass.toUri().toURL())).use { classLoader ->
-            val usesR = classLoader.loadClass("com.example.lib.UseR")
-            val method = usesR.getDeclaredMethod("getLibStringValue")
-            val libStringValue = method.invoke(null) as Int
-            assertThat(libStringValue).isEqualTo(99)
-        }
-    }
-
-    private fun createExampleRuntimeLibRClass(): Path {
-        val symbols = SymbolTable.builder()
-                .tablePackage("com.example.lib")
-                .add(Symbol.normalSymbol(ResourceType.STRING, "lib_string", intValue = 99))
-                .build()
-        val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
-        exportToCompiledJava(listOf(symbols), jar, true)
-        return jar
-    }
-
-    private fun extractAarJar(): Path {
-        val jar = temporaryFolder.newFolder().toPath().resolve("extractedJar.jar")
-        project.assertAar(AarSelector.RELEASE) {
-            classes().containsExactly("com/example/lib/UseR")
-        }
-        val aarPath = project.getAarLocationForCopy(AarSelector.RELEASE)
-        ZipFile(aarPath.toFile()).use {
-            Files.copy(it.getInputStream(it.getEntry("classes.jar")), jar)
-        }
-
-        return jar
-    }
+    return jar
+  }
 }

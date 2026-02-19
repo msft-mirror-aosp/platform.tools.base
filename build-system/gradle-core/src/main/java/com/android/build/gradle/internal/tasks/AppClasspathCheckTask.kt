@@ -20,14 +20,13 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.ide.common.gradle.Version
-import com.android.utils.FileUtils
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Internal
 import org.gradle.work.DisableCachingByDefault
 
 /**
- * Pre build task that performs comparison of runtime and compile classpath for application. If
- * there are any differences between the two, that could lead to runtime issues.
+ * Pre build task that performs comparison of runtime and compile classpath for application. If there are any differences between the two,
+ * that could lead to runtime issues.
  *
  * Caching disabled by default for this task in line with behavior of parent: [ClasspathComparisonTask]
  */
@@ -35,31 +34,26 @@ import org.gradle.work.DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION)
 abstract class AppClasspathCheckTask : ClasspathComparisonTask() {
 
-    @get:Internal("only for task execution")
-    abstract val projectBuildFile: RegularFileProperty
+  @get:Internal("only for task execution") abstract val projectBuildFile: RegularFileProperty
 
-    override fun onDifferentVersionsFound(
-        group: String,
-        module: String,
-        runtimeVersion: String,
-        compileVersion: String
-    ) {
+  override fun onDifferentVersionsFound(group: String, module: String, runtimeVersion: String, compileVersion: String) {
 
-        val suggestedVersion: String = try {
-            val runtime = Version.parse(runtimeVersion)
-            val compile = Version.parse(compileVersion)
-            if (runtime > compile) {
-                runtimeVersion
-            } else {
-                compileVersion
-            }
-        } catch (e: Throwable) {
-            // in case we are unable to parse versions for some reason, choose runtime
-            runtimeVersion
+    val suggestedVersion: String =
+      try {
+        val runtime = Version.parse(runtimeVersion)
+        val compile = Version.parse(compileVersion)
+        if (runtime > compile) {
+          runtimeVersion
+        } else {
+          compileVersion
         }
+      } catch (e: Throwable) {
+        // in case we are unable to parse versions for some reason, choose runtime
+        runtimeVersion
+      }
 
-        val message =
-            """Conflict with dependency '$group:$module' in project '${projectPath.get()}'.
+    val message =
+      """Conflict with dependency '$group:$module' in project '${projectPath.get()}'.
 Resolved versions for runtime classpath ($runtimeVersion) and compile classpath ($compileVersion) differ.
 This can lead to runtime crashes.
 To resolve this issue follow advice at https://developer.android.com/studio/build/gradle-tips#configure-project-wide-properties.
@@ -70,36 +64,27 @@ dependencies {
 }
 """
 
-        throw RuntimeException(message)
+    throw RuntimeException(message)
+  }
+
+  class CreationAction(private val creationConfig: ComponentCreationConfig) : TaskCreationAction<AppClasspathCheckTask>() {
+
+    override val name: String
+      get() = creationConfig.computeTaskNameInternal("check", "Classpath")
+
+    override val type: Class<AppClasspathCheckTask>
+      get() = AppClasspathCheckTask::class.java
+
+    override fun configure(task: AppClasspathCheckTask) {
+      task.variantName = creationConfig.name
+
+      val runtimeClasspath = creationConfig.variantDependencies.runtimeClasspath
+      val compileClasspath = creationConfig.variantDependencies.compileClasspath
+      task.runtimeVersionMap.set(task.project.providers.provider { runtimeClasspath.toVersionMap() })
+      task.compileVersionMap.set(task.project.providers.provider { compileClasspath.toVersionMap() })
+      task.fakeOutputDirectory = creationConfig.services.projectInfo.intermediatesDirectory.map { it.dir(name).dir(creationConfig.dirName) }
+      task.projectBuildFile.set(task.project.buildFile)
+      task.projectBuildFile.disallowChanges()
     }
-
-    class CreationAction(private val creationConfig: ComponentCreationConfig) :
-        TaskCreationAction<AppClasspathCheckTask>() {
-
-        override val name: String
-        get() = creationConfig.computeTaskNameInternal("check", "Classpath")
-
-        override val type: Class<AppClasspathCheckTask>
-            get() = AppClasspathCheckTask::class.java
-
-        override fun configure(task: AppClasspathCheckTask) {
-            task.variantName = creationConfig.name
-
-            val runtimeClasspath = creationConfig.variantDependencies.runtimeClasspath
-            val compileClasspath = creationConfig.variantDependencies.compileClasspath
-            task.runtimeVersionMap.set(
-                task.project.providers.provider {
-                    runtimeClasspath.toVersionMap()
-                }
-            )
-            task.compileVersionMap.set(
-                task.project.providers.provider {
-                    compileClasspath.toVersionMap()
-                }
-            )
-            task.fakeOutputDirectory = creationConfig.services.projectInfo.intermediatesDirectory.map { it.dir(name).dir(creationConfig.dirName) }
-            task.projectBuildFile.set(task.project.buildFile)
-            task.projectBuildFile.disallowChanges()
-        }
-    }
+  }
 }

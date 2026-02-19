@@ -17,45 +17,53 @@
 package com.android.ide.common.fonts
 
 class MutableFontDetail(
-    var name: String,
-    var type: FontType,
-    var weight: Int,
-    var width: Float,
-    var italics: Float,
-    var exact: Boolean,
-    var fontUrl: String,
-    var styleName: String,
-    var hasExplicitStyle: Boolean,
+  var name: String,
+  var type: FontType,
+  var weight: Int,
+  var width: Float,
+  var italics: Float,
+  var exact: Boolean,
+  var fontUrl: String,
+  var styleName: String,
+  var hasExplicitStyle: Boolean,
 ) {
-    constructor(name: String, weight: Int, width: Float, italics: Float, exact: Boolean)
-            : this(name, FontType.SINGLE, weight, width, italics, exact, "", "", false)
+  constructor(
+    name: String,
+    weight: Int,
+    width: Float,
+    italics: Float,
+    exact: Boolean,
+  ) : this(name, FontType.SINGLE, weight, width, italics, exact, "", "", false)
 
-    constructor(name: String, type: FontType, italics: Float, exact: Boolean)
-            : this(name, type, DEFAULT_WEIGHT, DEFAULT_WIDTH, italics, exact, "", "", false)
+  constructor(
+    name: String,
+    type: FontType,
+    italics: Float,
+    exact: Boolean,
+  ) : this(name, type, DEFAULT_WEIGHT, DEFAULT_WIDTH, italics, exact, "", "", false)
 
-    constructor()
-            : this("", FontType.SINGLE, NORMAL, DEFAULT_EXACT)
+  constructor() : this("", FontType.SINGLE, NORMAL, DEFAULT_EXACT)
 
-    fun findBestMatch(fonts: Collection<FontDetail>): FontDetail? {
-        var best: FontDetail? = null
-        var bestMatch = Float.MAX_VALUE
-        for (detail in fonts) {
-            val match = match(detail)
-            if (match < bestMatch) {
-                bestMatch = match
-                best = detail
-                if (match == 0f) {
-                    break
-                }
-            }
+  fun findBestMatch(fonts: Collection<FontDetail>): FontDetail? {
+    var best: FontDetail? = null
+    var bestMatch = Float.MAX_VALUE
+    for (detail in fonts) {
+      val match = match(detail)
+      if (match < bestMatch) {
+        bestMatch = match
+        best = detail
+        if (match == 0f) {
+          break
         }
-        return best
+      }
     }
+    return best
+  }
 
-    fun match(other: FontDetail): Float {
-        return Math.abs(weight - other.weight) +
-                Math.abs(width - other.width) +
-                Math.abs(italics - other.italics) * 50f +
-                if (type != other.type) 500f else 0f
-    }
+  fun match(other: FontDetail): Float {
+    return Math.abs(weight - other.weight) +
+      Math.abs(width - other.width) +
+      Math.abs(italics - other.italics) * 50f +
+      if (type != other.type) 500f else 0f
+  }
 }

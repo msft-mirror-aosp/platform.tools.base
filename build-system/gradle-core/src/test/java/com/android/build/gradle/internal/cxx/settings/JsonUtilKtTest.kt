@@ -23,128 +23,139 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class JsonUtilKtTest {
-    private val realWorldTestExample = """
+  private val realWorldTestExample =
+    """
+    {
+      "environments": [
         {
-          "environments": [
-            {
-              "namespace": "my-namespace",
-              "environment": "VS_14_x86",
-              "inheritEnvironments": [],
-              "VC14INSTALLDIR": "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC",
-              "WINDOWSKITS": "C:\\Program Files (x86)\\Windows Kits",
-              "WINDOWSKITS_VERSION": "10.0.17134.0",
-              "PATH": "${'$'}{env.PATH};${'$'}{env.VC14INSTALLDIR}bin;${'$'}{env.WINDOWSKITS}\\10\\bin\\x86",
-              "INCLUDE": "${'$'}{env.VC14INSTALLDIR}\\INCLUDE;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\INCLUDE;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\ucrt;${'$'}{env.WINDOWSKITS}\\NETFXSDK\\4.6.1\\include\\um;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\shared;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\um;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\winrt;",
-              "LIB": "${'$'}{env.VC14INSTALLDIR}\\LIB;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\LIB;${'$'}{env.WINDOWSKITS}\\10\\lib\\${'$'}{env.WINDOWSKITS_VERSION}\\ucrt\\x86;${'$'}{env.WINDOWSKITS}\\NETFXSDK\\4.6.1\\lib\\um\\x86;${'$'}{env.WINDOWSKITS}\\10\\lib\\${'$'}{env.WINDOWSKITS_VERSION}\\um\\x86;",
-              "LIBPATH": "C:\\windows\\Microsoft.NET\\Framework\\v4.0.30319;${'$'}{env.VC14INSTALLDIR}\\LIB;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\LIB;${'$'}{env.WINDOWSKITS}\\10\\UnionMetadata;${'$'}{env.WINDOWSKITS}\\10\\References;C:\\Program Files (x86)\\Microsoft SDKs\\Windows Kits\\10\\ExtensionSDKs\\Microsoft.VCLibs\\14.0\\References\\CommonConfiguration\\neutral;"
-            }
+          "namespace": "my-namespace",
+          "environment": "VS_14_x86",
+          "inheritEnvironments": [],
+          "VC14INSTALLDIR": "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC",
+          "WINDOWSKITS": "C:\\Program Files (x86)\\Windows Kits",
+          "WINDOWSKITS_VERSION": "10.0.17134.0",
+          "PATH": "${'$'}{env.PATH};${'$'}{env.VC14INSTALLDIR}bin;${'$'}{env.WINDOWSKITS}\\10\\bin\\x86",
+          "INCLUDE": "${'$'}{env.VC14INSTALLDIR}\\INCLUDE;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\INCLUDE;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\ucrt;${'$'}{env.WINDOWSKITS}\\NETFXSDK\\4.6.1\\include\\um;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\shared;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\um;${'$'}{env.WINDOWSKITS}\\10\\include\\${'$'}{env.WINDOWSKITS_VERSION}\\winrt;",
+          "LIB": "${'$'}{env.VC14INSTALLDIR}\\LIB;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\LIB;${'$'}{env.WINDOWSKITS}\\10\\lib\\${'$'}{env.WINDOWSKITS_VERSION}\\ucrt\\x86;${'$'}{env.WINDOWSKITS}\\NETFXSDK\\4.6.1\\lib\\um\\x86;${'$'}{env.WINDOWSKITS}\\10\\lib\\${'$'}{env.WINDOWSKITS_VERSION}\\um\\x86;",
+          "LIBPATH": "C:\\windows\\Microsoft.NET\\Framework\\v4.0.30319;${'$'}{env.VC14INSTALLDIR}\\LIB;${'$'}{env.VC14INSTALLDIR}\\ATLMFC\\LIB;${'$'}{env.WINDOWSKITS}\\10\\UnionMetadata;${'$'}{env.WINDOWSKITS}\\10\\References;C:\\Program Files (x86)\\Microsoft SDKs\\Windows Kits\\10\\ExtensionSDKs\\Microsoft.VCLibs\\14.0\\References\\CommonConfiguration\\neutral;"
+        }
+      ],
+      "configurations": [
+        {
+          "name": "x86-Debug",
+          "description": "",
+          "generator": "Ninja",
+          "configurationType": "Debug",
+          "inheritEnvironments": [
+            "VS_14_x86"
           ],
-          "configurations": [
+          "buildRoot": "${'$'}{env.USERPROFILE}\\CMakeBuilds\\${'$'}{workspaceHash}\\build\\${'$'}{name}",
+          "installRoot": "${'$'}{env.USERPROFILE}\\CMakeBuilds\\${'$'}{workspaceHash}\\install\\${'$'}{name}",
+          "cmakeCommandArgs": "",
+          "cmakeToolchain": "",
+          "cmakeExecutable": "",
+          "buildCommandArgs": "-v",
+          "ctestCommandArgs": "",
+          "variables": [
             {
-              "name": "x86-Debug",
-              "description": "",
-              "generator": "Ninja",
-              "configurationType": "Debug",
-              "inheritEnvironments": [
-                "VS_14_x86"
-              ],
-              "buildRoot": "${'$'}{env.USERPROFILE}\\CMakeBuilds\\${'$'}{workspaceHash}\\build\\${'$'}{name}",
-              "installRoot": "${'$'}{env.USERPROFILE}\\CMakeBuilds\\${'$'}{workspaceHash}\\install\\${'$'}{name}",
-              "cmakeCommandArgs": "",
-              "cmakeToolchain": "",
-              "cmakeExecutable": "",
-              "buildCommandArgs": "-v",
-              "ctestCommandArgs": "",
-              "variables": [
-                {
-                  "name": "CMAKE_C_COMPILER",
-                  "value": "${'$'}{env.BIN_ROOT}\\gcc.exe"
-                },
-                {
-                  "name": "CMAKE_CXX_COMPILER",
-                  "value": "${'$'}{env.BIN_ROOT}\\g++.exe"
-                }
-              ]
+              "name": "CMAKE_C_COMPILER",
+              "value": "${'$'}{env.BIN_ROOT}\\gcc.exe"
+            },
+            {
+              "name": "CMAKE_CXX_COMPILER",
+              "value": "${'$'}{env.BIN_ROOT}\\g++.exe"
             }
           ]
-        }""".trimIndent()
-
-    fun Settings.nullCheck() {
-        check(environments != null)
-        check(configurations != null)
-        environments.forEach { it.nullCheck() }
-        configurations.forEach { it.nullCheck() }
-    }
-
-    fun SettingsEnvironment.nullCheck() {
-        check(namespace != null)
-        check(environment != null)
-        check(inheritEnvironments != null)
-        inheritEnvironments.forEach { check(it!=null) }
-        check(properties != null)
-        properties.forEach { (key, value) ->
-            check(key != null)
-            check(value != null)
         }
+      ]
     }
+    """
+      .trimIndent()
 
-    fun SettingsConfiguration.nullCheck() {
-        check(inheritEnvironments != null)
-        inheritEnvironments.forEach { check(it!=null) }
-        check(variables != null)
-        variables.forEach { check(it!=null) }
-        variables.forEach { it.nullCheck() }
+  fun Settings.nullCheck() {
+    check(environments != null)
+    check(configurations != null)
+    environments.forEach { it.nullCheck() }
+    configurations.forEach { it.nullCheck() }
+  }
+
+  fun SettingsEnvironment.nullCheck() {
+    check(namespace != null)
+    check(environment != null)
+    check(inheritEnvironments != null)
+    inheritEnvironments.forEach { check(it != null) }
+    check(properties != null)
+    properties.forEach { (key, value) ->
+      check(key != null)
+      check(value != null)
     }
+  }
 
-    fun SettingsConfigurationVariable.nullCheck() {
-        check(name != null)
-        check(value != null)
-    }
+  fun SettingsConfiguration.nullCheck() {
+    check(inheritEnvironments != null)
+    inheritEnvironments.forEach { check(it != null) }
+    check(variables != null)
+    variables.forEach { check(it != null) }
+    variables.forEach { it.nullCheck() }
+  }
 
-    @Test
-    fun `real world test`() {
-        val settings = createSettingsFromJsonString(realWorldTestExample)
-        val returnToString = settings.toJsonString()
-        val roundTrip = createSettingsFromJsonString(returnToString)
-        assertThat(settings).isEqualTo(roundTrip)
-        assertThat(realWorldTestExample).isEqualTo(returnToString)
-    }
+  fun SettingsConfigurationVariable.nullCheck() {
+    check(name != null)
+    check(value != null)
+  }
 
-    @Test
-    fun `comments allowed`() {
-        val settings = createSettingsFromJsonString("""{
-            // A comment
-        }""".trimIndent())
-        val returnToString = settings.toJsonString()
-        val roundTrip = createSettingsFromJsonString(returnToString)
-        assertThat(settings).isEqualTo(roundTrip)
-    }
+  @Test
+  fun `real world test`() {
+    val settings = createSettingsFromJsonString(realWorldTestExample)
+    val returnToString = settings.toJsonString()
+    val roundTrip = createSettingsFromJsonString(returnToString)
+    assertThat(settings).isEqualTo(roundTrip)
+    assertThat(realWorldTestExample).isEqualTo(returnToString)
+  }
 
-    @Test
-    fun `trailing comma in variables`() {
-        val json = """
+  @Test
+  fun `comments allowed`() {
+    val settings =
+      createSettingsFromJsonString(
+        """
         {
-          "configurations": [
-            {
-              "variables": [
-                {
-                  "name": "CMAKE_C_COMPILER",
-                  "value": "${'$'}{env.BIN_ROOT}\\gcc.exe"
-                },
-              ]
-            }
-          ]
-        }""".trimIndent()
-        val value = createSettingsFromJsonString(json)
-        value.nullCheck()
-    }
+                    // A comment
+                }
+        """
+          .trimIndent()
+      )
+    val returnToString = settings.toJsonString()
+    val roundTrip = createSettingsFromJsonString(returnToString)
+    assertThat(settings).isEqualTo(roundTrip)
+  }
 
-    @Test
-    fun `check parse error becomes errorln`() {
-        PassThroughRecordingLoggingEnvironment().apply {
-            createSettingsFromJsonString("{")
-            assertThat(errors.single()).isEqualTo("${BUILD_SETTINGS_PARSE_ERROR.codeText} End of input at line 1 column 2 path \$.")
-        }
-    }
+  @Test
+  fun `trailing comma in variables`() {
+    val json =
+      """
+      {
+        "configurations": [
+          {
+            "variables": [
+              {
+                "name": "CMAKE_C_COMPILER",
+                "value": "${'$'}{env.BIN_ROOT}\\gcc.exe"
+              },
+            ]
+          }
+        ]
+      }
+      """
+        .trimIndent()
+    val value = createSettingsFromJsonString(json)
+    value.nullCheck()
+  }
 
+  @Test
+  fun `check parse error becomes errorln`() {
+    PassThroughRecordingLoggingEnvironment().apply {
+      createSettingsFromJsonString("{")
+      assertThat(errors.single()).isEqualTo("${BUILD_SETTINGS_PARSE_ERROR.codeText} End of input at line 1 column 2 path \$.")
+    }
+  }
 }

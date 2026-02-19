@@ -21,41 +21,40 @@ import org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIB
 import org.gradle.api.attributes.AttributeCompatibilityRule
 import org.gradle.api.attributes.AttributesSchema
 import org.gradle.api.attributes.CompatibilityCheckDetails
-import javax.inject.Inject
 
-class ModelArtifactCompatibilityRule @Inject constructor(val privacySandboxSdkSupportEnabled: Boolean): AttributeCompatibilityRule<String> {
+class ModelArtifactCompatibilityRule : AttributeCompatibilityRule<String> {
 
-    override fun execute(details: CompatibilityCheckDetails<String>) {
-        val producerValue = details.producerValue
-        when (details.consumerValue) {
-            producerValue -> details.compatible()
-            AndroidArtifacts.ArtifactType.AAR_OR_JAR.type -> {
-                when (producerValue) {
-                    AndroidArtifacts.ArtifactType.AAR.type -> details.compatible()
-                    AndroidArtifacts.ArtifactType.JAR.type -> details.compatible()
-                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE.type -> details.compatible()
-                }
-            }
-            AndroidArtifacts.ArtifactType.EXPLODED_AAR_OR_ASAR_INTERFACE_DESCRIPTOR.type -> {
-                when (producerValue) {
-                    AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_INTERFACE_DESCRIPTOR.type ->
-                        if (privacySandboxSdkSupportEnabled)
-                            details.compatible()
-                    AndroidArtifacts.ArtifactType.EXPLODED_AAR.type -> details.compatible()
-                }
-            }
-            AndroidArtifacts.ArtifactType.LOCAL_EXPLODED_AAR_FOR_LINT.type -> {
-                when (producerValue) {
-                    AndroidArtifacts.ArtifactType.EXPLODED_AAR.type -> details.compatible()
-                }
-            }
+  override fun execute(details: CompatibilityCheckDetails<String>) {
+    val producerValue = details.producerValue
+    when (details.consumerValue) {
+      producerValue -> details.compatible()
+      AndroidArtifacts.ArtifactType.AAR_OR_JAR.type -> {
+        when (producerValue) {
+          AndroidArtifacts.ArtifactType.AAR.type -> details.compatible()
+          AndroidArtifacts.ArtifactType.JAR.type -> details.compatible()
+          AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_SDK_ARCHIVE.type -> details.compatible()
         }
-    }
+      }
 
-    companion object {
-        fun setUp(attributesSchema: AttributesSchema, privacySandboxSdkSupportEnabled: Boolean) {
-            val strategy = attributesSchema.attribute(ARTIFACT_TYPE_ATTRIBUTE)
-            strategy.compatibilityRules.add(ModelArtifactCompatibilityRule::class.java) { config -> config.setParams(privacySandboxSdkSupportEnabled) }
+      AndroidArtifacts.ArtifactType.EXPLODED_AAR_OR_ASAR_INTERFACE_DESCRIPTOR.type -> {
+        when (producerValue) {
+          AndroidArtifacts.ArtifactType.EXPLODED_AAR.type -> details.compatible()
         }
+      }
+
+      AndroidArtifacts.ArtifactType.LOCAL_EXPLODED_AAR_FOR_LINT.type -> {
+        when (producerValue) {
+          AndroidArtifacts.ArtifactType.EXPLODED_AAR.type -> details.compatible()
+        }
+      }
     }
+  }
+
+  companion object {
+
+    fun setUp(attributesSchema: AttributesSchema) {
+      val strategy = attributesSchema.attribute(ARTIFACT_TYPE_ATTRIBUTE)
+      strategy.compatibilityRules.add(ModelArtifactCompatibilityRule::class.java)
+    }
+  }
 }

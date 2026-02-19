@@ -22,13 +22,13 @@ import org.gradle.declarative.dsl.model.annotations.Restricted
 
 @Restricted
 interface DependenciesExtension : GradleDependencies {
-    // main configurations
-    val api: DependencyCollector
-    val implementation: DependencyCollector
+  // main configurations
+  val api: DependencyCollector
+  val implementation: DependencyCollector
 
-    // test configurations
-    val testImplementation: DependencyCollector
+  // test configurations
+  val testImplementation: DependencyCollector
 
-    // android test configurations
-    val androidTestImplementation: DependencyCollector
+  // android test configurations
+  val androidTestImplementation: DependencyCollector
 }

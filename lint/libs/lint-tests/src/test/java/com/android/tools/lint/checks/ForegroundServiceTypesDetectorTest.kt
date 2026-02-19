@@ -20,10 +20,7 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 
 class ForegroundServiceTypesDetectorTest : AbstractCheckTest() {
-  /**
-   * In MY_SERVICE file, startForeground() is a member in subclass of "android.app.Service" class
-   * (isMemberInSubClassOf() returns true).
-   */
+  /** In MY_SERVICE file, startForeground() is a member in subclass of "android.app.Service" class (isMemberInSubClassOf() returns true). */
   private val MY_SERVICE =
     java(
       """package test.pkg;
@@ -45,9 +42,9 @@ public class MyService extends Service {
     )
 
   /**
-   * In MY_SERVICE_COMPAT file, androidx.core.app.ServiceCompat.startForeground() is called (instead
-   * of android.app.Service.startForeground), startForeground() is a member of
-   * "androidx.core.app.ServiceCompat" class (isMemberInClass() returns true).
+   * In MY_SERVICE_COMPAT file, androidx.core.app.ServiceCompat.startForeground() is called (instead of
+   * android.app.Service.startForeground), startForeground() is a member of "androidx.core.app.ServiceCompat" class (isMemberInClass()
+   * returns true).
    */
   private val MY_SERVICE_COMPAT =
     java(
@@ -71,10 +68,7 @@ public class MyService extends Service {
 """
     )
 
-  /**
-   * In MY_CLASS, startForeground() is not member of subclass of "android.app.Service" class
-   * (isMemberInSubClassOf() returns false).
-   */
+  /** In MY_CLASS, startForeground() is not member of subclass of "android.app.Service" class (isMemberInSubClassOf() returns false). */
   private val MY_CLASS =
     java(
       """package test.pkg;
@@ -118,8 +112,8 @@ public class MyClass {
   }
 
   /**
-   * Manifest file's <service> element does not have foregroundServiceType attribute, lint reports
-   * error. Original name: testStartForegroundMissingType
+   * Manifest file's <service> element does not have foregroundServiceType attribute, lint reports error. Original name:
+   * testStartForegroundMissingType
    */
   fun testDocumentationExample() {
     lint()
@@ -182,10 +176,7 @@ public class MyClass {
       .expectClean()
   }
 
-  /**
-   * Manifest file's <service> element has foregroundServiceType attribute, lint does not report
-   * error.
-   */
+  /** Manifest file's <service> element has foregroundServiceType attribute, lint does not report error. */
   fun testStartForegroundHasType() {
     lint()
       .files(
@@ -214,10 +205,7 @@ public class MyClass {
       .expectClean()
   }
 
-  /**
-   * The startForeground() is not a member in subclass of "android.app.Service" class, lint does not
-   * report error.
-   */
+  /** The startForeground() is not a member in subclass of "android.app.Service" class, lint does not report error. */
   fun testStartForegroundOutOfService() {
     lint()
       .files(
@@ -246,10 +234,9 @@ public class MyClass {
   }
 
   /**
-   * Manifest file does not have <service> element, lint does not report error. If a library module
-   * contains a call to startForeground but does not contain any <service> tags (because the code is
-   * designed to be consumed and/or extended by other modules that will declare the <service> tags)
-   * then we don't force developers to add <service> tags to the library module's manifest.
+   * Manifest file does not have <service> element, lint does not report error. If a library module contains a call to startForeground but
+   * does not contain any <service> tags (because the code is designed to be consumed and/or extended by other modules that will declare the
+   * <service> tags) then we don't force developers to add <service> tags to the library module's manifest.
    */
   fun testStartForegroundNoServiceElement() {
     lint()
@@ -275,9 +262,8 @@ public class MyClass {
   }
 
   /**
-   * androidx.core.app.ServiceCompat.startForeground() is called (instead of
-   * android.app.Service.startForeground), manifest file's <service> element does not have
-   * foregroundServiceType attribute, lint reports error.
+   * androidx.core.app.ServiceCompat.startForeground() is called (instead of android.app.Service.startForeground), manifest file's <service>
+   * element does not have foregroundServiceType attribute, lint reports error.
    */
   fun testStartForegroundFromServiceCompatMissingType() {
     lint()
@@ -314,9 +300,8 @@ public class MyClass {
   }
 
   /**
-   * androidx.core.app.ServiceCompat.startForeground() is called (instead of
-   * android.app.Service.startForeground). Manifest file's <service> element has
-   * foregroundServiceType attribute, lint does not report error.
+   * androidx.core.app.ServiceCompat.startForeground() is called (instead of android.app.Service.startForeground). Manifest file's <service>
+   * element has foregroundServiceType attribute, lint does not report error.
    */
   fun testStartForegroundFromServiceCompatHasType() {
     lint()

@@ -22,48 +22,43 @@ import org.junit.Rule
 import org.junit.Test
 
 class VariantApiUseTest {
-    @get: Rule
-    val project =
-        GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun testToTransformFilesWithName() {
-        project.buildFile.appendText(
-            """
-    android {
-        flavorDimensions "version"
-        productFlavors {
-            free {
-                dimension "version"
-                // ...
-            }
-            paid {
-                dimension "version"
-                // ...
-            }
-        }
-    }
-    int beforeVariantsInvocations = 0
-    int onVariantsInvocations = 0
-    androidComponents {
-        beforeVariants(selector().all(), { variantBuilder ->
-            beforeVariantsInvocations += 1
-        })
-        onVariants(selector().all(), { variant ->
-            if (onVariantsInvocations == 0 && beforeVariantsInvocations != 4) {
-                throw RuntimeExceptions("Expected 4 invocations of beforeVariants before onVariants is called, got " + beforeVariantsInvocations)
-            }
-            onVariantsInvocations +=1
-            println("onVariant ${'$'}{variant.name} called")
-        })
-    }
-            """.trimIndent()
-        )
+  @Test
+  fun testToTransformFilesWithName() {
+    project.buildFile.appendText(
+      """
+      android {
+          flavorDimensions "version"
+          productFlavors {
+              free {
+                  dimension "version"
+                  // ...
+              }
+              paid {
+                  dimension "version"
+                  // ...
+              }
+          }
+      }
+      int beforeVariantsInvocations = 0
+      int onVariantsInvocations = 0
+      androidComponents {
+          beforeVariants(selector().all(), { variantBuilder ->
+              beforeVariantsInvocations += 1
+          })
+          onVariants(selector().all(), { variant ->
+              if (onVariantsInvocations == 0 && beforeVariantsInvocations != 4) {
+                  throw RuntimeExceptions("Expected 4 invocations of beforeVariants before onVariants is called, got " + beforeVariantsInvocations)
+              }
+              onVariantsInvocations +=1
+              println("onVariant ${'$'}{variant.name} called")
+          })
+      }
+      """
+        .trimIndent()
+    )
 
-        project.executor().run("tasks")
-    }
-
-
+    project.executor().run("tasks")
+  }
 }

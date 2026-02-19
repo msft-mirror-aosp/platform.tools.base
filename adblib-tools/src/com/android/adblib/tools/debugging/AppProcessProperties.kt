@@ -26,67 +26,59 @@ import com.android.adblib.InstructionSet
  * @see AppProcessEntry
  */
 data class AppProcessProperties(
-    /**
-     * The process ID.
-     *
-     * Note: This is the only property that is guaranteed to be valid, all other
-     * properties are instances of [OptionalValue].
-     */
-    val pid: Int,
+  /**
+   * The process ID.
+   *
+   * Note: This is the only property that is guaranteed to be valid, all other properties are instances of [OptionalValue].
+   */
+  val pid: Int,
 
-    /**
-     * Whether a JDWP debugger can attach to the process (see [AdbDeviceServices.jdwp])
-     */
-    val debuggable: OptionalValue<Boolean> = OptionalValue.empty(),
+  /** Whether a JDWP debugger can attach to the process (see [AdbDeviceServices.jdwp]) */
+  val debuggable: OptionalValue<Boolean> = OptionalValue.empty(),
 
-    /**
-     * Whether profiling tools can profile the process
-     */
-    val profileable: OptionalValue<Boolean> = OptionalValue.empty(),
+  /** Whether profiling tools can profile the process */
+  val profileable: OptionalValue<Boolean> = OptionalValue.empty(),
 
-    /**
-     * The Android ABI the process is executing with, as defined at
-     * [abis](https://developer.android.com/ndk/guides/abis).
-     * Examples: "arm64-v8a", "x86_64"
-     */
-    val instructionSet: OptionalValue<InstructionSet> = OptionalValue.empty(),
+  /**
+   * The Android ABI the process is executing with, as defined at [abis](https://developer.android.com/ndk/guides/abis). Examples:
+   * "arm64-v8a", "x86_64"
+   */
+  val instructionSet: OptionalValue<InstructionSet> = OptionalValue.empty(),
 
-    /**
-     * The Android User ID
-     *
-     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
-     */
-    val userId : OptionalValue<Long> = OptionalValue.empty(),
+  /**
+   * The Android User ID
+   *
+   * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+   */
+  val userId: OptionalValue<Long> = OptionalValue.empty(),
 
-    /**
-     * The process name
-     *
-     * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
-     */
-    val processName: OptionalValue<String> = OptionalValue.empty(),
+  /**
+   * The process name
+   *
+   * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+   */
+  val processName: OptionalValue<String> = OptionalValue.empty(),
 
-    /**
-     * The list of packages this process hosts, typically only one for "regular"
-     * Android Applications
-     *
-     * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
-     */
-    val packageNames: OptionalValue<List<String>> = OptionalValue.empty(),
+  /**
+   * The list of packages this process hosts, typically only one for "regular" Android Applications
+   *
+   * Note: only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+   */
+  val packageNames: OptionalValue<List<String>> = OptionalValue.empty(),
 
-    /**
-     * Whether the JDWP process is waiting for a JDWP debugger to attach
-     *
-     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
-     */
-    val waitingForDebugger: OptionalValue<Boolean> = OptionalValue.empty(),
+  /**
+   * Whether the JDWP process is waiting for a JDWP debugger to attach
+   *
+   * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+   */
+  val waitingForDebugger: OptionalValue<Boolean> = OptionalValue.empty(),
 
-    /**
-     * The Android `uid`, i.e. the results of calling `getuid()` in the process.
-     * The `uid` is a unique identifier for a given [user ID][userId] and
-     * [package name][packageNames], i.e. 2 packages with the same name but different
-     * [userId] values will have different [uid] values.
-     *
-     * Note: Only ever set if [AdbFeatures.APP_INFO] is supported  by the device (API 36+)
-     */
-    val uid: OptionalValue<Long> = OptionalValue.empty(),
+  /**
+   * The Android `uid`, i.e. the results of calling `getuid()` in the process. The `uid` is a unique identifier for a given
+   * [user ID][userId] and [package name][packageNames], i.e. 2 packages with the same name but different [userId] values will have
+   * different [uid] values.
+   *
+   * Note: Only ever set if [AdbFeatures.APP_INFO] is supported by the device (API 36+)
+   */
+  val uid: OptionalValue<Long> = OptionalValue.empty(),
 )

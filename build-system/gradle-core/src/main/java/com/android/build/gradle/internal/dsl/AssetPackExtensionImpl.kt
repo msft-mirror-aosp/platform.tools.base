@@ -18,19 +18,18 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AssetPackExtension
 import com.android.build.api.dsl.DynamicDelivery
+import javax.inject.Inject
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
 abstract class AssetPackExtensionImpl @Inject constructor(objectFactory: ObjectFactory) : AssetPackExtension {
-    override val dynamicDelivery: DynamicDelivery = objectFactory.newInstance(
-        DynamicDeliveryImpl::class.java)
+  override val dynamicDelivery: DynamicDelivery = objectFactory.newInstance(DynamicDeliveryImpl::class.java)
 
-    override fun dynamicDelivery(action: DynamicDelivery.() -> Unit) {
-        action.invoke(dynamicDelivery)
-    }
+  override fun dynamicDelivery(action: DynamicDelivery.() -> Unit) {
+    action.invoke(dynamicDelivery)
+  }
 
-    fun dynamicDelivery(action: Action<DynamicDelivery>) {
-        action.execute(dynamicDelivery)
-    }
+  fun dynamicDelivery(action: Action<DynamicDelivery>) {
+    action.execute(dynamicDelivery)
+  }
 }

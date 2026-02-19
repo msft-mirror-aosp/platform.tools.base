@@ -27,13 +27,8 @@ import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.ULiteralExpression
 
-class FloatRangeConstraint
-private constructor(
-  val from: Double,
-  val to: Double,
-  val fromInclusive: Boolean,
-  val toInclusive: Boolean,
-) : RangeConstraint() {
+class FloatRangeConstraint private constructor(val from: Double, val to: Double, val fromInclusive: Boolean, val toInclusive: Boolean) :
+  RangeConstraint() {
 
   constructor(
     range: IntRangeConstraint
@@ -45,8 +40,7 @@ private constructor(
   )
 
   fun isValid(value: Double): Boolean {
-    return (fromInclusive && value >= from || !fromInclusive && value > from) &&
-      (toInclusive && value <= to || !toInclusive && value < to)
+    return (fromInclusive && value >= from || !fromInclusive && value > from) && (toInclusive && value <= to || !toInclusive && value < to)
   }
 
   override val infinite: Boolean
@@ -57,11 +51,7 @@ private constructor(
   }
 
   @JvmOverloads
-  fun describe(
-    argument: UExpression? = null,
-    actualValue: Double? = null,
-    prefix: String = "Value must be ",
-  ): String {
+  fun describe(argument: UExpression? = null, actualValue: Double? = null, prefix: String = "Value must be "): String {
     val sb = StringBuilder(20)
     sb.append(prefix)
     val valueString =
@@ -171,11 +161,7 @@ private constructor(
     return sb.toString()
   }
 
-  override fun describeDelta(
-    actual: RangeConstraint,
-    actualLabel: String,
-    allowedLabel: String,
-  ): String {
+  override fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String {
     if (actual !is FloatRangeConstraint) {
       return if (actual is IntRangeConstraint) {
         describeDelta(FloatRangeConstraint(actual), actualLabel, allowedLabel)
@@ -196,17 +182,12 @@ private constructor(
     }
 
     // No overlap? If so just display both ranges
-    if (
-      this.to <= actual.from && actual.to != POSITIVE_INFINITY ||
-        this.from >= actual.to && actual.from != NEGATIVE_INFINITY
-    ) {
+    if (this.to <= actual.from && actual.to != POSITIVE_INFINITY || this.from >= actual.to && actual.from != NEGATIVE_INFINITY) {
       sb.append("can be " + actual.describe(null, null, ""))
       return sb.toString()
     }
 
-    if (
-      actual.from < this.from || actual.from == this.from && !fromInclusive && actual.fromInclusive
-    ) {
+    if (actual.from < this.from || actual.from == this.from && !fromInclusive && actual.fromInclusive) {
       if (actual.from == NEGATIVE_INFINITY) {
         sb.append("can be < ${this.from}")
       } else {
@@ -317,12 +298,7 @@ private constructor(
     }
 
     @JvmStatic
-    fun range(
-      from: Double,
-      fromInclusive: Boolean,
-      to: Double,
-      toInclusive: Boolean,
-    ): FloatRangeConstraint {
+    fun range(from: Double, fromInclusive: Boolean, to: Double, toInclusive: Boolean): FloatRangeConstraint {
       return FloatRangeConstraint(from, to, fromInclusive, toInclusive)
     }
 

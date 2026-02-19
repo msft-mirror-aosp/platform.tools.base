@@ -40,43 +40,37 @@ import org.gradle.workers.WorkParameters
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class JacocoPropertiesTask : NonIncrementalTask() {
 
-    @get:OutputDirectory
-    abstract val propertiesDir: DirectoryProperty
+  @get:OutputDirectory abstract val propertiesDir: DirectoryProperty
 
-    override fun doTaskAction() {
-        workerExecutor.noIsolation().submit(WriteJacocoPropertiesFile::class.java) {
-            it.propertiesDir.setDisallowChanges(propertiesDir)
-        }
+  override fun doTaskAction() {
+    workerExecutor.noIsolation().submit(WriteJacocoPropertiesFile::class.java) { it.propertiesDir.setDisallowChanges(propertiesDir) }
+  }
+
+  abstract class WriteJacocoPropertiesFile : WorkAction<WriteJacocoPropertiesFile.Parameters> {
+
+    interface Parameters : WorkParameters {
+      val propertiesDir: DirectoryProperty
     }
 
-    abstract class WriteJacocoPropertiesFile : WorkAction<WriteJacocoPropertiesFile.Parameters> {
-
-        interface Parameters : WorkParameters {
-            val propertiesDir: DirectoryProperty
-        }
-
-        override fun execute() {
-            FileUtils.writeToFile(
-                FileUtils.join(
-                    parameters.propertiesDir.asFile.get(), "jacoco-agent.properties"
-                ),
-                "#Injected by the Android Gradle Plugin\noutput=none\n"
-            )
-        }
+    override fun execute() {
+      FileUtils.writeToFile(
+        FileUtils.join(parameters.propertiesDir.asFile.get(), "jacoco-agent.properties"),
+        "#Injected by the Android Gradle Plugin\noutput=none\n",
+      )
     }
+  }
 
-    class CreationAction(creationConfig: ComponentCreationConfig) : VariantTaskCreationAction<JacocoPropertiesTask, ComponentCreationConfig>(
-        creationConfig
-    ) {
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<JacocoPropertiesTask, ComponentCreationConfig>(creationConfig) {
 
-        override val name: String =
-            computeTaskName("generate", "JacocoPropertiesFile")
-        override val type: Class<JacocoPropertiesTask> get() = JacocoPropertiesTask::class.java
+    override val name: String = computeTaskName("generate", "JacocoPropertiesFile")
+    override val type: Class<JacocoPropertiesTask>
+      get() = JacocoPropertiesTask::class.java
 
-        override fun handleProvider(taskProvider: TaskProvider<JacocoPropertiesTask>) {
-            creationConfig.artifacts
-                .setInitialProvider(taskProvider, JacocoPropertiesTask::propertiesDir)
-                .on(InternalArtifactType.JACOCO_CONFIG_RESOURCES)
-        }
+    override fun handleProvider(taskProvider: TaskProvider<JacocoPropertiesTask>) {
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, JacocoPropertiesTask::propertiesDir)
+        .on(InternalArtifactType.JACOCO_CONFIG_RESOURCES)
     }
+  }
 }

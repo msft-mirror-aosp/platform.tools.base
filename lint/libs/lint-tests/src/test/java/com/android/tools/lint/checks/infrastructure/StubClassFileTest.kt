@@ -33,10 +33,13 @@ import com.intellij.psi.JavaRecursiveElementVisitor
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiClassType
 import com.intellij.psi.PsiField
+import com.intellij.psi.PsiJavaFile
 import com.intellij.psi.PsiLiteral
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiModifier
+import com.intellij.psi.PsiModifierList
 import com.intellij.psi.PsiModifierListOwner
+import com.intellij.psi.PsiPackage
 import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeParameter
 import java.io.File
@@ -48,10 +51,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 /**
- * Unit test for [StubClassFile]; this test will take Java stub files, convert them to class files,
- * and then load these using PSI and pretty print the class file APIs back to something resembling
- * metalava API signatures, checking that in the bytecode we found everything we expect -- methods,
- * parameters, types, generics, throws lists, constant initial values, etc.
+ * Unit test for [StubClassFile]; this test will take Java stub files, convert them to class files, and then load these using PSI and pretty
+ * print the class file APIs back to something resembling metalava API signatures, checking that in the bytecode we found everything we
+ * expect -- methods, parameters, types, generics, throws lists, constant initial values, etc.
  */
 @Suppress("LintDocExample")
 class StubClassFileTest {
@@ -108,8 +110,7 @@ class StubClassFileTest {
           }
         }
 
-        private fun appendModifiers(owner: PsiModifierListOwner) {
-          val modifierList = owner.modifierList ?: return
+        private fun appendAnnotations(modifierList: PsiModifierList) {
           val annotations = modifierList.annotations
           for (annotation in annotations) {
             sb.append('@').append(annotation.qualifiedName)
@@ -121,6 +122,11 @@ class StubClassFileTest {
             }
             sb.append(' ')
           }
+        }
+
+        private fun appendModifiers(owner: PsiModifierListOwner) {
+          val modifierList = owner.modifierList ?: return
+          appendAnnotations(modifierList)
 
           if (modifierList.hasModifierProperty(PsiModifier.PUBLIC)) {
             sb.append("public ")
@@ -215,8 +221,7 @@ class StubClassFileTest {
             is PsiLiteral -> (this as PsiLiteral).toSource()
             is JvmAnnotationConstantValue -> this.toSource()
             is JvmAnnotationClassValue -> "$qualifiedName.class"
-            is JvmNestedAnnotationValue ->
-              "@${value.qualifiedName}(${value.attributes.joinToString { it.toSource() }})"
+            is JvmNestedAnnotationValue -> "@${value.qualifiedName}(${value.attributes.joinToString { it.toSource() }})"
             is JvmAnnotationEnumFieldValue -> "$containingClassName.${this.fieldName}"
             is JvmAnnotationArrayValue -> "{" + values.joinToString(", ") { it.toSource() } + "}"
             else -> this.toString()
@@ -232,6 +237,15 @@ class StubClassFileTest {
 
         override fun visitClass(aClass: PsiClass) {
           indent(depth)
+          val containingFile = aClass.containingFile
+          if (aClass.name == PsiPackage.PACKAGE_INFO_CLASS && containingFile is PsiJavaFile) {
+            // Since 2025.3 commit d411c7c81c, package annotations moved into the package
+            // statement.
+            val packageAnnotations = containingFile.packageStatement?.annotationList
+            if (packageAnnotations != null) {
+              appendAnnotations(packageAnnotations)
+            }
+          }
           appendModifiers(aClass)
           if (aClass.isAnnotation()) {
             sb.append("@interface")
@@ -247,9 +261,7 @@ class StubClassFileTest {
           if (aClass.typeParameters.isNotEmpty()) {
             appendTypeParameters(aClass.typeParameters)
           }
-          if (
-            superClass != null && !(aClass.isInterface || aClass.isEnum || aClass.isAnnotation())
-          ) {
+          if (superClass != null && !(aClass.isInterface || aClass.isEnum || aClass.isAnnotation())) {
             sb.append(" extends ")
             sb.append(aClass.superTypes.joinToString(",") { it.canonicalText.replace("$", ".") })
           }
@@ -290,11 +302,7 @@ class StubClassFileTest {
         }
 
         override fun visitMethod(method: PsiMethod) {
-          if (
-            method.isConstructor &&
-              (method.containingClass?.isEnum == true ||
-                method.containingClass?.isAnnotation() == true)
-          ) {
+          if (method.isConstructor && (method.containingClass?.isEnum == true || method.containingClass?.isAnnotation() == true)) {
             return
           }
 
@@ -363,33 +371,33 @@ class StubClassFileTest {
   fun testBasic() {
     check(
       """
-            public class com.example.myapplication.Test extends java.lang.Object {
-                public static final java.lang.String MY_CONSTANT = myconst;
-                public static final int MY_FORTY_TWO = 42;
-                public static final int MY_FORTY_THREE = 43;
-                public final int MY_FORTY_FOUR = 44;
-                public static final int[] MY_ARRAY;
-                public Test();
-                public class com.example.myapplication.Test${"$"}InnerClass extends java.lang.Object {
-                    public InnerClass();
-                    public void test(int first, float second, java.lang.String third, boolean[] fourth) throws IOException;
-                }
-                public class com.example.myapplication.Test${"$"}Other extends com.example.myapplication.Test.InnerClass,java.lang.Runnable implements java.lang.Runnable {
-                    Other(float test);
-                    public void run();
-                    private void privateMethod();
-                }
-                interface com.example.myapplication.Test${"$"}MyInterface {
-                    public abstract void required();
-                }
-                enum com.example.myapplication.Test${"$"}MyEnum {
-                    FOO, BAR;
-                    private final int myField = 0;
-                    public static final java.lang.String OTHER = other;
-                    public java.lang.String displayName();
-                }
-            }
-            """
+      public class com.example.myapplication.Test extends java.lang.Object {
+          public static final java.lang.String MY_CONSTANT = myconst;
+          public static final int MY_FORTY_TWO = 42;
+          public static final int MY_FORTY_THREE = 43;
+          public final int MY_FORTY_FOUR = 44;
+          public static final int[] MY_ARRAY;
+          public Test();
+          public class com.example.myapplication.Test${"$"}InnerClass extends java.lang.Object {
+              public InnerClass();
+              public void test(int first, float second, java.lang.String third, boolean[] fourth) throws IOException;
+          }
+          public class com.example.myapplication.Test${"$"}Other extends com.example.myapplication.Test.InnerClass,java.lang.Runnable implements java.lang.Runnable {
+              Other(float test);
+              public void run();
+              private void privateMethod();
+          }
+          interface com.example.myapplication.Test${"$"}MyInterface {
+              public abstract void required();
+          }
+          enum com.example.myapplication.Test${"$"}MyEnum {
+              FOO, BAR;
+              private final int myField = 0;
+              public static final java.lang.String OTHER = other;
+              public java.lang.String displayName();
+          }
+      }
+      """
         .trimIndent(),
       binaryStub(
         "libs/test.jar",
@@ -440,30 +448,30 @@ class StubClassFileTest {
   fun testGenerics() {
     check(
       """
-            public class test.pkg.DiffUtil extends java.lang.Object {
-                public DiffUtil();
-                public static abstract class test.pkg.DiffUtil${"$"}ItemCallback<S, T extends java.util.List & java.util.List & java.util.RandomAccess, FOO> extends test.pkg.DiffUtil.Foo<FOO,T> {
-                    private java.util.List<? extends java.lang.Number> field1;
-                    private S field2;
-                    public ItemCallback();
-                    public abstract boolean areItemsTheSame(T oldItem, FOO newItem);
-                    public boolean areContentsTheSame(T oldItem, T newItem);
-                    public void test(java.util.List<? super java.lang.Integer> s);
-                    public static int <F extends java.lang.Number, G extends java.lang.Long> print(F num, G num);
-                    public static float <F extends java.lang.Double> print(F num);
-                }
-                class test.pkg.DiffUtil${"$"}ExceptionThrower<T extends java.io.IOException> extends java.lang.Object {
-                    public ExceptionThrower();
-                    void test() throws T;
-                }
-                public static class test.pkg.DiffUtil${"$"}Foo<A, B> extends java.lang.Object {
-                    public Foo();
-                }
-                public static class test.pkg.DiffUtil${"$"}Bar<FOO extends java.lang.Number & java.util.RandomAccess> extends test.pkg.DiffUtil.Foo<java.lang.String,java.lang.String> {
-                    public Bar();
-                }
-            }
-            """
+      public class test.pkg.DiffUtil extends java.lang.Object {
+          public DiffUtil();
+          public static abstract class test.pkg.DiffUtil${"$"}ItemCallback<S, T extends java.util.List & java.util.List & java.util.RandomAccess, FOO> extends test.pkg.DiffUtil.Foo<FOO,T> {
+              private java.util.List<? extends java.lang.Number> field1;
+              private S field2;
+              public ItemCallback();
+              public abstract boolean areItemsTheSame(T oldItem, FOO newItem);
+              public boolean areContentsTheSame(T oldItem, T newItem);
+              public void test(java.util.List<? super java.lang.Integer> s);
+              public static int <F extends java.lang.Number, G extends java.lang.Long> print(F num, G num);
+              public static float <F extends java.lang.Double> print(F num);
+          }
+          class test.pkg.DiffUtil${"$"}ExceptionThrower<T extends java.io.IOException> extends java.lang.Object {
+              public ExceptionThrower();
+              void test() throws T;
+          }
+          public static class test.pkg.DiffUtil${"$"}Foo<A, B> extends java.lang.Object {
+              public Foo();
+          }
+          public static class test.pkg.DiffUtil${"$"}Bar<FOO extends java.lang.Number & java.util.RandomAccess> extends test.pkg.DiffUtil.Foo<java.lang.String,java.lang.String> {
+              public Bar();
+          }
+      }
+      """
         .trimIndent(),
       binaryStub(
         "libs/diffutil.jar",
@@ -535,54 +543,54 @@ class StubClassFileTest {
   fun testAnnotations() {
     check(
       """
-            public class test.pkg.TestAnnotations extends java.lang.Object {
-                public static final int MY_CONSTANT = 15;
-                public TestAnnotations();
-                @androidx.annotation.MainThread public void testNoArgs(@androidx.annotation.StringRes int res);
-                public void testInt(@androidx.annotation.Size(min=5) java.lang.String arg);
-                public void testIntConstant(@androidx.annotation.Size(min=15) java.lang.String arg);
-                @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.TESTS}) public void testEnums();
-                @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.GROUP_ID, androidx.annotation.RestrictTo.Scope.TESTS}) public void testEnumsArray();
-                @androidx.annotation.RequiresPermission(value="android.permission.ACCESS_FINE_LOCATION") public void testString();
-                @androidx.annotation.RequiresPermission(anyOf={"android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_BACKGROUND_LOCATION"}) public void testStringArray();
-                @androidx.annotation.RequiresPermission.Read(value=@androidx.annotation.RequiresPermission()) public void testNestedPermission();
-                @androidx.annotation.RequiresPermission.Read(value=@androidx.annotation.RequiresPermission(value="android.permission.ACCESS_FINE_LOCATION")) public void testNestedPermission2();
-                @test.pkg.TestAnnotations.BooleanAnnotation(bool=true, booleans={true, false}) public void testBoolean();
-                @test.pkg.TestAnnotations.DoubleAnnotation(dbl=2.0, doubles={1.0, 2.5}) public void testDoubles();
-                @test.pkg.TestAnnotations.LongAnnotation(l=2, longs={1, 10}) public void testLongs();
-                @test.pkg.TestAnnotations.ClassAnnotation(cls=java.lang.Float.class) public void testClass();
-                @test.pkg.TestAnnotations.ClassAnnotation(classes={java.lang.Float.class, java.lang.Integer.class}) public void testClasses();
-                @interface test.pkg.TestAnnotations${"$"}BooleanAnnotation {
-                    public abstract boolean bool();
-                    public abstract boolean[] booleans();
-                }
-                @interface test.pkg.TestAnnotations${"$"}DoubleAnnotation {
-                    public abstract double dbl();
-                    public abstract double[] doubles();
-                }
-                @interface test.pkg.TestAnnotations${"$"}LongAnnotation {
-                    public abstract long l();
-                    public abstract long[] longs();
-                }
-                @interface test.pkg.TestAnnotations${"$"}ClassAnnotation {
-                    public abstract java.lang.Class<? extends java.lang.Number> cls();
-                    public abstract java.lang.Class<? extends java.lang.Number>[] classes();
-                }
-                @interface test.pkg.TestAnnotations${"$"}MyAnno {
-                    public abstract int[] values();
-                    public abstract java.lang.String foo();
-                    public abstract float max();
-                    public abstract int value();
-                    public abstract int foobar();
-                }
-                @test.pkg.TestAnnotations.MyAnno(value=3, foobar=5, max=0.5, foo="Test", values={1, 2, 3}) public static class test.pkg.TestAnnotations${"$"}TestAnnotationsOnClass extends java.lang.Object {
-                    public TestAnnotationsOnClass();
-                }
-                public class test.pkg.TestAnnotations${"$"}TestAnnotationsOnParameter extends java.lang.Object {
-                    TestAnnotationsOnParameter(@test.pkg.TestAnnotations.MyAnno(value=4) float f);
-                }
-            }
-            """
+      public class test.pkg.TestAnnotations extends java.lang.Object {
+          public static final int MY_CONSTANT = 15;
+          public TestAnnotations();
+          @androidx.annotation.MainThread public void testNoArgs(@androidx.annotation.StringRes int res);
+          public void testInt(@androidx.annotation.Size(min=5) java.lang.String arg);
+          public void testIntConstant(@androidx.annotation.Size(min=15) java.lang.String arg);
+          @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.TESTS}) public void testEnums();
+          @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.GROUP_ID, androidx.annotation.RestrictTo.Scope.TESTS}) public void testEnumsArray();
+          @androidx.annotation.RequiresPermission(value="android.permission.ACCESS_FINE_LOCATION") public void testString();
+          @androidx.annotation.RequiresPermission(anyOf={"android.permission.ACCESS_FINE_LOCATION", "android.permission.ACCESS_BACKGROUND_LOCATION"}) public void testStringArray();
+          @androidx.annotation.RequiresPermission.Read(value=@androidx.annotation.RequiresPermission()) public void testNestedPermission();
+          @androidx.annotation.RequiresPermission.Read(value=@androidx.annotation.RequiresPermission(value="android.permission.ACCESS_FINE_LOCATION")) public void testNestedPermission2();
+          @test.pkg.TestAnnotations.BooleanAnnotation(bool=true, booleans={true, false}) public void testBoolean();
+          @test.pkg.TestAnnotations.DoubleAnnotation(dbl=2.0, doubles={1.0, 2.5}) public void testDoubles();
+          @test.pkg.TestAnnotations.LongAnnotation(l=2, longs={1, 10}) public void testLongs();
+          @test.pkg.TestAnnotations.ClassAnnotation(cls=java.lang.Float.class) public void testClass();
+          @test.pkg.TestAnnotations.ClassAnnotation(classes={java.lang.Float.class, java.lang.Integer.class}) public void testClasses();
+          @interface test.pkg.TestAnnotations${"$"}BooleanAnnotation {
+              public abstract boolean bool();
+              public abstract boolean[] booleans();
+          }
+          @interface test.pkg.TestAnnotations${"$"}DoubleAnnotation {
+              public abstract double dbl();
+              public abstract double[] doubles();
+          }
+          @interface test.pkg.TestAnnotations${"$"}LongAnnotation {
+              public abstract long l();
+              public abstract long[] longs();
+          }
+          @interface test.pkg.TestAnnotations${"$"}ClassAnnotation {
+              public abstract java.lang.Class<? extends java.lang.Number> cls();
+              public abstract java.lang.Class<? extends java.lang.Number>[] classes();
+          }
+          @interface test.pkg.TestAnnotations${"$"}MyAnno {
+              public abstract int[] values();
+              public abstract java.lang.String foo();
+              public abstract float max();
+              public abstract int value();
+              public abstract int foobar();
+          }
+          @test.pkg.TestAnnotations.MyAnno(value=3, foobar=5, max=0.5, foo="Test", values={1, 2, 3}) public static class test.pkg.TestAnnotations${"$"}TestAnnotationsOnClass extends java.lang.Object {
+              public TestAnnotationsOnClass();
+          }
+          public class test.pkg.TestAnnotations${"$"}TestAnnotationsOnParameter extends java.lang.Object {
+              TestAnnotationsOnParameter(@test.pkg.TestAnnotations.MyAnno(value=4) float f);
+          }
+      }
+      """
         .trimIndent(),
       binaryStub(
         "libs/annotations.jar",
@@ -722,26 +730,26 @@ class StubClassFileTest {
   fun testKotlin() {
     check(
       """
-            public final class test.pkg.MyAnnotationKt extends java.lang.Object {
-                public MyAnnotationKt();
-                public static final void topLevelFunction(@test.pkg.MyAnnotation int p);
-            }
-            @java.lang.annotation.Retention(value=java.lang.annotation.RetentionPolicy.RUNTIME) public @interface test.pkg.MyAnnotation {
-            }
-            public final class test.pkg.MyClass extends java.lang.Object {
-                @org.jetbrains.annotations.NotNull public static final test.pkg.MyClass.Companion Companion;
-                public static final int MY_CONSTANT = 1;
-                @org.jetbrains.annotations.NotNull private final java.lang.String myProperty;
-                @org.jetbrains.annotations.NotNull public final java.lang.String getMyProperty();
-                public MyClass(@org.jetbrains.annotations.NotNull java.lang.String myProperty);
-                public MyClass(boolean b);
-                @kotlin.jvm.JvmStatic public static final void myCompanionMethod();
-                public static final class test.pkg.MyClass${"$"}Companion extends java.lang.Object {
-                    @kotlin.jvm.JvmStatic public final void myCompanionMethod();
-                    private Companion();
-                }
-            }
-            """
+      public final class test.pkg.MyAnnotationKt extends java.lang.Object {
+          public MyAnnotationKt();
+          public static final void topLevelFunction(@test.pkg.MyAnnotation int p);
+      }
+      @java.lang.annotation.Retention(value=java.lang.annotation.RetentionPolicy.RUNTIME) public @interface test.pkg.MyAnnotation {
+      }
+      public final class test.pkg.MyClass extends java.lang.Object {
+          @org.jetbrains.annotations.NotNull public static final test.pkg.MyClass.Companion Companion;
+          public static final int MY_CONSTANT = 1;
+          @org.jetbrains.annotations.NotNull private final java.lang.String myProperty;
+          @org.jetbrains.annotations.NotNull public final java.lang.String getMyProperty();
+          public MyClass(@org.jetbrains.annotations.NotNull java.lang.String myProperty);
+          public MyClass(boolean b);
+          @kotlin.jvm.JvmStatic public static final void myCompanionMethod();
+          public static final class test.pkg.MyClass${"$"}Companion extends java.lang.Object {
+              @kotlin.jvm.JvmStatic public final void myCompanionMethod();
+              private Companion();
+          }
+      }
+      """
         .trimIndent(),
       binaryStub(
         "libs/test.jar",
@@ -770,9 +778,9 @@ class StubClassFileTest {
   fun testPackageInfo() {
     check(
       """
-            @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.GROUP_ID}) interface library.pkg.internal.package-info {
-            }
-            """
+      @androidx.annotation.RestrictTo(value={androidx.annotation.RestrictTo.Scope.GROUP_ID}) interface library.pkg.internal.package-info {
+      }
+      """
         .trimIndent(),
       binaryStub(
         "libs/test.jar",
@@ -816,14 +824,14 @@ class StubClassFileTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                Method `test.pkg.Test.displayName()Ljava/lang/String;` is not just a stub method;
-                it contains code, which the testing infrastructure bytecode stubber can't handle.
-                You'll need to switch to a `compiled` or `bytecode` test file type instead (where
-                you precompile the source code using a compiler), *or*, if the method body etc isn't
-                necessary for the test, remove it and replace with a simple return or throw.
-                Method body: { return getName(); }
+        Method `test.pkg.Test.displayName()Ljava/lang/String;` is not just a stub method;
+        it contains code, which the testing infrastructure bytecode stubber can't handle.
+        You'll need to switch to a `compiled` or `bytecode` test file type instead (where
+        you precompile the source code using a compiler), *or*, if the method body etc isn't
+        necessary for the test, remove it and replace with a simple return or throw.
+        Method body: { return getName(); }
 
-                """
+        """
           .trimIndent(),
         e.message,
       )
@@ -850,12 +858,12 @@ class StubClassFileTest {
     } catch (e: Throwable) {
       assertEquals(
         """
-                You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on
-                `lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module
-                metadata is still missing, which means that if your test relies on this metadata
-                (for example to call package level functions from Kotlin, or to access things like
-                default values or inline methods), that will not work.
-                """
+        You cannot use Kotlin in a binaryStub or mavenLibrary unless you also turn on
+        `lint().allowKotlinClassStubs(true)`. Kotlin stubs work in general, but module
+        metadata is still missing, which means that if your test relies on this metadata
+        (for example to call package level functions from Kotlin, or to access things like
+        default values or inline methods), that will not work.
+        """
           .trimIndent(),
         e.message,
       )

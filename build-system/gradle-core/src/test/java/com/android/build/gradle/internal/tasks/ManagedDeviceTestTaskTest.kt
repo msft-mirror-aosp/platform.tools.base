@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.builder.model.TestOptions
 import com.google.common.truth.Truth.assertThat
+import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ArtifactCollection
@@ -46,140 +47,133 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.same
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import javax.inject.Inject
 
-/**
- * Unit tests for [ManagedDeviceTestTask].
- */
+/** Unit tests for [ManagedDeviceTestTask]. */
 class ManagedDeviceTestTaskTest {
 
-    interface TestDevice : Device
-    interface TestRunInput : DeviceTestRunInput
-    interface TestRunConfigAction : DeviceTestRunConfigureAction<TestDevice, TestRunInput>
-    interface TestRunTaskAction : DeviceTestRunTaskAction<TestRunInput>
+  interface TestDevice : Device
 
-    @get:Rule val tempFolderRule = TemporaryFolder()
+  interface TestRunInput : DeviceTestRunInput
 
-    private val creationConfig: InstrumentedTestCreationConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
-    private val device: TestDevice = mock()
-    private val testData: AbstractTestDataImpl = mock()
+  interface TestRunConfigAction : DeviceTestRunConfigureAction<TestDevice, TestRunInput>
 
-    private lateinit var project: Project
+  interface TestRunTaskAction : DeviceTestRunTaskAction<TestRunInput>
 
-    abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) :
-        ManagedDeviceTestTask() {
+  @get:Rule val tempFolderRule = TemporaryFolder()
 
-            override val workerExecutor = testWorkerExecutor
+  private val creationConfig: InstrumentedTestCreationConfig = mock(defaultAnswer = RETURNS_DEEP_STUBS)
+  private val device: TestDevice = mock()
+  private val testData: AbstractTestDataImpl = mock()
 
-            // Allows for setting the dependencies to the Test Task without expanding
-            // internal public api.
-            fun setDependenciesForTest(collection: ArtifactCollection) {
-                dependencies = collection
-            }
-        }
+  private lateinit var project: Project
 
-    // Needs to be a true abstract class and not a mock, to allow for the ObjectFactory to
-    // decorate the class for test.
-    abstract class FakeTestAction @Inject constructor(): DeviceTestRunTaskAction<DeviceTestRunInput> {
+  abstract class TaskForTest @Inject constructor(testWorkerExecutor: WorkerExecutor) : ManagedDeviceTestTask() {
 
-        override fun runTests(params: DeviceTestRunParameters<DeviceTestRunInput>): Boolean {
-            return shouldSucceed
-        }
+    override val workerExecutor = testWorkerExecutor
 
-        companion object {
-            internal var shouldSucceed: Boolean = false
-        }
+    // Allows for setting the dependencies to the Test Task without expanding
+    // internal public api.
+    fun setDependenciesForTest(collection: ArtifactCollection) {
+      dependencies = collection
+    }
+  }
+
+  // Needs to be a true abstract class and not a mock, to allow for the ObjectFactory to
+  // decorate the class for test.
+  abstract class FakeTestAction @Inject constructor() : DeviceTestRunTaskAction<DeviceTestRunInput> {
+
+    override fun runTests(params: DeviceTestRunParameters<DeviceTestRunInput>): Boolean {
+      return shouldSucceed
     }
 
-    @Before
-    fun setupMocks() {
-        project = ProjectBuilder.builder().withProjectDir(tempFolderRule.root).build()
-
-        whenever(device.name).thenReturn("testDeviceName")
-        whenever(creationConfig.name).thenReturn("variantName")
-        whenever(testData.hasTests(any(), any(), any())).thenReturn(realPropertyFor(true))
-        whenever(testData.flavorName).thenReturn(realPropertyFor(""))
-        whenever(testData.getAsStaticData()).thenReturn(mock())
-
-        FakeTestAction.shouldSucceed = false
+    companion object {
+      internal var shouldSucceed: Boolean = false
     }
+  }
 
-    @Test
-    fun configureTask() {
-        val creationAction = ManagedDeviceTestTask.CreationAction(
-            creationConfig,
-            device,
-            TestRunConfigAction::class.java,
-            TestRunTaskAction::class.java,
-            testData,
-            tempFolderRule.newFolder(),
-            tempFolderRule.newFolder(),
-            tempFolderRule.newFolder(),
-            tempFolderRule.newFolder(),
-            null,
-        )
+  @Before
+  fun setupMocks() {
+    project = ProjectBuilder.builder().withProjectDir(tempFolderRule.root).build()
 
-        val mockTask = mock<ManagedDeviceTestTask>(defaultAnswer = RETURNS_DEEP_STUBS)
-        val mockConfigAction = mock<TestRunConfigAction>()
-        whenever(mockTask.objectFactory.newInstance(eq(TestRunConfigAction::class.java)))
-            .thenReturn(mockConfigAction)
-        val mockTestRunInput = mock<TestRunInput>()
-        whenever(mockConfigAction.configureTaskInput(eq(device))).thenReturn(mockTestRunInput)
+    whenever(device.name).thenReturn("testDeviceName")
+    whenever(creationConfig.name).thenReturn("variantName")
+    whenever(testData.hasTests(any(), any(), any())).thenReturn(realPropertyFor(true))
+    whenever(testData.flavorName).thenReturn(realPropertyFor(""))
+    whenever(testData.getAsStaticData()).thenReturn(mock())
 
-        creationAction.configure(mockTask)
+    FakeTestAction.shouldSucceed = false
+  }
 
-        verify(mockTask.deviceInput).setDisallowChanges(same(mockTestRunInput))
-    }
+  @Test
+  fun configureTask() {
+    val creationAction =
+      ManagedDeviceTestTask.CreationAction(
+        creationConfig,
+        device,
+        TestRunConfigAction::class.java,
+        TestRunTaskAction::class.java,
+        testData,
+        tempFolderRule.newFolder(),
+        tempFolderRule.newFolder(),
+        tempFolderRule.newFolder(),
+        tempFolderRule.newFolder(),
+        null,
+      )
 
-    @Test
-    fun runTaskWithPassingTests() {
-        val task = createTask(testRunTaskActionResult = true)
+    val mockTask = mock<ManagedDeviceTestTask>(defaultAnswer = RETURNS_DEEP_STUBS)
+    val mockConfigAction = mock<TestRunConfigAction>()
+    whenever(mockTask.objectFactory.newInstance(eq(TestRunConfigAction::class.java))).thenReturn(mockConfigAction)
+    val mockTestRunInput = mock<TestRunInput>()
+    whenever(mockConfigAction.configureTaskInput(eq(device))).thenReturn(mockTestRunInput)
 
-        task.doTaskAction()
-    }
+    creationAction.configure(mockTask)
 
-    @Test
-    fun runTaskWithFailedTests() {
-        val task = createTask(testRunTaskActionResult = false)
+    verify(mockTask.deviceInput).setDisallowChanges(same(mockTestRunInput))
+  }
 
-        val exception = assertThrows(GradleException::class.java) {
-            task.doTaskAction()
-        }
+  @Test
+  fun runTaskWithPassingTests() {
+    val task = createTask(testRunTaskActionResult = true)
 
-        assertThat(exception).hasMessageThat().contains(
-            "There were failing tests for Device: myDevice.")
-    }
+    task.doTaskAction()
+  }
 
-    private inline fun <reified ValueClass> realPropertyFor(
-        providedValue: ValueClass): Property<ValueClass> {
+  @Test
+  fun runTaskWithFailedTests() {
+    val task = createTask(testRunTaskActionResult = false)
 
-        val property = project.objects.property(ValueClass::class.java)
-        property.set(providedValue)
-        return property
-    }
+    val exception = assertThrows(GradleException::class.java) { task.doTaskAction() }
 
-    private fun createTask(testRunTaskActionResult: Boolean): ManagedDeviceTestTask {
-        FakeTestAction.shouldSucceed = testRunTaskActionResult
+    assertThat(exception).hasMessageThat().contains("There were failing tests for Device: myDevice.")
+  }
 
-        return project.tasks.register(
-            "testTask",
-            TaskForTest::class.java,
-            FakeGradleWorkExecutor(project.objects, tempFolderRule.newFolder())
-        ).get().apply {
-            resultsDir.set(tempFolderRule.newFolder())
-            getCoverageDirectory().set(tempFolderRule.newFolder())
-            getAdditionalTestOutputEnabled().set(true)
-            getAdditionalTestOutputDir().set(tempFolderRule.newFolder())
-            testAction.set(FakeTestAction::class.java)
-            analyticsService.set(mock<AnalyticsService>())
-            testData.set(this@ManagedDeviceTestTaskTest.testData)
-            setDependenciesForTest(
-                mock<ArtifactCollection>(defaultAnswer = RETURNS_DEEP_STUBS))
-            executionEnum.set(TestOptions.Execution.HOST)
-            deviceInput.set(mock<DeviceTestRunInput>())
-            deviceDslName.set("myDevice")
-            projectPath.set("project_path")
-            getReportsDir().set(tempFolderRule.newFolder())
-        }
-    }
+  private inline fun <reified ValueClass> realPropertyFor(providedValue: ValueClass): Property<ValueClass> {
+
+    val property = project.objects.property(ValueClass::class.java)
+    property.set(providedValue)
+    return property
+  }
+
+  private fun createTask(testRunTaskActionResult: Boolean): ManagedDeviceTestTask {
+    FakeTestAction.shouldSucceed = testRunTaskActionResult
+
+    return project.tasks
+      .register("testTask", TaskForTest::class.java, FakeGradleWorkExecutor(project.objects, tempFolderRule.newFolder()))
+      .get()
+      .apply {
+        resultsDir.set(tempFolderRule.newFolder())
+        getCoverageDirectory().set(tempFolderRule.newFolder())
+        getAdditionalTestOutputEnabled().set(true)
+        getAdditionalTestOutputDir().set(tempFolderRule.newFolder())
+        testAction.set(FakeTestAction::class.java)
+        analyticsService.set(mock<AnalyticsService>())
+        testData.set(this@ManagedDeviceTestTaskTest.testData)
+        setDependenciesForTest(mock<ArtifactCollection>(defaultAnswer = RETURNS_DEEP_STUBS))
+        executionEnum.set(TestOptions.Execution.HOST)
+        deviceInput.set(mock<DeviceTestRunInput>())
+        deviceDslName.set("myDevice")
+        projectPath.set("project_path")
+        getReportsDir().set(tempFolderRule.newFolder())
+      }
+  }
 }

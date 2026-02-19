@@ -25,11 +25,7 @@ import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.res.v
 import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.src.app_package.blankFragmentJava
 import com.android.tools.idea.wizard.template.impl.fragments.blankFragment.src.app_package.blankFragmentKt
 
-fun RecipeExecutor.blankFragmentRecipe(
-  moduleData: ModuleTemplateData,
-  className: String,
-  layoutName: String
-) {
+fun RecipeExecutor.blankFragmentRecipe(moduleData: ModuleTemplateData, className: String, layoutName: String) {
   val (projectData, srcOut, resOut, _) = moduleData
   val packageName = moduleData.packageName
   val applicationPackage = moduleData.projectTemplateData.applicationPackage
@@ -40,10 +36,11 @@ fun RecipeExecutor.blankFragmentRecipe(
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
   save(fragmentBlankXml(className, packageName), resOut.resolve("layout/${layoutName}.xml"))
   open(resOut.resolve("layout/${layoutName}.xml"))
-  val blankFragment = when (projectData.language) {
-    Language.Java -> blankFragmentJava(applicationPackage, className, layoutName, packageName, useAndroidX)
-    Language.Kotlin -> blankFragmentKt(applicationPackage, className, layoutName, packageName, useAndroidX)
-  }
+  val blankFragment =
+    when (projectData.language) {
+      Language.Java -> blankFragmentJava(applicationPackage, className, layoutName, packageName, useAndroidX)
+      Language.Kotlin -> blankFragmentKt(applicationPackage, className, layoutName, packageName, useAndroidX)
+    }
   save(blankFragment, srcOut.resolve("${className}.${ktOrJavaExt}"))
   open(srcOut.resolve("${className}.${ktOrJavaExt}"))
 }

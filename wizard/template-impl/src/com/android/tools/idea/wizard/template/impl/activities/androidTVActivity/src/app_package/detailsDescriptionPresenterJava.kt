@@ -16,9 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-fun detailsDescriptionPresenterJava(
-  packageName: String
-) = """
+fun detailsDescriptionPresenterJava(packageName: String) =
+  """
 package ${packageName};
 
 import androidx.leanback.widget.AbstractDetailsDescriptionPresenter;

@@ -16,33 +16,29 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import org.junit.Rule
 import org.junit.Test
 
 class LintErrorTest {
 
-    @get:Rule
-    val project = builder().fromTestProject("lintCustomRules").create()
+  @get:Rule val project = builder().fromTestProject("lintCustomRules").create()
 
-    /**
-     * Regression test for b/230685896. An exception when running lint should cause the lint
-     * analysis task to fail to prevent flaky exceptions from being saved in the build cache.
-     */
-    @Test
-    fun testExceptionCausesLintAnalysisFailure() {
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("lint")
-                .mainSrcDir
-                .resolve("com/example/google/lint/MainActivityDetector.java"),
-            "// placeholder",
-            "throw new RuntimeException(\"test123\");"
-        )
-        project.executor().expectFailure().run(":app:lintAnalyzeDebug").apply {
-            assertErrorContains("test123")
-            assertErrorContains("You can try disabling it with something like this:")
-            assertErrorContains("disable \"UnitTestLintCheck\"")
-        }
+  /**
+   * Regression test for b/230685896. An exception when running lint should cause the lint analysis task to fail to prevent flaky exceptions
+   * from being saved in the build cache.
+   */
+  @Test
+  fun testExceptionCausesLintAnalysisFailure() {
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("lint").mainSrcDir.resolve("com/example/google/lint/MainActivityDetector.java"),
+      "// placeholder",
+      "throw new RuntimeException(\"test123\");",
+    )
+    project.executor().expectFailure().run(":app:lintAnalyzeDebug").apply {
+      assertErrorContains("test123")
+      assertErrorContains("You can try disabling it with something like this:")
+      assertErrorContains("disable \"UnitTestLintCheck\"")
     }
+  }
 }

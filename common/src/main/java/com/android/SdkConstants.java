@@ -2197,6 +2197,9 @@ public final class SdkConstants {
     public static final String DOT_AVIF = ".avif";
     public static final String DOT_TOML = ".toml";
     public static final String DOT_VERSIONS_DOT_TOML = ".versions.toml";
+    public static final String KEEP_RULES_FOLDER = "keepRules";
+    public static final String DOT_KEEP = ".keep";
+
 
     /** Extension of the Application package Files, i.e. "apk". */
     public static final String EXT_ANDROID_PACKAGE = "apk";
@@ -2918,7 +2921,7 @@ public final class SdkConstants {
      * Studio product. It need not actually be the latest version of Gradle, but it will most likely
      * be fairly recent.
      */
-    public static final String GRADLE_LATEST_VERSION = "9.1.0";
+    public static final String GRADLE_LATEST_VERSION = "9.3.1";
 
     /**
      * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
@@ -2926,19 +2929,19 @@ public final class SdkConstants {
      * display a diagnostic informing the user that this project's version AGP is unsupported, but
      * at some point that might fail.
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "4.0.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_FORCED_UPGRADE_VERSION = "4.2.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that this version of Studio will
      * support. (Support of the development series leading up to it is unknown.)
      */
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "4.2.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "7.0.0";
 
     /**
      * The minimum released version of the Android Gradle Plugin that the next version of Studio
      * will support.
      */
-    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.0.0";
+    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.1.0";
 
     /**
      * A version of the Android Gradle Plugin that this version of Studio and associated tools (e.g.
@@ -3093,7 +3096,7 @@ public final class SdkConstants {
     public static final String SDK_DL_FONTS_FOLDER = "fonts";
 
     /** Current version for ASM dependencies. */
-    public static final String CURRENT_ASM_VERSION = "9.8";
+    public static final String CURRENT_ASM_VERSION = "9.9";
 
     /** Logical ID of the primary display of an Android device. */
     public static int PRIMARY_DISPLAY_ID = 0;

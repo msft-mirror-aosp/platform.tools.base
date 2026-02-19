@@ -17,16 +17,12 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 
 import java.io.OutputStream
 
-/**
- * Class that provides a synchronization for writing to a handler's output stream.
- */
+/** Class that provides a synchronization for writing to a handler's output stream. */
 class JdwpHandlerOutput(private val stream: OutputStream) {
 
-    private val lock = Any()
+  private val lock = Any()
 
-    fun withOutputStream(block: (OutputStream) -> Unit) {
-        synchronized(lock) {
-            block(stream)
-        }
-    }
+  fun withOutputStream(block: (OutputStream) -> Unit) {
+    synchronized(lock) { block(stream) }
+  }
 }

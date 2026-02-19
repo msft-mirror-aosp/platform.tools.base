@@ -16,29 +16,28 @@
 
 package com.android.build.gradle.internal.fixtures
 
+import java.io.File
 import org.gradle.api.artifacts.component.ComponentArtifactIdentifier
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.component.Artifact
-import java.io.File
 
-class FakeResolvedArtifactResult(
-    private val file: File, private val identifier: ComponentIdentifier
-) : ResolvedArtifactResult {
-    override fun getFile() = file
+class FakeResolvedArtifactResult(private val file: File, private val identifier: ComponentIdentifier) : ResolvedArtifactResult {
+  override fun getFile() = file
 
-    override fun getId() = object : ComponentArtifactIdentifier {
-        override fun getDisplayName() = identifier.displayName
+  override fun getId() =
+    object : ComponentArtifactIdentifier {
+      override fun getDisplayName() = identifier.displayName
 
-        override fun getComponentIdentifier() = identifier
+      override fun getComponentIdentifier() = identifier
     }
 
-    override fun getType(): Class<out Artifact> {
-        TODO("not implemented")
-    }
+  override fun getType(): Class<out Artifact> {
+    TODO("not implemented")
+  }
 
-    override fun getVariant(): ResolvedVariantResult {
-        TODO("not implemented")
-    }
+  override fun getVariant(): ResolvedVariantResult {
+    TODO("not implemented")
+  }
 }

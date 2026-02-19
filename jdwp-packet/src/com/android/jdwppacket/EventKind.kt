@@ -43,7 +43,6 @@ enum class EventKind(val id: Int) {
 
     private val map = EventKind.values().associateBy(EventKind::id)
 
-    @JvmStatic
-    fun fromID(value: Int) = map[value] ?: throw IllegalStateException("No EventKind for $value")
+    @JvmStatic fun fromID(value: Int) = map[value] ?: throw IllegalStateException("No EventKind for $value")
   }
 }

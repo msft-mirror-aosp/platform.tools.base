@@ -17,41 +17,42 @@
 package com.android.tools.profgen.cli
 
 import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.createTempFile
 import kotlinx.cli.ExperimentalCli
 import org.junit.Test
-import kotlin.io.path.createTempFile
 
 @ExperimentalCli
 class WildCardsCommandTest {
 
-    @Test
-    fun expandWildCardsTest() {
-        val command = ExpandWildcardsCommand()
-        val profile = createTempFile(suffix = ".txt").toFile()
-        profile.writeText("L*;")
-        val output = createTempFile(suffix = ".txt").toFile()
-        command.parse(
-                arrayOf(
-                        "--profile", profile.toString(),
-                        "--output", output.toString(),
-                        getClassFileArgument(),
-                        testData(JarArchivePath).toString()))
-        command.execute()
-        assertThat(output.readText()).isEqualTo(
-                """
-                LHello;
-                LWorld;
-            """.trimIndent().plus('\n')
-        )
-    }
-    internal fun getClassFileArgument(): String {
-        val sourceDir = testDataPath()
-        return "$sourceDir:$ClassFilePath"
-    }
+  @Test
+  fun expandWildCardsTest() {
+    val command = ExpandWildcardsCommand()
+    val profile = createTempFile(suffix = ".txt").toFile()
+    profile.writeText("L*;")
+    val output = createTempFile(suffix = ".txt").toFile()
+    command.parse(
+      arrayOf("--profile", profile.toString(), "--output", output.toString(), getClassFileArgument(), testData(JarArchivePath).toString())
+    )
+    command.execute()
+    assertThat(output.readText())
+      .isEqualTo(
+        """
+        LHello;
+        LWorld;
+        """
+          .trimIndent()
+          .plus('\n')
+      )
+  }
 
-    companion object {
+  internal fun getClassFileArgument(): String {
+    val sourceDir = testDataPath()
+    return "$sourceDir:$ClassFilePath"
+  }
 
-        private const val ClassFilePath = "Hello.class"
-        private const val JarArchivePath = "world.jar"
-    }
+  companion object {
+
+    private const val ClassFilePath = "Hello.class"
+    private const val JarArchivePath = "world.jar"
+  }
 }

@@ -55,98 +55,99 @@ class LintModelSerializationTest {
   fun testFlavors() {
     val mocker: GradleModelMocker =
       GradleModelMockerTest.createMocker(
-        """
-            buildscript {
-                repositories {
-                    mavenCentral()
-                }
-                dependencies {
-                    classpath 'com.android.tools.build:gradle:4.0.0-beta01'
-                }
-            }
+          """
+          buildscript {
+              repositories {
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:4.0.0-beta01'
+              }
+          }
 
-            apply plugin: 'com.android.application'
-            apply plugin: 'kotlin-android'
+          apply plugin: 'com.android.application'
+          apply plugin: 'kotlin-android'
 
-            groupId = "com.android.tools.demo"
+          groupId = "com.android.tools.demo"
 
-            android {
-                compileSdkVersion 25
-                defaultConfig {
-                    applicationId "com.android.tools.test"
-                    minSdkVersion 5
-                    targetSdkVersion 16
-                    versionCode 2
-                    versionName "MyName"
-                    resConfigs "mdpi"
-                    resValue "string", "defaultConfigName", "Some DefaultConfig Data"
-                    manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example"]
-                }
-                flavorDimensions  "pricing", "releaseType"
-                productFlavors {
-                    beta {
-                        dimension "releaseType"
-                        resConfig "en"
-                        resConfigs "nodpi", "hdpi"
-                        versionNameSuffix "-beta"
-                        applicationIdSuffix '.beta'
-                        resValue "string", "VALUE_DEBUG",   "10"
-                        resValue "string", "VALUE_FLAVOR",  "10"
-                        resValue "string", "VALUE_VARIANT", "10"
-                        manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example.flavor"]
-                    }
-                    normal { dimension "releaseType" }
-                    free { dimension "pricing" }
-                    paid { dimension "pricing" }
-                }
+          android {
+              compileSdkVersion 25
+              defaultConfig {
+                  applicationId "com.android.tools.test"
+                  minSdkVersion 5
+                  targetSdkVersion 16
+                  versionCode 2
+                  versionName "MyName"
+                  resConfigs "mdpi"
+                  resValue "string", "defaultConfigName", "Some DefaultConfig Data"
+                  manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example"]
+              }
+              flavorDimensions  "pricing", "releaseType"
+              productFlavors {
+                  beta {
+                      dimension "releaseType"
+                      resConfig "en"
+                      resConfigs "nodpi", "hdpi"
+                      versionNameSuffix "-beta"
+                      applicationIdSuffix '.beta'
+                      resValue "string", "VALUE_DEBUG",   "10"
+                      resValue "string", "VALUE_FLAVOR",  "10"
+                      resValue "string", "VALUE_VARIANT", "10"
+                      manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example.flavor"]
+                  }
+                  normal { dimension "releaseType" }
+                  free { dimension "pricing" }
+                  paid { dimension "pricing" }
+              }
 
-                buildFeatures {
-                    viewBinding true
-                }
+              buildFeatures {
+                  viewBinding true
+              }
 
-                lintOptions {
-                    quiet = true
-                    abortOnError = false
-                    ignoreWarnings = true
-                    absolutePaths = false
-                    checkAllWarnings = true
-                    warningsAsErrors = true
-                    disable 'TypographyFractions','TypographyQuotes'
-                    enable 'RtlHardcoded','RtlCompat', 'RtlEnabled'
-                    check 'NewApi', 'InlinedApi'
-                    noLines = true
-                    showAll = true
-                    lintConfig = file("default-lint.xml")
-                    baseline = file("baseline.xml")
-                    warning 'FooBar'
-                    informational 'LogConditional'
-                    checkTestSources = true
-                    checkDependencies = true
-                }
+              lintOptions {
+                  quiet = true
+                  abortOnError = false
+                  ignoreWarnings = true
+                  absolutePaths = false
+                  checkAllWarnings = true
+                  warningsAsErrors = true
+                  disable 'TypographyFractions','TypographyQuotes'
+                  enable 'RtlHardcoded','RtlCompat', 'RtlEnabled'
+                  check 'NewApi', 'InlinedApi'
+                  noLines = true
+                  showAll = true
+                  lintConfig = file("default-lint.xml")
+                  baseline = file("baseline.xml")
+                  warning 'FooBar'
+                  informational 'LogConditional'
+                  checkTestSources = true
+                  checkDependencies = true
+              }
 
-                buildTypes {
-                    debug {
-                        resValue "string", "debugName", "Some Debug Data"
-                        manifestPlaceholders = ["holder":"debug"]
-                    }
-                    release {
-                        resValue "string", "releaseName1", "Some Release Data 1"
-                        resValue "string", "releaseName2", "Some Release Data 2"
-                    }
-                }
-            }
+              buildTypes {
+                  debug {
+                      resValue "string", "debugName", "Some Debug Data"
+                      manifestPlaceholders = ["holder":"debug"]
+                  }
+                  release {
+                      resValue "string", "releaseName1", "Some Release Data 1"
+                      resValue "string", "releaseName2", "Some Release Data 2"
+                  }
+              }
+          }
 
-            dependencies {
-                // Android libraries
-                compile "com.android.support:appcompat-v7:25.0.1"
-                compile "com.android.support.constraint:constraint-layout:1.0.0-beta3"
-                // Java libraries
-                implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.0"
-            }
-            """
-          .trimIndent(),
-        temporaryFolder,
-      )
+          dependencies {
+              // Android libraries
+              compile "com.android.support:appcompat-v7:25.0.1"
+              compile "com.android.support.constraint:constraint-layout:1.0.0-beta3"
+              // Java libraries
+              implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.3.0"
+          }
+          """
+            .trimIndent(),
+          temporaryFolder,
+        )
+        .withHighlightGradualR8Api(false)
 
     checkSerialization(
       mocker,
@@ -163,7 +164,8 @@ class LintModelSerializationTest {
                     buildFolder="build"
                     javaSourceLevel="1.7"
                     compileTarget="android-25"
-                    neverShrinking="true">
+                    neverShrinking="true"
+                    highlightGradualR8Api="false">
                   <lintOptions
                       lintConfig="default-lint.xml"
                       baselineFile="baseline.xml"
@@ -224,33 +226,39 @@ class LintModelSerializationTest {
                         manifests="src/main/AndroidManifest.xml"
                         javaDirectories="src/main/java:src/main/kotlin"
                         resDirectories="src/main/res"
-                        assetsDirectories="src/main/assets"/>
+                        assetsDirectories="src/main/assets"
+                        keepRulesDirectories="src/main/keepRules"/>
                     <sourceProvider
                         manifests="src/beta/AndroidManifest.xml"
                         javaDirectories="src/beta/java:src/beta/kotlin"
                         resDirectories="src/beta/res"
-                        assetsDirectories="src/beta/assets"/>
+                        assetsDirectories="src/beta/assets"
+                        keepRulesDirectories="src/beta/keepRules"/>
                     <sourceProvider
                         manifests="src/free/AndroidManifest.xml"
                         javaDirectories="src/free/java:src/free/kotlin"
                         resDirectories="src/free/res"
-                        assetsDirectories="src/free/assets"/>
+                        assetsDirectories="src/free/assets"
+                        keepRulesDirectories="src/free/keepRules"/>
                     <sourceProvider
                         manifests="src/freeBeta/AndroidManifest.xml"
                         javaDirectories="src/freeBeta/java:src/freeBeta/kotlin"
                         resDirectories="src/freeBeta/res"
-                        assetsDirectories="src/freeBeta/assets"/>
+                        assetsDirectories="src/freeBeta/assets"
+                        keepRulesDirectories="src/freeBeta/keepRules"/>
                     <sourceProvider
                         manifests="src/debug/AndroidManifest.xml"
                         javaDirectories="src/debug/java:src/debug/kotlin"
                         resDirectories="src/debug/res"
                         assetsDirectories="src/debug/assets"
+                        keepRulesDirectories="src/debug/keepRules"
                         debugOnly="true"/>
                     <sourceProvider
                         manifests="src/freeBetaDebug/AndroidManifest.xml"
                         javaDirectories="src/freeBetaDebug/java:src/freeBetaDebug/kotlin"
                         resDirectories="src/freeBetaDebug/res"
                         assetsDirectories="src/freeBetaDebug/assets"
+                        keepRulesDirectories="src/freeBetaDebug/keepRules"
                         debugOnly="true"/>
                   </sourceProviders>
                   <testSourceProviders>
@@ -259,36 +267,42 @@ class LintModelSerializationTest {
                         javaDirectories="src/androidTest/java:src/androidTest/kotlin"
                         resDirectories="src/androidTest/res"
                         assetsDirectories="src/androidTest/assets"
+                        keepRulesDirectories="src/androidTest/keepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/test/AndroidManifest.xml"
                         javaDirectories="src/test/java:src/test/kotlin"
                         resDirectories="src/test/res"
                         assetsDirectories="src/test/assets"
+                        keepRulesDirectories="src/test/keepRules"
                         unitTest="true"/>
                     <sourceProvider
                         manifests="src/androidTestBeta/AndroidManifest.xml"
                         javaDirectories="src/androidTestBeta/java:src/androidTestBeta/kotlin"
                         resDirectories="src/androidTestBeta/res"
                         assetsDirectories="src/androidTestBeta/assets"
+                        keepRulesDirectories="src/androidTestBeta/keepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/testBeta/AndroidManifest.xml"
                         javaDirectories="src/testBeta/java:src/testBeta/kotlin"
                         resDirectories="src/testBeta/res"
                         assetsDirectories="src/testBeta/assets"
+                        keepRulesDirectories="src/testBeta/keepRules"
                         unitTest="true"/>
                     <sourceProvider
                         manifests="src/androidTestFree/AndroidManifest.xml"
                         javaDirectories="src/androidTestFree/java:src/androidTestFree/kotlin"
                         resDirectories="src/androidTestFree/res"
                         assetsDirectories="src/androidTestFree/assets"
+                        keepRulesDirectories="src/androidTestFree/keepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/testFree/AndroidManifest.xml"
                         javaDirectories="src/testFree/java:src/testFree/kotlin"
                         resDirectories="src/testFree/res"
                         assetsDirectories="src/testFree/assets"
+                        keepRulesDirectories="src/testFree/keepRules"
                         unitTest="true"/>
                   </testSourceProviders>
                   <testFixturesSourceProviders>
@@ -297,18 +311,21 @@ class LintModelSerializationTest {
                         javaDirectories="src/testFixtures/java:src/testFixtures/kotlin"
                         resDirectories="src/testFixtures/res"
                         assetsDirectories="src/testFixtures/assets"
+                        keepRulesDirectories="src/testFixtures/keepRules"
                         testFixture="true"/>
                     <sourceProvider
                         manifests="src/testFixturesBeta/AndroidManifest.xml"
                         javaDirectories="src/testFixturesBeta/java:src/testFixturesBeta/kotlin"
                         resDirectories="src/testFixturesBeta/res"
                         assetsDirectories="src/testFixturesBeta/assets"
+                        keepRulesDirectories="src/testFixturesBeta/keepRules"
                         testFixture="true"/>
                     <sourceProvider
                         manifests="src/testFixturesFree/AndroidManifest.xml"
                         javaDirectories="src/testFixturesFree/java:src/testFixturesFree/kotlin"
                         resDirectories="src/testFixturesFree/res"
                         assetsDirectories="src/testFixturesFree/assets"
+                        keepRulesDirectories="src/testFixturesFree/keepRules"
                         testFixture="true"/>
                   </testFixturesSourceProviders>
                   <resValues>
@@ -659,32 +676,38 @@ class LintModelSerializationTest {
                             manifests="src/main/AndroidManifest.xml"
                             javaDirectories="src/main/java:src/main/kotlin"
                             resDirectories="src/main/res"
-                            assetsDirectories="src/main/assets"/>
+                            assetsDirectories="src/main/assets"
+                            keepRulesDirectories="src/main/keepRules"/>
                         <sourceProvider
                             manifests="src/normal/AndroidManifest.xml"
                             javaDirectories="src/normal/java:src/normal/kotlin"
                             resDirectories="src/normal/res"
-                            assetsDirectories="src/normal/assets"/>
+                            assetsDirectories="src/normal/assets"
+                            keepRulesDirectories="src/normal/keepRules"/>
                         <sourceProvider
                             manifests="src/paid/AndroidManifest.xml"
                             javaDirectories="src/paid/java:src/paid/kotlin"
                             resDirectories="src/paid/res"
-                            assetsDirectories="src/paid/assets"/>
+                            assetsDirectories="src/paid/assets"
+                            keepRulesDirectories="src/paid/keepRules"/>
                         <sourceProvider
                             manifests="src/paidNormal/AndroidManifest.xml"
                             javaDirectories="src/paidNormal/java:src/paidNormal/kotlin"
                             resDirectories="src/paidNormal/res"
-                            assetsDirectories="src/paidNormal/assets"/>
+                            assetsDirectories="src/paidNormal/assets"
+                            keepRulesDirectories="src/paidNormal/keepRules"/>
                         <sourceProvider
                             manifests="src/release/AndroidManifest.xml"
                             javaDirectories="src/release/java:src/release/kotlin"
                             resDirectories="src/release/res"
-                            assetsDirectories="src/release/assets"/>
+                            assetsDirectories="src/release/assets"
+                            keepRulesDirectories="src/release/keepRules"/>
                         <sourceProvider
                             manifests="src/paidNormalRelease/AndroidManifest.xml"
                             javaDirectories="src/paidNormalRelease/java:src/paidNormalRelease/kotlin"
                             resDirectories="src/paidNormalRelease/res"
-                            assetsDirectories="src/paidNormalRelease/assets"/>
+                            assetsDirectories="src/paidNormalRelease/assets"
+                            keepRulesDirectories="src/paidNormalRelease/keepRules"/>
                       </sourceProviders>
                       <testSourceProviders>
                         <sourceProvider
@@ -692,36 +715,42 @@ class LintModelSerializationTest {
                             javaDirectories="src/androidTest/java:src/androidTest/kotlin"
                             resDirectories="src/androidTest/res"
                             assetsDirectories="src/androidTest/assets"
+                            keepRulesDirectories="src/androidTest/keepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/test/AndroidManifest.xml"
                             javaDirectories="src/test/java:src/test/kotlin"
                             resDirectories="src/test/res"
                             assetsDirectories="src/test/assets"
+                            keepRulesDirectories="src/test/keepRules"
                             unitTest="true"/>
                         <sourceProvider
                             manifests="src/androidTestNormal/AndroidManifest.xml"
                             javaDirectories="src/androidTestNormal/java:src/androidTestNormal/kotlin"
                             resDirectories="src/androidTestNormal/res"
                             assetsDirectories="src/androidTestNormal/assets"
+                            keepRulesDirectories="src/androidTestNormal/keepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/testNormal/AndroidManifest.xml"
                             javaDirectories="src/testNormal/java:src/testNormal/kotlin"
                             resDirectories="src/testNormal/res"
                             assetsDirectories="src/testNormal/assets"
+                            keepRulesDirectories="src/testNormal/keepRules"
                             unitTest="true"/>
                         <sourceProvider
                             manifests="src/androidTestPaid/AndroidManifest.xml"
                             javaDirectories="src/androidTestPaid/java:src/androidTestPaid/kotlin"
                             resDirectories="src/androidTestPaid/res"
                             assetsDirectories="src/androidTestPaid/assets"
+                            keepRulesDirectories="src/androidTestPaid/keepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/testPaid/AndroidManifest.xml"
                             javaDirectories="src/testPaid/java:src/testPaid/kotlin"
                             resDirectories="src/testPaid/res"
                             assetsDirectories="src/testPaid/assets"
+                            keepRulesDirectories="src/testPaid/keepRules"
                             unitTest="true"/>
                       </testSourceProviders>
                       <testFixturesSourceProviders>
@@ -730,18 +759,21 @@ class LintModelSerializationTest {
                             javaDirectories="src/testFixtures/java:src/testFixtures/kotlin"
                             resDirectories="src/testFixtures/res"
                             assetsDirectories="src/testFixtures/assets"
+                            keepRulesDirectories="src/testFixtures/keepRules"
                             testFixture="true"/>
                         <sourceProvider
                             manifests="src/testFixturesNormal/AndroidManifest.xml"
                             javaDirectories="src/testFixturesNormal/java:src/testFixturesNormal/kotlin"
                             resDirectories="src/testFixturesNormal/res"
                             assetsDirectories="src/testFixturesNormal/assets"
+                            keepRulesDirectories="src/testFixturesNormal/keepRules"
                             testFixture="true"/>
                         <sourceProvider
                             manifests="src/testFixturesPaid/AndroidManifest.xml"
                             javaDirectories="src/testFixturesPaid/java:src/testFixturesPaid/kotlin"
                             resDirectories="src/testFixturesPaid/res"
                             assetsDirectories="src/testFixturesPaid/assets"
+                            keepRulesDirectories="src/testFixturesPaid/keepRules"
                             testFixture="true"/>
                       </testFixturesSourceProviders>
                       <resValues>
@@ -1153,11 +1185,7 @@ class LintModelSerializationTest {
   fun testLintModelSerializationFileAdapterRootHandling() {
     val temp = temporaryFolder.newFolder()
     val projectDirectory = temp.resolve("projectDir").createDirectories()
-    projectDirectory
-      .resolve("src/main/")
-      .createDirectories()
-      .resolve("AndroidManifest.xml")
-      .writeText("Fake Android manifest")
+    projectDirectory.resolve("src/main/").createDirectories().resolve("AndroidManifest.xml").writeText("Fake Android manifest")
     val buildDirectory = temp.resolve("buildDir").createDirectories()
     val modelsDir = buildDirectory.resolve("intermediates/lint-models").createDirectories()
     modelsDir
@@ -1205,9 +1233,7 @@ class LintModelSerializationTest {
     val module = LintModelSerialization.readModule(source = modelsDir, readDependencies = false)
 
     val manifestFile = module.defaultVariant()!!.sourceProviders.first().manifestFiles.first()
-    assertWithMessage(
-        "Source file should be resolved relative to the project directory, not the source directory"
-      )
+    assertWithMessage("Source file should be resolved relative to the project directory, not the source directory")
       .about(PathSubject.paths())
       .that(manifestFile.toPath())
       .hasContents("Fake Android manifest")
@@ -1220,17 +1246,13 @@ class LintModelSerializationTest {
     val buildDirectory = temp.resolve("buildDir").createDirectories()
     val modelsDir = buildDirectory.resolve("intermediates/lint-models").createDirectories()
     val mergedManifest =
-      buildDirectory
-        .resolve("intermediates/merged_manifest/debug")
-        .createDirectories()
-        .resolve("AndroidManifest.xml")
-        .apply { writeText("Merged manifest") }
+      buildDirectory.resolve("intermediates/merged_manifest/debug").createDirectories().resolve("AndroidManifest.xml").apply {
+        writeText("Merged manifest")
+      }
     val mergeReport =
-      buildDirectory
-        .resolve("outputs/reports/manifest/debug")
-        .createDirectories()
-        .resolve("ManifestMergeReport.xml")
-        .apply { writeText("Manifest merge report") }
+      buildDirectory.resolve("outputs/reports/manifest/debug").createDirectories().resolve("ManifestMergeReport.xml").apply {
+        writeText("Manifest merge report")
+      }
     modelsDir
       .resolve("module.xml")
       .writeText(
@@ -1281,8 +1303,8 @@ class LintModelSerializationTest {
   }
 
   /**
-   * Check that special references to output files "stderr" and "stdout" are not turned into actual
-   * files. Regression test for https://issuetracker.google.com/174480831.
+   * Check that special references to output files "stderr" and "stdout" are not turned into actual files. Regression test for
+   * https://issuetracker.google.com/174480831.
    */
   @Test
   fun testSpecialHandlingOfStderrAndStdout() {
@@ -1414,15 +1436,9 @@ class LintModelSerializationTest {
     // is written correctly.
     modelsDir.listFiles()?.forEach { Files.delete(it.toPath()) }
 
-    LintModelSerialization.writeModule(
-      module,
-      modelsDir,
-      listOf(debugVariant1),
-      writeDependencies = false,
-    )
+    LintModelSerialization.writeModule(module, modelsDir, listOf(debugVariant1), writeDependencies = false)
 
-    val debugVariant2 =
-      LintModelSerialization.readModule(modelsDir, readDependencies = false).defaultVariant()!!
+    val debugVariant2 = LintModelSerialization.readModule(modelsDir, readDependencies = false).defaultVariant()!!
 
     assertWithMessage("partialResultsDir is written and read correctly")
       .about(PathSubject.paths())
@@ -1437,17 +1453,13 @@ class LintModelSerializationTest {
     val buildDirectory = temp.resolve("buildDir").createDirectories()
     val modelsDir = buildDirectory.resolve("intermediates/lint-models").createDirectories()
     val mergedManifest =
-      buildDirectory
-        .resolve("intermediates/merged_manifest/debug")
-        .createDirectories()
-        .resolve("AndroidManifest.xml")
-        .apply { writeText("Merged manifest") }
+      buildDirectory.resolve("intermediates/merged_manifest/debug").createDirectories().resolve("AndroidManifest.xml").apply {
+        writeText("Merged manifest")
+      }
     val mergeReport =
-      buildDirectory
-        .resolve("outputs/reports/manifest/debug")
-        .createDirectories()
-        .resolve("ManifestMergeReport.xml")
-        .apply { writeText("Manifest merge report") }
+      buildDirectory.resolve("outputs/reports/manifest/debug").createDirectories().resolve("ManifestMergeReport.xml").apply {
+        writeText("Manifest merge report")
+      }
     modelsDir
       .resolve("module.xml")
       .writeText(
@@ -1467,10 +1479,8 @@ class LintModelSerializationTest {
                 </lint-module>"""
       )
     val currentPreviewFirstLetter = SdkVersionInfo.getBuildCode(HIGHEST_KNOWN_API)!!.first()
-    val futurePreviewPlus1 =
-      AndroidVersion(HIGHEST_KNOWN_API, (currentPreviewFirstLetter + 1) + "CodeName")
-    val futurePreviewPlus2 =
-      AndroidVersion(HIGHEST_KNOWN_API + 1, (currentPreviewFirstLetter + 2) + "CodeName")
+    val futurePreviewPlus1 = AndroidVersion(HIGHEST_KNOWN_API, (currentPreviewFirstLetter + 1) + "CodeName")
+    val futurePreviewPlus2 = AndroidVersion(HIGHEST_KNOWN_API + 1, (currentPreviewFirstLetter + 2) + "CodeName")
     val debugXml =
       """<variant
                     name="debug"
@@ -1507,17 +1517,13 @@ class LintModelSerializationTest {
     val buildDirectory = temp.resolve("buildDir").createDirectories()
     val modelsDir = buildDirectory.resolve("intermediates/lint-models").createDirectories()
     val mergedManifest =
-      buildDirectory
-        .resolve("intermediates/merged_manifest/debug")
-        .createDirectories()
-        .resolve("AndroidManifest.xml")
-        .apply { writeText("Merged manifest") }
+      buildDirectory.resolve("intermediates/merged_manifest/debug").createDirectories().resolve("AndroidManifest.xml").apply {
+        writeText("Merged manifest")
+      }
     val mergeReport =
-      buildDirectory
-        .resolve("outputs/reports/manifest/debug")
-        .createDirectories()
-        .resolve("ManifestMergeReport.xml")
-        .apply { writeText("Manifest merge report") }
+      buildDirectory.resolve("outputs/reports/manifest/debug").createDirectories().resolve("ManifestMergeReport.xml").apply {
+        writeText("Manifest merge report")
+      }
     modelsDir
       .resolve("module.xml")
       .writeText(
@@ -1597,9 +1603,7 @@ class LintModelSerializationTest {
   private fun tryParse(@Language("XML") xml: String, expectedErrors: String? = null) {
     try {
       val reader = StringReader(xml)
-      LintModelSerialization.readModule(
-        LintModelSerializationStringAdapter(reader = { _, _, _ -> reader })
-      )
+      LintModelSerialization.readModule(LintModelSerializationStringAdapter(reader = { _, _, _ -> reader }))
       if (expectedErrors != null) {
         fail("Expected failure, got valid module instead")
       }
@@ -1629,8 +1633,7 @@ class LintModelSerializationTest {
 
     for (fileType in TargetFile.values()) {
       for (variant in module.variants) {
-        for (artifactName in
-          listOf("artifact", "testArtifact", "androidTestArtifact", "testFixturesArtifact")) {
+        for (artifactName in listOf("artifact", "testArtifact", "androidTestArtifact", "testFixturesArtifact")) {
           val mapKey = getMapKey(fileType, variant.name, artifactName)
           val writtenXml: String = xml[mapKey] ?: continue
           assertValidXml(writtenXml)
@@ -1658,11 +1661,7 @@ class LintModelSerializationTest {
       )
     val newXml = writeModule(newModule)
     for ((key, contents) in xml) {
-      assertEquals(
-        "XML parsed and written back out does not match original for file " + key,
-        contents,
-        newXml[key],
-      )
+      assertEquals("XML parsed and written back out does not match original for file " + key, contents, newXml[key])
     }
   }
 
@@ -1678,20 +1677,13 @@ class LintModelSerializationTest {
     }
   }
 
-  private fun getMapKey(
-    target: TargetFile,
-    variantName: String = "",
-    artifactName: String = "",
-  ): String {
+  private fun getMapKey(target: TargetFile, variantName: String = "", artifactName: String = ""): String {
     //noinspection DefaultLocale
     val key = StringBuilder(target.name.lowercase())
     if (variantName.isNotEmpty() && target != TargetFile.MODULE) {
       key.append("-")
       key.append(variantName)
-      if (
-        artifactName.isNotEmpty() &&
-          (target == TargetFile.DEPENDENCIES || target == TargetFile.LIBRARY_TABLE)
-      ) {
+      if (artifactName.isNotEmpty() && (target == TargetFile.DEPENDENCIES || target == TargetFile.LIBRARY_TABLE)) {
         key.append("-")
         key.append(artifactName)
       }
@@ -1716,31 +1708,23 @@ class LintModelSerializationTest {
 
   private fun writeVariant(variant: LintModelVariant): String {
     val writer = StringWriter()
-    LintModelSerialization.writeVariant(
-      variant,
-      LintModelSerializationStringAdapter(writer = { _, _, _ -> writer }),
-    )
+    LintModelSerialization.writeVariant(variant, LintModelSerializationStringAdapter(writer = { _, _, _ -> writer }))
     return writer.toString()
   }
 
   private class LintModelSerializationStringAdapter(
     override val root: File? = null,
-    private val reader: (TargetFile, String, String) -> Reader = { _, _, _ ->
-      StringReader("<error>")
-    },
+    private val reader: (TargetFile, String, String) -> Reader = { _, _, _ -> StringReader("<error>") },
     private val writer: (TargetFile, String, String) -> Writer = { _, _, _ -> StringWriter() },
     override val pathVariables: PathVariables = PathVariables(),
   ) : LintModelSerialization.LintModelSerializationAdapter {
     override fun file(target: TargetFile, variantName: String, artifactName: String): File {
-      return if (variantName.isNotEmpty()) File("variant-$variantName.xml")
-      else File("testfile.xml")
+      return if (variantName.isNotEmpty()) File("variant-$variantName.xml") else File("testfile.xml")
     }
 
-    override fun getReader(target: TargetFile, variantName: String, artifactName: String) =
-      reader(target, variantName, artifactName)
+    override fun getReader(target: TargetFile, variantName: String, artifactName: String) = reader(target, variantName, artifactName)
 
-    override fun getWriter(target: TargetFile, variantName: String, artifactName: String) =
-      writer(target, variantName, artifactName)
+    override fun getWriter(target: TargetFile, variantName: String, artifactName: String) = writer(target, variantName, artifactName)
   }
 
   private fun assertNoTextNodes(element: Element) {

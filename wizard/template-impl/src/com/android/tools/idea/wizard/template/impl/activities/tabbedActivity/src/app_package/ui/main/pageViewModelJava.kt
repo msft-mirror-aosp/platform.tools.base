@@ -18,10 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.sr
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun pageViewModelJava(
-  packageName: String,
-  useAndroidX: Boolean) =
-
+fun pageViewModelJava(packageName: String, useAndroidX: Boolean) =
   """package ${packageName}.ui.main;
 
 import static androidx.lifecycle.Transformations.map;

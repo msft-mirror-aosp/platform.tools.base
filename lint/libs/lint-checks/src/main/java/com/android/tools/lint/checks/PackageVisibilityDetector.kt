@@ -41,17 +41,13 @@ import org.jetbrains.uast.UCallExpression
 import org.w3c.dom.Element
 
 /**
- * Android 11 introduces new app visibility restrictions: apps must declare extra permissions when
- * they want to inspect other apps on the device. This detector helps increase visibility into the
- * new restrictions.
+ * Android 11 introduces new app visibility restrictions: apps must declare extra permissions when they want to inspect other apps on the
+ * device. This detector helps increase visibility into the new restrictions.
  */
 class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
   private var cachedQueryPermissions: QueryPermissions? = null
 
-  private data class QueryPermissions(
-    val canQuerySomePackages: Boolean,
-    val canQueryAllPackages: Boolean,
-  )
+  private data class QueryPermissions(val canQuerySomePackages: Boolean, val canQueryAllPackages: Boolean)
 
   // ---- Implements XmlScanner ----
   // Checks for usage of the QUERY_ALL_PACKAGES permission (discouraged for most apps).
@@ -66,9 +62,9 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
           QUERY_ALL_PACKAGES_PERMISSION,
           context.getLocation(permission),
           """
-                A `<queries>` declaration should generally be used instead of QUERY_ALL_PACKAGES; \
-                see https://g.co/dev/packagevisibility for details
-                """
+          A `<queries>` declaration should generally be used instead of QUERY_ALL_PACKAGES; \
+          see https://g.co/dev/packagevisibility for details
+          """
             .trimIndent(),
         )
       context.report(incident, targetSdkAtLeast(INITIAL_API))
@@ -121,9 +117,9 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
           node.methodIdentifier ?: node,
           context.getLocation(node.methodIdentifier ?: node),
           """
-                As of Android 11, this method no longer returns information about all apps; \
-                see https://g.co/dev/packagevisibility for details
-                """
+          As of Android 11, this method no longer returns information about all apps; \
+          see https://g.co/dev/packagevisibility for details
+          """
             .trimIndent(),
         )
       context.report(incident, map().put(KEY_REQ_QUERY_ALL, true))
@@ -134,9 +130,9 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
           node.methodIdentifier ?: node,
           context.getLocation(node.methodIdentifier ?: node),
           """
-                Consider adding a `<queries>` declaration to your manifest when calling this \
-                method; see https://g.co/dev/packagevisibility for details
-                """
+          Consider adding a `<queries>` declaration to your manifest when calling this \
+          method; see https://g.co/dev/packagevisibility for details
+          """
             .trimIndent(),
         )
       context.report(incident, map().put(KEY_REQ_QUERY_ALL, false))
@@ -147,8 +143,7 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
     if (context.mainProject.targetSdk >= INITIAL_API) {
       val requirePermissions = map.getBoolean(KEY_REQ_QUERY_ALL, null) ?: return true
       val permissions = getQueryPermissions(context) ?: return false
-      return !(if (requirePermissions) permissions.canQueryAllPackages
-      else permissions.canQuerySomePackages)
+      return !(if (requirePermissions) permissions.canQueryAllPackages else permissions.canQuerySomePackages)
     }
     return false
   }
@@ -177,9 +172,7 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
       }
     }
 
-    return QueryPermissions(canQuerySomePackages, canQueryAllPackages).also {
-      cachedQueryPermissions = it
-    }
+    return QueryPermissions(canQuerySomePackages, canQueryAllPackages).also { cachedQueryPermissions = it }
   }
 
   companion object {
@@ -203,8 +196,7 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
         category = Category.COMPLIANCE,
         priority = 8,
         severity = Severity.ERROR,
-        implementation =
-          Implementation(PackageVisibilityDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(PackageVisibilityDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
         moreInfo = "https://g.co/dev/packagevisibility",
       )
@@ -229,11 +221,7 @@ class PackageVisibilityDetector : Detector(), XmlScanner, SourceCodeScanner {
         priority = 5,
         severity = Severity.WARNING,
         implementation =
-          Implementation(
-            PackageVisibilityDetector::class.java,
-            EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-            Scope.JAVA_FILE_SCOPE,
-          ),
+          Implementation(PackageVisibilityDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST), Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
         moreInfo = "https://g.co/dev/packagevisibility",
       )

@@ -23,41 +23,32 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.file.RegularFile
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 class AnalyticsEnabledMultipleArtifactTypeOutOperationRequestTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: MultipleArtifactTypeOutOperationRequest<RegularFile> = mock()
+  private val delegate: MultipleArtifactTypeOutOperationRequest<RegularFile> = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<RegularFile> by lazy {
-        AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<RegularFile>(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<RegularFile> by lazy {
+    AnalyticsEnabledMultipleArtifactTypeOutOperationRequest<RegularFile>(delegate, stats)
+  }
 
-    @Test
-    fun testToListenTo() {
+  @Test
+  fun testToListenTo() {
 
-        proxy.toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD)
+    proxy.toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-            listOf(
-                VariantPropertiesMethodType.MULTIPLE_TO_LISTEN_TO_VALUE
-            )
-        )
-        verify(delegate, times(1)).toListenTo(
-            MultipleArtifact.MULTIDEX_KEEP_PROGUARD,
-        )
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(listOf(VariantPropertiesMethodType.MULTIPLE_TO_LISTEN_TO_VALUE))
+    verify(delegate, times(1)).toListenTo(MultipleArtifact.MULTIDEX_KEEP_PROGUARD)
+  }
 }

@@ -17,13 +17,8 @@
 package com.android.build.gradle.integration.common.fixture.project.builder
 
 @GradleDefinitionDsl
-interface ConstraintsBuilder: DependencyConfigurations {
+interface ConstraintsBuilder : DependencyConfigurations {
 
-    /**
-     * For applying constraints on the runtime configuration.
-     */
-    fun runtime(
-        dependency: Any,
-        action: (DependencyBuilder.() -> Unit)?
-    )
+  /** For applying constraints on the runtime configuration. */
+  fun runtime(dependency: Any, action: (DependencyBuilder.() -> Unit)?)
 }

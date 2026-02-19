@@ -21,16 +21,9 @@ import com.android.builder.model.v2.ide.ProjectInfo
 
 interface ProjectGraph : AndroidModel {
 
-    /**
-     * Project path -> variant name,
-     * Contains all reachable projects from the given root and their resolved variants.
-     */
-    @Deprecated("Model with missing data. Use resolvedVariantsWithProjectInfo")
-    val resolvedVariants: Map<String, String>?
+  /** Project path -> variant name, Contains all reachable projects from the given root and their resolved variants. */
+  @Deprecated("Model with missing data. Use resolvedVariantsWithProjectInfo") val resolvedVariants: Map<String, String>?
 
-    /**
-     * Project info -> variant name,
-     * Contains all reachable projects from the given root and  their resolved variants.
-     */
-    val resolvedVariantsWithProjectInfo: Map<ProjectInfo, String>?
+  /** Project info -> variant name, Contains all reachable projects from the given root and their resolved variants. */
+  val resolvedVariantsWithProjectInfo: Map<ProjectInfo, String>?
 }

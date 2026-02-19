@@ -22,13 +22,13 @@ import java.io.InputStream
 import java.io.OutputStream
 
 private class NonClosingOutputStream(out: OutputStream) : FilterOutputStream(out) {
-    override fun close() {
-        flush()
-    }
+  override fun close() {
+    flush()
+  }
 
-    override fun write(b: ByteArray, off: Int, len: Int) {
-        out.write(b, off, len)
-    }
+  override fun write(b: ByteArray, off: Int, len: Int) {
+    out.write(b, off, len)
+  }
 }
 
 /**
@@ -46,7 +46,5 @@ fun OutputStream.nonClosing(): OutputStream = NonClosingOutputStream(this)
  * See [NonClosingInputStream]
  */
 fun InputStream.nonClosing(): InputStream {
-    return NonClosingInputStream(this).apply {
-        closeBehavior = NonClosingInputStream.CloseBehavior.IGNORE
-    }
+  return NonClosingInputStream(this).apply { closeBehavior = NonClosingInputStream.CloseBehavior.IGNORE }
 }

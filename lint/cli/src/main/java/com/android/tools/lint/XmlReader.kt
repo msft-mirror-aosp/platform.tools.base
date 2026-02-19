@@ -58,12 +58,7 @@ import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 
 /** The [XmlReader] can restore the state saved by [XmlWriter] */
-class XmlReader(
-  private val client: LintCliClient,
-  private val registry: IssueRegistry,
-  private val project: Project?,
-  xmlFile: File,
-) {
+class XmlReader(private val client: LintCliClient, private val registry: IssueRegistry, private val project: Project?, xmlFile: File) {
   private val incidents = mutableListOf<Incident>()
   private var data: MutableMap<Issue, LintMap>? = null
   private var configs: MutableMap<String, Severity>? = null
@@ -294,9 +289,7 @@ class XmlReader(
     // Not using a builder because we want to mutate the
     // list of fixes after construction
     val fixList = ArrayList<LintFix>()
-    val type =
-      if (tag == TAG_FIX_ALTERNATIVES) LintFix.GroupType.ALTERNATIVES
-      else LintFix.GroupType.COMPOSITE
+    val type = if (tag == TAG_FIX_ALTERNATIVES) LintFix.GroupType.ALTERNATIVES else LintFix.GroupType.COMPOSITE
     val newFix = LintFix.LintFixGroup(displayName, familyName, type, fixList, robot, independent)
     newFix.autoFix(robot, independent)
     addFix(newFix)
@@ -564,18 +557,8 @@ class XmlReader(
         Location.create(file)
       } else
         try {
-          val start =
-            DefaultPosition(
-              if (line != null) line.toInt() - 1 else -1,
-              column.toInt() - 1,
-              startOffset?.toInt() ?: -1,
-            )
-          val end =
-            DefaultPosition(
-              if (endLine != null) endLine.toInt() - 1 else -1,
-              endColumn.toInt() - 1,
-              endOffset?.toInt() ?: -1,
-            )
+          val start = DefaultPosition(if (line != null) line.toInt() - 1 else -1, column.toInt() - 1, startOffset?.toInt() ?: -1)
+          val end = DefaultPosition(if (endLine != null) endLine.toInt() - 1 else -1, endColumn.toInt() - 1, endOffset?.toInt() ?: -1)
           Location.create(file, start, end)
         } catch (e: NumberFormatException) {
           error("Invalid number: $e")

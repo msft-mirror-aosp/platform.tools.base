@@ -27,10 +27,6 @@ import com.android.testutils.apk.Zip
 import com.android.utils.PathUtils
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
-import org.junit.Assert.fail
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.io.IOException
 import java.lang.reflect.Field
@@ -42,371 +38,318 @@ import java.util.zip.ZipFile
 import javax.tools.JavaFileObject
 import javax.tools.ToolProvider
 import kotlin.streams.toList
+import org.junit.Assert.fail
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class BytecodeRClassWriterTest {
-    @Rule
-    @JvmField
-    var mTemporaryFolder = TemporaryFolder()
+  @Rule @JvmField var mTemporaryFolder = TemporaryFolder()
 
-    @Test
-    fun generateRFilesTest() {
-        val rJar = mTemporaryFolder.newFile("R.jar")
+  @Test
+  fun generateRFilesTest() {
+    val rJar = mTemporaryFolder.newFile("R.jar")
 
-        val symbols = SymbolTable.builder()
-                .tablePackage("com.example.foo")
-                .add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x0))
-                .add(
-                    Symbol.normalSymbol(
-                                ResourceType.DRAWABLE,
-                                "bar",
-                                0x1))
-                .add(Symbol.attributeSymbol("beep", 0x3))
-                .add(Symbol.attributeSymbol("boop", 0x5))
-                .add(
-                    Symbol.styleableSymbol(
-                                "styles",
-                                ImmutableList.of(0x2, 0x4),
-                                ImmutableList.of("style1", "style2")))
-                .build()
+    val symbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.foo")
+        .add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x0))
+        .add(Symbol.normalSymbol(ResourceType.DRAWABLE, "bar", 0x1))
+        .add(Symbol.attributeSymbol("beep", 0x3))
+        .add(Symbol.attributeSymbol("boop", 0x5))
+        .add(Symbol.styleableSymbol("styles", ImmutableList.of(0x2, 0x4), ImmutableList.of("style1", "style2")))
+        .build()
 
-        exportToCompiledJava(listOf(symbols), rJar.toPath())
+    exportToCompiledJava(listOf(symbols), rJar.toPath())
 
-        Zip(rJar).use {
-            assertThat(it.entries).hasSize(5)
+    Zip(rJar).use {
+      assertThat(it.entries).hasSize(5)
 
-            assertThat(it.entries.map { f -> f.toString() }).containsExactly(
-                    "/com/example/foo/R.class",
-                    "/com/example/foo/R\$id.class",
-                    "/com/example/foo/R\$drawable.class",
-                    "/com/example/foo/R\$styleable.class",
-                    "/com/example/foo/R\$attr.class")
-        }
-    }
-
-    @Test
-    fun testSamePackageSymbolTablesAreMerged() {
-        val rJar = mTemporaryFolder.newFile("R.jar")
-
-        val symbolTable1 = SymbolTable.builder()
-            .tablePackage("com.example.foo")
-            .add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x0))
-            .build()
-
-        val symbolTable2 = SymbolTable.builder()
-            .tablePackage("com.example.foo")
-            .add(Symbol.normalSymbol(ResourceType.ID, "bar", 0x1))
-            .build()
-
-        exportToCompiledJava(listOf(symbolTable1, symbolTable2), rJar.toPath())
-
-        Zip(rJar).use {
-            assertThat(it.entries).hasSize(2)
-
-            assertThat(it.entries.map { f -> f.toString() }).containsExactly(
-                "/com/example/foo/R.class",
-                "/com/example/foo/R\$id.class")
-        }
-
-        URLClassLoader(arrayOf(rJar.toURI().toURL()), null).use { rJarClassLoader ->
-            val actualFields = loadFields(rJarClassLoader, "com.example.foo.R\$id")
-            assertThat(actualFields).containsExactly("int foo = 0", "int bar = 1")
-        }
-    }
-
-    @Test
-    fun generateRFilesContentTest() {
-        val javacCompiledDir = mTemporaryFolder.newFolder("javac-compiled")
-        val generatedRJar = mTemporaryFolder.newFile("R.jar")
-        val rDotJavaDir = mTemporaryFolder.newFolder("source")
-
-        val appSymbols = SymbolTable.builder()
-                .tablePackage("com.example.foo.app")
-                .add(Symbol.attributeSymbol("beep", 0x1))
-                .add(Symbol.attributeSymbol("boop", 0x3))
-                .add(
-                    Symbol.styleableSymbol(
-                                "styles",
-                        ImmutableList.of(0x1004, 0x1002),
-                                ImmutableList.of("styles_boop", "styles_beep")))
-                .add(
-                    // number of children is > Byte.MAX_VALUE as a regression test for
-                    // https://issuetracker.google.com/142467886
-                    Symbol.styleableSymbol(
-                        "styleable_with_many_children",
-                        ImmutableList.copyOf(1..200),
-                        ImmutableList.copyOf((1..200).map { "child_$it" })))
-                .add(Symbol.normalSymbol(ResourceType.STRING, "libstring", 0x4))
-                .build()
-
-        val librarySymbols = SymbolTable.builder()
-                .tablePackage("com.example.foo.lib")
-                .add(Symbol.normalSymbol(ResourceType.STRING, "libstring",0x4))
-                .build()
-
-        // The existing path: Symbol table --com.android.builder.symbols.exportToJava--> R.java --javac--> R classes
-        // Generate the R.java file.
-        val appRDotJava = SymbolIo.exportToJava(appSymbols, rDotJavaDir, false)
-        val libRDotJava = SymbolIo.exportToJava(librarySymbols, rDotJavaDir, false)
-        val javac = ToolProvider.getSystemJavaCompiler()
-        val manager = javac.getStandardFileManager(null, null, null)
-        // Use javac to compile R.java into R.class, R$id.class. etc.
-        val source = manager.getJavaFileObjectsFromFiles(ImmutableList.of(libRDotJava, appRDotJava)) as Iterable<JavaFileObject>
-        javac.getTask(null,
-                manager, null,
-                ImmutableList.of("-d", javacCompiledDir.absolutePath), null,
-                source)
-                .call()
-
-        val expectedClasses = listOf(
-                "com.example.foo.lib.R",
-                "com.example.foo.lib.R\$string",
-                "com.example.foo.app.R",
-                "com.example.foo.app.R\$string",
-                "com.example.foo.app.R\$styleable",
-                "com.example.foo.app.R\$attr")
-
-        // Sanity check
-        assertThat(files(javacCompiledDir.toPath())).containsExactlyElementsIn(expectedClasses)
-
-        // And the method under test.
-        exportToCompiledJava(listOf(appSymbols, librarySymbols), generatedRJar.toPath())
-
-        Zip(generatedRJar).use {
-            assertThat(it.entries.map { className(it.root.relativize(it)) })
-                    .containsExactlyElementsIn(expectedClasses)
-        }
-        URLClassLoader(arrayOf(javacCompiledDir.toURI().toURL()), null).use { expectedClassLoader ->
-            URLClassLoader(arrayOf(generatedRJar.toURI().toURL()), null).use { actualClassLoader ->
-                for (javaName in expectedClasses) {
-                    val expectedFields = loadFields(expectedClassLoader, javaName)
-                    val actualFields = loadFields(actualClassLoader, javaName)
-                    assertThat(actualFields).containsExactlyElementsIn(expectedFields)
-                }
-            }
-        }
-
-        // Check that generatedRJar's entries aren't compressed
-        ZipFile(generatedRJar).use { zip ->
-            val entries = zip.entries()
-            while (entries.hasMoreElements()) {
-                val entry = entries.nextElement()
-                assertThat(entry.compressedSize).isAtLeast(entry.size)
-            }
-        }
-    }
-
-    @Test
-    fun testZeroValues() {
-        val rJar = mTemporaryFolder.newFile("R.jar")
-
-        val androidSymbols = SymbolTable.builder()
-                .tablePackage("android")
-                .add(Symbol.attributeSymbol("zero", 0))
-                .add(Symbol.attributeSymbol("unstable", 99))
-                .add(Symbol.attributeSymbol("stable", 33))
-                .build()
-
-        val appSymbols = SymbolTable.builder()
-                .tablePackage("com.example.foo.app")
-                .add(
-                        Symbol.styleableSymbol(
-                                "styles",
-                                ImmutableList.of(0, 42, 0),
-                                ImmutableList.of("android_unstable", "android.stable", "local")))
-                .build()
-
-        exportToCompiledJava(listOf(androidSymbols, appSymbols), rJar.toPath())
-
-        Zip(rJar).use {
-            assertThat(it.entries).hasSize(4)
-
-            assertThat(it.entries.map { f -> f.toString() }).containsExactly(
-                    "/android/R.class",
-                    "/android/R\$attr.class",
-                    "/com/example/foo/app/R.class",
-                    "/com/example/foo/app/R\$styleable.class")
-        }
-
-        URLClassLoader(arrayOf(rJar.toURI().toURL()), null).use { rJarClassLoader ->
-            // First of all, the bytecode should be able to load properly
-            val actualFields = loadFields(rJarClassLoader, "com.example.foo.app.R\$styleable")
-            // Find the styleable. The value of "unstable" should be loaded from the reference to
-            // android.R.unstable - even though when creating the app's SymbolTable the value of 0
-            // was specified.
-            assertThat(actualFields).containsExactly(
-                    "int[] styles = [99,42,0]",
-                    // 0 is replaced with the reference (99), loaded at runtime to the new value.
-                    // (See the corresponding value in the int array above)
-                    "int styles_android_unstable = 0",
-                    // despite being an android attr this one had non-zero value (stable) so keep
-                    // the value we already have (42) without using the reference (33).
-                    "int styles_android_stable = 1",
-                    // Check that if for whatever other reason we have a non-android attr with zero
-                    // value it doesn't get updated.
-                    "int styles_local = 2")
-        }
-    }
-
-    @Test
-    fun testParseArrayLiteral() {
-        assertThat(parseArrayLiteral(0, "{}").asList()).isEmpty()
-        assertThat(parseArrayLiteral(1, "{0x7f04002c}").asList())
-                .containsExactly(0x7f04002c)
-        assertThat(parseArrayLiteral(1, "{0x70}").asList())
-                .containsExactly(0x70)
-        assertThat(parseArrayLiteral(5, "{ 0x72, 0x73, 0x74, 0x71, 0x70 }").asList())
-                .containsExactly(0x72, 0x73, 0x74, 0x71, 0x70)
-        assertThat(parseArrayLiteral(2, "{     0x71    ,    0x72   }").asList())
-                .containsExactly(0x71, 0x72)
-
-        try {
-            parseArrayLiteral(3, "{0x1,0x2}")
-            fail("Expected failure - too few listed values")
-        } catch (e: IOException) {
-            assertThat(e).hasMessageThat().contains("should have 3 item(s)")
-        }
-
-        try {
-            parseArrayLiteral(1, "{0x1,0x2}")
-            fail("Expected failure - too many listed values")
-        } catch (e: IOException) {
-            assertThat(e).hasMessageThat().contains("should have 1 item(s)")
-        }
-
-    }
-
-    @Test
-    fun testValueToInt() {
-        assertThat(valueStringToInt("0x7f04002c")).isEqualTo(0x7f04002c)
-    }
-
-    @Test
-    fun rPackageSmokeTest() {
-        val rJar = mTemporaryFolder.newFile("R.jar")
-        val packageJar1 = mTemporaryFolder.newFile("SdkRPackage.jar")
-        val packageJar2 = mTemporaryFolder.newFile("AppBackwardCompatRPackage.jar")
-
-        val symbols = SymbolTable.builder()
-                .tablePackage("com.example.privacysandboxenabledsdk")
-                .add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x7f000001))
-                .add(
-                        Symbol.styleableSymbol(
-                                "styles",
-                                ImmutableList.of(0x7f000002, 0x7f000003),
-                                ImmutableList.of("style1", "style2")))
-                .build()
-
-        val privacySandboxSdkApplicationId = "com.example.privacysandboxenabledsdk.production"
-
-        exportToCompiledJava(listOf(symbols), rJar.toPath(), rPackage = privacySandboxSdkApplicationId)
-        writeRPackages(mapOf(privacySandboxSdkApplicationId to 0x7f000000), packageJar1.toPath())
-        writeRPackages(mapOf(privacySandboxSdkApplicationId to 0x7e000000), packageJar2.toPath())
-
-        fun classloaderOf(vararg jars: File) = URLClassLoader(jars.map { it.toURI().toURL() }.toTypedArray())
-
-        classloaderOf(rJar, packageJar1).use {
-            assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$id"))
-                    .containsExactly("int foo = 0x7F000001")
-            assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$styleable"))
-                    .containsExactly(
-                            "int[] styles = [0x7F000002,0x7F000003]",
-                            "int styles_style1 = 0",
-                            "int styles_style2 = 1",
-                    )
-        }
-        classloaderOf(rJar, packageJar2).use {
-            assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$id"))
-                    .containsExactly("int foo = 0x7E000001")
-            assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$styleable"))
-                    .containsExactly(
-                            "int[] styles = [0x7E000002,0x7E000003]",
-                            "int styles_style1 = 0",
-                            "int styles_style2 = 1",
-                    )
-        }
-    }
-
-    @Test
-    fun checkAndroidStyleableAttrsNotRepackagedInSdks() {
-        val rJar = mTemporaryFolder.newFile("R.jar")
-        val additionalRJar = mTemporaryFolder.newFile("additionalR.jar")
-        val androidSymbols =
-            SymbolTable.builder()
-                .tablePackage("android")
-                .add(Symbol.attributeSymbol("background", 0x1010109))
-                .add(Symbol.attributeSymbol("foreground", 0x10100d4))
-                .build()
-
-        val libSymbols =
-            SymbolTable.builder()
-                .tablePackage("com.example.sdk")
-                .add(
-                    Symbol.styleableSymbol(
-                        "styles",
-                        ImmutableList.of(0x1010109, 0x10100d4, 0x1000e, 0x7f000002),
-                        ImmutableList.of(
-                            "android_background",
-                            "android_foreground",
-                            "lib_attr",
-                            "sdk_attr"
-                        )
-                    )
-                )
-                .build()
-
-        exportToCompiledJava(
-            listOf(androidSymbols, libSymbols),
-            rJar.toPath(),
-            rPackage = "com.example.sdk"
+      assertThat(it.entries.map { f -> f.toString() })
+        .containsExactly(
+          "/com/example/foo/R.class",
+          "/com/example/foo/R\$id.class",
+          "/com/example/foo/R\$drawable.class",
+          "/com/example/foo/R\$styleable.class",
+          "/com/example/foo/R\$attr.class",
         )
-        writeRPackages(mapOf("com.example.sdk" to 0x82), additionalRJar.toPath())
+    }
+  }
 
-        URLClassLoader(arrayOf(rJar.toURI().toURL(), additionalRJar.toURI().toURL()), null).use {
-            rJarClassLoader ->
-            val actualFields = loadFields(rJarClassLoader, "com.example.sdk.R\$styleable")
-            assertThat(actualFields)
-                .containsExactly(
-                    "int[] styles = [16843017,16842964,65550,132]",
-                    "int styles_android_background = 0",
-                    "int styles_android_foreground = 1",
-                    "int styles_lib_attr = 2",
-                    "int styles_sdk_attr = 3"
-                )
+  @Test
+  fun testSamePackageSymbolTablesAreMerged() {
+    val rJar = mTemporaryFolder.newFile("R.jar")
+
+    val symbolTable1 = SymbolTable.builder().tablePackage("com.example.foo").add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x0)).build()
+
+    val symbolTable2 = SymbolTable.builder().tablePackage("com.example.foo").add(Symbol.normalSymbol(ResourceType.ID, "bar", 0x1)).build()
+
+    exportToCompiledJava(listOf(symbolTable1, symbolTable2), rJar.toPath())
+
+    Zip(rJar).use {
+      assertThat(it.entries).hasSize(2)
+
+      assertThat(it.entries.map { f -> f.toString() }).containsExactly("/com/example/foo/R.class", "/com/example/foo/R\$id.class")
+    }
+
+    URLClassLoader(arrayOf(rJar.toURI().toURL()), null).use { rJarClassLoader ->
+      val actualFields = loadFields(rJarClassLoader, "com.example.foo.R\$id")
+      assertThat(actualFields).containsExactly("int foo = 0", "int bar = 1")
+    }
+  }
+
+  @Test
+  fun generateRFilesContentTest() {
+    val javacCompiledDir = mTemporaryFolder.newFolder("javac-compiled")
+    val generatedRJar = mTemporaryFolder.newFile("R.jar")
+    val rDotJavaDir = mTemporaryFolder.newFolder("source")
+
+    val appSymbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.foo.app")
+        .add(Symbol.attributeSymbol("beep", 0x1))
+        .add(Symbol.attributeSymbol("boop", 0x3))
+        .add(Symbol.styleableSymbol("styles", ImmutableList.of(0x1004, 0x1002), ImmutableList.of("styles_boop", "styles_beep")))
+        .add(
+          // number of children is > Byte.MAX_VALUE as a regression test for
+          // https://issuetracker.google.com/142467886
+          Symbol.styleableSymbol(
+            "styleable_with_many_children",
+            ImmutableList.copyOf(1..200),
+            ImmutableList.copyOf((1..200).map { "child_$it" }),
+          )
+        )
+        .add(Symbol.normalSymbol(ResourceType.STRING, "libstring", 0x4))
+        .build()
+
+    val librarySymbols =
+      SymbolTable.builder().tablePackage("com.example.foo.lib").add(Symbol.normalSymbol(ResourceType.STRING, "libstring", 0x4)).build()
+
+    // The existing path: Symbol table --com.android.builder.symbols.exportToJava--> R.java
+    // --javac--> R classes
+    // Generate the R.java file.
+    val appRDotJava = SymbolIo.exportToJava(appSymbols, rDotJavaDir, false)
+    val libRDotJava = SymbolIo.exportToJava(librarySymbols, rDotJavaDir, false)
+    val javac = ToolProvider.getSystemJavaCompiler()
+    val manager = javac.getStandardFileManager(null, null, null)
+    // Use javac to compile R.java into R.class, R$id.class. etc.
+    val source = manager.getJavaFileObjectsFromFiles(ImmutableList.of(libRDotJava, appRDotJava)) as Iterable<JavaFileObject>
+    javac.getTask(null, manager, null, ImmutableList.of("-d", javacCompiledDir.absolutePath), null, source).call()
+
+    val expectedClasses =
+      listOf(
+        "com.example.foo.lib.R",
+        "com.example.foo.lib.R\$string",
+        "com.example.foo.app.R",
+        "com.example.foo.app.R\$string",
+        "com.example.foo.app.R\$styleable",
+        "com.example.foo.app.R\$attr",
+      )
+
+    // Sanity check
+    assertThat(files(javacCompiledDir.toPath())).containsExactlyElementsIn(expectedClasses)
+
+    // And the method under test.
+    exportToCompiledJava(listOf(appSymbols, librarySymbols), generatedRJar.toPath())
+
+    Zip(generatedRJar).use { assertThat(it.entries.map { className(it.root.relativize(it)) }).containsExactlyElementsIn(expectedClasses) }
+    URLClassLoader(arrayOf(javacCompiledDir.toURI().toURL()), null).use { expectedClassLoader ->
+      URLClassLoader(arrayOf(generatedRJar.toURI().toURL()), null).use { actualClassLoader ->
+        for (javaName in expectedClasses) {
+          val expectedFields = loadFields(expectedClassLoader, javaName)
+          val actualFields = loadFields(actualClassLoader, javaName)
+          assertThat(actualFields).containsExactlyElementsIn(expectedFields)
         }
+      }
     }
 
-    private fun loadFields(classLoader: ClassLoader, name: String) =
-            classLoader.loadClass(name)
-                    .fields
-                    .map { field ->
-                        "${field.type.typeName} ${field.name} = ${valueAsString(field)}" }
-                    .toList()
+    // Check that generatedRJar's entries aren't compressed
+    ZipFile(generatedRJar).use { zip ->
+      val entries = zip.entries()
+      while (entries.hasMoreElements()) {
+        val entry = entries.nextElement()
+        assertThat(entry.compressedSize).isAtLeast(entry.size)
+      }
+    }
+  }
 
-    private fun valueAsString(field: Field) = when (field.type.typeName) {
-        "int" -> field.get(null).formatInt
-        "int[]" -> "[" + (field.get(null) as IntArray).joinToString(",") { it.formatInt } + "]"
-        else -> throw IllegalStateException("Unexpected type " + field.type.typeName)
+  @Test
+  fun testZeroValues() {
+    val rJar = mTemporaryFolder.newFile("R.jar")
+
+    val androidSymbols =
+      SymbolTable.builder()
+        .tablePackage("android")
+        .add(Symbol.attributeSymbol("zero", 0))
+        .add(Symbol.attributeSymbol("unstable", 99))
+        .add(Symbol.attributeSymbol("stable", 33))
+        .build()
+
+    val appSymbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.foo.app")
+        .add(Symbol.styleableSymbol("styles", ImmutableList.of(0, 42, 0), ImmutableList.of("android_unstable", "android.stable", "local")))
+        .build()
+
+    exportToCompiledJava(listOf(androidSymbols, appSymbols), rJar.toPath())
+
+    Zip(rJar).use {
+      assertThat(it.entries).hasSize(4)
+
+      assertThat(it.entries.map { f -> f.toString() })
+        .containsExactly(
+          "/android/R.class",
+          "/android/R\$attr.class",
+          "/com/example/foo/app/R.class",
+          "/com/example/foo/app/R\$styleable.class",
+        )
     }
 
-    private val Any.formatInt: String get() {
-        (this as Int)
-        return if (this > 0x10000000 || this < 0) {
-            "0x%08X".format(Locale.US, this)
-        } else {
-            this.toString()
-        }
+    URLClassLoader(arrayOf(rJar.toURI().toURL()), null).use { rJarClassLoader ->
+      // First of all, the bytecode should be able to load properly
+      val actualFields = loadFields(rJarClassLoader, "com.example.foo.app.R\$styleable")
+      // Find the styleable. The value of "unstable" should be loaded from the reference to
+      // android.R.unstable - even though when creating the app's SymbolTable the value of 0
+      // was specified.
+      assertThat(actualFields)
+        .containsExactly(
+          "int[] styles = [99,42,0]",
+          // 0 is replaced with the reference (99), loaded at runtime to the new value.
+          // (See the corresponding value in the int array above)
+          "int styles_android_unstable = 0",
+          // despite being an android attr this one had non-zero value (stable) so keep
+          // the value we already have (42) without using the reference (33).
+          "int styles_android_stable = 1",
+          // Check that if for whatever other reason we have a non-android attr with zero
+          // value it doesn't get updated.
+          "int styles_local = 2",
+        )
+    }
+  }
+
+  @Test
+  fun testParseArrayLiteral() {
+    assertThat(parseArrayLiteral(0, "{}").asList()).isEmpty()
+    assertThat(parseArrayLiteral(1, "{0x7f04002c}").asList()).containsExactly(0x7f04002c)
+    assertThat(parseArrayLiteral(1, "{0x70}").asList()).containsExactly(0x70)
+    assertThat(parseArrayLiteral(5, "{ 0x72, 0x73, 0x74, 0x71, 0x70 }").asList()).containsExactly(0x72, 0x73, 0x74, 0x71, 0x70)
+    assertThat(parseArrayLiteral(2, "{     0x71    ,    0x72   }").asList()).containsExactly(0x71, 0x72)
+
+    try {
+      parseArrayLiteral(3, "{0x1,0x2}")
+      fail("Expected failure - too few listed values")
+    } catch (e: IOException) {
+      assertThat(e).hasMessageThat().contains("should have 3 item(s)")
     }
 
-    private fun files(dir: Path) =
-            Files.walk(dir).use {
-                it.filter { Files.isRegularFile(it) }
-                    .map { className(dir.relativize(it)) }
-                    .toList()
-            }
+    try {
+      parseArrayLiteral(1, "{0x1,0x2}")
+      fail("Expected failure - too many listed values")
+    } catch (e: IOException) {
+      assertThat(e).hasMessageThat().contains("should have 1 item(s)")
+    }
+  }
 
-    private fun className(relativePath: Path): String =
-            PathUtils.toSystemIndependentPath(relativePath)
-                    .removeSuffix(SdkConstants.DOT_CLASS)
-                    .replace('/', '.')
+  @Test
+  fun testValueToInt() {
+    assertThat(valueStringToInt("0x7f04002c")).isEqualTo(0x7f04002c)
+  }
 
+  @Test
+  fun rPackageSmokeTest() {
+    val rJar = mTemporaryFolder.newFile("R.jar")
+    val packageJar1 = mTemporaryFolder.newFile("SdkRPackage.jar")
+    val packageJar2 = mTemporaryFolder.newFile("AppBackwardCompatRPackage.jar")
+
+    val symbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.privacysandboxenabledsdk")
+        .add(Symbol.normalSymbol(ResourceType.ID, "foo", 0x7f000001))
+        .add(Symbol.styleableSymbol("styles", ImmutableList.of(0x7f000002, 0x7f000003), ImmutableList.of("style1", "style2")))
+        .build()
+
+    val privacySandboxSdkApplicationId = "com.example.privacysandboxenabledsdk.production"
+
+    exportToCompiledJava(listOf(symbols), rJar.toPath(), rPackage = privacySandboxSdkApplicationId)
+    writeRPackages(mapOf(privacySandboxSdkApplicationId to 0x7f000000), packageJar1.toPath())
+    writeRPackages(mapOf(privacySandboxSdkApplicationId to 0x7e000000), packageJar2.toPath())
+
+    fun classloaderOf(vararg jars: File) = URLClassLoader(jars.map { it.toURI().toURL() }.toTypedArray())
+
+    classloaderOf(rJar, packageJar1).use {
+      assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$id")).containsExactly("int foo = 0x7F000001")
+      assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$styleable"))
+        .containsExactly("int[] styles = [0x7F000002,0x7F000003]", "int styles_style1 = 0", "int styles_style2 = 1")
+    }
+    classloaderOf(rJar, packageJar2).use {
+      assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$id")).containsExactly("int foo = 0x7E000001")
+      assertThat(loadFields(it, "com.example.privacysandboxenabledsdk.R\$styleable"))
+        .containsExactly("int[] styles = [0x7E000002,0x7E000003]", "int styles_style1 = 0", "int styles_style2 = 1")
+    }
+  }
+
+  @Test
+  fun checkAndroidStyleableAttrsNotRepackagedInSdks() {
+    val rJar = mTemporaryFolder.newFile("R.jar")
+    val additionalRJar = mTemporaryFolder.newFile("additionalR.jar")
+    val androidSymbols =
+      SymbolTable.builder()
+        .tablePackage("android")
+        .add(Symbol.attributeSymbol("background", 0x1010109))
+        .add(Symbol.attributeSymbol("foreground", 0x10100d4))
+        .build()
+
+    val libSymbols =
+      SymbolTable.builder()
+        .tablePackage("com.example.sdk")
+        .add(
+          Symbol.styleableSymbol(
+            "styles",
+            ImmutableList.of(0x1010109, 0x10100d4, 0x1000e, 0x7f000002),
+            ImmutableList.of("android_background", "android_foreground", "lib_attr", "sdk_attr"),
+          )
+        )
+        .build()
+
+    exportToCompiledJava(listOf(androidSymbols, libSymbols), rJar.toPath(), rPackage = "com.example.sdk")
+    writeRPackages(mapOf("com.example.sdk" to 0x82), additionalRJar.toPath())
+
+    URLClassLoader(arrayOf(rJar.toURI().toURL(), additionalRJar.toURI().toURL()), null).use { rJarClassLoader ->
+      val actualFields = loadFields(rJarClassLoader, "com.example.sdk.R\$styleable")
+      assertThat(actualFields)
+        .containsExactly(
+          "int[] styles = [16843017,16842964,65550,132]",
+          "int styles_android_background = 0",
+          "int styles_android_foreground = 1",
+          "int styles_lib_attr = 2",
+          "int styles_sdk_attr = 3",
+        )
+    }
+  }
+
+  private fun loadFields(classLoader: ClassLoader, name: String) =
+    classLoader.loadClass(name).fields.map { field -> "${field.type.typeName} ${field.name} = ${valueAsString(field)}" }.toList()
+
+  private fun valueAsString(field: Field) =
+    when (field.type.typeName) {
+      "int" -> field.get(null).formatInt
+      "int[]" -> "[" + (field.get(null) as IntArray).joinToString(",") { it.formatInt } + "]"
+      else -> throw IllegalStateException("Unexpected type " + field.type.typeName)
+    }
+
+  private val Any.formatInt: String
+    get() {
+      (this as Int)
+      return if (this > 0x10000000 || this < 0) {
+        "0x%08X".format(Locale.US, this)
+      } else {
+        this.toString()
+      }
+    }
+
+  private fun files(dir: Path) =
+    Files.walk(dir).use { it.filter { Files.isRegularFile(it) }.map { className(dir.relativize(it)) }.toList() }
+
+  private fun className(relativePath: Path): String =
+    PathUtils.toSystemIndependentPath(relativePath).removeSuffix(SdkConstants.DOT_CLASS).replace('/', '.')
 }

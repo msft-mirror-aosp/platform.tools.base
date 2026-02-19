@@ -30,19 +30,18 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/**
- * Verifies tasks' states in a cached clean build (i.e., whether they should be cacheable or not
- * cacheable).
- */
+/** Verifies tasks' states in a cached clean build (i.e., whether they should be cacheable or not cacheable). */
 class CacheabilityTest {
 
-    /**
-     * The expected states of tasks when running a second build with the Gradle build cache
-     * enabled from an identical project at a different location.
-     */
-    private val expectedTaskStates: Map<ExecutionState, Set<String>> = mapOf(
+  /**
+   * The expected states of tasks when running a second build with the Gradle build cache enabled from an identical project at a different
+   * location.
+   */
+  private val expectedTaskStates: Map<ExecutionState, Set<String>> =
+    mapOf(
         // Sort alphabetically so it's easier to search
-        FROM_CACHE to setOf(
+        FROM_CACHE to
+          setOf(
             ":app:bundle${DEBUG_RELEASE}Resources",
             ":app:compile${DEBUG_RELEASE}NavigationResources",
             ":app:compile${DEBUG_RELEASE}JavaWithJavac",
@@ -72,8 +71,9 @@ class CacheabilityTest {
             ":app:process${DEBUG_RELEASE}NavigationResources",
             ":app:process${DEBUG_RELEASE}Resources",
             ":app:testDebugUnitTest",
-        ),
-        DID_WORK to setOf(
+          ),
+        DID_WORK to
+          setOf(
             ":app:build${DEBUG_RELEASE}PreBundle",
             ":app:bundleDebugClassesToCompileJar",
             ":app:bundleDebugClassesToRuntimeJar",
@@ -106,15 +106,17 @@ class CacheabilityTest {
             ":app:validateSigningDebug",
             ":app:write${DEBUG_RELEASE}AppMetadata",
             ":app:write${DEBUG_RELEASE}SigningConfigVersions",
-        ),
-        UP_TO_DATE to setOf(
+          ),
+        UP_TO_DATE to
+          setOf(
             ":app:clean",
             ":app:generate${DEBUG_RELEASE}Assets",
             ":app:preBuild",
             ":app:pre${DEBUG_RELEASE}Build",
             ":app:preDebugUnitTestBuild",
-        ),
-        SKIPPED to setOf(
+          ),
+        SKIPPED to
+          setOf(
             ":app:assemble${DEBUG_RELEASE}",
             ":app:extractReleaseNativeSymbolTables",
             ":app:merge${DEBUG_RELEASE}NativeDebugMetadata",
@@ -122,69 +124,73 @@ class CacheabilityTest {
             ":app:processDebugUnitTestJavaRes",
             ":app:processReleaseJavaRes",
             ":app:strip${DEBUG_RELEASE}DebugSymbols",
-        )
-    ).fillVariantNames()
+          ),
+      )
+      .fillVariantNames()
 
-    @get:Rule
-    val buildCacheDir = TemporaryFolder()
+  @get:Rule val buildCacheDir = TemporaryFolder()
 
-    @get:Rule
-    val projectCopy1 = setUpTestProject("projectCopy1")
+  @get:Rule val projectCopy1 = setUpTestProject("projectCopy1")
 
-    @get:Rule
-    val projectCopy2 = setUpTestProject("projectCopy2")
+  @get:Rule val projectCopy2 = setUpTestProject("projectCopy2")
 
-    private fun setUpTestProject(projectName: String): GradleTestProject {
-        return with(EmptyActivityProjectBuilder()) {
-            this.projectName = projectName
-            this.withUnitTest = true
-            disableBuiltInKotlin()
-            withHeap("2048m")
-            build()
-        }
+  private fun setUpTestProject(projectName: String): GradleTestProject {
+    return with(EmptyActivityProjectBuilder()) {
+      this.projectName = projectName
+      this.withUnitTest = true
+      disableBuiltInKotlin()
+      withHeap("2048m")
+      build()
     }
+  }
 
-    @Before
-    fun setUp() {
-        for (project in listOf(projectCopy1, projectCopy2)) {
-            // Set up the project such that we can test more tasks
-            TestFileUtils.appendToFile(
-                project.getSubproject("app").buildFile,
-                """
-                android {
-                    defaultConfig { versionCode = 1 }
-                    testOptions { unitTests { includeAndroidResources = true } }
-                    buildTypes { debug { testCoverageEnabled = true } }
-                    buildFeatures { resValues = true }
-                }
-                """.trimMargin()
+  @Before
+  fun setUp() {
+    for (project in listOf(projectCopy1, projectCopy2)) {
+      // Set up the project such that we can test more tasks
+      TestFileUtils.appendToFile(
+        project.getSubproject("app").buildFile,
+        """
+        |                android {
+        |                    defaultConfig { versionCode = 1 }
+        |                    testOptions { unitTests { includeAndroidResources = true } }
+        |                    buildTypes { debug { testCoverageEnabled = true } }
+        |                    buildFeatures { resValues = true }
+        |                }
+        """
+          .trimMargin(),
+      )
+    }
+  }
+
+  @Test
+  fun `check task states`() {
+    CacheabilityTestHelper(projectCopy1, projectCopy2, buildCacheDir.root)
+      .runTasks(
+        "clean",
+        ":app:assembleDebug",
+        ":app:testDebugUnitTest",
+        ":app:packageDebugBundle",
+        ":app:assembleRelease",
+        ":app:packageReleaseBundle",
+      )
+      .assertTaskStatesByGroups(expectedTaskStates, exhaustive = true)
+  }
+
+  private fun Map<ExecutionState, Set<String>>.fillVariantNames(): Map<ExecutionState, Set<String>> {
+    return mapValues { (_, taskNames) ->
+      taskNames.flatMapTo(mutableSetOf()) { taskName ->
+        when {
+          taskName.contains(DEBUG_RELEASE) ->
+            setOf(
+              taskName.substringBefore(DEBUG_RELEASE) + "Debug" + taskName.substringAfter(DEBUG_RELEASE),
+              taskName.substringBefore(DEBUG_RELEASE) + "Release" + taskName.substringAfter(DEBUG_RELEASE),
             )
+          else -> setOf(taskName)
         }
+      }
     }
-
-    @Test
-    fun `check task states`() {
-        CacheabilityTestHelper(projectCopy1, projectCopy2, buildCacheDir.root)
-            .runTasks(
-                "clean", ":app:assembleDebug", ":app:testDebugUnitTest", ":app:packageDebugBundle",
-                ":app:assembleRelease", ":app:packageReleaseBundle",
-            )
-            .assertTaskStatesByGroups(expectedTaskStates, exhaustive = true)
-    }
-
-    private fun Map<ExecutionState, Set<String>>.fillVariantNames(): Map<ExecutionState, Set<String>> {
-        return mapValues { (_, taskNames) ->
-            taskNames.flatMapTo(mutableSetOf()) { taskName ->
-                when {
-                    taskName.contains(DEBUG_RELEASE) -> setOf(
-                        taskName.substringBefore(DEBUG_RELEASE) + "Debug" + taskName.substringAfter(DEBUG_RELEASE),
-                        taskName.substringBefore(DEBUG_RELEASE) + "Release" + taskName.substringAfter(DEBUG_RELEASE)
-                    )
-                    else -> setOf(taskName)
-                }
-            }
-        }
-    }
+  }
 }
 
 private const val DEBUG_RELEASE = "{DEBUG_RELEASE}"

@@ -47,10 +47,7 @@ interface AdbServices {
    * @return The stdout of the command.
    * @throws BackupException on error
    */
-  suspend fun executeCommand(
-    command: String,
-    errorCode: ErrorCode = ErrorCode.UNEXPECTED_ERROR,
-  ): AdbOutput
+  suspend fun executeCommand(command: String, errorCode: ErrorCode = ErrorCode.UNEXPECTED_ERROR): AdbOutput
 
   /**
    * Reads a file from a Content Provider
@@ -78,11 +75,7 @@ interface AdbServices {
 
   suspend fun getForegroundApplicationId(): String
 
-  suspend fun getAppInfo(
-    applicationId: String,
-    withPermissions: Boolean = false,
-    user: String? = null,
-  ): AppInfo?
+  suspend fun getAppInfo(applicationId: String, withPermissions: Boolean = false, user: String? = null): AppInfo?
 
   suspend fun isPlayStoreInstalled(): Boolean
 

@@ -17,26 +17,30 @@ package com.android.build.gradle.integration.common.fixture.project
 
 import com.android.build.gradle.integration.common.fixture.project.builder.GroovyBuildWriter
 import com.google.common.truth.Truth
-import org.junit.Test
 import java.nio.file.Paths
+import org.junit.Test
 
 class AndroidApplicationDefinitionTest {
 
-    private val definition = AndroidApplicationDefinitionImpl(":foo", createMinimumProject = false)
+  private val definition = AndroidApplicationDefinitionImpl(":foo", createMinimumProject = false)
 
-    @Test
-    fun inlinedAndroid() {
-        definition.android.compileSdk = 2
+  @Test
+  fun inlinedAndroid() {
+    definition.android.compileSdk = 2
 
-        val groovy = GroovyBuildWriter()
-        definition.writeExtension(groovy, Paths.get(""))
+    val groovy = GroovyBuildWriter()
+    definition.writeExtension(groovy, Paths.get(""))
 
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            android {
-              compileSdk = 2
-            }
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        android {
+          compileSdk = 2
+        }
 
 
-        """.trimIndent())
-    }
+        """
+          .trimIndent()
+      )
+  }
 }

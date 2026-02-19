@@ -53,18 +53,15 @@ import java.util.function.Predicate
 import org.jetbrains.annotations.TestOnly
 
 /**
- * Android SDK interface to [RepoManager]. Ensures that the proper android sdk-specific schemas and
- * source providers are registered, and provides android sdk-specific package logic (pending as
- * adoption continues).
+ * Android SDK interface to [RepoManager]. Ensures that the proper android sdk-specific schemas and source providers are registered, and
+ * provides android sdk-specific package logic (pending as adoption continues).
  *
- * @constructor Don't use this, use [getInstance], unless you're in a unit test and need to specify
- *   a custom [androidFolder], [repoManager], or [userSourceProvider].
  * @property location Location of the local SDK.
- * @property androidFolder Location of the .android folder; see
- *   [AndroidLocationsProvider.prefsLocation]
- * @property repoManager The [RepoManager] initialized with our [SchemaModule]s,
- *   [RepositorySourceProvider]s, and local SDK path.
+ * @property androidFolder Location of the .android folder; see [AndroidLocationsProvider.prefsLocation]
+ * @property repoManager The [RepoManager] initialized with our [SchemaModule]s, [RepositorySourceProvider]s, and local SDK path.
  * @property userSourceProvider provider for user-specified [RepositorySource]s.
+ * @constructor Don't use this, use [getInstance], unless you're in a unit test and need to specify a custom [androidFolder], [repoManager],
+ *   or [userSourceProvider].
  */
 class AndroidSdkHandler
 @VisibleForTesting
@@ -91,12 +88,11 @@ constructor(
   @GuardedBy("lock") private var latestBuildTool: BuildToolInfo? = null
 
   /**
-   * Fetches a [RepoManager], creating it if necessary, then loads local packages synchronously.
-   * This involves scanning the disk, and may be slow.
+   * Fetches a [RepoManager], creating it if necessary, then loads local packages synchronously. This involves scanning the disk, and may be
+   * slow.
    *
-   * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached for
-   * longer than this AndroidSdkHandler remains valid. For example, if the local SDK path in Studio
-   * is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
+   * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached for longer than this AndroidSdkHandler
+   * remains valid. For example, if the local SDK path in Studio is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
    */
   @Slow
   fun getRepoManagerAndLoadSynchronously(progress: ProgressIndicator): RepoManager {
@@ -112,9 +108,8 @@ constructor(
   /**
    * Fetches a [RepoManager], creating it if necessary.
    *
-   * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached for
-   * longer than this AndroidSdkHandler remains valid. For example, if the local SDK path in Studio
-   * is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
+   * Its lifetime is the same as that of this AndroidSdkHandler; thus, it should not be cached for longer than this AndroidSdkHandler
+   * remains valid. For example, if the local SDK path in Studio is changed, a new AndroidSdkHandler and a new RepoManager will be needed.
    */
   fun getRepoManager(progress: ProgressIndicator): RepoManager {
     synchronized(lock) {
@@ -126,8 +121,7 @@ constructor(
       androidTargetManager = null
       latestBuildTool = null
 
-      val newRepoManager =
-        getRepoConfig(progress).createRepoManager(location, getUserSourceProvider(progress))
+      val newRepoManager = getRepoConfig(progress).createRepoManager(location, getUserSourceProvider(progress))
       // Invalidate system images, targets, the latest build tool, and the legacy local
       // package manager when local packages change
       newRepoManager.addLocalChangeListener {
@@ -154,10 +148,7 @@ constructor(
     val rm = getRepoManagerAndLoadSynchronously(progress)
 
     synchronized(lock) {
-      return systemImageManager
-        ?: SystemImageManager(rm, sysImgModule.createLatestFactory()).also {
-          systemImageManager = it
-        }
+      return systemImageManager ?: SystemImageManager(rm, sysImgModule.createLatestFactory()).also { systemImageManager = it }
     }
   }
 
@@ -179,10 +170,9 @@ constructor(
   }
 
   /**
-   * Suppose that `prefix` is `p`, and we have these local packages: `p;1.1`, `p;1.2`, `p;2.1` What
-   * this should return is the package `p;2.1`. We operate on the path suffix since we have no
-   * guarantee that the package revision is the same as used in the path. We also have no guarantee
-   * that the format of the path even matches, so we ignore the packages that don't fit the format.
+   * Suppose that `prefix` is `p`, and we have these local packages: `p;1.1`, `p;1.2`, `p;2.1` What this should return is the package
+   * `p;2.1`. We operate on the path suffix since we have no guarantee that the package revision is the same as used in the path. We also
+   * have no guarantee that the format of the path even matches, so we ignore the packages that don't fit the format.
    *
    * @see Revision.safeParseRevision
    */
@@ -219,23 +209,19 @@ constructor(
     return getRepoConfig(progress).remoteListSourceProvider
   }
 
-  /**
-   * Gets the customizable [RepositorySourceProvider]. Can be null if there's a problem with the
-   * user's environment.
-   */
+  /** Gets the customizable [RepositorySourceProvider]. Can be null if there's a problem with the user's environment. */
   fun getUserSourceProvider(progress: ProgressIndicator): LocalSourceProvider? {
     synchronized(lock) {
       if (userSourceProvider == null && androidFolder != null) {
-        userSourceProvider =
-          createUserSourceProvider(androidFolder).also { repoManager?.let(it::setRepoManager) }
+        userSourceProvider = createUserSourceProvider(androidFolder).also { repoManager?.let(it::setRepoManager) }
       }
       return userSourceProvider
     }
   }
 
   /**
-   * Class containing the repository configuration we can (lazily) create statically, as well as a
-   * method to create a new [RepoManager] based on that configuration.
+   * Class containing the repository configuration we can (lazily) create statically, as well as a method to create a new [RepoManager]
+   * based on that configuration.
    *
    * Instances of this class may be shared between [AndroidSdkHandler] instances.
    */
@@ -246,10 +232,7 @@ constructor(
     /** Provider for the main new-style [RepositorySource] */
     private val repositorySourceProvider: ConstantSourceProvider
 
-    /**
-     * Provider for the previous version of the main new-style [RepositorySource], useful during
-     * transition to the new version.
-     */
+    /** Provider for the previous version of the main new-style [RepositorySource], useful during transition to the new version. */
     private val prevRepositorySourceProvider: ConstantSourceProvider?
 
     /** Sets up our [SchemaModule]s and [RepositorySourceProvider]s if they haven't been yet. */
@@ -307,9 +290,7 @@ constructor(
 
       val customSourceUrl = System.getProperty(CUSTOM_SOURCE_PROPERTY)
       if (!customSourceUrl.isNullOrEmpty()) {
-        sourceProviders.add(
-          ConstantSourceProvider(customSourceUrl, "Custom Provider", getAllModules())
-        )
+        sourceProviders.add(ConstantSourceProvider(customSourceUrl, "Custom Provider", getAllModules()))
       }
       addonsListSourceProvider?.let { sourceProviders.add(it) }
       userProvider?.let { sourceProviders.add(it) }
@@ -319,7 +300,8 @@ constructor(
           localLocation,
           getAllModules(),
           sourceProviders,
-          // If we have a local sdk path set, set up the old-style loader so we can parse any legacy
+          // If we have a local sdk path set, set up the old-style loader so we can parse any
+          // legacy
           // packages.
           localLocation?.let { LegacyLocalRepoLoader(it) },
           LegacyRemoteRepoLoader(),
@@ -332,13 +314,11 @@ constructor(
 
     companion object {
       /**
-       * Gets the default url (without the actual filename or specific final part of the path (e.g.
-       * sys-img)). This will be either the value of [SDK_TEST_BASE_URL_ENV_VAR],
-       * [URL_GOOGLE_SDK_SITE] or [SDK_TEST_BASE_URL_PROPERTY] JVM property.
+       * Gets the default url (without the actual filename or specific final part of the path (e.g. sys-img)). This will be either the value
+       * of [SDK_TEST_BASE_URL_ENV_VAR], [URL_GOOGLE_SDK_SITE] or [SDK_TEST_BASE_URL_PROPERTY] JVM property.
        */
       private fun getBaseUrl(progress: ProgressIndicator): String {
-        val baseUrl =
-          System.getenv(SDK_TEST_BASE_URL_ENV_VAR) ?: System.getProperty(SDK_TEST_BASE_URL_PROPERTY)
+        val baseUrl = System.getenv(SDK_TEST_BASE_URL_ENV_VAR) ?: System.getProperty(SDK_TEST_BASE_URL_PROPERTY)
         if (baseUrl != null) {
           if (baseUrl.isNotEmpty() && baseUrl.endsWith("/")) {
             return baseUrl
@@ -353,15 +333,13 @@ constructor(
         return getBaseUrl(progress) + DEFAULT_SITE_LIST_FILENAME_PATTERN
       }
 
-      private fun getRepoUrl(progress: ProgressIndicator, version: Int) =
-        "${getBaseUrl(progress)}repository2-$version.xml"
+      private fun getRepoUrl(progress: ProgressIndicator, version: Int) = "${getBaseUrl(progress)}repository2-$version.xml"
     }
   }
 
   /**
-   * Returns a [BuildToolInfo] corresponding to the newest installed build tool [LocalPackage], or
-   * `null` if none are installed (or if the `allowPreview` parameter is false and there was
-   * non-preview version available)
+   * Returns a [BuildToolInfo] corresponding to the newest installed build tool [LocalPackage], or `null` if none are installed (or if the
+   * `allowPreview` parameter is false and there was non-preview version available)
    *
    * @param progress a progress indicator
    * @param allowPreview ignore preview build tools version unless this parameter is true
@@ -371,28 +349,21 @@ constructor(
   }
 
   /**
-   * Returns a [BuildToolInfo] corresponding to the newest installed build tool [LocalPackage], or
-   * `null` if none are installed (or if the `allowPreview` parameter is false and there was
-   * non-preview version available)
+   * Returns a [BuildToolInfo] corresponding to the newest installed build tool [LocalPackage], or `null` if none are installed (or if the
+   * `allowPreview` parameter is false and there was non-preview version available)
    *
    * @param progress a progress indicator
    * @param filter the revision predicate to satisfy
    * @param allowPreview ignore preview build tools version unless this parameter is true
    */
-  fun getLatestBuildTool(
-    progress: ProgressIndicator,
-    filter: Predicate<Revision>?,
-    allowPreview: Boolean,
-  ): BuildToolInfo? {
+  fun getLatestBuildTool(progress: ProgressIndicator, filter: Predicate<Revision>?, allowPreview: Boolean): BuildToolInfo? {
     synchronized(lock) {
       if (!allowPreview && latestBuildTool != null) {
         return latestBuildTool
       }
     }
 
-    val latestBuildToolPackage =
-      getLatestLocalPackageForPrefix(SdkConstants.FD_BUILD_TOOLS, filter, allowPreview, progress)
-        ?: return null
+    val latestBuildToolPackage = getLatestLocalPackageForPrefix(SdkConstants.FD_BUILD_TOOLS, filter, allowPreview, progress) ?: return null
 
     val latestBuildTool = BuildToolInfo.fromLocalPackage(latestBuildToolPackage)
 
@@ -409,14 +380,12 @@ constructor(
    *
    * @param revision The build tools revision requested
    * @param progress [ProgressIndicator] for logging.
-   * @return The [BuildToolInfo] corresponding to the specified build tools package, or `null` if
-   *   that revision is not installed.
+   * @return The [BuildToolInfo] corresponding to the specified build tools package, or `null` if that revision is not installed.
    */
   fun getBuildToolInfo(revision: Revision, progress: ProgressIndicator): BuildToolInfo? {
-    return getRepoManagerAndLoadSynchronously(progress)
-      .packages
-      .localPackages[DetailsTypes.getBuildToolsPath(revision)]
-      ?.let { BuildToolInfo.fromLocalPackage(it) }
+    return getRepoManagerAndLoadSynchronously(progress).packages.localPackages[DetailsTypes.getBuildToolsPath(revision)]?.let {
+      BuildToolInfo.fromLocalPackage(it)
+    }
   }
 
   /** Converts a `File` into a `Path` on the `FileSystem` used by this SDK. */
@@ -444,10 +413,7 @@ constructor(
   object DefaultInstanceProvider : InstanceProvider {
     private val instances = CacheByCanonicalPath<AndroidSdkHandler>()
 
-    override fun getInstance(
-      locationProvider: AndroidLocationsProvider,
-      localPath: Path?,
-    ): AndroidSdkHandler {
+    override fun getInstance(locationProvider: AndroidLocationsProvider, localPath: Path?): AndroidSdkHandler {
       return instances.computeIfAbsent(localPath) { canonicalKey ->
         val androidFolder = runCatching { locationProvider.prefsLocation }.getOrNull()
         AndroidSdkHandler(canonicalKey, androidFolder)
@@ -460,10 +426,7 @@ constructor(
   }
 
   companion object {
-    /**
-     * @return The [SchemaModule] containing the metadata for addon-type repositories. See
-     *   sdk-addon-XX.xsd.
-     */
+    /** @return The [SchemaModule] containing the metadata for addon-type repositories. See sdk-addon-XX.xsd. */
     /** Schema module containing the package type information to be used in addon repos. */
     @JvmStatic
     val addonModule: SchemaModule<AddonFactory> =
@@ -474,8 +437,8 @@ constructor(
       )
 
     /**
-     * @return The [SchemaModule] containing the metadata for the primary android SDK (containing
-     *   platforms etc.). See sdk-repository-XX.xsd.
+     * @return The [SchemaModule] containing the metadata for the primary android SDK (containing platforms etc.). See
+     *   sdk-repository-XX.xsd.
      */
     /** Schema module containing the package type information to be used in the primary repo. */
     @JvmStatic
@@ -486,10 +449,7 @@ constructor(
         AndroidSdkHandler::class.java,
       )
 
-    /**
-     * @return The [SchemaModule] containing the metadata for system image-type repositories. See
-     *   sdk-sys-img-XX.xsd.
-     */
+    /** @return The [SchemaModule] containing the metadata for system image-type repositories. See sdk-sys-img-XX.xsd. */
     /** Schema module containing the package type information to be used in system image repos. */
     @JvmStatic
     val sysImgModule: SchemaModule<SysImgFactory> =
@@ -499,10 +459,7 @@ constructor(
         AndroidSdkHandler::class.java,
       )
 
-    /**
-     * @return The [SchemaModule] containing the common sdk-specific metadata. See
-     *   sdk-common-XX.xsd.
-     */
+    /** @return The [SchemaModule] containing the common sdk-specific metadata. See sdk-common-XX.xsd. */
     /** Common schema module used by the other sdk-specific modules. */
     @JvmStatic
     val commonModule: SchemaModule<SdkCommonFactory> =
@@ -512,25 +469,16 @@ constructor(
         AndroidSdkHandler::class.java,
       )
 
-    /**
-     * The URL of the official Google sdk-repository site. The URL ends with a /, allowing easy
-     * concatenation.
-     */
+    /** The URL of the official Google sdk-repository site. The URL ends with a /, allowing easy concatenation. */
     private const val URL_GOOGLE_SDK_SITE = "https://dl.google.com/android/repository/"
 
     /** A system property than can be used to add an extra fully-privileged update site. */
     private const val CUSTOM_SOURCE_PROPERTY = "android.sdk.custom.url"
 
-    /**
-     * The name of the environment variable used to override the url of the primary repository, for
-     * testing.
-     */
+    /** The name of the environment variable used to override the url of the primary repository, for testing. */
     const val SDK_TEST_BASE_URL_ENV_VAR = "SDK_TEST_BASE_URL"
 
-    /**
-     * The name of the system property used to override the url of the primary repository, for
-     * testing.
-     */
+    /** The name of the system property used to override the url of the primary repository, for testing. */
     const val SDK_TEST_BASE_URL_PROPERTY = "sdk.test.base.url"
 
     /** The name of the file containing user-specified remote repositories. */
@@ -546,28 +494,22 @@ constructor(
     /** Implementation of [getInstance]; can be overridden for testing via AndroidSdkHandlerRule. */
     @set:TestOnly internal var instanceProvider: InstanceProvider = DefaultInstanceProvider
 
-    /**
-     * Lazily-initialized class containing our static repository configuration, shared between
-     * AndroidSdkHandler instances.
-     */
+    /** Lazily-initialized class containing our static repository configuration, shared between AndroidSdkHandler instances. */
     private var repoConfig: RepoConfig? = null
 
     /**
      * Get an [AndroidSdkHandler] instance.
      *
      * @param locationProvider a location provider to get the path to the .android folder.
-     * @param localPath The path to the local SDK. If null, this handler will only be used for
-     *   remote operations.
+     * @param localPath The path to the local SDK. If null, this handler will only be used for remote operations.
      */
     @JvmStatic
-    fun getInstance(
-      locationProvider: AndroidLocationsProvider,
-      localPath: Path?,
-    ): AndroidSdkHandler = instanceProvider.getInstance(locationProvider, localPath)
+    fun getInstance(locationProvider: AndroidLocationsProvider, localPath: Path?): AndroidSdkHandler =
+      instanceProvider.getInstance(locationProvider, localPath)
 
     /**
-     * Force removal of any cached {@code AndroidSdkHandler} instances. This will force a reparsing
-     * of the SDK next time a component is looked up.
+     * Force removal of any cached {@code AndroidSdkHandler} instances. This will force a reparsing of the SDK next time a component is
+     * looked up.
      */
     @JvmStatic
     fun reset() {
@@ -575,16 +517,14 @@ constructor(
     }
 
     /**
-     * @param packages a [Collection] of packages which share a common `prefix`, from which we wish
-     *   to extract the "Latest" package, as sorted in natural order with `mapper`.
+     * @param packages a [Collection] of packages which share a common `prefix`, from which we wish to extract the "Latest" package, as
+     *   sorted in natural order with `mapper`.
      * @param filter the revision predicate that has to be satisfied by the returned package
      * @param allowPreview whether we allow returning a preview package.
-     * @param mapper maps from path suffix to a [Comparable], so that we can sort the packages by
-     *   suffix in natural order.
+     * @param mapper maps from path suffix to a [Comparable], so that we can sort the packages by suffix in natural order.
      * @param P package type; [LocalPackage] or [RemotePackage]
      * @param T [Comparable] that we map the suffix to.
-     * @return the "Latest" package from the [Collection], as sorted with `mapper` on the last path
-     *   component.
+     * @return the "Latest" package from the [Collection], as sorted with `mapper` on the last path component.
      */
     @JvmStatic
     fun <P : RepoPackage, T : Comparable<T>> getLatestPackageFromPrefixCollection(
@@ -612,14 +552,7 @@ constructor(
 
     @JvmStatic
     fun getAllModules(): List<SchemaModule<*>> =
-      listOf(
-        repositoryModule,
-        addonModule,
-        sysImgModule,
-        commonModule,
-        RepoManager.commonModule,
-        RepoManager.genericModule,
-      )
+      listOf(repositoryModule, addonModule, sysImgModule, commonModule, RepoManager.commonModule, RepoManager.genericModule)
 
     /** Creates a customizable [RepositorySourceProvider]. */
     @JvmStatic
@@ -631,10 +564,7 @@ constructor(
       )
     }
 
-    /**
-     * Gets or creates the single static RepoConfig instance. Synchronized to ensure that only one
-     * is created.
-     */
+    /** Gets or creates the single static RepoConfig instance. Synchronized to ensure that only one is created. */
     @Synchronized
     private fun getRepoConfig(progress: ProgressIndicator): RepoConfig {
       return repoConfig ?: RepoConfig(progress).also { repoConfig = it }
@@ -642,5 +572,4 @@ constructor(
   }
 }
 
-private fun <T> Predicate<T>?.toFunction(): (T) -> Boolean =
-  this?.let { this::test } ?: { _ -> true }
+private fun <T> Predicate<T>?.toFunction(): (T) -> Boolean = this?.let { this::test } ?: { _ -> true }

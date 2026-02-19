@@ -18,9 +18,9 @@ package com.android.adblib.testing
 import com.android.adblib.AdbUsageTracker
 import java.util.Collections
 
-class FakeAdbUsageTracker: AdbUsageTracker {
+class FakeAdbUsageTracker : AdbUsageTracker {
   private val loggedAdbUsageEvents: MutableList<AdbUsageTracker.Event> =
-        Collections.synchronizedList(mutableListOf<AdbUsageTracker.Event>())
+    Collections.synchronizedList(mutableListOf<AdbUsageTracker.Event>())
 
   override fun logUsage(event: AdbUsageTracker.Event) {
     loggedAdbUsageEvents.add(event)

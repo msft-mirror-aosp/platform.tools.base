@@ -235,13 +235,7 @@ class TextReporterTest : AbstractCheckTest() {
   }
 
   private fun TestLintResult.expectText(expected: String, flags: LintCliFlags) {
-    expectReported(
-      expected,
-      DOT_TXT,
-      { client, file ->
-        Reporter.createTextReporter(client, flags, file, file.bufferedWriter(), true)
-      },
-    )
+    expectReported(expected, DOT_TXT, { client, file -> Reporter.createTextReporter(client, flags, file, file.bufferedWriter(), true) })
   }
 
   override fun getDetector(): Detector = HardcodedValuesDetector()

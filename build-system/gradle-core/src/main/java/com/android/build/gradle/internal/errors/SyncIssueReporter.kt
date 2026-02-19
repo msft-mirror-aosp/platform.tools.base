@@ -27,13 +27,13 @@ import com.google.common.collect.ImmutableList
  */
 abstract class SyncIssueReporter : IssueReporter() {
 
-    abstract fun isInStandardEvaluationMode(): Boolean
+  abstract fun isInStandardEvaluationMode(): Boolean
 
-    abstract val syncIssues: ImmutableList<SyncIssue>
+  abstract val syncIssues: ImmutableList<SyncIssue>
 
-    /**
-     * Lock this issue handler and if any issue is reported after this is called, the handler
-     * will throw just like as like it's running in non-sync mode.
-     */
-    abstract fun lockHandler()
+  /**
+   * Lock this issue handler and if any issue is reported after this is called, the handler will throw just like as like it's running in
+   * non-sync mode.
+   */
+  abstract fun lockHandler()
 }

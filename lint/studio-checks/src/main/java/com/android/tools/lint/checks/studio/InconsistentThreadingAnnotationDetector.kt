@@ -42,8 +42,7 @@ class InconsistentThreadingAnnotationDetector : Detector(), SourceCodeScanner {
         // TODO: add @AnyThread and @Slow annotations
       )
 
-    private val IMPLEMENTATION =
-      Implementation(InconsistentThreadingAnnotationDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(InconsistentThreadingAnnotationDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -86,10 +85,7 @@ class InconsistentThreadingAnnotationDetector : Detector(), SourceCodeScanner {
     val superAnnotation = annotationInfo.qualifiedName
     val overriddenMethod = (usageInfo.usage as UMethod)
     val overriddenMethodAnnotation =
-      context.evaluator
-        .getAllAnnotations(overriddenMethod)
-        .map { it.qualifiedName }
-        .firstOrNull { threadingAnnotations.contains(it) }
+      context.evaluator.getAllAnnotations(overriddenMethod).map { it.qualifiedName }.firstOrNull { threadingAnnotations.contains(it) }
 
     if (overriddenMethodAnnotation == null) {
       // If overridden method doesn't have a threading annotation check if it's

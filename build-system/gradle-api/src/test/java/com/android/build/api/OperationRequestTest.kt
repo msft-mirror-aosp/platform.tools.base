@@ -16,8 +16,8 @@
 
 package com.android.build.api
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.Artifacts
+import com.android.build.api.artifact.SingleArtifact
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
@@ -29,61 +29,47 @@ import org.mockito.Mock
 
 class OperationRequestTest {
 
-    @Mock
-    lateinit var artifacts: Artifacts
+  @Mock lateinit var artifacts: Artifacts
 
-    @Mock
-    lateinit var dirTask: TaskProvider<MyDirTask>
+  @Mock lateinit var dirTask: TaskProvider<MyDirTask>
 
-    @Mock
-    lateinit var fileTask: TaskProvider<MyFileTask>
+  @Mock lateinit var fileTask: TaskProvider<MyFileTask>
 
-    @Mock
-    lateinit var fileCombiningTask: TaskProvider<MyFileCombiningTask>
+  @Mock lateinit var fileCombiningTask: TaskProvider<MyFileCombiningTask>
 
-    @Mock
-    lateinit var dirCombiningTask: TaskProvider<MyDirCombiningTask>
+  @Mock lateinit var dirCombiningTask: TaskProvider<MyDirCombiningTask>
 
-    abstract class MyDirTask: DefaultTask() {
-        abstract val input: DirectoryProperty
-        abstract val output: DirectoryProperty
-    }
+  abstract class MyDirTask : DefaultTask() {
+    abstract val input: DirectoryProperty
+    abstract val output: DirectoryProperty
+  }
 
-    abstract class MyFileTask: DefaultTask() {
-        abstract val input: RegularFileProperty
-        abstract val output: RegularFileProperty
-    }
+  abstract class MyFileTask : DefaultTask() {
+    abstract val input: RegularFileProperty
+    abstract val output: RegularFileProperty
+  }
 
-    abstract class MyFileCombiningTask: DefaultTask() {
-        abstract val input: ListProperty<RegularFile>
-        abstract val output: RegularFileProperty
-    }
+  abstract class MyFileCombiningTask : DefaultTask() {
+    abstract val input: ListProperty<RegularFile>
+    abstract val output: RegularFileProperty
+  }
 
-    abstract class MyDirCombiningTask: DefaultTask() {
-        abstract val input: ListProperty<Directory>
-        abstract val output: DirectoryProperty
-    }
+  abstract class MyDirCombiningTask : DefaultTask() {
+    abstract val input: ListProperty<Directory>
+    abstract val output: DirectoryProperty
+  }
 
-    fun testSimple() {
+  fun testSimple() {
 
-        artifacts
-            .use(dirTask)
-            .wiredWithDirectories(MyDirTask::input, MyDirTask::output)
-            .toTransform(SingleArtifact.APK)
+    artifacts.use(dirTask).wiredWithDirectories(MyDirTask::input, MyDirTask::output).toTransform(SingleArtifact.APK)
 
-//        artifacts
-//            .use2(fileTask)
-//            .with(MyFileTask::input)
-//            .toAppendTo(ArtifactType.BUNDLE)
+    //        artifacts
+    //            .use2(fileTask)
+    //            .with(MyFileTask::input)
+    //            .toAppendTo(ArtifactType.BUNDLE)
 
-        artifacts
-            .use(fileTask)
-            .wiredWithFiles(MyFileTask::input, MyFileTask::output)
-            .toTransform(SingleArtifact.BUNDLE)
+    artifacts.use(fileTask).wiredWithFiles(MyFileTask::input, MyFileTask::output).toTransform(SingleArtifact.BUNDLE)
 
-        artifacts
-            .use(fileTask)
-            .wiredWith(MyFileTask::output)
-            .toCreate(SingleArtifact.MERGED_MANIFEST)
-    }
+    artifacts.use(fileTask).wiredWith(MyFileTask::output).toCreate(SingleArtifact.MERGED_MANIFEST)
+  }
 }

@@ -19,19 +19,18 @@ package com.android.tools.idea.wizard.template.impl.other.intentService.src.app_
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 import com.android.tools.idea.wizard.template.renderIf
 
-fun intentServiceKt(
-  className: String,
-  includeHelper: Boolean,
-  packageName: String
-): String {
-  val classDocBlock = if (includeHelper) """
+fun intentServiceKt(className: String, includeHelper: Boolean, packageName: String): String {
+  val classDocBlock =
+    if (includeHelper)
+      """
  * TODO: Customize class - update intent actions, extra parameters and static
  * helper methods.
   """
-  else "* TODO: Customize class - update intent actions and extra parameters."
+    else "* TODO: Customize class - update intent actions and extra parameters."
 
-  val companionObjectBlock = renderIf(includeHelper) {
-    """
+  val companionObjectBlock =
+    renderIf(includeHelper) {
+      """
     companion object {
         /**
          * Starts this service to perform action Foo with the given parameters. If
@@ -66,7 +65,7 @@ fun intentServiceKt(
         }
     }
   """
-  }
+    }
 
   return """
 package ${escapeKotlinIdentifier(packageName)}

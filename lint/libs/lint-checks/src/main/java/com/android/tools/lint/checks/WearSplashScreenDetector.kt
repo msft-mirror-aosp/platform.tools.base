@@ -33,8 +33,7 @@ import org.w3c.dom.Element
 class WearSplashScreenDetector : WearDetector(), XmlScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(WearSplashScreenDetector::class.java, Scope.MANIFEST_SCOPE, Scope.GRADLE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WearSplashScreenDetector::class.java, Scope.MANIFEST_SCOPE, Scope.GRADLE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -65,13 +64,11 @@ class WearSplashScreenDetector : WearDetector(), XmlScanner {
 
   private var hasSplashScreenLibrary = false
 
-  override fun getApplicableElements(): Collection<String> =
-    listOf(SdkConstants.TAG_ACTIVITY, SdkConstants.TAG_ACTIVITY_ALIAS)
+  override fun getApplicableElements(): Collection<String> = listOf(SdkConstants.TAG_ACTIVITY, SdkConstants.TAG_ACTIVITY_ALIAS)
 
   override fun beforeCheckFile(context: Context) {
     hasSplashScreenLibrary =
-      context.project.isGradleProject() &&
-        (context.project.dependsOn(SdkConstants.ANDROIDX_CORE_SPLASHSCREEN) ?: false)
+      context.project.isGradleProject() && (context.project.dependsOn(SdkConstants.ANDROIDX_CORE_SPLASHSCREEN) ?: false)
   }
 
   override fun visitElement(context: XmlContext, element: Element) {
@@ -81,13 +78,9 @@ class WearSplashScreenDetector : WearDetector(), XmlScanner {
     if (hasSplashScreenLibrary) return
 
     // Flag only suspicious activities using the name Splash.
-    if (
-      !element.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME).contains("Splash")
-    )
-      return
+    if (!element.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME).contains("Splash")) return
 
-    val intentFilterTag =
-      XmlUtils.getFirstSubTagByName(element, SdkConstants.TAG_INTENT_FILTER) ?: return
+    val intentFilterTag = XmlUtils.getFirstSubTagByName(element, SdkConstants.TAG_INTENT_FILTER) ?: return
     val isLauncherActivity =
       intentFilterTag
         .subtag(SdkConstants.TAG_ACTION)

@@ -16,7 +16,6 @@
 
 package com.android.tools.idea.wizard.template.impl.other.files.aidlFile
 
-
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.Constraint.CLASS
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
@@ -55,11 +54,7 @@ val aidlFileTemplate
       File("no_activity.png")
     }
 
-    widgets(
-      TextFieldWidget(interfaceName)
-    )
+    widgets(TextFieldWidget(interfaceName))
 
-    recipe = { data: TemplateData ->
-      aidlFileRecipe(data as ModuleTemplateData, interfaceName.value)
-    }
+    recipe = { data: TemplateData -> aidlFileRecipe(data as ModuleTemplateData, interfaceName.value) }
   }

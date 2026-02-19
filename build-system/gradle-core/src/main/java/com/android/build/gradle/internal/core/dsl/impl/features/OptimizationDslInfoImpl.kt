@@ -30,108 +30,113 @@ import com.android.build.gradle.internal.dsl.OptimizationImpl
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.ComponentType
+import com.android.builder.core.ComponentTypeImpl.BASE_APK
 import com.android.builder.model.BaseConfig
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFile
-import java.io.File
-import com.android.builder.core.ComponentTypeImpl.BASE_APK
 
 class OptimizationDslInfoImpl(
-    private val componentType: ComponentType,
-    private val defaultConfig: DefaultConfig,
-    private val buildTypeObj: BuildType,
-    private val productFlavorList: List<ProductFlavor>,
-    private val services: VariantServices,
-    private val buildDirectory: DirectoryProperty,
-): CommonOptimizationDslInfoImpl(services) {
+  private val componentType: ComponentType,
+  private val defaultConfig: DefaultConfig,
+  private val buildTypeObj: BuildType,
+  private val productFlavorList: List<ProductFlavor>,
+  private val services: VariantServices,
+  private val buildDirectory: DirectoryProperty,
+) : CommonOptimizationDslInfoImpl(services) {
 
-    private val mergedOptimization = MergedOptimization()
+  private val mergedOptimization = MergedOptimization()
 
-    init {
-        mergeOptions()
-    }
+  init {
+    mergeOptions()
+  }
 
-    private fun mergeOptions() {
-        computeMergedOptions(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            mergedOptimization,
-            { optimization as OptimizationImpl },
-            { optimization as OptimizationImpl }
+  private fun mergeOptions() {
+    computeMergedOptions(
+      defaultConfig,
+      buildTypeObj,
+      productFlavorList,
+      mergedOptimization,
+      { optimization as OptimizationImpl },
+      { optimization as OptimizationImpl },
+    )
+  }
+
+  override val ignoreFromInKeepRules: Set<String>
+    get() = mergedOptimization.ignoreFromInKeepRules
+
+  override val ignoreFromAllExternalDependenciesInKeepRules: Boolean
+    get() = mergedOptimization.ignoreFromAllExternalDependenciesInKeepRules
+
+  override val ignoreFromInBaselineProfile: Set<String>
+    get() = mergedOptimization.ignoreFromInBaselineProfile
+
+  override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
+    get() = mergedOptimization.ignoreFromAllExternalDependenciesInBaselineProfile
+
+  override val applicationOptimizationEnabled: Boolean
+    get() = mergedOptimization.enable && componentType == BASE_APK
+
+  override val includePackages: Set<String>
+    get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
+
+  override val optimizationEnabled: Boolean
+    get() = mergedOptimization.enable
+
+  override val keepRuleFiles: Set<File>
+    get() = mergedOptimization.keepRuleFiles
+
+  override val includeDefaultRules: Boolean
+    get() = mergedOptimization.includeDefault
+
+  override val postProcessingOptions: PostProcessingOptions by lazy {
+    object : PostProcessingOptions {
+      override fun getProguardFiles(type: ProguardFileType): Collection<File> =
+        (buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).getProguardFiles(type)
+
+      override fun getDefaultProguardFiles(): List<File> =
+        listOf(
+          ProguardFiles.getDefaultProguardFile(
+            if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
+                ProguardFiles.ProguardFile.OPTIMIZE
+              } else {
+                ProguardFiles.ProguardFile.DONT_OPTIMIZE
+              }
+              .fileName,
+            buildDirectory,
+          )
         )
+
+      override fun codeShrinkerEnabled(): Boolean {
+        if (componentType.isTestComponent && buildTypeObj is LibraryBuildType) {
+          return buildTypeObj.androidTest.enableMinification
+        } else {
+          return buildTypeObj.isMinifyEnabled
+        }
+      }
+
+      override fun resourcesShrinkingEnabled(): Boolean = buildTypeObj.isShrinkResources
+    }
+  }
+
+  override fun gatherProguardFiles(type: ProguardFileType, into: MutableList<RegularFile>) {
+    val projectDir = services.projectInfo.projectDirectory
+    fun addToList(itemsToAdd: Collection<File>) {
+      into.addAll(itemsToAdd.map { projectDir.file(it.path) })
     }
 
-    override val ignoreFromInKeepRules: Set<String>
-        get() = mergedOptimization.ignoreFromInKeepRules
-
-    override val ignoreFromAllExternalDependenciesInKeepRules: Boolean
-        get() = mergedOptimization.ignoreFromAllExternalDependenciesInKeepRules
-
-    override val ignoreFromInBaselineProfile: Set<String>
-        get() = mergedOptimization.ignoreFromInBaselineProfile
-
-    override val ignoreFromAllExternalDependenciesInBaselineProfile: Boolean
-        get() = mergedOptimization.ignoreFromAllExternalDependenciesInBaselineProfile
-
-    override val applicationOptimizationEnabled: Boolean
-        get() = mergedOptimization.enable && componentType == BASE_APK
-
-    override val includePackages: Set<String>
-        get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
-
-    override val keepRuleFiles: Set<File>
-        get() = mergedOptimization.keepRuleFiles
-
-    override val postProcessingOptions: PostProcessingOptions by lazy {
-        object : PostProcessingOptions {
-            override fun getProguardFiles(type: ProguardFileType): Collection<File> =
-                (buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).getProguardFiles(type)
-
-            override fun getDefaultProguardFiles(): List<File> =
-                listOf(
-                    ProguardFiles.getDefaultProguardFile(
-                        if (services.projectOptions[BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED]) {
-                            ProguardFiles.ProguardFile.OPTIMIZE
-                        } else {
-                            ProguardFiles.ProguardFile.DONT_OPTIMIZE
-                        }.fileName,
-                        buildDirectory
-                    )
-                )
-
-            override fun codeShrinkerEnabled(): Boolean {
-                if (componentType.isTestComponent && buildTypeObj is LibraryBuildType) {
-                    return buildTypeObj.androidTest.enableMinification
-                } else {
-                    return buildTypeObj.isMinifyEnabled
-                }
-            }
-
-            override fun resourcesShrinkingEnabled(): Boolean = buildTypeObj.isShrinkResources
-        }
+    addToList(defaultConfig.getProguardFiles(type))
+    for (flavor in productFlavorList) {
+      addToList((flavor as com.android.build.gradle.internal.dsl.ProductFlavor).getProguardFiles(type))
     }
+    addToList(postProcessingOptions.getProguardFiles(type))
+    if (type == ProguardFileType.EXPLICIT) addToList(keepRuleFiles)
+  }
 
-    override fun gatherProguardFiles(
-        type: ProguardFileType,
-        into: MutableList<RegularFile>
-    ) {
-        val projectDir = services.projectInfo.projectDirectory
-        fun addToList(itemsToAdd: Collection<File>) {
-            into.addAll(itemsToAdd.map { projectDir.file(it.path)})
-        }
-
-        addToList(defaultConfig.getProguardFiles(type))
-        for (flavor in productFlavorList) {
-            addToList((flavor as com.android.build.gradle.internal.dsl.ProductFlavor).getProguardFiles(type))
-        }
-        addToList(postProcessingOptions.getProguardFiles(type))
-        if (type == ProguardFileType.EXPLICIT) addToList(keepRuleFiles)
-    }
-
-    private fun BaseConfig.getProguardFiles(type: ProguardFileType): Collection<File> = when (type) {
-        ProguardFileType.EXPLICIT -> this.proguardFiles
-        ProguardFileType.TEST -> this.testProguardFiles
-        ProguardFileType.CONSUMER -> this.consumerProguardFiles
+  private fun BaseConfig.getProguardFiles(type: ProguardFileType): Collection<File> =
+    when (type) {
+      ProguardFileType.EXPLICIT -> this.proguardFiles
+      ProguardFileType.TEST -> this.testProguardFiles
+      ProguardFileType.CONSUMER -> this.consumerProguardFiles
     }
 }

@@ -7,6 +7,7 @@ maven_proto_library(
     srcs = glob(["src/main/proto/*.proto"]),
     coordinates = "com.android.tools.utp:android-test-plugin-host-logcat-proto",
     description = "A protobuf message used in a UTP plugin to export logcat information",
+    proto_java_runtime_library = ["//tools/base/utp:utp.protobuf-java"],
     protoc_version = UTP_PROTO_VERSION,
     resource_strip_prefix = "tools/base/utp/android-test-plugin-host-logcat-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),

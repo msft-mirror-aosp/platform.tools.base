@@ -22,11 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.merge
 
 /** A [ProcessTracker] that merges multiple trackers into one flow */
-internal class MergedProcessTracker(
-    @VisibleForTesting
-    vararg val trackers: ProcessTracker,
-) : ProcessTracker {
+internal class MergedProcessTracker(@VisibleForTesting vararg val trackers: ProcessTracker) : ProcessTracker {
 
-    override fun trackProcesses(): Flow<ProcessEvent> =
-        merge(*trackers.map { it.trackProcesses() }.toTypedArray())
+  override fun trackProcesses(): Flow<ProcessEvent> = merge(*trackers.map { it.trackProcesses() }.toTypedArray())
 }

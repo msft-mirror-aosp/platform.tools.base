@@ -27,14 +27,14 @@ import java.nio.file.Path
  */
 class FakeAndroidLocationsProvider(override val userHomeLocation: Path) : AndroidLocationsProvider {
 
-    constructor(fileSystem: FileSystem) : this(fileSystem.getPath(System.getProperty("user.home")))
+  constructor(fileSystem: FileSystem) : this(fileSystem.getPath(System.getProperty("user.home")))
 
-    override val prefsLocation: Path
-        get() = userHomeLocation.resolve(".android").also { Files.createDirectories(it) }
+  override val prefsLocation: Path
+    get() = userHomeLocation.resolve(".android").also { Files.createDirectories(it) }
 
-    override val avdLocation: Path
-        get() = prefsLocation.resolve(AbstractAndroidLocations.FOLDER_AVD)
+  override val avdLocation: Path
+    get() = prefsLocation.resolve(AbstractAndroidLocations.FOLDER_AVD)
 
-    override val gradleAvdLocation: Path
-        get() = avdLocation.resolve(AbstractAndroidLocations.FOLDER_GRADLE_AVD)
+  override val gradleAvdLocation: Path
+    get() = avdLocation.resolve(AbstractAndroidLocations.FOLDER_GRADLE_AVD)
 }

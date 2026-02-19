@@ -25,34 +25,23 @@ import java.io.File
 
 class MockChannelProviderFactory : ChannelProviderFactory {
 
-    override fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel {
-        try {
-            val serverName = InProcessServerBuilder.generateName()
-            val roboResultsPath =
-                System.getProperty("FakeCrawlerServiceInput.roboResultsPath", null)
-            val masterCrawl = if (!roboResultsPath.isNullOrEmpty()) {
-                val content = File(roboResultsPath).readText()
-                TextFormat.parse(content, Crawl::class.java)
-            } else {
-                Crawl.getDefaultInstance()
-            }
-            val shouldInduceServerError =
-                System.getProperty("FakeCrawlerServiceInput.shouldInduceServerError").toBoolean()
-            val fakeCrawlerService =
-                FakeCrawlerService(
-                    masterCrawl,
-                    shouldInduceServerError
-                )
-            InProcessServerBuilder.forName(serverName)
-                .directExecutor()
-                .addService(fakeCrawlerService)
-                .build()
-                .start()
-            return { _, _ ->
-                InProcessChannelBuilder.forName(serverName).directExecutor().build()
-            }
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to create channel for testing", e)
+  override fun createChannelProvider(): (targetEndpoint: String, accessTokenPath: String) -> ManagedChannel {
+    try {
+      val serverName = InProcessServerBuilder.generateName()
+      val roboResultsPath = System.getProperty("FakeCrawlerServiceInput.roboResultsPath", null)
+      val masterCrawl =
+        if (!roboResultsPath.isNullOrEmpty()) {
+          val content = File(roboResultsPath).readText()
+          TextFormat.parse(content, Crawl::class.java)
+        } else {
+          Crawl.getDefaultInstance()
         }
+      val shouldInduceServerError = System.getProperty("FakeCrawlerServiceInput.shouldInduceServerError").toBoolean()
+      val fakeCrawlerService = FakeCrawlerService(masterCrawl, shouldInduceServerError)
+      InProcessServerBuilder.forName(serverName).directExecutor().addService(fakeCrawlerService).build().start()
+      return { _, _ -> InProcessChannelBuilder.forName(serverName).directExecutor().build() }
+    } catch (e: Exception) {
+      throw RuntimeException("Failed to create channel for testing", e)
     }
+  }
 }

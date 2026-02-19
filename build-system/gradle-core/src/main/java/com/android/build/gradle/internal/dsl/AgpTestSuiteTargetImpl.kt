@@ -19,19 +19,15 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.AgpTestSuiteTarget
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.testing.Test
 
-open class AgpTestSuiteTargetImpl(
-    val testSuite: AgpTestSuiteImpl,
-    private val _name: String
-): AgpTestSuiteTarget {
+open class AgpTestSuiteTargetImpl(val testSuite: AgpTestSuiteImpl, private val _name: String) : AgpTestSuiteTarget {
 
-    override val targetDevices: MutableList<String> = mutableListOf()
+  override val targetDevices: MutableList<String> = mutableListOf()
 
-    @Suppress("UnstableApiUsage")
-    override fun getBinaryResultsDirectory(): Provider<Directory> {
-        throw RuntimeException("Not implemented")
-    }
+  @Suppress("UnstableApiUsage")
+  override fun getBinaryResultsDirectory(): Provider<Directory> {
+    throw RuntimeException("Not implemented")
+  }
 
-    override fun getName(): String = _name
+  override fun getName(): String = _name
 }

@@ -32,20 +32,14 @@ interface ParameterBuilder<T> {
   }
 }
 
-inline fun stringParameter(block: StringParameterBuilder.() -> Unit): StringParameter =
-  StringParameterBuilder().apply(block).build()
+inline fun stringParameter(block: StringParameterBuilder.() -> Unit): StringParameter = StringParameterBuilder().apply(block).build()
 
-inline fun booleanParameter(block: BooleanParameterBuilder.() -> Unit): BooleanParameter =
-  BooleanParameterBuilder().apply(block).build()
+inline fun booleanParameter(block: BooleanParameterBuilder.() -> Unit): BooleanParameter = BooleanParameterBuilder().apply(block).build()
 
-inline fun <reified T : Enum<T>> enumParameter(
-  block: EnumParameterBuilder<T>.() -> Unit
-): EnumParameter<T> = enumParameter(T::class, block)
+inline fun <reified T : Enum<T>> enumParameter(block: EnumParameterBuilder<T>.() -> Unit): EnumParameter<T> = enumParameter(T::class, block)
 
-inline fun <T : Enum<T>> enumParameter(
-  klass: KClass<T>,
-  block: EnumParameterBuilder<T>.() -> Unit,
-): EnumParameter<T> = EnumParameterBuilder(klass).apply(block).build()
+inline fun <T : Enum<T>> enumParameter(klass: KClass<T>, block: EnumParameterBuilder<T>.() -> Unit): EnumParameter<T> =
+  EnumParameterBuilder(klass).apply(block).build()
 
 @TemplateDSL
 data class BooleanParameterBuilder(
@@ -72,10 +66,7 @@ data class StringParameterBuilder(
   var suggest: WizardParameterData.() -> String? = { null },
   var loggable: Boolean = false,
 ) : ParameterBuilder<String> {
-  /**
-   * This exists for (hopefully temporary) binary compatibility with JetBrains' Kotlin Multiplatform
-   * plugin
-   */
+  /** This exists for (hopefully temporary) binary compatibility with JetBrains' Kotlin Multiplatform plugin */
   @Deprecated("Specify loggable parameter")
   constructor(
     name: String? = null,
@@ -89,16 +80,7 @@ data class StringParameterBuilder(
 
   override fun build(): StringParameter {
     validate()
-    return StringParameter(
-      name!!,
-      help,
-      visible,
-      enabled,
-      default!!,
-      constraints,
-      suggest,
-      loggable,
-    )
+    return StringParameter(name!!, help, visible, enabled, default!!, constraints, suggest, loggable)
   }
 }
 

@@ -21,22 +21,7 @@ import com.android.io.NonClosingInputStream;
 import com.android.io.NonClosingInputStream.CloseBehavior;
 import com.android.utils.XmlUtils;
 import com.android.xml.sax.AttributeUtils;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -46,6 +31,24 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+
 public class DeviceSchema {
 
     // ---- XSD ----
@@ -54,7 +57,7 @@ public class DeviceSchema {
      * The latest version of the device XML Schema. Valid version numbers are between 1 and this
      * number, included.
      */
-    public static final int NS_LATEST_VERSION = 8;
+    public static final int NS_LATEST_VERSION = 9;
 
     /** The XML namespace of the latest device XML. */
     public static final String NS_DEVICES_URI = getSchemaUri(NS_LATEST_VERSION);
@@ -124,6 +127,8 @@ public class DeviceSchema {
     public static final String NODE_CAMERA = "camera";
 
     public static final String NODE_LOCATION = "location";
+
+    public static final String NODE_SENSOR_ORIENTATION = "sensor-orientation";
 
     public static final String NODE_GPU = "gpu";
 
@@ -203,6 +208,9 @@ public class DeviceSchema {
     public static final String NODE_HINGE_SUB_TYPE = "sub-type";
     public static final String NODE_HINGE_TYPE = "type";
     public static final String NODE_HINGE_FOLD_AT_POSTURE = "fold-at-posture";
+    public static final String NODE_TOUCHPAD = "touchpad";
+    public static final String NODE_WIDTH = "width";
+    public static final String NODE_HEIGHT = "height";
     public static final String NODE_CHANGE_ORIENTATION_ON_FOLD = "change-orientation-on-fold";
     public static final String NODE_HINGE_POSTURE_LIST = "posture-list";
     public static final String NODE_HINGE_ANGLES_POSTURE_DEFINITIONS =
@@ -313,8 +321,10 @@ public class DeviceSchema {
 
             int version = getXmlSchemaVersion(deviceXml);
             if (version < 1 || version > NS_LATEST_VERSION) {
-                writer.println(String.format("Devices XSD version %1$d is out of valid range 1..%2$d",
-                        version, NS_LATEST_VERSION));
+                writer.println(
+                        String.format(
+                                "Devices XSD version %1$d is out of valid range 1..%2$d",
+                                version, NS_LATEST_VERSION));
                 return false;
             }
 

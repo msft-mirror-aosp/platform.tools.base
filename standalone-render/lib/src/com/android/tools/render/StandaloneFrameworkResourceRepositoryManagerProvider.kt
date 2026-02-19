@@ -20,9 +20,8 @@ import com.android.tools.res.FrameworkResourceRepositoryManager
 import com.android.tools.res.FrameworkResourceRepositoryManagerImpl
 
 /** Provides [FrameworkResourceRepositoryManager] without caching. */
-class StandaloneFrameworkResourceRepositoryManagerProvider :
-    FrameworkResourceRepositoryManager.Provider {
-    override val frameworkResourceRepositoryManager: FrameworkResourceRepositoryManager =
-        // No need to cache FrameworkResourceRepository on disk, so no cache path
-        FrameworkResourceRepositoryManagerImpl { }
+class StandaloneFrameworkResourceRepositoryManagerProvider : FrameworkResourceRepositoryManager.Provider {
+  override val frameworkResourceRepositoryManager: FrameworkResourceRepositoryManager =
+    // No need to cache FrameworkResourceRepository on disk, so no cache path
+    FrameworkResourceRepositoryManagerImpl {}
 }

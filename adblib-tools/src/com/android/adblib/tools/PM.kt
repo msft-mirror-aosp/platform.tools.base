@@ -19,57 +19,57 @@ import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.DeviceSelector
 import kotlinx.coroutines.flow.Flow
-import java.nio.file.Path
 
 /**
- * An abstraction layer for the many ways the PackageManager service can be accessed on Android.
- * Non-exhaustive list:
- *     - Invoke pm executable
- *     - Invoke cmd executable with "package parameter"
- *     - Invoke abb binder client
- *     - Invoke legacy non-stream support pm executable
+ * An abstraction layer for the many ways the PackageManager service can be accessed on Android. Non-exhaustive list:
+ * - Invoke pm executable
+ * - Invoke cmd executable with "package parameter"
+ * - Invoke abb binder client
+ * - Invoke legacy non-stream support pm executable
  */
-internal abstract class PM(val deviceService : AdbDeviceServices) {
+internal abstract class PM(val deviceService: AdbDeviceServices) {
 
-    /**
-     * Request an install session from the Package Manager.
-     *
-     * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [options] the install options. e.g.: {"-t", "-r"}.
-     * parame [size] the combined size of all files we will be pushing
-     */
-    abstract suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long) : Flow<String>
+  /**
+   * Request an install session from the Package Manager.
+   *
+   * @param [device] the [DeviceSelector] corresponding to the target device
+   * @param [options] the install options. e.g.: {"-t", "-r"}. parame [size] the combined size of all files we will be pushing
+   */
+  abstract suspend fun createSession(device: DeviceSelector, options: List<String>, size: Long): Flow<String>
 
-    /**
-     * Stream a split APK to the Package Manager.
-     *
-     * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [sessionID] the session returned from [createSession].
-     * @param [apk] the split/apk to send to the package manager
-     * @param [filename] the filename to provide to the package manager upon streaming
-     * @param [size] the filesize of [apk]
-     */
-    abstract suspend fun streamApk(device: DeviceSelector, sessionID: String, apk: AdbInputChannel, filename: String, size: Long) : Flow<String>
+  /**
+   * Stream a split APK to the Package Manager.
+   *
+   * @param [device] the [DeviceSelector] corresponding to the target device
+   * @param [sessionID] the session returned from [createSession].
+   * @param [apk] the split/apk to send to the package manager
+   * @param [filename] the filename to provide to the package manager upon streaming
+   * @param [size] the filesize of [apk]
+   */
+  abstract suspend fun streamApk(
+    device: DeviceSelector,
+    sessionID: String,
+    apk: AdbInputChannel,
+    filename: String,
+    size: Long,
+  ): Flow<String>
 
-    /**
-     * Commit the app installation with the Package Manager. The session is destroyed.
-     *
-     * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [sessionID] the session returned from [createSession].
-     */
-    abstract suspend fun commit(device: DeviceSelector, sessionID: String): Flow<String>
+  /**
+   * Commit the app installation with the Package Manager. The session is destroyed.
+   *
+   * @param [device] the [DeviceSelector] corresponding to the target device
+   * @param [sessionID] the session returned from [createSession].
+   */
+  abstract suspend fun commit(device: DeviceSelector, sessionID: String): Flow<String>
 
-    /**
-     * Abandon the app installation with the Package Manager. The session is destroyed.
-     *
-     * @param [device] the [DeviceSelector] corresponding to the target device
-     * @param [sessionID] the session returned from [createSession].
-     */
-    abstract suspend fun abandon(device: DeviceSelector, sessionID: String): Flow<String>
+  /**
+   * Abandon the app installation with the Package Manager. The session is destroyed.
+   *
+   * @param [device] the [DeviceSelector] corresponding to the target device
+   * @param [sessionID] the session returned from [createSession].
+   */
+  abstract suspend fun abandon(device: DeviceSelector, sessionID: String): Flow<String>
 
-    /**
-     * Inform the called of how the createSession/stream/commit|abandon will executed
-     * (a.k.a strategy).
-     */
-    abstract suspend fun getStrategy() : String
+  /** Inform the called of how the createSession/stream/commit|abandon will executed (a.k.a strategy). */
+  abstract suspend fun getStrategy(): String
 }

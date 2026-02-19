@@ -18,18 +18,19 @@ package com.android.build.api.apiTest.groovy
 
 import com.android.build.api.apiTest.VariantApiBaseTest
 import com.google.common.truth.Truth
+import kotlin.test.assertNotNull
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.Test
-import kotlin.test.assertNotNull
 
-class ManifestReplacementTest: VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
-    @Test
-    fun manifestReplacementTest() {
-        given {
-            tasksToInvoke.add(":app:processDebugResources")
+class ManifestReplacementTest : VariantApiBaseTest(TestType.Script, ScriptingLanguage.Groovy) {
+  @Test
+  fun manifestReplacementTest() {
+    given {
+      tasksToInvoke.add(":app:processDebugResources")
 
-            addModule(":app") {
-                buildFile = """
+      addModule(":app") {
+        buildFile =
+          """
             plugins {
                 id 'com.android.application'
             }
@@ -62,39 +63,36 @@ class ManifestReplacementTest: VariantApiBaseTest(TestType.Script, ScriptingLang
                         .toCreate(SingleArtifact.MERGED_MANIFEST.INSTANCE)
                 })
             }
-            """.trimIndent()
+            """
+            .trimIndent()
 
-                testingElements.addManifest(this)
-                testingElements.addMainActivity(this)
-            }
-        }
-        withDocs {
-            index =
-                    // language=markdown
-                    """
-# Test manifest replacement
-
-This sample shows how to replace a text in the manifest file.
-It replaces the version name with the version obtained from git.
-
-## To Run
-./gradlew debugManifestProducer
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            arrayOf(
-                ":app:debugGitVersionProvider",
-                ":app:debugManifestProducer"
-            ).forEach {
-                val task = task(it)
-                assertNotNull(task)
-                Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
-
-            }
-            Truth.assertThat(task(":app:processDebugMainManifest")).isNull()
-        }
+        testingElements.addManifest(this)
+        testingElements.addMainActivity(this)
+      }
     }
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Test manifest replacement
 
+        This sample shows how to replace a text in the manifest file.
+        It replaces the version name with the version obtained from git.
+
+        ## To Run
+        ./gradlew debugManifestProducer
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      arrayOf(":app:debugGitVersionProvider", ":app:debugManifestProducer").forEach {
+        val task = task(it)
+        assertNotNull(task)
+        Truth.assertThat(task.outcome).isEqualTo(TaskOutcome.SUCCESS)
+      }
+      Truth.assertThat(task(":app:processDebugMainManifest")).isNull()
+    }
+  }
 }

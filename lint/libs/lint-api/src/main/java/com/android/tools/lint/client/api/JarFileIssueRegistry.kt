@@ -39,12 +39,11 @@ import java.util.jar.JarFile
 import java.util.regex.Pattern
 
 /**
- * An [IssueRegistry] for a custom lint rule jar file. The rule jar should provide a manifest entry
- * with the key `Lint-Registry` and the value of the fully qualified name of an implementation of
- * [IssueRegistry] (with a default constructor).
+ * An [IssueRegistry] for a custom lint rule jar file. The rule jar should provide a manifest entry with the key `Lint-Registry` and the
+ * value of the fully qualified name of an implementation of [IssueRegistry] (with a default constructor).
  *
- * NOTE: The custom issue registry should not extend this file; it should be a plain IssueRegistry!
- * This file is used internally to wrap the given issue registry.
+ * NOTE: The custom issue registry should not extend this file; it should be a plain IssueRegistry! This file is used internally to wrap the
+ * given issue registry.
  */
 class JarFileIssueRegistry
 private constructor(
@@ -81,8 +80,8 @@ private constructor(
   companion object Factory {
     /**
      * Pattern for matching lint jar paths in Gradle's cache, like
-     * ../../../../../.gradle/caches/transforms-3/4f61605fce02e0e38b0af6e34f10c4a6/transformed/lifecycle-runtime-ktx-2.2.0/jars/lint.jar
-     * and on Windows,
+     * ../../../../../.gradle/caches/transforms-3/4f61605fce02e0e38b0af6e34f10c4a6/transformed/lifecycle-runtime-ktx-2.2.0/jars/lint.jar and
+     * on Windows,
      * C:\users\example\.gradle\caches\transforms-3\4f61605fce02e0e38b0af6e34f10c4a6\transformed\annotation-experimental-1.0.0\jars\lint.jar.
      */
     private val ARTIFACT_PATTERN =
@@ -91,8 +90,7 @@ private constructor(
       )
 
     /** Service key for automatic discovery of lint rules. */
-    private const val SERVICE_KEY =
-      "META-INF/services/com.android.tools.lint.client.api.IssueRegistry"
+    private const val SERVICE_KEY = "META-INF/services/com.android.tools.lint.client.api.IssueRegistry"
 
     /**
      * Manifest constant for declaring an issue provider.
@@ -115,8 +113,8 @@ private constructor(
     private val cache = ConcurrentHashMap<File, SoftReference<JarFileIssueRegistry>>()
 
     /**
-     * Mapping files with verification failures to their last modified timestamps. Only failures
-     * with isolated [LintDriver] and false skipVerification are cached.
+     * Mapping files with verification failures to their last modified timestamps. Only failures with isolated [LintDriver] and false
+     * skipVerification are cached.
      */
     private val failureCache = ConcurrentHashMap<File, Long>()
 
@@ -124,12 +122,10 @@ private constructor(
     private val rejectedIssueIds = CopyOnWriteArraySet<String>()
 
     /**
-     * Loads custom rules from the given list of jar files and returns a list of
-     * [JarFileIssueRegistry] instances.
+     * Loads custom rules from the given list of jar files and returns a list of [JarFileIssueRegistry] instances.
      *
-     * It will also deduplicate issue registries, since in Gradle projects with local lint.jar's
-     * it's possible for the same lint.jar to be handed back multiple times with different paths
-     * through various separate dependencies.
+     * It will also deduplicate issue registries, since in Gradle projects with local lint.jar's it's possible for the same lint.jar to be
+     * handed back multiple times with different paths through various separate dependencies.
      */
     fun get(
       client: LintClient,
@@ -147,8 +143,7 @@ private constructor(
       val registries = ArrayList<JarFileIssueRegistry>(capacity)
 
       for ((registryClass, jarFiles) in registryMap) {
-        val registry =
-          get(client, registryClass, jarFiles, currentProject, driver, skipVerification) ?: continue
+        val registry = get(client, registryClass, jarFiles, currentProject, driver, skipVerification) ?: continue
         registries.add(registry)
       }
 
@@ -156,9 +151,8 @@ private constructor(
     }
 
     /**
-     * Returns a [JarFileIssueRegistry] for the given issue registry class name and jar files, with
-     * caching. Only the first verified item in [jarFiles] are processed to create the
-     * [JarFileIssueRegistry].
+     * Returns a [JarFileIssueRegistry] for the given issue registry class name and jar files, with caching. Only the first verified item in
+     * [jarFiles] are processed to create the [JarFileIssueRegistry].
      */
     private fun get(
       client: LintClient,
@@ -180,11 +174,7 @@ private constructor(
         }
         if (useFailureCache && failureCache[jarFile]?.equals(jarFile.lastModified()) == true) {
           if (logJarProblems()) {
-            client.log(
-              Severity.WARNING,
-              null,
-              "Skipping loading of $jarFile, as it previously failed to be loaded.",
-            )
+            client.log(Severity.WARNING, null, "Skipping loading of $jarFile, as it previously failed to be loaded.")
           }
           continue
         }
@@ -192,16 +182,7 @@ private constructor(
           // Ensure that the scope-to-detector map doesn't return stale results
           reset()
 
-          val userRegistry =
-            loadIssueRegistry(
-              client,
-              jarFile,
-              registryClassName,
-              currentProject,
-              driver,
-              skipVerification,
-              true,
-            )
+          val userRegistry = loadIssueRegistry(client, jarFile, registryClassName, currentProject, driver, skipVerification, true)
           if (userRegistry != null) {
             val vendor = getVendor(client, userRegistry, jarFile)
             val jarIssueRegistry = JarFileIssueRegistry(client, jarFile, userRegistry, vendor)
@@ -211,8 +192,7 @@ private constructor(
                 client.log(
                   Severity.ERROR,
                   null,
-                  "Issue ${issue.id} has defaultSeverity=IGNORE; that's " +
-                    "not valid. Use enabledByDefault=false instead.",
+                  "Issue ${issue.id} has defaultSeverity=IGNORE; that's " + "not valid. Use enabledByDefault=false instead.",
                 )
               }
             }
@@ -248,8 +228,7 @@ private constructor(
     /** Verifies that the given issue jar [jarFile] is compatible. */
     private fun verify(client: LintClient, jarFile: File): LintJarVerifier {
       val skip =
-        (System.getProperty("android.lint.skip.bytecode.verifier")
-          ?: System.getenv("ANDROID_LINT_SKIP_BYTECODE_VERIFIER")) == VALUE_TRUE
+        (System.getProperty("android.lint.skip.bytecode.verifier") ?: System.getenv("ANDROID_LINT_SKIP_BYTECODE_VERIFIER")) == VALUE_TRUE
       val verifier = LintJarVerifier(client, jarFile, skip)
       verifier.getVerificationThrowable()?.let {
         if (logJarProblems()) {
@@ -266,8 +245,7 @@ private constructor(
     /**
      * Given a jar file, create a class loader for it and instantiate the named issue registry.
      *
-     * TODO: Add a custom class loader architecture here such that custom rules can have dependent
-     *   jars without needing to jar-jar them!
+     * TODO: Add a custom class loader architecture here such that custom rules can have dependent jars without needing to jar-jar them!
      */
     private fun loadIssueRegistry(
       client: LintClient,
@@ -280,8 +258,7 @@ private constructor(
     ): IssueRegistry? {
       // Make a class loader for this jar
       return try {
-        val loader =
-          client.createUrlClassLoader(listOf(jarFile), JarFileIssueRegistry::class.java.classLoader)
+        val loader = client.createUrlClassLoader(listOf(jarFile), JarFileIssueRegistry::class.java.classLoader)
         val registryClass = Class.forName(className, true, loader)
         val registry = registryClass.getDeclaredConstructor().newInstance() as IssueRegistry
 
@@ -484,12 +461,7 @@ private constructor(
           if (logJarProblems()) {
             val stacktrace = StringBuilder()
             LintDriver.appendStackTraceSummary(e, stacktrace)
-            client.log(
-              e,
-              "Could not load custom lint check jar file %1\$s: %2\$s",
-              jarFile,
-              stacktrace,
-            )
+            client.log(e, "Could not load custom lint check jar file %1\$s: %2\$s", jarFile, stacktrace)
           }
         } else if (reportErrors(driver)) {
           val stacktrace = StringBuilder()
@@ -557,11 +529,7 @@ private constructor(
             inferredVendor
           } else {
             if (logJarProblems()) {
-              client.log(
-                Severity.WARNING,
-                null,
-                "$registryClass in $jarFile does not specify a vendor; see IssueRegistry#vendor",
-              )
+              client.log(Severity.WARNING, null, "$registryClass in $jarFile does not specify a vendor; see IssueRegistry#vendor")
             }
 
             Vendor(identifier = identifier)
@@ -570,9 +538,9 @@ private constructor(
     }
 
     /**
-     * Returns a map from issue registry qualified name to the corresponding jar files that contains
-     * it. The sorting order for Jar files prioritizes those with higher revision numbers first,
-     * followed by Jar files that have no revision number, and lastly, legacy Jar files.
+     * Returns a map from issue registry qualified name to the corresponding jar files that contains it. The sorting order for Jar files
+     * prioritizes those with higher revision numbers first, followed by Jar files that have no revision number, and lastly, legacy Jar
+     * files.
      */
     fun findRegistries(client: LintClient, jarFiles: Collection<File>): Map<String, List<File>> {
       val registryClassToJarFile = HashMap<String, TreeMap<Int, File>>()
@@ -651,19 +619,11 @@ private constructor(
       }
     }
 
-    private fun generateVerifierMessage(
-      api: Int,
-      className: String,
-      issues: List<Issue>,
-      verifier: LintJarVerifier,
-    ): String {
+    private fun generateVerifierMessage(api: Int, className: String, issues: List<Issue>, verifier: LintJarVerifier): String {
       val sb = StringBuilder()
       when {
         api > CURRENT_API -> sb.append("Requires newer lint; ")
-        api < CURRENT_API ->
-          sb.append(
-            "Library lint checks out of date;\n"
-          ) // inconsistent newline, but preserve existing baselines
+        api < CURRENT_API -> sb.append("Library lint checks out of date;\n") // inconsistent newline, but preserve existing baselines
         else -> sb.append("Library lint checks reference invalid APIs; ")
       }
       sb.append("these checks **will be skipped**!\n\n")
@@ -673,30 +633,30 @@ private constructor(
         api > CURRENT_API ->
           sb.append(
             """
-                    which was compiled against a newer version of lint
-                    than this one. This is usually fine, but not in this
-                    case; some basic verification shows that the lint
-                    check jar references (for example) the following API
-                    which is not valid in the version of lint which is running:
-                    """
+            which was compiled against a newer version of lint
+            than this one. This is usually fine, but not in this
+            case; some basic verification shows that the lint
+            check jar references (for example) the following API
+            which is not valid in the version of lint which is running:
+            """
               .trimIndent()
           )
         api < CURRENT_API ->
           sb.append(
             """
-                    which was compiled against an older version of lint
-                    than this one. This is usually fine, but not in this
-                    case; some basic verification shows that the lint
-                    check jar references (for example) the following API
-                    which is no longer valid in this version of lint:
-                    """
+            which was compiled against an older version of lint
+            than this one. This is usually fine, but not in this
+            case; some basic verification shows that the lint
+            check jar references (for example) the following API
+            which is no longer valid in this version of lint:
+            """
               .trimIndent()
           )
         else ->
           sb.append(
             """
-                    which contains some references to invalid API:
-                    """
+            which contains some references to invalid API:
+            """
               .trimIndent()
           )
       }
@@ -720,39 +680,38 @@ private constructor(
       sb.append("\n\n")
 
       when {
-        reference ==
-          "org.jetbrains.uast.kotlin.KotlinUClass#getKtClass(): org.jetbrains.kotlin.psi.KtClassOrObject" &&
+        reference == "org.jetbrains.uast.kotlin.KotlinUClass#getKtClass(): org.jetbrains.kotlin.psi.KtClassOrObject" &&
           className == "androidx.fragment.lint.FragmentIssueRegistry" &&
           LintClient.isGradle -> {
           sb.append(
             """
-                        **This is a known bug which is already fixed in
-                        `androidx.fragment:fragment:1.5.1` and later**; update
-                        to that version. If you are not directly depending
-                        on this library but picking it up via a transitive
-                        dependency, explicitly add
-                        `implementation 'androidx.fragment:fragment:1.5.1'`
-                        (or later) to your build.gradle dependency block.
-                        """
+            **This is a known bug which is already fixed in
+            `androidx.fragment:fragment:1.5.1` and later**; update
+            to that version. If you are not directly depending
+            on this library but picking it up via a transitive
+            dependency, explicitly add
+            `implementation 'androidx.fragment:fragment:1.5.1'`
+            (or later) to your build.gradle dependency block.
+            """
               .trimIndent()
           )
         }
         api > CURRENT_API -> {
           sb.append(
             """
-                        To use this lint check, upgrade to a more recent version
-                        of lint.
-                        """
+            To use this lint check, upgrade to a more recent version
+            of lint.
+            """
               .trimIndent()
           )
         }
         api < CURRENT_API -> {
           sb.append(
             """
-                        Recompile the checks against the latest version, or if
-                        this is a check bundled with a third-party library, see
-                        if there is a more recent version available.
-                        """
+            Recompile the checks against the latest version, or if
+            this is a check bundled with a third-party library, see
+            if there is a more recent version available.
+            """
               .trimIndent()
           )
         }
@@ -760,9 +719,9 @@ private constructor(
           // api == CURRENT_API
           sb.append(
             """
-                        To use this lint check, upgrade to a more recent version
-                        of the library.
-                        """
+            To use this lint check, upgrade to a more recent version
+            of the library.
+            """
               .trimIndent()
           )
         }
@@ -784,18 +743,16 @@ private constructor(
     }
 
     /**
-     * Work around http://bugs.java.com/bugdatabase/view_bug.do?bug_id=5041014 : URLClassLoader, on
-     * Windows, locks the .jar file forever. As of Java 7, there's a workaround: you can call
-     * close() when you're "done" with the file. We'll do that here. However, the whole point of the
-     * [JarFileIssueRegistry] is that when lint is run over and over again as the user is editing in
-     * the IDE and we're background checking the code, we don't want to keep loading the custom view
-     * classes over and over again: we want to cache them. Therefore, just closing the
-     * URLClassLoader right away isn't great either. However, it turns out it's safe to close the
-     * URLClassLoader once you've loaded the classes you need, since the URLClassLoader will
-     * continue to serve those classes even after its close() methods has been called.
+     * Work around http://bugs.java.com/bugdatabase/view_bug.do?bug_id=5041014 : URLClassLoader, on Windows, locks the .jar file forever. As
+     * of Java 7, there's a workaround: you can call close() when you're "done" with the file. We'll do that here. However, the whole point
+     * of the [JarFileIssueRegistry] is that when lint is run over and over again as the user is editing in the IDE and we're background
+     * checking the code, we don't want to keep loading the custom view classes over and over again: we want to cache them. Therefore, just
+     * closing the URLClassLoader right away isn't great either. However, it turns out it's safe to close the URLClassLoader once you've
+     * loaded the classes you need, since the URLClassLoader will continue to serve those classes even after its close() methods has been
+     * called.
      *
-     * Therefore, if we can call close() on this URLClassLoader, we'll proactively load all class
-     * files we find in the .jar file, then close it.
+     * Therefore, if we can call close() on this URLClassLoader, we'll proactively load all class files we find in the .jar file, then close
+     * it.
      *
      * @param client the client to report errors to
      * @param file the .jar file
@@ -849,12 +806,10 @@ private constructor(
     }
 
     /**
-     * If set to false, don't log various problems related to loading custom jar files. This
-     * includes unexpected conditions like a lint jar file not containing an issue registry, or I/O
-     * errors reading the file. It does *not* include exceptions thrown by the IssueRegistry being
-     * initialized; these are reported as actual [IssueRegistry.LINT_ERROR] problems.
+     * If set to false, don't log various problems related to loading custom jar files. This includes unexpected conditions like a lint jar
+     * file not containing an issue registry, or I/O errors reading the file. It does *not* include exceptions thrown by the IssueRegistry
+     * being initialized; these are reported as actual [IssueRegistry.LINT_ERROR] problems.
      */
-    private fun logJarProblems(): Boolean =
-      System.getProperty("android.lint.log-jar-problems") != VALUE_FALSE
+    private fun logJarProblems(): Boolean = System.getProperty("android.lint.log-jar-problems") != VALUE_FALSE
   }
 }

@@ -22,54 +22,60 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.testutils.TestInputsGenerator
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Files
 import org.junit.Rule
 import org.junit.Test
-import java.nio.file.Files
 
 class DuplicateClassesTest {
 
-    val app = MinimalSubProject.app("com.example")
-        .withFile("src/main/java/com/example/A.java",
-            "package com.example; public class A {}")
-        .withFile("src/main/java/com/example/C.java",
-            "package com.example; public class C {}")
-    val javaLib = MinimalSubProject.javaLibrary()
-        .withFile("src/main/java/com/example/A.java",
-            "package com.example; public class A {}")
-        .withFile("src/main/java/com/example/B.java",
-            "package com.example; public class B {}")
+  val app =
+    MinimalSubProject.app("com.example")
+      .withFile("src/main/java/com/example/A.java", "package com.example; public class A {}")
+      .withFile("src/main/java/com/example/C.java", "package com.example; public class C {}")
+  val javaLib =
+    MinimalSubProject.javaLibrary()
+      .withFile("src/main/java/com/example/A.java", "package com.example; public class A {}")
+      .withFile("src/main/java/com/example/B.java", "package com.example; public class B {}")
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject(":app", app)
-                .subproject(":lib", javaLib)
-                .dependency("implementation", app, javaLib)
-                .build()
-        ).create()
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject(":app", app)
+          .subproject(":lib", javaLib)
+          .dependency("implementation", app, javaLib)
+          .build()
+      )
+      .create()
 
-    private val lineSeparator: String = System.lineSeparator()
+  private val lineSeparator: String = System.lineSeparator()
 
-    @Test
-    fun testExternalLibrariesWithDuplicateClasses() {
-        val jar1 = project.getSubproject(":app").projectDir.toPath().resolve("libs/jar1.jar")
-        Files.createDirectories(jar1.parent)
-        TestInputsGenerator.jarWithEmptyClasses(jar1, listOf("com/example/A"))
+  @Test
+  fun testExternalLibrariesWithDuplicateClasses() {
+    val jar1 = project.getSubproject(":app").projectDir.toPath().resolve("libs/jar1.jar")
+    Files.createDirectories(jar1.parent)
+    TestInputsGenerator.jarWithEmptyClasses(jar1, listOf("com/example/A"))
 
-        val jar2 = project.getSubproject(":app").projectDir.toPath().resolve("libs/jar2.jar")
-        TestInputsGenerator.jarWithEmptyClasses(jar2, listOf("com/example/A", "com/example/G"))
+    val jar2 = project.getSubproject(":app").projectDir.toPath().resolve("libs/jar2.jar")
+    TestInputsGenerator.jarWithEmptyClasses(jar2, listOf("com/example/A", "com/example/G"))
 
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """dependencies {
-                        |api files('libs/jar1.jar', 'libs/jar2.jar')
-                    |}""".trimMargin())
-        val result = project.executor().expectFailure().run("clean", ":app:checkDebugDuplicateClasses")
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
+      |dependencies {
+      |api files('libs/jar1.jar', 'libs/jar2.jar')
+      |}
+      """
+        .trimMargin(),
+    )
+    val result = project.executor().expectFailure().run("clean", ":app:checkDebugDuplicateClasses")
 
-        assertThat(result.failureMessage).contains(
-            "Duplicate class com.example.A found in modules jar1.jar -> jar1 (jar1.jar) and " +
-                    "jar2.jar -> jar2 (jar2.jar)$lineSeparator${lineSeparator}" +
-                    "Learn how to fix dependency resolution errors at https://d.android.com/r/tools/classpath-sync-errors")
-    }
+    assertThat(result.failureMessage)
+      .contains(
+        "Duplicate class com.example.A found in modules jar1.jar -> jar1 (jar1.jar) and " +
+          "jar2.jar -> jar2 (jar2.jar)$lineSeparator${lineSeparator}" +
+          "Learn how to fix dependency resolution errors at https://d.android.com/r/tools/classpath-sync-errors"
+      )
+  }
 }

@@ -66,17 +66,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 
-/**
- * An implementation of the ADB server to device protocol that forwards all commands to a remote
- * server via gRPC.
- */
+/** An implementation of the ADB server to device protocol that forwards all commands to a remote server via gRPC. */
 internal class ForwardingDaemonImpl(
   private val streamOpener: StreamOpener,
   private val scope: CoroutineScope,
   private val adbSession: AdbSession,
-  private val serverSocketProvider: suspend () -> AdbServerSocket = {
-    adbSession.channelFactory.createServerSocket()
-  },
+  private val serverSocketProvider: suspend () -> AdbServerSocket = { adbSession.channelFactory.createServerSocket() },
 ) : ForwardingDaemon {
 
   private val streams = mutableMapOf<Int, Stream>()
@@ -141,11 +136,7 @@ internal class ForwardingDaemonImpl(
       .flowOn(Dispatchers.IO)
       .shareIn(scope, SharingStarted.WhileSubscribed(), 1)
 
-  private suspend fun pingDevice(
-    byteArray: ByteArray,
-    input: AdbInputChannel,
-    output: AdbOutputChannel,
-  ): Long {
+  private suspend fun pingDevice(byteArray: ByteArray, input: AdbInputChannel, output: AdbOutputChannel): Long {
     val buffer = ByteBuffer.wrap(byteArray)
     return withTimeout(ROUND_TRIP_LATENCY_LIMIT.toMillis()) {
       measureTimeMillis {
@@ -177,11 +168,7 @@ internal class ForwardingDaemonImpl(
                 object : AdbChannel by adbChannel {
                   val writeMutex = Mutex()
 
-                  override suspend fun writeExactly(
-                    buffer: ByteBuffer,
-                    timeout: Long,
-                    unit: TimeUnit,
-                  ) {
+                  override suspend fun writeExactly(buffer: ByteBuffer, timeout: Long, unit: TimeUnit) {
                     writeMutex.withLock { adbChannel.writeExactly(buffer, timeout, unit) }
                   }
                 }
@@ -256,10 +243,7 @@ internal class ForwardingDaemonImpl(
           try {
             withTimeout(FAST_TASK_TIME_LIMIT.toMillis()) { adbCommandHandler.join() }
           } catch (_: TimeoutCancellationException) {
-            logger.log(
-              Level.WARNING,
-              "Command handler not cancelled after ${FAST_TASK_TIME_LIMIT.seconds}s.",
-            )
+            logger.log(Level.WARNING, "Command handler not cancelled after ${FAST_TASK_TIME_LIMIT.seconds}s.")
           }
         }
         streams.clear()
@@ -279,10 +263,7 @@ internal class ForwardingDaemonImpl(
     }
   }
 
-  /**
-   * Cleanup methods may throw exceptions while closing device and these exceptions should not
-   * terminate the whole closing process.
-   */
+  /** Cleanup methods may throw exceptions while closing device and these exceptions should not terminate the whole closing process. */
   private fun runAndLogExceptionsOnClosing(block: () -> Unit) =
     try {
       block()
@@ -299,8 +280,7 @@ internal class ForwardingDaemonImpl(
   private suspend fun handleConnect(command: ConnectCommand) {
     // As of aosp/568123 (which incremented ADB's version to 0x01000001), CRC32 is not required.
     needsCrc32 = command.adbVersion < 0x01000001
-    reverseService =
-      ReverseService(serialNumber, scope, ResponseWriter(localAdbChannel, needsCrc32), adbSession)
+    reverseService = ReverseService(serialNumber, scope, ResponseWriter(localAdbChannel, needsCrc32), adbSession)
     val response = ConnectCommand(banner = "${deviceState.value.adbState}::features=$features")
     response.writeTo(localAdbChannel, needsCrc32)
   }

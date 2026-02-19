@@ -15,7 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.xrActivity.res.values
 
-fun stringsXml() = """
+fun stringsXml() =
+  """
 <resources>
     <string name="app_name">Basic Headset Activity</string>
     <string name="hello_android_xr">Hello Android XR.</string>

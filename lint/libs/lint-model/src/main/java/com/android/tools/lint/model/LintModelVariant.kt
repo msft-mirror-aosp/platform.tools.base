@@ -26,18 +26,11 @@ interface LintModelVariant {
   val name: String
   val useSupportLibraryVectorDrawables: Boolean
 
-  /**
-   * The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts
-   * are passed to lint for analysis.
-   */
+  /** The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts are passed to lint for analysis. */
   val artifact: LintModelArtifact
 
-  /**
-   * The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts
-   * are passed to lint for analysis.
-   */
-  @Deprecated("This property is deprecated.", ReplaceWith("artifact"))
-  val mainArtifact: LintModelAndroidArtifact
+  /** The single artifact passed to lint for analysis, or the "main" artifact if multiple artifacts are passed to lint for analysis. */
+  @Deprecated("This property is deprecated.", ReplaceWith("artifact")) val mainArtifact: LintModelAndroidArtifact
   val testArtifact: LintModelJavaArtifact?
   val androidTestArtifact: LintModelAndroidArtifact?
   val testFixturesArtifact: LintModelAndroidArtifact?
@@ -65,9 +58,8 @@ interface LintModelVariant {
   val buildFeatures: LintModelBuildFeatures
 
   /**
-   * Lookup from artifact address in a [LintModelDependencyGraph] to a [LintModelLibrary]. The
-   * libraries are shared across modules and variants, only the dependency graphs pointing to the
-   * libraries by address are per artifact.
+   * Lookup from artifact address in a [LintModelDependencyGraph] to a [LintModelLibrary]. The libraries are shared across modules and
+   * variants, only the dependency graphs pointing to the libraries by address are per artifact.
    */
   val libraryResolver: LintModelLibraryResolver
 
@@ -94,14 +86,13 @@ class DefaultLintModelVariant(
   override val targetSdkVersion: AndroidVersion?,
 
   /**
-   * Resource fields declared in the DSL. Note that unlike the builder-model, this map merges all
-   * the values from the mergedFlavor (which includes the defaultConfig) as well as the buildType.
+   * Resource fields declared in the DSL. Note that unlike the builder-model, this map merges all the values from the mergedFlavor (which
+   * includes the defaultConfig) as well as the buildType.
    */
   override val resValues: Map<String, LintModelResourceField>,
   /**
-   * Manifest placeholders declared in the DSL. Note that unlike the builder-model, this map merges
-   * all the values from the mergedFlavor (which includes the defaultConfig) as well as the
-   * buildType.
+   * Manifest placeholders declared in the DSL. Note that unlike the builder-model, this map merges all the values from the mergedFlavor
+   * (which includes the defaultConfig) as well as the buildType.
    */
   override val manifestPlaceholders: Map<String, String>,
   override val resourceConfigurations: Collection<String>,
@@ -123,8 +114,7 @@ class DefaultLintModelVariant(
     return@lazy if (mainArtifactOrNull != null) {
       mainArtifactOrNull
     } else {
-      val nonNullArtifacts: List<LintModelArtifact> =
-        listOfNotNull(testArtifact, androidTestArtifact, testFixturesArtifact)
+      val nonNullArtifacts: List<LintModelArtifact> = listOfNotNull(testArtifact, androidTestArtifact, testFixturesArtifact)
       if (nonNullArtifacts.size != 1) {
         throw RuntimeException("Unexpected number of artifacts")
       }

@@ -18,10 +18,8 @@ package com.android.build.gradle.internal.manifest
 
 import org.gradle.api.provider.Provider
 
-/**
- * A class that can provide a [Provider] of [ManifestData]
- */
+/** A class that can provide a [Provider] of [ManifestData] */
 interface ManifestDataProvider {
-    val manifestLocation: String
-    val manifestData: Provider<ManifestData>
+  val manifestLocation: String
+  val manifestData: Provider<ManifestData>
 }

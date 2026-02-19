@@ -19,14 +19,14 @@ import org.junit.Test
 
 class HardwareTest {
 
-    @Test
-    fun testDeepCopyWorksWithNulls() {
-        val hardware = Hardware()
+  @Test
+  fun testDeepCopyWorksWithNulls() {
+    val hardware = Hardware()
 
-        hardware.screen = null
-        hardware.ram = null
+    hardware.screen = null
+    hardware.ram = null
 
-        /* no exception expected */
-        hardware.deepCopy()
-    }
+    /* no exception expected */
+    hardware.deepCopy()
+  }
 }

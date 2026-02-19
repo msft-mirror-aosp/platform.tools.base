@@ -1,0 +1,6 @@
+directories:
+  tools/base/android-test
+  tools/base/build-system/integration-test/connected
+
+java_language_level: 17
+workspace_type: java

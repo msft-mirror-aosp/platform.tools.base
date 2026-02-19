@@ -20,21 +20,19 @@ import com.android.build.api.apiTest.VariantApiBaseTest
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.ArtifactAccess
-import org.junit.Test
-import java.io.File
-import java.util.zip.ZipFile
 import kotlin.test.assertNotNull
+import org.junit.Test
 
-class BundleTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun addMetadataFileTest() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayBundle"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+class BundleTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun addMetadataFileTest() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayBundle"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
             plugins {
                     id("com.android.application")
                     kotlin("android")
@@ -104,37 +102,37 @@ class BundleTest: VariantApiBaseTest(TestType.Script) {
                     }
                 }
             }
-        """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# bundleConfig.addMetadataFile in Kotlin
-This sample shows how to add a metadata file to the built bundle.
-The [BundleConfig] variant object will be used to register the output of the AddMetadataInBundleTask
-Task to a new metadata file to be added to the resulting bundle file.
-## To Run
-./gradlew debugDisplayBundle
-expected result : You should see the added metadata.pb file added to the resulting bundle.
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("BUNDLE-METADATA/com.android.build/metadata.pb")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.artifactAccessList).hasSize(1)
-                    val artifactAccess = it.variantApiAccess.artifactAccessList[0]
-                    Truth.assertThat(artifactAccess.type).isEqualTo(
-                        ArtifactAccess.AccessType.GET
-                    )
-                }
-            }
-        }
+        """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # bundleConfig.addMetadataFile in Kotlin
+        This sample shows how to add a metadata file to the built bundle.
+        The [BundleConfig] variant object will be used to register the output of the AddMetadataInBundleTask
+        Task to a new metadata file to be added to the resulting bundle file.
+        ## To Run
+        ./gradlew debugDisplayBundle
+        expected result : You should see the added metadata.pb file added to the resulting bundle.
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("BUNDLE-METADATA/com.android.build/metadata.pb")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.artifactAccessList).hasSize(1)
+          val artifactAccess = it.variantApiAccess.artifactAccessList[0]
+          Truth.assertThat(artifactAccess.type).isEqualTo(ArtifactAccess.AccessType.GET)
+        }
+      }
+    }
+  }
 }

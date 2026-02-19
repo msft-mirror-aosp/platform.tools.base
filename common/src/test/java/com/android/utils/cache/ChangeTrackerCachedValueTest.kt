@@ -15,12 +15,12 @@
  */
 package com.android.utils.cache
 
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 class ChangeTrackerCachedValueTest {
   @Test
@@ -28,9 +28,7 @@ class ChangeTrackerCachedValueTest {
     val counter = AtomicInteger(0)
     val tracker = AtomicLong(0)
     val value = ChangeTrackerCachedValue.strongReference<String>()
-    val provider = {
-      counter.getAndIncrement().toString()
-    }
+    val provider = { counter.getAndIncrement().toString() }
     val trackerProvider = { tracker.get() }
     assertEquals("0", ChangeTrackerCachedValue.get(value, provider, trackerProvider))
     assertEquals("0", ChangeTrackerCachedValue.get(value, provider, trackerProvider))
@@ -42,9 +40,7 @@ class ChangeTrackerCachedValueTest {
   fun testNeverChanging() = runBlocking {
     val counter = AtomicInteger(0)
     val value = ChangeTrackerCachedValue.strongReference<String>()
-    val provider = {
-      counter.getAndIncrement().toString()
-    }
+    val provider = { counter.getAndIncrement().toString() }
     assertEquals("0", ChangeTrackerCachedValue.get(value, provider, ChangeTracker.NEVER_CHANGE))
     assertEquals("0", ChangeTrackerCachedValue.get(value, provider, ChangeTracker.NEVER_CHANGE))
     assertEquals("0", ChangeTrackerCachedValue.get(value, provider, ChangeTracker.NEVER_CHANGE))

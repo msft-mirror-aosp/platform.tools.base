@@ -24,88 +24,80 @@ import org.junit.Test
 
 class AndroidTestClasspathTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withMavenRepository {
-            jar("com.test:lib:1.0").addEmptyClasses("com/test/MyClass")
-        }.from {
-            androidApplication {
-                android {
-                    namespace = "com.test.app"
+  @get:Rule
+  val rule =
+    GradleRule.configure()
+      .withMavenRepository { jar("com.test:lib:1.0").addEmptyClasses("com/test/MyClass") }
+      .from {
+        androidApplication {
+          android {
+            namespace = "com.test.app"
 
-                    enableKotlin = false
-                }
+            enableKotlin = false
+          }
 
-                dependencies {
-                    implementation("com.test:lib:1.0")
-                    implementation(project(":lib"))
-                    androidTestImplementation("com.test:lib:1.0")
-                }
+          dependencies {
+            implementation("com.test:lib:1.0")
+            implementation(project(":lib"))
+            androidTestImplementation("com.test:lib:1.0")
+          }
 
-                files {
-                    add("src/androidTest/java/test/DataTest.java",
-                        // language=java
-                        """
-                            package test;
-                            public class DataTest extends Data {}
-                        """.trimIndent())
-                }
-
-            }
-            androidLibrary(":lib") {
-                android {
-                    namespace = "com.test.lib"
-
-                    enableKotlin = false
-                }
-
-                group = "com.test"
-                version = "99.0"
-
-                files {
-                    add("src/main/java/test/Data.java",
-                        // language=java
-                        """
-                            package test;
-                            public class Data {}
-                        """.trimIndent())
-                }
-            }
-        }
-
-    @Test
-    fun testAndroidTestClasspathContainsProjectDep() {
-        val build = rule.build
-
-        val failure = build.executor.expectFailure().run(":app:assembleDebugAndroidTest")
-
-        failure.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "Unable to align dependencies in configurations 'debugRuntimeClasspath' and 'debugAndroidTestRuntimeClasspath', as both require 'project :lib'.\n"
+          files {
+            add(
+              "src/androidTest/java/test/DataTest.java",
+              // language=java
+              """
+              package test;
+              public class DataTest extends Data {}
+              """
+                .trimIndent(),
             )
+          }
         }
+        androidLibrary(":lib") {
+          android {
+            namespace = "com.test.lib"
 
-        val app = build.androidApplication()
-        app.reconfigure {
-            dependencies {
-                androidTestImplementation(project(":lib"))
-            }
-        }
+            enableKotlin = false
+          }
 
-        build.executor.run(":app:assembleDebug", ":app:assembleDebugAndroidTest")
+          group = "com.test"
+          version = "99.0"
 
-        app.assertApk(ApkSelector.DEBUG) {
-            classes().containsExactly(
-                "com/test/app/R",
-                "com/test/lib/R",
-                "test/Data")
-        }
-
-        app.assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-            classes().containsExactly(
-                "com/test/app/test/R",
-                "test/DataTest"
+          files {
+            add(
+              "src/main/java/test/Data.java",
+              // language=java
+              """
+              package test;
+              public class Data {}
+              """
+                .trimIndent(),
             )
+          }
         }
+      }
+
+  @Test
+  fun testAndroidTestClasspathContainsProjectDep() {
+    val build = rule.build
+
+    val failure = build.executor.expectFailure().run(":app:assembleDebugAndroidTest")
+
+    failure.stderr.use {
+      ScannerSubject.assertThat(it)
+        .contains(
+          "Unable to align dependencies in configurations 'debugRuntimeClasspath' and 'debugAndroidTestRuntimeClasspath', as both require 'project :lib'.\n"
+        )
     }
+
+    val app = build.androidApplication()
+    app.reconfigure { dependencies { androidTestImplementation(project(":lib")) } }
+
+    build.executor.run(":app:assembleDebug", ":app:assembleDebugAndroidTest")
+
+    app.assertApk(ApkSelector.DEBUG) { classes().containsExactly("com/test/app/R", "com/test/lib/R", "test/Data") }
+
+    app.assertApk(ApkSelector.ANDROIDTEST_DEBUG) { classes().containsExactly("com/test/app/test/R", "test/DataTest") }
+  }
 }

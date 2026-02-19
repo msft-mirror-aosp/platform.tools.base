@@ -17,7 +17,6 @@ package com.android.tools.idea.wizard.template.impl.activities.aiStarter
 
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
-import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
 import com.android.tools.idea.wizard.template.impl.activities.aiStarter.src.app_package.mainActivityKt
 import com.android.tools.idea.wizard.template.impl.activities.common.addAllKotlinDependencies
 import com.android.tools.idea.wizard.template.impl.activities.common.addComposeDependencies
@@ -28,12 +27,7 @@ import com.android.tools.idea.wizard.template.impl.activities.composeActivityMat
 import com.android.tools.idea.wizard.template.impl.activities.composeActivityMaterial3.src.app_package.ui.typeKt
 import java.io.File
 
-fun RecipeExecutor.aiStarterRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-  isLauncher: Boolean,
-) {
+fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String, isLauncher: Boolean) {
   val (_, srcOut, resOut, _) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -48,24 +42,8 @@ fun RecipeExecutor.aiStarterRecipe(
   // Add Compose dependencies, using the BOM to set versions
   addComposeDependencies(moduleData)
 
-  val hiltVersion = "2.57.2"
-  addPlugin(
-    "com.google.dagger.hilt.android",
-    "com.google.dagger:hilt-android-gradle-plugin",
-    hiltVersion,
-  )
-
-  // KSP is needed for Hilt and Room
-  addPlugin(
-    "com.google.devtools.ksp",
-    "com.google.devtools.ksp:symbol-processing-gradle-plugin",
-    // KSP versions are a composite of the Kotlin version and the KSP library version. We have to
-    // take the Kotlin version we're given, so use the latest KSP that is compatible with it.
-    "${moduleData.projectTemplateData.kotlinVersion}-+",
-  )
-
-  val hiltNavigationComposeVersion = "1.2.0"
-  addDependency("androidx.hilt:hilt-navigation-compose:$hiltNavigationComposeVersion")
+  // KSP is needed for Room
+  addPlugin("com.google.devtools.ksp", "com.google.devtools.ksp:symbol-processing-gradle-plugin", "2.3.5")
 
   val navigationVersion = "2.8.9"
   addDependency("androidx.navigation:navigation-compose:$navigationVersion")
@@ -75,18 +53,8 @@ fun RecipeExecutor.aiStarterRecipe(
   addDependency("androidx.room:room-ktx:$roomVersion")
   addDependency("androidx.room:room-compiler:$roomVersion", configuration = "ksp")
 
-  addDependency("com.google.dagger:hilt-android:$hiltVersion")
-  addDependency("com.google.dagger:hilt-android-compiler:$hiltVersion", configuration = "ksp")
-  addDependency("com.google.dagger:hilt-compiler:$hiltVersion", configuration = "ksp")
-  addDependency(
-    "com.google.dagger:hilt-android-testing:$hiltVersion",
-    configuration = "androidTestImplementation",
-  )
   addDependency("junit:junit:4.13.2", configuration = "testImplementation")
-  addDependency(
-    "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2",
-    configuration = "testImplementation",
-  )
+  addDependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2", configuration = "testImplementation")
   addDependency("androidx.test:core:1.6.1", configuration = "testImplementation")
   addDependency("androidx.test.ext:junit:1.3.0", configuration = "testImplementation")
   addDependency("androidx.test:runner:1.6.2", configuration = "androidTestImplementation")
@@ -155,18 +123,15 @@ fun RecipeExecutor.aiStarterRecipe(
   )
   mergeXml(
     """
-        <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
-          <uses-permission android:name="android.permission.INTERNET" />
-        </manifest>
+    <manifest xmlns:android ="http://schemas.android.com/apk/res/android">
+      <uses-permission android:name="android.permission.INTERNET" />
+    </manifest>
     """
       .trimIndent(),
     moduleData.manifestDir.resolve("AndroidManifest.xml"),
   )
 
-  save(
-    mainActivityKt(activityClass, "GreetingPreview", "Greeting", packageName, themeName),
-    srcOut.resolve("${activityClass}.kt"),
-  )
+  save(mainActivityKt(activityClass, "GreetingPreview", "Greeting", packageName, themeName), srcOut.resolve("${activityClass}.kt"))
   val uiThemeFolder = "ui/theme"
   save(colorKt(packageName), srcOut.resolve("$uiThemeFolder/Color.kt"))
   save(themeKt(packageName, themeName), srcOut.resolve("$uiThemeFolder/Theme.kt"))
@@ -174,16 +139,6 @@ fun RecipeExecutor.aiStarterRecipe(
 
   setJavaKotlinCompileOptions(true)
   setBuildFeature("compose", true)
-  if (moduleData.projectTemplateData.agpVersion >= AGP_VERSION_WITH_BUILT_IN_KOTLIN) {
-    append(
-      """
-      |# Use the old DSL until the Hilt Gradle Plugin is updated to support AGP 9:
-      |# https://github.com/google/dagger/issues/4944
-      |android.newDsl=false
-      |"""
-        .trimMargin(),
-      moduleData.projectTemplateData.rootDir.resolve("gradle.properties"),
-    )
-  }
+
   open(srcOut.resolve("${activityClass}.kt"))
 }

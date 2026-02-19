@@ -26,23 +26,19 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
- * Expresses an API constraint, such as "API level must be at least 21", or "API level must be 24 or
- * 25" or "API level must be less than 31". This is usually referring to the Android platform API
- * level, but it can also refer to SDK extension API versions.
+ * Expresses an API constraint, such as "API level must be at least 21", or "API level must be 24 or 25" or "API level must be less than
+ * 31". This is usually referring to the Android platform API level, but it can also refer to SDK extension API versions.
  *
  * The [ApiConstraint] is used in several contexts:
- * * The `minSdkVersion` of an app is an [ApiConstraint]; for example, `minSdkVersion="31"` in the
- *   manifest is recorded as [Project.getMinSdkVersions] returning an [SdkApiConstraint] of "API
- *   level ≥ 31".
- * * If code performs an explicit `SDK_INT` check, this will be modeled as an [ApiConstraint] by
- *   [VersionChecks]. For example, in the code snippet "SDK_INT < 31 || methodCall()", the version
- *   constraint computed for `methodCall()` will be "API level ≥ 31".
- * * When methods are introduced in later versions of an API, these are also modeled as API
- *   constraints; e.g. a method introduced in API level 32 has the requirement API constraint "API
- *   level ≥ 32".
+ * * The `minSdkVersion` of an app is an [ApiConstraint]; for example, `minSdkVersion="31"` in the manifest is recorded as
+ *   [Project.getMinSdkVersions] returning an [SdkApiConstraint] of "API level ≥ 31".
+ * * If code performs an explicit `SDK_INT` check, this will be modeled as an [ApiConstraint] by [VersionChecks]. For example, in the code
+ *   snippet "SDK_INT < 31 || methodCall()", the version constraint computed for `methodCall()` will be "API level ≥ 31".
+ * * When methods are introduced in later versions of an API, these are also modeled as API constraints; e.g. a method introduced in API
+ *   level 32 has the requirement API constraint "API level ≥ 32".
  *
- * Note that API constraints aren't always simple "X >= Y" relationships. They are modeled as
- * bitvectors, so for example, in the following code:
+ * Note that API constraints aren't always simple "X >= Y" relationships. They are modeled as bitvectors, so for example, in the following
+ * code:
  * ```
  * when (SDK_INT) {
  *     in 1..14 -> { }
@@ -52,70 +48,54 @@ import org.w3c.dom.Node
  * }
  * ```
  *
- * the [ApiConstraint] computed for the `methodCall` site knows that `SDK_INT` is either 15
- * or >= 21.
+ * the [ApiConstraint] computed for the `methodCall` site knows that `SDK_INT` is either 15 or >= 21.
  *
- * There are a number of operations defined on [ApiConstraint]s. For example, [isAtLeast] returns
- * true if the receiver API level is at least as high as the parameter API level.
+ * There are a number of operations defined on [ApiConstraint]s. For example, [isAtLeast] returns true if the receiver API level is at least
+ * as high as the parameter API level.
  *
- * In the normal case where you're referring to a simple Android API, this is just an integer
- * comparison -- is manifest minSdkVersion at least as high as the introduced-in API level for the
- * API? But with mainline modules, APIs can be backported and appear in many different SDKs. This is
- * handled by the [ApiConstraint] class as a "vector" of API levels. Both the minSdkVersion and the
- * required API can include multiple API levels, and the [isAtLeast] method checks that the
- * requirements are satisfied.
+ * In the normal case where you're referring to a simple Android API, this is just an integer comparison -- is manifest minSdkVersion at
+ * least as high as the introduced-in API level for the API? But with mainline modules, APIs can be backported and appear in many different
+ * SDKs. This is handled by the [ApiConstraint] class as a "vector" of API levels. Both the minSdkVersion and the required API can include
+ * multiple API levels, and the [isAtLeast] method checks that the requirements are satisfied.
  */
 sealed class ApiConstraint {
   /**
-   * The lowest API level included in the constraint. E.g. for "X >= 21" it's 21, for "X < 15" it's
-   * 1, and for [NONE] and [UNKNOWN] it's -1.
+   * The lowest API level included in the constraint. E.g. for "X >= 21" it's 21, for "X < 15" it's 1, and for [NONE] and [UNKNOWN] it's -1.
    *
    * Alias for [fromInclusive] which makes some code clearer.
    */
   fun min(): Int = fromInclusive()
 
   /**
-   * The lowest API level included in the constraint. E.g. for "X >= 21" it's 21, for "X < 15" it's
-   * 1, and for [NONE] or [UNKNOWN] it's -1.
+   * The lowest API level included in the constraint. E.g. for "X >= 21" it's 21, for "X < 15" it's 1, and for [NONE] or [UNKNOWN] it's -1.
    *
-   * **This method should not be called on a multi-version constraint**. For backwards
-   * compatibility, this will attempt to return the lowest API level for the constraint
-   * corresponding to the Android SDK (if included in the multi constraint); otherwise, it will
-   * return -1.
+   * **This method should not be called on a multi-version constraint**. For backwards compatibility, this will attempt to return the lowest
+   * API level for the constraint corresponding to the Android SDK (if included in the multi constraint); otherwise, it will return -1.
    */
   abstract fun fromInclusive(): Int
 
-  /**
-   * The **minor version** of the lowest API level included in the constraint. E.g. for "X >= 21.2"
-   * it's 2, for "X < 15" is 0".
-   */
+  /** The **minor version** of the lowest API level included in the constraint. E.g. for "X >= 21.2" it's 2, for "X < 15" is 0". */
   abstract fun fromInclusiveMinor(): Int
 
   /**
-   * The highest API level included in the constraint. E.g. for "X < 15" it's 15. For "X > 15" it
-   * will return the highest value representable in the API level data structures; this is not
-   * Integer.MAX_VALUE.
+   * The highest API level included in the constraint. E.g. for "X < 15" it's 15. For "X > 15" it will return the highest value
+   * representable in the API level data structures; this is not Integer.MAX_VALUE.
    *
-   * **This method should not be called on a multi-version constraint**. For backwards
-   * compatibility, this will attempt to return the highest API level for the constraint
-   * corresponding to the Android SDK (if included in the multi constraint); otherwise, it will
-   * return -1.
+   * **This method should not be called on a multi-version constraint**. For backwards compatibility, this will attempt to return the
+   * highest API level for the constraint corresponding to the Android SDK (if included in the multi constraint); otherwise, it will return
+   * -1.
    */
   abstract fun toExclusive(): Int
 
-  /**
-   * The **minor version** of the highest API level included in the constraint. E.g. for "X < 15.2"
-   * it's 2, for "X >= 21.5" it's 0.
-   */
+  /** The **minor version** of the highest API level included in the constraint. E.g. for "X < 15.2" it's 2, for "X >= 21.5" it's 0. */
   abstract fun toExclusiveMinor(): Int
 
   /**
    * Is this [ApiConstraint] at least as high as the given [constraint] ?
    *
-   * For example, let's say `this` is the constraint `SDK_INT >= 31`, constructed from
-   * `minSdkVersion = 31` in the manifest. And let's say [constraint] is `SDK_INT >= 28`, the
-   * since-requirement for a new method introduced in API level 28. Here,
-   * `this.isAtLeast(constraint)` is true, because 31 >= 28.
+   * For example, let's say `this` is the constraint `SDK_INT >= 31`, constructed from `minSdkVersion = 31` in the manifest. And let's say
+   * [constraint] is `SDK_INT >= 28`, the since-requirement for a new method introduced in API level 28. Here, `this.isAtLeast(constraint)`
+   * is true, because 31 >= 28.
    */
   abstract fun isAtLeast(constraint: ApiConstraint): Boolean
 
@@ -125,10 +105,9 @@ sealed class ApiConstraint {
   /**
    * Will this API level or anything higher always match this constraint?
    *
-   * For example, if we know from minSdkVersion that SDK_INT >= 32, and we see a check if SDK_INT
-   * is >= 21, that check will always be true. That's what this method is for; this [ApiConstraint]
-   * is the SDK_INT check, and the passed in [minSdk] represents the minimum value of SDK_INT (the
-   * known constraint from minSdkVersion).
+   * For example, if we know from minSdkVersion that SDK_INT >= 32, and we see a check if SDK_INT is >= 21, that check will always be true.
+   * That's what this method is for; this [ApiConstraint] is the SDK_INT check, and the passed in [minSdk] represents the minimum value of
+   * SDK_INT (the known constraint from minSdkVersion).
    */
   abstract fun alwaysAtLeast(minSdk: ApiConstraint): Boolean
 
@@ -136,22 +115,17 @@ sealed class ApiConstraint {
   abstract operator fun not(): ApiConstraint
 
   /**
-   * Whether this constraint can be negated (using [not]). For example, the [ApiConstraint] derived
-   * from `SDK_INT >= 24` is negatable; in the `else` clause of `if (SDK_INT >= 24)` we can negate
-   * the constraint and conclude that `SDK_INT < 24`.
+   * Whether this constraint can be negated (using [not]). For example, the [ApiConstraint] derived from `SDK_INT >= 24` is negatable; in
+   * the `else` clause of `if (SDK_INT >= 24)` we can negate the constraint and conclude that `SDK_INT < 24`.
    *
-   * However, for the constraint derived from something like `SDK_INT >= 24 && day == TUESDAY`, the
-   * constraint itself should not be negated. This is basically expressing something about the
-   * *context* of the constraint, which we bundle with the constraint itself to make it easier to
-   * pass constraints around. For example, the various [VersionChecks] utility methods which
-   * recursively compute [ApiConstraint] objects for elements can set this bit when combining
-   * contains in `&&` expressions.
+   * However, for the constraint derived from something like `SDK_INT >= 24 && day == TUESDAY`, the constraint itself should not be negated.
+   * This is basically expressing something about the *context* of the constraint, which we bundle with the constraint itself to make it
+   * easier to pass constraints around. For example, the various [VersionChecks] utility methods which recursively compute [ApiConstraint]
+   * objects for elements can set this bit when combining contains in `&&` expressions.
    */
   abstract fun negatable(): Boolean
 
-  /**
-   * Marks this [ApiConstraint] as not being safe to negate; see [negatable] for more information.
-   */
+  /** Marks this [ApiConstraint] as not being safe to negate; see [negatable] for more information. */
   abstract fun asNonNegatable(): ApiConstraint
 
   abstract fun isEmpty(): Boolean
@@ -162,10 +136,7 @@ sealed class ApiConstraint {
   /** Returns a new constraint which takes the intersection of the two constraints. */
   abstract infix fun and(other: ApiConstraint?): ApiConstraint
 
-  /**
-   * Serializes this constraint into a String, which can later be retrieved by calling
-   * [deserialize].
-   */
+  /** Serializes this constraint into a String, which can later be retrieved by calling [deserialize]. */
   abstract fun serialize(): String
 
   /** Creates a string representation of this constraint, suitable for display to the user. */
@@ -191,55 +162,44 @@ sealed class ApiConstraint {
   /** Returns the SDK id for this ApiConstraint; returns -1 for multi-SDK constraints. */
   abstract fun getSdk(): Int
 
-  /**
-   * If this is a multi-SDK constraint, returns a list of all the individual constraints; if not,
-   * returns self.
-   */
+  /** If this is a multi-SDK constraint, returns a list of all the individual constraints; if not, returns self. */
   abstract fun getConstraints(): List<SdkApiConstraint>
 
   @Deprecated(
     "Use the ApiConstraint version instead to make sure you're checking the right SDK extension",
-    ReplaceWith(
-      "isAtLeast(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"
-    ),
+    ReplaceWith("isAtLeast(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"),
   )
   open fun isAtLeast(apiLevel: Int): Boolean = isAtLeast(atLeast(apiLevel, 0, getSdk()))
 
   @Deprecated(
     "Use the ApiConstraint version instead to make sure you're checking the right SDK extension",
-    ReplaceWith(
-      "alwaysAtLeast(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"
-    ),
+    ReplaceWith("alwaysAtLeast(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"),
   )
   abstract fun alwaysAtLeast(apiLevel: Int): Boolean
 
   @Deprecated(
     "Use the ApiConstraint version instead to make sure you're checking the right SDK extension",
-    ReplaceWith(
-      "everHigher(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"
-    ),
+    ReplaceWith("everHigher(ApiConstraint.get(apiLevel,com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID))"),
   )
   abstract fun everHigher(apiLevel: Int): Boolean
 
   /**
-   * Find the first missing or unsatisfied [SdkApiConstraint] from the given [requirement]. Should
-   * only be called on an [ApiConstraint] where [isAtLeast] returned false for the given
-   * [requirement].
+   * Find the first missing or unsatisfied [SdkApiConstraint] from the given [requirement]. Should only be called on an [ApiConstraint]
+   * where [isAtLeast] returned false for the given [requirement].
    */
   abstract fun firstMissing(requirement: ApiConstraint): SdkApiConstraint?
 
   companion object {
     /**
-     * Special constraint value which means that there are no valid API levels. This is for example
-     * the case inside "if (SDK_INT < 5 && SDK_INT > 5)".
+     * Special constraint value which means that there are no valid API levels. This is for example the case inside "if (SDK_INT < 5 &&
+     * SDK_INT > 5)".
      */
     @JvmField val NONE: SdkApiConstraint = SdkApiConstraint.NO_LEVELS
 
     /**
      * Special constraint value which means that the API is unknown or the constraint is unknown.
      *
-     * This is not a valid level, only a marker, so you cannot call operations on it like
-     * [isAtLeast], [and], etc.
+     * This is not a valid level, only a marker, so you cannot call operations on it like [isAtLeast], [and], etc.
      */
     @JvmField val UNKNOWN: SdkApiConstraint = SdkApiConstraint(Intervals.NONE, -2)
 
@@ -268,9 +228,8 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Returns the max of two constraints, across SDKs. If we're joining constraints, the [either]
-     * flag indicates whether we only know that either constraint is available or required, rather
-     * than both.
+     * Returns the max of two constraints, across SDKs. If we're joining constraints, the [either] flag indicates whether we only know that
+     * either constraint is available or required, rather than both.
      */
     fun max(api1: ApiConstraint, api2: ApiConstraint?, either: Boolean = false): ApiConstraint {
       assert(api1 !== UNKNOWN)
@@ -287,12 +246,7 @@ sealed class ApiConstraint {
                 if (sdkId == api2.sdkId) {
                   SdkApiConstraint(api1.intervals and api2.intervals, sdkId)
                 } else {
-                  MultiSdkApiConstraint(
-                    listOf(
-                      SdkApiConstraints(sdkId, api1, either),
-                      SdkApiConstraints(api2.sdkId, api2, either),
-                    )
-                  )
+                  MultiSdkApiConstraint(listOf(SdkApiConstraints(sdkId, api1, either), SdkApiConstraints(api2.sdkId, api2, either)))
                 }
               } else {
                 // Reverse args and recurse such that we only need to handle this combination in one
@@ -305,9 +259,7 @@ sealed class ApiConstraint {
                 is SdkApiConstraint -> {
                   val match =
                     api1.findSdks(api2.sdkId)
-                      ?: return MultiSdkApiConstraint(
-                        api1.sdkConstraints + SdkApiConstraints(api2.sdkId, api2, either)
-                      )
+                      ?: return MultiSdkApiConstraint(api1.sdkConstraints + SdkApiConstraints(api2.sdkId, api2, either))
                   val apis: List<SdkApiConstraints> =
                     api1.sdkConstraints
                       .map {
@@ -342,9 +294,8 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Returns true if the given level (typically returned from [fromInclusive] or [toExclusive]
-     * represents infinity, e.g. it's an open-ended interval such as `x >= 10`, represented as the
-     * interval `[x, ∞)`.
+     * Returns true if the given level (typically returned from [fromInclusive] or [toExclusive] represents infinity, e.g. it's an
+     * open-ended interval such as `x >= 10`, represented as the interval `[x, ∞)`.
      */
     fun isInfinity(level: Int): Boolean {
       return Intervals.isInfinity(level)
@@ -364,11 +315,7 @@ sealed class ApiConstraint {
     /** Create constraint where the API level is at least [apiLevel].[minorLevel] in SDK [sdkId]. */
     @JvmStatic
     fun atLeast(apiLevel: Int, minorLevel: Int, sdkId: Int): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        fromInclusive = apiLevel,
-        fromInclusiveMinor = minorLevel,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(fromInclusive = apiLevel, fromInclusiveMinor = minorLevel, sdkId = sdkId)
     }
 
     /** Create constraint where the API level is less than [apiLevel]. */
@@ -378,11 +325,7 @@ sealed class ApiConstraint {
 
     /** Create constraint where the API level is less than [apiLevel].[minorLevel] in SDK [sdkId] */
     fun below(apiLevel: Int, minorLevel: Int, sdkId: Int): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        toExclusive = apiLevel,
-        toExclusiveMinor = minorLevel,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(toExclusive = apiLevel, toExclusiveMinor = minorLevel, sdkId = sdkId)
     }
 
     /** Create constraint where the API level is higher than [apiLevel]. */
@@ -412,17 +355,12 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Create constraint where the API level is higher than [apiLevel].[minorLevel]. Notice how this
-     * isn't just adding a decimal to the other version of this method; it instead treats the
-     * constraint as being on the decimal part. E.g. for "X > 4", the above level-only method
-     * returns "X >= 5", and this method returns "X >= 4.1".
+     * Create constraint where the API level is higher than [apiLevel].[minorLevel]. Notice how this isn't just adding a decimal to the
+     * other version of this method; it instead treats the constraint as being on the decimal part. E.g. for "X > 4", the above level-only
+     * method returns "X >= 5", and this method returns "X >= 4.1".
      */
     fun above(apiLevel: Int, minorLevel: Int, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        fromInclusive = apiLevel,
-        fromInclusiveMinor = minorLevel + 1,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(fromInclusive = apiLevel, fromInclusiveMinor = minorLevel + 1, sdkId = sdkId)
     }
 
     /** Create constraint where the API level is lower than or equal to [apiLevel]. */
@@ -442,26 +380,12 @@ sealed class ApiConstraint {
 
     /** Create constraint where the API level is lower than or equal to [apiLevel].[minorLevel]. */
     fun atMost(apiLevel: Int, minorLevel: Int, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        toExclusive = apiLevel,
-        toExclusiveMinor = minorLevel + 1,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(toExclusive = apiLevel, toExclusiveMinor = minorLevel + 1, sdkId = sdkId)
     }
 
     /** Create constraint where the API level is in the given range. */
-    fun range(
-      fromInclusive: ApiLevel,
-      toExclusive: ApiLevel,
-      sdkId: Int = ANDROID_SDK_ID,
-    ): SdkApiConstraint {
-      return range(
-        fromInclusive.major,
-        fromInclusive.minor,
-        toExclusive.major,
-        toExclusive.minor,
-        sdkId,
-      )
+    fun range(fromInclusive: ApiLevel, toExclusive: ApiLevel, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
+      return range(fromInclusive.major, fromInclusive.minor, toExclusive.major, toExclusive.minor, sdkId)
     }
 
     /** Create constraint where the API level is in the given range. */
@@ -472,13 +396,7 @@ sealed class ApiConstraint {
       toExclusiveMinor: Int,
       sdkId: Int = ANDROID_SDK_ID,
     ): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        fromInclusive,
-        fromInclusiveMinor,
-        toExclusive,
-        toExclusiveMinor,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(fromInclusive, fromInclusiveMinor, toExclusive, toExclusiveMinor, sdkId = sdkId)
     }
 
     /** Creates an API constraint where the API level equals a specific level. */
@@ -499,25 +417,15 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Creates an API constraint where the API level equals a specific level. Note that the version
-     * which doesn't take a minor level will model this as the range from X to X + 1. If x is 4,
-     * this is 4 <= x <= 5. But this version will work on minor versions instead, in other words, if
-     * x is 4.0, this models the range 4.0 <= x <= 4.1.
+     * Creates an API constraint where the API level equals a specific level. Note that the version which doesn't take a minor level will
+     * model this as the range from X to X + 1. If x is 4, this is 4 <= x <= 5. But this version will work on minor versions instead, in
+     * other words, if x is 4.0, this models the range 4.0 <= x <= 4.1.
      */
     fun exactly(apiLevel: Int, minorLevel: Int, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
-      return SdkApiConstraint.createConstraint(
-        apiLevel,
-        minorLevel,
-        apiLevel,
-        minorLevel + 1,
-        sdkId = sdkId,
-      )
+      return SdkApiConstraint.createConstraint(apiLevel, minorLevel, apiLevel, minorLevel + 1, sdkId = sdkId)
     }
 
-    /**
-     * Creates an API constraint where the API level is **not** a specific value (e.g. API !=
-     * apiLevel).
-     */
+    /** Creates an API constraint where the API level is **not** a specific value (e.g. API != apiLevel). */
     fun not(apiLevel: ApiLevel, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
       return if (apiLevel.isDotted()) {
         not(apiLevel.major, apiLevel.minor, sdkId)
@@ -531,26 +439,19 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Creates an API constraint where the API level is **not** a specific value (e.g. API !=
-     * apiLevel). See the [exactly] documentation to explain the difference between specifying a
-     * minor level and not.
+     * Creates an API constraint where the API level is **not** a specific value (e.g. API != apiLevel). See the [exactly] documentation to
+     * explain the difference between specifying a minor level and not.
      */
     fun not(apiLevel: Int, minorLevel: Int, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
       return exactly(apiLevel, minorLevel, sdkId).not()
     }
 
-    /**
-     * Serializes the given constraint into a String, which can later be retrieved by calling
-     * [deserialize].
-     */
+    /** Serializes the given constraint into a String, which can later be retrieved by calling [deserialize]. */
     fun serialize(constraint: ApiConstraint): String {
       return constraint.serialize()
     }
 
-    /**
-     * Deserializes a given string (previously computed by [serialize]) into the corresponding
-     * constraint.
-     */
+    /** Deserializes a given string (previously computed by [serialize]) into the corresponding constraint. */
     fun deserialize(s: String): ApiConstraint {
       return if (s.startsWith('{')) {
         MultiSdkApiConstraint.deserialize(s)
@@ -560,14 +461,12 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Given a `<uses-sdk>` element from an Android manifest, returns the corresponding
-     * [ApiConstraint]. This normally just corresponds to the `minSdkVersion`, but if there are
-     * `<extension-sdk>` element children, those are included in the vector as well.
+     * Given a `<uses-sdk>` element from an Android manifest, returns the corresponding [ApiConstraint]. This normally just corresponds to
+     * the `minSdkVersion`, but if there are `<extension-sdk>` element children, those are included in the vector as well.
      */
     fun getFromUsesSdk(usesSdk: Element): ApiConstraint? {
       assert(usesSdk.tagName == SdkConstants.TAG_USES_SDK)
-      val minSdkVersionString =
-        usesSdk.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_MIN_SDK_VERSION)
+      val minSdkVersionString = usesSdk.getAttributeNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_MIN_SDK_VERSION)
       val minSdkVersion = minSdkVersionString.getApiLevel()
       val codeName = if (minSdkVersionString.isNumber()) null else minSdkVersionString
       var curr = usesSdk.firstChild ?: return if (minSdkVersion != -1) get(minSdkVersion) else null
@@ -580,49 +479,40 @@ sealed class ApiConstraint {
           // Example: android:sdkVersion="30" android:minExtensionVersion="12"
           val sdkVersionString = extension.getAttributeNS(SdkConstants.ANDROID_URI, "sdkVersion")
           val sdkVersion = sdkVersionString.getApiLevel()
-          val extensionVersion =
-            extension.getAttributeNS(SdkConstants.ANDROID_URI, "minExtensionVersion").getApiLevel()
+          val extensionVersion = extension.getAttributeNS(SdkConstants.ANDROID_URI, "minExtensionVersion").getApiLevel()
           if (sdkVersion == minSdkVersion && (codeName == null || codeName == sdkVersionString)) {
             addMinSdkVersion = false
           }
-          list.add(
-            SdkApiConstraint.createConstraint(fromInclusive = extensionVersion, sdkId = sdkVersion)
-          )
+          list.add(SdkApiConstraint.createConstraint(fromInclusive = extensionVersion, sdkId = sdkVersion))
         }
         curr = curr.nextSibling ?: break
       }
       if (addMinSdkVersion) {
-        list.add(
-          0,
-          SdkApiConstraint.createConstraint(fromInclusive = minSdkVersion, sdkId = ANDROID_SDK_ID),
-        )
+        list.add(0, SdkApiConstraint.createConstraint(fromInclusive = minSdkVersion, sdkId = ANDROID_SDK_ID))
       }
       return MultiSdkApiConstraint(list, anyOf = false)
     }
   }
 
   /**
-   * Expresses an API constraint, such as "API level must be at least 21", for a specific SDK (such
-   * as the Android SDK, or a mainline module backport for API level 30, and so on).
+   * Expresses an API constraint, such as "API level must be at least 21", for a specific SDK (such as the Android SDK, or a mainline module
+   * backport for API level 30, and so on).
    */
   class SdkApiConstraint(
     /**
-     * The bits here represent API levels; bit 0 is API level 1, bit 1 is API level 2 etc., all the
-     * way up. The very last bit represents infinity.
+     * The bits here represent API levels; bit 0 is API level 1, bit 1 is API level 2 etc., all the way up. The very last bit represents
+     * infinity.
      */
     val intervals: Intervals,
     val sdkId: Int = ANDROID_SDK_ID,
     /**
-     * Whether this constraint can be negated (using [not]). For example, the [ApiConstraint]
-     * derived from `SDK_INT >= 24` is negatable; in the `else` clause of `if (SDK_INT >= 24)` we
-     * can negate the constraint and conclude that `SDK_INT < 24`.
+     * Whether this constraint can be negated (using [not]). For example, the [ApiConstraint] derived from `SDK_INT >= 24` is negatable; in
+     * the `else` clause of `if (SDK_INT >= 24)` we can negate the constraint and conclude that `SDK_INT < 24`.
      *
-     * However, for the constraint derived from something like `SDK_INT >= 24 && day == TUESDAY`,
-     * the constraint itself should not be negated. This is basically expressing something about the
-     * *context* of the constraint, which we bundle with the constraint itself to make it easier to
-     * pass constraints around. For example, the various [VersionChecks] utility methods which
-     * recursively compute [ApiConstraint] objects for elements can set this bit when combining
-     * contains in `&&` expressions.
+     * However, for the constraint derived from something like `SDK_INT >= 24 && day == TUESDAY`, the constraint itself should not be
+     * negated. This is basically expressing something about the *context* of the constraint, which we bundle with the constraint itself to
+     * make it easier to pass constraints around. For example, the various [VersionChecks] utility methods which recursively compute
+     * [ApiConstraint] objects for elements can set this bit when combining contains in `&&` expressions.
      */
     private val isNegatable: Boolean = true,
   ) : ApiConstraint() {
@@ -643,8 +533,8 @@ sealed class ApiConstraint {
     }
 
     /**
-     * Returns true if this is an "open ended" constraint, e.g. it goes up to infinity. True for
-     * something like "SDK_INT >= 31", and false for "SDK_INT < 24".
+     * Returns true if this is an "open ended" constraint, e.g. it goes up to infinity. True for something like "SDK_INT >= 31", and false
+     * for "SDK_INT < 24".
      */
     fun isOpenEnded(): Boolean {
       return this.toExclusive() == Integer.MAX_VALUE
@@ -789,12 +679,7 @@ sealed class ApiConstraint {
           if (other.isEmpty()) return this
           if (sdkId != other.sdkId) {
             if (isEmpty()) return other
-            return MultiSdkApiConstraint(
-              listOf(
-                SdkApiConstraints(sdkId, null, this),
-                SdkApiConstraints(other.sdkId, null, other),
-              )
-            )
+            return MultiSdkApiConstraint(listOf(SdkApiConstraints(sdkId, null, this), SdkApiConstraints(other.sdkId, null, other)))
           }
           return SdkApiConstraint(intervals or other.intervals, sdkId)
         }
@@ -867,11 +752,7 @@ sealed class ApiConstraint {
     companion object {
       val NO_LEVELS = SdkApiConstraint(Intervals.NONE, -1)
 
-      fun createConstraint(
-        fromInclusive: Int? = null,
-        toExclusive: Int? = null,
-        sdkId: Int = ANDROID_SDK_ID,
-      ): SdkApiConstraint {
+      fun createConstraint(fromInclusive: Int? = null, toExclusive: Int? = null, sdkId: Int = ANDROID_SDK_ID): SdkApiConstraint {
         return createConstraint(fromInclusive, null, toExclusive, null, sdkId)
       }
 
@@ -885,12 +766,7 @@ sealed class ApiConstraint {
         val intervals =
           if (fromInclusive != null) {
             if (toExclusive != null) {
-              Intervals.range(
-                fromInclusive,
-                fromInclusiveMinor ?: 0,
-                toExclusive,
-                toExclusiveMinor ?: 0,
-              )
+              Intervals.range(fromInclusive, fromInclusiveMinor ?: 0, toExclusive, toExclusiveMinor ?: 0)
             } else {
               if (fromInclusiveMinor != null) {
                 Intervals.atLeast(fromInclusive, fromInclusiveMinor)
@@ -904,18 +780,12 @@ sealed class ApiConstraint {
         return SdkApiConstraint(intervals, sdkId)
       }
 
-      /**
-       * Serializes the given constraint into a String, which can later be retrieved by calling
-       * [deserialize].
-       */
+      /** Serializes the given constraint into a String, which can later be retrieved by calling [deserialize]. */
       fun serialize(constraint: SdkApiConstraint): String {
         return constraint.serialize()
       }
 
-      /**
-       * Deserializes a given string (previously computed by [serialize]) into the corresponding
-       * constraint.
-       */
+      /** Deserializes a given string (previously computed by [serialize]) into the corresponding constraint. */
       fun deserialize(s: String): SdkApiConstraint {
         val index = s.indexOf(';')
         val sdkId: Int
@@ -933,23 +803,18 @@ sealed class ApiConstraint {
   }
 
   /**
-   * The known constraints for a particular SDK. The [always] constraint is known to always be
-   * present or required, and the [sometimes] constraint may or may not be present.
+   * The known constraints for a particular SDK. The [always] constraint is known to always be present or required, and the [sometimes]
+   * constraint may or may not be present.
    *
-   * Instead of just recording the constraint and a Boolean flag for whether the constraint is
-   * optional, we have two constraints to handle the case where you're combining two API vectors.
+   * Instead of just recording the constraint and a Boolean flag for whether the constraint is optional, we have two constraints to handle
+   * the case where you're combining two API vectors.
    *
-   * For example, if you have the constraint "SDK_INT >= 21 or R_EXT >= 5", and you max that with
-   * the constraint "SDK_INT >= 19 and R_EXT >= 3", what's the result? Here we're trying to decide
-   * if the max of SDK_INT is a certain 19 or an optional 21. We can't really combine these; if we
-   * pick the higher number, we also lose certainty. And depending on whether we need certainty or
-   * the higher number in a call check, it's useful to know both.
+   * For example, if you have the constraint "SDK_INT >= 21 or R_EXT >= 5", and you max that with the constraint "SDK_INT >= 19 and R_EXT >=
+   * 3", what's the result? Here we're trying to decide if the max of SDK_INT is a certain 19 or an optional 21. We can't really combine
+   * these; if we pick the higher number, we also lose certainty. And depending on whether we need certainty or the higher number in a call
+   * check, it's useful to know both.
    */
-  internal data class SdkApiConstraints(
-    val sdkId: Int,
-    val always: SdkApiConstraint?,
-    val sometimes: SdkApiConstraint?,
-  ) {
+  internal data class SdkApiConstraints(val sdkId: Int, val always: SdkApiConstraint?, val sometimes: SdkApiConstraint?) {
     fun lowest(): SdkApiConstraint = always ?: sometimes!!
 
     fun highest(): SdkApiConstraint = sometimes ?: always!!
@@ -968,10 +833,7 @@ sealed class ApiConstraint {
       return andWith(if (either) null else constraint, if (either) constraint else null)
     }
 
-    private fun andWith(
-      matchAlways: SdkApiConstraint?,
-      matchSometimes: SdkApiConstraint?,
-    ): SdkApiConstraints {
+    private fun andWith(matchAlways: SdkApiConstraint?, matchSometimes: SdkApiConstraint?): SdkApiConstraints {
       val have = this
       val always =
         if (matchAlways != null) {
@@ -994,11 +856,7 @@ sealed class ApiConstraint {
           have.sometimes
         }
       // If sometimes isn't higher than always, just switch to it since it's more certain
-      if (
-        always != null &&
-          sometimes != null &&
-          always.intervals and sometimes.intervals == always.intervals
-      ) {
+      if (always != null && sometimes != null && always.intervals and sometimes.intervals == always.intervals) {
         sometimes = null
       }
       assert(always != null || sometimes != null)
@@ -1013,10 +871,7 @@ sealed class ApiConstraint {
       return orWith(if (either) null else constraint, if (either) constraint else null)
     }
 
-    private fun orWith(
-      matchAlways: SdkApiConstraint?,
-      matchSometimes: SdkApiConstraint?,
-    ): SdkApiConstraints {
+    private fun orWith(matchAlways: SdkApiConstraint?, matchSometimes: SdkApiConstraint?): SdkApiConstraints {
       val have = this
       val always =
         if (matchAlways != null) {
@@ -1039,11 +894,7 @@ sealed class ApiConstraint {
           have.sometimes
         }
       // If sometimes isn't higher than always, just switch to it since it's more certain
-      if (
-        always != null &&
-          sometimes != null &&
-          always.intervals or sometimes.intervals == always.intervals
-      ) {
+      if (always != null && sometimes != null && always.intervals or sometimes.intervals == always.intervals) {
         sometimes = null
       }
       assert(always != null || sometimes != null)
@@ -1054,16 +905,13 @@ sealed class ApiConstraint {
   /**
    * A constraint vector recording multiple constraints for separate SDKs.
    *
-   * Note that [MultiSdkApiConstraint] intentionally does not implement [Comparable]; implication
-   * among predicates only form a partial order, as opposed to total order that the Comparable<*>
-   * interface expresses.
+   * Note that [MultiSdkApiConstraint] intentionally does not implement [Comparable]; implication among predicates only form a partial
+   * order, as opposed to total order that the Comparable<*> interface expresses.
    *
-   * Put another way, it's because API level vectors are different from simple API levels and will
-   * not behave the same symmetric way that an API level would, so we cannot create a consistent
-   * ordering (for example an API level vector can contain standalone SDKs which cannot be compared
-   * with each other, so there's no sense of one being "higher" than the other. We would want both x
-   * < y and y < x to be false, and there isn't a return value from compareTo we could return that
-   * would allow that.)
+   * Put another way, it's because API level vectors are different from simple API levels and will not behave the same symmetric way that an
+   * API level would, so we cannot create a consistent ordering (for example an API level vector can contain standalone SDKs which cannot be
+   * compared with each other, so there's no sense of one being "higher" than the other. We would want both x < y and y < x to be false, and
+   * there isn't a return value from compareTo we could return that would allow that.)
    *
    * In converting existing API logic using comparator, the following may be helpful:
    * ```
@@ -1074,11 +922,10 @@ sealed class ApiConstraint {
    *   max(x, y) < z => x < z && y < z
    * ```
    *
-   * though be careful with if/else handling here due to the incomparable issue mentioned above;
-   * just because < is false doesn't mean >= in the else clause will be true.
+   * though be careful with if/else handling here due to the incomparable issue mentioned above; just because < is false doesn't mean >= in
+   * the else clause will be true.
    */
-  class MultiSdkApiConstraint
-  internal constructor(internal val sdkConstraints: List<SdkApiConstraints>) : ApiConstraint() {
+  class MultiSdkApiConstraint internal constructor(internal val sdkConstraints: List<SdkApiConstraints>) : ApiConstraint() {
     constructor(
       apis: List<SdkApiConstraint>,
       anyOf: Boolean,
@@ -1137,10 +984,7 @@ sealed class ApiConstraint {
             } else if (mightNeed != null) {
               if (match == null || anyMatch) continue
               val (_, alwaysHave, sometimesHave) = match
-              if (
-                alwaysHave != null && alwaysHave.isAtLeast(mightNeed) ||
-                  sometimesHave != null && sometimesHave.isAtLeast(mightNeed)
-              ) {
+              if (alwaysHave != null && alwaysHave.isAtLeast(mightNeed) || sometimesHave != null && sometimesHave.isAtLeast(mightNeed)) {
                 anyMatch = true
               }
             } else {
@@ -1149,9 +993,7 @@ sealed class ApiConstraint {
           }
 
           // If there's any optional SDK ID in this not in constraint, no match
-          if (
-            sdkConstraints.any { it.sometimes != null && constraint.findSdks(it.sdkId) == null }
-          ) {
+          if (sdkConstraints.any { it.sometimes != null && constraint.findSdks(it.sdkId) == null }) {
             return false
           }
           return anyMatch
@@ -1228,10 +1070,7 @@ sealed class ApiConstraint {
           var firstMissing: SdkApiConstraint? = null
           for ((sdkId, alwaysNeed, mightNeed) in requirement.sdkConstraints) {
             val sdkMatch = sdkConstraints.firstOrNull { it.sdkId == sdkId }
-            val match =
-              if (sdkMatch != null && (alwaysNeed ?: mightNeed!!).isAtLeast(sdkMatch.highest()))
-                null
-              else sdkMatch
+            val match = if (sdkMatch != null && (alwaysNeed ?: mightNeed!!).isAtLeast(sdkMatch.highest())) null else sdkMatch
 
             if (alwaysNeed != null) {
               val alwaysHave = sdkMatch?.always ?: return alwaysNeed
@@ -1248,10 +1087,7 @@ sealed class ApiConstraint {
                 continue
               }
               val (_, alwaysHave, sometimesHave) = match
-              if (
-                alwaysHave != null && alwaysHave.isAtLeast(mightNeed) ||
-                  sometimesHave != null && sometimesHave.isAtLeast(mightNeed)
-              ) {
+              if (alwaysHave != null && alwaysHave.isAtLeast(mightNeed) || sometimesHave != null && sometimesHave.isAtLeast(mightNeed)) {
                 anyMatch = true
               } else if (firstMissing == null) {
                 firstMissing = mightNeed
@@ -1262,9 +1098,7 @@ sealed class ApiConstraint {
           }
 
           // If there's any optional SDK ID in this not in constraint, no match
-          if (
-            sdkConstraints.any { it.sometimes != null && requirement.findSdks(it.sdkId) == null }
-          ) {
+          if (sdkConstraints.any { it.sometimes != null && requirement.findSdks(it.sdkId) == null }) {
             return firstMissing
           }
           return if (anyMatch) null else firstMissing
@@ -1273,8 +1107,7 @@ sealed class ApiConstraint {
     }
 
     override fun not(): ApiConstraint {
-      val reversed =
-        sdkConstraints.map { SdkApiConstraints(it.sdkId, it.sometimes?.not(), it.always?.not()) }
+      val reversed = sdkConstraints.map { SdkApiConstraints(it.sdkId, it.sometimes?.not(), it.always?.not()) }
       return MultiSdkApiConstraint(reversed)
     }
 
@@ -1286,10 +1119,7 @@ sealed class ApiConstraint {
       if (!negatable()) {
         return this
       }
-      val reversed =
-        sdkConstraints.map {
-          SdkApiConstraints(it.sdkId, it.always?.asNonNegatable(), it.sometimes?.asNonNegatable())
-        }
+      val reversed = sdkConstraints.map { SdkApiConstraints(it.sdkId, it.always?.asNonNegatable(), it.sometimes?.asNonNegatable()) }
       return MultiSdkApiConstraint(reversed)
     }
 
@@ -1368,8 +1198,7 @@ sealed class ApiConstraint {
       val orString = orItems.joinToString(" or ") { it.toString(sdkRegistry) }
       return if (andItems.isNotEmpty()) {
         if (orItems.isNotEmpty()) {
-          if (orItems.size == 1) "$andString and optionally $orString"
-          else "$andString and any of ($orString)"
+          if (orItems.size == 1) "$andString and optionally $orString" else "$andString and any of ($orString)"
         } else {
           andString
         }
@@ -1417,21 +1246,19 @@ sealed class ApiConstraint {
             }
             val apiLevel = s.substring(index + 1).toInt()
             val sdk = s.substring(0, index).toInt()
-            if (sdk == ANDROID_SDK_ID) get(apiLevel)
-            else SdkApiConstraint.createConstraint(fromInclusive = apiLevel, sdkId = sdk)
+            if (sdk == ANDROID_SDK_ID) get(apiLevel) else SdkApiConstraint.createConstraint(fromInclusive = apiLevel, sdkId = sdk)
           }
         return MultiSdkApiConstraint(constraints, anyOf = anyOf)
       }
 
       /**
-       * Produces a string-description of this [MultiSdkApiConstraint] matching the format found in
-       * api-versions.xml files (and parsed via [create])
+       * Produces a string-description of this [MultiSdkApiConstraint] matching the format found in api-versions.xml files (and parsed via
+       * [create])
        */
       fun describe(constraint: ApiConstraint): String {
         return when (constraint) {
           is SdkApiConstraint -> "0:${constraint.minString()}"
-          is MultiSdkApiConstraint ->
-            constraint.sdkConstraints.joinToString(",") { "${it.sdkId}:${it.lowest().minString()}" }
+          is MultiSdkApiConstraint -> constraint.sdkConstraints.joinToString(",") { "${it.sdkId}:${it.lowest().minString()}" }
         }
       }
 
@@ -1441,11 +1268,8 @@ sealed class ApiConstraint {
             .split(",")
             .map { t ->
               val index = t.indexOf(':')
-              val always =
-                if (index > 0) SdkApiConstraint.deserialize(t.substring(0, index)) else null
-              val sometimes =
-                if (index < t.length - 1) SdkApiConstraint.deserialize(t.substring(index + 1))
-                else null
+              val always = if (index > 0) SdkApiConstraint.deserialize(t.substring(0, index)) else null
+              val sometimes = if (index < t.length - 1) SdkApiConstraint.deserialize(t.substring(index + 1)) else null
               SdkApiConstraints(always?.sdkId ?: sometimes!!.sdkId, always, sometimes)
             }
             .toList()
@@ -1458,6 +1282,5 @@ sealed class ApiConstraint {
 private fun String.isNumber(): Boolean = this.isNotEmpty() && Character.isDigit(this[0])
 
 private fun String.getApiLevel(): Int {
-  return if (isBlank()) -1
-  else if (isNumber()) this.toInt() else SdkVersionInfo.getApiByPreviewName(this, true)
+  return if (isBlank()) -1 else if (isNumber()) this.toInt() else SdkVersionInfo.getApiByPreviewName(this, true)
 }

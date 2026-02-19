@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.integration.api
 
-import com.android.build.gradle.integration.common.truth.ScannerSubject
-
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.google.common.truth.Truth
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -33,64 +32,45 @@ import org.junit.Test
 
 class LifecycleTasksTest {
 
-    @get:Rule
-    val rule = GradleRule
-        .from {
-            androidApplication {
-                pluginCallbacks += MyAppCallback::class.java
-            }
+  @get:Rule val rule = GradleRule.from { androidApplication { pluginCallbacks += MyAppCallback::class.java } }
+
+  class MyAppCallback : ApplicationComponentCallback {
+
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      val customPreBuildProvider =
+        project.tasks.register("customPreBuild", LifecycleDependencyCustomTask::class.java) { it.outputDirectory.set(File("build/output")) }
+
+      val customPreInstallationProvider =
+        project.tasks.register("customPreInstallationTask", LifecycleDependencyCustomTask::class.java) {
+          it.outputDirectory.set(File("build/output2"))
         }
 
-    class MyAppCallback: ApplicationComponentCallback {
-
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            val customPreBuildProvider = project.tasks.register(
-                "customPreBuild",
-                LifecycleDependencyCustomTask::class.java
-            ) {
-                it.outputDirectory.set(File("build/output"))
-            }
-
-            val customPreInstallationProvider = project.tasks.register(
-                "customPreInstallationTask",
-                LifecycleDependencyCustomTask::class.java
-            ) {
-                it.outputDirectory.set(File("build/output2"))
-            }
-
-            androidComponents.onVariants { variant ->
-                variant.lifecycleTasks.registerPreBuild(customPreBuildProvider)
-                variant.lifecycleTasks.registerPreInstallation(customPreInstallationProvider)
-
-            }
-        }
+      androidComponents.onVariants { variant ->
+        variant.lifecycleTasks.registerPreBuild(customPreBuildProvider)
+        variant.lifecycleTasks.registerPreInstallation(customPreInstallationProvider)
+      }
     }
+  }
 
-    @Test
-    fun testAddingPreBuildDependent() {
-        val buildResult = rule.build.executor.run("preDebugBuild")
-        Truth.assertThat(buildResult.didWorkTasks).contains(":app:customPreBuild")
-        ScannerSubject.assertThat(buildResult.stdout).contains("customPreBuild ran !")
-    }
+  @Test
+  fun testAddingPreBuildDependent() {
+    val buildResult = rule.build.executor.run("preDebugBuild")
+    Truth.assertThat(buildResult.didWorkTasks).contains(":app:customPreBuild")
+    ScannerSubject.assertThat(buildResult.stdout).contains("customPreBuild ran !")
+  }
 
-    @Test
-    fun testAddingPreInstallationDependenct() {
-        val buildResult = rule.build.executor.withArgument("--dry-run").run("installDebug")
-        Truth.assertThat(
-            buildResult.stdout.findAll(":app:customPreInstallationTask SKIPPED").findFirst().isPresent
-        ).isTrue()
-    }
+  @Test
+  fun testAddingPreInstallationDependenct() {
+    val buildResult = rule.build.executor.withArgument("--dry-run").run("installDebug")
+    Truth.assertThat(buildResult.stdout.findAll(":app:customPreInstallationTask SKIPPED").findFirst().isPresent).isTrue()
+  }
 }
 
-abstract class LifecycleDependencyCustomTask: DefaultTask() {
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+abstract class LifecycleDependencyCustomTask : DefaultTask() {
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    @TaskAction
-    fun run() {
-        print("$name ran !")
-    }
+  @TaskAction
+  fun run() {
+    print("$name ran !")
+  }
 }

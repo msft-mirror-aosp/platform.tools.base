@@ -34,30 +34,27 @@ internal const val DEC_SIGNIFICAND_DOWN_SHIFT = 36
 internal const val ROUND_VALUE = 1L shl 35
 
 /**
- * The significands of all powers of ten from 10^-1 to 10^-47 in that order. This is used in decimal
- * parsing.
+ * The significands of all powers of ten from 10^-1 to 10^-47 in that order. This is used in decimal parsing.
  *
- * The format of the significand is a fixed point where the 59th bit is the one's place, and the
- * bits [58:0] represent the basic fraction. The 59th bit is guaranteed to be set in this format
- * and is the highest order set bit.
+ * The format of the significand is a fixed point where the 59th bit is the one's place, and the bits [58:0] represent the basic fraction.
+ * The 59th bit is guaranteed to be set in this format and is the highest order set bit.
  *
  * For example the significand of 10^-1 is 0x0ccccccccccccccc which in significand format would be:
  *
  * 1.100110011001100110011001100...
  *
- * The associated power of 2 which would multiply this significand to get the actual value is in the
- * [negativeShifts] array.
+ * The associated power of 2 which would multiply this significand to get the actual value is in the [negativeShifts] array.
  *
- * The reason why the 59th bit was chosen to be the most significant bit is that the significand can
- * be safely multiplied by 9 (the highest digit value) without creating a overflow. This allows for
- * us to take the advantage of Long precision while still allowing computation to be quick.
+ * The reason why the 59th bit was chosen to be the most significant bit is that the significand can be safely multiplied by 9 (the highest
+ * digit value) without creating a overflow. This allows for us to take the advantage of Long precision while still allowing computation to
+ * be quick.
  *
- * Long values are used has they have an overwhelmingly higher precision than floats guaranteeing
- * a lower margin of error.
+ * Long values are used has they have an overwhelmingly higher precision than floats guaranteeing a lower margin of error.
  *
  * These values were generated.
  */
-internal val negativeSignificands = arrayOf(
+internal val negativeSignificands =
+  arrayOf(
     0x0ccccccccccccccc,
     0x0a3d70a3d70a3d70,
     0x083126e978d4fdf3,
@@ -104,26 +101,25 @@ internal val negativeSignificands = arrayOf(
     0x0e45c10c42a2b3b0,
     0x0b6b00d69bb55c8d,
     0x09226712162ab070,
-    0x0e9d71b689dde71a
-)
+    0x0e9d71b689dde71a,
+  )
 
 /**
- * The array of all binary shifts of the powers of ten from 10^-1 to 10^-47 in that order. This is
- * used in decimal parsing.
+ * The array of all binary shifts of the powers of ten from 10^-1 to 10^-47 in that order. This is used in decimal parsing.
  *
- * The shift represents the power of 2 associated with the significand in the [negativeSignificands]
- * array. That is to say the value of a power of ten that is negative can be represented as:
+ * The shift represents the power of 2 associated with the significand in the [negativeSignificands] array. That is to say the value of a
+ * power of ten that is negative can be represented as:
  *
  *     negativeSignificands[n] * 2^(negativeShifts[n])
  *
- * For example 10^-1 significand is 1.100_1100_ where the _1100_ is infinitely repeating, and the
- * negative shift is -4. Thus:
+ * For example 10^-1 significand is 1.100_1100_ where the _1100_ is infinitely repeating, and the negative shift is -4. Thus:
  *
  *     1.100_1100_ * 2^-4 = .0_0011_ = 10^-1
  *
  * These values were generated.
  */
-internal val negativeShifts = arrayOf(
+internal val negativeShifts =
+  arrayOf(
     -4,
     -7,
     -10,
@@ -170,15 +166,13 @@ internal val negativeShifts = arrayOf(
     -147,
     -150,
     -153,
-    -157
-)
+    -157,
+  )
 /**
- * The significands of all powers of ten from 10^1 to 10^38 in that order. This is used in decimal
- * parsing.
+ * The significands of all powers of ten from 10^1 to 10^38 in that order. This is used in decimal parsing.
  *
- * The format of the significand is a fixed point where the 59th bit is the one's place, and the
- * bits [58:0] represent the basic fraction. The 59th bit is guaranteed to be set in this format
- * and is the highest order set bit.
+ * The format of the significand is a fixed point where the 59th bit is the one's place, and the bits [58:0] represent the basic fraction.
+ * The 59th bit is guaranteed to be set in this format and is the highest order set bit.
  *
  * For example the significand of 10^3 is 0x0c80000000000000, which in significand format would be:
  *
@@ -186,19 +180,18 @@ internal val negativeShifts = arrayOf(
  *
  * Note: 1100100 in binary is equal to 100 in decimal.
  *
- * The associated power of 2 which would multiply this significand to get the actual value is in the
- * [positiveShifts] array.
+ * The associated power of 2 which would multiply this significand to get the actual value is in the [positiveShifts] array.
  *
- * The reason why the 59th bit was chosen to be the most significant bit is that the significand can
- * be safely multiplied by 9 (the highest digit value) without creating a overflow. This allows for
- * us to take the advantage of Long precision while still allowing computation to be quick.
+ * The reason why the 59th bit was chosen to be the most significant bit is that the significand can be safely multiplied by 9 (the highest
+ * digit value) without creating a overflow. This allows for us to take the advantage of Long precision while still allowing computation to
+ * be quick.
  *
- * Long values are used as they have an overwhelmingly higher precision than floats guaranteeing
- * a lower margin of error.
+ * Long values are used as they have an overwhelmingly higher precision than floats guaranteeing a lower margin of error.
  *
  * These values were generated.
  */
-internal val positiveSignificands = arrayOf(
+internal val positiveSignificands =
+  arrayOf(
     0x0800000000000000,
     0x0a00000000000000,
     0x0c80000000000000,
@@ -237,15 +230,14 @@ internal val positiveSignificands = arrayOf(
     0x09a130b963a6c115,
     0x0c097ce7bc90715b,
     0x0f0bdc21abb48db2,
-    0x096769950b50d88f
-)
+    0x096769950b50d88f,
+  )
 
 /**
- * The array of all binary shifts of the powers of ten from 10^0 to 10^38 in that order. This is
- * used in decimal parsing.
+ * The array of all binary shifts of the powers of ten from 10^0 to 10^38 in that order. This is used in decimal parsing.
  *
- * The shift represents the power of 2 associated with the significand in the [positiveSignificands]
- * array. That is to say the value of a power of ten that is positive can be represented as:
+ * The shift represents the power of 2 associated with the significand in the [positiveSignificands] array. That is to say the value of a
+ * power of ten that is positive can be represented as:
  *
  *     positiveSignificands[n] * 2^(positiveShifts[n])
  *
@@ -255,7 +247,8 @@ internal val positiveSignificands = arrayOf(
  *
  * These values were generated.
  */
-internal val positiveShifts = arrayOf(
+internal val positiveShifts =
+  arrayOf(
     0,
     3,
     6,
@@ -294,5 +287,5 @@ internal val positiveShifts = arrayOf(
     116,
     119,
     122,
-    126
-)
+    126,
+  )

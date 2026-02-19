@@ -50,12 +50,7 @@ import org.w3c.dom.Element
 class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-      Implementation(
-        AlarmDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-        Scope.JAVA_FILE_SCOPE,
-        Scope.MANIFEST_SCOPE,
-      )
+      Implementation(AlarmDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST), Scope.JAVA_FILE_SCOPE, Scope.MANIFEST_SCOPE)
 
     /** Alarm set too soon/frequently. */
     @JvmField
@@ -138,11 +133,9 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
   // methods that schedule exact alarms, using strings "1", "2", "3", ... as keys.
   private var numScheduleCalls = 0
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf(shortAlarmMethod, exactAlarmPermissionMethod)
+  override fun getApplicableMethodNames(): List<String> = listOf(shortAlarmMethod, exactAlarmPermissionMethod)
 
-  override fun applicableAnnotations(): List<String> =
-    listOf(PERMISSION_ANNOTATION.oldName(), PERMISSION_ANNOTATION.newName())
+  override fun applicableAnnotations(): List<String> = listOf(PERMISSION_ANNOTATION.oldName(), PERMISSION_ANNOTATION.newName())
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -156,10 +149,7 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
         !handlesException(element, null, allowSuperClass = false, SECURITY_EXCEPTION) &&
         !context.driver.isSuppressed(context, SCHEDULE_EXACT_ALARM, element)
     )
-      context
-        .getPartialResults(SCHEDULE_EXACT_ALARM)
-        .map()
-        .put(numScheduleCalls++.toString(), context.getLocation(element))
+      context.getPartialResults(SCHEDULE_EXACT_ALARM).map().put(numScheduleCalls++.toString(), context.getLocation(element))
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -170,10 +160,7 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
       // androidx.core.app.AlarmManagerCompat#canScheduleExactAlarms, as well as any other custom
       // methods implemented in other codebases.
       if (context.isEnabled(SCHEDULE_EXACT_ALARM) && method.name == exactAlarmPermissionMethod) {
-        context
-          .getPartialResults(SCHEDULE_EXACT_ALARM)
-          .map()
-          .put(CHECKS_EXACT_ALARM_PERMISSION, true)
+        context.getPartialResults(SCHEDULE_EXACT_ALARM).map().put(CHECKS_EXACT_ALARM_PERMISSION, true)
       }
       val evaluator = context.evaluator
       if (evaluator.isMemberInClass(method, "android.app.AlarmManager")) {
@@ -186,17 +173,11 @@ class AlarmDetector : Detector(), SourceCodeScanner, XmlScanner {
     }
   }
 
-  private fun ensureAtLeast(
-    context: JavaContext,
-    node: UCallExpression,
-    parameter: Int,
-    min: Long,
-  ) {
+  private fun ensureAtLeast(context: JavaContext, node: UCallExpression, parameter: Int, min: Long) {
     val argument = node.valueArguments[parameter]
     val value = getLongValue(context, argument)
     if (value < min) {
-      val message =
-        "Value will be forced up to $min as of Android 5.1; " + "don't rely on this to be exact"
+      val message = "Value will be forced up to $min as of Android 5.1; " + "don't rely on this to be exact"
       context.report(SHORT_ALARM, argument, context.getLocation(argument), message)
     }
   }

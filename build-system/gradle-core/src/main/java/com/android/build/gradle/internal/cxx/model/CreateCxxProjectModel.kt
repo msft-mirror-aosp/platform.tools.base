@@ -22,21 +22,17 @@ import com.android.build.gradle.internal.cxx.gradle.generator.CxxConfigurationPa
 /**
  * Create a [CxxProjectModel] to hold project-wide settings and flags.
  *
- * Note, the data in this class is project-wide but there is still one instance per module.
- * For this reason, [CxxProjectModel] is not suitable to hold services that are meant to
- * be strictly per-project.
+ * Note, the data in this class is project-wide but there is still one instance per module. For this reason, [CxxProjectModel] is not
+ * suitable to hold services that are meant to be strictly per-project.
  */
-fun createCxxProjectModel(
-    sdkComponents: SdkComponentsBuildService,
-    configurationParameters: CxxConfigurationParameters
-) : CxxProjectModel {
-    return CxxProjectModel(
-      rootBuildGradleFolder = configurationParameters.rootDir,
-      sdkFolder = sdkComponents.sdkDirectoryProvider.get().asFile,
-      isBuildOnlyTargetAbiEnabled = configurationParameters.isBuildOnlyTargetAbiEnabled,
-      ideBuildTargetAbi = configurationParameters.ideBuildTargetAbi,
-      isCmakeBuildCohabitationEnabled = configurationParameters.isCmakeBuildCohabitationEnabled,
-      chromeTraceJsonFolder = configurationParameters.chromeTraceJsonFolder,
-      isPrefabEnabled = configurationParameters.isPrefabEnabled
-    )
+fun createCxxProjectModel(sdkComponents: SdkComponentsBuildService, configurationParameters: CxxConfigurationParameters): CxxProjectModel {
+  return CxxProjectModel(
+    rootBuildGradleFolder = configurationParameters.rootDir,
+    sdkFolder = sdkComponents.sdkDirectoryProvider.get().asFile,
+    isBuildOnlyTargetAbiEnabled = configurationParameters.isBuildOnlyTargetAbiEnabled,
+    ideBuildTargetAbi = configurationParameters.ideBuildTargetAbi,
+    isCmakeBuildCohabitationEnabled = configurationParameters.isCmakeBuildCohabitationEnabled,
+    chromeTraceJsonFolder = configurationParameters.chromeTraceJsonFolder,
+    isPrefabEnabled = configurationParameters.isPrefabEnabled,
+  )
 }

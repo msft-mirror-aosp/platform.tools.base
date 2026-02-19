@@ -21,19 +21,11 @@ import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
-class BundleConfigImpl(
-    override val codeTransparency: CodeTransparencyImpl,
-    val variantServices: VariantServices,
-): BundleConfig {
+class BundleConfigImpl(override val codeTransparency: CodeTransparencyImpl, val variantServices: VariantServices) : BundleConfig {
 
-    internal val metadataFiles = variantServices.listPropertyOf(MetadataRecord::class.java) {}
+  internal val metadataFiles = variantServices.listPropertyOf(MetadataRecord::class.java) {}
 
-    override fun addMetadataFile(metadataDirectory: String, file: Provider<RegularFile>) {
-        metadataFiles.add(
-            MetadataRecord(
-                metadataDirectory,
-                file
-            )
-        )
-    }
+  override fun addMetadataFile(metadataDirectory: String, file: Provider<RegularFile>) {
+    metadataFiles.add(MetadataRecord(metadataDirectory, file))
+  }
 }

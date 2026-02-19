@@ -27,22 +27,30 @@ fun recyclerViewAdapterJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val onCreateViewHolderBlock = if (isViewBindingSupported) """
+  val onCreateViewHolderBlock =
+    if (isViewBindingSupported)
+      """
     return new ViewHolder(${layoutToViewBindingClass(fragmentLayout)}.inflate(LayoutInflater.from(parent.getContext()), parent, false));
-  """ else """
+  """
+    else
+      """
     return new ViewHolder(LayoutInflater.from(parent.getContext()), parent);
   """
 
-  val viewHolderBlock = if (isViewBindingSupported) """
+  val viewHolderBlock =
+    if (isViewBindingSupported)
+      """
     public ViewHolder(${layoutToViewBindingClass(fragmentLayout)} binding) {
       super(binding.getRoot());
       mIdView = binding.itemNumber;
       mContentView = binding.content;
     }
-  """ else """
+  """
+    else
+      """
     public ViewHolder(View view) {
       super(view);
       mIdView = (TextView) view.findViewById(R.id.item_number);

@@ -16,21 +16,17 @@
 
 package com.android.build.gradle.internal.scope
 
-import java.io.File
-import java.io.Serializable
 import com.android.utils.FileUtils
-import org.gradle.tooling.BuildException
+import java.io.File
 import java.io.IOException
+import java.io.Serializable
 import javax.inject.Inject
+import org.gradle.tooling.BuildException
 
-/**
- * The parameters that will be injected to the BuildElementsTransformRunnable object.
- */
+/** The parameters that will be injected to the BuildElementsTransformRunnable object. */
 abstract class BuildElementsTransformParams : Serializable {
-    /**
-     * The output file of the transform
-     */
-    abstract val output: File?
+  /** The output file of the transform */
+  abstract val output: File?
 }
 
 /**
@@ -38,28 +34,18 @@ abstract class BuildElementsTransformParams : Serializable {
  *
  * @param params the parameters that will be injected to the runnable
  */
-abstract class BuildElementsTransformRunnable constructor(protected val params: BuildElementsTransformParams) :
-    Runnable
+abstract class BuildElementsTransformRunnable constructor(protected val params: BuildElementsTransformParams) : Runnable
 
-/**
- * A transform class that copies a file to a new destination
- */
-class BuildElementsCopyRunnable @Inject internal constructor(params: BuildElementsCopyParams) :
-    BuildElementsTransformRunnable(params) {
+/** A transform class that copies a file to a new destination */
+class BuildElementsCopyRunnable @Inject internal constructor(params: BuildElementsCopyParams) : BuildElementsTransformRunnable(params) {
 
-    override fun run() {
-        try {
-            FileUtils.copyFile(
-                (params as BuildElementsCopyParams).input, params.output
-            )
-        } catch (e: IOException) {
-            throw BuildException(e.message, e)
-        }
-
+  override fun run() {
+    try {
+      FileUtils.copyFile((params as BuildElementsCopyParams).input, params.output)
+    } catch (e: IOException) {
+      throw BuildException(e.message, e)
     }
+  }
 }
 
-class BuildElementsCopyParams internal constructor(
-    val input: File,
-    override val output: File
-) : BuildElementsTransformParams()
+class BuildElementsCopyParams internal constructor(val input: File, override val output: File) : BuildElementsTransformParams()

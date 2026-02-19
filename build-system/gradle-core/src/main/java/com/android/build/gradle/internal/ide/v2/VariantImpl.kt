@@ -25,30 +25,28 @@ import com.android.builder.model.v2.ide.Variant
 import java.io.File
 import java.io.Serializable
 
-/**
- * Implementation of [Variant] for serialization via the Tooling API.
- */
+/** Implementation of [Variant] for serialization via the Tooling API. */
 data class VariantImpl(
-    override val name: String,
-    override val displayName: String,
-    override val mainArtifact: AndroidArtifact,
-    override val deviceTestArtifacts: Map<String, AndroidArtifact>,
-    override val hostTestArtifacts: Map<String, JavaArtifact>,
-    override val testFixturesArtifact: AndroidArtifact?,
-    override val testSuiteArtifacts: Map<String, TestSuiteArtifact>,
-    override val testedTargetVariant: TestedTargetVariant?,
-    override val runTestInSeparateProcess: Boolean,
-    override val isInstantAppCompatible: Boolean,
-    override val desugaredMethods: List<File>,
-    override val experimentalProperties: Map<String, String>
+  override val name: String,
+  override val displayName: String,
+  override val mainArtifact: AndroidArtifact,
+  override val deviceTestArtifacts: Map<String, AndroidArtifact>,
+  override val hostTestArtifacts: Map<String, JavaArtifact>,
+  override val testFixturesArtifact: AndroidArtifact?,
+  override val testSuiteArtifacts: Map<String, TestSuiteArtifact>,
+  override val testedTargetVariant: TestedTargetVariant?,
+  override val runTestInSeparateProcess: Boolean,
+  override val isInstantAppCompatible: Boolean,
+  override val desugaredMethods: List<File>,
+  override val experimentalProperties: Map<String, String>,
 ) : Variant, Serializable {
-    override val androidTestArtifact: AndroidArtifact?
-        get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
-    override val unitTestArtifact: JavaArtifact?
-        get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+  override val androidTestArtifact: AndroidArtifact?
+    get() = deviceTestArtifacts[ComponentTypeImpl.ANDROID_TEST.artifactName]
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  override val unitTestArtifact: JavaArtifact?
+    get() = hostTestArtifacts[ComponentTypeImpl.UNIT_TEST.artifactName]
+
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

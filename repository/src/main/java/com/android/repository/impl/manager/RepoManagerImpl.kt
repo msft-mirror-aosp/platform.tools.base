@@ -48,9 +48,8 @@ import org.jetbrains.annotations.TestOnly
 import org.w3c.dom.ls.LSResourceResolver
 
 /**
- * Main implementation of [RepoManager]. Loads local and remote [RepoPackage]s synchronously and
- * asynchronously into a [RepositoryPackages] instance from the given local path and from the
- * registered [RepositorySourceProvider]s, using the registered [SchemaModule]s.
+ * Main implementation of [RepoManager]. Loads local and remote [RepoPackage]s synchronously and asynchronously into a [RepositoryPackages]
+ * instance from the given local path and from the registered [RepositorySourceProvider]s, using the registered [SchemaModule]s.
  *
  * @property localPath the path under which to look for installed packages.
  * @property localRepoLoader the implementation of local package loading
@@ -68,17 +67,14 @@ internal constructor(
    * Constructor for production use, using the standard local and remote loaders.
    *
    * @param localPath the path under which to look for installed packages.
-   * @param sourceProviders the [RepositorySourceProvider]s which [RemoteRepoLoaderImpl] will use to
-   *   load remote repositories.
-   * @param additionalSchemaModules schema modules to use to parse XML files, in addition to the
-   *   always-included [commonModule] and [genericModule]
-   * @param fallbackLocalRepoLoader the [FallbackLocalRepoLoader] to use if the normal
-   *   [LocalRepoLoaderImpl] does not find the expected package.xml. This will detect packages in
-   *   the legacy XML format, and also manually installed packages, and create a package.xml file
+   * @param sourceProviders the [RepositorySourceProvider]s which [RemoteRepoLoaderImpl] will use to load remote repositories.
+   * @param additionalSchemaModules schema modules to use to parse XML files, in addition to the always-included [commonModule] and
+   *   [genericModule]
+   * @param fallbackLocalRepoLoader the [FallbackLocalRepoLoader] to use if the normal [LocalRepoLoaderImpl] does not find the expected
+   *   package.xml. This will detect packages in the legacy XML format, and also manually installed packages, and create a package.xml file
    *   for them.
-   * @param fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal
-   *   [RemoteRepoLoaderImpl] can't understand a downloaded repository xml file. (This is currently
-   *   used for parsing the old repository XML format.)
+   * @param fallbackRemoteRepoLoader the [FallbackRemoteRepoLoader] to use if the normal [RemoteRepoLoaderImpl] can't understand a
+   *   downloaded repository xml file. (This is currently used for parsing the old repository XML format.)
    */
   constructor(
     localPath: Path?,
@@ -89,13 +85,7 @@ internal constructor(
   ) : this(
     localPath = localPath,
     localRepoLoader =
-      localPath?.let {
-        LocalRepoLoaderImpl(
-          it,
-          setOf(commonModule, genericModule) + additionalSchemaModules,
-          fallbackLocalRepoLoader,
-        )
-      },
+      localPath?.let { LocalRepoLoaderImpl(it, setOf(commonModule, genericModule) + additionalSchemaModules, fallbackLocalRepoLoader) },
     remoteRepoLoader = RemoteRepoLoaderImpl(sourceProviders, fallbackRemoteRepoLoader),
     additionalSchemaModules = additionalSchemaModules,
   )
@@ -103,8 +93,7 @@ internal constructor(
   @TestOnly constructor(localPath: Path?) : this(localPath, emptyList())
 
   /** The registered [SchemaModule]s. */
-  override val schemaModules: Set<SchemaModule<*>> =
-    setOf(commonModule, genericModule) + additionalSchemaModules
+  override val schemaModules: Set<SchemaModule<*>> = setOf(commonModule, genericModule) + additionalSchemaModules
 
   /** The [RepositorySourceProvider]s from which to get [RepositorySource]s to load from. */
   override val sourceProviders
@@ -122,14 +111,10 @@ internal constructor(
   /** The task used to load packages. If non-null, a load is currently in progress. */
   @GuardedBy("taskLock") private var task: LocalLoadTask? = null
 
-  private data class RemoteLoadTaskKey(
-    val downloader: Downloader,
-    val settings: SettingsController?,
-  )
+  private data class RemoteLoadTaskKey(val downloader: Downloader, val settings: SettingsController?)
 
   /** The task used to load remote packages. If non-null, a load is currently in progress. */
-  @GuardedBy("taskLock")
-  private val remoteTasks: MutableMap<RemoteLoadTaskKey, RemoteLoadTask> = mutableMapOf()
+  @GuardedBy("taskLock") private val remoteTasks: MutableMap<RemoteLoadTaskKey, RemoteLoadTask> = mutableMapOf()
 
   /** Lock guarding [.task] and [.remoteTasks]. */
   private val taskLock = Any()
@@ -143,11 +128,7 @@ internal constructor(
   /** Install/uninstall operations that are currently running. */
   private val inProgressInstalls = mutableMapOf<RepoPackage, PackageOperation>()
 
-  override fun getSources(
-    downloader: Downloader?,
-    progress: ProgressIndicator,
-    forceRefresh: Boolean,
-  ): List<RepositorySource> =
+  override fun getSources(downloader: Downloader?, progress: ProgressIndicator, forceRefresh: Boolean): List<RepositorySource> =
     sourceProviders.flatMap { it.getSources(downloader, progress, forceRefresh) }
 
   override fun markInvalid() {
@@ -184,38 +165,24 @@ internal constructor(
     downloader: Downloader?,
     settings: SettingsController?,
   ) {
-    load(
-      cacheExpirationMs,
-      onLocalComplete,
-      onSuccess,
-      onError,
-      runner,
-      downloader,
-      settings,
-      false,
-    )
+    load(cacheExpirationMs, onLocalComplete, onSuccess, onError, runner, downloader, settings, false)
   }
 
   /**
    * Loads the local and remote repositories.
    *
-   * @param cacheExpirationMs How long must have passed since the last load for us to reload.
-   *   Specify `0` to reload immediately.
-   * @param onLocalComplete When loading, the local repo load happens first, and should be
-   *   relatively fast. When complete, the `onLocalComplete` [RepoLoadedListener] is run. Will be
-   *   called with a [RepositoryPackages] that contains only the local packages.
-   * @param onSuccess Callback that is run when the entire load (local and remote) has completed
-   *   successfully. Called with an [RepositoryPackages] containing both the local and remote
-   *   packages.
+   * @param cacheExpirationMs How long must have passed since the last load for us to reload. Specify `0` to reload immediately.
+   * @param onLocalComplete When loading, the local repo load happens first, and should be relatively fast. When complete, the
+   *   `onLocalComplete` [RepoLoadedListener] is run. Will be called with a [RepositoryPackages] that contains only the local packages.
+   * @param onSuccess Callback that is run when the entire load (local and remote) has completed successfully. Called with an
+   *   [RepositoryPackages] containing both the local and remote packages.
    * @param onError Callback that is run when there's an error at some point during the load.
-   * @param runner The [ProgressRunner] to use for any tasks started during the load, including
-   *   running the callbacks.
-   * @param downloader The [Downloader] to use for downloading remote files, including any remote
-   *   list of repo sources and the remote repositories themselves.
-   * @param settings The settings to use during the load, including for example proxy settings used
-   *   when fetching remote files.
-   * @param sync If true, load synchronously. If false, load asynchronously (this method should
-   *   return quickly, and the `onSuccess` callbacks can be used to process the completed results).
+   * @param runner The [ProgressRunner] to use for any tasks started during the load, including running the callbacks.
+   * @param downloader The [Downloader] to use for downloading remote files, including any remote list of repo sources and the remote
+   *   repositories themselves.
+   * @param settings The settings to use during the load, including for example proxy settings used when fetching remote files.
+   * @param sync If true, load synchronously. If false, load asynchronously (this method should return quickly, and the `onSuccess`
+   *   callbacks can be used to process the completed results).
    */
   // TODO: fix up invalidation. It's annoying that you have to manually reload.
   // TODO: Maybe: when you load, instead of load as now, you get back a loader, which knows how
@@ -234,15 +201,12 @@ internal constructor(
     // Build a task that will load the local and, if applicable, the remote repos, or wait for
     // existing tasks that are doing that.
     val runnable: ProgressRunnable
-    val localRunnable =
-      getOrCreateLocalLoadTask(cacheExpirationMs).wrapRun(onLocalComplete, onError)
+    val localRunnable = getOrCreateLocalLoadTask(cacheExpirationMs).wrapRun(onLocalComplete, onError)
 
     if (downloader == null) {
       runnable = localRunnable
     } else {
-      val remoteRunnable =
-        getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings)
-          .wrapRun(onSuccess, onError)
+      val remoteRunnable = getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings).wrapRun(onSuccess, onError)
 
       runnable = ProgressRunnable { indicator ->
         localRunnable.run(indicator)
@@ -276,20 +240,13 @@ internal constructor(
       val remoteTaskKey = RemoteLoadTaskKey(downloader, settings)
       val existingRemoteTask = remoteTasks[remoteTaskKey]?.takeIfNotTimedOut()
       if (existingRemoteTask == null) {
-        return RemoteLoadTask(cacheExpirationMs, downloader, settings).also {
-          remoteTasks[remoteTaskKey] = it
-        }
+        return RemoteLoadTask(cacheExpirationMs, downloader, settings).also { remoteTasks[remoteTaskKey] = it }
       } else {
-        return existingRemoteTask.newPiggybackTask {
-          getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings)
-        }
+        return existingRemoteTask.newPiggybackTask { getOrCreateRemoteLoadTask(cacheExpirationMs, downloader, settings) }
       }
     }
 
-  override suspend fun loadLocalPackages(
-    indicator: ProgressIndicator,
-    cacheExpiration: Duration,
-  ): List<LocalPackage> =
+  override suspend fun loadLocalPackages(indicator: ProgressIndicator, cacheExpiration: Duration): List<LocalPackage> =
     getOrCreateLocalLoadTask(cacheExpiration.inWholeMilliseconds).load(indicator)
 
   override suspend fun loadRemotePackages(
@@ -297,9 +254,7 @@ internal constructor(
     downloader: Downloader,
     settings: SettingsController?,
     cacheExpiration: Duration,
-  ): List<RemotePackage> =
-    getOrCreateRemoteLoadTask(cacheExpiration.inWholeMilliseconds, downloader, settings)
-      .load(indicator)
+  ): List<RemotePackage> = getOrCreateRemoteLoadTask(cacheExpiration.inWholeMilliseconds, downloader, settings).load(indicator)
 
   @Slow
   override fun reloadLocalIfNeeded(progress: ProgressIndicator) {
@@ -371,10 +326,9 @@ internal constructor(
     /**
      * Returns a LoadTask that simply waits on the result of this LoadTask and returns it.
      *
-     * The problem with sharing the results of an existing task is that the caller of the existing
-     * task may cancel it, even though our caller still wants the result. Our caller may not even
-     * allow cancellation and may not be expecting it. So, if that happens, use [fallback] to create
-     * a fresh LoadTask and use it.
+     * The problem with sharing the results of an existing task is that the caller of the existing task may cancel it, even though our
+     * caller still wants the result. Our caller may not even allow cancellation and may not be expecting it. So, if that happens, use
+     * [fallback] to create a fresh LoadTask and use it.
      */
     fun newPiggybackTask(fallback: () -> LoadTask<T>): LoadTask<T> = LoadTask { indicator ->
       try {
@@ -394,14 +348,8 @@ internal constructor(
     Clock.systemUTC().instant() < it.taskCreateTime + TASK_TIMEOUT
   }
 
-  /**
-   * Produces a ProgressRunnable that invokes this LoadTask and then performs the given callbacks
-   * when finished.
-   */
-  private fun LoadTask<*>.wrapRun(
-    onSuccess: RepoLoadedListener?,
-    onError: Runnable?,
-  ): ProgressRunnable = ProgressRunnable { indicator ->
+  /** Produces a ProgressRunnable that invokes this LoadTask and then performs the given callbacks when finished. */
+  private fun LoadTask<*>.wrapRun(onSuccess: RepoLoadedListener?, onError: Runnable?): ProgressRunnable = ProgressRunnable { indicator ->
     try {
       load(indicator)
       onSuccess?.loaded(packages)
@@ -411,15 +359,13 @@ internal constructor(
     }
   }
 
-  private inner class LocalLoadTask(val cacheExpirationMs: Long) :
-    AbstractLoadTask<LocalPackage>() {
+  private inner class LocalLoadTask(val cacheExpirationMs: Long) : AbstractLoadTask<LocalPackage>() {
 
     override suspend fun doLoad(indicator: ProgressIndicator): List<LocalPackage> {
       val result: List<LocalPackage>
       if (
         localRepoLoader != null &&
-          (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() ||
-            localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
+          (lastLocalRefreshMs + cacheExpirationMs <= System.currentTimeMillis() || localRepoLoader.needsUpdate(lastLocalRefreshMs, false))
       ) {
         indicator.setText("Loading local repository...")
         val newLocals = localRepoLoader.getPackages(indicator)
@@ -464,8 +410,7 @@ internal constructor(
 
     private fun loadRemote(indicator: ProgressIndicator): List<RemotePackage> {
       if (lastRemoteRefreshMs + cacheExpirationMs <= System.currentTimeMillis()) {
-        val remotes =
-          remoteRepoLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
+        val remotes = remoteRepoLoader.fetchPackages(indicator.createSubProgress(.75), downloader, settings)
         indicator.setText("Computing updates...")
         indicator.setFraction(0.75)
         val fireListeners = remotes != packages.remotePackages

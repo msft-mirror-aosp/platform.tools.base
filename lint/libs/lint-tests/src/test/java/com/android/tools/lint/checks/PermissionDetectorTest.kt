@@ -72,11 +72,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
     return getManifestWithPermissions(1, targetSdk, *permissions)
   }
 
-  private fun getThingsManifestWithPermissions(
-    targetSdk: Int,
-    isRequired: Boolean?,
-    vararg permissions: String,
-  ): TestFile {
+  private fun getThingsManifestWithPermissions(targetSdk: Int, isRequired: Boolean?, vararg permissions: String): TestFile {
     val applicationBlock = StringBuilder()
     applicationBlock.append("<uses-library android:name=\"com.google.android.things\"")
     if (isRequired != null) {
@@ -91,26 +87,14 @@ class PermissionDetectorTest : AbstractCheckTest() {
     return getManifestWithPermissions(applicationBlock.toString(), 1, targetSdk, *permissions)
   }
 
-  private fun getManifestWithPermissions(
-    minSdk: Int,
-    targetSdk: Int,
-    vararg permissions: String,
-  ): TestFile {
+  private fun getManifestWithPermissions(minSdk: Int, targetSdk: Int, vararg permissions: String): TestFile {
     return getManifestWithPermissions(null, minSdk, targetSdk, *permissions)
   }
 
-  private fun getManifestWithPermissions(
-    applicationBlock: String?,
-    minSdk: Int,
-    targetSdk: Int,
-    vararg permissions: String,
-  ): TestFile {
+  private fun getManifestWithPermissions(applicationBlock: String?, minSdk: Int, targetSdk: Int, vararg permissions: String): TestFile {
     val permissionBlock = StringBuilder()
     for (permission in permissions) {
-      permissionBlock
-        .append("    <uses-permission android:name=\"")
-        .append(permission)
-        .append("\" />\n")
+      permissionBlock.append("    <uses-permission android:name=\"").append(permission).append("\" />\n")
     }
     return xml(
       "AndroidManifest.xml",
@@ -253,15 +237,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
         "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 0 warnings\n"
 
-    lint()
-      .files(
-        getManifestWithPermissions(14),
-        mPermissionTest,
-        mLocationManagerStub,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
-      .run()
-      .expect(expected)
+    lint().files(getManifestWithPermissions(14), mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR).run().expect(expected)
   }
 
   fun testHasPermission() {
@@ -369,37 +345,21 @@ class PermissionDetectorTest : AbstractCheckTest() {
   }
 
   fun testUsesPermissionSdk23() {
-    val manifest =
-      getManifestWithPermissions(
-        14,
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.BLUETOOTH",
-      )
+    val manifest = getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION", "android.permission.BLUETOOTH")
     val contents = manifest.getContents()
     assertNotNull(contents)
     val s = contents!!.replace(TAG_USES_PERMISSION, TAG_USES_PERMISSION_SDK_23)
     manifest.withSource(s)
-    lint()
-      .files(manifest, mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR)
-      .run()
-      .expectClean()
+    lint().files(manifest, mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR).run().expectClean()
   }
 
   fun testUsesPermissionSdkM() {
-    val manifest =
-      getManifestWithPermissions(
-        14,
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.BLUETOOTH",
-      )
+    val manifest = getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION", "android.permission.BLUETOOTH")
     val contents = manifest.getContents()
     assertNotNull(contents)
     val s = contents!!.replace(TAG_USES_PERMISSION, TAG_USES_PERMISSION_SDK_M)
     manifest.withSource(s)
-    lint()
-      .files(manifest, mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR)
-      .run()
-      .expectClean()
+    lint().files(manifest, mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR).run().expectClean()
   }
 
   fun testPermissionAnnotation() {
@@ -456,12 +416,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
         "1 errors, 0 warnings\n"
 
     lint()
-      .files(
-        getThingsManifestWithPermissions(24, null),
-        mPermissionTest,
-        mLocationManagerStub,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
+      .files(getThingsManifestWithPermissions(24, null), mPermissionTest, mLocationManagerStub, SUPPORT_ANNOTATIONS_JAR)
       .run()
       .expect(expected)
   }
@@ -986,9 +941,11 @@ class PermissionDetectorTest : AbstractCheckTest() {
             "        Intent intent = new Intent(Intent.ACTION_CALL);\n" +
             "        intent.setData(Uri.parse(\"tel:1234567890\"));\n" +
             "        // This one will only be flagged if we have framework metadata on Intent.ACTION_CALL\n" +
-            // This relies on the attached SDK having external annotations on Intent.ACTION_CALL;
+            // This relies on the attached SDK having external annotations on
+            // Intent.ACTION_CALL;
             // it looks like this is not available on the SDK we're currently using:
-            // "        activity./*Missing permissions required by intent Intent.ACTION_CALL:
+            // "        activity./*Missing permissions required by intent
+            // Intent.ACTION_CALL:
             // android.permission.CALL_PHONE*/startActivity(intent/**/);\n" +
             "        activity.startActivity(intent);\n" +
             "    }\n" +
@@ -1481,8 +1438,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
         SUPPORT_ANNOTATIONS_JAR,
 
         // App skeleton
-        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION")
-          .to("../app/AndroidManifest.xml"),
+        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION").to("../app/AndroidManifest.xml"),
       )
       .run()
       .expectClean()
@@ -1528,7 +1484,8 @@ class PermissionDetectorTest : AbstractCheckTest() {
                 """
             )
             .indented(),
-          // Extracted from android-S's annotations.zip (until our test builds use the Android 12
+          // Extracted from android-S's annotations.zip (until our test builds use the Android
+          // 12
           // SDK)
           jar(
             "annotations.zip",
@@ -1634,8 +1591,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
         SUPPORT_ANNOTATIONS_JAR,
 
         // App skeleton
-        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION")
-          .to("../app/AndroidManifest.xml"),
+        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION").to("../app/AndroidManifest.xml"),
       )
       .run()
       .expect(
@@ -1673,11 +1629,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
   fun testNearby() {
     // Regression test for 235963893: Handling for NEARBY_WIFI_DEVICES
     lint()
-      .files(
-        getManifestWithPermissions(33, "android.permission.ACCESS_FINE_LOCATION"),
-        nearbyPermissionExample,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
+      .files(getManifestWithPermissions(33, "android.permission.ACCESS_FINE_LOCATION"), nearbyPermissionExample, SUPPORT_ANNOTATIONS_JAR)
       .run()
       .expect(
         """
@@ -1693,11 +1645,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
     // Regression test for 235963893: Handling for NEARBY_WIFI_DEVICES
     lint()
       .files(
-        getManifestWithPermissions(
-          33,
-          "android.permission.ACCESS_FINE_LOCATION",
-          "android.permission.NEARBY_WIFI_DEVICES",
-        ),
+        getManifestWithPermissions(33, "android.permission.ACCESS_FINE_LOCATION", "android.permission.NEARBY_WIFI_DEVICES"),
         nearbyPermissionExample,
         SUPPORT_ANNOTATIONS_JAR,
       )
@@ -1712,11 +1660,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
     // targetSdkVersion=33 sensitive
     // permissions. That's the cautiousness this test is checking.
     lint()
-      .files(
-        getManifestWithPermissions(33, "android.permission.NEARBY_WIFI_DEVICES"),
-        nearbyPermissionExample,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
+      .files(getManifestWithPermissions(33, "android.permission.NEARBY_WIFI_DEVICES"), nearbyPermissionExample, SUPPORT_ANNOTATIONS_JAR)
       .run()
       .expectClean()
   }
@@ -1725,11 +1669,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
     // Regression test for 235963893: Handling for NEARBY_WIFI_DEVICES
     // When target < 33, don't flag these
     lint()
-      .files(
-        getManifestWithPermissions(32, "android.permission.ACCESS_FINE_LOCATION"),
-        nearbyPermissionExample,
-        SUPPORT_ANNOTATIONS_JAR,
-      )
+      .files(getManifestWithPermissions(32, "android.permission.ACCESS_FINE_LOCATION"), nearbyPermissionExample, SUPPORT_ANNOTATIONS_JAR)
       .run()
       .expectClean()
   }
@@ -1738,10 +1678,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
     // Like testNearby, but missing more than *just* the nearby permission; in that case, we don't
     // flag anything because we have less confidence that the conditional permission is only
     // conditional on the special nearby permission.
-    lint()
-      .files(manifest().minSdk(33), nearbyPermissionExample, SUPPORT_ANNOTATIONS_JAR)
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(33), nearbyPermissionExample, SUPPORT_ANNOTATIONS_JAR).run().expectClean()
   }
 
   fun testErrorRange() {
@@ -1876,13 +1813,7 @@ class PermissionDetectorTest : AbstractCheckTest() {
         .name("app")
         .type(ProjectDescription.Type.APP)
         .dependsOn(lib)
-        .files(
-          manifest()
-            .pkg("com.example.app")
-            .minSdk(25)
-            .targetSdk(30)
-            .permissions("android.permission.RECORD_AUDIO")
-        )
+        .files(manifest().pkg("com.example.app").minSdk(25).targetSdk(30).permissions("android.permission.RECORD_AUDIO"))
 
     lint()
       .projects(app)

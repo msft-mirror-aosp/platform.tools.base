@@ -25,15 +25,13 @@ class DebuggerHelperTest(archive: DexArchiveBase) : MultipleDexVersionTestBase(a
 
   @Test
   fun isSimpleGetter() {
-    val debugHelper =
-      DexDebuggerHelper(archive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
+    val debugHelper = DexDebuggerHelper(archive.getRawBytecode("LSimpleGetterClass;", "getIntValue(I)"))
     Assert.assertEquals("", true, debugHelper.isSimpleGetter())
   }
 
   @Test
   fun hasStaticInvocations() {
-    val debugHelper =
-      DexDebuggerHelper(archive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
+    val debugHelper = DexDebuggerHelper(archive.getRawBytecode("LStaticInvocationClass;", "invokeStatic(V)"))
     Assert.assertEquals("", true, debugHelper.hasStaticInvocations())
   }
 }

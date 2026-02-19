@@ -27,40 +27,40 @@ private val BUS_REGEX: Regex = Regex(PATTERN_STRING)
 private val SERIAL_REGEX = Regex("\\h*iSerial\\h+(\\S+)\\h*(\\S*)$")
 
 fun createUsbDevice(line: String): UsbDevice? {
-    val matcher = BUS_REGEX.matchEntire(line) ?: return null
-    assert(matcher.groupValues.size == 4)
-    val (_, vendorId, productId, productName) = matcher.groupValues
-    return UsbDevice(productName.trim(), "0x$vendorId", "0x$productId")
+  val matcher = BUS_REGEX.matchEntire(line) ?: return null
+  assert(matcher.groupValues.size == 4)
+  val (_, vendorId, productId, productName) = matcher.groupValues
+  return UsbDevice(productName.trim(), "0x$vendorId", "0x$productId")
 }
 
 class LinuxParser : OutputParser {
-    override fun parse(output: InputStream): List<UsbDevice> {
-        val lines = BufferedReader(InputStreamReader(output, Charsets.UTF_8)).lines()
+  override fun parse(output: InputStream): List<UsbDevice> {
+    val lines = BufferedReader(InputStreamReader(output, Charsets.UTF_8)).lines()
 
-        val result = ArrayList<UsbDevice>()
-        var curDevice: UsbDevice? = null
-        for (next in lines) {
-            val nextDevice = createUsbDevice(next)
-            if (nextDevice != null) {
-                if (curDevice != null) {
-                    result.add(curDevice)
-                }
-                curDevice = nextDevice
-                continue
-            }
-            if (curDevice != null) {
-                val matchSerial = SERIAL_REGEX.matchEntire(next)
-                if (matchSerial != null) {
-                    val (_, _, iSerial) = matchSerial.groupValues
-                    if (iSerial.isNotEmpty()) {
-                        curDevice = curDevice.copy(serialNumber = iSerial)
-                    }
-                }
-            }
-        }
+    val result = ArrayList<UsbDevice>()
+    var curDevice: UsbDevice? = null
+    for (next in lines) {
+      val nextDevice = createUsbDevice(next)
+      if (nextDevice != null) {
         if (curDevice != null) {
-            result.add(curDevice)
+          result.add(curDevice)
         }
-        return result
+        curDevice = nextDevice
+        continue
+      }
+      if (curDevice != null) {
+        val matchSerial = SERIAL_REGEX.matchEntire(next)
+        if (matchSerial != null) {
+          val (_, _, iSerial) = matchSerial.groupValues
+          if (iSerial.isNotEmpty()) {
+            curDevice = curDevice.copy(serialNumber = iSerial)
+          }
+        }
+      }
     }
+    if (curDevice != null) {
+      result.add(curDevice)
+    }
+    return result
+  }
 }

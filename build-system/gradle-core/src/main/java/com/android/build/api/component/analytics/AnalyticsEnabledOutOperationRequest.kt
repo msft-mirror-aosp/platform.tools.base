@@ -22,48 +22,41 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.file.FileSystemLocation
 import javax.inject.Inject
+import org.gradle.api.file.FileSystemLocation
 
-open class AnalyticsEnabledOutOperationRequest<FileTypeT: FileSystemLocation> @Inject constructor(
-    val delegate: OutOperationRequest<FileTypeT>,
-    val stats: GradleBuildVariant.Builder
-): OutOperationRequest<FileTypeT> {
+open class AnalyticsEnabledOutOperationRequest<FileTypeT : FileSystemLocation>
+@Inject
+constructor(val delegate: OutOperationRequest<FileTypeT>, val stats: GradleBuildVariant.Builder) : OutOperationRequest<FileTypeT> {
 
-    override fun withName(name: String): OutOperationRequest<FileTypeT> {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TRANSFORM_WITH_NAME_VALUE
-        delegate.withName(name)
-        return this
+  override fun withName(name: String): OutOperationRequest<FileTypeT> {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TRANSFORM_WITH_NAME_VALUE
+    delegate.withName(name)
+    return this
+  }
+
+  override fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT)
+    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.Appendable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_APPEND_TO_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.APPEND
     }
+    delegate.toAppendTo(type)
+  }
 
-    override fun <ArtifactTypeT> toAppendTo(type: ArtifactTypeT)
-            where ArtifactTypeT : Artifact.Multiple<FileTypeT>,
-                  ArtifactTypeT : Artifact.Appendable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_APPEND_TO_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.APPEND
-        }
-        delegate.toAppendTo(type)
+  override fun <ArtifactTypeT> toCreate(type: ArtifactTypeT)
+    where ArtifactTypeT : Artifact.Single<FileTypeT>, ArtifactTypeT : Artifact.Replaceable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_CREATE_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.CREATE
     }
+    delegate.toCreate(type)
+  }
 
-    override fun <ArtifactTypeT> toCreate(type: ArtifactTypeT)
-            where ArtifactTypeT : Artifact.Single<FileTypeT>,
-                  ArtifactTypeT : Artifact.Replaceable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_CREATE_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.CREATE
-        }
-        delegate.toCreate(type)
-    }
-
-    override fun <ArtifactTypeT : Artifact.Single<FileTypeT>> toListenTo(type: ArtifactTypeT) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.SINGLE_TO_LISTEN_TO_VALUE
-        delegate.toListenTo(type)
-    }
+  override fun <ArtifactTypeT : Artifact.Single<FileTypeT>> toListenTo(type: ArtifactTypeT) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.SINGLE_TO_LISTEN_TO_VALUE
+    delegate.toListenTo(type)
+  }
 }

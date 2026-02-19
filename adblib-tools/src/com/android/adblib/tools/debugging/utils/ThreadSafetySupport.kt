@@ -15,16 +15,12 @@
  */
 package com.android.adblib.tools.debugging.utils
 
-/**
- * A class implements the [ThreadSafetySupport] to expose its thread-safety characteristics
- * at run-time.
- */
+/** A class implements the [ThreadSafetySupport] to expose its thread-safety characteristics at run-time. */
 internal interface ThreadSafetySupport {
 
-    /**
-     * Returns whether this instance is thread-safe and immutable, meaning it can be
-     * safely shared across threads and coroutines, without any observable change in
-     * state and behavior.
-     */
-    val isThreadSafeAndImmutable: Boolean
+  /**
+   * Returns whether this instance is thread-safe and immutable, meaning it can be safely shared across threads and coroutines, without any
+   * observable change in state and behavior.
+   */
+  val isThreadSafeAndImmutable: Boolean
 }

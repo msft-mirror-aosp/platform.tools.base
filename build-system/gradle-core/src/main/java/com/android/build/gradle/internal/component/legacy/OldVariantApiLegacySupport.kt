@@ -26,47 +26,43 @@ import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.features.ManifestPlaceholdersDslInfo
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.variant.BaseVariantData
+import java.io.Serializable
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.FileCollection
-import java.io.Serializable
 
 interface OldVariantApiLegacySupport {
-    val buildTypeObj: BuildType
-    val productFlavorList: List<ProductFlavor>
-    val mergedFlavor: MergedFlavor
-    val oldVariantApiJavaCompileOptions: JavaCompileOptions
-    val variantData: BaseVariantData
-    val dslSigningConfig: com.android.build.gradle.internal.dsl.SigningConfig?
-    val variantSources: VariantSources
-    val outputs: VariantOutputList
-    val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo?
+  val buildTypeObj: BuildType
+  val productFlavorList: List<ProductFlavor>
+  val mergedFlavor: MergedFlavor
+  val oldVariantApiJavaCompileOptions: JavaCompileOptions
+  val variantData: BaseVariantData
+  val dslSigningConfig: com.android.build.gradle.internal.dsl.SigningConfig?
+  val variantSources: VariantSources
+  val outputs: VariantOutputList
+  val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo?
 
-    fun getJavaClasspathArtifacts(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        classesType: AndroidArtifacts.ArtifactType,
-        generatedBytecodeKey: Any?
-    ): ArtifactCollection
+  fun getJavaClasspathArtifacts(
+    configType: AndroidArtifacts.ConsumedConfigType,
+    classesType: AndroidArtifacts.ArtifactType,
+    generatedBytecodeKey: Any?,
+  ): ArtifactCollection
 
-    fun addBuildConfigField(type: String, key: String, value: Serializable, comment: String?)
+  fun addBuildConfigField(type: String, key: String, value: Serializable, comment: String?)
 
-    // TODO : b/214316660
-    fun getAllRawAndroidResources(component: ComponentCreationConfig): FileCollection
+  // TODO : b/214316660
+  fun getAllRawAndroidResources(component: ComponentCreationConfig): FileCollection
 
-    fun handleMissingDimensionStrategy(dimension: String, alternatedValues: List<String>)
+  fun handleMissingDimensionStrategy(dimension: String, alternatedValues: List<String>)
 
-    /**
-     * Notification that the old variant API ran successfully.
-     */
-    fun oldVariantApiCompleted()
+  /** Notification that the old variant API ran successfully. */
+  fun oldVariantApiCompleted()
 
-    /**
-     * Registers an action to run once the old variant API has completed.
-     * The action will run in an undetermined thread.
-     *
-     * Note that if the variant API has already completed, the action will run
-     * immediately in the calling thread.
-     *
-     * @param action lambda to run once old variant API completed.
-     */
-    fun registerPostOldVariantApiAction(action: () -> Unit)
+  /**
+   * Registers an action to run once the old variant API has completed. The action will run in an undetermined thread.
+   *
+   * Note that if the variant API has already completed, the action will run immediately in the calling thread.
+   *
+   * @param action lambda to run once old variant API completed.
+   */
+  fun registerPostOldVariantApiAction(action: () -> Unit)
 }

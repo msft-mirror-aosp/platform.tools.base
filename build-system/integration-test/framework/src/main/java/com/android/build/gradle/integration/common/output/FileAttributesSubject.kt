@@ -20,23 +20,17 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.Subject
 import java.nio.file.attribute.BasicFileAttributes
 
-class FileAttributesSubject internal constructor(
-    metadata: FailureMetadata,
-    actual: BasicFileAttributes
-): Subject<FileAttributesSubject, BasicFileAttributes>(metadata, actual) {
+class FileAttributesSubject internal constructor(metadata: FailureMetadata, actual: BasicFileAttributes) :
+  Subject<FileAttributesSubject, BasicFileAttributes>(metadata, actual) {
 
-    companion object {
-        /**
-         * Method for getting the subject factory (for use with assertAbout())
-         */
-        internal fun attributes(): Factory<FileAttributesSubject, BasicFileAttributes> {
-            return Factory<FileAttributesSubject, BasicFileAttributes> { metadata, actual ->
-                FileAttributesSubject(metadata, actual)
-            }
-        }
+  companion object {
+    /** Method for getting the subject factory (for use with assertAbout()) */
+    internal fun attributes(): Factory<FileAttributesSubject, BasicFileAttributes> {
+      return Factory<FileAttributesSubject, BasicFileAttributes> { metadata, actual -> FileAttributesSubject(metadata, actual) }
     }
+  }
 
-    fun hasLastModifiedTimeInMillis(value: Long) {
-        check("hasLastModifiedTimeInMillis()").that(actual().lastModifiedTime().toMillis()).isEqualTo(value)
-    }
+  fun hasLastModifiedTimeInMillis(value: Long) {
+    check("hasLastModifiedTimeInMillis()").that(actual().lastModifiedTime().toMillis()).isEqualTo(value)
+  }
 }

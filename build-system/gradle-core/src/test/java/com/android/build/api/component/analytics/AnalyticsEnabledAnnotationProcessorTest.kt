@@ -25,71 +25,59 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.process.CommandLineArgumentProvider
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
 
 internal class AnalyticsEnabledAnnotationProcessorTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: AnnotationProcessor = mock()
+  private val delegate: AnnotationProcessor = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledAnnotationProcessor by lazy {
-        AnalyticsEnabledAnnotationProcessor(delegate, stats)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledAnnotationProcessor by lazy { AnalyticsEnabledAnnotationProcessor(delegate, stats) }
 
-    @Test
-    fun getClassNames() {
-        @Suppress("UNCHECKED_CAST")
-        val list = mock<ListProperty<String>>()
+  @Test
+  fun getClassNames() {
+    @Suppress("UNCHECKED_CAST") val list = mock<ListProperty<String>>()
 
-        whenever(delegate.classNames).thenReturn(list)
-        Truth.assertThat(proxy.classNames).isEqualTo(list)
+    whenever(delegate.classNames).thenReturn(list)
+    Truth.assertThat(proxy.classNames).isEqualTo(list)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CLASS_NAMES_VALUE)
-        verify(delegate, times(1))
-            .classNames
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CLASS_NAMES_VALUE)
+    verify(delegate, times(1)).classNames
+  }
 
-    @Test
-    fun getArguments() {
-        @Suppress("UNCHECKED_CAST")
-        val map = mock<MapProperty<String, String>>()
+  @Test
+  fun getArguments() {
+    @Suppress("UNCHECKED_CAST") val map = mock<MapProperty<String, String>>()
 
-        whenever(delegate.arguments).thenReturn(map)
-        Truth.assertThat(proxy.arguments).isEqualTo(map)
+    whenever(delegate.arguments).thenReturn(map)
+    Truth.assertThat(proxy.arguments).isEqualTo(map)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENTS_VALUE)
-        verify(delegate, times(1))
-            .arguments
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENTS_VALUE)
+    verify(delegate, times(1)).arguments
+  }
 
-    @Test
-    fun getArgumentProviders() {
-        @Suppress("UNCHECKED_CAST")
-        val list = mutableListOf<CommandLineArgumentProvider>()
+  @Test
+  fun getArgumentProviders() {
+    @Suppress("UNCHECKED_CAST") val list = mutableListOf<CommandLineArgumentProvider>()
 
-        whenever(delegate.argumentProviders).thenReturn(list)
-        Truth.assertThat(proxy.argumentProviders).isEqualTo(list)
+    whenever(delegate.argumentProviders).thenReturn(list)
+    Truth.assertThat(proxy.argumentProviders).isEqualTo(list)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENT_PROVIDERS_VALUE)
-        verify(delegate, times(1))
-            .argumentProviders
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.ANNOTATION_PROCESSOR_ARGUMENT_PROVIDERS_VALUE)
+    verify(delegate, times(1)).argumentProviders
+  }
 }

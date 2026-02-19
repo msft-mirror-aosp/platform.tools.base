@@ -33,13 +33,12 @@ import com.android.utils.iterator
 import org.w3c.dom.Element
 
 /**
- * Check which makes sure that views have the expected number of declared children (e.g. at most one
- * in ScrollViews and none in AdapterViews)
+ * Check which makes sure that views have the expected number of declared children (e.g. at most one in ScrollViews and none in
+ * AdapterViews)
  */
 class ChildCountDetector : LayoutDetector() {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ChildCountDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ChildCountDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** The main issue discovered by this detector. */
     @JvmField
@@ -101,22 +100,12 @@ class ChildCountDetector : LayoutDetector() {
         tagName == CLASS_NESTED_SCROLL_VIEW.newName()
     ) {
       if (childCount > 1) {
-        context.report(
-          SCROLLVIEW_ISSUE,
-          element,
-          context.getNameLocation(element),
-          "A scroll view can have only one child",
-        )
+        context.report(SCROLLVIEW_ISSUE, element, context.getNameLocation(element), "A scroll view can have only one child")
       }
     } else {
       // Adapter view
       if (childCount > 0) {
-        context.report(
-          ADAPTER_VIEW_ISSUE,
-          element,
-          context.getNameLocation(element),
-          "A list/grid should have no children declared in XML",
-        )
+        context.report(ADAPTER_VIEW_ISSUE, element, context.getNameLocation(element), "A list/grid should have no children declared in XML")
       }
     }
   }

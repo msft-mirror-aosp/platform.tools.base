@@ -27,263 +27,302 @@ import org.junit.Test
 // this should really test the event content of the recorder instead of relying on
 // the BuildWriter, but it's so much more convenient...
 
-class BasicDslProxyTest: ExtensionAwareDefinition{
-    private val dslRecorder = DefaultDslRecorder()
+class BasicDslProxyTest : ExtensionAwareDefinition {
+  private val dslRecorder = DefaultDslRecorder()
 
-    @Test
-    fun basicTest() {
-        dslRecorder.runNestedBlock("address", listOf(), Address::class.java) {
+  @Test
+  fun basicTest() {
+    dslRecorder.runNestedBlock("address", listOf(), Address::class.java) {
+      street = "1600 Amphitheatre Parkway"
+      city = "Mountain View"
+      zipCode = 94043
+    }
+
+    val writer = GroovyBuildWriter()
+    dslRecorder.writeContent(writer)
+    Truth.assertThat(writer.toString())
+      .isEqualTo(
+        """
+        address {
+          street = '1600 Amphitheatre Parkway'
+          city = 'Mountain View'
+          zipCode = 94043
+        }
+
+        """
+          .trimIndent()
+      )
+  }
+
+  @Test
+  fun nestedTest() {
+    dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
+      name = "BugDroid"
+      surname = null
+      age = 17
+      isRobot = true
+      address {
+        street = "1600 Amphitheatre Parkway"
+        city = "Mountain View"
+        zipCode = 94043
+      }
+    }
+
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .named("Groovy version")
+      .isEqualTo(
+        """
+        person {
+          name = 'BugDroid'
+          surname = null
+          age = 17
+          robot = true
+          address {
+            street = '1600 Amphitheatre Parkway'
+            city = 'Mountain View'
+            zipCode = 94043
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+
+    val kts = KtsBuildWriter()
+    dslRecorder.writeContent(kts)
+    Truth.assertThat(kts.toString())
+      .named("KTS version")
+      .isEqualTo(
+        """
+        person {
+          name = "BugDroid"
+          surname = null
+          age = 17
+          isRobot = true
+          address {
             street = "1600 Amphitheatre Parkway"
             city = "Mountain View"
             zipCode = 94043
+          }
         }
 
-        val writer = GroovyBuildWriter()
-        dslRecorder.writeContent(writer)
-        Truth.assertThat(writer.toString()).isEqualTo("""
-            address {
-              street = '1600 Amphitheatre Parkway'
-              city = 'Mountain View'
-              zipCode = 94043
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun chainedBlockUsage() {
+    dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
+      mountainView.mayor {
+        name = "bob"
+        address.street = "1600 Amphitheatre Parkway"
+      }
     }
 
-    @Test
-    fun nestedTest() {
-        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
-            name = "BugDroid"
-            surname = null
-            age = 17
-            isRobot = true
-            address {
-                street = "1600 Amphitheatre Parkway"
-                city = "Mountain View"
-                zipCode = 94043
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        california {
+          mountainView.mayor {
+            name = 'bob'
+            address.street = '1600 Amphitheatre Parkway'
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
-            person {
-              name = 'BugDroid'
-              surname = null
-              age = 17
-              robot = true
-              address {
-                street = '1600 Amphitheatre Parkway'
-                city = 'Mountain View'
-                zipCode = 94043
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun multiChainedBlockUsage() {
+    dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
+      mountainView.mayor { name = "bob" }
 
-        val kts = KtsBuildWriter()
-        dslRecorder.writeContent(kts)
-        Truth.assertThat(kts.toString()).named("KTS version").isEqualTo("""
-            person {
-              name = "BugDroid"
-              surname = null
-              age = 17
-              isRobot = true
-              address {
-                street = "1600 Amphitheatre Parkway"
-                city = "Mountain View"
-                zipCode = 94043
-              }
-            }
-
-        """.trimIndent())
-
+      mountainView.mayor.address.street = "1600 Amphitheatre Parkway"
     }
 
-    @Test
-    fun chainedBlockUsage() {
-        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
-            mountainView.mayor {
-                name = "bob"
-                address.street = "1600 Amphitheatre Parkway"
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        california {
+          mountainView.mayor {
+            name = 'bob'
+          }
+          mountainView.mayor.address.street = '1600 Amphitheatre Parkway'
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            california {
-              mountainView.mayor {
-                name = 'bob'
-                address.street = '1600 Amphitheatre Parkway'
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun methodCall() {
+    dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
+      name = "bob"
+      sendMessage("Hello!")
+      sendMessage(null)
+      something("one", "two")
+      something(12, "one", "two")
     }
 
-    @Test
-    fun multiChainedBlockUsage() {
-        dslRecorder.runNestedBlock("california", listOf(), California::class.java) {
-            mountainView.mayor {
-                name = "bob"
-
-            }
-            mountainView.mayor.address.street = "1600 Amphitheatre Parkway"
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        person {
+          name = 'bob'
+          sendMessage('Hello!')
+          sendMessage(null)
+          something('one', 'two')
+          something(12, 'one', 'two')
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            california {
-              mountainView.mayor {
-                name = 'bob'
-              }
-              mountainView.mayor.address.street = '1600 Amphitheatre Parkway'
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
-    }
+  @Test
+  fun inlinedRootAccess() {
+    val person = DslProxy.createProxy(Person::class.java, dslRecorder)
+    person.name = "Bob"
+    val groovy = GroovyBuildWriter().block("person") { dslRecorder.writeContent(this) }
 
-    @Test
-    fun methodCall() {
-        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
-            name = "bob"
-            sendMessage("Hello!")
-            sendMessage(null)
-            something("one", "two")
-            something(12, "one", "two")
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        person {
+          name = 'Bob'
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            person {
-              name = 'bob'
-              sendMessage('Hello!')
-              sendMessage(null)
-              something('one', 'two')
-              something(12, 'one', 'two')
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun extension() {
+    // This tests an extension. Person has `address` but not `workAddress`.
+    // We'll us the same type for both
+    dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
+      name = "BugDroid"
+      surname = null
+      address {
+        street = "1600 Amphitheatre Parkway"
+        city = "Mountain View"
+        zipCode = 94043
+      }
+      viaExtension("workAddress", Address::class) {
+        street = "901 Cherry Ave." // youtube
+        city = "San Bruno"
+        zipCode = 94066
+      }
     }
 
-    @Test
-    fun inlinedRootAccess() {
-        val person = DslProxy.createProxy(Person::class.java, dslRecorder)
-        person.name = "Bob"
-        val groovy = GroovyBuildWriter().block("person") {
-            dslRecorder.writeContent(this)
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .named("Groovy version")
+      .isEqualTo(
+        """
+        person {
+          name = 'BugDroid'
+          surname = null
+          address {
+            street = '1600 Amphitheatre Parkway'
+            city = 'Mountain View'
+            zipCode = 94043
+          }
+          workAddress {
+            street = '901 Cherry Ave.'
+            city = 'San Bruno'
+            zipCode = 94066
+          }
         }
 
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            person {
-              name = 'Bob'
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun nestedExtension() {
+    // this tests a nested extension to make sure it gets written inside the right block
+    dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
+      name = "BugDroid"
+      address {
+        street = "1600 Amphitheatre Parkway"
+        city = "Mountain View"
+        zipCode = 94043
+        viaExtension("landlord", Person::class) {
+          name = "Sundar"
+          surname = "Pichai"
+        }
+      }
     }
 
-    @Test
-    fun extension() {
-        // This tests an extension. Person has `address` but not `workAddress`.
-        // We'll us the same type for both
-        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
-            name = "BugDroid"
-            surname = null
-            address {
-                street = "1600 Amphitheatre Parkway"
-                city = "Mountain View"
-                zipCode = 94043
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .named("Groovy version")
+      .isEqualTo(
+        """
+        person {
+          name = 'BugDroid'
+          address {
+            street = '1600 Amphitheatre Parkway'
+            city = 'Mountain View'
+            zipCode = 94043
+            landlord {
+              name = 'Sundar'
+              surname = 'Pichai'
             }
-            viaExtension("workAddress", Address::class) {
-                street = "901 Cherry Ave." //youtube
-                city = "San Bruno"
-                zipCode = 94066
-            }
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
-            person {
-              name = 'BugDroid'
-              surname = null
-              address {
-                street = '1600 Amphitheatre Parkway'
-                city = 'Mountain View'
-                zipCode = 94043
-              }
-              workAddress {
-                street = '901 Cherry Ave.'
-                city = 'San Bruno'
-                zipCode = 94066
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun chainedExtension() {
+    // this tests a nested extension via a chained call, to make sure it gets written inside
+    // the right block
+    dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
+      name = "BugDroid"
+      address.viaExtension("landlord", Person::class) {
+        name = "Sundar"
+        surname = "Pichai"
+      }
     }
 
-    @Test
-    fun nestedExtension() {
-        // this tests a nested extension to make sure it gets written inside the right block
-        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
-            name = "BugDroid"
-            address {
-                street = "1600 Amphitheatre Parkway"
-                city = "Mountain View"
-                zipCode = 94043
-                viaExtension("landlord", Person::class) {
-                    name = "Sundar"
-                    surname = "Pichai"
-                }
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .named("Groovy version")
+      .isEqualTo(
+        """
+        person {
+          name = 'BugDroid'
+          address.landlord {
+            name = 'Sundar'
+            surname = 'Pichai'
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
-            person {
-              name = 'BugDroid'
-              address {
-                street = '1600 Amphitheatre Parkway'
-                city = 'Mountain View'
-                zipCode = 94043
-                landlord {
-                  name = 'Sundar'
-                  surname = 'Pichai'
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
-
-    @Test
-    fun chainedExtension() {
-        // this tests a nested extension via a chained call, to make sure it gets written inside
-        // the right block
-        dslRecorder.runNestedBlock("person", listOf(), Person::class.java) {
-            name = "BugDroid"
-            address.viaExtension("landlord", Person::class) {
-                name = "Sundar"
-                surname = "Pichai"
-            }
-        }
-
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).named("Groovy version").isEqualTo("""
-            person {
-              name = 'BugDroid'
-              address.landlord {
-                name = 'Sundar'
-                surname = 'Pichai'
-              }
-            }
-
-        """.trimIndent())
-    }
-
+        """
+          .trimIndent()
+      )
+  }
 }

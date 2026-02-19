@@ -144,8 +144,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
         "declaredMemberProperties",
       )
     private const val ERROR_MESSAGE =
-      "Accessing internal APIs via reflection is not " +
-        "supported and may not work on all devices or in the future"
+      "Accessing internal APIs via reflection is not " + "supported and may not work on all devices or in the future"
   }
 
   private var client: LintClient? = null
@@ -180,10 +179,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     val name = method.name
     if (LOAD_CLASS == name) {
-      if (
-        evaluator.isMemberInClass(method, "java.lang.ClassLoader") ||
-          evaluator.isMemberInClass(method, "dalvik.system.DexFile")
-      ) {
+      if (evaluator.isMemberInClass(method, "java.lang.ClassLoader") || evaluator.isMemberInClass(method, "dalvik.system.DexFile")) {
         checkLoadClass(context, node)
       }
     } else {
@@ -198,11 +194,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     // Kotlin reflection is harder to analyze statically, there are multiple ways of
     // finally matching a method from the collection of declared members, etc. We heuristically
     // try to match the strings we see with method and field names from the private API list.
@@ -219,11 +211,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     val methodName = ConstantEvaluator.evaluateString(context, arguments[0], false)
 
     val aClass = context.evaluator.findClass(cls)
-    if (
-      aClass != null &&
-        methodName != null &&
-        aClass.findMethodsByName(methodName, true).isNotEmpty()
-    ) {
+    if (aClass != null && methodName != null && aClass.findMethodsByName(methodName, true).isNotEmpty()) {
       // Hidden and deleted methods aren't part of android.jar, so use the private API database
       // directly
       val desc = getMethodDescriptor(arguments, context, methodName) ?: return
@@ -249,19 +237,10 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun getMethodDescriptor(
-    arguments: List<UExpression>,
-    context: JavaContext,
-    methodName: String,
-  ): String? {
+  private fun getMethodDescriptor(arguments: List<UExpression>, context: JavaContext, methodName: String): String? {
     val argTypes =
-      if (arguments.size >= 2)
-        arguments.subList(1, arguments.size).mapNotNull { getJavaClassType(it) }.toTypedArray()
-      else emptyArray()
-    return context.evaluator.constructMethodDescription(
-      method = methodName,
-      argumentTypes = argTypes,
-    )
+      if (arguments.size >= 2) arguments.subList(1, arguments.size).mapNotNull { getJavaClassType(it) }.toTypedArray() else emptyArray()
+    return context.evaluator.constructMethodDescription(method = methodName, argumentTypes = argTypes)
   }
 
   private fun checkGetDeclaredField(context: JavaContext, call: UCallExpression) {
@@ -308,10 +287,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     var isInternal = false
     if (value.startsWith("com.android.internal.")) {
       isInternal = true
-    } else if (
-      value.startsWith("com.android.") ||
-        value.startsWith("android.") && !value.startsWith("android.support.")
-    ) {
+    } else if (value.startsWith("com.android.") || value.startsWith("android.") && !value.startsWith("android.support.")) {
       // Attempting to access internal API? Look in two places:
       //  (1) SDK class
       //  (2) API database
@@ -331,14 +307,13 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a Class#getMethodDeclaration or getFieldDeclaration etc call, figure out the
-   * corresponding class name the method is being invoked on
+   * Given a Class#getMethodDeclaration or getFieldDeclaration etc call, figure out the corresponding class name the method is being invoked
+   * on
    *
    * @param call the [Class.getDeclaredMethod] or [Class.getDeclaredField] call
    * @return the fully qualified name of the class, if found
    */
-  private fun getJavaClassFromMemberLookup(call: UCallExpression): String? =
-    getJavaClassType(call.receiver)?.canonicalText
+  private fun getJavaClassFromMemberLookup(call: UCallExpression): String? = getJavaClassType(call.receiver)?.canonicalText
 
   /** We know [element] has type java.lang.Class<T> and we try to find out the PsiType for T. */
   private fun getJavaClassType(element: UElement?): PsiType? {
@@ -358,9 +333,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
             // Make sure we extract the primitive type (int.class, Integer.TYPE in Java,
             // Int::class.javaPrimitiveType in Kotlin)
             if (element is UQualifiedReferenceExpression) {
-              val identifier =
-                (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)
-                  ?.identifier
+              val identifier = (element.selector.skipParenthesizedExprDown() as? USimpleNameReferenceExpression)?.identifier
               if (identifier == "javaPrimitiveType" || identifier == "TYPE") {
                 clazz = it
               }
@@ -385,19 +358,14 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
           }
         }
 
-        if (
-          element is UQualifiedReferenceExpression &&
-            element.selector.skipParenthesizedExprDown() is UCallExpression
-        ) {
+        if (element is UQualifiedReferenceExpression && element.selector.skipParenthesizedExprDown() is UCallExpression) {
           val call = element.selector.skipParenthesizedExprDown() as UCallExpression
           val name = call.methodName
 
           if (FOR_NAME == name || LOAD_CLASS == name) {
             val arguments = call.valueArguments
             if (arguments.isNotEmpty()) {
-              return ConstantEvaluator.evaluateString(null, arguments[0], false)?.let {
-                psiFactory!!.createTypeFromText(it, null)
-              }
+              return ConstantEvaluator.evaluateString(null, arguments[0], false)?.let { psiFactory!!.createTypeFromText(it, null) }
             }
           } else if (GET_CLASS == name) {
             return TypeEvaluator.evaluate(element.receiver)
@@ -411,12 +379,7 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
     return TypeEvaluator.evaluate(element)
   }
 
-  private fun reportIssue(
-    context: JavaContext,
-    restriction: Restriction?,
-    api: String,
-    call: UCallExpression,
-  ) {
+  private fun reportIssue(context: JavaContext, restriction: Restriction?, api: String, call: UCallExpression) {
     val targetSdk = context.project.targetSdk
 
     fun fatal() {
@@ -478,17 +441,11 @@ class PrivateApiDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * This method checks whether the targetSdkVersion is less than the given [apiLevel], or whether
-   * the code is guarded by a runtime SDK_INT check which guarantees that we are running on
-   * [apiLevel] or older. This is true if the [ApiConstraint] does not include any higher API
+   * This method checks whether the targetSdkVersion is less than the given [apiLevel], or whether the code is guarded by a runtime SDK_INT
+   * check which guarantees that we are running on [apiLevel] or older. This is true if the [ApiConstraint] does not include any higher API
    * levels.
    */
-  private fun isAllowed(
-    context: JavaContext,
-    element: UCallExpression,
-    targetSdk: Int,
-    apiLevel: Int,
-  ): Boolean {
+  private fun isAllowed(context: JavaContext, element: UCallExpression, targetSdk: Int, apiLevel: Int): Boolean {
     if (targetSdk <= apiLevel) {
       return true
     }

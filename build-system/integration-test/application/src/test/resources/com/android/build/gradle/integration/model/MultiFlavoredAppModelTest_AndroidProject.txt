@@ -39,7 +39,6 @@
                - apkFromBundleTaskName              = "extractApksForProPlayDebug"
                - apkFromBundleTaskOutputListingFile = {PROJECT}/app/build/intermediates/apk_from_bundle_ide_redirect_file/proPlayDebug/createProPlayDebugApksFromBundleListingFileRedirect/redirect.txt{!}
             - codeShrinker                  = (null)
-            - privacySandboxSdkInfo         = (null)
          < mainArtifact
          > androidTestArtifact:
             - compileTaskName               = "compileProPlayDebugAndroidTestSources"
@@ -71,7 +70,6 @@
                - instrumentedTestTaskName = "connectedProPlayDebugAndroidTest"
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
-            - privacySandboxSdkInfo         = (null)
          < androidTestArtifact
          > unitTestArtifact:
             - compileTaskName       = "compileProPlayDebugUnitTestSources"
@@ -100,6 +98,7 @@
    > flags:
       * "APPLICATION_R_CLASS_CONSTANT_IDS -> false"
       * "BUILD_FEATURE_ANDROID_RESOURCES -> true"
+      * "BUILT_IN_KOTLIN_DEFAULT_ENABLED -> true"
       * "DATA_BINDING_ENABLED -> false"
       * "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT -> false"
       * "ENABLE_VCS_INFO -> false"
@@ -108,6 +107,7 @@
       * "JETPACK_COMPOSE -> false"
       * "ML_MODEL_BINDING -> false"
       * "OLD_VARIANT_API_IN_USE -> false"
+      * "R8_GRADUAL_API -> false"
       * "TEST_R_CLASS_CONSTANT_IDS -> false"
       * "TRANSITIVE_R_CLASS -> false"
       * "UNIFIED_TEST_PLATFORM -> true"

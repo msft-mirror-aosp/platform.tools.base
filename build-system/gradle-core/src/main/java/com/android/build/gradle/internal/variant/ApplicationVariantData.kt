@@ -17,33 +17,24 @@ package com.android.build.gradle.internal.variant
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.ComponentIdentity
-import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentType
 
 /**
  * Data about a variant that produce an application APK.
  *
- *
  * This includes application, dynamic-feature and standalone Test plugins.
  */
-class ApplicationVariantData(
-    componentIdentity: ComponentIdentity,
-    artifacts: ArtifactsImpl,
-    services: VariantServices,
-) : ApkVariantData(
-    componentIdentity,
-    artifacts,
-    services
-), TestedVariantData {
+class ApplicationVariantData(componentIdentity: ComponentIdentity, artifacts: ArtifactsImpl, services: VariantServices) :
+  ApkVariantData(componentIdentity, artifacts, services), TestedVariantData {
 
-    private val testVariants: MutableMap<ComponentType, TestVariantData> = mutableMapOf()
+  private val testVariants: MutableMap<ComponentType, TestVariantData> = mutableMapOf()
 
-    override fun setTestVariantData(testVariantData: TestVariantData, type: ComponentType) {
-        testVariants[type] = testVariantData
-    }
+  override fun setTestVariantData(testVariantData: TestVariantData, type: ComponentType) {
+    testVariants[type] = testVariantData
+  }
 
-    override fun getTestVariantData(type: ComponentType): TestVariantData? {
-        return testVariants[type]
-    }
+  override fun getTestVariantData(type: ComponentType): TestVariantData? {
+    return testVariants[type]
+  }
 }

@@ -29,15 +29,13 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 
 /**
- * Makes sure you don't pass 0 to Service.startForeground, as hinted in the docs. Ideally we could
- * have just expressed this with an annotation constraint on the API itself, but we don't have a way
- * to prevent a single value, e.g. we can do
+ * Makes sure you don't pass 0 to Service.startForeground, as hinted in the docs. Ideally we could have just expressed this with an
+ * annotation constraint on the API itself, but we don't have a way to prevent a single value, e.g. we can do
  * > 0 or < 0 but not both.
  */
 class InvalidNotificationIdDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(InvalidNotificationIdDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(InvalidNotificationIdDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Invalid */
     @JvmField

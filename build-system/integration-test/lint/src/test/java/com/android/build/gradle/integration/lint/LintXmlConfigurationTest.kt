@@ -21,45 +21,38 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.lint.LINT_XML_CONFIG_FILE_NAME
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
-/**
- * Tests for the correct handling of lint.xml files by AGP
- */
+/** Tests for the correct handling of lint.xml files by AGP */
 class LintXmlConfigurationTest {
 
-    private val app =
-        MinimalSubProject.app("com.example.test").appendToBuild("// STOPSHIP")
+  private val app = MinimalSubProject.app("com.example.test").appendToBuild("// STOPSHIP")
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build())
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
-    /**
-     * Regression test for Issue 211012777
-     */
-    @Test
-    fun testChangedLintXmlCausesLintToRunAgain() {
-        // Add lint.xml file setting the severity of the "StopShip" lint issue to "warning"
-        val projectLintXml = File(project.projectDir, LINT_XML_CONFIG_FILE_NAME)
-        projectLintXml.writeText(
-            // language=XML
-            """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <lint>
-                    <issue id="StopShip" severity="warning" />
-                </lint>
-            """.trimIndent()
-        )
-        project.executor().run(":app:lintRelease")
-        // Change lint.xml file to set the severity of the "StopShip" lint issue to "error", which
-        // should cause lint analysis to run again when the lint task is invoked.
-        TestFileUtils.searchAndReplace(projectLintXml, "warning", "error")
-        project.executor().expectFailure().run(":app:lintRelease")
-    }
+  /** Regression test for Issue 211012777 */
+  @Test
+  fun testChangedLintXmlCausesLintToRunAgain() {
+    // Add lint.xml file setting the severity of the "StopShip" lint issue to "warning"
+    val projectLintXml = File(project.projectDir, LINT_XML_CONFIG_FILE_NAME)
+    projectLintXml.writeText(
+      // language=XML
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <lint>
+          <issue id="StopShip" severity="warning" />
+      </lint>
+      """
+        .trimIndent()
+    )
+    project.executor().run(":app:lintRelease")
+    // Change lint.xml file to set the severity of the "StopShip" lint issue to "error", which
+    // should cause lint analysis to run again when the lint task is invoked.
+    TestFileUtils.searchAndReplace(projectLintXml, "warning", "error")
+    project.executor().expectFailure().run(":app:lintRelease")
+  }
 }
-

@@ -20,6 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 public final class SyncOptions {
 
     public enum ErrorFormatMode {
@@ -51,6 +56,17 @@ public final class SyncOptions {
         } else {
             return ErrorFormatMode.HUMAN_READABLE;
         }
+    }
+
+    public static Set<String> getSyncWarningSuppression(@NonNull ProjectOptions options) {
+        String stringOption = options.get(StringOption.SUPPRESS_AGP_SYNC_WARNINGS);
+        if (stringOption != null) {
+            return Arrays.stream(stringOption.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toSet());
+        }
+        return Collections.emptySet();
     }
 
     /**

@@ -38,43 +38,35 @@ import org.gradle.work.DisableCachingByDefault
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.METADATA)
 abstract class ApplicationIdWriterTask : NonIncrementalTask() {
-    @get:Input
-    @get:Optional
-    abstract val applicationId: Property<String>
+  @get:Input @get:Optional abstract val applicationId: Property<String>
 
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
-    override fun doTaskAction() {
-        FileUtils.write(outputFile.get().asFile, applicationId.get())
+  override fun doTaskAction() {
+    FileUtils.write(outputFile.get().asFile, applicationId.get())
+  }
+
+  internal class CreationAction(creationConfig: ApkCreationConfig) :
+    VariantTaskCreationAction<ApplicationIdWriterTask, ApkCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("write", "ApplicationId")
+
+    override val type: Class<ApplicationIdWriterTask>
+      get() = ApplicationIdWriterTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ApplicationIdWriterTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ApplicationIdWriterTask::outputFile)
+        .withName("application-id.txt")
+        .on(InternalArtifactType.METADATA_APPLICATION_ID)
     }
 
-    internal class CreationAction(creationConfig: ApkCreationConfig) :
-        VariantTaskCreationAction<ApplicationIdWriterTask, ApkCreationConfig>(
-            creationConfig
-        ) {
+    override fun configure(task: ApplicationIdWriterTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("write", "ApplicationId")
-        override val type: Class<ApplicationIdWriterTask>
-            get() = ApplicationIdWriterTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ApplicationIdWriterTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ApplicationIdWriterTask::outputFile
-            ).withName("application-id.txt").on(InternalArtifactType.METADATA_APPLICATION_ID)
-        }
-
-        override fun configure(
-            task: ApplicationIdWriterTask
-        ) {
-            super.configure(task)
-
-            task.applicationId.setDisallowChanges(creationConfig.applicationId)
-        }
+      task.applicationId.setDisallowChanges(creationConfig.applicationId)
     }
+  }
 }

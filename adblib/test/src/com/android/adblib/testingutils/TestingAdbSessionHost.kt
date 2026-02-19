@@ -17,65 +17,59 @@ package com.android.adblib.testingutils
 
 import com.android.adblib.AdbLogger
 import com.android.adblib.AdbSessionHost
-import kotlinx.coroutines.CoroutineExceptionHandler
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineExceptionHandler
 
 class TestingAdbSessionHost : AdbSessionHost() {
 
-    val uncaughtExceptions = mutableListOf<Throwable>()
-    var overrideUtcNow: Instant? = null
+  val uncaughtExceptions = mutableListOf<Throwable>()
+  var overrideUtcNow: Instant? = null
 
-    private val systemProperties = ConcurrentHashMap<String, Any>()
+  private val systemProperties = ConcurrentHashMap<String, Any>()
 
-    override val loggerFactory: TestingAdbLoggerFactory by lazy {
-        TestingAdbLoggerFactory()
+  override val loggerFactory: TestingAdbLoggerFactory by lazy { TestingAdbLoggerFactory() }
+
+  override val usageTracker: TestingAdbUsageTracker by lazy { TestingAdbUsageTracker() }
+
+  override fun utcNow(): Instant {
+    return overrideUtcNow ?: Instant.now()
+  }
+
+  override val parentContext = CoroutineExceptionHandler { ctx, exception ->
+    uncaughtExceptions.add(exception)
+    logger.error(exception, "Unhandled exception in $ctx")
+  }
+
+  override fun <T : Any> getPropertyValue(property: Property<T>): T {
+    val value = systemProperties[property.name]
+    return if (value != null) {
+      @Suppress("UNCHECKED_CAST")
+      value as T
+    } else {
+      property.defaultValue
     }
+  }
 
-    override val usageTracker: TestingAdbUsageTracker by lazy {
-        TestingAdbUsageTracker()
-    }
+  fun <T : Any> removePropertyValue(property: Property<T>) {
+    systemProperties.remove(property.name)
+  }
 
-    override fun utcNow(): Instant {
-        return overrideUtcNow ?: Instant.now()
-    }
+  fun <T : Any> setPropertyValue(property: Property<T>, value: T) {
+    systemProperties[property.name] = value
+  }
 
-    override val parentContext =
-        CoroutineExceptionHandler { ctx, exception ->
-            uncaughtExceptions.add(exception)
-            logger.error(exception, "Unhandled exception in $ctx")
-        }
-
-    override fun <T : Any> getPropertyValue(property: Property<T>): T {
-        val value = systemProperties[property.name]
-        return if (value != null) {
-            @Suppress("UNCHECKED_CAST")
-            value as T
-        } else {
-            property.defaultValue
-        }
-    }
-
-    fun <T : Any> removePropertyValue(property: Property<T>) {
-       systemProperties.remove(property.name)
-    }
-
-    fun <T : Any> setPropertyValue(property: Property<T>, value: T) {
-        systemProperties[property.name] = value
-    }
-
-    override fun close() {
-        logger.debug { "TestingAdbSessionHost closed" }
-    }
+  override fun close() {
+    logger.debug { "TestingAdbSessionHost closed" }
+  }
 }
 
 /**
- * Overrides the default [AdbLogger.Level] of the [TestingAdbSessionHost], useful
- * for enabling more verbose logging for a single test, e.g.
+ * Overrides the default [AdbLogger.Level] of the [TestingAdbSessionHost], useful for enabling more verbose logging for a single test, e.g.
  *
  * `hostServices.session.host.setTestLoggerMinLevel(AdbLogger.Level.VERBOSE)`
  */
 @Suppress("unused")
 fun AdbSessionHost.setTestLoggerMinLevel(level: AdbLogger.Level) {
-    (this as TestingAdbSessionHost).loggerFactory.minLevel = level
+  (this as TestingAdbSessionHost).loggerFactory.minLevel = level
 }

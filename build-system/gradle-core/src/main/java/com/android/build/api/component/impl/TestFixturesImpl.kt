@@ -52,25 +52,28 @@ import com.android.build.gradle.options.BooleanOption.ENABLE_TEST_FIXTURES_KOTLI
 import com.android.builder.core.BuilderConstants
 import com.android.utils.appendCapitalized
 import com.android.utils.capitalizeAndAppend
+import javax.inject.Inject
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.Provider
-import javax.inject.Inject
 
-open class TestFixturesImpl @Inject constructor(
-    componentIdentity: ComponentIdentity,
-    buildFeatureValues: BuildFeatureValues,
-    variantDslInfo: TestFixturesComponentDslInfo,
-    variantDependencies: VariantDependencies,
-    variantSources: VariantSources,
-    paths: VariantPathHelper,
-    artifacts: ArtifactsImpl,
-    taskContainer: MutableTaskContainer,
-    override val mainVariant: VariantCreationConfig,
-    variantServices: VariantServices,
-    taskCreationServices: TaskCreationServices,
-    global: GlobalTaskCreationConfig
-): ComponentImpl<TestFixturesComponentDslInfo>(
+open class TestFixturesImpl
+@Inject
+constructor(
+  componentIdentity: ComponentIdentity,
+  buildFeatureValues: BuildFeatureValues,
+  variantDslInfo: TestFixturesComponentDslInfo,
+  variantDependencies: VariantDependencies,
+  variantSources: VariantSources,
+  paths: VariantPathHelper,
+  artifacts: ArtifactsImpl,
+  taskContainer: MutableTaskContainer,
+  override val mainVariant: VariantCreationConfig,
+  variantServices: VariantServices,
+  taskCreationServices: TaskCreationServices,
+  global: GlobalTaskCreationConfig,
+) :
+  ComponentImpl<TestFixturesComponentDslInfo>(
     componentIdentity,
     buildFeatureValues,
     variantDslInfo,
@@ -81,120 +84,112 @@ open class TestFixturesImpl @Inject constructor(
     taskContainer = taskContainer,
     internalServices = variantServices,
     services = taskCreationServices,
-    global = global
-), TestFixtures, TestFixturesCreationConfig {
+    global = global,
+  ),
+  TestFixtures,
+  TestFixturesCreationConfig {
 
-    override val description: String
-        get() = if (productFlavorList.isNotEmpty()) {
-            val sb = StringBuilder(50)
-            componentIdentity.buildType?.let { sb.appendCapitalized(it) }
-            sb.append(" build for flavor ")
-            componentIdentity.flavorName?.let { sb.appendCapitalized(it) }
-            sb.toString()
-        } else {
-            componentIdentity.buildType!!.capitalizeAndAppend(" build")
-        }
+  override val description: String
+    get() =
+      if (productFlavorList.isNotEmpty()) {
+        val sb = StringBuilder(50)
+        componentIdentity.buildType?.let { sb.appendCapitalized(it) }
+        sb.append(" build for flavor ")
+        componentIdentity.flavorName?.let { sb.appendCapitalized(it) }
+        sb.toString()
+      } else {
+        componentIdentity.buildType!!.capitalizeAndAppend(" build")
+      }
 
-    // test fixtures doesn't exist in the old variant api
-    override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? = null
+  // test fixtures doesn't exist in the old variant api
+  override val oldVariantApiLegacySupport: OldVariantApiLegacySupport? = null
 
-    // ---------------------------------------------------------------------------------------------
-    // PUBLIC API
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // PUBLIC API
+  // ---------------------------------------------------------------------------------------------
 
-    override val applicationId: Provider<String> =
-        internalServices.providerOf(String::class.java, variantDslInfo.namespace)
-    override val debuggable: Boolean
-        get() = mainVariant.debuggable
-    override val minSdk: AndroidVersion
-        get() = mainVariant.minSdk
-    override val publishInfo: VariantPublishingInfo?
-        get() = (mainVariant as? PublishableCreationConfig)?.publishInfo
+  override val applicationId: Provider<String> = internalServices.providerOf(String::class.java, variantDslInfo.namespace)
+  override val debuggable: Boolean
+    get() = mainVariant.debuggable
 
-    override val aarMetadata: AarMetadata =
-        internalServices.newInstance(AarMetadata::class.java).also {
-            it.minCompileSdk.set(1)
-            it.minCompileSdkExtension.set(DEFAULT_MIN_COMPILE_SDK_EXTENSION)
-            it.minAgpVersion.set(DEFAULT_MIN_AGP_VERSION)
-        }
+  override val minSdk: AndroidVersion
+    get() = mainVariant.minSdk
 
-    override val javaCompilation: JavaCompilation =
-        JavaCompilationImpl(
-            variantDslInfo.javaCompileOptionsSetInDSL,
-            buildFeatures.dataBinding,
-            internalServices,
-            variantDependencies
-        )
+  override val publishInfo: VariantPublishingInfo?
+    get() = (mainVariant as? PublishableCreationConfig)?.publishInfo
 
-    // ---------------------------------------------------------------------------------------------
-    // INTERNAL API
-    // ---------------------------------------------------------------------------------------------
-
-    override val aarOutputFileName: Property<String> =
-        variantServices.newPropertyBackingDeprecatedApi(
-            String::class.java,
-            services.projectInfo.getProjectBaseName().map {
-                "$it-$baseName.${BuilderConstants.EXT_LIB_ARCHIVE}"
-            }
-        )
-
-    override val buildConfigCreationConfig: BuildConfigCreationConfig? = null
-
-    override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig?
-        get() = mainVariant.manifestPlaceholdersCreationConfig
-
-    override val resValues: MapProperty<ResValue.Key, ResValue> by lazy {
-        resValuesCreationConfig?.resValues
-            ?: warnAboutAccessingVariantApiValueForDisabledFeature(
-                featureName = FeatureNames.RES_VALUES,
-                apiName = "resValues",
-                value = internalServices.mapPropertyOf(
-                    ResValue.Key::class.java,
-                    ResValue::class.java,
-                    dslInfo.androidResourcesDsl!!.getResValues()
-                )
-            )
+  override val aarMetadata: AarMetadata =
+    internalServices.newInstance(AarMetadata::class.java).also {
+      it.minCompileSdk.set(1)
+      it.minCompileSdkExtension.set(DEFAULT_MIN_COMPILE_SDK_EXTENSION)
+      it.minAgpVersion.set(DEFAULT_MIN_AGP_VERSION)
     }
 
-    override fun makeResValueKey(type: String, name: String): ResValue.Key = ResValueKeyImpl(type, name)
+  override val javaCompilation: JavaCompilation =
+    JavaCompilationImpl(variantDslInfo.javaCompileOptionsSetInDSL, buildFeatures.dataBinding, internalServices, variantDependencies)
 
-    override val pseudoLocalesEnabled: Property<Boolean>  by lazy {
-        androidResourcesCreationConfig?.pseudoLocalesEnabled
-            ?: warnAboutAccessingVariantApiValueForDisabledFeature(
-                featureName = FeatureNames.ANDROID_RESOURCES,
-                apiName = "pseudoLocalesEnabled",
-                value = internalServices.newPropertyBackingDeprecatedApi(
-                    Boolean::class.java,
-                    dslInfo.androidResourcesDsl!!.isPseudoLocalesEnabled
-                )
-            )
-    }
+  // ---------------------------------------------------------------------------------------------
+  // INTERNAL API
+  // ---------------------------------------------------------------------------------------------
 
-    override fun getArtifactName(name: String): String {
-        return "$testFixturesFeatureName-$name"
-    }
+  override val aarOutputFileName: Property<String> =
+    variantServices.newPropertyBackingDeprecatedApi(
+      String::class.java,
+      services.projectInfo.getProjectBaseName().map { "$it-$baseName.${BuilderConstants.EXT_LIB_ARCHIVE}" },
+    )
 
-    override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
-        val support = super.builtInKotlinSupportMode
-        if (support is BuiltInKotlinSupportMode.NotSupported
-            && internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
-            && internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
-        ) {
-            BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKgpApplied
-        } else {
-            support
-        }
-    }
+  override val buildConfigCreationConfig: BuildConfigCreationConfig? = null
 
-    override val builtInKaptSupportMode: BuiltInKaptSupportMode by lazy {
-        val support = super.builtInKaptSupportMode
-        if (support is BuiltInKaptSupportMode.NotSupported
-            && internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT)
-            && internalServices.projectInfo.hasPlugin(KOTLIN_KAPT_PLUGIN_ID)
-        ) {
-            BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKaptApplied
-        } else {
-            support
-        }
+  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig?
+    get() = mainVariant.manifestPlaceholdersCreationConfig
+
+  override val resValues: MapProperty<ResValue.Key, ResValue> by lazy {
+    resValuesCreationConfig?.resValues
+      ?: warnAboutAccessingVariantApiValueForDisabledFeature(
+        featureName = FeatureNames.RES_VALUES,
+        apiName = "resValues",
+        value = internalServices.mapPropertyOf(ResValue.Key::class.java, ResValue::class.java, dslInfo.androidResourcesDsl!!.getResValues()),
+      )
+  }
+
+  override fun makeResValueKey(type: String, name: String): ResValue.Key = ResValueKeyImpl(type, name)
+
+  override val pseudoLocalesEnabled: Property<Boolean> by lazy {
+    androidResourcesCreationConfig?.pseudoLocalesEnabled
+      ?: warnAboutAccessingVariantApiValueForDisabledFeature(
+        featureName = FeatureNames.ANDROID_RESOURCES,
+        apiName = "pseudoLocalesEnabled",
+        value = internalServices.newPropertyBackingDeprecatedApi(Boolean::class.java, dslInfo.androidResourcesDsl!!.isPseudoLocalesEnabled),
+      )
+  }
+
+  override fun getArtifactName(name: String): String {
+    return "$testFixturesFeatureName-$name"
+  }
+
+  override val builtInKotlinSupportMode: BuiltInKotlinSupportMode by lazy {
+    val support = super.builtInKotlinSupportMode
+    if (
+      support is BuiltInKotlinSupportMode.NotSupported &&
+        internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT) &&
+        internalServices.projectInfo.hasPlugin(KOTLIN_ANDROID_PLUGIN_ID)
+    ) {
+      BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKgpApplied
+    } else {
+      support
     }
+  }
+
+  override val builtInKaptSupportMode: BuiltInKaptSupportMode by lazy {
+    val support = super.builtInKaptSupportMode
+    if (
+      support is BuiltInKaptSupportMode.NotSupported &&
+        internalServices.projectOptions.get(ENABLE_TEST_FIXTURES_KOTLIN_SUPPORT) &&
+        internalServices.projectInfo.hasPlugin(KOTLIN_KAPT_PLUGIN_ID)
+    ) {
+      BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest.TestFixturesSupportEnabledAndKaptApplied
+    } else {
+      support
+    }
+  }
 }

@@ -14,14 +14,15 @@
         manifests="src/main/AndroidManifest.xml"
         javaDirectories="src/main/java:src/debug/java:src/main/kotlin:src/debug/kotlin"
         resDirectories="src/main/res:src/debug/res"
-        assetsDirectories="src/main/assets:src/debug/assets"/>
+        assetsDirectories="src/main/assets:src/debug/assets"
+        keepRulesDirectories="src/main/keepRules:src/debug/keepRules"/>
   </sourceProviders>
   <testSourceProviders>
   </testSourceProviders>
   <testFixturesSourceProviders>
   </testFixturesSourceProviders>
   <artifact
-      classOutputs="build/intermediates/javac/debug/compileDebugJavaWithJavac/classes:build/tmp/kotlin-classes/debug:build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar"
+      classOutputs="build/intermediates/javac/debug/compileDebugJavaWithJavac/classes:build/intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes:build/intermediates/compile_r_class_jar/debug/generateDebugRFile/R.jar"
       type="MAIN"
       applicationId="com.example.android.lint.kotlin"
       generatedSourceFolders="build/generated/ap_generated_sources/debug/out"

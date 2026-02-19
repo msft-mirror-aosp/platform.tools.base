@@ -19,15 +19,15 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.JniLibsPackaging
 
 abstract class JniLibsPackagingImpl : JniLibsPackaging {
-    // support excludes += 'foo' syntax in groovy
-    abstract fun setExcludes(patterns: Set<String>)
+  // support excludes += 'foo' syntax in groovy
+  abstract fun setExcludes(patterns: Set<String>)
 
-    // support pickFirsts += 'foo' syntax in groovy
-    abstract fun setPickFirsts(patterns: Set<String>)
+  // support pickFirsts += 'foo' syntax in groovy
+  abstract fun setPickFirsts(patterns: Set<String>)
 
-    // support keepDebugSymbols += 'foo' syntax in groovy
-    abstract fun setKeepDebugSymbols(patterns: Set<String>)
+  // support keepDebugSymbols += 'foo' syntax in groovy
+  abstract fun setKeepDebugSymbols(patterns: Set<String>)
 
-    // support testOnly += 'foo' syntax in groovy
-    abstract fun setTestOnly(patterns: Set<String>)
+  // support testOnly += 'foo' syntax in groovy
+  abstract fun setTestOnly(patterns: Set<String>)
 }

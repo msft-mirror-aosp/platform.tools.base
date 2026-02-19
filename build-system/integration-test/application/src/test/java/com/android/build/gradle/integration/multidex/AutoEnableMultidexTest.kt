@@ -28,81 +28,82 @@ import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 
-/** Check multidex is automatically enabled for min sdk > 21.  */
+/** Check multidex is automatically enabled for min sdk > 21. */
 class AutoEnableMultidexTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(MinimalSubProject.app("com.example.helloworld").apply {
-            appendToBuild(
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.helloworld").apply {
+          appendToBuild(
+            """
+            android {
+                flavorDimensions "generation"
+                productFlavors {
+                    legacy { minSdkVersion 19 }
+                    current { minSdkVersion 21 }
+                }
+            }
+            """
+              .trimIndent()
+          )
+          val dexMethodLimit = 1L.shl(16)
+          val methods = (0..(dexMethodLimit / 3 + 1)).joinToString("\n    ") { "public void m$it() {}" }
+          for (i in 0..2) {
+            addFile(
+              TestSourceFile(
+                "src/main/java/com/example/helloworld",
+                "A$i.java",
                 """
-                    android {
-                        flavorDimensions "generation"
-                        productFlavors {
-                            legacy { minSdkVersion 19 }
-                            current { minSdkVersion 21 }
-                        }
-                    }
-                    """.trimIndent()
-            )
-            val dexMethodLimit = 1L.shl(16)
-            val methods = (0..(dexMethodLimit / 3 + 1))
-                .joinToString("\n    ") { "public void m$it() {}" }
-            for (i in 0..2) {
-                addFile(
-                    TestSourceFile(
-                        "src/main/java/com/example/helloworld", "A$i.java",
-                        """
                             package com.example.helloworld;
                             public class A$i {
                                 $methods
                             }
-                        """.trimIndent()
-                    )
-                )
-            }
-        })
-        .disableBuiltInKotlin()
-        .create()
-
-    @Test
-    fun testAutoEnableMultidex() {
-        val result = project.executor().expectFailure().run("assembleLegacyDebug")
-        assertThat(Throwables.getStackTraceAsString(result.exception!!))
-            .contains("https://developer.android.com/tools/building/multidex.html")
-
-        project.executor().run("assembleCurrentDebug")
-
-        // Check no duplicate classes across the dex files
-        val classToDexMap: MutableMap<String, Dex> = mutableMapOf()
-        for (dex in project.getApk(GradleTestProject.ApkType.DEBUG, "current").allDexes) {
-            for (className in dex.classes.keys) {
-                val previousDex = classToDexMap.put(className, dex)
-                if (previousDex != null) {
-                    Assert.fail("Class $className is found in both $previousDex and $dex")
-                }
-            }
+                        """
+                  .trimIndent(),
+              )
+            )
+          }
         }
+      )
+      .disableBuiltInKotlin()
+      .create()
 
-        if (FileUtils.join(project.intermediatesDir,
-                InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName())
-                .exists()
-        ) {
-            assertThat(classToDexMap.keys)
-                    .containsExactly(
-                            "Lcom/example/helloworld/A0;",
-                            "Lcom/example/helloworld/A1;",
-                            "Lcom/example/helloworld/A2;",
-                            "Lcom/example/helloworld/R;"
-                    )
-        } else {
-            assertThat(classToDexMap.keys)
-                    .containsExactly(
-                            "Lcom/example/helloworld/A0;",
-                            "Lcom/example/helloworld/A1;",
-                            "Lcom/example/helloworld/A2;",
-                            "Lcom/example/helloworld/R;"
-                    )
+  @Test
+  fun testAutoEnableMultidex() {
+    val result = project.executor().expectFailure().run("assembleLegacyDebug")
+    assertThat(Throwables.getStackTraceAsString(result.exception!!)).contains("https://developer.android.com/tools/building/multidex.html")
+
+    project.executor().run("assembleCurrentDebug")
+
+    // Check no duplicate classes across the dex files
+    val classToDexMap: MutableMap<String, Dex> = mutableMapOf()
+    for (dex in project.getApk(GradleTestProject.ApkType.DEBUG, "current").allDexes) {
+      for (className in dex.classes.keys) {
+        val previousDex = classToDexMap.put(className, dex)
+        if (previousDex != null) {
+          Assert.fail("Class $className is found in both $previousDex and $dex")
         }
+      }
     }
+
+    if (FileUtils.join(project.intermediatesDir, InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
+      assertThat(classToDexMap.keys)
+        .containsExactly(
+          "Lcom/example/helloworld/A0;",
+          "Lcom/example/helloworld/A1;",
+          "Lcom/example/helloworld/A2;",
+          "Lcom/example/helloworld/R;",
+        )
+    } else {
+      assertThat(classToDexMap.keys)
+        .containsExactly(
+          "Lcom/example/helloworld/A0;",
+          "Lcom/example/helloworld/A1;",
+          "Lcom/example/helloworld/A2;",
+          "Lcom/example/helloworld/R;",
+        )
+    }
+  }
 }

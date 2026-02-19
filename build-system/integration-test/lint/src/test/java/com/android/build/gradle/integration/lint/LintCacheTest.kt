@@ -24,25 +24,24 @@ import org.junit.Test
 
 class LintCacheTest {
 
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-            .fromTestProject("lintDeps")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
-            .withHeap("1001M")
-            .create()
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestProject("lintDeps")
+      .addGradleProperties("${BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.propertyName}=false")
+      .withHeap("1001M")
+      .create()
 
-    /**
-     * Regression test for b/188187060. This test checks that lint uses a subdirectory of the build
-     * directory for the lint cache. Lint won't write to the lint cache in some cases if it already
-     * has the info it needs in memory, so this test is in a class of its own and the project is
-     * given a unique heap size of "1001M" to ensure the test uses a fresh gradle daemon without
-     * the lint cache info already in memory.
-     */
-    @Test
-    fun testLintCache() {
-        project.execute("clean", ":app:lintAnalyzeDebug", ":javalib:lintAnalyzeJvmMain")
-        assertThat(project.getSubproject("app").getIntermediateFile("lint-cache")).isDirectory()
-        assertThat(project.getSubproject("javalib").getIntermediateFile("lint-cache")).isDirectory()
-    }
+  /**
+   * Regression test for b/188187060. This test checks that lint uses a subdirectory of the build directory for the lint cache. Lint won't
+   * write to the lint cache in some cases if it already has the info it needs in memory, so this test is in a class of its own and the
+   * project is given a unique heap size of "1001M" to ensure the test uses a fresh gradle daemon without the lint cache info already in
+   * memory.
+   */
+  @Test
+  fun testLintCache() {
+    project.execute("clean", ":app:lintAnalyzeDebug", ":javalib:lintAnalyzeJvmMain")
+    assertThat(project.getSubproject("app").getIntermediateFile("lint-cache")).isDirectory()
+    assertThat(project.getSubproject("javalib").getIntermediateFile("lint-cache")).isDirectory()
+  }
 }

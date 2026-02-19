@@ -17,68 +17,59 @@
 package com.android.utils.cxx.io
 
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.StringReader
+import org.junit.Test
 
 class ProgressReaderTest {
-    @Test
-    fun `basic read 0 interval`() {
-        checkString(
-            "string value",
-            progressIntervalMillis = 0,
-            expectedProgressCalls = "string value".length + 1,
-        )
+  @Test
+  fun `basic read 0 interval`() {
+    checkString("string value", progressIntervalMillis = 0, expectedProgressCalls = "string value".length + 1)
+  }
+
+  @Test
+  fun `basic read with interval`() {
+    checkString(
+      "string value",
+      progressIntervalMillis = 100L, // 100ms
+      artificialPause = 100L,
+      expectedProgressCalls = 1,
+    )
+  }
+
+  @Test
+  fun `basic read max interval`() {
+    checkString("string value", progressIntervalMillis = Long.MAX_VALUE, expectedProgressCalls = 0)
+  }
+
+  private fun checkString(
+    value: String,
+    progressIntervalMillis: Long = Long.MAX_VALUE,
+    artificialPause: Long = 0L,
+    expectedProgressCalls: Int = -1,
+  ) {
+    val reader = value.progressReader(progressIntervalMillis)
+    var progressCalls = 0
+
+    fun progress(filename: String, totalBytes: Long, bytesRead: Long) {
+      ++progressCalls
     }
-
-    @Test
-    fun `basic read with interval`() {
-        checkString(
-            "string value",
-            progressIntervalMillis = 100L, // 100ms
-            artificialPause = 100L,
-            expectedProgressCalls = 1
-        )
+    while (reader.read() != -1) {
+      reader.postProgress(::progress)
     }
-
-    @Test
-    fun `basic read max interval`() {
-        checkString(
-            "string value",
-            progressIntervalMillis = Long.MAX_VALUE,
-            expectedProgressCalls = 0
-        )
+    if (artificialPause > 0L) {
+      Thread.sleep(artificialPause)
     }
-
-    private fun checkString(
-        value : String,
-        progressIntervalMillis : Long = Long.MAX_VALUE,
-        artificialPause : Long = 0L,
-        expectedProgressCalls : Int = -1,
-    ) {
-        val reader = value.progressReader(progressIntervalMillis)
-        var progressCalls = 0
-
-        fun progress(filename: String, totalBytes: Long, bytesRead: Long) {
-            ++progressCalls
-        }
-        while(reader.read() != -1) {
-            reader.postProgress(::progress)
-        }
-        if (artificialPause > 0L) {
-            Thread.sleep(artificialPause)
-        }
-        reader.postProgress(::progress)
-        if (expectedProgressCalls != -1) {
-            assertThat(progressCalls).isEqualTo(expectedProgressCalls)
-        }
+    reader.postProgress(::progress)
+    if (expectedProgressCalls != -1) {
+      assertThat(progressCalls).isEqualTo(expectedProgressCalls)
     }
+  }
 
-    private fun String.progressReader(
-        progressIntervalMillis : Long
-    ) = ProgressReader(
-        reader = StringReader(this),
-        filename = "a string",
-        totalBytes = length.toLong(),
-        progressIntervalMillis = progressIntervalMillis
+  private fun String.progressReader(progressIntervalMillis: Long) =
+    ProgressReader(
+      reader = StringReader(this),
+      filename = "a string",
+      totalBytes = length.toLong(),
+      progressIntervalMillis = progressIntervalMillis,
     )
 }

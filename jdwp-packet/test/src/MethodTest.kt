@@ -45,12 +45,7 @@ class MethodTest {
 
   @Test
   fun testLineTableReply() {
-    val packet =
-      LineTableReply(
-        Long.MAX_VALUE - 1,
-        Long.MAX_VALUE - 2,
-        listOf(LineTableReply.Line(Long.MAX_VALUE, Int.MAX_VALUE)),
-      )
+    val packet = LineTableReply(Long.MAX_VALUE - 1, Long.MAX_VALUE - 2, listOf(LineTableReply.Line(Long.MAX_VALUE, Int.MAX_VALUE)))
     assertJDWPObjectAndWireEquals(packet, LineTableReply::parse)
   }
 
@@ -65,16 +60,7 @@ class MethodTest {
     val packet =
       VariableTableWithGenericReply(
         Int.MAX_VALUE - 1,
-        listOf(
-          VariableTableWithGenericReply.Slot(
-            Long.MAX_VALUE,
-            "a",
-            "b",
-            "c",
-            Int.MAX_VALUE - 1,
-            Int.MAX_VALUE - 2,
-          )
-        ),
+        listOf(VariableTableWithGenericReply.Slot(Long.MAX_VALUE, "a", "b", "c", Int.MAX_VALUE - 1, Int.MAX_VALUE - 2)),
       )
     assertJDWPObjectAndWireEquals(packet, VariableTableWithGenericReply::parse)
   }

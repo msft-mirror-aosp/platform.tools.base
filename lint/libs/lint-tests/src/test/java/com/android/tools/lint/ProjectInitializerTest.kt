@@ -260,29 +260,29 @@ class ProjectInitializerTest {
     val mergedManifestXml =
       """
 
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                package="foo.bar2"
-                android:versionCode="1"
-                android:versionName="1.0" >
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="foo.bar2"
+          android:versionCode="1"
+          android:versionName="1.0" >
 
-                <uses-sdk android:minSdkVersion="14" />
+          <uses-sdk android:minSdkVersion="14" />
 
-                <permission
-                    android:name="foo.permission.SEND_SMS"
-                    android:description="@string/foo"
-                    android:label="@string/foo" />
-                <permission
-                    android:name="bar.permission.SEND_SMS"
-                    android:description="@string/foo"
-                    android:label="@string/foo" />
+          <permission
+              android:name="foo.permission.SEND_SMS"
+              android:description="@string/foo"
+              android:label="@string/foo" />
+          <permission
+              android:name="bar.permission.SEND_SMS"
+              android:description="@string/foo"
+              android:label="@string/foo" />
 
-                <application
-                    android:icon="@drawable/ic_launcher"
-                    android:label="@string/app_name" >
-                </application>
+          <application
+              android:icon="@drawable/ic_launcher"
+              android:label="@string/app_name" >
+          </application>
 
-            </manifest>
-            """
+      </manifest>
+      """
         .trimIndent()
 
     val mergedManifest = temp.newFile("merged-manifest$suffix")
@@ -291,23 +291,23 @@ class ProjectInitializerTest {
     @Language("XML")
     val baselineXml =
       """
-            <issues format="4" by="lint unknown">
-                <issue
-                    id="DuplicateDefinition"
-                    message="`string3` has already been defined in this folder"
-                    errorLine1="    &lt;string name=&quot;string3&quot;>String 4&lt;/string>"
-                    errorLine2="            ~~~~~~~~~~~~~~">
-                    <location
-                        file="res/values/strings.xml"
-                        line="8"
-                        column="13"/>
-                    <location
-                        file="res/values/strings.xml"
-                        line="5"
-                        column="13"/>
-                </issue>
-            </issues>
-            """
+      <issues format="4" by="lint unknown">
+          <issue
+              id="DuplicateDefinition"
+              message="`string3` has already been defined in this folder"
+              errorLine1="    &lt;string name=&quot;string3&quot;>String 4&lt;/string>"
+              errorLine2="            ~~~~~~~~~~~~~~">
+              <location
+                  file="res/values/strings.xml"
+                  line="8"
+                  column="13"/>
+              <location
+                  file="res/values/strings.xml"
+                  line="5"
+                  column="13"/>
+          </issue>
+      </issues>
+      """
         .trimIndent()
     val baseline = File(appProjectDir, "baseline.xml")
     Files.asCharSink(baseline, Charsets.UTF_8).write(baselineXml)
@@ -358,8 +358,7 @@ class ProjectInitializerTest {
           assertThat(manifest).isNotNull()
           manifest!!
           val permission = getFirstSubTagByName(manifest.documentElement, "permission")!!
-          assertThat(permission.getAttributeNS(ANDROID_URI, ATTR_NAME))
-            .isEqualTo("foo.permission.SEND_SMS")
+          assertThat(permission.getAttributeNS(ANDROID_URI, ATTR_NAME)).isEqualTo("foo.permission.SEND_SMS")
           assertionsChecked++
 
           // compileSdkVersion=android-M -> build API=23
@@ -382,8 +381,7 @@ class ProjectInitializerTest {
 
     // TODO: https://youtrack.jetbrains.com/issue/KT-57715
     val expectedError =
-      if (useFirUast())
-        "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
+      if (useFirUast()) "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
       else "w: Classpath entry points to a non-existent location: ROOT/test.jar"
 
     MainTest.checkDriver(
@@ -422,13 +420,7 @@ class ProjectInitializerTest {
         "--project",
         File(root, "project.xml").path,
       ),
-      {
-        it
-          .replace(canonicalRoot, "ROOT")
-          .replace(root.path, "ROOT")
-          .replace(baseline.parentFile.path, "TESTROOT")
-          .dos2unix()
-      },
+      { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").replace(baseline.parentFile.path, "TESTROOT").dos2unix() },
       listener,
       null,
       false,
@@ -464,10 +456,10 @@ class ProjectInitializerTest {
     Files.asCharSink(sourceFile, Charsets.UTF_8)
       .write(
         """
-                package com.example;
+        package com.example;
 
-                public class Foo {}
-            """
+        public class Foo {}
+        """
           .trimIndent()
       )
 
@@ -854,8 +846,7 @@ class ProjectInitializerTest {
     val rFile = File(aar, FN_RESOURCE_TEXT)
     Files.asCharSink(rFile, Charsets.UTF_8).write(allResources)
 
-    val publicResources =
-      ("" + "" + "string my_public_string\n" + "style Theme.AppCompat.DayNight\n")
+    val publicResources = ("" + "" + "string my_public_string\n" + "style Theme.AppCompat.DayNight\n")
 
     val publicTxtFile = File(aar, FN_PUBLIC_TXT)
     Files.asCharSink(publicTxtFile, Charsets.UTF_8).write(publicResources)
@@ -889,12 +880,7 @@ class ProjectInitializerTest {
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "MissingApplicationIcon,PrivateResource",
-        "--project",
-        descriptorFile.path,
-      ),
+      arrayOf("--check", "MissingApplicationIcon,PrivateResource", "--project", descriptorFile.path),
       { it.dos2unix() },
       null,
     )
@@ -1334,7 +1320,7 @@ class ProjectInitializerTest {
                         return switch (duration) {
                             // Missing LENGTH_INDEFINITE handling
                             case LENGTH_SHORT, LENGTH_LONG -> true;
-                            default -> false;
+                            default -> throw new IllegalStateException("Unexpected");
                         };
                     }
                 }
@@ -1481,37 +1467,37 @@ class ProjectInitializerTest {
     crlf.parentFile.mkdirs()
     crlf.writeText(
       """
-            package com.example.foo.notification;
+      package com.example.foo.notification;
 
-            public class AppNotifBlockedReceiver extends BroadcastReceiver {
-                // content removed
-            }
-            """
+      public class AppNotifBlockedReceiver extends BroadcastReceiver {
+          // content removed
+      }
+      """
         .trimIndent()
         .replace("\n", "\r\n")
     )
     val lf = File(root, "app/src/main/java/ClassLF.java")
     lf.writeText(
       """
-            package com.example.foo.tester.ui;
+      package com.example.foo.tester.ui;
 
-            public class DisableActivity extends Activity {
-            // Content removed
-            }
-            """
+      public class DisableActivity extends Activity {
+      // Content removed
+      }
+      """
         .trimIndent()
     )
 
     @Language("XML")
     val descriptor =
       """
-            <project>
-               <module android="true" compile-sdk-version="18" name="app">
-                  <src file="app/src/main/java/ClassCRLF.java"/>
-                  <src file="app/src/main/java/ClassLF.java"/>
-               </module>
-            </project>
-            """
+      <project>
+         <module android="true" compile-sdk-version="18" name="app">
+            <src file="app/src/main/java/ClassCRLF.java"/>
+            <src file="app/src/main/java/ClassLF.java"/>
+         </module>
+      </project>
+      """
         .trimIndent()
     val descriptorFile = File(root, "descriptor.xml")
     descriptorFile.writeText(descriptor.replace("\n", "\r\n"))
@@ -1667,16 +1653,7 @@ class ProjectInitializerTest {
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "UniquePermission",
-        "--config",
-        configFile.path,
-        "--text",
-        "stdout",
-        "--project",
-        File(root, "project.xml").path,
-      ),
+      arrayOf("--check", "UniquePermission", "--config", configFile.path, "--text", "stdout", "--project", File(root, "project.xml").path),
       { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").dos2unix() },
       null,
     )
@@ -1779,12 +1756,7 @@ class ProjectInitializerTest {
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "RequiredSize,ManifestOrder,ContentDescription,WrongManifestParent",
-        "--project",
-        descriptorFile.path,
-      ),
+      arrayOf("--check", "RequiredSize,ManifestOrder,ContentDescription,WrongManifestParent", "--project", descriptorFile.path),
       null,
       null,
     )
@@ -1794,33 +1766,24 @@ class ProjectInitializerTest {
   fun testFindPackage() {
     assertEquals("foo.bar", findPackage("package foo.bar;\n", File("Test.java")))
     assertEquals("foo.bar", findPackage("// Copyright 2021\npackage foo.bar;\n", File("Test.java")))
-    assertEquals(
-      "foo.bar",
-      findPackage("// package wrong; /*\npackage  foo. bar ;\n", File("Test.java")),
-    )
-    assertEquals(
-      "foo.bar",
-      findPackage("/* package wrong; */\npackage  foo .bar ;\n", File("Test.java")),
-    )
-    assertEquals(
-      "foo.bar",
-      findPackage("/* /* nested comment */ package wrong */\npackage foo.bar \n", File("x.kt")),
-    )
+    assertEquals("foo.bar", findPackage("// package wrong; /*\npackage  foo. bar ;\n", File("Test.java")))
+    assertEquals("foo.bar", findPackage("/* package wrong; */\npackage  foo .bar ;\n", File("Test.java")))
+    assertEquals("foo.bar", findPackage("/* /* nested comment */ package wrong */\npackage foo.bar \n", File("x.kt")))
     // Regression test for 195004772
     @Language("java")
     val source =
       """
-            // Copyright 2007, Google Inc.
-            /** The classes in this is package provide a variety of utility services. */
-            @CheckReturnValue
-            @ParametersAreNonnullByDefault
-            @NullMarked
-            package com.google.common.util;
+      // Copyright 2007, Google Inc.
+      /** The classes in this is package provide a variety of utility services. */
+      @CheckReturnValue
+      @ParametersAreNonnullByDefault
+      @NullMarked
+      package com.google.common.util;
 
-            import javax.annotation.CheckReturnValue;
-            import javax.annotation.ParametersAreNonnullByDefault;
-            import org.jspecify.nullness.NullMarked;
-            """
+      import javax.annotation.CheckReturnValue;
+      import javax.annotation.ParametersAreNonnullByDefault;
+      import org.jspecify.nullness.NullMarked;
+      """
         .trimIndent()
     assertEquals("com.google.common.util", findPackage(source, File("package-info.java")))
   }
@@ -1854,12 +1817,9 @@ class ProjectInitializerTest {
 
     fun checkFilesDoNotContainBuildRoot(dir: File) {
       val badFiles =
-        java.nio.file.Files.list(dir.toPath())
-          .filter { it.isRegularFile() && it.readText(Charsets.UTF_8).contains("buildRoot") }
-          .toList()
+        java.nio.file.Files.list(dir.toPath()).filter { it.isRegularFile() && it.readText(Charsets.UTF_8).contains("buildRoot") }.toList()
       assertTrue(
-        "The following files contain the buildRoot directory, " +
-          "which should not happen: ${badFiles.joinToString()}",
+        "The following files contain the buildRoot directory, " + "which should not happen: ${badFiles.joinToString()}",
         badFiles.isEmpty(),
       )
     }
@@ -1872,11 +1832,9 @@ class ProjectInitializerTest {
       return file
     }
 
-    fun createXmlFile(path: String, @Language("XML") content: String): File =
-      createFile(path, content)
+    fun createXmlFile(path: String, @Language("XML") content: String): File = createFile(path, content)
 
-    fun createJavaFile(path: String, @Language("JAVA") content: String): File =
-      createFile(path, content)
+    fun createJavaFile(path: String, @Language("JAVA") content: String): File = createFile(path, content)
 
     val configFile =
       createXmlFile(
@@ -2624,9 +2582,7 @@ class ProjectInitializerTest {
                 analyze(func) {
                   assertTrue(
                     "KMP should be enabled",
-                    (useSiteModule as KaSourceModule)
-                      .languageVersionSettings
-                      .supportsFeature(LanguageFeature.MultiPlatformProjects),
+                    (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
                   )
                   val expectSymbols = func.symbol.getExpectsForActual()
                   assertEquals(1, expectSymbols.size)
@@ -2695,9 +2651,7 @@ class ProjectInitializerTest {
                 analyze(clz) {
                   assertTrue(
                     "KMP should be enabled",
-                    (useSiteModule as KaSourceModule)
-                      .languageVersionSettings
-                      .supportsFeature(LanguageFeature.MultiPlatformProjects),
+                    (useSiteModule as KaSourceModule).languageVersionSettings.supportsFeature(LanguageFeature.MultiPlatformProjects),
                   )
                 }
               }
@@ -2725,179 +2679,179 @@ class ProjectInitializerTest {
     @Language("kotlin")
     val klibSourceFile =
       """
-package com.klib
+      package com.klib
 
-annotation class LibAnnotation
+      annotation class LibAnnotation
 
-fun libGlobalMethod(): Int {
-  return 2
-}
+      fun libGlobalMethod(): Int {
+        return 2
+      }
 
-fun libGlobalMethod(a: Int): Int {
-  return 3
-}
+      fun libGlobalMethod(a: Int): Int {
+        return 3
+      }
 
-fun libGlobalMethod2(a: Int): Int {
-  return 2
-}
+      fun libGlobalMethod2(a: Int): Int {
+        return 2
+      }
 
-val Int.globalProperty
-  get() = ""
+      val Int.globalProperty
+        get() = ""
 
-val String.globalProperty
-  get() = 2
+      val String.globalProperty
+        get() = 2
 
-val globalProperty = 2
+      val globalProperty = 2
 
-val globalProperty2 = 3
+      val globalProperty2 = 3
 
-const val LIB_CONST = ""
+      const val LIB_CONST = ""
 
-open class LibClass {
+      open class LibClass {
 
-  val Int.valProp
-    get() = 0
+        val Int.valProp
+          get() = 0
 
-  val String.valProp
-    get() = 0
+        val String.valProp
+          get() = 0
 
-  val valProp = 0
+        val valProp = 0
 
-  var varProp = 1
+        var varProp = 1
 
-  val propWithGetter
-    get() = 1
+        val propWithGetter
+          get() = 1
 
-  val mutableListProp: MutableList<String> = mutableListOf()
+        val mutableListProp: MutableList<String> = mutableListOf()
 
-  var propWithField: Int = 0
-    get() = field + 1
-    set(value) {
-      field = value - 1
-    }
+        var propWithField: Int = 0
+          get() = field + 1
+          set(value) {
+            field = value - 1
+          }
 
-  fun libMethod(arg: Int): Int = 1
-  fun libMethod(arg: Long): Long = 1
+        fun libMethod(arg: Int): Int = 1
+        fun libMethod(arg: Long): Long = 1
 
-  fun libMethod2(arg: Long): Long = 1
+        fun libMethod2(arg: Long): Long = 1
 
-  fun libMethod3(arg: Array<Long>): Array<Long> = arrayOf(1L)
+        fun libMethod3(arg: Array<Long>): Array<Long> = arrayOf(1L)
 
-  fun <T> libGenericMethod(arg: T): Array<T>? = null
+        fun <T> libGenericMethod(arg: T): Array<T>? = null
 
-  operator fun unaryPlus(): LibClass = this
+        operator fun unaryPlus(): LibClass = this
 
-  companion object {
-    fun companionFunc(): Int = 2
-    val companionProp: Int = 3
-  }
+        companion object {
+          fun companionFunc(): Int = 2
+          val companionProp: Int = 3
+        }
 
-  object LibClassObject {
-    fun func(): Int = 1
-    val prop: Int = 2
-  }
-}
+        object LibClassObject {
+          fun func(): Int = 1
+          val prop: Int = 2
+        }
+      }
 
-object MyFirstObject {
+      object MyFirstObject {
 
-  fun bar(): Long = 2L
+        fun bar(): Long = 2L
 
-  object MySecondObject {
-    val prop: Int = 1
-    fun foo(): Int = 2
-  }
-}
+        object MySecondObject {
+          val prop: Int = 1
+          fun foo(): Int = 2
+        }
+      }
 
-enum class ProtocolState {
-  WAITING {
-    override fun signal() = TALKING
-  },
+      enum class ProtocolState {
+        WAITING {
+          override fun signal() = TALKING
+        },
 
-  TALKING {
-    override fun signal() = WAITING
-  };
+        TALKING {
+          override fun signal() = WAITING
+        };
 
-  abstract fun signal(): ProtocolState
-}
-"""
+        abstract fun signal(): ProtocolState
+      }
+      """
         .trimIndent()
 
     @Language("kotlin")
     val kotlinSourceFile =
       """
-package com.example
+      package com.example
 
-import com.klib.LibClass
-import com.klib.MyFirstObject
-import com.klib.LibAnnotation
-import com.klib.globalProperty
-import com.klib.globalProperty2
-import com.klib.libGlobalMethod
-import com.klib.libGlobalMethod2
-import com.klib.LIB_CONST
-import com.klib.ProtocolState
+      import com.klib.LibClass
+      import com.klib.MyFirstObject
+      import com.klib.LibAnnotation
+      import com.klib.globalProperty
+      import com.klib.globalProperty2
+      import com.klib.libGlobalMethod
+      import com.klib.libGlobalMethod2
+      import com.klib.LIB_CONST
+      import com.klib.ProtocolState
 
-@LibAnnotation
-class Code {
-  fun hello() {
-    libGlobalMethod()
-    libGlobalMethod(1)
-    libGlobalMethod2(1)
+      @LibAnnotation
+      class Code {
+        fun hello() {
+          libGlobalMethod()
+          libGlobalMethod(1)
+          libGlobalMethod2(1)
 
-    globalProperty
-    1.globalProperty
-    "".globalProperty
-    globalProperty2
+          globalProperty
+          1.globalProperty
+          "".globalProperty
+          globalProperty2
 
-    LIB_CONST
+          LIB_CONST
 
-    val c = LibClass()
-    +c
+          val c = LibClass()
+          +c
 
-    LibClass.companionFunc()
-    LibClass.companionProp
-    LibClass.Companion
-    LibClass.Companion.companionFunc()
-    LibClass.Companion.companionProp
+          LibClass.companionFunc()
+          LibClass.companionProp
+          LibClass.Companion
+          LibClass.Companion.companionFunc()
+          LibClass.Companion.companionProp
 
-    LibClass.LibClassObject
-    LibClass.LibClassObject.func()
-    LibClass.LibClassObject.prop
+          LibClass.LibClassObject
+          LibClass.LibClassObject.func()
+          LibClass.LibClassObject.prop
 
-    MyFirstObject
-    MyFirstObject.bar()
-    MyFirstObject.MySecondObject
-    MyFirstObject.MySecondObject.prop
-    MyFirstObject.MySecondObject.foo()
+          MyFirstObject
+          MyFirstObject.bar()
+          MyFirstObject.MySecondObject
+          MyFirstObject.MySecondObject.prop
+          MyFirstObject.MySecondObject.foo()
 
-    ProtocolState.WAITING
-  }
+          ProtocolState.WAITING
+        }
 
-  fun LibClass.hello2() {
-    1.valProp
-    "".valProp
-    valProp
-    varProp = 2
-    varProp += 2
-    varProp--
-    ++varProp
-    varProp
-    propWithGetter
-    mutableListProp += "a"
-    propWithField
+        fun LibClass.hello2() {
+          1.valProp
+          "".valProp
+          valProp
+          varProp = 2
+          varProp += 2
+          varProp--
+          ++varProp
+          varProp
+          propWithGetter
+          mutableListProp += "a"
+          propWithField
 
-    libMethod(1)
-    libMethod(1L)
-    libMethod2(1L)
-    libMethod3(arrayOf(1L))
+          libMethod(1)
+          libMethod(1L)
+          libMethod2(1L)
+          libMethod3(arrayOf(1L))
 
-    libGenericMethod(1)
-  }
-}
+          libGenericMethod(1)
+        }
+      }
 
-@LibAnnotation
-class OtherClass : LibClass()
-"""
+      @LibAnnotation
+      class OtherClass : LibClass()
+      """
         .trimIndent()
 
     val jarFile =
@@ -3295,8 +3249,7 @@ class OtherClass : LibClass()
 
     fun getUastInfo(uFile: UFile): String {
       val sb = StringBuilder()
-      val expressions =
-        uFile.classes[0].methods[0].uastBody.asSafely<UBlockExpression>()!!.expressions
+      val expressions = uFile.classes[0].methods[0].uastBody.asSafely<UBlockExpression>()!!.expressions
 
       fun appendInfo(name: String, method: PsiMethod?) {
         with(sb) {
@@ -3304,17 +3257,9 @@ class OtherClass : LibClass()
           appendLine("Info for: ${name}")
           appendLine("method?.name: ${method?.name}")
           appendLine("method?.isConstructor: ${method?.isConstructor}")
-          appendLine(
-            "method?.containingClass?.qualifiedName: ${method?.containingClass?.qualifiedName}"
-          )
+          appendLine("method?.containingClass?.qualifiedName: ${method?.containingClass?.qualifiedName}")
           appendLine("method?.returnType?.canonicalText: ${method?.returnType?.canonicalText}")
-          val params =
-            method
-              ?.parameterList
-              ?.parameters
-              ?.asSequence()
-              ?.map { "${it.name}: ${it.type.canonicalText}" }
-              ?.joinToString()
+          val params = method?.parameterList?.parameters?.asSequence()?.map { "${it.name}: ${it.type.canonicalText}" }?.joinToString()
           appendLine("params: ${params}")
         }
       }
@@ -3334,16 +3279,10 @@ class OtherClass : LibClass()
         with(sb) {
           appendLine("")
           appendLine("Info for: ${name}")
-          appendLine(
-            "field?.containingClass?.qualifiedName: ${field?.containingClass?.qualifiedName}"
-          )
+          appendLine("field?.containingClass?.qualifiedName: ${field?.containingClass?.qualifiedName}")
           appendLine("field?.type?.canonicalText: ${field?.type?.canonicalText}")
-          appendLine(
-            "field?.hasModifierProperty(\"private\"): ${field?.hasModifierProperty("private")}"
-          )
-          appendLine(
-            "field?.hasModifierProperty(\"public\"): ${field?.hasModifierProperty("public")}"
-          )
+          appendLine("field?.hasModifierProperty(\"private\"): ${field?.hasModifierProperty("private")}")
+          appendLine("field?.hasModifierProperty(\"public\"): ${field?.hasModifierProperty("public")}")
         }
       }
 
@@ -3370,16 +3309,11 @@ class OtherClass : LibClass()
       appendInfo("LibClass()", constructor.resolve().asSafely<PsiMethod>())
 
       // Yields null on KMP native because of b/458272425.
-      sb.appendLine(
-        "UCallExpression.classReference: ${constructor.classReference?.resolve()?.asSafely<PsiClass>()?.qualifiedName}"
-      )
+      sb.appendLine("UCallExpression.classReference: ${constructor.classReference?.resolve()?.asSafely<PsiClass>()?.qualifiedName}")
 
       appendInfo("containingClass", constructor.resolve().asSafely<PsiMethod>()?.containingClass)
 
-      appendInfo(
-        "+c",
-        expressions[9].asSafely<UUnaryExpression>()!!.resolveOperator()?.asSafely<PsiMethod>(),
-      )
+      appendInfo("+c", expressions[9].asSafely<UUnaryExpression>()!!.resolveOperator()?.asSafely<PsiMethod>())
 
       appendInfo("LibClass.companionFunc()", expressions[10].tryResolve().asSafely<PsiMethod>())
 
@@ -3387,22 +3321,13 @@ class OtherClass : LibClass()
 
       appendInfo("LibClass.Companion", expressions[12].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-        "LibClass.Companion.companionFunc()",
-        expressions[13].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.Companion.companionFunc()", expressions[13].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "LibClass.Companion.companionProp",
-        expressions[14].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.Companion.companionProp", expressions[14].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("LibClass.LibClassObject", expressions[15].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-        "LibClass.LibClassObject.func()",
-        expressions[16].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("LibClass.LibClassObject.func()", expressions[16].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("LibClass.LibClassObject.prop", expressions[17].tryResolve().asSafely<PsiMethod>())
 
@@ -3412,20 +3337,13 @@ class OtherClass : LibClass()
 
       appendInfo("MyFirstObject.MySecondObject", expressions[20].tryResolve().asSafely<PsiClass>())
 
-      appendInfo(
-        "MyFirstObject.MySecondObject.prop",
-        expressions[21].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("MyFirstObject.MySecondObject.prop", expressions[21].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "MyFirstObject.MySecondObject.foo()",
-        expressions[22].tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("MyFirstObject.MySecondObject.foo()", expressions[22].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("ProtocolState.WAITING", expressions[23].tryResolve().asSafely<PsiField>())
 
-      val expressions2 =
-        uFile.classes[0].methods[1].uastBody.asSafely<UBlockExpression>()!!.expressions
+      val expressions2 = uFile.classes[0].methods[1].uastBody.asSafely<UBlockExpression>()!!.expressions
 
       appendInfo("1.valProp", expressions2[0].tryResolve().asSafely<PsiMethod>())
 
@@ -3433,66 +3351,27 @@ class OtherClass : LibClass()
 
       appendInfo("valProp", expressions2[2].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp = 2",
-        expressions2[3]
-          .asSafely<UBinaryExpression>()!!
-          .leftOperand
-          .tryResolve()
-          .asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp = 2", expressions2[3].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp = 2 (operator)",
-        expressions2[3].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp = 2 (operator)", expressions2[3].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp += 2",
-        expressions2[4]
-          .asSafely<UBinaryExpression>()!!
-          .leftOperand
-          .tryResolve()
-          .asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp += 2", expressions2[4].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp += 2 (operator)",
-        expressions2[4].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp += 2 (operator)", expressions2[4].asSafely<UBinaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp--",
-        expressions2[5].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp--", expressions2[5].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "varProp-- (operator)",
-        expressions2[5].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("varProp-- (operator)", expressions2[5].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
-      appendInfo(
-        "++varProp",
-        expressions2[6].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>(),
-      )
+      appendInfo("++varProp", expressions2[6].asSafely<UUnaryExpression>()!!.operand.tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "++varProp (operator)",
-        expressions2[6].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>(),
-      )
+      appendInfo("++varProp (operator)", expressions2[6].asSafely<UUnaryExpression>()!!.resolveOperator().asSafely<PsiMethod>())
 
       appendInfo("varProp", expressions2[7].tryResolve().asSafely<PsiMethod>())
 
       appendInfo("propWithGetter", expressions2[8].tryResolve().asSafely<PsiMethod>())
 
-      appendInfo(
-        "mutableListProp += \"a\"",
-        expressions2[9]
-          .asSafely<UBinaryExpression>()!!
-          .leftOperand
-          .tryResolve()
-          .asSafely<PsiMethod>(),
-      )
+      appendInfo("mutableListProp += \"a\"", expressions2[9].asSafely<UBinaryExpression>()!!.leftOperand.tryResolve().asSafely<PsiMethod>())
 
       appendInfo(
         "mutableListProp += \"a\" (operator)",
@@ -3575,322 +3454,322 @@ class OtherClass : LibClass()
 
     assertEquals(
       """
-Info for: libGlobalMethod()
-method?.name: libGlobalMethod
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
-method?.returnType?.canonicalText: int
-params:
+      Info for: libGlobalMethod()
+      method?.name: libGlobalMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: libGlobalMethod(1)
-method?.name: libGlobalMethod
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
-method?.returnType?.canonicalText: int
-params: a: int
+      Info for: libGlobalMethod(1)
+      method?.name: libGlobalMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod
+      method?.returnType?.canonicalText: int
+      params: a: int
 
-Info for: libGlobalMethod2(1)
-method?.name: libGlobalMethod2
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod2
-method?.returnType?.canonicalText: int
-params: a: int
+      Info for: libGlobalMethod2(1)
+      method?.name: libGlobalMethod2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}libGlobalMethod2
+      method?.returnType?.canonicalText: int
+      params: a: int
 
-Info for: globalProperty
-method?.name: getGlobalProperty
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-method?.returnType?.canonicalText: int
-params:
+      Info for: globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: 1.globalProperty
-method?.name: getGlobalProperty
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-method?.returnType?.canonicalText: java.lang.String
-params: ${'$'}this${'$'}globalProperty: int
+      Info for: 1.globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: java.lang.String
+      params: ${'$'}this${'$'}globalProperty: int
 
-Info for: "".globalProperty
-method?.name: getGlobalProperty
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
-method?.returnType?.canonicalText: int
-params: ${'$'}this${'$'}globalProperty: java.lang.String
+      Info for: "".globalProperty
+      method?.name: getGlobalProperty
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}globalProperty: java.lang.String
 
-Info for: globalProperty2
-method?.name: getGlobalProperty2
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty2
-method?.returnType?.canonicalText: int
-params:
+      Info for: globalProperty2
+      method?.name: getGlobalProperty2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.Facade${'$'}globalProperty2
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LIB_CONST
-field?.containingClass?.qualifiedName: com.klib.Facade${'$'}LIB_CONST
-field?.type?.canonicalText: java.lang.String
-field?.hasModifierProperty("private"): false
-field?.hasModifierProperty("public"): true
+      Info for: LIB_CONST
+      field?.containingClass?.qualifiedName: com.klib.Facade${'$'}LIB_CONST
+      field?.type?.canonicalText: java.lang.String
+      field?.hasModifierProperty("private"): false
+      field?.hasModifierProperty("public"): true
 
-Info for: LibClass()
-method?.name: LibClass
-method?.isConstructor: true
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: null
-params:
-UCallExpression.classReference: null
+      Info for: LibClass()
+      method?.name: LibClass
+      method?.isConstructor: true
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: null
+      params:
+      UCallExpression.classReference: com.klib.LibClass
 
-Info for: containingClass:
-cls?.supers?.joinToString():
-cls?.superTypes?.joinToString(): PsiType:Object
-cls?.superClass: null
-cls?.superClassType: PsiType:Object
+      Info for: containingClass:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-Info for: +c
-method?.name: unaryPlus
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: com.klib.LibClass
-params:
+      Info for: +c
+      method?.name: unaryPlus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: com.klib.LibClass
+      params:
 
-Info for: LibClass.companionFunc()
-method?.name: companionFunc
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.companionFunc()
+      method?.name: companionFunc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LibClass.companionProp
-method?.name: getCompanionProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.companionProp
+      method?.name: getCompanionProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LibClass.Companion:
-cls?.supers?.joinToString():
-cls?.superTypes?.joinToString(): PsiType:Object
-cls?.superClass: null
-cls?.superClassType: PsiType:Object
+      Info for: LibClass.Companion:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-Info for: LibClass.Companion.companionFunc()
-method?.name: companionFunc
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.Companion.companionFunc()
+      method?.name: companionFunc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LibClass.Companion.companionProp
-method?.name: getCompanionProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.Companion.companionProp
+      method?.name: getCompanionProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.Companion
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LibClass.LibClassObject:
-cls?.supers?.joinToString():
-cls?.superTypes?.joinToString(): PsiType:Object
-cls?.superClass: null
-cls?.superClassType: PsiType:Object
+      Info for: LibClass.LibClassObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-Info for: LibClass.LibClassObject.func()
-method?.name: func
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.LibClassObject.func()
+      method?.name: func
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: LibClass.LibClassObject.prop
-method?.name: getProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
-method?.returnType?.canonicalText: int
-params:
+      Info for: LibClass.LibClassObject.prop
+      method?.name: getProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass.LibClassObject
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: MyFirstObject:
-cls?.supers?.joinToString():
-cls?.superTypes?.joinToString(): PsiType:Object
-cls?.superClass: null
-cls?.superClassType: PsiType:Object
+      Info for: MyFirstObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-Info for: MyFirstObject.bar()
-method?.name: bar
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.MyFirstObject
-method?.returnType?.canonicalText: long
-params:
+      Info for: MyFirstObject.bar()
+      method?.name: bar
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject
+      method?.returnType?.canonicalText: long
+      params:
 
-Info for: MyFirstObject.MySecondObject:
-cls?.supers?.joinToString():
-cls?.superTypes?.joinToString(): PsiType:Object
-cls?.superClass: null
-cls?.superClassType: PsiType:Object
+      Info for: MyFirstObject.MySecondObject:
+      cls?.supers?.joinToString():
+      cls?.superTypes?.joinToString(): PsiType:Object
+      cls?.superClass: null
+      cls?.superClassType: PsiType:Object
 
-Info for: MyFirstObject.MySecondObject.prop
-method?.name: getProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
-method?.returnType?.canonicalText: int
-params:
+      Info for: MyFirstObject.MySecondObject.prop
+      method?.name: getProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: MyFirstObject.MySecondObject.foo()
-method?.name: foo
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
-method?.returnType?.canonicalText: int
-params:
+      Info for: MyFirstObject.MySecondObject.foo()
+      method?.name: foo
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.MyFirstObject.MySecondObject
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: ProtocolState.WAITING
-field?.containingClass?.qualifiedName: com.klib.ProtocolState
-field?.type?.canonicalText: com.klib.ProtocolState
-field?.hasModifierProperty("private"): false
-field?.hasModifierProperty("public"): true
+      Info for: ProtocolState.WAITING
+      field?.containingClass?.qualifiedName: com.klib.ProtocolState
+      field?.type?.canonicalText: com.klib.ProtocolState
+      field?.hasModifierProperty("private"): false
+      field?.hasModifierProperty("public"): true
 
-Info for: 1.valProp
-method?.name: getValProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params: ${'$'}this${'$'}valProp: int
+      Info for: 1.valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}valProp: int
 
-Info for: "".valProp
-method?.name: getValProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params: ${'$'}this${'$'}valProp: java.lang.String
+      Info for: "".valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: ${'$'}this${'$'}valProp: java.lang.String
 
-Info for: valProp
-method?.name: getValProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params:
+      Info for: valProp
+      method?.name: getValProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: varProp = 2
-method?.name: setVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: void
-params: <set-?>: int
+      Info for: varProp = 2
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-Info for: varProp = 2 (operator)
-method?.name: setVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: void
-params: <set-?>: int
+      Info for: varProp = 2 (operator)
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-Info for: varProp += 2
-method?.name: setVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: void
-params: <set-?>: int
+      Info for: varProp += 2
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-Info for: varProp += 2 (operator)
-method?.name: plus
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: kotlin.Int
-method?.returnType?.canonicalText: int
-params: other: int
+      Info for: varProp += 2 (operator)
+      method?.name: plus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params: other: int
 
-Info for: varProp--
-method?.name: setVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: void
-params: <set-?>: int
+      Info for: varProp--
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-Info for: varProp-- (operator)
-method?.name: dec
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: kotlin.Int
-method?.returnType?.canonicalText: int
-params:
+      Info for: varProp-- (operator)
+      method?.name: dec
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: ++varProp
-method?.name: setVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: void
-params: <set-?>: int
+      Info for: ++varProp
+      method?.name: setVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: void
+      params: <set-?>: int
 
-Info for: ++varProp (operator)
-method?.name: inc
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: kotlin.Int
-method?.returnType?.canonicalText: int
-params:
+      Info for: ++varProp (operator)
+      method?.name: inc
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Int
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: varProp
-method?.name: getVarProp
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params:
+      Info for: varProp
+      method?.name: getVarProp
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: propWithGetter
-method?.name: getPropWithGetter
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params:
+      Info for: propWithGetter
+      method?.name: getPropWithGetter
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: mutableListProp += "a"
-method?.name: null
-method?.isConstructor: null
-method?.containingClass?.qualifiedName: null
-method?.returnType?.canonicalText: null
-params: null
+      Info for: mutableListProp += "a"
+      method?.name: null
+      method?.isConstructor: null
+      method?.containingClass?.qualifiedName: null
+      method?.returnType?.canonicalText: null
+      params: null
 
-Info for: mutableListProp += "a" (operator)
-method?.name: plus
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: kotlin.Facade${'$'}plus
-method?.returnType?.canonicalText: java.lang.String
-params: ${'$'}this${'$'}plus: java.lang.String, other: java.lang.Object
+      Info for: mutableListProp += "a" (operator)
+      method?.name: plus
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: kotlin.Facade${'$'}plus
+      method?.returnType?.canonicalText: java.lang.String
+      params: ${'$'}this${'$'}plus: java.lang.String, other: java.lang.Object
 
-Info for: propWithField
-method?.name: getPropWithField
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params:
+      Info for: propWithField
+      method?.name: getPropWithField
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params:
 
-Info for: libMethod(1)
-method?.name: libMethod
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: int
-params: arg: int
+      Info for: libMethod(1)
+      method?.name: libMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: int
+      params: arg: int
 
-Info for: libMethod(1L)
-method?.name: libMethod
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: long
-params: arg: long
+      Info for: libMethod(1L)
+      method?.name: libMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: long
+      params: arg: long
 
-Info for: libMethod2(1L)
-method?.name: libMethod2
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: long
-params: arg: long
+      Info for: libMethod2(1L)
+      method?.name: libMethod2
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: long
+      params: arg: long
 
-Info for: libMethod3(arrayOf(1L))
-method?.name: libMethod3
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: java.lang.Long[]
-params: arg: java.lang.Long[]
+      Info for: libMethod3(arrayOf(1L))
+      method?.name: libMethod3
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: java.lang.Long[]
+      params: arg: java.lang.Long[]
 
-Info for: libGenericMethod(1)
-method?.name: libGenericMethod
-method?.isConstructor: false
-method?.containingClass?.qualifiedName: com.klib.LibClass
-method?.returnType?.canonicalText: T[]
-params: arg: T
-"""
+      Info for: libGenericMethod(1)
+      method?.name: libGenericMethod
+      method?.isConstructor: false
+      method?.containingClass?.qualifiedName: com.klib.LibClass
+      method?.returnType?.canonicalText: T[]
+      params: arg: T
+      """
         .trimIndent(),
       sourceWithKlibInfo,
     )
@@ -4034,14 +3913,7 @@ params: arg: T
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "SetAndClearCommunicationDevice",
-        "--project",
-        descriptorFile.path,
-        "--config",
-        configFile.path,
-      ),
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
       null,
       { driver, type, project, context ->
         when (type) {
@@ -4162,14 +4034,7 @@ params: arg: T
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "SetAndClearCommunicationDevice",
-        "--project",
-        descriptorFile.path,
-        "--config",
-        configFile.path,
-      ),
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
       null,
       { driver, type, project, context ->
         when (type) {
@@ -4284,14 +4149,7 @@ params: arg: T
       ERRNO_SUCCESS,
 
       // Args
-      arrayOf(
-        "--check",
-        "SetAndClearCommunicationDevice",
-        "--project",
-        descriptorFile.path,
-        "--config",
-        configFile.path,
-      ),
+      arrayOf("--check", "SetAndClearCommunicationDevice", "--project", descriptorFile.path, "--config", configFile.path),
       null,
       { driver, type, project, context ->
         when (type) {
@@ -4424,14 +4282,7 @@ params: arg: T
       // Args
       // These checks are chosen to get a scope that includes JAVA_FILE, MANIFEST, and
       // RESOURCE_FILE (the values folders), and with no extra phases requested.
-      arrayOf(
-        "--check",
-        "ButtonOrder,ShortAlarm",
-        "--project",
-        descriptorFile.path,
-        "--config",
-        configFile.path,
-      ),
+      arrayOf("--check", "ButtonOrder,ShortAlarm", "--project", descriptorFile.path, "--config", configFile.path),
       null,
       { driver, type, project, context ->
         when (type) {
@@ -4486,7 +4337,7 @@ params: arg: T
                 val name: String
             }
             expect fun getPlatform(): Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4496,7 +4347,7 @@ params: arg: T
             class Greeting {
                 private val platform: Platform = getPlatform()
             }
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4507,7 +4358,7 @@ params: arg: T
                 override val name: String = "Android 34"
             }
             actual fun getPlatform(): Platform = AndroidPlatform()
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4519,7 +4370,7 @@ params: arg: T
                 override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
             }
             actual fun getPlatform(): Platform = IOSPlatform()
-          """
+            """
               .trimIndent(),
           ),
           klib(
@@ -4748,7 +4599,7 @@ params: arg: T
             """
             package pkg
             expect fun getPlatform() : Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4756,7 +4607,7 @@ params: arg: T
             """
             package pkg
             actual fun getPlatform() = TODO()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -4795,7 +4646,7 @@ params: arg: T
                     }
                 }
             }
-          """
+            """
               .trimIndent(),
           ),
           source(
@@ -4811,7 +4662,7 @@ params: arg: T
                 }
               }
             }
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -4898,7 +4749,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 val name: String
             }
             expect fun getPlatform(): Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4908,7 +4759,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             class Greeting {
                 private val platform: Platform = getPlatform()
             }
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4919,7 +4770,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 override val name: String = "Android 34"
             }
             actual fun getPlatform(): Platform = AndroidPlatform()
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -4931,7 +4782,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
             }
             actual fun getPlatform(): Platform = IOSPlatform()
-          """
+            """
               .trimIndent(),
           ),
           klib(
@@ -5160,7 +5011,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             expect fun getPlatform() : Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5168,7 +5019,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             actual fun getPlatform() = TODO()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5207,7 +5058,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                     }
                 }
             }
-          """
+            """
               .trimIndent(),
           ),
           source(
@@ -5223,7 +5074,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
               }
             }
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5303,10 +5154,12 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
     val shared =
       project(
           // TODO
-          //   Here we leave `androidMain/.../Platform.kt` out of the klib because `kotlinc-native`
+          //   Here we leave `androidMain/.../Platform.kt` out of the klib because
+          // `kotlinc-native`
           //   gives an error on conflicting overloads of `actual fun getPlatform()`, and it's
           //   strange for the Android-specific file to be passed to `kotlinc-native`.
-          //   If we have neither, `kotlinc-native` will complain that there's no corresponding
+          //   If we have neither, `kotlinc-native` will complain that there's no
+          // corresponding
           //   `actual` to the `expect`.
           klib(
             "build/common.klib",
@@ -5375,33 +5228,33 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             kt(
               "src/commonMain/kotlin/pkg/Platform.kt",
               """
-            package pkg
-            interface Platform {
-                val name: String
-            }
-            expect fun getPlatform(): Platform
-          """
+              package pkg
+              interface Platform {
+                  val name: String
+              }
+              expect fun getPlatform(): Platform
+              """
                 .trimIndent(),
             ),
             kt(
               "src/commonMain/kotlin/pkg/Greeting.kt",
               """
-            package pkg
-            class Greeting {
-                private val platform: Platform = getPlatform()
-            }
-          """
+              package pkg
+              class Greeting {
+                  private val platform: Platform = getPlatform()
+              }
+              """
                 .trimIndent(),
             ),
             kt(
               "src/iosMain/kotlin/pkg/Platform.kt",
               """
-            package pkg
-            class IOSPlatform: Platform {
-                override val name: String = "iOS platform name"
-            }
-            actual fun getPlatform(): Platform = IOSPlatform()
-          """
+              package pkg
+              class IOSPlatform: Platform {
+                  override val name: String = "iOS platform name"
+              }
+              actual fun getPlatform(): Platform = IOSPlatform()
+              """
                 .trimIndent(),
             ),
           ),
@@ -5413,7 +5266,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 override val name: String = "Android 34"
             }
             actual fun getPlatform(): Platform = AndroidPlatform()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5576,7 +5429,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             expect fun getPlatform() : Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5584,7 +5437,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             actual fun getPlatform() = TODO()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5623,7 +5476,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                     }
                 }
             }
-          """
+            """
               .trimIndent(),
           ),
           source(
@@ -5639,7 +5492,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
               }
             }
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5732,7 +5585,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 val commonMain = "commonMain"
                 override fun hello() = "Hello " + commonMain + "!"
             }
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5742,7 +5595,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             class Greeting {
                 private val platform: Platform = getPlatform()
             }
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5757,7 +5610,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 override fun hello() = "Hello " + androidMain + "!"
             }
             actual fun getPlatform(): Platform = AndroidPlatform()
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5773,7 +5626,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 override fun hello() = "Hello " + iosMain + "!"
             }
             actual fun getPlatform(): Platform = IOSPlatform()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5845,7 +5698,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             expect fun getPlatform() : Platform
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5853,7 +5706,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
             """
             package pkg
             actual fun getPlatform() = TODO()
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5892,7 +5745,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                     }
                 }
             }
-          """
+            """
               .trimIndent(),
           ),
           source(
@@ -5908,7 +5761,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 }
               }
             }
-          """
+            """
               .trimIndent(),
           ),
           kt(
@@ -5918,7 +5771,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
                 val iosApp = "iosApp"
                 fun hello(str: String) = "Hello " + iosApp + "!"
             }
-          """
+            """
               .trimIndent(),
           ),
         )
@@ -5958,8 +5811,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       """
         .trimIndent()
 
-    val task =
-      lint().issues(HelloDetector.ISSUE).projects(shared, androidApp, iosApp).allowMissingSdk()
+    val task = lint().issues(HelloDetector.ISSUE).projects(shared, androidApp, iosApp).allowMissingSdk()
     val projects = task.createProjects(root)
     Files.asCharSink(File(root, "project.xml"), Charsets.UTF_8).write(descriptor)
 
@@ -5998,22 +5850,22 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       .run()
       .expect(
         """
-          ../iosApp/src/IosHello.kt:1: Warning: This class (with fields [iosApp] and methods [getIosApp, hello, IosHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-          class IosHello: pkg.Hello {
-          ^
-          src/main/java/pkg/android/MainActivity.kt:8: Warning: This class (with fields [androidApp] and methods [getAndroidApp, hello, ]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-          val androidAppHello = object : pkg.Hello {
-                                ^
-          ../shared/src/androidMain/kotlin/pkg/Platform.kt:5: Warning: This class (with fields [androidMain] and methods [getAndroidMain, hello, AndroidMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-          class AndroidMainHello: Hello {
-          ^
-          ../shared/src/iosMain/kotlin/pkg/Platform.kt:6: Warning: This class (with fields [iosMain] and methods [getIosMain, hello, IosMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-          class IosMainHello: Hello {
-          ^
-          ../shared/src/commonMain/kotlin/pkg/Platform.kt:9: Warning: This class (with fields [commonMain, INSTANCE] and methods [getCommonMain, hello, CommonMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
-          object CommonMainHello : Hello {
-          ^
-          0 errors, 5 warnings
+        ../iosApp/src/IosHello.kt:1: Warning: This class (with fields [iosApp] and methods [getIosApp, hello, IosHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class IosHello: pkg.Hello {
+        ^
+        src/main/java/pkg/android/MainActivity.kt:8: Warning: This class (with fields [androidApp] and methods [getAndroidApp, hello, ]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        val androidAppHello = object : pkg.Hello {
+                              ^
+        ../shared/src/androidMain/kotlin/pkg/Platform.kt:5: Warning: This class (with fields [androidMain] and methods [getAndroidMain, hello, AndroidMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class AndroidMainHello: Hello {
+        ^
+        ../shared/src/iosMain/kotlin/pkg/Platform.kt:6: Warning: This class (with fields [iosMain] and methods [getIosMain, hello, IosMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        class IosMainHello: Hello {
+        ^
+        ../shared/src/commonMain/kotlin/pkg/Platform.kt:9: Warning: This class (with fields [commonMain, INSTANCE] and methods [getCommonMain, hello, CommonMainHello]) shouldn't extend pkg.Hello [HelloDetectorIssue]
+        object CommonMainHello : Hello {
+        ^
+        0 errors, 5 warnings
         """
           .trimIndent()
       )
@@ -6044,8 +5896,7 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
       if (declaration.qualifiedName != commonHello) {
         val flds = declaration.fields.joinToString { (it.javaPsi as? PsiField)?.name ?: "??" }
         val mthds = declaration.methods.joinToString { it.javaPsi.name }
-        val msg =
-          "This class (with fields [$flds] and methods [$mthds]) shouldn't extend `$commonHello`"
+        val msg = "This class (with fields [$flds] and methods [$mthds]) shouldn't extend `$commonHello`"
         context.report(ISSUE, declaration, context.getLocation(declaration.javaPsi), msg)
       }
     }

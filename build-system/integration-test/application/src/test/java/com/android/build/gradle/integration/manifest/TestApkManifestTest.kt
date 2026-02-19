@@ -22,30 +22,29 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Checks AndroidManifest.xml of test APK.
- */
+/** Checks AndroidManifest.xml of test APK. */
 class TestApkManifestTest {
 
-    @get:Rule
-    val project = GradleRule.from {
-        androidApplication(":app") {
-            android {
-                defaultConfig {
-                    applicationId = "com.example.app"
-                    minSdk = 24
-                }
-            }
+  @get:Rule
+  val project =
+    GradleRule.from {
+      androidApplication(":app") {
+        android {
+          defaultConfig {
+            applicationId = "com.example.app"
+            minSdk = 24
+          }
         }
+      }
     }
 
-    @Test
-    fun `android manifest matches expected`() {
-        project.build.executor.run("assembleAndroidTest")
-        project.build.androidApplication()
-            .assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
-                manifest().isEqualTo(
-                    """
+  @Test
+  fun `android manifest matches expected`() {
+    project.build.executor.run("assembleAndroidTest")
+    project.build.androidApplication().assertApk(ApkSelector.ANDROIDTEST_DEBUG) {
+      manifest()
+        .isEqualTo(
+          """
                     N: android=http://schemas.android.com/apk/res/android
                       E: manifest
                         A: http://schemas.android.com/apk/res/android:compileSdkVersion=36
@@ -65,8 +64,9 @@ class TestApkManifestTest {
                           E: application
                             A: http://schemas.android.com/apk/res/android:debuggable=true
                             A: http://schemas.android.com/apk/res/android:extractNativeLibs=false
-                    """.trimIndent()
-                )
-            }
+                    """
+            .trimIndent()
+        )
     }
+  }
 }

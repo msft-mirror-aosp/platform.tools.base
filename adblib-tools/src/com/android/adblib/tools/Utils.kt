@@ -21,6 +21,4 @@ private val fileNameCleaner = "[^A-Za-z0-9\\-_\\.-]".toRegex()
 // If the install strategy involves invoking a shell command, the apk name should be escaped. We use
 // an allow list because users are creating exotic apk name using' ' character or
 // even '(', ')'.
-internal fun sanitizeApkName(filename : String) : String =
-    fileNameCleaner.replace(filename, "_")
-
+internal fun sanitizeApkName(filename: String): String = fileNameCleaner.replace(filename, "_")

@@ -41,8 +41,7 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
 
     if (statement == "getDefaultProguardFile") {
       if (
-        unnamedArguments.any { it.contains("proguard-android.txt") } ||
-          namedArguments.values.any { it.contains("proguard-android.txt") }
+        unnamedArguments.any { it.contains("proguard-android.txt") } || namedArguments.values.any { it.contains("proguard-android.txt") }
       ) {
         val incident =
           Incident(
@@ -50,11 +49,7 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
             cookie,
             context.getLocation(cookie),
             "Avoid `getDefaultProguardFile('proguard-android.txt')`",
-            fix()
-              .replace()
-              .pattern("proguard-android.txt")
-              .with("proguard-android-optimize.txt")
-              .build(),
+            fix().replace().pattern("proguard-android.txt").with("proguard-android-optimize.txt").build(),
           )
         context.client.report(context, incident)
       }
@@ -76,8 +71,7 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
         priority = 2,
         severity = Severity.WARNING,
         implementation = Implementation(ProguardAndroidTxtDetector::class.java, Scope.GRADLE_SCOPE),
-        moreInfo =
-          "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
+        moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
         androidSpecific = true,
       )
   }

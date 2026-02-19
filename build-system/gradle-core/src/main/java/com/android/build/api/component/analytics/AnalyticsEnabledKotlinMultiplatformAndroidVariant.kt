@@ -18,11 +18,10 @@ package com.android.build.api.component.analytics
 
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
-import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
+import org.gradle.api.model.ObjectFactory
 
-open class AnalyticsEnabledKotlinMultiplatformAndroidVariant @Inject constructor(
-    override val delegate: KotlinMultiplatformAndroidVariant,
-    stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-): AnalyticsEnabledLibraryVariant(delegate, stats, objectFactory), KotlinMultiplatformAndroidVariant
+open class AnalyticsEnabledKotlinMultiplatformAndroidVariant
+@Inject
+constructor(override val delegate: KotlinMultiplatformAndroidVariant, stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) :
+  AnalyticsEnabledLibraryVariant(delegate, stats, objectFactory), KotlinMultiplatformAndroidVariant

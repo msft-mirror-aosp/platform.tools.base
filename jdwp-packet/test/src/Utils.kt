@@ -20,20 +20,13 @@ import org.junit.Assert
  * limitations under the License.
  */
 
-internal fun assertJDWPObjectAndWireEquals(
-  packetable: Packetable,
-  parser: (messageReader: MessageReader) -> Packetable,
-) {
+internal fun assertJDWPObjectAndWireEquals(packetable: Packetable, parser: (messageReader: MessageReader) -> Packetable) {
   val idSizes = IDSizes()
   val id = 1234567890
 
   // Generate expected serialized bytebuffer
   val expectedBytes = packetable.toPacket(id, idSizes)
-  Assert.assertEquals(
-    "Packet bytebuffer was overallocated",
-    expectedBytes.limit(),
-    expectedBytes.remaining(),
-  )
+  Assert.assertEquals("Packet bytebuffer was overallocated", expectedBytes.limit(), expectedBytes.remaining())
 
   // Parse and serialize again to generate actual bytebuffer
   val reader = MessageReader(idSizes, expectedBytes.duplicate())

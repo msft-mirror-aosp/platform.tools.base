@@ -20,7 +20,6 @@ import com.android.annotations.concurrency.Slow
 import com.android.annotations.concurrency.UiThread
 import com.android.annotations.concurrency.WorkerThread
 import com.android.tools.lint.checks.ThreadConstraintDetector
-import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.checks.fx.get
 import com.android.tools.lint.checks.fx.invoke
@@ -61,10 +60,9 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
   /**
    * Thread groups we track in the Android Studio code base.
    *
-   * As far as thread compatibility is concerned, `@Slow` and `@WorkerThread` are equivalent, so
-   * they have the same internal representation, simplifying a preorder to a partial order. UX wise,
-   * a small price we're currently paying is that when reporting errors back to the user, we're
-   * displaying `@{Slow,WorkerThread}` instead of the exact one that they originally write.
+   * As far as thread compatibility is concerned, `@Slow` and `@WorkerThread` are equivalent, so they have the same internal representation,
+   * simplifying a preorder to a partial order. UX wise, a small price we're currently paying is that when reporting errors back to the
+   * user, we're displaying `@{Slow,WorkerThread}` instead of the exact one that they originally write.
    */
   enum class Thread {
     Ui,
@@ -79,8 +77,7 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
 
   companion object {
 
-    private val Impl =
-      Implementation(IntellijInferredThreadDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val Impl = Implementation(IntellijInferredThreadDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val THREAD =
@@ -136,9 +133,7 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
           run {
             virtual<Runnable>(Application::invokeLater) assumedAs
               forAll<Runnable> { runnable ->
-                given(Application::class(), runnable) {
-                  constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
-                }
+                given(Application::class(), runnable) { constraint += runnable[Runnable::run] to lattice.of(Thread.Ui) }
               }
             virtual<_, Condition<*>>(Application::invokeLater) assumedAs
               forAll<Runnable> { runnable ->
@@ -154,12 +149,7 @@ class IntellijInferredThreadDetector : ThreadConstraintDetector<Thread>(lattice,
               }
             virtual<_, _, _>(Application::invokeLater) assumedAs
               forAll<Runnable> { runnable ->
-                given(
-                  Application::class(),
-                  runnable,
-                  ModalityState::class(),
-                  Condition::class(Type.WildCard),
-                ) {
+                given(Application::class(), runnable, ModalityState::class(), Condition::class(Type.WildCard)) {
                   constraint += runnable[Runnable::run] to lattice.of(Thread.Ui)
                 }
               }

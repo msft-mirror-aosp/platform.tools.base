@@ -22,9 +22,8 @@ import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.TestBuildType
 
 /**
- * To appease the groovy dynamic method dispatch so that
- * initWith with an instance of the Gradle decorated [BuildType]_Decorated can be passed to
- * initWith in groovy (finding `fun initWith(that: InternalBuildType): BuildType`)
+ * To appease the groovy dynamic method dispatch so that initWith with an instance of the Gradle decorated [BuildType]_Decorated can be
+ * passed to initWith in groovy (finding `fun initWith(that: InternalBuildType): BuildType`)
  *
  * ```
  * Tooling Model       New DSL API
@@ -35,12 +34,8 @@ import com.android.build.api.dsl.TestBuildType
  *        ...._Decorated (Gradle decorated subclass)
  * ```
  *
- * I'm not sure why, but the groovy dispatch can't handle disambiguating the three methods when
- * InternalBuildType is a class, but can when everything is an interface.
+ * I'm not sure why, but the groovy dispatch can't handle disambiguating the three methods when InternalBuildType is a class, but can when
+ * everything is an interface.
  */
 interface InternalBuildType :
-    ApplicationBuildType,
-    LibraryBuildType,
-    DynamicFeatureBuildType,
-    TestBuildType,
-    com.android.builder.model.BuildType
+  ApplicationBuildType, LibraryBuildType, DynamicFeatureBuildType, TestBuildType, com.android.builder.model.BuildType

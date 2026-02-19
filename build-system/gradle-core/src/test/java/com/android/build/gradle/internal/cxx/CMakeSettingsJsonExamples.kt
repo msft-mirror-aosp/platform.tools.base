@@ -40,47 +40,53 @@ import com.android.build.gradle.internal.cxx.settings.Macro.NDK_PLATFORM_SYSTEM_
 import com.android.build.gradle.internal.cxx.settings.Macro.NDK_VARIANT_NAME
 import com.android.build.gradle.internal.cxx.settings.Macro.NDK_VARIANT_OPTIMIZATION_TAG
 
-/**
- * Examples of CMakeSettings.json files that are parsable.
- */
-val PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN = listOf(
+/** Examples of CMakeSettings.json files that are parsable. */
+val PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN =
+  listOf(
     // Simple GOMA configuration
-    """{
-      "configurations": [{
-        "name": "android-gradle-plugin-predetermined-name",
-        "description": "Remote Build",
-        "inheritEnvironments": ["ndk"],
-        "buildCommandArgs": "-j 100",
-        "variables": [{
-          "name": "CMAKE_CXX_COMPILER_LAUNCHER",
-          "value": "gomacc"
-        }]
-      }]
-    }""".trimIndent(),
+    """
+    {
+          "configurations": [{
+            "name": "android-gradle-plugin-predetermined-name",
+            "description": "Remote Build",
+            "inheritEnvironments": ["ndk"],
+            "buildCommandArgs": "-j 100",
+            "variables": [{
+              "name": "CMAKE_CXX_COMPILER_LAUNCHER",
+              "value": "gomacc"
+            }]
+          }]
+        }
+    """
+      .trimIndent(),
     // cmakeToolchain disagrees with CMAKE_TOOLCHAIN_FILE
-    """{
-          "configurations": [{
-            "name": "android-gradle-plugin-predetermined-name",
-            "inheritEnvironments": ["ndk"],
-            "cmakeToolchain": "toolchain1.cmake",
-            "variables": [
-              {"name": "CMAKE_TOOLCHAIN_FILE", "value": "toolchain2.cmake"}
-            ]
-          }]
-        }
-    """.trimIndent(),
+    """
+    {
+              "configurations": [{
+                "name": "android-gradle-plugin-predetermined-name",
+                "inheritEnvironments": ["ndk"],
+                "cmakeToolchain": "toolchain1.cmake",
+                "variables": [
+                  {"name": "CMAKE_TOOLCHAIN_FILE", "value": "toolchain2.cmake"}
+                ]
+              }]
+            }
+    """
+      .trimIndent(),
     // configurationType disagrees with CMAKE_BUILD_TYPE
-    """{
-          "configurations": [{
-            "name": "android-gradle-plugin-predetermined-name",
-            "inheritEnvironments": ["ndk"],
-            "configurationType": "Debug",
-            "variables": [
-              {"name": "CMAKE_BUILD_TYPE", "value": "Release"}
-            ]
-          }]
-        }
-    """.trimIndent(),
+    """
+    {
+              "configurations": [{
+                "name": "android-gradle-plugin-predetermined-name",
+                "inheritEnvironments": ["ndk"],
+                "configurationType": "Debug",
+                "variables": [
+                  {"name": "CMAKE_BUILD_TYPE", "value": "Release"}
+                ]
+              }]
+            }
+    """
+      .trimIndent(),
     """{
           "environments": [{
             "environment": "ndk-setup",
@@ -99,7 +105,8 @@ val PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN = listOf(
             ]
           }]
         }
-    """.trimIndent(),
+    """
+      .trimIndent(),
     """
         {
             "configurations": [{
@@ -134,5 +141,6 @@ val PARSABLE_CMAKE_SETTINGS_JSON_DOMAIN = listOf(
                 "inheritEnvironments": ["ndk"],
                 "buildRoot": "project-build-root/${NDK_ABI.ref}"
             } ]
-        }""".trimIndent()
-)
+        }"""
+      .trimIndent(),
+  )

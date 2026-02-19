@@ -37,13 +37,7 @@ val aiGlassesActivityTemplate
     name = "Basic AI Glasses Activity"
     description = "Creates a new basic AI glasses activity"
     minApi = 30
-    constraints =
-      listOf(
-        TemplateConstraint.AndroidX,
-        TemplateConstraint.Kotlin,
-        TemplateConstraint.Material3,
-        TemplateConstraint.Compose,
-      )
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Activity
     formFactor = FormFactor.AiGlasses
@@ -64,7 +58,5 @@ val aiGlassesActivityTemplate
 
     thumb { File("ai-glasses-activity").resolve("template_ai_glasses_activity.png") }
 
-    recipe = { data: TemplateData ->
-      aiGlassesActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value)
-    }
+    recipe = { data: TemplateData -> aiGlassesActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value) }
   }

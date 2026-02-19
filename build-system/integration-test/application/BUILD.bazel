@@ -37,13 +37,13 @@ TEST_DEPS = [
     "@maven//:com.android.tools.smali.smali-dexlib2",
     "@maven//:com.google.code.gson.gson",
     "@maven//:com.google.devtools.ksp.symbol-processing-gradle-plugin",
-    "@maven//:com.google.testing.platform.core-proto",
     "@maven//:commons-io.commons-io",
     "@maven//:org.codehaus.groovy.groovy-all",
     "@maven//:org.jetbrains.dokka.dokka-core",
     "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin",
     "@maven//:org.jetbrains.kotlin.kotlin-test",
+    "@maven//:org.junit.platform.junit-platform-launcher",
     "@maven//:org.mockito.mockito-core",
     "@maven//:org.ow2.asm.asm",
     "@maven//:org.ow2.asm.asm-tree",
@@ -240,7 +240,7 @@ CONNECTED_TESTS = [
     "src/test/java/com/android/build/gradle/integration/testing/ConnectedCheckTest.java",
 ]
 
-CHECK_ALL_SOURCES = ["src/test/java/**/CheckAll.java"]
+CHECK_ALL_SOURCES = ["src/automaticTest/java/**/CheckAll.java"]
 
 # Creates separate target for each source
 single_gradle_integration_test_per_source(
@@ -406,8 +406,9 @@ COMPOSE_TESTS = [
     "src/test/java/com/android/build/gradle/integration/compose/**",
 ]
 
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "compose-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     srcs = glob(
         include = COMPOSE_TESTS,
     ),
@@ -423,7 +424,6 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
         "//tools/base/build-system/integration-test:compose_gradle_plugin",
     ],
-    shard_count = 2,
     deps = TEST_DEPS,
 )
 
@@ -451,17 +451,29 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+PACKAGING_FIXTURE = [
+    "src/test/java/com/android/build/gradle/integration/packaging/PackagingTestUtil.kt",
+]
+
+kotlin_library(
+    name = "packaging_fixture",
+    srcs = PACKAGING_FIXTURE,
+    deps = TEST_DEPS,
+)
+
+single_gradle_integration_test_per_source(
     name = "packaging-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/packaging/*.java",
             "src/test/java/com/android/build/gradle/integration/packaging/*.kt",
         ],
-        exclude = CONNECTED_TESTS,
+        exclude = CONNECTED_TESTS + PACKAGING_FIXTURE,
     ),
     data = TEST_DATA + OLD_SDKS,
+    friends = [":packaging_fixture"],
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
     ],
@@ -474,8 +486,7 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 8,
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [":packaging_fixture"],
 )
 
 maven_repository(
@@ -500,8 +511,10 @@ maven_repository(
     visibility = [":__subpackages__"],
 )
 
-gradle_integration_test(
-    name = "built-in-kotlin-support-tests",
+# built-in Kotlin tests (name shortened to avoid issues on Windows)
+single_gradle_integration_test_per_source(
+    name = "kotlin-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/kotlin/*.java",
@@ -528,7 +541,6 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 7,
     deps = TEST_DEPS,
 )
 
@@ -550,13 +562,14 @@ gradle_integration_test(
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
-    name = "dependencies-tests",
+single_gradle_integration_test_per_source(
+    name = "deps-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
-            "src/test/java/com/android/build/gradle/integration/dependencies/*.java",
-            "src/test/java/com/android/build/gradle/integration/dependencies/*.kt",
+            "src/test/java/com/android/build/gradle/integration/dependencies/**/*.java",
+            "src/test/java/com/android/build/gradle/integration/dependencies/**/*.kt",
         ],
         exclude = CONNECTED_TESTS,
     ),
@@ -573,93 +586,12 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 4,
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
-    name = "app-dependencies-tests",
-    timeout = "long",
-    srcs = glob(
-        [
-            "src/test/java/com/android/build/gradle/integration/dependencies/app/*.java",
-            "src/test/java/com/android/build/gradle/integration/dependencies/app/*.kt",
-        ],
-        exclude = CONNECTED_TESTS,
-    ),
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test:androidx_latest",
-        "//tools/base/build-system/integration-test:support_library_latest",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-    ],
-    resources = glob(["src/test/resources/**"]),
-    shard_count = 4,
-    deps = TEST_DEPS,
-)
-
-gradle_integration_test(
-    name = "lib-dependencies-tests",
-    timeout = "long",
-    srcs = glob(
-        [
-            "src/test/java/com/android/build/gradle/integration/dependencies/lib/*.java",
-            "src/test/java/com/android/build/gradle/integration/dependencies/lib/*.kt",
-        ],
-        exclude = CONNECTED_TESTS,
-    ),
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test:androidx_latest",
-        "//tools/base/build-system/integration-test:support_library_latest",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-    ],
-    resources = glob(["src/test/resources/**"]),
-    shard_count = 2,
-    deps = TEST_DEPS,
-)
-
-gradle_integration_test(
-    name = "test-dependencies-tests",
-    timeout = "long",
-    srcs = glob(
-        [
-            "src/test/java/com/android/build/gradle/integration/dependencies/test/*.java",
-            "src/test/java/com/android/build/gradle/integration/dependencies/test/*.kt",
-        ],
-        exclude = CONNECTED_TESTS,
-    ),
-    data = TEST_DATA,
-    maven_repo_zips = [
-        "//tools/base/build-system:android_gradle_plugin",
-    ],
-    maven_repos = [
-        "//tools/base/build-system:gradle-runtime-maven",
-        "//tools/base/build-system:android_gradle_plugin_runtime_dependencies",
-        "//tools/base/build-system/integration-test:androidx_latest",
-        "//tools/base/build-system/integration-test:support_library_latest",
-        "//tools/base/build-system/integration-test:kotlin_gradle_plugin_prebuilts",
-        "//tools/base/build-system/integration-test/application:prebuilts",
-    ],
-    resources = glob(["src/test/resources/**"]),
-    shard_count = 2,
-    deps = TEST_DEPS,
-)
-
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "library-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = glob(
         [
@@ -684,12 +616,12 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 6,
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+single_gradle_integration_test_per_source(
     name = "r8-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/r8/*.kt",
@@ -711,15 +643,34 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    shard_count = 4,
     deps = TEST_DEPS,
 )
 
-gradle_integration_test(
+kotlin_library(
+    name = "fused_library_testing_utils_lib",
+    srcs = ["src/test/java/com/android/build/gradle/integration/fusedlibrary/FusedLibraryTestingUtils.kt"],
+    visibility = ["//tools/base/build-system/integration-test/application:__subpackages__"],
+    deps = [
+        "//tools/base/build-system:gradle-api",
+        "//tools/base/build-system/gradle-common-api",
+        "//tools/base/build-system/integration-test/framework",
+        "//tools/base/common:tools.common",
+        "@maven//:com.google.guava.guava",
+        "@maven//:com.google.truth.truth",
+        "@maven//:junit.junit",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+)
+
+single_gradle_integration_test_per_source(
     name = "fused-library-tests",
+    package_name = "tools/base/build-system/integration-test/application",
     srcs = glob(
         [
             "src/test/java/com/android/build/gradle/integration/fusedlibrary/*.kt",
+        ],
+        exclude = [
+            "src/test/java/com/android/build/gradle/integration/fusedlibrary/FusedLibraryTestingUtils.kt",
         ],
     ),
     data = TEST_DATA,
@@ -732,7 +683,9 @@ gradle_integration_test(
         "//tools/base/build-system/integration-test/application:prebuilts",
     ],
     resources = glob(["src/test/resources/**"]),
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [
+        ":fused_library_testing_utils_lib",
+    ],
 )
 
 gradle_integration_test(
@@ -920,7 +873,6 @@ gradle_integration_test(
         SOURCES_TO_COMPILE_TOGETHER,
     ),
     data = TEST_DATA,
-    lint_baseline = "lint_baseline_coupled_tests.xml",
     #keep sorted
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
@@ -1198,8 +1150,10 @@ maven_repository(
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.jacoco.org.jacoco.agent_0.7.4.201502262128",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.13",
+        "@maven//:org.jacoco.org.jacoco.agent_0.8.14",
         "@maven//:org.jacoco.org.jacoco.agent_0.8.7",
         "@maven//:org.jacoco.org.jacoco.ant_0.8.13",
+        "@maven//:org.jacoco.org.jacoco.ant_0.8.14",
         "@maven//:org.jacoco.org.jacoco.ant_0.8.7",
         "@maven//:org.javassist.javassist_3.26.0-GA",
         "@maven//:org.jdeferred.jdeferred-android-aar_1.2.2",
@@ -1231,8 +1185,11 @@ maven_repository(
     name = "layoutlib_prebuilts",
     artifacts = [
         "@maven//:com.android.tools.layoutlib.layoutlib-resources_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib-resources_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
         "@maven//:com.android.tools.layoutlib.layoutlib-runtime_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib-runtime_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
         "@maven//:com.android.tools.layoutlib.layoutlib_" + LAYOUTLIB_PREBUILTS_VERSION,
+        "@maven//:com.android.tools.layoutlib.layoutlib_" + LAYOUTLIB_PREBUILTS_VERSION + "-jdk17",
     ],
     visibility = ["__subpackages__"],
 )

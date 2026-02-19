@@ -1,12 +1,12 @@
 package com.android.aaptcompiler
 
-import com.android.aaptcompiler.android.ResValue
 import com.android.aapt.Resources
+import com.android.aaptcompiler.android.ResValue
 import com.android.resources.ResourceVisibility
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertFailsWith
 
 const val XML_PREAMBLE = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 
@@ -20,34 +20,31 @@ class TableExtractorTest {
   }
 
   private fun testParse(
-      input: String,
-      config: ConfigDescription = ConfigDescription(),
-      mockLogger: BlameLoggerTest.MockLogger = BlameLoggerTest.MockLogger()
+    input: String,
+    config: ConfigDescription = ConfigDescription(),
+    mockLogger: BlameLoggerTest.MockLogger = BlameLoggerTest.MockLogger(),
   ): Boolean {
     val parseInput =
       """$XML_PREAMBLE
       <resources>
       $input
       </resources>
-    """.trimIndent()
+    """
+        .trimIndent()
 
     val blameLogger = getMockBlameLogger(mockLogger)
 
-    val extractor =
-      TableExtractor(table, Source("test.xml"), config, TableExtractorOptions(), blameLogger)
+    val extractor = TableExtractor(table, Source("test.xml"), config, TableExtractorOptions(), blameLogger)
 
-      try {
-          extractor.extract(parseInput.byteInputStream())
-      } catch (e: Exception) {
-          return false
-      }
-      return true
+    try {
+      extractor.extract(parseInput.byteInputStream())
+    } catch (e: Exception) {
+      return false
+    }
+    return true
   }
 
-  private fun getValue(
-    resName: String,
-    config: ConfigDescription = ConfigDescription(),
-    productName: String = "") =
+  private fun getValue(resName: String, config: ConfigDescription = ConfigDescription(), productName: String = "") =
     getValue(table, resName, config, productName)
 
   @Test
@@ -56,13 +53,7 @@ class TableExtractorTest {
 
     val mockLogger = BlameLoggerTest.MockLogger()
 
-    val extractor =
-      TableExtractor(
-          table,
-          Source("test.xml"),
-          ConfigDescription(),
-          TableExtractorOptions(),
-          getMockBlameLogger(mockLogger))
+    val extractor = TableExtractor(table, Source("test.xml"), ConfigDescription(), TableExtractorOptions(), getMockBlameLogger(mockLogger))
 
     extractor.extract(input.byteInputStream())
     assertThat(mockLogger.errors).isEmpty()
@@ -74,45 +65,42 @@ class TableExtractorTest {
     val input = """$XML_PREAMBLE<attr name="foo"/>"""
     val mockLogger = BlameLoggerTest.MockLogger()
     val blameLogger = getMockBlameLogger(mockLogger)
-    val extractor =
-      TableExtractor(
-          table, Source("test.xml"), ConfigDescription(), TableExtractorOptions(), blameLogger)
+    val extractor = TableExtractor(table, Source("test.xml"), ConfigDescription(), TableExtractorOptions(), blameLogger)
 
-    val extractorException = assertFailsWith(Exception::class) {
-      extractor.extract(input.byteInputStream())
-    }
+    val extractorException = assertFailsWith(Exception::class) { extractor.extract(input.byteInputStream()) }
     assertThat(extractorException).isNotNull()
-    assertThat(extractorException.message)
-      .contains("Root xml element of resource table not labeled 'resources' (test.xml.rewritten:0:1:).")
+    assertThat(extractorException.message).contains("Root xml element of resource table not labeled 'resources' (test.xml.rewritten:0:1:).")
   }
 
   @Test
   fun failToParseDuplicates() {
-    val input = """
-    <attr name="foo">
-        <enum name="bar" value="0"/>
-        <enum name="bar" value="1"/>
-    </attr>
-    """.trimIndent()
+    val input =
+      """
+      <attr name="foo">
+          <enum name="bar" value="0"/>
+          <enum name="bar" value="1"/>
+      </attr>
+      """
+        .trimIndent()
 
-      val mockLogger = BlameLoggerTest.MockLogger()
-      assertThat(testParse(input, mockLogger = mockLogger)).isFalse()
-      assertThat(mockLogger.errors).hasSize(1)
-      val errorMsg = mockLogger.errors.single().first
+    val mockLogger = BlameLoggerTest.MockLogger()
+    assertThat(testParse(input, mockLogger = mockLogger)).isFalse()
+    assertThat(mockLogger.errors).hasSize(1)
+    val errorMsg = mockLogger.errors.single().first
 
-      assertThat(errorMsg).contains(
-          "test.xml.rewritten:7:1: Duplicate symbol 'id/bar' defined here:")
-      assertThat(errorMsg).contains(
-          "test.xml.rewritten:7:1:  and here:")
-      assertThat(errorMsg)
-          .contains("test.xml.rewritten:6:1")
+    assertThat(errorMsg).contains("test.xml.rewritten:7:1: Duplicate symbol 'id/bar' defined here:")
+    assertThat(errorMsg).contains("test.xml.rewritten:7:1:  and here:")
+    assertThat(errorMsg).contains("test.xml.rewritten:6:1")
   }
 
   @Test
   fun testParseBoolean() {
-    val input = """
+    val input =
+      """
       <bool name="a">true</bool>
-      <bool name="b">false</bool>""".trimIndent()
+      <bool name="b">false</bool>
+      """
+        .trimIndent()
 
     assertThat(testParse(input)).isTrue()
 
@@ -129,10 +117,12 @@ class TableExtractorTest {
 
   @Test
   fun testParseColor() {
-    val input = """
+    val input =
+      """
       <color name="a">#7fa87f</color>
       <color name="b">@android:color/black</color>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(testParse(input)).isTrue()
 
@@ -143,18 +133,18 @@ class TableExtractorTest {
 
     val colorB = getValue("color/b") as? Reference
     assertThat(colorB).isNotNull()
-    assertThat(colorB!!.name)
-      .isEqualTo(parseResourceName("android:color/black")!!.resourceName)
+    assertThat(colorB!!.name).isEqualTo(parseResourceName("android:color/black")!!.resourceName)
   }
 
   @Test
   fun parseDimen() {
     val input =
       """
-        <dimen name="a">16dp</dimen>
-        <dimen name="b">@dimen/abc_control_padding_material</dimen>
-        <item name="c" type="dimen">10%</item>
-      """.trimIndent()
+      <dimen name="a">16dp</dimen>
+      <dimen name="b">@dimen/abc_control_padding_material</dimen>
+      <item name="c" type="dimen">10%</item>
+      """
+        .trimIndent()
 
     assertThat(testParse(input)).isTrue()
 
@@ -165,8 +155,7 @@ class TableExtractorTest {
 
     val dimenB = getValue("dimen/b") as? Reference
     assertThat(dimenB).isNotNull()
-    assertThat(dimenB!!.name)
-      .isEqualTo(parseResourceName("dimen/abc_control_padding_material")!!.resourceName)
+    assertThat(dimenB!!.name).isEqualTo(parseResourceName("dimen/abc_control_padding_material")!!.resourceName)
 
     val dimenC = getValue("dimen/c") as? BinaryPrimitive
     assertThat(dimenC).isNotNull()
@@ -189,11 +178,13 @@ class TableExtractorTest {
 
   @Test
   fun testParseInteger() {
-    val input = """
+    val input =
+      """
       <integer name="a">10</integer>
       <integer name="b">0x10</integer>
       <item name="c" type="integer">0xA</item>
-    """.trimIndent()
+      """
+        .trimIndent()
 
     assertThat(testParse(input)).isTrue()
 
@@ -221,8 +212,8 @@ class TableExtractorTest {
 
   @Test
   fun testParsingNonItemId() {
-      assertThat(testParse("""<id name="foo"/>""")).isTrue()
-      assertThat(getValue("id/foo") as? Id).isNotNull()
+    assertThat(testParse("""<id name="foo"/>""")).isTrue()
+    assertThat(getValue("id/foo") as? Id).isNotNull()
   }
 
   @Test
@@ -244,57 +235,97 @@ class TableExtractorTest {
 
   @Test
   fun testParseCDataString() {
-      assertThat(testParse("""<string name="foo"><![CDATA[basic]]></string>""")).isTrue()
-      var str = getValue("string/foo") as BasicString
-      assertThat(str.toString()).isEqualTo("basic")
-      assertThat(str.untranslatables).isEmpty()
+    assertThat(testParse("""<string name="foo"><![CDATA[basic]]></string>""")).isTrue()
+    var str = getValue("string/foo") as BasicString
+    assertThat(str.toString()).isEqualTo("basic")
+    assertThat(str.untranslatables).isEmpty()
 
-      assertThat(testParse("""
-          <string name="bar"><![CDATA[<span>Try span</span>]]></string>""")).isTrue()
-      str = getValue("string/bar") as BasicString
-      assertThat(str.toString()).isEqualTo("<span>Try span</span>")
+    assertThat(
+        testParse(
+          """
+          <string name="bar"><![CDATA[<span>Try span</span>]]></string>"""
+        )
+      )
+      .isTrue()
+    str = getValue("string/bar") as BasicString
+    assertThat(str.toString()).isEqualTo("<span>Try span</span>")
 
-      // Testing multiple CDATA spans and whitespace behavior across spans.
-      assertThat(testParse("""
+    // Testing multiple CDATA spans and whitespace behavior across spans.
+    assertThat(
+        testParse(
+          """
           <string name="baz"><![CDATA[
             <t>trial</t>]]>multiple <![CDATA[ <t>trials</t>]]></string>
-      """.trimIndent())).isTrue()
-      str = getValue("string/baz") as BasicString
-      assertThat(str.toString()).isEqualTo("<t>trial</t>multiple <t>trials</t>")
+          """
+            .trimIndent()
+        )
+      )
+      .isTrue()
+    str = getValue("string/baz") as BasicString
+    assertThat(str.toString()).isEqualTo("<t>trial</t>multiple <t>trials</t>")
 
-      // Quotes are handled as expected.
-      assertThat(testParse("""
-          <string name="bat">"  <![CDATA[Let's go!]]>  "</string>
-      """.trimIndent()))
-      str = getValue("string/bat") as BasicString
-      assertThat(str.toString()).isEqualTo("  Let's go!  ")
+    // Quotes are handled as expected.
+    assertThat(
+      testParse(
+        """
+        <string name="bat">"  <![CDATA[Let's go!]]>  "</string>
+        """
+          .trimIndent()
+      )
+    )
+    str = getValue("string/bat") as BasicString
+    assertThat(str.toString()).isEqualTo("  Let's go!  ")
 
-      // Quotes are handle the same inside or out of CDATA.
-      assertThat(testParse("""
+    // Quotes are handle the same inside or out of CDATA.
+    assertThat(
+        testParse(
+          """
           <string name="bat2"><![CDATA["  Let's go!  "]]></string>
-      """.trimIndent())).isTrue()
-      str = getValue("string/bat2") as BasicString
-      assertThat(str.toString()).isEqualTo("  Let's go!  ")
+          """
+            .trimIndent()
+        )
+      )
+      .isTrue()
+    str = getValue("string/bat2") as BasicString
+    assertThat(str.toString()).isEqualTo("  Let's go!  ")
 
-      // Or across the CDATA border.
-      assertThat(testParse("""
+    // Or across the CDATA border.
+    assertThat(
+        testParse(
+          """
           <string name="bat3">" <![CDATA[ Let's go! ]]> "</string>
-      """.trimIndent())).isTrue()
-      str = getValue("string/bat3") as BasicString
-      assertThat(str.toString()).isEqualTo("  Let's go!  ")
+          """
+            .trimIndent()
+        )
+      )
+      .isTrue()
+    str = getValue("string/bat3") as BasicString
+    assertThat(str.toString()).isEqualTo("  Let's go!  ")
 
-      // Invalid xml in CDATA is okay.
-      assertThat(testParse("""
+    // Invalid xml in CDATA is okay.
+    assertThat(
+        testParse(
+          """
           <string name="bax"><![CDATA[<invalid>xml]]></string>
-      """.trimIndent())).isTrue()
-      str = getValue("string/bax") as BasicString
-      assertThat(str.toString()).isEqualTo("<invalid>xml")
+          """
+            .trimIndent()
+        )
+      )
+      .isTrue()
+    str = getValue("string/bax") as BasicString
+    assertThat(str.toString()).isEqualTo("<invalid>xml")
 
-      assertThat(testParse("""
+    assertThat(
+        testParse(
+          """
           <string name="bav"><![CDATA[\"  QUOTE TIME  \"]]></string>
-      """.trimIndent())).isTrue()
-      str = getValue("string/bav") as BasicString
-      assertThat(str.toString()).isEqualTo("\" QUOTE TIME \"")
+          """
+            .trimIndent()
+        )
+      )
+      .isTrue()
+    str = getValue("string/bav") as BasicString
+    assertThat(str.toString()).isEqualTo("\" QUOTE TIME \"")
   }
 
   @Test
@@ -312,36 +343,30 @@ class TableExtractorTest {
   @Test
   fun testParseFormattedString() {
     val mockLogger = BlameLoggerTest.MockLogger()
-    assertThat(
-        testParse("""<string name="foo">%1${"$"}d %2${"$"}s</string>""", mockLogger = mockLogger))
-        .isTrue()
+    assertThat(testParse("""<string name="foo">%1${"$"}d %2${"$"}s</string>""", mockLogger = mockLogger)).isTrue()
     assertThat(mockLogger.errors).isEmpty()
     assertThat(mockLogger.warnings).isEmpty()
 
-    assertThat(
-        testParse("""<string name="foo">%d %s</string>""", mockLogger = mockLogger)).isFalse()
+    assertThat(testParse("""<string name="foo">%d %s</string>""", mockLogger = mockLogger)).isFalse()
     assertThat(mockLogger.errors).hasSize(1)
-    assertThat(mockLogger.errors.single().first).contains(
-        "test.xml.rewritten:5:1: Multiple substitutions specified in non-positional format of " +
-                "string resource string/foo. ")
+    assertThat(mockLogger.errors.single().first)
+      .contains("test.xml.rewritten:5:1: Multiple substitutions specified in non-positional format of " + "string resource string/foo. ")
     assertThat(mockLogger.warnings).isEmpty()
-
   }
 
   @Test
   fun testParseUnformattedString() {
-      assertThat(testParse("""<string name="tested">%10</string>""")).isTrue()
+    assertThat(testParse("""<string name="tested">%10</string>""")).isTrue()
   }
 
   @Test
   fun testNonAsciiString() {
-      assertThat(testParse("""<string name="theme_light_default">डिफ़ॉल्ट</string>""")).isTrue()
+    assertThat(testParse("""<string name="theme_light_default">डिफ़ॉल्ट</string>""")).isTrue()
   }
 
   @Test
   fun testParseStyledString() {
-    val input =
-      "<string name=\"foo\">This is my aunt\u2019s <b>fickle <small>string</small></b></string>"
+    val input = "<string name=\"foo\">This is my aunt\u2019s <b>fickle <small>string</small></b></string>"
     assertThat(testParse(input)).isTrue()
 
     val str = getValue("string/foo") as StyledString
@@ -396,7 +421,7 @@ class TableExtractorTest {
     assertThat(str.toString()).isEqualTo("\n")
     assertThat(str.untranslatables).isEmpty()
 
-     assertThat(testParse("""<string name="foo3">\n\n\n\n\n\n\n\n\n</string>""")).isTrue()
+    assertThat(testParse("""<string name="foo3">\n\n\n\n\n\n\n\n\n</string>""")).isTrue()
 
     str = getValue("string/foo3") as BasicString
     assertThat(str.toString()).isEqualTo("\n\n\n\n\n\n\n\n\n")
@@ -405,14 +430,20 @@ class TableExtractorTest {
 
   @Test
   fun testParseStringWithBasicLineBreaking() {
-    assertThat(testParse("""
-    <string name="foo">
-
-          Hello
-          world
-
-
-    </string>""".trimMargin()))
+    assertThat(
+      testParse(
+        """
+        |    <string name="foo">
+        |
+        |          Hello
+        |          world
+        |
+        |
+        |    </string>
+        """
+          .trimMargin()
+      )
+    )
 
     val str = getValue("string/foo") as BasicString
     assertThat(str.toString()).isEqualTo("Hello world")
@@ -427,13 +458,18 @@ class TableExtractorTest {
     assertThat(str.toString()).isEmpty()
     assertThat(str.untranslatables).isEmpty()
 
-    assertThat(testParse("""
-        <string name="foo2">
-
-
-
-        </string>
-    """.trimMargin()))
+    assertThat(
+      testParse(
+        """
+        |        <string name="foo2">
+        |
+        |
+        |
+        |        </string>
+        """
+          .trimMargin()
+      )
+    )
 
     str = getValue("string/foo2") as BasicString
     assertThat(str.toString()).isEmpty()
@@ -466,7 +502,7 @@ class TableExtractorTest {
     assertThat(testParse("""<string name="foo3">"</string>""")).isTrue()
 
     str = getValue("string/foo3") as BasicString
-    //AAPT2 removes the single quotes, so should be empty.
+    // AAPT2 removes the single quotes, so should be empty.
     assertThat(str.toString()).isEmpty()
     assertThat(str.untranslatables).isEmpty()
   }
@@ -494,10 +530,12 @@ class TableExtractorTest {
 
   @Test
   fun testIgnoreXliffTagsOtherThanG() {
-    val input = """
+    val input =
+      """
       <string name="foo" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           There are <xliff:source>no</xliff:source> apples</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     var str = getValue("string/foo") as? BasicString
@@ -509,19 +547,23 @@ class TableExtractorTest {
 
   @Test
   fun failToParseNestedXliffGTags() {
-    val input = """
+    val input =
+      """
       <string name="foo" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           Do not <xliff:g>translate <xliff:g>this</xliff:g></xliff:g></string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isFalse()
   }
 
   @Test
   fun testParseUntranslatableSections() {
-    val input = """
+    val input =
+      """
       <string name="foo" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           There are <xliff:g id="count">%1${"$"}d</xliff:g> apples</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val str = getValue("string/foo") as? BasicString
@@ -537,10 +579,12 @@ class TableExtractorTest {
 
   @Test
   fun testParseUntranslatablesInStyledString() {
-    val input = """
+    val input =
+      """
       <string name="foo" xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
           There are <b><xliff:g id="count">%1${"$"}d</xliff:g></b> apples</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val str = getValue("string/foo") as? StyledString
@@ -590,10 +634,12 @@ class TableExtractorTest {
 
   @Test
   fun testParseAttr() {
-    val input = """
+    val input =
+      """
       <attr name="foo" format="string"/>
       <attr name="bar"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val attr1 = getValue("attr/foo") as? AttributeResource
@@ -612,12 +658,14 @@ class TableExtractorTest {
   @Test
   fun testParseAttrAndDeclareStyleableUnderConfigButRecordAsNoConfig() {
     val watchConfig = parse("watch")
-    val input = """
+    val input =
+      """
       <attr name="foo" />
       <declare-styleable name="bar">
         <attr name="baz" />
       </declare-styleable>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input, watchConfig)).isTrue()
 
     assertThat(getValue("attr/foo", watchConfig)).isNull()
@@ -639,9 +687,11 @@ class TableExtractorTest {
 
   @Test
   fun testEmptyStyleable() {
-    val input = """
+    val input =
+      """
       <declare-styleable name="bar"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
     assertThat(getValue("styleable/bar")).isNotNull()
 
@@ -653,12 +703,12 @@ class TableExtractorTest {
 
     assertThat(group.entries.size).isEqualTo(1)
     group.entries.forEach {
-        assertThat(it.key).isEqualTo("bar")
-        assertThat(group.type.tagName).isEqualTo("styleable")
-        val styleableContainer = it.value.values.first().values
-        assertThat(styleableContainer.size).isEqualTo(1)
-        assertThat(styleableContainer[0].value).isInstanceOf(Styleable::class.java)
-        assertThat(styleableContainer[0].value).isEqualTo(group.getStyleable(it))
+      assertThat(it.key).isEqualTo("bar")
+      assertThat(group.type.tagName).isEqualTo("styleable")
+      val styleableContainer = it.value.values.first().values
+      assertThat(styleableContainer.size).isEqualTo(1)
+      assertThat(styleableContainer[0].value).isInstanceOf(Styleable::class.java)
+      assertThat(styleableContainer[0].value).isEqualTo(group.getStyleable(it))
     }
   }
 
@@ -683,12 +733,14 @@ class TableExtractorTest {
 
   @Test
   fun testParseUseAndDeclarationOfAttr() {
-    val input = """
+    val input =
+      """
       <declare-styleable name="Styleable">
         <attr name="foo" />
       </declare-styleable>
       <attr name="foo" format="string"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val attr = getValue("attr/foo") as? AttributeResource
@@ -699,14 +751,16 @@ class TableExtractorTest {
 
   @Test
   fun testParseDoubleUseOfAttr() {
-    val input = """
+    val input =
+      """
       <declare-styleable name="Theme">
         <attr name="foo" />
       </declare-styleable>
       <declare-styleable name="Window">
         <attr name="foo" format="boolean"/>
       </declare-styleable>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val attr = getValue("attr/foo") as? AttributeResource
@@ -717,13 +771,15 @@ class TableExtractorTest {
 
   @Test
   fun testParseEnumAttr() {
-    val input = """
+    val input =
+      """
       <attr name="foo">
         <enum name="bar" value="0"/>
         <enum name="bat" value="1"/>
         <enum name="baz" value="2"/>
       </attr>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val attr = getValue("attr/foo") as? AttributeResource
@@ -747,13 +803,15 @@ class TableExtractorTest {
 
   @Test
   fun testParseFlagAttr() {
-    val input = """
+    val input =
+      """
       <attr name="foo">
         <flag name="bar" value="0"/>
         <flag name="bat" value="1"/>
         <flag name="baz" value="2"/>
       </attr>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val attr = getValue("attr/foo") as? AttributeResource
@@ -782,41 +840,41 @@ class TableExtractorTest {
 
   @Test
   fun failParseEnumNonUniqueKeys() {
-    val input = """
+    val input =
+      """
       <attr name="foo">
         <enum name="bar" value="0"/>
         <enum name="bat" value="1"/>
         <enum name="bat" value="2"/>
       </attr>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isFalse()
   }
 
   @Test
   fun testParseStyle() {
-    val input = """
+    val input =
+      """
       <style name="foo" parent="@style/fu">
         <item name="bar">#ffffffff</item>
         <item name="bat">@string/hey</item>
         <item name="baz"><b>hey</b></item>
       </style>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val style = getValue("style/foo") as? Style
     assertThat(style).isNotNull()
     style!!
     assertThat(style.parent).isNotNull()
-    assertThat(style.parent!!.name)
-      .isEqualTo(parseResourceName("style/fu")!!.resourceName)
+    assertThat(style.parent!!.name).isEqualTo(parseResourceName("style/fu")!!.resourceName)
     assertThat(style.entries).hasSize(3)
 
-    assertThat(style.entries[0].key.name)
-      .isEqualTo(parseResourceName("attr/bar")!!.resourceName)
-    assertThat(style.entries[1].key.name)
-      .isEqualTo(parseResourceName("attr/bat")!!.resourceName)
-    assertThat(style.entries[2].key.name)
-      .isEqualTo(parseResourceName("attr/baz")!!.resourceName)
+    assertThat(style.entries[0].key.name).isEqualTo(parseResourceName("attr/bar")!!.resourceName)
+    assertThat(style.entries[1].key.name).isEqualTo(parseResourceName("attr/bat")!!.resourceName)
+    assertThat(style.entries[2].key.name).isEqualTo(parseResourceName("attr/baz")!!.resourceName)
   }
 
   @Test
@@ -827,41 +885,42 @@ class TableExtractorTest {
     assertThat(style).isNotNull()
     style!!
     assertThat(style.parent).isNotNull()
-    assertThat(style.parent!!.name)
-      .isEqualTo(parseResourceName("com.app:style/Theme")!!.resourceName)
+    assertThat(style.parent!!.name).isEqualTo(parseResourceName("com.app:style/Theme")!!.resourceName)
   }
 
   @Test
   fun testParseStyleWithPackageAliasedParent() {
-    val input = """
+    val input =
+      """
       <style xmlns:app="http://schemas.android.com/apk/res/android"
           name="foo" parent="app:Theme"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val style = getValue("style/foo") as? Style
     assertThat(style).isNotNull()
     style!!
     assertThat(style.parent).isNotNull()
-    assertThat(style.parent!!.name)
-      .isEqualTo(parseResourceName("android:style/Theme")!!.resourceName)
+    assertThat(style.parent!!.name).isEqualTo(parseResourceName("android:style/Theme")!!.resourceName)
   }
 
   @Test
   fun testParseStyleWithPackageAliasedItems() {
-    val input = """
+    val input =
+      """
       <style xmlns:app="http://schemas.android.com/apk/res/android" name="foo">
         <item name="app:bar">0</item>
       </style>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val style = getValue("style/foo") as? Style
     assertThat(style).isNotNull()
     style!!
     assertThat(style.entries).hasSize(1)
-    assertThat(style.entries[0].key.name)
-      .isEqualTo(parseResourceName("android:attr/bar")!!.resourceName)
+    assertThat(style.entries[0].key.name).isEqualTo(parseResourceName("android:attr/bar")!!.resourceName)
   }
 
   @Test
@@ -873,8 +932,7 @@ class TableExtractorTest {
     style!!
     assertThat(style.parent).isNotNull()
     assertThat(style.parentInferred).isTrue()
-    assertThat(style.parent!!.name)
-      .isEqualTo(parseResourceName("style/foo")!!.resourceName)
+    assertThat(style.parent!!.name).isEqualTo(parseResourceName("style/foo")!!.resourceName)
   }
 
   @Test
@@ -890,8 +948,7 @@ class TableExtractorTest {
 
   @Test
   fun testParseStyleWithPrivateParent() {
-    assertThat(
-      testParse("""<style name="foo" parent="*android:style/bar" />""")).isTrue()
+    assertThat(testParse("""<style name="foo" parent="*android:style/bar" />""")).isTrue()
 
     val style = getValue("style/foo") as? Style
     assertThat(style).isNotNull()
@@ -908,7 +965,8 @@ class TableExtractorTest {
 
   @Test
   fun testParseAttributesInDeclareStyleable() {
-    val input = """
+    val input =
+      """
       <declare-styleable name="foo">
         <attr name="bar" />
         <attr name="bat" format="string|reference"/>
@@ -916,7 +974,8 @@ class TableExtractorTest {
           <enum name="foo" value="1"/>
         </attr>
       </declare-styleable>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val tableResult = table.findResource(parseResourceName("styleable/foo")!!.resourceName)
@@ -943,23 +1002,22 @@ class TableExtractorTest {
     styleable!!
     assertThat(styleable.entries).hasSize(3)
 
-    assertThat(styleable.entries[0].name)
-      .isEqualTo(parseResourceName("attr/bar")!!.resourceName)
-    assertThat(styleable.entries[1].name)
-      .isEqualTo(parseResourceName("attr/bat")!!.resourceName)
-    assertThat(styleable.entries[2].name)
-      .isEqualTo(parseResourceName("attr/baz")!!.resourceName)
+    assertThat(styleable.entries[0].name).isEqualTo(parseResourceName("attr/bar")!!.resourceName)
+    assertThat(styleable.entries[1].name).isEqualTo(parseResourceName("attr/bat")!!.resourceName)
+    assertThat(styleable.entries[2].name).isEqualTo(parseResourceName("attr/baz")!!.resourceName)
   }
 
   @Test
   fun testParsePrivateAttributesDeclareStyleable() {
-    val input = """
+    val input =
+      """
       <declare-styleable xmlns:privAndroid="http://schemas.android.com/apk/prv/res/android"
           name="foo">
         <attr name="*android:bar" />
         <attr name="privAndroid:bat" />
       </declare-styleable>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val styleable = getValue("styleable/foo") as? Styleable
@@ -978,13 +1036,15 @@ class TableExtractorTest {
 
   @Test
   fun testParseArray() {
-    val input = """
+    val input =
+      """
       <array name="foo">
         <item>@string/ref</item>
         <item>hey</item>
         <item>23</item>
       </array>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val array = getValue("array/foo") as? ArrayResource
@@ -1002,11 +1062,13 @@ class TableExtractorTest {
 
   @Test
   fun testParseStringArray() {
-    val input = """
+    val input =
+      """
       <string-array name="foo">
         <item>"Werk"</item>"
       </string-array>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val array = getValue("array/foo") as? ArrayResource
@@ -1016,11 +1078,13 @@ class TableExtractorTest {
 
   @Test
   fun testParseArrayWithFormat() {
-    val input = """
+    val input =
+      """
       <array name="foo" format="string">
         <item>100</item>
       </array>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val array = getValue("array/foo") as? ArrayResource
@@ -1035,22 +1099,26 @@ class TableExtractorTest {
 
   @Test
   fun testParseArrayWithBadFormat() {
-    val input = """
+    val input =
+      """
       <array name="foo" format="integer">
         <item>Hi</item>
       </array>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isFalse()
   }
 
   @Test
   fun testParsePlural() {
-    val input = """
+    val input =
+      """
       <plurals name="foo">
         <item quantity="other">apples</item>
         <item quantity="one">apple</item>
       </plurals>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val plural = getValue("plurals/foo") as? Plural
@@ -1067,10 +1135,12 @@ class TableExtractorTest {
 
   @Test
   fun testParseCommentsWithResource() {
-    val input = """
+    val input =
+      """
       <!--This is a comment-->
       <string name="foo">Hi</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val value = getValue("string/foo") as? BasicString
@@ -1080,11 +1150,13 @@ class TableExtractorTest {
 
   @Test
   fun testDoNotCombineMultipleComments() {
-    val input = """
+    val input =
+      """
       <!--One-->
       <!--Two-->
       <string name="foo">Hi</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val value = getValue("string/foo") as? BasicString
@@ -1094,13 +1166,15 @@ class TableExtractorTest {
 
   @Test
   fun testIgnoreCommentBeforeEndTag() {
-    val input = """
+    val input =
+      """
       <!--One-->
       <string name="foo">
         Hi
       <!--Two-->
       </string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val value = getValue("string/foo") as? BasicString
@@ -1112,7 +1186,8 @@ class TableExtractorTest {
   fun testParseNestedComments() {
     // We only care about declare-styleable and enum/flag attributes because comments from those end
     // up in R.java
-    val input = """
+    val input =
+      """
       <declare-styleable name="foo">
         <!-- The name of the bar -->
         <attr name="barName" format="string|reference" />
@@ -1122,7 +1197,8 @@ class TableExtractorTest {
         <!-- The very first -->
         <enum name="one" value="1" />
       </attr>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val styleable = getValue("styleable/foo") as? Styleable
@@ -1145,36 +1221,36 @@ class TableExtractorTest {
 
   @Test
   fun testKeepAllProducts() {
-    val input = """
+    val input =
+      """
       <string name="foo" product="phone">hi</string>
       <string name="foo" product="no-sdcard">ho</string>
       <string name="bar" product="">wee</string>
       <string name="baz">woo</string>
       <string name="bit" product="phablet">hoot</string>
       <string name="bot" product="default">yes</string>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
-    assertThat(getValue("string/foo", productName = "phone") as? BasicString)
-      .isNotNull()
-    assertThat(getValue("string/foo", productName = "no-sdcard") as? BasicString)
-      .isNotNull()
+    assertThat(getValue("string/foo", productName = "phone") as? BasicString).isNotNull()
+    assertThat(getValue("string/foo", productName = "no-sdcard") as? BasicString).isNotNull()
     assertThat(getValue("string/bar") as? BasicString).isNotNull()
     assertThat(getValue("string/baz") as? BasicString).isNotNull()
-    assertThat(getValue("string/bit", productName = "phablet") as? BasicString)
-      .isNotNull()
-    assertThat(getValue("string/bot", productName = "default") as? BasicString)
-      .isNotNull()
+    assertThat(getValue("string/bit", productName = "phablet") as? BasicString).isNotNull()
+    assertThat(getValue("string/bot", productName = "default") as? BasicString).isNotNull()
   }
 
   @Test
   fun testAutoIncrementIdsInPublicGroup() {
-    val input = """
+    val input =
+      """
       <public-group type="attr" first-id="0x01010040">
         <public name="foo" />
         <public name="bar" />
       </public-group>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val tableResult0 = table.findResource(parseResourceName("attr/foo")!!.resourceName)
@@ -1183,10 +1259,7 @@ class TableExtractorTest {
     assertThat(tableResult0.tablePackage.id).isNotNull()
     assertThat(tableResult0.group.id).isNotNull()
     assertThat(tableResult0.entry.id).isNotNull()
-    val actualId0 = resourceIdFromParts(
-      tableResult0.tablePackage.id!!,
-      tableResult0.group.id!!,
-      tableResult0.entry.id!!)
+    val actualId0 = resourceIdFromParts(tableResult0.tablePackage.id!!, tableResult0.group.id!!, tableResult0.entry.id!!)
     assertThat(actualId0).isEqualTo(0x01010040)
 
     val tableResult1 = table.findResource(parseResourceName("attr/bar")!!.resourceName)
@@ -1195,16 +1268,14 @@ class TableExtractorTest {
     assertThat(tableResult1.tablePackage.id).isNotNull()
     assertThat(tableResult1.group.id).isNotNull()
     assertThat(tableResult1.entry.id).isNotNull()
-    val actualId1 = resourceIdFromParts(
-      tableResult1.tablePackage.id!!,
-      tableResult1.group.id!!,
-      tableResult1.entry.id!!)
+    val actualId1 = resourceIdFromParts(tableResult1.tablePackage.id!!, tableResult1.group.id!!, tableResult1.entry.id!!)
     assertThat(actualId1).isEqualTo(0x01010041)
   }
 
   @Test
   fun testStrongestSymbolVisibilityWins() {
-    val input = """
+    val input =
+      """
       <public type="string" name="foo" id="0x01020000" />
       <string name="foo" />
       <java-symbol type="string" name="bar"/>
@@ -1214,7 +1285,8 @@ class TableExtractorTest {
       <public name="foo_rev" type="string"/>
       <string name="bar_rev"/>
       <java-symbol name="bar_rev" type="string"/>
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isTrue()
 
     val fooResult = table.findResource(parseResourceName("string/foo")!!.resourceName)
@@ -1236,19 +1308,19 @@ class TableExtractorTest {
 
   @Test
   fun testVisibilityConflict() {
-    val input = """
+    val input =
+      """
       <java-symbol type="string" name="foo" />
       <public type="string" name="foo" id="0x01020000" />
-    """.trimIndent()
+      """
+        .trimIndent()
     assertThat(testParse(input)).isFalse()
   }
 
   @Test
   fun testExternalTypesShouldBeReferences() {
-    assertThat(
-      testParse("""<item type="layout" name="foo">@layout/bar</item>""")).isTrue()
-    assertThat(
-      testParse("""<item type="layout" name="bar">"this is a string"</item>""")).isFalse()
+    assertThat(testParse("""<item type="layout" name="foo">@layout/bar</item>""")).isTrue()
+    assertThat(testParse("""<item type="layout" name="bar">"this is a string"</item>""")).isFalse()
   }
 
   @Test
@@ -1264,21 +1336,19 @@ class TableExtractorTest {
 
   @Test
   fun testParseItemElementWithFormat() {
-    assertThat(
-      testParse("""<item name="foo" type="integer" format="float">0.3</item>""")).isTrue()
+    assertThat(testParse("""<item name="foo" type="integer" format="float">0.3</item>""")).isTrue()
 
     val primitive = getValue("integer/foo") as? BinaryPrimitive
     assertThat(primitive).isNotNull()
     assertThat(primitive!!.resValue.dataType).isEqualTo(ResValue.DataType.FLOAT)
 
-    assertThat(
-      testParse("""<item name="bar" type="integer" format="fraction">100</item>""")).isFalse()
+    assertThat(testParse("""<item name="bar" type="integer" format="fraction">100</item>""")).isFalse()
   }
 
   @Test
   fun testParseItemElementValueOnNewLineWithQuotations() {
     val sample =
-        """<style name="Widget.ImageButton.Custom" parent="android:style/Widget.ImageButton">
+      """<style name="Widget.ImageButton.Custom" parent="android:style/Widget.ImageButton">
                 <item name="customAttr">
                   "some value"
                 </item>
@@ -1291,72 +1361,73 @@ class TableExtractorTest {
 
   @Test
   fun testParseItemElementWithValueOnNewLineWithNoQuotations() {
-      val sample =
-         """<style name="Widget.ImageButton.Custom" parent="android:style/Widget.ImageButton">
+    val sample =
+      """<style name="Widget.ImageButton.Custom" parent="android:style/Widget.ImageButton">
                 <item name="customAttr">
                     some value
                 </item>
             </style>"""
-      assertThat(testParse(sample)).isTrue()
-      val style = getValue("style/Widget.ImageButton.Custom") as Style
-      val item = style.entries[0].value as RawString
-      assertThat(item.value.value()).isEqualTo("some value")
+    assertThat(testParse(sample)).isTrue()
+    val style = getValue("style/Widget.ImageButton.Custom") as Style
+    val item = style.entries[0].value as RawString
+    assertThat(item.value.value()).isEqualTo("some value")
   }
 
   @Test
   fun testMacro() {
-      val mockLogger = BlameLoggerTest.MockLogger()
+    val mockLogger = BlameLoggerTest.MockLogger()
 
-      val macros = """
-          <macro name="m_string">@string/foo</macro>
-          <macro name="m_int">@integer/foo</macro>
-          <macro name="m_attr">?attr/foo</macro>
-          <macro name="m_macro">@macro/foo</macro>
-          <macro name="m_text_value">Hello world</macro>
-          <macro name="m_int_value">123</macro>
-          """.trimIndent()
+    val macros =
+      """
+      <macro name="m_string">@string/foo</macro>
+      <macro name="m_int">@integer/foo</macro>
+      <macro name="m_attr">?attr/foo</macro>
+      <macro name="m_macro">@macro/foo</macro>
+      <macro name="m_text_value">Hello world</macro>
+      <macro name="m_int_value">123</macro>
+      """
+        .trimIndent()
 
-      val result = testParse(macros, mockLogger = mockLogger)
-      assertThat(result).isTrue()
-      assertThat(mockLogger.errors).isEmpty()
-      assertThat(mockLogger.warnings).isEmpty()
+    val result = testParse(macros, mockLogger = mockLogger)
+    assertThat(result).isTrue()
+    assertThat(mockLogger.errors).isEmpty()
+    assertThat(mockLogger.warnings).isEmpty()
 
-      val stringRefMacro = getValue("macro/m_string") as Macro
-      assertThat(stringRefMacro).isNotNull()
-      assertThat(stringRefMacro.rawValue).isEqualTo("@string/foo")
+    val stringRefMacro = getValue("macro/m_string") as Macro
+    assertThat(stringRefMacro).isNotNull()
+    assertThat(stringRefMacro.rawValue).isEqualTo("@string/foo")
 
-      val intRefMacro = getValue("macro/m_int") as Macro
-      assertThat(intRefMacro).isNotNull()
-      assertThat(intRefMacro.rawValue).isEqualTo("@integer/foo")
+    val intRefMacro = getValue("macro/m_int") as Macro
+    assertThat(intRefMacro).isNotNull()
+    assertThat(intRefMacro.rawValue).isEqualTo("@integer/foo")
 
-      val maybeAttrRefMacro = getValue("macro/m_attr") as Macro
-      assertThat(maybeAttrRefMacro).isNotNull()
-      assertThat(maybeAttrRefMacro.rawValue).isEqualTo("?attr/foo")
+    val maybeAttrRefMacro = getValue("macro/m_attr") as Macro
+    assertThat(maybeAttrRefMacro).isNotNull()
+    assertThat(maybeAttrRefMacro.rawValue).isEqualTo("?attr/foo")
 
-      val macroRefMacro = getValue("macro/m_macro") as Macro
-      assertThat(macroRefMacro).isNotNull()
-      assertThat(macroRefMacro.rawValue).isEqualTo("@macro/foo")
+    val macroRefMacro = getValue("macro/m_macro") as Macro
+    assertThat(macroRefMacro).isNotNull()
+    assertThat(macroRefMacro.rawValue).isEqualTo("@macro/foo")
 
-      val rawStringValueMacro = getValue("macro/m_text_value") as Macro
-      assertThat(rawStringValueMacro).isNotNull()
-      assertThat(rawStringValueMacro.untranslatables).isEmpty()
-      assertThat(rawStringValueMacro.rawValue).isEqualTo("Hello world")
+    val rawStringValueMacro = getValue("macro/m_text_value") as Macro
+    assertThat(rawStringValueMacro).isNotNull()
+    assertThat(rawStringValueMacro.untranslatables).isEmpty()
+    assertThat(rawStringValueMacro.rawValue).isEqualTo("Hello world")
 
-      // Any text that isn't a reference is held as a string in a macro
-      val rawIntValueMacro = getValue("macro/m_int_value") as Macro
-      assertThat(rawIntValueMacro).isNotNull()
-      assertThat(rawIntValueMacro.untranslatables).isEmpty()
-      assertThat(rawIntValueMacro.rawValue).isEqualTo("123")
+    // Any text that isn't a reference is held as a string in a macro
+    val rawIntValueMacro = getValue("macro/m_int_value") as Macro
+    assertThat(rawIntValueMacro).isNotNull()
+    assertThat(rawIntValueMacro.untranslatables).isEmpty()
+    assertThat(rawIntValueMacro.rawValue).isEqualTo("123")
   }
 
   @Test
   fun testMacroMissingName() {
-      val mockLogger = BlameLoggerTest.MockLogger()
+    val mockLogger = BlameLoggerTest.MockLogger()
 
-      val result = testParse("<macro/>", mockLogger = mockLogger)
-      assertThat(result).isFalse()
-      assertThat(mockLogger.errors).hasSize(1)
-      assertThat(mockLogger.errors.single().first).contains("<macro> is missing the 'name' attribute.")
+    val result = testParse("<macro/>", mockLogger = mockLogger)
+    assertThat(result).isFalse()
+    assertThat(mockLogger.errors).hasSize(1)
+    assertThat(mockLogger.errors.single().first).contains("<macro> is missing the 'name' attribute.")
   }
-
 }

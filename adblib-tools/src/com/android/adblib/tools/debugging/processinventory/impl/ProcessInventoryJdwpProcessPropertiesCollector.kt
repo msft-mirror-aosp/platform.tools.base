@@ -31,59 +31,56 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 internal class ProcessInventoryJdwpProcessPropertiesCollector(
-    private val serverConnection: ProcessInventoryServerConnection,
-    override val process: JdwpProcess
+  private val serverConnection: ProcessInventoryServerConnection,
+  override val process: JdwpProcess,
 ) : ExternalJdwpProcessPropertiesCollector {
 
-    private val session: AdbSession
-        get() = process.device.session
+  private val session: AdbSession
+    get() = process.device.session
 
-    private val logger = adbLogger(session).withProcessPrefix(process.device, process.pid)
+  private val logger = adbLogger(session).withProcessPrefix(process.device, process.pid)
 
-    init {
-        process.scope.launch {
-            runCatching {
-                process.propertiesFlow.collect { properties ->
-                    logger.debug { "Process properties changed to $properties" }
-                    serverConnection.withConnectionForDevice(process.device) {
-                        sendProcessProperties(properties)
-                    }
-                }
-            }.onFailure { throwable ->
-                logger.logIOCompletionErrors(throwable)
+  init {
+    process.scope
+      .launch {
+        runCatching {
+            process.propertiesFlow.collect { properties ->
+              logger.debug { "Process properties changed to $properties" }
+              serverConnection.withConnectionForDevice(process.device) { sendProcessProperties(properties) }
             }
-        }.invokeOnCompletion {
-            // If the process has exited, notify the server (using the device scope,
-            // as the process scope has been closed)
-            if (!process.scope.isActive) {
-                logger.debug { "Process scope has terminated, notifying server that process has terminated" }
-                process.device.scope.launch {
-                    kotlin.runCatching {
-                        serverConnection.withConnectionForDevice(process.device) {
-                            notifyProcessExit(process.pid)
-                        }
-                    }.onFailure { throwable ->
-                        logger.logIOCompletionErrors(throwable, "Notify process exit")
-                    }
-                }
-            }
+          }
+          .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
+      }
+      .invokeOnCompletion {
+        // If the process has exited, notify the server (using the device scope,
+        // as the process scope has been closed)
+        if (!process.scope.isActive) {
+          logger.debug { "Process scope has terminated, notifying server that process has terminated" }
+          process.device.scope.launch {
+            kotlin
+              .runCatching { serverConnection.withConnectionForDevice(process.device) { notifyProcessExit(process.pid) } }
+              .onFailure { throwable -> logger.logIOCompletionErrors(throwable, "Notify process exit") }
+          }
         }
-    }
+      }
+  }
 
-    override fun trackProperties(): Flow<JdwpProcessProperties> = flow {
-        // Use the device flow, and filter to this process only
-        serverConnection.withConnectionForDevice(process.device) {
-            processListStateFlow.collect { list ->
-                logger.verbose { "Collected new list of properties from device inventory: $list" }
-                list.firstOrNull { it.pid == process.pid }?.also {
-                    logger.verbose { "Emitting process properties: $it" }
-                    emit(it)
-                }
-            }
-        }
+  override fun trackProperties(): Flow<JdwpProcessProperties> = flow {
+    // Use the device flow, and filter to this process only
+    serverConnection.withConnectionForDevice(process.device) {
+      processListStateFlow.collect { list ->
+        logger.verbose { "Collected new list of properties from device inventory: $list" }
+        list
+          .firstOrNull { it.pid == process.pid }
+          ?.also {
+            logger.verbose { "Emitting process properties: $it" }
+            emit(it)
+          }
+      }
     }
+  }
 
-    override fun toString(): String {
-        return "${this::class.java.simpleName}(process=$process)"
-    }
+  override fun toString(): String {
+    return "${this::class.java.simpleName}(process=$process)"
+  }
 }

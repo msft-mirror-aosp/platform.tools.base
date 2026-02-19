@@ -25,7 +25,7 @@ fun RecipeExecutor.androidManifestRecipe(
   moduleData: ModuleTemplateData,
   remapFolder: Boolean,
   relativeNewLocation: String,
-  sourceProviderNameSupplier: () -> String
+  sourceProviderNameSupplier: () -> String,
 ) {
   if (remapFolder) {
     val newLocation = moduleData.rootDir.resolve(relativeNewLocation)

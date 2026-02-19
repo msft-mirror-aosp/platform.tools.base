@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.function.Function;
 
 /** Creates a Maven repository using symlinks. */
 public class RepoLinker {
@@ -35,20 +36,28 @@ public class RepoLinker {
         new RepoLinker().link(destination, artifacts);
     }
 
+    public void link(Path destination, List<String> artifacts) throws Exception {
+        link(destination, artifacts, Paths::get);
+    }
+
     /**
      * Creates a Maven repository using symlinks.
      *
      * @param destination The destination directory for the Maven repository.
      * @param artifacts The list of artifacts to symlink. The artifacts are given as a list of
      *     path_in_repo=path_to_file
+     * @param artifactResolver A function that resolves an artifact's source path string into a
+     * Path object. This provides a flexible strategy for locating the source artifact files
      */
-    public void link(Path destination, List<String> artifacts) throws Exception {
+    public void link(
+            Path destination, List<String> artifacts, Function<String, Path> artifactResolver)
+            throws Exception {
         for (String artifact : artifacts) {
             String[] split = artifact.split("=");
             if (split.length != 2) {
                 throw new IllegalStateException("Invalid repository file " + artifact);
             }
-            Path src = Paths.get(split[1]).toAbsolutePath().normalize();
+            Path src = artifactResolver.apply(split[1]).toAbsolutePath().normalize();
             Path dest = destination.resolve(split[0]);
 
             if (Files.isSymbolicLink(dest) && Files.readSymbolicLink(dest) == src) {

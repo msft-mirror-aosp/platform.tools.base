@@ -66,10 +66,8 @@ import org.jetbrains.uast.psi.UElementWithLocation
 // Fully qualified names here:
 // class traffics in Project from both lint and openapi so be explicit
 @Suppress("RemoveRedundantQualifierName")
-open class DefaultUastParser(
-  project: com.android.tools.lint.detector.api.Project?,
-  val ideaProject: com.intellij.openapi.project.Project,
-) : UastParser() {
+open class DefaultUastParser(project: com.android.tools.lint.detector.api.Project?, val ideaProject: com.intellij.openapi.project.Project) :
+  UastParser() {
   private val javaEvaluator: JavaEvaluator
 
   init {
@@ -77,14 +75,11 @@ open class DefaultUastParser(
     javaEvaluator = createEvaluator(project, ideaProject)
   }
 
-  protected open fun createEvaluator(
-    project: Project?,
-    p: com.intellij.openapi.project.Project,
-  ): DefaultJavaEvaluator = DefaultJavaEvaluator(p, project!!)
+  protected open fun createEvaluator(project: Project?, p: com.intellij.openapi.project.Project): DefaultJavaEvaluator =
+    DefaultJavaEvaluator(p, project!!)
 
   /**
-   * Returns an evaluator which can perform various resolution tasks, evaluate inheritance lookup
-   * etc.
+   * Returns an evaluator which can perform various resolution tasks, evaluate inheritance lookup etc.
    *
    * @return an evaluator
    */
@@ -93,9 +88,8 @@ open class DefaultUastParser(
   /**
    * Parse the file pointed to by the given context.
    *
-   * @param context the context pointing to the file to be parsed, typically via
-   *   [Context.getContents] but the file handle ([Context.file]) can also be used to map to an
-   *   existing editor buffer in the surrounding tool, etc)
+   * @param context the context pointing to the file to be parsed, typically via [Context.getContents] but the file handle ([Context.file])
+   *   can also be used to map to an existing editor buffer in the surrounding tool, etc)
    * @return the compilation unit node for the file
    */
   override fun parse(context: JavaContext): UFile? {
@@ -112,17 +106,12 @@ open class DefaultUastParser(
     val virtualFile = StandardFileSystems.local().findFileByPath(absPath) ?: return null
     val psiFile = PsiManager.getInstance(ideaProject).findFile(virtualFile) ?: return null
 
-    if (
-      psiFile.language == Language.ANY &&
-        (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_KTS))
-    ) {
+    if (psiFile.language == Language.ANY && (file.path.endsWith(DOT_KT) || file.path.endsWith(DOT_KTS))) {
       // Expected to get Kotlin language back here!
       context.client.log(
         Severity.ERROR,
         null,
-        "Could not process " +
-          context.project.getRelativePath(file) +
-          ": Kotlin not configured correctly",
+        "Could not process " + context.project.getRelativePath(file) + ": Kotlin not configured correctly",
       )
       return null
     }
@@ -132,8 +121,7 @@ open class DefaultUastParser(
         warnedAboutLargeFiles = true
         // default user file size limit = 2500 KiB
         // default user content load limit = 20000 KiB
-        val max =
-          max(FileUtilRt.getUserFileSizeLimit(), FileUtilRt.getUserContentLoadLimit()) / 1024
+        val max = max(FileUtilRt.getUserFileSizeLimit(), FileUtilRt.getUserContentLoadLimit()) / 1024
         val size = file.length() / 1024
         val sizeRoundedUp = 2.0.pow(ceil(log10(size.toDouble()) / log10(2.0) + 0.2)).toInt()
         context.report(
@@ -158,40 +146,27 @@ open class DefaultUastParser(
   }
 
   /**
-   * Checks whether this [psiFile] is annotated with any of the skip annotations. We do this at the
-   * PSI level instead of via UAST because these annotations are typically used to avoid processing
-   * large and costly generated classes, so it's worthwhile skipping the UAST conversion.
+   * Checks whether this [psiFile] is annotated with any of the skip annotations. We do this at the PSI level instead of via UAST because
+   * these annotations are typically used to avoid processing large and costly generated classes, so it's worthwhile skipping the UAST
+   * conversion.
    */
-  protected fun isAnnotatedWithSkipAnnotation(
-    psiFile: PsiFile,
-    skipAnnotations: List<String>,
-  ): Boolean {
+  protected fun isAnnotatedWithSkipAnnotation(psiFile: PsiFile, skipAnnotations: List<String>): Boolean {
     if (psiFile is PsiJavaFile) {
       val topLevel = psiFile.classes.firstOrNull() ?: return false
       //noinspection ExternalAnnotations
       return topLevel.annotations.any { skipAnnotations.contains(it.qualifiedName) }
     } else if (psiFile is KtFile) {
       return containsAnnotation(skipAnnotations, psiFile.annotationEntries) ||
-        containsAnnotation(
-          skipAnnotations,
-          psiFile.declarations.firstOrNull()?.annotationEntries ?: emptyList(),
-        )
+        containsAnnotation(skipAnnotations, psiFile.declarations.firstOrNull()?.annotationEntries ?: emptyList())
     }
     return false
   }
 
-  /**
-   * Returns true if any of the given Kotlin [annotations] are any of the fully qualified [names]
-   */
-  protected fun containsAnnotation(
-    names: List<String>,
-    annotations: List<KtAnnotationEntry>,
-  ): Boolean {
+  /** Returns true if any of the given Kotlin [annotations] are any of the fully qualified [names] */
+  protected fun containsAnnotation(names: List<String>, annotations: List<KtAnnotationEntry>): Boolean {
     for (annotation in annotations) {
       if (names.any { it.endsWith(annotation.shortName?.identifier ?: "?") }) {
-        val uAnnotation =
-          UastFacade.convertElement(annotation, null, UAnnotation::class.java) as? UAnnotation
-            ?: continue
+        val uAnnotation = UastFacade.convertElement(annotation, null, UAnnotation::class.java) as? UAnnotation ?: continue
         if (names.contains(uAnnotation.qualifiedName)) {
           return true
         }
@@ -304,12 +279,7 @@ open class DefaultUastParser(
     return Location.NONE
   }
 
-  override fun getCallLocation(
-    context: JavaContext,
-    call: UCallExpression,
-    includeReceiver: Boolean,
-    includeArguments: Boolean,
-  ): Location {
+  override fun getCallLocation(context: JavaContext, call: UCallExpression, includeReceiver: Boolean, includeArguments: Boolean): Location {
     if (includeArguments) {
       call.valueArguments.lastOrNull()?.let { lastArgument ->
         val argumentsEnd = lastArgument.sourcePsi?.endOffset
@@ -324,8 +294,7 @@ open class DefaultUastParser(
           // Work around UAST bug where the value argument list points directly to the
           // string content node instead of a node containing the opening and closing
           // tokens as well. We need to include the closing tags in the range as well!
-          val next =
-            (lastArgument.sourcePsi as? KtLiteralStringTemplateEntry)?.nextSibling as? TreeElement
+          val next = (lastArgument.sourcePsi as? KtLiteralStringTemplateEntry)?.nextSibling as? TreeElement
           val delta =
             if (next != null && next.elementType == KtTokens.CLOSING_QUOTE) {
               next.textLength
@@ -401,9 +370,8 @@ open class DefaultUastParser(
   }
 
   /**
-   * Returns a [Location] for the given node range (from the starting offset of the first node to
-   * the ending offset of the second node). The result will be inaccurate if the source location is
-   * missing in either [from] or [to].
+   * Returns a [Location] for the given node range (from the starting offset of the first node to the ending offset of the second node). The
+   * result will be inaccurate if the source location is missing in either [from] or [to].
    *
    * @param context information about the file being parsed
    * @param from the AST node to get a starting location from
@@ -412,13 +380,7 @@ open class DefaultUastParser(
    * @param toDelta Offset delta to apply to the ending offset
    * @return a location for the given node
    */
-  override fun getRangeLocation(
-    context: JavaContext,
-    from: PsiElement,
-    fromDelta: Int,
-    to: PsiElement,
-    toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, to: PsiElement, toDelta: Int): Location {
     val contents = context.getContents()
 
     // b/452422771: `PsiElement.textRange` can be `null`
@@ -432,28 +394,14 @@ open class DefaultUastParser(
           fromRange == null -> "starting source"
           else -> "end source"
         }
-      context.client.log(
-        Severity.WARNING,
-        NullPointerException("Text range missing from $sources"),
-        "Text range missing from $sources",
-      )
+      context.client.log(Severity.WARNING, NullPointerException("Text range missing from $sources"), "Text range missing from $sources")
     }
 
     val start = max(0, fromRange?.startOffset?.plus(fromDelta) ?: toRange?.endOffset ?: 0)
-    val end =
-      min(
-        contents?.length ?: Integer.MAX_VALUE,
-        toRange?.endOffset?.plus(toDelta) ?: fromRange?.endOffset ?: Integer.MAX_VALUE,
-      )
+    val end = min(contents?.length ?: Integer.MAX_VALUE, toRange?.endOffset?.plus(toDelta) ?: fromRange?.endOffset ?: Integer.MAX_VALUE)
     if (end <= start) {
       // Some AST nodes don't have proper bounds, such as empty parameter lists
-      return Location.create(
-          context.file,
-          contents,
-          start,
-          fromRange?.endOffset ?: contents?.length ?: start,
-        )
-        .setSource(from)
+      return Location.create(context.file, contents, start, fromRange?.endOffset ?: contents?.length ?: start).setSource(from)
     }
     return Location.create(context.file, contents, start, end).setSource(from)
   }
@@ -471,13 +419,7 @@ open class DefaultUastParser(
     return null
   }
 
-  override fun getRangeLocation(
-    context: JavaContext,
-    from: UElement,
-    fromDelta: Int,
-    to: UElement,
-    toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, to: UElement, toDelta: Int): Location {
     var contents = context.getContents()
     val toRange = getTextRange(to)
     val fromRange = getTextRange(from) ?: toRange
@@ -531,9 +473,8 @@ open class DefaultUastParser(
   }
 
   /**
-   * Like [getRangeLocation] but both offsets are relative to the starting offset of the given node.
-   * This is sometimes more convenient than operating relative to the ending offset when you have a
-   * fixed range in mind.
+   * Like [getRangeLocation] but both offsets are relative to the starting offset of the given node. This is sometimes more convenient than
+   * operating relative to the ending offset when you have a fixed range in mind.
    *
    * @param context information about the file being parsed
    * @param from the AST node to get a starting location from
@@ -541,19 +482,10 @@ open class DefaultUastParser(
    * @param toDelta Offset delta to apply to the starting offset
    * @return a location for the given node
    */
-  override fun getRangeLocation(
-    context: JavaContext,
-    from: PsiElement,
-    fromDelta: Int,
-    toDelta: Int,
-  ): Location = getRangeLocation(context, from, fromDelta, from, -(from.textRange.length - toDelta))
+  override fun getRangeLocation(context: JavaContext, from: PsiElement, fromDelta: Int, toDelta: Int): Location =
+    getRangeLocation(context, from, fromDelta, from, -(from.textRange.length - toDelta))
 
-  override fun getRangeLocation(
-    context: JavaContext,
-    from: UElement,
-    fromDelta: Int,
-    toDelta: Int,
-  ): Location {
+  override fun getRangeLocation(context: JavaContext, from: UElement, fromDelta: Int, toDelta: Int): Location {
     val fromRange = getTextRange(from)
     if (fromRange != null) {
       return getRangeLocation(context, from, fromDelta, from, -(fromRange.length - toDelta))
@@ -562,9 +494,8 @@ open class DefaultUastParser(
   }
 
   /**
-   * Returns a [Location] for the given node. This attempts to pick a shorter location range than
-   * the entire node; for a class or method for example, it picks the name node (if found). For
-   * statement constructs such as a `switch` statement it will highlight the keyword, etc.
+   * Returns a [Location] for the given node. This attempts to pick a shorter location range than the entire node; for a class or method for
+   * example, it picks the name node (if found). For statement constructs such as a `switch` statement it will highlight the keyword, etc.
    *
    * @param context information about the file being parsed
    * @param element the node to create a location for

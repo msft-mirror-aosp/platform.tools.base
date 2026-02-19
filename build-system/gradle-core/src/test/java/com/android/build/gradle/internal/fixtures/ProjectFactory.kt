@@ -20,15 +20,9 @@ import com.google.common.io.Files
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 
-/**
- * A provider of [Project] object for running tests.
- *
- */
-class ProjectFactory  {
-    companion object {
-        @JvmStatic
-        val project: Project by lazy {
-            ProjectBuilder.builder().withProjectDir(Files.createTempDir()).build()
-        }
-    }
+/** A provider of [Project] object for running tests. */
+class ProjectFactory {
+  companion object {
+    @JvmStatic val project: Project by lazy { ProjectBuilder.builder().withProjectDir(Files.createTempDir()).build() }
+  }
 }

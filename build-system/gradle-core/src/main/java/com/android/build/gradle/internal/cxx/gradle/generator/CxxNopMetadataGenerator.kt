@@ -19,12 +19,7 @@ package com.android.build.gradle.internal.cxx.gradle.generator
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.process.ExecOperations
 
-/**
- * NOP C/C++ metadata generator to be used when there was an earlier
- * configuration error.
- */
-class CxxNopMetadataGenerator(
-        override val variantBuilder: GradleBuildVariant.Builder?
-) : CxxMetadataGenerator {
-    override fun configure(ops: ExecOperations, forceConfigure: Boolean) { }
+/** NOP C/C++ metadata generator to be used when there was an earlier configuration error. */
+class CxxNopMetadataGenerator(override val variantBuilder: GradleBuildVariant.Builder?) : CxxMetadataGenerator {
+  override fun configure(ops: ExecOperations, forceConfigure: Boolean) {}
 }

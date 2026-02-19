@@ -15,6 +15,12 @@
  */
 package com.android.tools.apk.analyzer;
 
+import com.android.ide.common.pagealign.AlignmentProblem;
+
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
 public class ZipEntryInfo {
     public enum Alignment {
         ALIGNMENT_NONE(""),
@@ -31,20 +37,20 @@ public class ZipEntryInfo {
 
     public long size;
     public Alignment zipAlignment;
-    public long elfLoadSectionAlignment;
+    public List<@NotNull AlignmentProblem> elfAlignmentProblems;
     public boolean isCompressed;
-    public boolean isElf;
 
     public ZipEntryInfo(
             long size,
             Alignment zipAlignment,
             boolean isCompressed,
-            boolean isElf,
-            long elfLoadSectionAlignment) {
+            // A null list means not an ELF file. An empty list means it's an ELF file but no
+            // alignment problems were found. A non-empty list means the file is an ELF file and
+            // alignment problems were found.
+            List<@NotNull AlignmentProblem> elfLoadSectionAlignment) {
         this.size = size;
         this.zipAlignment = zipAlignment;
         this.isCompressed = isCompressed;
-        this.isElf = isElf;
-        this.elfLoadSectionAlignment = elfLoadSectionAlignment;
+        this.elfAlignmentProblems = elfLoadSectionAlignment;
     }
 }

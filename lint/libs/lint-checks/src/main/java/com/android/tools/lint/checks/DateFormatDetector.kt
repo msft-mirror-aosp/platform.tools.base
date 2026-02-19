@@ -40,11 +40,7 @@ class DateFormatDetector : Detector(), SourceCodeScanner {
     return listOf(JAVA_SIMPLE_DATE_FORMAT_CLS, ICU_SIMPLE_DATE_FORMAT_CLS)
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     if (!specifiesLocale(constructor)) {
       val location = context.getLocation(node)
       val message =
@@ -65,10 +61,7 @@ class DateFormatDetector : Detector(), SourceCodeScanner {
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (
-      context.evaluator.isMemberInClass(method, CLS_DATE_TIME_FORMATTER) &&
-        context.isEnabled(WEEK_YEAR)
-    ) {
+    if (context.evaluator.isMemberInClass(method, CLS_DATE_TIME_FORMATTER) && context.isEnabled(WEEK_YEAR)) {
       checkDateFormat(context, node)
     }
   }
@@ -87,10 +80,7 @@ class DateFormatDetector : Detector(), SourceCodeScanner {
     val value =
       when (argument) {
         is ULiteralExpression -> argument.value
-        is UInjectionHost ->
-          argument.evaluateToString()
-            ?: ConstantEvaluator().allowUnknowns().evaluate(argument)
-            ?: return
+        is UInjectionHost -> argument.evaluateToString() ?: ConstantEvaluator().allowUnknowns().evaluate(argument) ?: return
         else -> ConstantEvaluator().allowUnknowns().evaluate(argument) ?: return
       }
     val format = value.toString()
@@ -135,18 +125,12 @@ class DateFormatDetector : Detector(), SourceCodeScanner {
         location = context.getRangeLocation(argument.operands[0], index, end - index)
       }
 
-      context.report(
-        WEEK_YEAR,
-        argument,
-        location,
-        "`DateFormat` character 'Y' in $digits is the week-era-year; did you mean 'y'?",
-      )
+      context.report(WEEK_YEAR, argument, location, "`DateFormat` character 'Y' in $digits is the week-era-year; did you mean 'y'?")
     }
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(DateFormatDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(DateFormatDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Constructing SimpleDateFormat without an explicit locale. */
     @JvmField
@@ -191,8 +175,7 @@ class DateFormatDetector : Detector(), SourceCodeScanner {
                 If you expected this to format as 2019, you should use the pattern `yyyy` \
                 instead.
                 """,
-        moreInfo =
-          "https://stackoverflow.com/questions/46847245/using-datetimeformatter-on-january-first-cause-an-invalid-year-value",
+        moreInfo = "https://stackoverflow.com/questions/46847245/using-datetimeformatter-on-january-first-cause-an-invalid-year-value",
         category = Category.I18N,
         priority = 6,
         severity = Severity.WARNING,

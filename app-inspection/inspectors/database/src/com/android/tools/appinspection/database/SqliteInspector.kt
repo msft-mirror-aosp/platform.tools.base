@@ -117,11 +117,7 @@ private const val OPEN_DATABASE_COMMAND_SIG_API_27 =
     "Landroid/database/sqlite/SQLiteDatabase;"
 
 private const val CREATE_IN_MEMORY_DATABASE_COMMAND_SIG_API_27 =
-  "createInMemory" +
-    "(" +
-    "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" +
-    ")" +
-    "Landroid/database/sqlite/SQLiteDatabase;"
+  "createInMemory" + "(" + "Landroid/database/sqlite/SQLiteDatabase\$OpenParams;" + ")" + "Landroid/database/sqlite/SQLiteDatabase;"
 
 private const val ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE = "onAllReferencesReleased()V"
 
@@ -129,16 +125,13 @@ private const val ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE = "onAllReferencesRel
 private val SQLITE_STATEMENT_EXECUTE_METHODS_SIGNATURES: List<String> =
   mutableListOf("execute()V", "executeInsert()J", "executeUpdateDelete()I")
 
-private const val ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG =
-  "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
+private const val ANDROIDX_DRIVER_OPEN_WITH_FLAGS_SIG = "open(Ljava/lang/String;I)Landroidx/sqlite/SQLiteConnection;"
 
-private const val ANDROIDX_DRIVER_OPEN_SIG =
-  "open(Ljava/lang/String;)Landroidx/sqlite/SQLiteConnection;"
+private const val ANDROIDX_DRIVER_OPEN_SIG = "open(Ljava/lang/String;)Landroidx/sqlite/SQLiteConnection;"
 
 private const val ANDROIDX_CONNECTION_CLOSE_SIG = "close()V"
 
-private const val ANDROIDX_CONNECTION_PREPARE_SIG =
-  "prepare(Ljava/lang/String;)Landroidx/sqlite/SQLiteStatement;"
+private const val ANDROIDX_CONNECTION_PREPARE_SIG = "prepare(Ljava/lang/String;)Landroidx/sqlite/SQLiteStatement;"
 
 private val INVALIDATION_MIN_INTERVAL = 1.seconds
 
@@ -197,13 +190,11 @@ private const val BUNDLED_DRIVER = "androidx.sqlite.driver.bundled.BundledSQLite
 internal class SqliteInspector(
   connection: Connection,
   private val environment: InspectorEnvironment,
-  throttlerCoroutineContext: CoroutineContext =
-    environment.executors().io().asCoroutineDispatcher(),
+  throttlerCoroutineContext: CoroutineContext = environment.executors().io().asCoroutineDispatcher(),
   testMode: Boolean = false,
 ) : Inspector(connection) {
   @VisibleForTesting
-  internal val databaseRegistry =
-    DatabaseRegistry(::dispatchDatabaseOpenedEvent, ::dispatchDatabaseClosedEvent, testMode)
+  internal val databaseRegistry = DatabaseRegistry(::dispatchDatabaseOpenedEvent, ::dispatchDatabaseClosedEvent, testMode)
   private val databaseLockRegistry = DatabaseLockRegistry(databaseRegistry)
   private val ioExecutor = environment.executors().io()
 
@@ -218,11 +209,7 @@ internal class SqliteInspector(
     )
 
   private val throttler =
-    RequestCollapsingThrottler(
-      INVALIDATION_MIN_INTERVAL,
-      ::dispatchDatabasePossiblyChangedEvent,
-      throttlerCoroutineContext,
-    )
+    RequestCollapsingThrottler(INVALIDATION_MIN_INTERVAL, ::dispatchDatabasePossiblyChangedEvent, throttlerCoroutineContext)
 
   override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
     try {
@@ -236,12 +223,7 @@ internal class SqliteInspector(
         RELEASE_DATABASE_LOCK -> handleReleaseDatabaseLock(command.releaseDatabaseLock, callback)
         else ->
           callback.reply(
-            createErrorOccurredResponse(
-                "Unrecognised command type: " + command.oneOfCase.name,
-                null,
-                true,
-                ERROR_UNRECOGNISED_COMMAND,
-              )
+            createErrorOccurredResponse("Unrecognised command type: " + command.oneOfCase.name, null, true, ERROR_UNRECOGNISED_COMMAND)
               .toByteArray()
           )
       }
@@ -266,20 +248,14 @@ internal class SqliteInspector(
     throttler.dispose()
   }
 
-  private fun CommandCallback.replyTrackDatabasesCommand(
-    trackedDriverClasses: List<AdditionalDriverClasses>
-  ) {
+  private fun CommandCallback.replyTrackDatabasesCommand(trackedDriverClasses: List<AdditionalDriverClasses>) {
     val trackDatabasesResponseBuilder = TrackDatabasesResponse.newBuilder()
     trackedDriverClasses.forEach {
       trackDatabasesResponseBuilder.addTrackedAdditionalDrivers(
-        AdditionalDriver.newBuilder()
-          .setDriverClass(it.driverClass.name)
-          .setConnectionClass(it.connectionClass.name)
+        AdditionalDriver.newBuilder().setDriverClass(it.driverClass.name).setConnectionClass(it.connectionClass.name)
       )
     }
-    reply(
-      Response.newBuilder().setTrackDatabases(trackDatabasesResponseBuilder).build().toByteArray()
-    )
+    reply(Response.newBuilder().setTrackDatabases(trackDatabasesResponseBuilder).build().toByteArray())
   }
 
   private fun handleTrackDatabases(command: TrackDatabasesCommand, callback: CommandCallback) {
@@ -313,19 +289,25 @@ internal class SqliteInspector(
         }
       }
     }
-    classes
-      .map { it.connectionClass }
-      .forEach {
-        Log.i(TAG, "Finding instances of ${it.name}")
-        artTooling.findInstances(it).forEach { sqlConnection ->
-          val file = sqlConnection.getDatabasePath()
+    val connectionClasses = buildSet {
+      if (bundledClasses != null) {
+        add(bundledClasses.connectionClass)
+      }
+      addAll(classes.map { it.connectionClass })
+    }
+    Log.i(TAG, "Connection classes: $connectionClasses")
 
-          val database = AndroidXDatabase(sqlConnection, file)
-          if (database.isOpen()) {
-            onDatabaseOpened(database)
-          }
+    connectionClasses.forEach {
+      Log.i(TAG, "Finding instances of ${it.name}")
+      artTooling.findInstances(it).forEach { sqlConnection ->
+        val file = sqlConnection.getDatabasePath()
+
+        val database = AndroidXDatabase(sqlConnection, file)
+        if (database.isOpen()) {
+          onDatabaseOpened(database)
         }
       }
+    }
 
     if (command.forceOpen) {
       databaseRegistry.enableForceOpen()
@@ -351,10 +333,7 @@ internal class SqliteInspector(
     registerFrameworkInvalidationHooks(hookRegistry)
   }
 
-  private fun registerAndroidXHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    vararg drivers: AdditionalDriverClasses,
-  ) {
+  private fun registerAndroidXHooks(hookRegistry: EntryExitMatchingHookRegistry, vararg drivers: AdditionalDriverClasses) {
     try {
       registerAndroidXOpenHooks(hookRegistry, drivers.map { it.driverClass })
       val connectionClasses = drivers.map { it.connectionClass }
@@ -366,15 +345,12 @@ internal class SqliteInspector(
   }
 
   /**
-   * Secures a lock (transaction) on the database. Note that while the lock is in place, no changes
-   * to the database are possible: - the lock prevents other threads from modifying the database, -
-   * lock thread, on releasing the lock, rolls-back all changes (transaction is rolled-back).
+   * Secures a lock (transaction) on the database. Note that while the lock is in place, no changes to the database are possible: - the lock
+   * prevents other threads from modifying the database, - lock thread, on releasing the lock, rolls-back all changes (transaction is
+   * rolled-back).
    */
   // code inside the future is exception-proofed
-  private fun handleAcquireDatabaseLock(
-    command: AcquireDatabaseLockCommand,
-    callback: CommandCallback,
-  ) {
+  private fun handleAcquireDatabaseLock(command: AcquireDatabaseLockCommand, callback: CommandCallback) {
     val databaseId = command.databaseId
     val connection = acquireConnection(databaseId, callback) ?: return
 
@@ -390,20 +366,14 @@ internal class SqliteInspector(
           return@Runnable
         }
         callback.reply(
-          Response.newBuilder()
-            .setAcquireDatabaseLock(AcquireDatabaseLockResponse.newBuilder().setLockId(lockId))
-            .build()
-            .toByteArray()
+          Response.newBuilder().setAcquireDatabaseLock(AcquireDatabaseLockResponse.newBuilder().setLockId(lockId)).build().toByteArray()
         )
       },
     )
   }
 
   // code inside the future is exception-proofed
-  private fun handleReleaseDatabaseLock(
-    command: ReleaseDatabaseLockCommand,
-    callback: CommandCallback,
-  ) {
+  private fun handleReleaseDatabaseLock(command: ReleaseDatabaseLockCommand, callback: CommandCallback) {
     // Timeout is covered by mDatabaseLockRegistry
     submit(
       ioExecutor,
@@ -414,25 +384,15 @@ internal class SqliteInspector(
           processLockingException(callback, e, false)
           return@Runnable
         }
-        callback.reply(
-          Response.newBuilder()
-            .setReleaseDatabaseLock(ReleaseDatabaseLockResponse.getDefaultInstance())
-            .build()
-            .toByteArray()
-        )
+        callback.reply(Response.newBuilder().setReleaseDatabaseLock(ReleaseDatabaseLockResponse.getDefaultInstance()).build().toByteArray())
       },
     )
   }
 
   /** @param isLockingStage provide true for acquiring a lock; false for releasing a lock */
-  private fun processLockingException(
-    callback: CommandCallback,
-    exception: Throwable,
-    isLockingStage: Boolean,
-  ) {
+  private fun processLockingException(callback: CommandCallback, exception: Throwable, isLockingStage: Boolean) {
     val errorCode =
-      if (((exception is IllegalStateException) && exception.isAttemptAtUsingClosedDatabase()))
-        ErrorCode.ERROR_DB_CLOSED_DURING_OPERATION
+      if (((exception is IllegalStateException) && exception.isAttemptAtUsingClosedDatabase())) ErrorCode.ERROR_DB_CLOSED_DURING_OPERATION
       else ErrorCode.ERROR_ISSUE_WITH_LOCKING_DATABASE
 
     val message =
@@ -444,9 +404,7 @@ internal class SqliteInspector(
       else null // not sure if we can recover from a failure to unlock the db, so
 
     // UNKNOWN
-    callback.reply(
-      createErrorOccurredResponse(message, isRecoverable, exception, errorCode).toByteArray()
-    )
+    callback.reply(createErrorOccurredResponse(message, isRecoverable, exception, errorCode).toByteArray())
   }
 
   private fun registerFrameworkOpenHooks() {
@@ -485,22 +443,14 @@ internal class SqliteInspector(
     }
   }
 
-  private fun registerAndroidXOpenHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    driverClasses: List<Class<SQLiteDriver>>,
-  ) {
+  private fun registerAndroidXOpenHooks(hookRegistry: EntryExitMatchingHookRegistry, driverClasses: List<Class<SQLiteDriver>>) {
     driverClasses.forEach { registerAndroidXOpenHooks(hookRegistry, it) }
   }
 
-  private fun registerAndroidXOpenHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    cls: Class<out SQLiteDriver>,
-  ) {
+  private fun registerAndroidXOpenHooks(hookRegistry: EntryExitMatchingHookRegistry, cls: Class<out SQLiteDriver>) {
     Log.i(TAG, "registerAndroidXOpenHooks: ${cls.name}")
     val hasFlags = cls.name == BUNDLED_DRIVER
-    val entryHook = EntryHook { _, args ->
-      databaseLockRegistry.waitForUnlockedDatabase(args[0].toString())
-    }
+    val entryHook = EntryHook { _, args -> databaseLockRegistry.waitForUnlockedDatabase(args[0].toString()) }
     val onExitCallback =
       OnExitCallback<SQLiteDriver, SQLiteConnection> { _, args, result ->
         val sqliteConnection = result ?: return@OnExitCallback null
@@ -527,14 +477,10 @@ internal class SqliteInspector(
     hookRegistry.registerHook(cls, sig, entryHook, onExitCallback)
   }
 
-  /**
-   * Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE]
-   */
+  /** Tracking potential database closed events via [ ][.ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE] */
   private fun registerFrameworkCloseHooks(hookRegistry: EntryExitMatchingHookRegistry) {
-    hookRegistry.registerHook<SQLiteDatabase, Unit>(
-      SQLiteDatabase::class.java,
-      ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE,
-    ) { thisObject, _, _ ->
+    hookRegistry.registerHook<SQLiteDatabase, Unit>(SQLiteDatabase::class.java, ALL_REFERENCES_RELEASE_COMMAND_SIGNATURE) { thisObject, _, _
+      ->
       if (thisObject is SQLiteDatabase) {
         onDatabaseClosed(FrameworkDatabase(thisObject))
       }
@@ -542,9 +488,7 @@ internal class SqliteInspector(
   }
 
   private fun registerFrameworkReleaseReferenceHooks() {
-    environment.artTooling().registerEntryHook(SQLiteClosable::class.java, "releaseReference()V") {
-      thisObject,
-      _ ->
+    environment.artTooling().registerEntryHook(SQLiteClosable::class.java, "releaseReference()V") { thisObject, _ ->
       if (thisObject is SQLiteDatabase) {
         databaseRegistry.notifyReleaseReference(FrameworkDatabase(thisObject))
       }
@@ -558,17 +502,13 @@ internal class SqliteInspector(
   }
 
   /**
-   * Triggering invalidation on [SQLiteDatabase.endTransaction] allows us to avoid showing incorrect
-   * stale values that could originate from a mid-transaction query.
+   * Triggering invalidation on [SQLiteDatabase.endTransaction] allows us to avoid showing incorrect stale values that could originate from
+   * a mid-transaction query.
    *
-   * TODO: track if transaction committed or rolled back by observing if
-   *   [ ][SQLiteDatabase.setTransactionSuccessful] was called
+   * TODO: track if transaction committed or rolled back by observing if [ ][SQLiteDatabase.setTransactionSuccessful] was called
    */
   private fun registerInvalidationHooksTransaction() {
-    environment.artTooling().registerExitHook<Any>(
-      SQLiteDatabase::class.java,
-      "endTransaction()V",
-    ) { result ->
+    environment.artTooling().registerExitHook<Any>(SQLiteDatabase::class.java, "endTransaction()V") { result ->
       throttler.submitRequest()
       result
     }
@@ -582,8 +522,7 @@ internal class SqliteInspector(
    */
   private fun registerInvalidationHooksSqliteStatement() {
     for (method in SQLITE_STATEMENT_EXECUTE_METHODS_SIGNATURES) {
-      environment.artTooling().registerExitHook<Any>(SQLiteStatement::class.java, method) { result
-        ->
+      environment.artTooling().registerExitHook<Any>(SQLiteStatement::class.java, method) { result ->
         throttler.submitRequest()
         result
       }
@@ -591,11 +530,10 @@ internal class SqliteInspector(
   }
 
   /**
-   * Invalidation hooks triggered by [SQLiteCursor.close] which means that the cursor's query was
-   * executed.
+   * Invalidation hooks triggered by [SQLiteCursor.close] which means that the cursor's query was executed.
    *
-   * In order to access cursor's query, we also use [SQLiteDatabase.rawQueryWithFactory] which takes
-   * a query String and constructs a cursor based on it.
+   * In order to access cursor's query, we also use [SQLiteDatabase.rawQueryWithFactory] which takes a query String and constructs a cursor
+   * based on it.
    */
   private fun registerInvalidationHooksSQLiteCursor(hookRegistry: EntryExitMatchingHookRegistry) {
     // TODO: add active pruning via Cursor#close listener
@@ -610,44 +548,33 @@ internal class SqliteInspector(
         "Ljava/lang/String;" +
         "Landroid/os/CancellationSignal;" +
         ")Landroid/database/Cursor;")
-    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(
-      SQLiteDatabase::class.java,
-      rawQueryMethodSignature,
-    ) { _, args, result ->
+    hookRegistry.registerHook<SQLiteDatabase, android.database.Cursor>(SQLiteDatabase::class.java, rawQueryMethodSignature) {
+      _,
+      args,
+      result ->
       val query = stringParam(args[1]!!)
       val cursor = cursorParam(result)
 
       // Only track cursors that might modify the database.
       // TODO: handle PRAGMA select queries, e.g. PRAGMA_TABLE_INFO
-      if (
-        cursor != null &&
-          query != null &&
-          DatabaseUtils.getSqlStatementType(query) != DatabaseUtils.STATEMENT_SELECT
-      ) {
+      if (cursor != null && query != null && DatabaseUtils.getSqlStatementType(query) != DatabaseUtils.STATEMENT_SELECT) {
         trackedCursors[cursor] = null
       }
       result
     }
 
-    environment.artTooling().registerEntryHook(SQLiteCursor::class.java, "close()V") { thisObject, _
-      ->
+    environment.artTooling().registerEntryHook(SQLiteCursor::class.java, "close()V") { thisObject, _ ->
       if (trackedCursors.containsKey(thisObject)) {
         throttler.submitRequest()
       }
     }
   }
 
-  private fun registerAndroidXCloseHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    connectionClasses: List<Class<SQLiteConnection>>,
-  ) {
+  private fun registerAndroidXCloseHooks(hookRegistry: EntryExitMatchingHookRegistry, connectionClasses: List<Class<SQLiteConnection>>) {
     connectionClasses.forEach { registerAndroidXCloseHooks(hookRegistry, it) }
   }
 
-  private fun registerAndroidXCloseHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    cls: Class<out SQLiteConnection>,
-  ) {
+  private fun registerAndroidXCloseHooks(hookRegistry: EntryExitMatchingHookRegistry, cls: Class<out SQLiteConnection>) {
     Log.i(TAG, "registerAndroidXCloseHooks: ${cls.name}")
     val databasePath = AtomicReference<String?>(null)
     // We need to hook both entry and exit hooks because we need to extract the database path from
@@ -676,15 +603,9 @@ internal class SqliteInspector(
     connectionClasses.forEach { registerAndroidXInvalidationHooks(hookRegistry, it) }
   }
 
-  private fun registerAndroidXInvalidationHooks(
-    hookRegistry: EntryExitMatchingHookRegistry,
-    cls: Class<out SQLiteConnection>,
-  ) {
+  private fun registerAndroidXInvalidationHooks(hookRegistry: EntryExitMatchingHookRegistry, cls: Class<out SQLiteConnection>) {
     Log.i(TAG, "registerAndroidXInvalidationHooks: ${cls.name}")
-    hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(
-      cls,
-      ANDROIDX_CONNECTION_PREPARE_SIG,
-    ) { _, args, result ->
+    hookRegistry.registerHook<SQLiteConnection, androidx.sqlite.SQLiteStatement>(cls, ANDROIDX_CONNECTION_PREPARE_SIG) { _, args, result ->
       // if the prepared statement is not a SELECT, we wrap it with a wrapper that triggers
       // invalidation when step() is
       // called
@@ -709,10 +630,7 @@ internal class SqliteInspector(
     }
 
     // TODO: add support for more cursor types
-    Log.w(
-      SqliteInspector::class.java.name,
-      String.format("Unsupported Cursor type: %s. Invalidation might not work correctly.", cursor),
-    )
+    Log.w(SqliteInspector::class.java.name, String.format("Unsupported Cursor type: %s. Invalidation might not work correctly.", cursor))
     return null
   }
 
@@ -721,13 +639,7 @@ internal class SqliteInspector(
     return string as? String
   }
 
-  private fun dispatchDatabaseOpenedEvent(
-    databaseId: Int,
-    path: String,
-    isForced: Boolean,
-    isReadOnly: Boolean,
-    apiClassName: String,
-  ) {
+  private fun dispatchDatabaseOpenedEvent(databaseId: Int, path: String, isForced: Boolean, isReadOnly: Boolean, apiClassName: String) {
     Log.v(HIDDEN_TAG, "dispatchDatabaseOpenedEvent: ${path.substringAfterLast("/")}")
     connection.sendEvent(
       Event.newBuilder()
@@ -747,19 +659,13 @@ internal class SqliteInspector(
   private fun dispatchDatabaseClosedEvent(databaseId: Int, path: String) {
     Log.v(HIDDEN_TAG, "dispatchDatabaseClosedEvent: ${path.substringAfterLast("/")}")
     connection.sendEvent(
-      Event.newBuilder()
-        .setDatabaseClosed(DatabaseClosedEvent.newBuilder().setDatabaseId(databaseId).setPath(path))
-        .build()
-        .toByteArray()
+      Event.newBuilder().setDatabaseClosed(DatabaseClosedEvent.newBuilder().setDatabaseId(databaseId).setPath(path)).build().toByteArray()
     )
   }
 
   private fun dispatchDatabasePossiblyChangedEvent() {
     connection.sendEvent(
-      Event.newBuilder()
-        .setDatabasePossiblyChanged(DatabasePossiblyChangedEvent.getDefaultInstance())
-        .build()
-        .toByteArray()
+      Event.newBuilder().setDatabasePossiblyChanged(DatabasePossiblyChangedEvent.getDefaultInstance()).build().toByteArray()
     )
   }
 
@@ -803,21 +709,12 @@ internal class SqliteInspector(
           )
           triggerInvalidation(command.query)
         } catch (e: SQLiteException) {
-          callback.reply(
-            createErrorOccurredResponse(e, true, ErrorCode.ERROR_ISSUE_WITH_PROCESSING_QUERY)
-              .toByteArray()
-          )
+          callback.reply(createErrorOccurredResponse(e, true, ErrorCode.ERROR_ISSUE_WITH_PROCESSING_QUERY).toByteArray())
         } catch (e: IllegalArgumentException) {
-          callback.reply(
-            createErrorOccurredResponse(e, true, ErrorCode.ERROR_ISSUE_WITH_PROCESSING_QUERY)
-              .toByteArray()
-          )
+          callback.reply(createErrorOccurredResponse(e, true, ErrorCode.ERROR_ISSUE_WITH_PROCESSING_QUERY).toByteArray())
         } catch (e: IllegalStateException) {
           if (e.isAttemptAtUsingClosedDatabase()) {
-            callback.reply(
-              createErrorOccurredResponse(e, true, ErrorCode.ERROR_DB_CLOSED_DURING_OPERATION)
-                .toByteArray()
-            )
+            callback.reply(createErrorOccurredResponse(e, true, ErrorCode.ERROR_DB_CLOSED_DURING_OPERATION).toByteArray())
           } else {
             callback.reply(createErrorOccurredResponse(e, null, ERROR_UNKNOWN).toByteArray())
           }
@@ -841,43 +738,30 @@ internal class SqliteInspector(
     }
   }
 
-  private fun handleKeepDatabasesOpen(
-    keepDatabasesOpen: KeepDatabasesOpenCommand,
-    callback: CommandCallback,
-  ) {
+  private fun handleKeepDatabasesOpen(keepDatabasesOpen: KeepDatabasesOpenCommand, callback: CommandCallback) {
     // Acknowledge the command
-    callback.reply(
-      Response.newBuilder()
-        .setKeepDatabasesOpen(KeepDatabasesOpenResponse.getDefaultInstance())
-        .build()
-        .toByteArray()
-    )
+    callback.reply(Response.newBuilder().setKeepDatabasesOpen(KeepDatabasesOpenResponse.getDefaultInstance()).build().toByteArray())
 
     databaseRegistry.notifyKeepOpenToggle(keepDatabasesOpen.setEnabled)
   }
 
   /**
-   * Tries to find a database for an id. If no such database is found, it replies with an [ ] via
-   * the `callback` provided.
+   * Tries to find a database for an id. If no such database is found, it replies with an [ ] via the `callback` provided.
    *
-   * The race condition can be mitigated by clients by securing a lock synchronously with no other
-   * queries in place.
+   * The race condition can be mitigated by clients by securing a lock synchronously with no other queries in place.
    *
    * @return null if no database found for the provided id. A database reference otherwise.
    *
-   * TODO: remove race condition (affects WAL=off) - lock request is received and in the process of
-   *   being secured - query request is received and since no lock in place, receives an IO
-   *   Executor - lock request completes and holds a lock on the database - query cannot run because
-   *   there is a lock in place
+   * TODO: remove race condition (affects WAL=off) - lock request is received and in the process of being secured - query request is
+   *   received and since no lock in place, receives an IO Executor - lock request completes and holds a lock on the database - query cannot
+   *   run because there is a lock in place
    */
   private fun acquireConnection(databaseId: Int, callback: CommandCallback): DatabaseConnection? {
     val connection = databaseLockRegistry.getConnection(databaseId)
     if (connection != null) {
       // With WAL enabled, we prefer to use the IO executor. With WAL off we don't have a
       // choice and must use the executor that has a lock (transaction) on the database.
-      return if (connection.database.isWriteAheadLoggingEnabled())
-        DatabaseConnection(connection.database, ioExecutor)
-      else connection
+      return if (connection.database.isWriteAheadLoggingEnabled()) DatabaseConnection(connection.database, ioExecutor) else connection
     }
 
     val database = databaseRegistry.getConnection(databaseId)
@@ -892,20 +776,8 @@ internal class SqliteInspector(
 
   private fun replyNoDatabaseWithId(callback: CommandCallback, databaseId: Int) {
     val message =
-      String.format(
-        "Unable to perform an operation on database (id=%s)." +
-          " The database may have already been closed.",
-        databaseId,
-      )
-    callback.reply(
-      createErrorOccurredResponse(
-          message,
-          null,
-          true,
-          ErrorCode.ERROR_NO_OPEN_DATABASE_WITH_REQUESTED_ID,
-        )
-        .toByteArray()
-    )
+      String.format("Unable to perform an operation on database (id=%s)." + " The database may have already been closed.", databaseId)
+    callback.reply(createErrorOccurredResponse(message, null, true, ErrorCode.ERROR_NO_OPEN_DATABASE_WITH_REQUESTED_ID).toByteArray())
   }
 
   private fun querySchema(database: Database): Response {
@@ -913,9 +785,7 @@ internal class SqliteInspector(
     try {
       val withoutRowidMap = getWithoutRowIdMap(database)
       cursor = rawQuery(database, QUERY_TABLE_INFO, arrayOfNulls(0), null)
-      val schemaBuilder =
-        GetSchemaResponse.newBuilder()
-          .setIsForcedConnection(databaseRegistry.isForcedConnection(database))
+      val schemaBuilder = GetSchemaResponse.newBuilder().setIsForcedConnection(databaseRegistry.isForcedConnection(database))
 
       val objectTypeIx = cursor.getColumnIndex("type") // view or table
       val tableNameIx = cursor.getColumnIndex("tableName")
@@ -1011,17 +881,10 @@ internal class SqliteInspector(
   }
 
   @Suppress("SameParameterValue")
-  private fun createErrorOccurredEvent(
-    message: String?,
-    stackTrace: String?,
-    isRecoverable: Boolean?,
-    errorCode: ErrorCode,
-  ): Event {
+  private fun createErrorOccurredEvent(message: String?, stackTrace: String?, isRecoverable: Boolean?, errorCode: ErrorCode): Event {
     return Event.newBuilder()
       .setErrorOccurred(
-        ErrorOccurredEvent.newBuilder()
-          .setContent(createErrorContentMessage(message, stackTrace, isRecoverable, errorCode))
-          .build()
+        ErrorOccurredEvent.newBuilder().setContent(createErrorContentMessage(message, stackTrace, isRecoverable, errorCode)).build()
       )
       .build()
   }
@@ -1035,10 +898,7 @@ internal class SqliteInspector(
         // The Application database path is under "/data/user/<user>" but pragma_database_list
         // returns "/data/data"
         // paths, so we need to get the user id and change the path so it matches.
-        val user =
-          application
-            ?.getSystemService(UserManager::class.java)
-            ?.getSerialNumberForUser(Process.myUserHandle())
+        val user = application?.getSystemService(UserManager::class.java)?.getSerialNumberForUser(Process.myUserHandle())
         when (user) {
           null -> filename
           else -> filename.replace("/data/data/", "/data/user/$user/")
@@ -1050,20 +910,15 @@ internal class SqliteInspector(
   /**
    * Provides a reference to the database and an executor to access the database.
    *
-   * Executor is relevant in the context of locking, where a locked database with WAL disabled needs
-   * to run queries on the thread that locked it.
+   * Executor is relevant in the context of locking, where a locked database with WAL disabled needs to run queries on the thread that
+   * locked it.
    */
   internal class DatabaseConnection(val database: Database, val executor: Executor)
 
   companion object {
 
     @SuppressLint("Recycle") // For: "The cursor should be freed up after use with #close"
-    private fun rawQuery(
-      database: Database,
-      queryText: String,
-      params: Array<String?>,
-      cancellationSignal: CancellationSignal?,
-    ): Cursor {
+    private fun rawQuery(database: Database, queryText: String, params: Array<String?>, cancellationSignal: CancellationSignal?): Cursor {
       return database.rawQuery(queryText, params, cancellationSignal)
     }
 
@@ -1074,10 +929,7 @@ internal class SqliteInspector(
         when (param.oneOfCase) {
           QueryParameterValue.OneOfCase.STRING_VALUE -> params[i] = param.stringValue
           QueryParameterValue.OneOfCase.ONEOF_NOT_SET -> params[i] = null
-          else ->
-            throw IllegalArgumentException(
-              "Unsupported parameter type. OneOfCase=" + param.oneOfCase
-            )
+          else -> throw IllegalArgumentException("Unsupported parameter type. OneOfCase=" + param.oneOfCase)
         }
       }
       return params
@@ -1137,11 +989,7 @@ internal class SqliteInspector(
       return builder.setRecoverability(recoverability.build()).setErrorCode(errorCode).build()
     }
 
-    private fun createErrorOccurredResponse(
-      exception: Throwable,
-      isRecoverable: Boolean?,
-      errorCode: ErrorCode,
-    ): Response {
+    private fun createErrorOccurredResponse(exception: Throwable, isRecoverable: Boolean?, errorCode: ErrorCode): Response {
       return createErrorOccurredResponse("", isRecoverable, exception, errorCode)
     }
 
@@ -1153,12 +1001,7 @@ internal class SqliteInspector(
     ): Response {
       var message = exception.message
       if (message == null) message = exception.toString()
-      return createErrorOccurredResponse(
-        messagePrefix + message,
-        stackTraceFromException(exception),
-        isRecoverable,
-        errorCode,
-      )
+      return createErrorOccurredResponse(messagePrefix + message, stackTraceFromException(exception), isRecoverable, errorCode)
     }
 
     private fun createErrorOccurredResponse(
@@ -1169,8 +1012,7 @@ internal class SqliteInspector(
     ): Response {
       return Response.newBuilder()
         .setErrorOccurred(
-          ErrorOccurredResponse.newBuilder()
-            .setContent(createErrorContentMessage(message, stackTrace, isRecoverable, errorCode))
+          ErrorOccurredResponse.newBuilder().setContent(createErrorContentMessage(message, stackTrace, isRecoverable, errorCode))
         )
         .build()
     }
@@ -1182,14 +1024,10 @@ internal class SqliteInspector(
     }
   }
 
-  private class AdditionalDriverClasses(
-    val driverClass: Class<SQLiteDriver>,
-    val connectionClass: Class<SQLiteConnection>,
-  )
+  private class AdditionalDriverClasses(val driverClass: Class<SQLiteDriver>, val connectionClass: Class<SQLiteConnection>)
 
   private fun AdditionalDriver.toClasses(): AdditionalDriverClasses? {
-    val connectionClassName =
-      connectionClass.ifEmpty { driverClass.replace("Driver", "Connection") }
+    val connectionClassName = connectionClass.ifEmpty { driverClass.replace("Driver", "Connection") }
     val driverClass = loadClass<SQLiteDriver>(driverClass) ?: return null
     val connectionClass = loadClass<SQLiteConnection>(connectionClassName) ?: return null
     return AdditionalDriverClasses(driverClass, connectionClass)

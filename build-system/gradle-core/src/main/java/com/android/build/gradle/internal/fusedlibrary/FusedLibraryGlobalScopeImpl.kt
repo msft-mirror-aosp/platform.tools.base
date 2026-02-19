@@ -24,7 +24,6 @@ import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.dsl.InternalFusedLibraryExtension
 import com.android.build.gradle.internal.fusedlibrary.FusedLibraryConstants.EXTENSION_NAME
-import com.android.build.gradle.internal.ide.v2.PackagingOptionsImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -36,41 +35,38 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.provider.MapProperty
 
 class FusedLibraryGlobalScopeImpl(
-    project: Project,
-    private val projectServices: ProjectServices,
-    extensionProvider: () -> InternalFusedLibraryExtension,
+  project: Project,
+  private val projectServices: ProjectServices,
+  extensionProvider: () -> InternalFusedLibraryExtension,
 ) : FusedLibraryGlobalScope {
 
-    private val internalServices = VariantServicesImpl(projectServices)
+  private val internalServices = VariantServicesImpl(projectServices)
 
-    override val aarMetadata: AarMetadataImpl
-        get() = extension.aarMetadata as AarMetadataImpl
+  override val aarMetadata: AarMetadataImpl
+    get() = extension.aarMetadata as AarMetadataImpl
 
-    override val packaging: Packaging
-        get() = PackagingImpl(extension.packaging.also {
-            it.dex.useLegacyPackaging?.let {
-                error("${EXTENSION_NAME}.packaging.dex.useLegacyPackaging is not a supported option.")
-            }
-        }, VariantServicesImpl(projectServices))
+  override val packaging: Packaging
+    get() =
+      PackagingImpl(
+        extension.packaging.also {
+          it.dex.useLegacyPackaging?.let { error("${EXTENSION_NAME}.packaging.dex.useLegacyPackaging is not a supported option.") }
+        },
+        VariantServicesImpl(projectServices),
+      )
 
-    override val artifacts= ArtifactsImpl(project, "single")
-    override val dependencies = FusedLibraryDependencies()
-    override val incomingConfigurations = dependencies.configurations
-    override val extension: InternalFusedLibraryExtension by lazy {
-        extensionProvider.invoke()
-    }
+  override val artifacts = ArtifactsImpl(project, "single")
+  override val dependencies = FusedLibraryDependencies()
+  override val incomingConfigurations = dependencies.configurations
+  override val extension: InternalFusedLibraryExtension by lazy { extensionProvider.invoke() }
 
-    override val experimentalProperties: MapProperty<String, Any>
-        get() = internalServices.mapPropertyOf(
-            String::class.java,
-            Any::class.java,
-            extension.experimentalProperties,
-            false
-        )
+  override val experimentalProperties: MapProperty<String, Any>
+    get() = internalServices.mapPropertyOf(String::class.java, Any::class.java, extension.experimentalProperties, false)
 
-    override val namespace: String
-        get() = extension.namespace ?: error(
-            """
+  override val namespace: String
+    get() =
+      extension.namespace
+        ?: error(
+          """
                 Namespace is not defined.
 
                 Please add the `namespace` field to the :${projectServices.projectInfo.name} build file.
@@ -81,15 +77,18 @@ class FusedLibraryGlobalScopeImpl(
                     namespace = "com.example.mylibrary"
                 }
                 ```
-            """.trimIndent()
+            """
+            .trimIndent()
         )
 
-    override val manifestPlaceholders: MutableMap<String, String>
-        get() = extension.manifestPlaceholders
+  override val manifestPlaceholders: MutableMap<String, String>
+    get() = extension.manifestPlaceholders
 
-    override val minSdkApiLevel: Int
-        get() = extension.minSdkApiLevel ?: error(
-            """
+  override val minSdkApiLevel: Int
+    get() =
+      extension.minSdkApiLevel
+        ?: error(
+          """
                 Minimum Sdk is not defined.
 
                 Please configure `minSdk` in the `${EXTENSION_NAME}`:${projectServices.projectInfo.name} build file.
@@ -102,19 +101,19 @@ class FusedLibraryGlobalScopeImpl(
                     }
                 }
                 ```
-            """.trimIndent()
+            """
+            .trimIndent()
         )
 
-    override val projectLayout: ProjectLayout = project.layout
-    override val services: TaskCreationServices
-        get() = TaskCreationServicesImpl(projectServices)
+  override val projectLayout: ProjectLayout = project.layout
+  override val services: TaskCreationServices
+    get() = TaskCreationServicesImpl(projectServices)
 
-    override fun getLocalJars(): FileCollection {
-        return VariantDependencies.computeLocalFileDependencies(
-            incomingConfigurations.getByConfigType(
-                AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH),
-            services::fileCollection,
-            { file -> file.extension == EXT_JAR }
-        )
-    }
+  override fun getLocalJars(): FileCollection {
+    return VariantDependencies.computeLocalFileDependencies(
+      incomingConfigurations.getByConfigType(AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH),
+      services::fileCollection,
+      { file -> file.extension == EXT_JAR },
+    )
+  }
 }

@@ -23,17 +23,15 @@ import java.lang.reflect.Method
 private const val INVALIDATION_TRACKER_QNAME = "androidx.room.InvalidationTracker"
 
 /**
- * Tracks instances of Room's InvalidationTracker so that we can trigger them to re-check database
- * for changes in case there are observed tables in the application UI.
+ * Tracks instances of Room's InvalidationTracker so that we can trigger them to re-check database for changes in case there are observed
+ * tables in the application UI.
  *
- * The list of instances of InvalidationTrackers are cached to avoid re-finding them after each
- * query. Make sure to call [.invalidateCache] after a new database connection is detected.
+ * The list of instances of InvalidationTrackers are cached to avoid re-finding them after each query. Make sure to call [.invalidateCache]
+ * after a new database connection is detected.
  *
- * TODO(aalbert): THis seems overly complicated. It should be able to use a similar pattern to the
- *   SqlDelight invalidators.
+ * TODO(aalbert): THis seems overly complicated. It should be able to use a similar pattern to the SqlDelight invalidators.
  */
-internal class RoomInvalidationRegistry(private val environment: InspectorEnvironment) :
-  Invalidation {
+internal class RoomInvalidationRegistry(private val environment: InspectorEnvironment) : Invalidation {
   /** Might be null if application does not ship with Room. */
   private val invoker = findInvalidationTrackerClass()
 
@@ -85,10 +83,7 @@ internal class RoomInvalidationRegistry(private val environment: InspectorEnviro
       val klass = classLoader.loadClass(INVALIDATION_TRACKER_QNAME)
       return InvalidationTrackerInvoker(klass)
     } catch (e: ClassNotFoundException) {
-      Log.v(
-        HIDDEN_TAG,
-        "Room InvalidationTracker not found. Either app is not using it or Proguard has renamed it.",
-      )
+      Log.v(HIDDEN_TAG, "Room InvalidationTracker not found. Either app is not using it or Proguard has renamed it.")
     } catch (e: Throwable) {
       Log.w(TAG, "Error setting up Room invalidation", e)
     }

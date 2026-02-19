@@ -32,8 +32,8 @@ import org.w3c.dom.Element
 /**
  * Check which makes sure that only views that are `android.view.ViewGroup` have children.
  *
- * <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content"
- * android:src="@drawable/icon" > <TextView /> </ImageView>
+ * <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/icon" > <TextView />
+ * </ImageView>
  *
  * Attempting to inflate a layout above, will otherwise lead to the following exception:
  *
@@ -41,8 +41,7 @@ import org.w3c.dom.Element
  */
 class ChildInNonViewGroupDetector : LayoutDetector() {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ChildInNonViewGroupDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ChildInNonViewGroupDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     /** The main issue discovered by this detector. */
     @JvmField
@@ -87,6 +86,5 @@ class ChildInNonViewGroupDetector : LayoutDetector() {
       "A ${element.parentNode.nodeName} should have no children declared in XML",
     )
 
-  private fun SdkInfo.isChildOfViewGroup(element: Element): Boolean =
-    isSubViewOf(VIEW_GROUP, element.parentNode.nodeName)
+  private fun SdkInfo.isChildOfViewGroup(element: Element): Boolean = isSubViewOf(VIEW_GROUP, element.parentNode.nodeName)
 }

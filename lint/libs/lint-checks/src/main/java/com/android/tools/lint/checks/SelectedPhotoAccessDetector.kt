@@ -32,11 +32,10 @@ import com.android.tools.lint.detector.api.XmlScanner
 import com.android.utils.iterator
 
 /**
- * On Android 14 devices, apps requesting READ_MEDIA_IMAGES and/or READ_MEDIA_VIDEO should request
- * READ_MEDIA_VISUAL_USER_SELECTED to better support selected photos access. The
- * READ_MEDIA_VISUAL_USER_SELECTED permission must be declared (but not requested) to allow apps to
- * better control the UX of photos selection. The potential issue is apps adding this new permission
- * without changing their UX and permission logic to accommodate this behavior change.
+ * On Android 14 devices, apps requesting READ_MEDIA_IMAGES and/or READ_MEDIA_VIDEO should request READ_MEDIA_VISUAL_USER_SELECTED to better
+ * support selected photos access. The READ_MEDIA_VISUAL_USER_SELECTED permission must be declared (but not requested) to allow apps to
+ * better control the UX of photos selection. The potential issue is apps adding this new permission without changing their UX and
+ * permission logic to accommodate this behavior change.
  */
 class SelectedPhotoAccessDetector : Detector(), XmlScanner {
 
@@ -58,13 +57,10 @@ class SelectedPhotoAccessDetector : Detector(), XmlScanner {
           category = Category.CORRECTNESS,
           priority = 5,
           severity = Severity.WARNING,
-          implementation =
-            Implementation(SelectedPhotoAccessDetector::class.java, Scope.MANIFEST_SCOPE),
+          implementation = Implementation(SelectedPhotoAccessDetector::class.java, Scope.MANIFEST_SCOPE),
           androidSpecific = true,
         )
-        .addMoreInfo(
-          "https://developer.android.com/about/versions/14/changes/partial-photo-video-access"
-        )
+        .addMoreInfo("https://developer.android.com/about/versions/14/changes/partial-photo-video-access")
   }
 
   override fun checkMergedProject(context: Context) {

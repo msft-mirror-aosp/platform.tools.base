@@ -16,7 +16,6 @@
 package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.InferredThreadDetector.Thread
-import com.android.tools.lint.checks.ThreadConstraintDetector.ThreadConstraintLattice.Companion.assumeCommonJavaAndKotlinSignatures
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Implementation
@@ -48,10 +47,9 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
   /**
    * Thread groups we track in an Android app.
    *
-   * As far as thread compatibility is concerned, `@UiThread` and `@MainThread` are equivalent, so
-   * they have the same internal representation, simplifying a preorder to a partial order. UX wise,
-   * a small price we're currently paying is that when reporting errors back to the user, we're
-   * displaying `@{Main,Ui}Thread` instead of the exact one that they originally write.
+   * As far as thread compatibility is concerned, `@UiThread` and `@MainThread` are equivalent, so they have the same internal
+   * representation, simplifying a preorder to a partial order. UX wise, a small price we're currently paying is that when reporting errors
+   * back to the user, we're displaying `@{Main,Ui}Thread` instead of the exact one that they originally write.
    */
   enum class Thread {
     MainOrUi,
@@ -83,8 +81,7 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
                 `WrongThreadInterprocedural`, accompanied by a check aiming to be more reliable \
                 and scalable.
                 """,
-          moreInfo =
-            "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+          moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
           category = Category.CORRECTNESS,
           priority = 6,
           severity = Severity.ERROR,
@@ -96,7 +93,6 @@ class InferredThreadDetector : ThreadConstraintDetector<Thread>(lattice, assumpt
 
     val lattice = ThreadConstraintLattice.of<Thread>()
 
-    val assumptions by
-      lazy(LazyThreadSafetyMode.NONE) { lattice.build { assumeCommonJavaAndKotlinSignatures() } }
+    val assumptions by lazy(LazyThreadSafetyMode.NONE) { lattice.build { assumeCommonJavaAndKotlinSignatures() } }
   }
 }

@@ -6,12 +6,10 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * A string flattened from an XML hierarchy, which maintains tags and untranslatable sections in
- * parallel data structures.
+ * A string flattened from an XML hierarchy, which maintains tags and untranslatable sections in parallel data structures.
  *
- * @property rawString The raw string of the flattened xml.
- *   <p> This string will contain all removed spaces and escape characters. For the processed
- *   string see {@code styleString.str}.
+ * @property rawString The raw string of the flattened xml. <p> This string will contain all removed spaces and escape characters. For the
+ *   processed string see {@code styleString.str}.
  * @property styleString The processed string with all spans generated.
  * @property untranslatableSections all marked untranslatable sections from the xml.
  * @property success Whether or not this resource was parsed without error.
@@ -20,45 +18,41 @@ data class FlattenedXml(
   val rawString: String,
   val styleString: StyleString,
   val untranslatableSections: List<UntranslatableSection>,
-  val success: Boolean)
+  val success: Boolean,
+)
 
 /**
- * Flattens an XML hierarchy into a FlattenedXml string, formatting the text, escaping characters,
- * and removing whitespace, all while keeping the untranslatable sections and spans in sync with the
- * transformations.
+ * Flattens an XML hierarchy into a FlattenedXml string, formatting the text, escaping characters, and removing whitespace, all while
+ * keeping the untranslatable sections and spans in sync with the transformations.
  *
- * <p> Specifically, the StringBuilder will handle escaped characters like \t, \n, \\, \', etc.
- * Single quotes *must* be escaped, unless within a pair of double-quotes.
- * Pairs of double-quotes disable whitespace stripping of the enclosed text.
- * Unicode escape codes (\u0049) are interpreted and the represented Unicode character is inserted.
+ * <p> Specifically, the StringBuilder will handle escaped characters like \t, \n, \\, \', etc. Single quotes *must* be escaped, unless
+ * within a pair of double-quotes. Pairs of double-quotes disable whitespace stripping of the enclosed text. Unicode escape codes (\u0049)
+ * are interpreted and the represented Unicode character is inserted.
  *
  * <p> A NOTE ON WHITESPACE:
  *
- * <p> When preserve_spaces is false, and when text is not enclosed within double-quotes,
- * StringBuilder replaces a series of whitespace with a single space character. This happens at the
- * start and end of the string as well, so leading and trailing whitespace is possible, but only if
- * the flattened xml being built contains spans.
+ * <p> When preserve_spaces is false, and when text is not enclosed within double-quotes, StringBuilder replaces a series of whitespace with
+ * a single space character. This happens at the start and end of the string as well, so leading and trailing whitespace is possible, but
+ * only if the flattened xml being built contains spans.
  *
- * <p> When a Span is started or stopped, the whitespace counter is reset, meaning if whitespace
- * is encountered directly after the span, it will be emitted. This leads to situations like the
- * following: "This <b> is </b> spaced" -> "This  is  spaced". Without spans, this would be properly
- * compressed: "This  is  spaced" -> "This is spaced".
+ * <p> When a Span is started or stopped, the whitespace counter is reset, meaning if whitespace is encountered directly after the span, it
+ * will be emitted. This leads to situations like the following: "This <b> is </b> spaced" -> "This is spaced". Without spans, this would be
+ * properly compressed: "This is spaced" -> "This is spaced".
  *
- * <p> Untranslatable sections do not have the same problem:
- * "This <xliff:g> is </xliff:g> not spaced" -> "This is not spaced".
+ * <p> Untranslatable sections do not have the same problem: "This <xliff:g> is </xliff:g> not spaced" -> "This is not spaced".
  *
- * <p> NOTE: This is all the way it is because AAPT1 did it this way. Maintaining backwards
- * compatibility is important.
+ * <p> NOTE: This is all the way it is because AAPT1 did it this way. Maintaining backwards compatibility is important.
  *
- * @property preserveSpaces If true, whitespace removal is not performed.
- *   <p> Single quotations can be used without escaping when {@code preservedSpaces} is set to true
- *   as well.
+ * @property preserveSpaces If true, whitespace removal is not performed. <p> Single quotations can be used without escaping when {@code
+ *   preservedSpaces} is set to true as well.
  */
 class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
   var inQuote = preserveSpaces
     private set
+
   var lastCodepointWasSpace = false
     private set
+
   private var lastCodepointWasBackslash = false
   private var firstQuote = -1
   private var lastQuote = -1
@@ -76,7 +70,6 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
   /** @property error the last error found while constructing the flattened xml. */
   var error = ""
     private set
-
 
   /** Resets the XmlStringBuilder state to an empty string. */
   fun clear() {
@@ -100,22 +93,21 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
   }
 
   /** Transform escaped codepoint into expected codepoint. */
-  fun handleEscape(
-      codePoint: Int,
-      textBuilder: StringBuilder,
-      codePoints: PrimitiveIterator.OfInt,
-      str: String
-  ): Boolean {
+  fun handleEscape(codePoint: Int, textBuilder: StringBuilder, codePoints: PrimitiveIterator.OfInt, str: String): Boolean {
     when (codePoint) {
       't'.code -> textBuilder.append('\t')
       'n'.code -> textBuilder.append('\n')
-      '#'.code, '@'.code, '?'.code, '"'.code, '\''.code, '\\'.code ->
-          textBuilder.appendCodePoint(codePoint)
+      '#'.code,
+      '@'.code,
+      '?'.code,
+      '"'.code,
+      '\''.code,
+      '\\'.code -> textBuilder.appendCodePoint(codePoint)
       'u'.code -> {
-          if (!appendUnicodeEscapeSequence(codePoints, textBuilder)) {
-              error = "Invalid unicode escape sequence in string\n\"$str\""
-              return false
-          }
+        if (!appendUnicodeEscapeSequence(codePoints, textBuilder)) {
+          error = "Invalid unicode escape sequence in string\n\"$str\""
+          return false
+        }
       }
       // Can ignore the escape character and just include the code point.
       else -> textBuilder.appendCodePoint(codePoint)
@@ -124,7 +116,7 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
   }
 
   /** Appends a chunk of text to the xml string. */
-  fun append(str : String) : XmlStringBuilder {
+  fun append(str: String): XmlStringBuilder {
     rawStringBuilder.append(str)
 
     val codePoints = str.codePoints().iterator()
@@ -148,7 +140,7 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
       }
 
       if (firstChar == -1) {
-          firstChar = textBuilder.length
+        firstChar = textBuilder.length
       }
 
       lastCodepointWasSpace = false
@@ -161,21 +153,21 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
           lastCodepointWasBackslash = false
         }
         codePoint == '\\'.code -> {
-            if (codePoints.hasNext()) {
-                codePoint = codePoints.nextInt()
-                if (!handleEscape(codePoint, textBuilder, codePoints, str)) {
-                    return this
-                }
-                lastChar = textBuilder.length
-            } else {
-                lastCodepointWasBackslash = true
+          if (codePoints.hasNext()) {
+            codePoint = codePoints.nextInt()
+            if (!handleEscape(codePoint, textBuilder, codePoints, str)) {
+              return this
             }
+            lastChar = textBuilder.length
+          } else {
+            lastCodepointWasBackslash = true
+          }
         }
         codePoint == '\"'.code && !preserveSpaces -> {
           // only toggle quote when we are not preserving spaces.
           inQuote = !inQuote
           if (firstQuote == -1) {
-              firstQuote = textBuilder.length
+            firstQuote = textBuilder.length
           }
           lastQuote = textBuilder.length
           lastChar = textBuilder.length
@@ -197,12 +189,12 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
 
   /**
    * Starts a Span (tag) with the given name.
-   * <p> The name is expected to be of the form:
-   * "tag_name;attr1=value;attr2=value"
-   * <p> Which is how Spans are encoded in the ResStringPool. A corresponding call to
-   * [endSpan] is needed to close the span.
+   *
+   * <p> The name is expected to be of the form: "tag_name;attr1=value;attr2=value"
+   *
+   * <p> Which is how Spans are encoded in the ResStringPool. A corresponding call to [endSpan] is needed to close the span.
    */
-  fun startSpan(name : String): XmlStringBuilder {
+  fun startSpan(name: String): XmlStringBuilder {
     if (error.isNotEmpty()) {
       return this
     }
@@ -235,8 +227,8 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
 
   /**
    * Starts an Untranslatable section.
-   * <p> To end the section, call the [endUntranslatable] method. No more than one translatable
-   * section can be open at one time.
+   *
+   * <p> To end the section, call the [endUntranslatable] method. No more than one translatable section can be open at one time.
    */
   fun startUntranslatable(): XmlStringBuilder {
     if (error.isNotEmpty()) {
@@ -270,11 +262,8 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
     return this
   }
 
-  /**
-   * Returns the flattened XML string, with all spans and untranslatable sections encoded as
-   * parallel data structures.
-   */
-  fun getFlattenedXml() : FlattenedXml {
+  /** Returns the flattened XML string, with all spans and untranslatable sections encoded as parallel data structures. */
+  fun getFlattenedXml(): FlattenedXml {
     if (inUntranslatable) {
       error = "Attempting to flatten xml with unfinished untranslatable section."
     }
@@ -294,9 +283,7 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
       if (untranslatableSections.isNotEmpty()) {
         lastChar = max(lastChar, untranslatableSections.last().endIndex)
       }
-      untranslatables = untranslatableSections.map {
-        it.shift(-firstChar)
-      }
+      untranslatables = untranslatableSections.map { it.shift(-firstChar) }
 
       // If we had a string made fully of whitespace, then firstChar > lastChar. Since we're
       // removing leading and trailing whitespaces, handle this as an empty string.
@@ -304,8 +291,7 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
     }
 
     val raw = rawStringBuilder.toString()
-    return FlattenedXml(
-        raw, StyleString(text, spans.toList()), untranslatables.toList(), error.isEmpty())
+    return FlattenedXml(raw, StyleString(text, spans.toList()), untranslatables.toList(), error.isEmpty())
   }
 
   private fun getFirstChar(): Int {
@@ -322,8 +308,7 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
     }
     // If there are quotes we need to check if there are any non-whitespace characters before
     // the quote. If there are any, the string should be preserved.
-    if (firstChar != -1 && firstChar < firstQuote)
-      return 0
+    if (firstChar != -1 && firstChar < firstQuote) return 0
     return firstQuote
   }
 
@@ -331,19 +316,18 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
     if (lastQuote == -1) {
       // If we had no quotes then just trim the whitespace at the end of the string.
       if (lastChar != -1) {
-          return lastChar
+        return lastChar
       }
       // If there were no characters, it's all whitespace, and the resulting string should be empty.
       return 0
     }
     // If we had quotes, only trim the string if there are exclusively whitespaces after the
     // last quote.
-    if (lastChar != -1 && lastChar > lastQuote)
-      return text.length
+    if (lastChar != -1 && lastChar > lastQuote) return text.length
     return lastQuote
   }
 
-  private fun appendUnicodeEscapeSequence(iter : Iterator<Int>, text: StringBuilder) : Boolean {
+  private fun appendUnicodeEscapeSequence(iter: Iterator<Int>, text: StringBuilder): Boolean {
     var code = 0
     for (i in 1..4) {
       if (!iter.hasNext()) {
@@ -367,5 +351,4 @@ class XmlStringBuilder(private val preserveSpaces: Boolean = false) {
     lastCodepointWasSpace = false
     lastCodepointWasBackslash = false
   }
-
 }

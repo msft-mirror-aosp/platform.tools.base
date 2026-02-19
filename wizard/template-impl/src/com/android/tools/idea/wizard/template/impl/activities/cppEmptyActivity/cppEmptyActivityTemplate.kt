@@ -61,9 +61,7 @@ val cppEmptyActivityTemplate
       name = "Activity Name"
       visible = { !isNewModule }
       constraints = listOf(CLASS, UNIQUE, NONEMPTY)
-      suggest = {
-        layoutToActivity(layoutName.value)
-      }
+      suggest = { layoutToActivity(layoutName.value) }
       default = "MainActivity"
       help = "The name of the activity class to create"
       loggable = true
@@ -72,9 +70,7 @@ val cppEmptyActivityTemplate
       name = "Layout Name"
       visible = { !isNewModule }
       constraints = listOf(LAYOUT, UNIQUE, NONEMPTY)
-      suggest = {
-        activityToLayout(activityClass.value)
-      }
+      suggest = { activityToLayout(activityClass.value) }
       default = "activity_main"
       help = "The name of the UI layout to create for the activity"
       loggable = true
@@ -85,11 +81,12 @@ val cppEmptyActivityTemplate
       default = false
       help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
-    val cppStandard = enumParameter<CppStandardType> {
-      name = "C++ Standard"
-      default = CppStandardType.`Toolchain Default`
-      help = "C++ Standard version"
-    }
+    val cppStandard =
+      enumParameter<CppStandardType> {
+        name = "C++ Standard"
+        default = CppStandardType.`Toolchain Default`
+        help = "C++ Standard version"
+      }
     val packageName = defaultPackageNameParameter
 
     widgets(
@@ -100,16 +97,19 @@ val cppEmptyActivityTemplate
       LanguageWidget(),
       EnumWidget(cppStandard),
       LabelWidget("C++ feature support depends on Android NDK version."),
-      UrlLinkWidget("See documentation", DOCUMENTATION_URL)
+      UrlLinkWidget("See documentation", DOCUMENTATION_URL),
     )
 
-    thumb {
-      File("cpp-empty-activity").resolve("cpp_configure.png")
-    }
+    thumb { File("cpp-empty-activity").resolve("cpp_configure.png") }
 
     recipe = { data ->
       generateCppEmptyActivity(
-        data as ModuleTemplateData, activityClass.value, layoutName.value, isLauncher.value, packageName.value, cppStandard.value.toString()
+        data as ModuleTemplateData,
+        activityClass.value,
+        layoutName.value,
+        isLauncher.value,
+        packageName.value,
+        cppStandard.value.toString(),
       )
     }
   }

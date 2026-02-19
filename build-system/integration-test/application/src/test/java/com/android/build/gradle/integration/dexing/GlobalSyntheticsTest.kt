@@ -28,273 +28,259 @@ import com.android.testutils.MavenRepoGenerator
 import com.android.testutils.apk.AndroidArchive
 import com.google.common.io.Resources
 import com.google.common.truth.Truth
+import java.io.File
+import java.nio.file.Files
 import org.junit.Assume
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
-import java.nio.file.Files
 
 @RunWith(Parameterized::class)
 class GlobalSyntheticsTest(private val dexType: DexType) {
 
-    enum class DexType {
-        MONO, LEGACY, NATIVE
-    }
+  enum class DexType {
+    MONO,
+    LEGACY,
+    NATIVE,
+  }
 
-    companion object {
-        @JvmStatic
-        @Parameterized.Parameters(name = "dexType_{0}")
-        fun parameters() = listOf(DexType.MONO, DexType.LEGACY, DexType.NATIVE)
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "dexType_{0}") fun parameters() = listOf(DexType.MONO, DexType.LEGACY, DexType.NATIVE)
 
-        const val exceptionGlobalTriggerClass = "IllformedLocaleExceptionUsage"
-        const val recordClass = "Person"
-        const val exceptionGlobalDex = "Landroid/icu/util/IllformedLocaleException;"
-        const val recordGlobalDex = "Lcom/android/tools/r8/RecordTag;"
-    }
+    const val exceptionGlobalTriggerClass = "IllformedLocaleExceptionUsage"
+    const val recordClass = "Person"
+    const val exceptionGlobalDex = "Landroid/icu/util/IllformedLocaleException;"
+    const val recordGlobalDex = "Lcom/android/tools/r8/RecordTag;"
+  }
 
-    private val recordJarUrl = Resources.getResource(
-        GlobalSyntheticsTest::class.java,
-        "GlobalSyntheticsTest/record.jar"
+  private val recordJarUrl = Resources.getResource(GlobalSyntheticsTest::class.java, "GlobalSyntheticsTest/record.jar")
+
+  private val mavenRepo = MavenRepoGenerator(listOf(MavenRepoGenerator.Library("com.example:myjar:1", Resources.toByteArray(recordJarUrl))))
+
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .withAdditionalMavenRepo(mavenRepo)
+      .fromTestApp(
+        MultiModuleTestProject.builder()
+          .subproject("app", MinimalSubProject.app("com.example.app"))
+          .subproject("lib", MinimalSubProject.lib("com.example.lib"))
+          .build()
+      )
+      .create()
+
+  private lateinit var app: GradleTestProject
+  private lateinit var lib: GradleTestProject
+
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(project.gradlePropertiesFile, "android.enableApiModelingAndGlobalSynthetics=true")
+
+    app = project.getSubproject("app")
+    lib = project.getSubproject("lib")
+
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
+
+      dependencies {
+          implementation project(":lib")
+      }
+      """
+        .trimIndent(),
     )
 
-    private val mavenRepo = MavenRepoGenerator(
-        listOf(
-            MavenRepoGenerator.Library(
-                "com.example:myjar:1", Resources.toByteArray(recordJarUrl))
-        )
+    val minSdkVersion = if (dexType == DexType.NATIVE) 21 else 20
+
+    TestFileUtils.appendToFile(app.buildFile, "\nandroid.defaultConfig.minSdkVersion = $minSdkVersion\n")
+    if (dexType == DexType.LEGACY) {
+      TestFileUtils.appendToFile(app.buildFile, "android.defaultConfig.multiDexEnabled = true")
+    }
+  }
+
+  @Test
+  fun testGlobalFromAppAndFileDep() {
+    createExceptionGlobalSourceFile(
+      app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
+      "com.example.app",
+      exceptionGlobalTriggerClass,
+    )
+    addFileDependencies(app)
+
+    executor().run("assembleDebug")
+
+    val localeGlobalFromApp =
+      InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT.getOutputDir(app.buildDir)
+        .resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
+    Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
+    val recordGlobalFromFileDep =
+      InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB.getOutputDir(app.buildDir).resolve("debug/desugarDebugFileDependencies/0_record.jar")
+    Truth.assertThat(recordGlobalFromFileDep.exists()).isTrue()
+
+    if (dexType == DexType.NATIVE) {
+      val globalDex =
+        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
+      Truth.assertThat(globalDex.exists()).isTrue()
+    }
+
+    checkPackagedGlobal(exceptionGlobalDex)
+    checkPackagedGlobal(recordGlobalDex)
+  }
+
+  @Test
+  fun testGlobalFromAppProgramClass() {
+    val recordClass = app.mainSrcDir.resolve("com/example/app/$recordClass.java").also { it.parentFile.mkdirs() }
+    TestFileUtils.appendToFile(
+      recordClass,
+      """
+      package com.example.app;
+
+      public record Person (String name, String address) {}
+      """
+        .trimIndent(),
     )
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .withAdditionalMavenRepo(mavenRepo)
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject("app", MinimalSubProject.app("com.example.app"))
-                .subproject("lib", MinimalSubProject.lib("com.example.lib"))
-                .build()
-        ).create()
+    // AarMetadata defaults minCompileSdk to the compileSdk if unset, explicitly set it to 34 for
+    // this use case.
+    TestFileUtils.searchAndReplace(
+      project.getSubproject("lib").buildFile,
+      "compileSdkVersion " + GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION,
+      "compileSdkVersion 34",
+    )
 
-    private lateinit var app: GradleTestProject
-    private lateinit var lib: GradleTestProject
+    TestFileUtils.appendToFile(
+      app.buildFile,
+      """
+      android {
+          // sdk 34 contains support for JDK17 features, including java.lang.Record
+          compileSdk = 34
+          compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.gradlePropertiesFile,
-            "android.enableApiModelingAndGlobalSynthetics=true"
-        )
+    executor().run("assembleDebug")
 
-        app = project.getSubproject("app")
-        lib = project.getSubproject("lib")
+    checkPackagedGlobal(recordGlobalDex)
+  }
 
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
+  @Test
+  fun testGlobalFromLibAndExternalDep() {
+    createExceptionGlobalSourceFile(
+      lib.mainSrcDir.resolve("com/example/lib/$exceptionGlobalTriggerClass.java"),
+      "com.example.lib",
+      exceptionGlobalTriggerClass,
+    )
 
-                dependencies {
-                    implementation project(":lib")
-                }
-            """.trimIndent()
-        )
+    app.buildFile.appendText(
+      """
 
-        val minSdkVersion = if (dexType == DexType.NATIVE) 21 else 20
+      dependencies {
+          implementation 'com.example:myjar:1'
+      }
+      """
+        .trimIndent()
+    )
 
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            "\nandroid.defaultConfig.minSdkVersion = $minSdkVersion\n"
-        )
-        if (dexType == DexType.LEGACY) {
-            TestFileUtils.appendToFile(
-                app.buildFile,
-                "android.defaultConfig.multiDexEnabled = true"
-            )
+    executor().run("assembleDebug")
+
+    if (dexType == DexType.NATIVE) {
+      val globalDex =
+        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
+      Truth.assertThat(globalDex.exists()).isTrue()
+    }
+
+    checkPackagedGlobal(exceptionGlobalDex)
+    checkPackagedGlobal(recordGlobalDex)
+  }
+
+  @Test
+  fun testDeDupGlobal() {
+    createExceptionGlobalSourceFile(
+      app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
+      "com.example.app",
+      exceptionGlobalTriggerClass,
+    )
+
+    createExceptionGlobalSourceFile(
+      lib.mainSrcDir.resolve("com/example/lib/$exceptionGlobalTriggerClass.java"),
+      "com.example.lib",
+      exceptionGlobalTriggerClass,
+    )
+
+    executor().run("assembleDebug")
+
+    val localeGlobalFromApp =
+      InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT.getOutputDir(app.buildDir)
+        .resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
+    Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
+
+    val localeGlobalFromLib = lib.buildDir.resolve(".transforms").walk().filter { it.path.endsWith(".globals") }.toList()
+    Truth.assertThat(localeGlobalFromLib).hasSize(1)
+
+    checkPackagedGlobal(exceptionGlobalDex)
+  }
+
+  // Regression test for b/257488927
+  @Test
+  fun minSdkVersionConsistent() {
+    Assume.assumeTrue(dexType == DexType.NATIVE)
+    addFileDependencies(app)
+    executor().with(IntegerOption.IDE_TARGET_DEVICE_API, 24).run("assembleDebug")
+  }
+
+  private fun createExceptionGlobalSourceFile(source: File, pkg: String, name: String) {
+    source.let {
+      it.parentFile.mkdirs()
+      it.createNewFile()
+      it.appendText("package $pkg;")
+      it.appendText("public class $name {")
+      it.appendText(
+        """
+            public void function() {
+                try {
+                    throw new android.icu.util.IllformedLocaleException();
+                } catch (android.icu.util.IllformedLocaleException e) {}
+            }
         }
+        """
+          .trimIndent()
+      )
     }
+  }
 
-    @Test
-    fun testGlobalFromAppAndFileDep() {
-        createExceptionGlobalSourceFile(
-            app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
-            "com.example.app",
-            exceptionGlobalTriggerClass
-        )
-        addFileDependencies(app)
+  private fun addFileDependencies(app: GradleTestProject) {
+    val recordJar = "record.jar"
 
-        executor().run("assembleDebug")
-
-        val localeGlobalFromApp = InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT
-            .getOutputDir(app.buildDir).resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
-        Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
-        val recordGlobalFromFileDep = InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB
-            .getOutputDir(app.buildDir).resolve("debug/desugarDebugFileDependencies/0_record.jar")
-        Truth.assertThat(recordGlobalFromFileDep.exists()).isTrue()
-
-        if (dexType == DexType.NATIVE) {
-            val globalDex = InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir)
-                .resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
-            Truth.assertThat(globalDex.exists()).isTrue()
-        }
-
-        checkPackagedGlobal(exceptionGlobalDex)
-        checkPackagedGlobal(recordGlobalDex)
-    }
-
-    @Test
-    fun testGlobalFromAppProgramClass() {
-        val recordClass = app.mainSrcDir.resolve("com/example/app/$recordClass.java").also {
-            it.parentFile.mkdirs()
-        }
-        TestFileUtils.appendToFile(
-            recordClass,
-            """
-                package com.example.app;
-
-                public record Person (String name, String address) {}
-            """.trimIndent()
-        )
-
-        // AarMetadata defaults minCompileSdk to the compileSdk if unset, explicitly set it to 34 for
-        // this use case.
-        TestFileUtils.searchAndReplace(
-            project.getSubproject("lib").buildFile,
-            "compileSdkVersion " + GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION,
-            "compileSdkVersion 34"
-        )
-
-        TestFileUtils.appendToFile(
-            app.buildFile,
-            """
-                android {
-                    // sdk 34 contains support for JDK17 features, including java.lang.Record
-                    compileSdk = 34
-                    compileOptions {
-                        sourceCompatibility JavaVersion.VERSION_17
-                        targetCompatibility JavaVersion.VERSION_17
-                    }
-                }
-            """.trimIndent()
-        )
-
-        executor().run("assembleDebug")
-
-        checkPackagedGlobal(recordGlobalDex)
-    }
-
-    @Test
-    fun testGlobalFromLibAndExternalDep() {
-        createExceptionGlobalSourceFile(
-            lib.mainSrcDir.resolve("com/example/lib/$exceptionGlobalTriggerClass.java"),
-            "com.example.lib",
-            exceptionGlobalTriggerClass
-        )
-
-        app.buildFile.appendText(
-            """
-
-                dependencies {
-                    implementation 'com.example:myjar:1'
-                }
-            """.trimIndent()
-        )
-
-        executor().run("assembleDebug")
-
-        if (dexType == DexType.NATIVE) {
-            val globalDex = InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir)
-                .resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
-            Truth.assertThat(globalDex.exists()).isTrue()
-        }
-
-        checkPackagedGlobal(exceptionGlobalDex)
-        checkPackagedGlobal(recordGlobalDex)
-    }
-
-    @Test
-    fun testDeDupGlobal() {
-        createExceptionGlobalSourceFile(
-            app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
-            "com.example.app",
-            exceptionGlobalTriggerClass
-        )
-
-        createExceptionGlobalSourceFile(
-            lib.mainSrcDir.resolve("com/example/lib/$exceptionGlobalTriggerClass.java"),
-            "com.example.lib",
-            exceptionGlobalTriggerClass
-        )
-
-        executor().run("assembleDebug")
-
-        val localeGlobalFromApp = InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT
-            .getOutputDir(app.buildDir).resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
-        Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
-
-        val localeGlobalFromLib = lib.buildDir.resolve(".transforms").walk()
-            .filter { it.path.endsWith(".globals") }.toList()
-        Truth.assertThat(localeGlobalFromLib).hasSize(1)
-
-        checkPackagedGlobal(exceptionGlobalDex)
-    }
-
-    // Regression test for b/257488927
-    @Test
-    fun minSdkVersionConsistent() {
-        Assume.assumeTrue(dexType == DexType.NATIVE)
-        addFileDependencies(app)
-        executor()
-                .with(IntegerOption.IDE_TARGET_DEVICE_API, 24)
-                .run("assembleDebug")
-    }
-
-    private fun createExceptionGlobalSourceFile(source: File, pkg: String, name: String) {
-        source.let {
-            it.parentFile.mkdirs()
-            it.createNewFile()
-            it.appendText("package $pkg;")
-            it.appendText("public class $name {")
-            it.appendText(
-                """
-                        public void function() {
-                            try {
-                                throw new android.icu.util.IllformedLocaleException();
-                            } catch (android.icu.util.IllformedLocaleException e) {}
-                        }
-                    }
-                """.trimIndent()
-            )
-        }
-    }
-
-    private fun addFileDependencies(app: GradleTestProject) {
-        val recordJar = "record.jar"
-
-        Files.write(
-            app.projectDir.resolve(recordJar).toPath(),
-            Resources.toByteArray(recordJarUrl)
-        )
-        app.buildFile.appendText(
-            """
+    Files.write(app.projectDir.resolve(recordJar).toPath(), Resources.toByteArray(recordJarUrl))
+    app.buildFile.appendText(
+      """
 
                 dependencies {
                     implementation files('$recordJar')
                 }
-            """.trimIndent()
-        )
-    }
+            """
+        .trimIndent()
+    )
+  }
 
-    private fun checkPackagedGlobal(global: String, expectedCount: Int = 1) {
-        val apk = app.getApk(GradleTestProject.ApkType.DEBUG)
+  private fun checkPackagedGlobal(global: String, expectedCount: Int = 1) {
+    val apk = app.getApk(GradleTestProject.ApkType.DEBUG)
 
-        // there should only be a single global synthetics of specific type in the apk
-        val dexes = apk.allDexes.filter {
-            AndroidArchive.checkValidClassName(global)
-            it.classes.keys.contains(global)
-        }
-        Truth.assertThat(dexes.size).isEqualTo(expectedCount)
-    }
+    // there should only be a single global synthetics of specific type in the apk
+    val dexes =
+      apk.allDexes.filter {
+        AndroidArchive.checkValidClassName(global)
+        it.classes.keys.contains(global)
+      }
+    Truth.assertThat(dexes.size).isEqualTo(expectedCount)
+  }
 
-    private fun executor() = project.executor()
+  private fun executor() = project.executor()
 }

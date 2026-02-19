@@ -83,8 +83,7 @@ class IteratorDetector : Detector(), SourceCodeScanner {
       )
   }
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf("add", "spliterator", "stream", "parallelStream")
+  override fun getApplicableMethodNames(): List<String> = listOf("add", "spliterator", "stream", "parallelStream")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val receiver = node.receiver?.skipParenthesizedExprDown() ?: return
@@ -102,8 +101,7 @@ class IteratorDetector : Detector(), SourceCodeScanner {
 
     val resolved = receiver.tryResolve() ?: return
     val variable = resolved as? PsiVariable ?: return
-    val initializer =
-      UastLintUtils.findLastAssignment(variable, node)?.skipParenthesizedExprDown() ?: return
+    val initializer = UastLintUtils.findLastAssignment(variable, node)?.skipParenthesizedExprDown() ?: return
     if (initializer is UQualifiedReferenceExpression) {
       val r = initializer.receiver.skipParenthesizedExprDown()
       val type = TypeEvaluator.evaluate(r) ?: return
@@ -111,10 +109,7 @@ class IteratorDetector : Detector(), SourceCodeScanner {
       if (canonical == "java.util.LinkedHashMap") {
         // Look for acceptable uses: passing to the workaround functions
         val pp = skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent)
-        if (
-          pp is UQualifiedReferenceExpression &&
-            (pp.selector as? UCallExpression)?.methodName == "characteristics"
-        ) {
+        if (pp is UQualifiedReferenceExpression && (pp.selector as? UCallExpression)?.methodName == "characteristics") {
           return
         }
 
@@ -127,12 +122,7 @@ class IteratorDetector : Detector(), SourceCodeScanner {
           }
         // b/33945212
         context.report(
-          Incident(
-            ISSUE,
-            node,
-            context.getLocation(node),
-            "`LinkedHashMap#$name` was broken in API 24 and 25. Workaround: $workaround",
-          ),
+          Incident(ISSUE, node, context.getLocation(node), "`LinkedHashMap#$name` was broken in API 24 and 25. Workaround: $workaround"),
           minSdkLessThan(26),
         )
       } else if (canonical == "java.util.Vector") {

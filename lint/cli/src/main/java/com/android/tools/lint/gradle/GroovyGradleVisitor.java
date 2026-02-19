@@ -487,7 +487,7 @@ public class GroovyGradleVisitor extends GradleVisitor {
                                         parent,
                                         parentParent,
                                         b.getLeftExpression(),
-                                        b,
+                                        rightExpression,
                                         b);
                             }
                         }

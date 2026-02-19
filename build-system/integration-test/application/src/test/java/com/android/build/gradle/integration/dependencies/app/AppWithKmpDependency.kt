@@ -27,103 +27,90 @@ import org.junit.Test
 
 class AppWithKmpDependency : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .disableBrokenBuiltInKotlinOptOutChecks()
-        .from {
-            androidApplication {
-                android {
-                    defaultConfig.minSdk = 21
-                }
-                // this is a kmp dependency published with -android and -desktop variants
-                dependencies {
-                    implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02")
-                }
-            }
-            gradleProperties {
-                add(BooleanOption.USE_ANDROID_X, true)
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().from {
+      androidApplication {
+        android { defaultConfig.minSdk = 21 }
+        // this is a kmp dependency published with -android and -desktop variants
+        dependencies { implementation("androidx.lifecycle:lifecycle-runtime:2.8.0-alpha02") }
+      }
+    }
 
-    @Test
-    fun `test VariantDependencies model with kotlin attribute`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model with kotlin attribute`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies_android"
+    with(result)
+      .compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies_android")
+  }
+
+  @Test
+  fun `test VariantDependencies model without kotlin attribute`() {
+    val result =
+      rule.build.modelBuilder
+        .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+        .with(BooleanOption.BUILT_IN_KOTLIN, false)
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchModels(variantName = "debug")
+
+    with(result)
+      .compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies_desktop")
+  }
+
+  @Test
+  fun checkPackagedClassesContainAndroidSpecificClass() {
+    val build = rule.build
+    build.executor.run(":app:assembleDebug")
+
+    build.androidApplication().assertApk(ApkSelector.DEBUG) { classes().contains("androidx/lifecycle/ReportFragment") }
+  }
+
+  @Test
+  fun checkPackagedClassesDoesntContainAndroidSpecificClass() {
+    // should resolve desktopApiElements-published variant
+    val build = rule.build
+    build.executor
+      .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
+      .with(BooleanOption.BUILT_IN_KOTLIN, false)
+      .run(":app:assembleDebug")
+
+    build.androidApplication().assertApk(ApkSelector.DEBUG) {
+      // FIXME we should fix this by publishing a simple KMP library that only has a few classes
+      classes()
+        .subPackage("androidx/lifecycle")
+        .containsExactly(
+          "ClassesInfoCache$",
+          "CompositeGeneratedAdaptersObserver",
+          "DefaultLifecycleObserver$",
+          "DefaultLifecycleObserverAdapter$",
+          "DispatchQueue$",
+          "FlowExtKt$",
+          "GeneratedAdapter",
+          "GenericLifecycleObserver",
+          "Lifecycle$",
+          "LifecycleController$",
+          "LifecycleCoroutineScope$",
+          "LifecycleCoroutineScopeImpl$",
+          "LifecycleDestroyedException",
+          "LifecycleEventObserver",
+          "LifecycleKt$",
+          "LifecycleObserver",
+          "LifecycleOwner",
+          "LifecycleOwnerKt",
+          "LifecycleRegistry$",
+          "LifecycleRegistry_desktopKt",
+          "Lifecycle_jvmKt",
+          "Lifecycling",
+          "MethodCallsLogger",
+          "OnLifecycleEvent",
+          "PausingDispatcher",
+          "PausingDispatcherKt$",
+          "ReflectiveGenericLifecycleObserver",
+          "RepeatOnLifecycleKt$",
+          "SingleGeneratedAdapterObserver",
+          "WithLifecycleStateKt$",
         )
     }
-
-    @Test
-    fun `test VariantDependencies model without kotlin attribute`() {
-        val result = rule.build.modelBuilder
-            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
-            .with(BooleanOption.BUILT_IN_KOTLIN, false)
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
-
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies_desktop"
-        )
-    }
-
-    @Test
-    fun checkPackagedClassesContainAndroidSpecificClass() {
-        val build = rule.build
-        build.executor.run(":app:assembleDebug")
-
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            classes().contains("androidx/lifecycle/ReportFragment")
-        }
-    }
-
-    @Test
-    fun checkPackagedClassesDoesntContainAndroidSpecificClass() {
-        // should resolve desktopApiElements-published variant
-        val build = rule.build
-        build.executor
-            .with(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP, true)
-            .with(BooleanOption.BUILT_IN_KOTLIN, false)
-            .run(":app:assembleDebug")
-
-        build.androidApplication().assertApk(ApkSelector.DEBUG) {
-            // FIXME we should fix this by publishing a simple KMP library that only has a few classes
-            classes().subPackage("androidx/lifecycle").containsExactly(
-                "ClassesInfoCache$",
-                "CompositeGeneratedAdaptersObserver",
-                "DefaultLifecycleObserver$",
-                "DefaultLifecycleObserverAdapter$",
-                "DispatchQueue$",
-                "FlowExtKt$",
-                "GeneratedAdapter",
-                "GenericLifecycleObserver",
-                "Lifecycle$",
-                "LifecycleController$",
-                "LifecycleCoroutineScope$",
-                "LifecycleCoroutineScopeImpl$",
-                "LifecycleDestroyedException",
-                "LifecycleEventObserver",
-                "LifecycleKt$",
-                "LifecycleObserver",
-                "LifecycleOwner",
-                "LifecycleOwnerKt",
-                "LifecycleRegistry$",
-                "LifecycleRegistry_desktopKt",
-                "Lifecycle_jvmKt",
-                "Lifecycling",
-                "MethodCallsLogger",
-                "OnLifecycleEvent",
-                "PausingDispatcher",
-                "PausingDispatcherKt$",
-                "ReflectiveGenericLifecycleObserver",
-                "RepeatOnLifecycleKt$",
-                "SingleGeneratedAdapterObserver",
-                "WithLifecycleStateKt$",
-            )
-        }
-    }
+  }
 }

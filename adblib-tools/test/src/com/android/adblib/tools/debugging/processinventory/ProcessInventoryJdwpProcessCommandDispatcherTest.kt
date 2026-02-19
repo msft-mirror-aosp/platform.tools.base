@@ -34,212 +34,180 @@ import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.net.InetSocketAddress
+import java.time.Duration
+import kotlin.test.assertEquals
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
-import java.net.InetSocketAddress
-import java.time.Duration
-import kotlin.test.assertEquals
 
 class ProcessInventoryJdwpProcessCommandDispatcherTest {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @JvmField @Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    @Test
-    fun testFactoryCanBeEnabledAndDisabled(): Unit = runBlockingWithTimeout {
-        // Prepare
-        val session = fakeAdbRule.adbSession
-        val server = ProcessInventoryServerConnection.create(session, TestServerConfig())
-        val pid1 = 20
-        val fakeDevice = fakeAdbRule.fakeAdb.addSampleDevice(apiLevel = 30)
-        fakeDevice.addSampleJdwpProcess(pid1)
-        val device = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        val jdwpProcess = device.jdwpProcessTracker.processesFlow.mapNotNull { processList ->
-            processList.firstOrNull { it.pid == pid1 }
-        }.first()
+  @Test
+  fun testFactoryCanBeEnabledAndDisabled(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val session = fakeAdbRule.adbSession
+    val server = ProcessInventoryServerConnection.create(session, TestServerConfig())
+    val pid1 = 20
+    val fakeDevice = fakeAdbRule.fakeAdb.addSampleDevice(apiLevel = 30)
+    fakeDevice.addSampleJdwpProcess(pid1)
+    val device = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    val jdwpProcess =
+      device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid1 } }.first()
 
-        var enabled = true
-        session.installProcessInventoryJdwpProcessCommandDispatcherFactory(
-            server,
-            enabled = { enabled }
-        )
+    var enabled = true
+    session.installProcessInventoryJdwpProcessCommandDispatcherFactory(server, enabled = { enabled })
 
-        // Act
-        enabled = true
-        val externalCollectorList1 = session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull {
-            it.create(jdwpProcess)
+    // Act
+    enabled = true
+    val externalCollectorList1 = session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull { it.create(jdwpProcess) }
+
+    enabled = false
+    val externalCollectorList2 = session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull { it.create(jdwpProcess) }
+
+    // Assert
+    assertEquals(1, externalCollectorList1.size)
+    assertEquals(0, externalCollectorList2.size)
+    val dispatcher = externalCollectorList1[0]
+    assertEquals("ProcessInventoryJdwpProcessCommandDispatcher(process=$jdwpProcess)", dispatcher.toString())
+  }
+
+  @Test
+  fun testProcessCommandsAreDispatchedToAllClients(): Unit = runBlockingWithTimeout {
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1, findFreeTcpPort())
+
+    // Prepare
+    // Create 2 adblib sessions for a single fake adb server, install a
+    // ProcessInventoryServer on both sessions, start collecting properties from both
+    // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
+    // sessions is stuck waiting for the other one when trying to collect properties),
+    // check that a "ResumeJdwpProcess" command is processed correctly by one of the session
+    // (the one that holds onto the JDWP session)
+    fakeAdbRule.host.setPropertyValue(AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT, Duration.ofSeconds(5))
+
+    // Act
+    val processList =
+      testSendProcessCommandWithMultipleSessions(
+        sequence {
+          val session1 = fakeAdbRule.adbSession
+          val session2 = createSessionClone(fakeAdbRule)
+          session1.installTestProcessInventoryServer()
+          session2.installTestProcessInventoryServer()
+          yield(session1)
+          yield(session2)
+        }
+      ) { jdwpProcessList ->
+        // Test sanity check: verify that the JDWP process was properly set up, i.e.
+        // it is in the `isWaitingForDebugger` state
+        jdwpProcessList.forEach { jdwpProcess ->
+          val clientState = jdwpProcess.run { fakeAdbRule.fakeAdb.device(device.serialNumber).getClient(pid)!! }
+          Assert.assertTrue(clientState.waitingForDebugger)
         }
 
-        enabled = false
-        val externalCollectorList2 = session.externalJdwpProcessCommandDispatcherFactoryList.mapNotNull {
-            it.create(jdwpProcess)
+        // Create and start all registered command dispatchers
+        val dispatchers =
+          jdwpProcessList.map { jdwpProcess ->
+            jdwpProcess
+              .externalJdwpProcessCommandDispatcherList()
+              .map {
+                it.start()
+                it
+              }
+              .first()
+          }
+
+        // Send a "resume process" command to one of the dispatchers
+        dispatchers.first().also { dispatcher ->
+          val command = ExternalJdwpProcessCommandDispatcher.ProcessCommand.ResumeJdwpProcess(dispatcher.process.pid)
+          dispatchers.first().executeCommand(command)
         }
+        jdwpProcessList
+      }
 
-        // Assert
-        assertEquals(1, externalCollectorList1.size)
-        assertEquals(0, externalCollectorList2.size)
+    // Assert: The process has been resumed!
+    Assert.assertEquals(2, processList.size)
+    val clientState = processList[0].run { fakeAdbRule.fakeAdb.device(device.serialNumber).getClient(pid)!! }
+    Assert.assertEquals(false, clientState.waitingForDebugger)
+  }
+
+  private suspend fun <R> testSendProcessCommandWithMultipleSessions(
+    sequenceOf: Sequence<AdbSession>,
+    commandRunner: suspend (List<JdwpProcess>) -> R,
+  ): R {
+    val fakeAdbServer = fakeAdbRule.fakeAdb
+    val sessions = sequenceOf.toList()
+
+    // Create a single process for testing
+    val pid = 20
+    val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 30)
+    fakeDevice.addSampleJdwpProcess(pid, isWaitingForDebugger = true)
+
+    // Find the `ConnectedDevice` in each session
+    val connectedDevices = sessions.map { it.waitForOnlineConnectedDevice(fakeDevice.deviceId) }
+
+    // Find the `JdwpProcess` in each session
+    val jdwpProcesses =
+      connectedDevices.map { device ->
+        device.jdwpProcessTracker.processesFlow.mapNotNull { processList -> processList.firstOrNull { it.pid == pid } }.first()
+      }
+
+    // Act
+    return commandRunner(jdwpProcesses)
+  }
+
+  private fun FakeAdbServerProvider.addSampleDevice(apiLevel: Int): DeviceState {
+    return connectDevice(
+        deviceId = "1234",
+        manufacturer = "test1",
+        deviceModel = "test2",
+        release = "model",
+        sdk = AndroidApiLevel(apiLevel),
+        hostConnectionType = DeviceState.HostConnectionType.USB,
+      )
+      .also { it.deviceStatus = DeviceState.DeviceStatus.ONLINE }
+  }
+
+  private fun DeviceState.addSampleJdwpProcess(pid: Int, isWaitingForDebugger: Boolean = false): ClientState {
+    return startClient(pid, userId = 0, packageName = "a.b.c", isWaiting = isWaitingForDebugger).also {
+      // Additional features to return in FEAT reply packet
+      it.addFeature("feat1")
+      it.addFeature("feat2")
+      it.addFeature("feat3")
     }
+  }
 
-    @Test
-    fun testProcessCommandsAreDispatchedToAllClients(): Unit = runBlockingWithTimeout {
-        fakeAdbRule.host.setPropertyValue(
-            AdbLibToolsProcessInventoryServerProperties.LOCAL_PORT_V1,
-            findFreeTcpPort()
-        )
-
-        // Prepare
-        // Create 2 adblib sessions for a single fake adb server, install a
-        // ProcessInventoryServer on both sessions, start collecting properties from both
-        // sessions with a long timeout for keeping JDWP sessions open (one of the 2 adblib
-        // sessions is stuck waiting for the other one when trying to collect properties),
-        // check that a "ResumeJdwpProcess" command is processed correctly by one of the session
-        // (the one that holds onto the JDWP session)
-        fakeAdbRule.host.setPropertyValue(
-            AdbLibToolsProperties.PROCESS_PROPERTIES_READ_TIMEOUT,
-            Duration.ofSeconds(5)
-        )
-
-        // Act
-        val processList = testSendProcessCommandWithMultipleSessions(sequence {
-            val session1 = fakeAdbRule.adbSession
-            val session2 = createSessionClone(fakeAdbRule)
-            session1.installTestProcessInventoryServer()
-            session2.installTestProcessInventoryServer()
-            yield(session1)
-            yield(session2)
-        }) { jdwpProcessList ->
-            // Test sanity check: verify that the JDWP process was properly set up, i.e.
-            // it is in the `isWaitingForDebugger` state
-            jdwpProcessList.forEach { jdwpProcess ->
-                val clientState = jdwpProcess.run {
-                    fakeAdbRule.fakeAdb.device(device.serialNumber).getClient(pid)!!
-                }
-                Assert.assertTrue(clientState.waitingForDebugger)
-            }
-
-            // Create and start all registered command dispatchers
-            val dispatchers = jdwpProcessList.map { jdwpProcess ->
-                jdwpProcess.externalJdwpProcessCommandDispatcherList().map {
-                    it.start()
-                    it
-                }.first()
-            }
-
-            // Send a "resume process" command to one of the dispatchers
-            dispatchers.first().also { dispatcher ->
-                val command = ExternalJdwpProcessCommandDispatcher.ProcessCommand.ResumeJdwpProcess(dispatcher.process.pid)
-                dispatchers.first().executeCommand(command)
-            }
-            jdwpProcessList
-        }
-
-        // Assert: The process has been resumed!
-        Assert.assertEquals(2, processList.size)
-        val clientState = processList[0].run {
-            fakeAdbRule.fakeAdb.device(device.serialNumber).getClient(pid)!!
-        }
-        Assert.assertEquals(false, clientState.waitingForDebugger)
-
+  private fun createSessionClone(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
+    val host = fakeAdbRule.host
+    return AdbSession.create(host, fakeAdbRule.createChannelProvider(), Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS)).also {
+      registerCloseable(it)
     }
+  }
 
-    private suspend fun <R> testSendProcessCommandWithMultipleSessions(
-        sequenceOf: Sequence<AdbSession>,
-        commandRunner: suspend (List<JdwpProcess>) -> R
-    ): R {
-        val fakeAdbServer = fakeAdbRule.fakeAdb
-        val sessions = sequenceOf.toList()
+  private fun AdbSession.installTestProcessInventoryServer() {
+    val server = ProcessInventoryServerConnection.create(this, TestServerConfig())
+    this.installProcessInventoryJdwpProcessCommandDispatcherFactory(server, enabled = { true })
+  }
 
-        // Create a single process for testing
-        val pid = 20
-        val fakeDevice = fakeAdbServer.addSampleDevice(apiLevel = 30)
-        fakeDevice.addSampleJdwpProcess(pid, isWaitingForDebugger = true)
+  private suspend fun findFreeTcpPort(): Int {
+    val session = registerCloseable(FakeAdbSession())
+    val freePort = session.channelFactory.createServerSocket().use { it.bind(InetSocketAddress(0)).port }
+    return freePort
+  }
 
-        // Find the `ConnectedDevice` in each session
-        val connectedDevices = sessions.map {
-            it.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        }
+  private class TestServerConfig : ProcessInventoryServerConfiguration {
 
-        // Find the `JdwpProcess` in each session
-        val jdwpProcesses = connectedDevices.map { device ->
-            device.jdwpProcessTracker.processesFlow.mapNotNull { processList ->
-                processList.firstOrNull { it.pid == pid }
-            }.first()
-        }
+    override var clientDescription: String = "test_client"
 
-        // Act
-        return commandRunner(jdwpProcesses)
-    }
+    override var serverDescription: String = "test_server"
+  }
 
-    private fun FakeAdbServerProvider.addSampleDevice(apiLevel: Int): DeviceState {
-        return connectDevice(
-            deviceId = "1234",
-            manufacturer = "test1",
-            deviceModel = "test2",
-            release = "model",
-            sdk = AndroidApiLevel(apiLevel),
-            hostConnectionType = DeviceState.HostConnectionType.USB
-        ).also {
-            it.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        }
-    }
-
-    private fun DeviceState.addSampleJdwpProcess(pid: Int, isWaitingForDebugger: Boolean = false): ClientState {
-        return startClient(
-            pid,
-            userId = 0,
-            packageName = "a.b.c",
-            isWaiting = isWaitingForDebugger
-        ).also {
-            // Additional features to return in FEAT reply packet
-            it.addFeature("feat1")
-            it.addFeature("feat2")
-            it.addFeature("feat3")
-        }
-    }
-
-    private fun createSessionClone(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
-        val host = fakeAdbRule.host
-        return AdbSession.create(
-            host,
-            fakeAdbRule.createChannelProvider(),
-            Duration.ofMillis(SOCKET_CONNECT_TIMEOUT_MS)
-        ).also {
-            registerCloseable(it)
-        }
-    }
-
-    private fun AdbSession.installTestProcessInventoryServer() {
-        val server = ProcessInventoryServerConnection.create(this, TestServerConfig())
-        this.installProcessInventoryJdwpProcessCommandDispatcherFactory(
-            server,
-            enabled = { true }
-        )
-    }
-
-    private suspend fun findFreeTcpPort(): Int {
-        val session = registerCloseable(FakeAdbSession())
-        val freePort = session.channelFactory.createServerSocket().use {
-            it.bind(InetSocketAddress(0)).port
-        }
-        return freePort
-    }
-
-    private class TestServerConfig : ProcessInventoryServerConfiguration {
-
-        override var clientDescription: String = "test_client"
-
-        override var serverDescription: String = "test_server"
-    }
-
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
-    }
+  private fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
 }

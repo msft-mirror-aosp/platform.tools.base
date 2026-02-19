@@ -24,67 +24,60 @@ import com.android.utils.ILogger
 import java.util.concurrent.TimeoutException
 
 class CompileLinkTimeoutAapt2Daemon(name: String = "Test") :
-        Aapt2Daemon("$name Compile/Link Timeout AAPT Daemon", NoErrorsOrWarningsLogger()) {
-    override fun startProcess() {
-    }
+  Aapt2Daemon("$name Compile/Link Timeout AAPT Daemon", NoErrorsOrWarningsLogger()) {
+  override fun startProcess() {}
 
-    override fun doCompile(request: CompileResourceRequest, logger: ILogger) {
-        throw TimeoutException("Compile timed out")
-    }
+  override fun doCompile(request: CompileResourceRequest, logger: ILogger) {
+    throw TimeoutException("Compile timed out")
+  }
 
-    override fun doLink(request: AaptPackageConfig, logger: ILogger) {
-        throw TimeoutException("Link timed out")
-    }
+  override fun doLink(request: AaptPackageConfig, logger: ILogger) {
+    throw TimeoutException("Link timed out")
+  }
 
-    override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
-        throw TimeoutException("Convert timed out")
-    }
+  override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
+    throw TimeoutException("Convert timed out")
+  }
 
-    override fun stopProcess() {
-    }
+  override fun stopProcess() {}
 }
 
-class StartupTimeoutAapt2Daemon(name: String = "Test") :
-        Aapt2Daemon("$name Startup Timeout AAPT Daemon", NoErrorsOrWarningsLogger()) {
-    override fun startProcess() {
-        throw TimeoutException("startProcess() timed out")
-    }
+class StartupTimeoutAapt2Daemon(name: String = "Test") : Aapt2Daemon("$name Startup Timeout AAPT Daemon", NoErrorsOrWarningsLogger()) {
+  override fun startProcess() {
+    throw TimeoutException("startProcess() timed out")
+  }
 
-    override fun doCompile(request: CompileResourceRequest, logger: ILogger) {
-        throw UnsupportedOperationException()
-    }
+  override fun doCompile(request: CompileResourceRequest, logger: ILogger) {
+    throw UnsupportedOperationException()
+  }
 
-    override fun doLink(request: AaptPackageConfig, logger: ILogger) {
-        throw UnsupportedOperationException()
-    }
+  override fun doLink(request: AaptPackageConfig, logger: ILogger) {
+    throw UnsupportedOperationException()
+  }
 
-    override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
-        throw UnsupportedOperationException()
-    }
+  override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
+    throw UnsupportedOperationException()
+  }
 
-    override fun stopProcess() {
-        throw UnsupportedOperationException()
-    }
+  override fun stopProcess() {
+    throw UnsupportedOperationException()
+  }
 }
 
+class ShutdownTimeoutAapt2Daemon(name: String = "Test", logger: ILogger) : Aapt2Daemon("$name Shutdown Timeout AAPT Daemon", logger) {
+  override fun startProcess() {}
 
-class ShutdownTimeoutAapt2Daemon(name: String = "Test", logger: ILogger) :
-        Aapt2Daemon("$name Shutdown Timeout AAPT Daemon", logger) {
-    override fun startProcess() {
-    }
+  override fun doCompile(request: CompileResourceRequest, logger: ILogger) {}
 
-    override fun doCompile(request: CompileResourceRequest, logger: ILogger) {
-    }
+  override fun doLink(request: AaptPackageConfig, logger: ILogger) {
+    throw UnsupportedOperationException()
+  }
 
-    override fun doLink(request: AaptPackageConfig, logger: ILogger) {
-        throw UnsupportedOperationException()
-    }
+  override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
+    throw UnsupportedOperationException()
+  }
 
-    override fun doConvert(request: AaptConvertConfig, logger: ILogger) {
-        throw UnsupportedOperationException()
-    }
-
-    override fun stopProcess() {
-        throw TimeoutException("stopProcess() timed out")
-    }
+  override fun stopProcess() {
+    throw TimeoutException("stopProcess() timed out")
+  }
 }

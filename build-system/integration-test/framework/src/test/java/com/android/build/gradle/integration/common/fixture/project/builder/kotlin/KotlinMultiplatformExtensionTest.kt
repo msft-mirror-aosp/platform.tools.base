@@ -24,29 +24,29 @@ import org.junit.Test
 
 class KotlinMultiplatformExtensionTest {
 
-    private val dslRecorder = DefaultDslRecorder()
+  private val dslRecorder = DefaultDslRecorder()
 
-    @Test
-    fun testApplication() {
-        dslRecorder.runNestedBlock("kmp", listOf(), KotlinMultiplatformExtension::class.java) {
-            sourceSets.androidMain.configure {
-                it.languageSettings {
-                    languageVersion = "foo"
-                }
+  @Test
+  fun testApplication() {
+    dslRecorder.runNestedBlock("kmp", listOf(), KotlinMultiplatformExtension::class.java) {
+      sourceSets.androidMain.configure { it.languageSettings { languageVersion = "foo" } }
+    }
+
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        kmp {
+          sourceSets.androidMain.configure {
+            languageSettings {
+              languageVersion = 'foo'
             }
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            kmp {
-              sourceSets.androidMain.configure {
-                languageSettings {
-                  languageVersion = 'foo'
-                }
-              }
-            }
-
-        """.trimIndent())
-    }
+        """
+          .trimIndent()
+      )
+  }
 }

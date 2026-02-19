@@ -1,432 +1,385 @@
 package com.android.adblib
 
 /**
- * The identifier of a device (technically a "transport" in ADB terminology) when invoking
- * a service on the ADB Server that relates to a specific device.
+ * The identifier of a device (technically a "transport" in ADB terminology) when invoking a service on the ADB Server that relates to a
+ * specific device.
  */
 abstract class DeviceSelector {
 
-    abstract override fun toString(): String
+  abstract override fun toString(): String
+
+  /**
+   * The (optional) transport ID of the device if the [DeviceSelector] used to start the service specified that a transport ID should be
+   * returned on the channel. `null` otherwise.
+   *
+   * Note: This field is only set for [DeviceSelector] instances that come from the [factoryWithTransportIdTracking] factory.
+   */
+  open var transportId: Long?
+    get() = null
+    /** Internal function called when the transport ID is read on the ADB protocol wire. */
+    internal set(@Suppress("UNUSED_PARAMETER") value) {
+      // Default implementation does not track transport IDs
+    }
+
+  /**
+   * The prefix used to invoke services on the ADB Server that relate to a specific device, but does not actually connect to the device ADB
+   * daemon.
+   *
+   * As documented in
+   * [SERVICES.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SERVICES.TXT;l=5),
+   * the value is one of
+   * + __`host-transport-id:<transport-id>`__ - This is a special form of query, where the 'host-transport-id:<transport-id>:' prefix can be
+   *   used to indicate that the client is asking the ADB server for information related to a specific transport id of a device.
+   * + __`host-serial:<serial-number>`__ - This is a special form of query, where the 'host-serial:<serial-number>:' prefix can be used to
+   *   indicate that the client is asking the ADB server for information related to a specific device.
+   * + __`host-usb`__ - A variant of host-serial used to target the single USB device connected to the host. This will fail if there is none
+   *   or more than one.
+   * + __`host-local`__ - A variant of host-serial used to target the single emulator instance running on the host. This will fail if there
+   *   is none or more than one.
+   * + __`host`__ - When asking for information related to a device, 'host:' can also be interpreted as 'any single device or emulator
+   *   connected to/running on the host'.
+   */
+  internal abstract val hostPrefix: String
+
+  /**
+   * A prefix used to switch the socket to a direct connection to the adbd daemon running on the corresponding device.
+   *
+   * As documented in
+   * [SERVICES.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SERVICES.TXT;l=5),
+   * the value is one of
+   * * __host:transport-id:<transport-id>__ - Asks to switch the connection to the device/emulator identified by <transport-id>. After the
+   *   OKAY response, every client request will be sent directly to the adbd daemon running on the device.
+   * * __host:transport:<serial-number>__ or __host:tport:serial:<serial-number>__ - Asks to switch the connection to the device/emulator
+   *   identified by <serial-number>. After the OKAY response, every client request will be sent directly to the adbd daemon running on the
+   *   device.
+   * * __host:transport-usb__ or __host:tport:usb__ - Asks to switch the connection to one device connected through USB to the host machine.
+   *   This will fail if there are more than one such devices.
+   * * __host:transport-local__ or __host:tport:local__ - Asks to switch the connection to one emulator connected through TCP. This will
+   *   fail if there is more than one such emulator instance running.
+   * * __host:transport-any__ or __host:tport:any__ - Asks to switch the connection to either the device or emulator connect to/running on
+   *   the host. Will fail if there is more than one such device/emulator available.
+   *
+   * The __host:tport__ versions always return an 8 byte transport id in the response stream.
+   */
+  internal abstract val transportPrefix: String
+
+  /** See [transportPrefix]: all `host:tport` prefixes result in ADB sending an 8 byte transport ID in the response. */
+  internal open val responseContainsTransportId: Boolean
+    get() = false
+
+  /**
+   * Returns a [DeviceSelector] equivalent to this instance, i.e. selecting the same device, but with the guarantee that
+   * [responseContainsTransportId] is true, i.e. a call to the ADB server will result in setting the [transportId] of the device.
+   */
+  internal abstract fun withTransportIdInResponse(): DeviceSelector
+
+  /** The device serial number if this [DeviceSelector] contains one, `null` otherwise */
+  internal open val serialNumber: String?
+    get() = null
+
+  /** A short human-readable description */
+  abstract val shortDescription: String
+
+  private class SerialNumber(override val serialNumber: String) : DeviceSelector() {
+
+    override fun toString() = "serial-$serialNumber"
+
+    override val hostPrefix: String
+      get() = "host-serial:$serialNumber"
+
+    override val transportPrefix: String
+      get() = "host:transport:$serialNumber"
+
+    override val shortDescription: String
+      get() = serialNumberShortDescription(serialNumber)
+
+    override fun withTransportIdInResponse(): DeviceSelector {
+      return factoryWithTransportIdTracking.fromSerialNumber(serialNumber)
+    }
+  }
+
+  private class TransportId(private val value: Long) : DeviceSelector() {
+
+    override var transportId: Long?
+      get() = value
+      set(@Suppress("UNUSED_PARAMETER") value) {
+        // We don't track transport ID values, since we were provided one!
+      }
+
+    override fun toString() = "transport-$value"
+
+    override val hostPrefix: String
+      get() = "host-transport-id:$value"
+
+    override val transportPrefix: String
+      get() = "host:transport-id:$value"
+
+    override val shortDescription: String
+      get() = transportIdShortDescription(value)
+
+    override fun withTransportIdInResponse(): DeviceSelector {
+      return this
+    }
+  }
+
+  private object Usb : DeviceSelector() {
+
+    override fun toString() = "usb"
+
+    override val hostPrefix: String
+      get() = "host-usb"
+
+    override val transportPrefix: String
+      get() = "host:transport-usb"
+
+    override val shortDescription: String
+      get() = USB_SHORT_DESCRIPTION
+
+    override fun withTransportIdInResponse(): DeviceSelector {
+      return factoryWithTransportIdTracking.usb()
+    }
+  }
+
+  private object Local : DeviceSelector() {
+
+    override fun toString() = "local"
+
+    override val hostPrefix: String
+      get() = "host-local"
+
+    override val transportPrefix: String
+      get() = "host:transport-local"
+
+    override val shortDescription: String
+      get() = LOCAL_SHORT_DESCRIPTION
+
+    override fun withTransportIdInResponse(): DeviceSelector {
+      return factoryWithTransportIdTracking.local()
+    }
+  }
+
+  private object Any : DeviceSelector() {
+
+    override fun toString() = "any"
+
+    override val hostPrefix: String
+      get() = "host"
+
+    override val transportPrefix: String
+      get() = "host:transport-any"
+
+    override val shortDescription: String
+      get() = ANY_SHORT_DESCRIPTION
+
+    override fun withTransportIdInResponse(): DeviceSelector {
+      return factoryWithTransportIdTracking.any()
+    }
+  }
+
+  /** Factory for [DeviceSelector] instances. */
+  companion object {
 
     /**
-     * The (optional) transport ID of the device if the [DeviceSelector] used to start the
-     * service specified that a transport ID should be returned on the channel.
-     * `null` otherwise.
-     *
-     * Note: This field is only set for [DeviceSelector] instances that come from the
-     * [factoryWithTransportIdTracking] factory.
+     * Factory for [DeviceSelector] instances that request a transport ID in the response from the ADB host, but don't track the transport
+     * ID value itself.
      */
-    open var transportId: Long?
-        get() = null
-        /**
-         * Internal function called when the transport ID is read on the ADB protocol wire.
-         */
-        internal set(@Suppress("UNUSED_PARAMETER") value) {
-            // Default implementation does not track transport IDs
-        }
+    val factoryWithTransportId: DeviceSelectorFactory = TransportIdDeviceSelectorFactory
 
     /**
-     * The prefix used to invoke services on the ADB Server that relate to a specific device,
-     * but does not actually connect to the device ADB daemon.
+     * Factory for [DeviceSelector] instances that request a transport ID in the response from the ADB host, and store that transport ID
+     * value in [DeviceSelector.transportId] when it is received in the response.
      *
-     * As documented in [SERVICES.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SERVICES.TXT;l=5),
-     * the value is one of
-     *
-     * + __`host-transport-id:<transport-id>`__ -
-     *   This is a special form of query, where the 'host-transport-id:<transport-id>:'
-     *   prefix can be used to indicate that the client is asking the ADB server
-     *   for information related to a specific transport id of a device.
-     *
-     * + __`host-serial:<serial-number>`__ -
-     *   This is a special form of query, where the 'host-serial:<serial-number>:'
-     *   prefix can be used to indicate that the client is asking the ADB server
-     *   for information related to a specific device.
-     *
-     * + __`host-usb`__ -
-     *   A variant of host-serial used to target the single USB device connected
-     *   to the host. This will fail if there is none or more than one.
-     *
-     * + __`host-local`__ -
-     *   A variant of host-serial used to target the single emulator instance
-     *   running on the host. This will fail if there is none or more than one.
-     *
-     * + __`host`__ -
-     *   When asking for information related to a device, 'host:' can also be
-     *   interpreted as 'any single device or emulator connected to/running on
-     *   the host'.
+     * Note: This factory is slightly less efficient than the [factoryWithTransportId] factory, because returned instances are mutable and
+     * never shared across invocations. Returned instances are also not thread-safe and should not be used when invoking ADB services
+     * concurrently.
      */
-    internal abstract val hostPrefix: String
+    @JvmStatic val factoryWithTransportIdTracking: DeviceSelectorFactory = TransportIdTrackingDeviceSelectorFactory
+
+    @JvmStatic
+    /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
+    fun fromSerialNumber(serialNumber: String): DeviceSelector = SerialNumber(serialNumber)
 
     /**
-     * A prefix used to switch the socket to a direct connection to the adbd daemon running
-     * on the corresponding device.
+     * [DeviceSelector] for the given transport id (see [DeviceInfo.transportId]).
      *
-     * As documented in [SERVICES.TXT](https://cs.android.com/android/platform/superproject/+/fbe41e9a47a57f0d20887ace0fc4d0022afd2f5f:packages/modules/adb/SERVICES.TXT;l=5),
-     * the value is one of
-     *
-     * * __host:transport-id:<transport-id>__ -
-     *   Asks to switch the connection to the device/emulator identified by
-     *   <transport-id>. After the OKAY response, every client request will
-     *   be sent directly to the adbd daemon running on the device.
-     *
-     * * __host:transport:<serial-number>__ or __host:tport:serial:<serial-number>__ -
-     *   Asks to switch the connection to the device/emulator identified by
-     *   <serial-number>. After the OKAY response, every client request will
-     *   be sent directly to the adbd daemon running on the device.
-     *
-     * * __host:transport-usb__ or __host:tport:usb__ -
-     *   Asks to switch the connection to one device connected through USB
-     *   to the host machine. This will fail if there are more than one such
-     *   devices.
-     *
-     * * __host:transport-local__ or __host:tport:local__ -
-     *   Asks to switch the connection to one emulator connected through TCP.
-     *   This will fail if there is more than one such emulator instance
-     *   running.
-     *
-     * * __host:transport-any__ or __host:tport:any__ -
-     *   Asks to switch the connection to
-     *   either the device or emulator connect to/running on the host.
-     *   Will fail if there is more than one such device/emulator available.
-     *
-     * The __host:tport__ versions always return an 8 byte transport id in the response
-     * stream.
+     * Note: This can be useful to address devices that ADB detects correctly but have an unknown serial number, i.e. devices not yet fully
+     * booted or in recovery mode.
      */
-    internal abstract val transportPrefix: String
+    @JvmStatic fun fromTransportId(transportId: Long): DeviceSelector = TransportId(transportId)
 
-    /**
-     * See [transportPrefix]: all `host:tport` prefixes result in ADB sending an 8 byte
-     * transport ID in the response.
-     */
-    internal open val responseContainsTransportId: Boolean
-        get() = false
+    /** [DeviceSelector] for any single device connected via usb cable */
+    @JvmStatic fun usb(): DeviceSelector = Usb
 
-    /**
-     * Returns a [DeviceSelector] equivalent to this instance, i.e. selecting the same
-     * device, but with the guarantee that [responseContainsTransportId] is true, i.e.
-     * a call to the ADB server will result in setting the [transportId] of the device.
-     */
-    internal abstract fun withTransportIdInResponse(): DeviceSelector
+    /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
+    @JvmStatic fun local(): DeviceSelector = Local
 
-    /**
-     * The device serial number if this [DeviceSelector] contains one, `null` otherwise
-     */
-    internal open val serialNumber: String?
-        get() = null
+    /** [DeviceSelector] for any single connected device */
+    @JvmStatic fun any(): DeviceSelector = Any
 
-    /**
-     * A short human-readable description
-     */
-    abstract val shortDescription: String
+    interface DeviceSelectorFactory {
+      /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
+      fun fromSerialNumber(serialNumber: String): DeviceSelector
 
-    private class SerialNumber(override val serialNumber: String) : DeviceSelector() {
+      /** [DeviceSelector] for any single device connected via usb cable */
+      fun usb(): DeviceSelector
+
+      /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
+      fun local(): DeviceSelector
+
+      /** [DeviceSelector] for any single connected device */
+      fun any(): DeviceSelector
+    }
+
+    internal object TransportIdDeviceSelectorFactory : DeviceSelectorFactory {
+
+      /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
+      override fun fromSerialNumber(serialNumber: String): DeviceSelector = SerialNumberWithTransportId(serialNumber)
+
+      /** [DeviceSelector] for any single device connected via usb cable */
+      override fun usb(): DeviceSelector = UsbWithTransportId
+
+      /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
+      override fun local(): DeviceSelector = LocalWithTransportId
+
+      /** [DeviceSelector] for any single connected device */
+      override fun any(): DeviceSelector = AnyWithTransportId
+
+      private class SerialNumberWithTransportId(override val serialNumber: String) : DeviceSelector() {
 
         override fun toString() = "serial-$serialNumber"
 
         override val hostPrefix: String
-            get() = "host-serial:$serialNumber"
+          get() = "host-serial:$serialNumber"
 
         override val transportPrefix: String
-            get() = "host:transport:$serialNumber"
+          get() = "host:tport:serial:$serialNumber"
+
+        override val responseContainsTransportId: Boolean
+          get() = true
 
         override val shortDescription: String
-            get() = serialNumberShortDescription(serialNumber)
+          get() = serialNumberShortDescription(serialNumber)
 
         override fun withTransportIdInResponse(): DeviceSelector {
-            return factoryWithTransportIdTracking.fromSerialNumber(serialNumber)
+          return factoryWithTransportIdTracking.fromSerialNumber(serialNumber)
         }
-    }
+      }
 
-    private class TransportId(private val value: Long) : DeviceSelector() {
-
-        override var transportId: Long?
-            get() = value
-            set(@Suppress("UNUSED_PARAMETER") value) {
-                // We don't track transport ID values, since we were provided one!
-            }
-
-        override fun toString() = "transport-$value"
-
-        override val hostPrefix: String
-            get() = "host-transport-id:$value"
-
-        override val transportPrefix: String
-            get() = "host:transport-id:$value"
-
-        override val shortDescription: String
-            get() = transportIdShortDescription(value)
-
-        override fun withTransportIdInResponse(): DeviceSelector {
-            return this
-        }
-    }
-
-    private object Usb : DeviceSelector() {
+      private object UsbWithTransportId : DeviceSelector() {
 
         override fun toString() = "usb"
 
         override val hostPrefix: String
-            get() = "host-usb"
+          get() = "host-usb"
 
         override val transportPrefix: String
-            get() = "host:transport-usb"
+          get() = "host:tport:usb"
+
+        override val responseContainsTransportId: Boolean
+          get() = true
 
         override val shortDescription: String
-            get() = USB_SHORT_DESCRIPTION
+          get() = USB_SHORT_DESCRIPTION
 
         override fun withTransportIdInResponse(): DeviceSelector {
-            return factoryWithTransportIdTracking.usb()
+          return factoryWithTransportIdTracking.usb()
         }
-    }
+      }
 
-    private object Local : DeviceSelector() {
+      private object LocalWithTransportId : DeviceSelector() {
 
         override fun toString() = "local"
 
         override val hostPrefix: String
-            get() = "host-local"
+          get() = "host-local"
 
         override val transportPrefix: String
-            get() = "host:transport-local"
+          get() = "host:tport:local"
+
+        override val responseContainsTransportId: Boolean
+          get() = true
 
         override val shortDescription: String
-            get() = LOCAL_SHORT_DESCRIPTION
+          get() = LOCAL_SHORT_DESCRIPTION
 
         override fun withTransportIdInResponse(): DeviceSelector {
-            return factoryWithTransportIdTracking.local()
+          return factoryWithTransportIdTracking.local()
         }
-    }
+      }
 
-    private object Any : DeviceSelector() {
+      private object AnyWithTransportId : DeviceSelector() {
 
         override fun toString() = "any"
 
         override val hostPrefix: String
-            get() = "host"
+          get() = "host"
 
         override val transportPrefix: String
-            get() = "host:transport-any"
+          get() = "host:tport:any"
+
+        override val responseContainsTransportId: Boolean
+          get() = true
 
         override val shortDescription: String
-            get() = ANY_SHORT_DESCRIPTION
+          get() = ANY_SHORT_DESCRIPTION
 
         override fun withTransportIdInResponse(): DeviceSelector {
-            return factoryWithTransportIdTracking.any()
+          return factoryWithTransportIdTracking.any()
         }
+      }
     }
 
-    /**
-     * Factory for [DeviceSelector] instances.
-     */
-    companion object {
+    internal object TransportIdTrackingDeviceSelectorFactory : DeviceSelectorFactory {
 
-        /**
-         * Factory for [DeviceSelector] instances that request a transport ID in the response
-         * from the ADB host, but don't track the transport ID value itself.
-         */
-        val factoryWithTransportId: DeviceSelectorFactory = TransportIdDeviceSelectorFactory
+      /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
+      override fun fromSerialNumber(serialNumber: String): DeviceSelector =
+        TrackingDeviceSelector(factoryWithTransportId.fromSerialNumber(serialNumber))
 
-        /**
-         * Factory for [DeviceSelector] instances that request a transport ID in the response
-         * from the ADB host, and store that transport ID value in [DeviceSelector.transportId]
-         * when it is received in the response.
-         *
-         * Note: This factory is slightly less efficient than the [factoryWithTransportId] factory,
-         *       because returned instances are mutable and never shared across invocations.
-         *       Returned instances are also not thread-safe and should not be used when
-         *       invoking ADB services concurrently.
-         */
-        @JvmStatic
-        val factoryWithTransportIdTracking: DeviceSelectorFactory = TransportIdTrackingDeviceSelectorFactory
+      /** [DeviceSelector] for any single device connected via usb cable */
+      override fun usb(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.usb())
 
-        @JvmStatic
-        /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
-        fun fromSerialNumber(serialNumber: String): DeviceSelector = SerialNumber(serialNumber)
+      /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
+      override fun local(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.local())
 
-        /**
-         * [DeviceSelector] for the given transport id (see [DeviceInfo.transportId]).
-         *
-         * Note: This can be useful to address devices that ADB detects correctly but have an
-         * unknown serial number, i.e. devices not yet fully booted or in recovery mode.
-         */
-        @JvmStatic
-        fun fromTransportId(transportId: Long): DeviceSelector = TransportId(transportId)
+      /** [DeviceSelector] for any single connected device */
+      override fun any(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.any())
 
-        /** [DeviceSelector] for any single device connected via usb cable */
-        @JvmStatic
-        fun usb(): DeviceSelector = Usb
+      private class TrackingDeviceSelector(private val delegate: DeviceSelector) : DeviceSelector() {
 
-        /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
-        @JvmStatic
-        fun local(): DeviceSelector = Local
+        override var transportId: Long? = null
 
-        /** [DeviceSelector] for any single connected device */
-        @JvmStatic
-        fun any(): DeviceSelector = Any
+        override fun toString() = delegate.toString()
 
-        interface DeviceSelectorFactory {
-            /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
-            fun fromSerialNumber(serialNumber: String): DeviceSelector
-            /** [DeviceSelector] for any single device connected via usb cable */
-            fun usb(): DeviceSelector
+        override val hostPrefix: String
+          get() = delegate.hostPrefix
 
-            /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
-            fun local(): DeviceSelector
+        override val transportPrefix: String
+          get() = delegate.transportPrefix
 
-            /** [DeviceSelector] for any single connected device */
-            fun any(): DeviceSelector
+        override val responseContainsTransportId: Boolean
+          get() = true
+
+        override val shortDescription: String
+          get() = delegate.shortDescription
+
+        override fun withTransportIdInResponse(): DeviceSelector {
+          return this
         }
-
-        internal object TransportIdDeviceSelectorFactory : DeviceSelectorFactory {
-
-            /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
-            override fun fromSerialNumber(serialNumber: String): DeviceSelector =
-                SerialNumberWithTransportId(serialNumber)
-
-            /** [DeviceSelector] for any single device connected via usb cable */
-            override fun usb(): DeviceSelector = UsbWithTransportId
-
-            /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
-            override fun local(): DeviceSelector = LocalWithTransportId
-
-            /** [DeviceSelector] for any single connected device */
-            override fun any(): DeviceSelector = AnyWithTransportId
-
-            private class SerialNumberWithTransportId(override val serialNumber: String) :
-                DeviceSelector() {
-
-                override fun toString() = "serial-$serialNumber"
-
-                override val hostPrefix: String
-                    get() = "host-serial:$serialNumber"
-
-                override val transportPrefix: String
-                    get() = "host:tport:serial:$serialNumber"
-
-                override val responseContainsTransportId: Boolean
-                    get() = true
-
-                override val shortDescription: String
-                    get() = serialNumberShortDescription(serialNumber)
-
-                override fun withTransportIdInResponse(): DeviceSelector {
-                    return factoryWithTransportIdTracking.fromSerialNumber(serialNumber)
-                }
-            }
-
-            private object UsbWithTransportId : DeviceSelector() {
-
-                override fun toString() = "usb"
-
-                override val hostPrefix: String
-                    get() = "host-usb"
-
-                override val transportPrefix: String
-                    get() = "host:tport:usb"
-
-                override val responseContainsTransportId: Boolean
-                    get() = true
-
-                override val shortDescription: String
-                    get() = USB_SHORT_DESCRIPTION
-
-                override fun withTransportIdInResponse(): DeviceSelector {
-                    return factoryWithTransportIdTracking.usb()
-                }
-            }
-
-            private object LocalWithTransportId : DeviceSelector() {
-
-                override fun toString() = "local"
-
-                override val hostPrefix: String
-                    get() = "host-local"
-
-                override val transportPrefix: String
-                    get() = "host:tport:local"
-
-                override val responseContainsTransportId: Boolean
-                    get() = true
-
-                override val shortDescription: String
-                    get() = LOCAL_SHORT_DESCRIPTION
-
-                override fun withTransportIdInResponse(): DeviceSelector {
-                    return factoryWithTransportIdTracking.local()
-                }
-            }
-
-            private object AnyWithTransportId : DeviceSelector() {
-
-                override fun toString() = "any"
-
-                override val hostPrefix: String
-                    get() = "host"
-
-                override val transportPrefix: String
-                    get() = "host:tport:any"
-
-                override val responseContainsTransportId: Boolean
-                    get() = true
-
-                override val shortDescription: String
-                    get() = ANY_SHORT_DESCRIPTION
-
-                override fun withTransportIdInResponse(): DeviceSelector {
-                    return factoryWithTransportIdTracking.any()
-                }
-            }
-        }
-
-        internal object TransportIdTrackingDeviceSelectorFactory : DeviceSelectorFactory {
-
-            /** [DeviceSelector] for the given device serial number (see [DeviceInfo.serialNumber] */
-            override fun fromSerialNumber(serialNumber: String): DeviceSelector =
-                TrackingDeviceSelector(factoryWithTransportId.fromSerialNumber(serialNumber))
-
-            /** [DeviceSelector] for any single device connected via usb cable */
-            override fun usb(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.usb())
-
-            /** [DeviceSelector] for any single device connected locally (e.g.emulator) */
-            override fun local(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.local())
-
-            /** [DeviceSelector] for any single connected device */
-            override fun any(): DeviceSelector = TrackingDeviceSelector(factoryWithTransportId.any())
-
-            private class TrackingDeviceSelector(private val delegate: DeviceSelector) : DeviceSelector() {
-
-                override var transportId: Long? = null
-
-                override fun toString() = delegate.toString()
-
-                override val hostPrefix: String
-                    get() = delegate.hostPrefix
-
-                override val transportPrefix: String
-                    get() = delegate.transportPrefix
-
-                override val responseContainsTransportId: Boolean
-                    get() = true
-
-                override val shortDescription: String
-                    get() = delegate.shortDescription
-
-                override fun withTransportIdInResponse(): DeviceSelector {
-                    return this
-                }
-            }
-        }
-
-        private const val USB_SHORT_DESCRIPTION = "device 'usb'"
-        private const val LOCAL_SHORT_DESCRIPTION = "device 'local'"
-        private const val ANY_SHORT_DESCRIPTION = "device 'any'"
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun serialNumberShortDescription(serialNumber: String): String {
-            return "device serial #$serialNumber"
-        }
-        @Suppress("NOTHING_TO_INLINE")
-        private inline fun transportIdShortDescription(transportId: Long): String {
-            return "device transport id $transportId"
-        }
+      }
     }
+
+    private const val USB_SHORT_DESCRIPTION = "device 'usb'"
+    private const val LOCAL_SHORT_DESCRIPTION = "device 'local'"
+    private const val ANY_SHORT_DESCRIPTION = "device 'any'"
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun serialNumberShortDescription(serialNumber: String): String {
+      return "device serial #$serialNumber"
+    }
+
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun transportIdShortDescription(transportId: Long): String {
+      return "device transport id $transportId"
+    }
+  }
 }

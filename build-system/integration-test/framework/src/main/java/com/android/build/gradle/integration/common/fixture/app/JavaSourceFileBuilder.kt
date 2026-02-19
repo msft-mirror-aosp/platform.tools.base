@@ -19,29 +19,29 @@ package com.android.build.gradle.integration.common.fixture.app
 /** Builder for the contents of a Java source file. */
 class JavaSourceFileBuilder(private val packageName: String) {
 
-    private val imports = mutableListOf<String>()
-    private val classes = StringBuilder()
+  private val imports = mutableListOf<String>()
+  private val classes = StringBuilder()
 
-    fun addImports(vararg imports: String) {
-        this.imports.addAll(imports)
-    }
+  fun addImports(vararg imports: String) {
+    this.imports.addAll(imports)
+  }
 
-    fun addClass(classContents: String) {
-        classes.append("\n${classContents.trim()}")
-    }
+  fun addClass(classContents: String) {
+    classes.append("\n${classContents.trim()}")
+  }
 
-    fun build(): String {
-        val contents = StringBuilder()
-        contents.append("package $packageName;")
-        if (!imports.isEmpty()) {
-            contents.append("\n")
-            for (import in imports) {
-                contents.append("\nimport $import;")
-            }
-        }
-        if (!classes.isEmpty()) {
-            contents.append("\n\n${classes.trim()}")
-        }
-        return contents.toString()
+  fun build(): String {
+    val contents = StringBuilder()
+    contents.append("package $packageName;")
+    if (!imports.isEmpty()) {
+      contents.append("\n")
+      for (import in imports) {
+        contents.append("\nimport $import;")
+      }
     }
+    if (!classes.isEmpty()) {
+      contents.append("\n\n${classes.trim()}")
+    }
+    return contents.toString()
+  }
 }

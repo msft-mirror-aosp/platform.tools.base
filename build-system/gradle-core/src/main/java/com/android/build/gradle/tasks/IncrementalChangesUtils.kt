@@ -20,10 +20,11 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.builder.files.SerializableChange
-import com.android.builder.files.SerializableInputChanges
 import com.android.builder.files.SerializableFileChanges
+import com.android.builder.files.SerializableInputChanges
 import com.android.ide.common.resources.FileStatus
 import com.google.common.collect.ImmutableList
+import java.util.Collections
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.FileType
@@ -31,7 +32,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.work.ChangeType
 import org.gradle.work.FileChange
 import org.gradle.work.InputChanges
-import java.util.Collections
 
 /**
  * Convert Gradle incremental changes to a serializable form for the worker API.
@@ -39,10 +39,11 @@ import java.util.Collections
  * This method ignores directory changes.
  */
 fun InputChanges.getChangesInSerializableForm(input: Provider<out FileSystemLocation>): SerializableInputChanges {
-    return SerializableInputChanges(
-        roots = ImmutableList.of(input.get().asFile),
-        changes = convert(getFileChanges(input))
-    )
+  return SerializableInputChanges(roots = ImmutableList.of(input.get().asFile), changes = convert(getFileChanges(input)))
+}
+
+fun InputChanges.getChangesInSerializableForm(inputs: List<Provider<out FileSystemLocation>>): SerializableInputChanges {
+  return SerializableInputChanges(roots = inputs.map { it.get().asFile }, changes = inputs.flatMap { convert(getFileChanges(it)) })
 }
 
 /**
@@ -51,32 +52,32 @@ fun InputChanges.getChangesInSerializableForm(input: Provider<out FileSystemLoca
  * This method ignores directory changes.
  */
 fun InputChanges.getChangesInSerializableForm(input: FileCollection): SerializableInputChanges {
-    return SerializableInputChanges(
-        roots = input.files.toImmutableList(),
-        changes = convert(getFileChanges(input))
-    )
+  return SerializableInputChanges(roots = input.files.toImmutableList(), changes = convert(getFileChanges(input)))
 }
 
 private fun convert(changes: Iterable<FileChange>): Collection<SerializableChange> {
-    return Collections.unmodifiableCollection(ArrayList<SerializableChange>().also { collection ->
-        for (change in changes) {
-            if (change.fileType == FileType.FILE) {
-                collection.add(change.toSerializable())
-            }
+  return Collections.unmodifiableCollection(
+    ArrayList<SerializableChange>().also { collection ->
+      for (change in changes) {
+        if (change.fileType == FileType.FILE) {
+          collection.add(change.toSerializable())
         }
-    })
+      }
+    }
+  )
 }
 
-fun ChangeType.toSerializable(): FileStatus = when (this) {
+fun ChangeType.toSerializable(): FileStatus =
+  when (this) {
     ChangeType.ADDED -> FileStatus.NEW
     ChangeType.MODIFIED -> FileStatus.CHANGED
     ChangeType.REMOVED -> FileStatus.REMOVED
-}
+  }
 
 fun FileChange.toSerializable(): SerializableChange {
-    return SerializableChange(file, changeType.toSerializable(), normalizedPath)
+  return SerializableChange(file, changeType.toSerializable(), normalizedPath)
 }
 
 fun Iterable<FileChange>.toSerializable(): SerializableFileChanges {
-    return SerializableFileChanges(this.map { it.toSerializable() })
+  return SerializableFileChanges(this.map { it.toSerializable() })
 }

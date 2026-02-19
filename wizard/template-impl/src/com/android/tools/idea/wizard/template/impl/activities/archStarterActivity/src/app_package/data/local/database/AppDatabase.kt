@@ -17,7 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.appDatabase() = """
+fun ArchStarterActivityTemplateVariables.appDatabase() =
+  """
 package $databasePackage
 
 import androidx.room.Database

@@ -27,17 +27,13 @@ import org.junit.Test
 
 class AppWithProvidedRemoteJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithLocalDeps")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: "com.android.application"
                 android {
                     namespace = 'com.android.tests.libWithProvidedLocalJar'
@@ -48,24 +44,22 @@ class AppWithProvidedRemoteJarTest : ModelComparator() {
                         compileOnly "com.google.guava:guava:18.0"
                     }
                 }
-            """.trimIndent())
-    }
+            """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
-    }
+    with(result).compareVariantDependencies(goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun `check provided remote jar is not packaged`() {
-        project.execute("clean", "assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        TruthHelper.assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/person/People;")
-    }
+  @Test
+  fun `check provided remote jar is not packaged`() {
+    project.execute("clean", "assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    TruthHelper.assertThat(apk).doesNotContainClass("Lcom/example/android/multiproject/person/People;")
+  }
 }
-

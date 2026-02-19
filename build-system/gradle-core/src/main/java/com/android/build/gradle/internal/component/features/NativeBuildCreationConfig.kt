@@ -23,22 +23,21 @@ import com.android.build.gradle.internal.dsl.NdkOptions
 /**
  * Creation config for components that support native build.
  *
- * To use this in a task that requires native build support, access the nullable property on the
- * component
+ * To use this in a task that requires native build support, access the nullable property on the component
  * [com.android.build.gradle.internal.component.VariantCreationConfig.nativeBuildCreationConfig].
  */
 interface NativeBuildCreationConfig {
-    val supportedAbis: Set<String>
+  val supportedAbis: Set<String>
 
-    val userDefinedAbis: Set<String>
+  val userDefinedAbis: Set<String>
 
-    val ndkConfig: MergedNdkConfig
+  val ndkConfig: MergedNdkConfig
 
-    val isJniDebuggable: Boolean
+  val isJniDebuggable: Boolean
 
-    val externalNativeBuild: ExternalNativeBuild?
+  val externalNativeBuild: ExternalNativeBuild?
 
-    val nativeDebugSymbolLevel: NdkOptions.DebugSymbolLevel
+  val nativeDebugSymbolLevel: NdkOptions.DebugSymbolLevel
 
-    val externalNativeExperimentalProperties: Map<String, Any>
+  val externalNativeExperimentalProperties: Map<String, Any>
 }

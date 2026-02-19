@@ -19,27 +19,30 @@ package com.android.build.gradle.integration.common.fixture.app
 /** Builder for the contents of an AndroidManifest.xml file. */
 class ManifestFileBuilder() {
 
-    private val tags = StringBuilder()
+  private val tags = StringBuilder()
 
-    fun addUsesPermissionTag(androidName: String) {
-        tags.append(
-                """
+  fun addUsesPermissionTag(androidName: String) {
+    tags.append(
+      """
                     <uses-permission android:name="$androidName" />
-                """.trimIndent()
-        )
-    }
+                """
+        .trimIndent()
+    )
+  }
 
-    @JvmOverloads
-    fun addApplicationTag(activityClassName: String, namespace:String = "", isMainActivity: Boolean = true) {
-        val mainLauncherIntentFilter = """
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
+  @JvmOverloads
+  fun addApplicationTag(activityClassName: String, namespace: String = "", isMainActivity: Boolean = true) {
+    val mainLauncherIntentFilter =
+      """
+      <intent-filter>
+          <action android:name="android.intent.action.MAIN" />
 
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-        """.trimIndent()
-        tags.append(
-            """
+          <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+      """
+        .trimIndent()
+    tags.append(
+      """
             <application
                 android:allowBackup="true"
                 android:supportsRtl="true"
@@ -49,22 +52,24 @@ class ManifestFileBuilder() {
                 ${if(isMainActivity) mainLauncherIntentFilter else ""}
                 </activity>
             </application>
-            """.trimIndent()
-        )
-    }
-
-    fun build(): String {
-        val contents = StringBuilder()
-        contents.append(
             """
-            <?xml version="1.0" encoding="utf-8"?>
-            <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            """.trimIndent()
-        )
-        if (!tags.isEmpty()) {
-            contents.append("\n\n$tags\n\n")
-        }
-        contents.append("</manifest>")
-        return contents.toString()
+        .trimIndent()
+    )
+  }
+
+  fun build(): String {
+    val contents = StringBuilder()
+    contents.append(
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+      """
+        .trimIndent()
+    )
+    if (!tags.isEmpty()) {
+      contents.append("\n\n$tags\n\n")
     }
+    contents.append("</manifest>")
+    return contents.toString()
+  }
 }

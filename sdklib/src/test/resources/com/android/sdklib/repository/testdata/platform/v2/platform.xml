@@ -1,0 +1,16 @@
+<common:repository xmlns:common="http://schemas.android.com/repository/android/common/02"
+                   xmlns:sdk="http://schemas.android.com/sdk/android/repo/repository2/02"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <localPackage path="platforms;android-23" obsolete="false">
+        <type-details xsi:type="sdk:platformDetailsType">
+            <api-level>23</api-level>
+            <layoutlib api="6"/>
+        </type-details>
+        <revision>
+            <major>2</major>
+            <minor>0</minor>
+            <micro>1</micro>
+        </revision>
+        <display-name>Sample platform v2</display-name>
+    </localPackage>
+</common:repository>

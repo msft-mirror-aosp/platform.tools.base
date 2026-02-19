@@ -23,7 +23,8 @@ import com.android.tools.lint.detector.api.Detector
 class KotlinNullnessAnnotationDetectorTest : AbstractCheckTest() {
   override fun lint(): TestLintTask {
     return super.lint()
-      // Our warning messages are picking up specific strings from the type expressions, which means
+      // Our warning messages are picking up specific strings from the type expressions, which
+      // means
       // the test results would vary for type aliases
       .skipTestModes(TestMode.TYPE_ALIAS)
   }

@@ -20,54 +20,38 @@ import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import org.gradle.api.GradleException
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /**
- * Pre build task that checks that there are not differences between artifact versions between the
- * runtime classpath of tested variant, and runtime classpath of test variant.
+ * Pre build task that checks that there are not differences between artifact versions between the runtime classpath of tested variant, and
+ * runtime classpath of test variant.
  *
  * Caching disabled by default for this task in line with behavior of parent: [ClasspathComparisonTask]
  */
 @DisableCachingByDefault
 abstract class TestPreBuildTask : ClasspathComparisonTask() {
 
-    override fun onDifferentVersionsFound(
-        group: String,
-        module: String,
-        runtimeVersion: String,
-        compileVersion: String
-    ) {
-        throw GradleException(
-            """Conflict with dependency '$group:$module' in project '${projectPath.get()}'.
+  override fun onDifferentVersionsFound(group: String, module: String, runtimeVersion: String, compileVersion: String) {
+    throw GradleException(
+      """Conflict with dependency '$group:$module' in project '${projectPath.get()}'.
 Resolved versions for app ($compileVersion) and test app ($runtimeVersion) differ.
 See https://d.android.com/r/tools/test-apk-dependency-conflicts.html for details."""
-        )
+    )
+  }
+
+  class CreationAction(creationConfig: TestComponentCreationConfig) :
+    TaskManager.AbstractPreBuildCreationAction<TestPreBuildTask, TestComponentCreationConfig>(creationConfig) {
+
+    override val type: Class<TestPreBuildTask>
+      get() = TestPreBuildTask::class.java
+
+    override fun configure(task: TestPreBuildTask) {
+      super.configure(task)
+      val runtimeClasspath = creationConfig.variantDependencies.runtimeClasspath
+      val compileClasspath = creationConfig.mainVariant.variantDependencies.runtimeClasspath
+      task.runtimeVersionMap.set(task.project.providers.provider { runtimeClasspath.toVersionMap() })
+      task.compileVersionMap.set(task.project.providers.provider { compileClasspath.toVersionMap() })
+      task.fakeOutputDirectory =
+        creationConfig.services.projectInfo.intermediatesDirectory.map { it.dir("prebuild").dir(creationConfig.dirName) }
     }
-
-    class CreationAction(creationConfig: TestComponentCreationConfig) :
-        TaskManager.AbstractPreBuildCreationAction<TestPreBuildTask, TestComponentCreationConfig>(creationConfig) {
-
-        override val type: Class<TestPreBuildTask>
-            get() = TestPreBuildTask::class.java
-
-        override fun configure(
-            task: TestPreBuildTask
-        ) {
-            super.configure(task)
-            val runtimeClasspath = creationConfig.variantDependencies.runtimeClasspath
-            val compileClasspath =
-                creationConfig.mainVariant.variantDependencies.runtimeClasspath
-            task.runtimeVersionMap.set(
-                task.project.providers.provider {
-                    runtimeClasspath.toVersionMap()
-                }
-            )
-            task.compileVersionMap.set(
-                task.project.providers.provider {
-                    compileClasspath.toVersionMap()
-                }
-            )
-            task.fakeOutputDirectory = creationConfig.services.projectInfo.intermediatesDirectory.map { it.dir("prebuild").dir(creationConfig.dirName) }
-        }
-    }
+  }
 }

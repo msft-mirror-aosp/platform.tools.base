@@ -30,12 +30,11 @@ import org.jetbrains.uast.UAnonymousClass
 import org.jetbrains.uast.UClass
 
 /**
- * Checks that Fragment subclasses can be instantiated via Class.newInstance: the class is public,
- * static, and has a public null constructor.
+ * Checks that Fragment subclasses can be instantiated via Class.newInstance: the class is public, static, and has a public null
+ * constructor.
  *
- * This helps track down issues like
- * http://stackoverflow.com/questions/8058809/fragment-activity-crashes-on-screen-rotate (and
- * countless duplicates)
+ * This helps track down issues like http://stackoverflow.com/questions/8058809/fragment-activity-crashes-on-screen-rotate (and countless
+ * duplicates)
  */
 class FragmentDetector : Detector(), SourceCodeScanner {
   companion object {
@@ -127,8 +126,7 @@ class FragmentDetector : Detector(), SourceCodeScanner {
       } else {
         val location = context.getNameLocation(constructor)
         // TODO: Use separate issue for this which isn't an error
-        val message =
-          "Avoid non-default constructors in fragments: use a default constructor plus `Fragment#setArguments(Bundle)` instead"
+        val message = "Avoid non-default constructors in fragments: use a default constructor plus `Fragment#setArguments(Bundle)` instead"
         context.report(ISSUE, constructor, location, message)
       }
     }

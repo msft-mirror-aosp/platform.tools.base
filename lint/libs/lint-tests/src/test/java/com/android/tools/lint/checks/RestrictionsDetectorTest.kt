@@ -573,14 +573,14 @@ class RestrictionsDetectorTest : AbstractCheckTest() {
     }
     sb.append(
       """
-                <restriction
-                        android:defaultValue="@string/default_message"
-                        android:description="@string/description_message"
-                        android:key="message"
-                        android:restrictionType="string"
-                        android:title="@string/title_message"/>
+      <restriction
+              android:defaultValue="@string/default_message"
+              android:description="@string/description_message"
+              android:key="message"
+              android:restrictionType="string"
+              android:title="@string/title_message"/>
 
-            """
+      """
         .trimIndent()
     )
     for (i in 0 until maxDepth) {

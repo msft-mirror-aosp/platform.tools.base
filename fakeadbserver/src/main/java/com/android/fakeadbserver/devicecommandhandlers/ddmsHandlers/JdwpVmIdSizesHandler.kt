@@ -24,47 +24,42 @@ import java.nio.ByteOrder
 
 class JdwpVmIdSizesHandler : JdwpPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: JdwpPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput
-    ): Boolean {
-        // See https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_IDSizes
-        // int	fieldIDSize	fieldID size in bytes
-        // int	methodIDSize	methodID size in bytes
-        // int	objectIDSize	objectID size in bytes
-        // int	referenceTypeIDSize	referenceTypeID size in bytes
-        // int	frameIDSize	frameID size in bytes
-        val payloadStream = ByteArrayOutputStream()
-        writeJdwpInt(payloadStream, 10)
-        writeJdwpInt(payloadStream, 10)
-        writeJdwpInt(payloadStream, 10)
-        writeJdwpInt(payloadStream, 10)
-        writeJdwpInt(payloadStream, 10)
+  override fun handlePacket(device: DeviceState, client: ClientState, packet: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput): Boolean {
+    // See
+    // https://docs.oracle.com/javase/8/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_IDSizes
+    // int	fieldIDSize	fieldID size in bytes
+    // int	methodIDSize	methodID size in bytes
+    // int	objectIDSize	objectID size in bytes
+    // int	referenceTypeIDSize	referenceTypeID size in bytes
+    // int	frameIDSize	frameID size in bytes
+    val payloadStream = ByteArrayOutputStream()
+    writeJdwpInt(payloadStream, 10)
+    writeJdwpInt(payloadStream, 10)
+    writeJdwpInt(payloadStream, 10)
+    writeJdwpInt(payloadStream, 10)
+    writeJdwpInt(payloadStream, 10)
 
-        val payload = payloadStream.toByteArray()
-        val replyPacket = JdwpPacket.createResponse(packet.id, payload, packet.cmdSet, packet.cmd)
-        replyPacket.write(jdwpHandlerOutput)
+    val payload = payloadStream.toByteArray()
+    val replyPacket = JdwpPacket.createResponse(packet.id, payload, packet.cmdSet, packet.cmd)
+    replyPacket.write(jdwpHandlerOutput)
 
-        return true // don't close connection
-    }
+    return true // don't close connection
+  }
 
-    private fun writeJdwpInt(oStream: OutputStream, value: Int) {
-        // See https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/jdwp-spec.html
-        // "All fields and data sent via JDWP should be in big-endian format"
-        val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN)
-        buffer.putInt(value)
-        writeJdwpBytes(oStream, buffer.array())
-    }
+  private fun writeJdwpInt(oStream: OutputStream, value: Int) {
+    // See https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/jdwp-spec.html
+    // "All fields and data sent via JDWP should be in big-endian format"
+    val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN)
+    buffer.putInt(value)
+    writeJdwpBytes(oStream, buffer.array())
+  }
 
-    private fun writeJdwpBytes(oStream: OutputStream, bytes: ByteArray) {
-        oStream.write(bytes)
-    }
+  private fun writeJdwpBytes(oStream: OutputStream, bytes: ByteArray) {
+    oStream.write(bytes)
+  }
 
-    companion object {
+  companion object {
 
-        val commandId =
-            JdwpCommandId(JdwpCommands.CmdSet.SET_VM.value, JdwpCommands.VmCmd.CMD_VM_IDSIZES.value)
-    }
+    val commandId = JdwpCommandId(JdwpCommands.CmdSet.SET_VM.value, JdwpCommands.VmCmd.CMD_VM_IDSIZES.value)
+  }
 }

@@ -23,61 +23,62 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests generation of unit test configuration after relocating build dir
- */
+/** Tests generation of unit test configuration after relocating build dir */
 class BuildDirRelocationTest {
-    @get:Rule
-    var project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
-        .addGradleProperties("org.gradle.caching=true")
-        .create()
+  @get:Rule
+  var project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldApp.forPlugin("com.android.library"))
+      .addGradleProperties("org.gradle.caching=true")
+      .create()
 
-    // Regression test for b/146922959
-    @Test
-    fun checkUnitTestConfigAfterRelocation() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            dependencies {
-                testImplementation 'junit:junit:4.12'
-                testImplementation 'androidx.test:core:1.6.1'
-            }
-            """.trimIndent()
+  // Regression test for b/146922959
+  @Test
+  fun checkUnitTestConfigAfterRelocation() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      dependencies {
+          testImplementation 'junit:junit:4.12'
+          testImplementation 'androidx.test:core:1.6.1'
+      }
+      """
+        .trimIndent(),
+    )
+
+    // Generate the test config and runs the tests.
+    project.execute("testDebugUnitTest")
+
+    // Change the build dir to foo/bar
+    TestFileUtils.appendToFile(project.buildFile, "buildDir = \"foo/bar\"")
+
+    PathUtils.deleteRecursivelyIfExists(project.buildDir.toPath())
+
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android.testOptions.unitTests.includeAndroidResources = true
+      """
+        .trimIndent(),
+    )
+
+    /*
+     * Re-generate the test config artifact
+     * ./foo/bar/intermediates/unit_test_config_directory/debugUnitTest/out/com/android/tools/test_config.properties
+     */
+    project.execute("generateDebugUnitTestConfig")
+
+    val testConfigFile =
+      project
+        .file(
+          "foo/bar/intermediates/unit_test_config_directory/debugUnitTest/generateDebugUnitTestConfig/out/com/android/tools/test_config.properties"
         )
+        .readText()
 
-        //Generate the test config and runs the tests.
-        project.execute("testDebugUnitTest")
-
-        // Change the build dir to foo/bar
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "buildDir = \"foo/bar\""
-        )
-
-        PathUtils.deleteRecursivelyIfExists(project.buildDir.toPath())
-
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-            android.testOptions.unitTests.includeAndroidResources = true
-            """.trimIndent()
-        )
-
-        /*
-         * Re-generate the test config artifact
-         * ./foo/bar/intermediates/unit_test_config_directory/debugUnitTest/out/com/android/tools/test_config.properties
-         */
-        project.execute("generateDebugUnitTestConfig")
-
-        val testConfigFile = project.file("foo/bar/intermediates/unit_test_config_directory/debugUnitTest/generateDebugUnitTestConfig/out/com/android/tools/test_config.properties")
-            .readText()
-
-        /*
-         * Verify that test config was re-generated after changing build dir location
-         * and not fetched from cache
-         */
-        assertThat(testConfigFile).doesNotContain("build/")
-    }
-
+    /*
+     * Verify that test config was re-generated after changing build dir location
+     * and not fetched from cache
+     */
+    assertThat(testConfigFile).doesNotContain("build/")
+  }
 }

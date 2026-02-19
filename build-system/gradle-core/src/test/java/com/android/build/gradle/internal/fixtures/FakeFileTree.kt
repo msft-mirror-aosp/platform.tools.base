@@ -17,40 +17,40 @@
 package com.android.build.gradle.internal.fixtures
 
 import groovy.lang.Closure
+import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.FileVisitDetails
 import org.gradle.api.file.FileVisitor
 import org.gradle.api.tasks.util.PatternFilterable
-import java.io.File
 
 class FakeFileTree(allFiles: Collection<File>) : FileTree, FakeFileCollection(allFiles) {
 
-    override fun plus(p0: FileTree): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun plus(p0: FileTree): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun matching(p0: Closure<Any>): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun matching(p0: Closure<Any>): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun matching(p0: Action<in PatternFilterable>): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun matching(p0: Action<in PatternFilterable>): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun matching(p0: PatternFilterable): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun matching(p0: PatternFilterable): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun visit(p0: FileVisitor): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun visit(p0: FileVisitor): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun visit(p0: Closure<Any>): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun visit(p0: Closure<Any>): FileTree {
+    TODO("Not yet implemented")
+  }
 
-    override fun visit(p0: Action<in FileVisitDetails>): FileTree {
-        TODO("Not yet implemented")
-    }
+  override fun visit(p0: Action<in FileVisitDetails>): FileTree {
+    TODO("Not yet implemented")
+  }
 }

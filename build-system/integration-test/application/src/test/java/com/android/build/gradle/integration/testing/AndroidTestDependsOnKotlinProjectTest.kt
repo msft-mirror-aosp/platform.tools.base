@@ -28,41 +28,34 @@ import org.junit.Test
 /** Regression test for b/187353303. */
 class AndroidTestDependsOnKotlinProjectTest {
 
-    @Rule
-    @JvmField
-    val project = EmptyActivityProjectBuilder()
-        .also {
-            it.minSdkVersion = 24
-        }
-        .addJavaLibrary(useKotlin = true)
-        .build()
+  @Rule @JvmField val project = EmptyActivityProjectBuilder().also { it.minSdkVersion = 24 }.addJavaLibrary(useKotlin = true).build()
 
-    @Before
-    fun setUp() {
-        project.getSubproject(APP).buildFile.appendText(
-            """
+  @Before
+  fun setUp() {
+    project
+      .getSubproject(APP)
+      .buildFile
+      .appendText(
+        """
 
             dependencies {
                 androidTestImplementation project(":$JAVALIB")
             }
-        """.trimIndent()
-        )
+        """
+          .trimIndent()
+      )
 
-        project.getSubproject(JAVALIB).mainSrcDir.let {
-            it.mkdirs()
-            it.resolve("JavaClass.java").writeText("public class JavaClass {}")
-            it.resolve("KotlinClass.kt").writeText("class KotlinClass")
-        }
+    project.getSubproject(JAVALIB).mainSrcDir.let {
+      it.mkdirs()
+      it.resolve("JavaClass.java").writeText("public class JavaClass {}")
+      it.resolve("KotlinClass.kt").writeText("class KotlinClass")
     }
+  }
 
-    @Test
-    fun testApk() {
-        project.executor().run(":app:assembleDebugAndroidTest")
-        assertThat(
-            project.getSubproject(APP).getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        ).containsClass("LJavaClass;")
-        assertThat(
-            project.getSubproject(APP).getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)
-        ).containsClass("LKotlinClass;")
-    }
+  @Test
+  fun testApk() {
+    project.executor().run(":app:assembleDebugAndroidTest")
+    assertThat(project.getSubproject(APP).getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)).containsClass("LJavaClass;")
+    assertThat(project.getSubproject(APP).getApk(GradleTestProject.ApkType.ANDROIDTEST_DEBUG)).containsClass("LKotlinClass;")
+  }
 }

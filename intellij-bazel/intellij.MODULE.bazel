@@ -19,18 +19,6 @@ intellij.local_platform(
     target = "@//prebuilts/studio/intellij-sdk:sherlock-sdk",
 )
 intellij.remote_platform(
-    name = "intellij_ce_2024_2",
-    sha256 = "781cc03526d5811061c6ffd211942698b3d18ed2f055a04f384956686a7aa0a6",
-    top_level_dir = "idea-IC-242.21829.142",
-    url = "https://download.jetbrains.com/idea/ideaIC-2024.2.1.tar.gz",
-)
-intellij.remote_platform(
-    name = "intellij_ce_2024_3",
-    sha256 = "b183b126de2cd457475eea184874b5da2fa33ba5ae2ff874bdc8c1d534156428",
-    top_level_dir = "idea-IC-243.22562.218",
-    url = "https://download.jetbrains.com/idea/ideaIC-2024.3.1.1.tar.gz",
-)
-intellij.remote_platform(
     name = "intellij_ce_2025_1",
     sha256 = "e5abd978ec976bde4171dc380f9008c581db81b77a6e6420ce3e7cf35e9573ef",
     top_level_dir = "idea-IC-251.25410.109",
@@ -38,16 +26,16 @@ intellij.remote_platform(
 )
 intellij.remote_platform(
     name = "intellij_ce_2025_2",
-    sha256 = "fc76fe8b6693b18d5d7385bb005f415287dbd5897b313287b9ef56dd0df9d5bd",
-    top_level_dir = "idea-IC-252.25557.131",
-    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.1.tar.gz",
+    sha256 = "3c152de654fa948e12e5fba4c04ed0200e472556a8081ddc2d4c22e5831d6020",
+    top_level_dir = "idea-IC-252.27397.103",
+    url = "https://download.jetbrains.com/idea/ideaIC-2025.2.4.tar.gz",
 )
 intellij.remote_platform(
     name = "intellij_2025_3",
-    sha256 = "4bab2677f95d13f88cffe1d377f31f82c164da1bce44356ee687bcd7305e726f",
-    top_level_dir = "idea-IU-253.28086.51",
-    url = "https://download.jetbrains.com/idea/idea-253.28086.51.tar.gz",
+    sha256 = "13f4174ba16c1cef04871cb261433536d002586c269a809392c20ee3f94959f5",
+    top_level_dir = "idea-IU-253.28294.334",
+    url = "https://download.jetbrains.com/idea/idea-2025.3.tar.gz",
 )
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
-use_repo(intellij, "intellij", "intellij_2025_3", "intellij_ce_2024_2", "intellij_ce_2024_3", "intellij_ce_2025_1", "intellij_ce_2025_2")
+use_repo(intellij, "intellij", "intellij_2025_3", "intellij_ce_2025_1", "intellij_ce_2025_2")

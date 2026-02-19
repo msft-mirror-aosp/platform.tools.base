@@ -23,9 +23,9 @@ package com.android.build.api.variant
  */
 interface Packaging {
 
-    /** Packaging options for native libraries. Initialized from the corresponding DSL. */
-    val jniLibs: JniLibsPackaging
+  /** Packaging options for native libraries. Initialized from the corresponding DSL. */
+  val jniLibs: JniLibsPackaging
 
-    /** Packaging options for java resources. Initialized from the corresponding DSL. */
-    val resources: ResourcesPackaging
+  /** Packaging options for java resources. Initialized from the corresponding DSL. */
+  val resources: ResourcesPackaging
 }

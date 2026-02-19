@@ -25,7 +25,8 @@ class CredentialManagerDependencyDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         manifest(MANIFEST_MIN_ANDROID_13).indented(),
-        // Only Gradle DSL (not kts) seems to allow project.dependsOn(...) to work in unit tests.
+        // Only Gradle DSL (not kts) seems to allow project.dependsOn(...) to work in unit
+        // tests.
         gradle(
             """
             dependencies {

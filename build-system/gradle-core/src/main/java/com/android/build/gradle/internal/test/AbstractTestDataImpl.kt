@@ -26,240 +26,152 @@ import com.android.build.gradle.internal.testing.TestData
 import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.ide.common.util.toPathString
 import com.google.common.io.Files
+import java.io.File
+import java.util.zip.ZipFile
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import java.io.File
-import java.nio.file.Path
-import java.util.zip.ZipFile
 
-/**
- * Common implementation of [TestData] for embedded test projects (in androidTest folder)
- * and separate module test projects.
- */
+/** Common implementation of [TestData] for embedded test projects (in androidTest folder) and separate module test projects. */
 abstract class AbstractTestDataImpl(
-    @get:Input
-    val namespace: Provider<String>,
-    creationConfig: InstrumentedTestCreationConfig,
-    override val testApkDir: Provider<Directory>,
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    val testedApksDir: Provider<Directory>?,
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    val privacySandboxSdkApks: FileCollection?,
-    @get:InputDirectory
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    @get:Optional
-    val privacySandboxCompatSdkApks: Provider<Directory>?,
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.NONE)
-    @get:Optional
-    val additionalSdkSupportedSplitApks: Provider<Directory>?,
-    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
+  @get:Input val namespace: Provider<String>,
+  creationConfig: InstrumentedTestCreationConfig,
+  override val testApkDir: Provider<Directory>,
+  @get:InputDirectory @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional val testedApksDir: Provider<Directory>?,
+  extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>,
 ) : TestData {
 
-    @get:Internal
-    val privacyInstallBundlesFinder: ApkBundlesFinder
-        get() = _privacyInstallBundlesFinder ?:
-            object: ApkBundlesFinder {
-                val privacySandboxApks: Set<File>? = privacySandboxSdkApks?.files
+  @get:Input abstract val supportedAbis: Set<String>
 
-                override fun findBundles(
-                    deviceConfigProvider: DeviceConfigProvider
-                ): List<List<Path>> {
-                    privacySandboxApks ?: return emptyList()
-                    val privacySandboxInstallBundles = privacySandboxApks
-                        .mapNotNull {  BuiltArtifactsLoaderImpl().load { it } }
-                        .map { artifacts -> artifacts.elements.map { Path.of(it.outputFile) }
-                    }
-                    return privacySandboxInstallBundles
-                }
-            }.also { _privacyInstallBundlesFinder = it }
+  @get:Internal
+  open val testedApksFinder: ApksFinder
+    get() =
+      _testedApksFinder
+        ?: TestedApksFinder(testedApksDir?.let { BuiltArtifactsLoaderImpl().load(it) }, supportedAbis).also { _testedApksFinder = it }
 
-    private var _privacyInstallBundlesFinder: ApkBundlesFinder? = null
+  private var _testedApksFinder: ApksFinder? = null
 
-    @get:Input
-    abstract val supportedAbis: Set<String>
+  internal class TestedApksFinder(private val testedApkBuiltArtifacts: BuiltArtifactsImpl?, private val supportedAbis: Set<String>) :
+    ApksFinder {
 
-    @get:Internal
-    open val testedApksFinder: ApksFinder
-        get() = _testedApksFinder ?:
-            TestedApksFinder(
-                testedApksDir?.let { BuiltArtifactsLoaderImpl().load(it) },
-                privacySandboxCompatSdkApks?.let {
-                    if (it.isPresent) {
-                        BuiltArtifactsLoaderImpl().load(it)
-                    } else {
-                        null
-                    }
-                },
-                additionalSdkSupportedSplitApks?.let {
-                    if (it.isPresent) {
-                        BuiltArtifactsLoaderImpl().load(it)
-                    } else {
-                        null
-                    }
-                },
-                supportedAbis
-            ).also {
-                _testedApksFinder = it
-            }
+    override fun findApks(deviceConfigProvider: DeviceConfigProvider): List<File> {
+      testedApkBuiltArtifacts ?: return emptyList()
+      val apks = mutableListOf<File>()
+      apks += computeBestOutput(deviceConfigProvider.abis, testedApkBuiltArtifacts, supportedAbis)
+      return apks
+    }
+  }
 
-    private var _testedApksFinder: ApksFinder? = null
+  override val applicationId = creationConfig.applicationId
 
-    internal class TestedApksFinder(
-        private val testedApkBuiltArtifacts: BuiltArtifactsImpl?,
-        private val privacySandboxCompatSdkApksBuiltArtifacts: BuiltArtifactsImpl?,
-        private val additionalSdkSupportApkSplitsBuiltArtifacts: BuiltArtifactsImpl?,
-        private val supportedAbis: Set<String>
-    ) : ApksFinder {
+  // Note: creationConfig.testedApplicationId returns the instrumentation target application ID.
+  // testedApplicationId and instrumentationTargetPackageID are usually the same value
+  // except for the one case where there are test.apk and app.apk and the self-instrumenting
+  // flag is enabled. See TestApplicationTestData class.
+  override val testedApplicationId = creationConfig.testedApplicationId
 
-        override fun findApks(deviceConfigProvider: DeviceConfigProvider): List<File> {
-            testedApkBuiltArtifacts ?: return emptyList()
-            val apks = mutableListOf<File>()
-            apks += computeBestOutput(deviceConfigProvider.abis, testedApkBuiltArtifacts, supportedAbis)
-            // Add additional splits
-            if (deviceConfigProvider.supportsPrivacySandbox) {
-                additionalSdkSupportApkSplitsBuiltArtifacts?.let {
-                    apks += it.elements.map { File(it.outputFile) }
-                }
-            } else {
-                privacySandboxCompatSdkApksBuiltArtifacts?.let {
-                    apks += it.elements.map { File(it.outputFile) }
-                }
-            }
-            return apks
-        }
+  override val instrumentationTargetPackageId = creationConfig.testedApplicationId
+
+  override val instrumentationRunner = creationConfig.instrumentationRunner
+
+  final override val instrumentationRunnerArguments = creationConfig.services.mapProperty(String::class.java, String::class.java)
+
+  override var animationsDisabled = creationConfig.services.provider { false }
+
+  override val testCoverageEnabled = creationConfig.services.provider { creationConfig.codeCoverageEnabled }
+
+  override val minSdkVersion = creationConfig.services.provider { creationConfig.minSdk }
+
+  override val flavorName = creationConfig.services.provider { creationConfig.flavorName ?: "" }
+
+  override val testDirectories: ConfigurableFileCollection =
+    creationConfig.services.fileCollection().also { fileCollection ->
+      // For now we check if there are any test sources. We could inspect the test classes and
+      // apply JUnit logic to see if there's something to run, but that would not catch the case
+      // where user makes a typo in a test name or forgets to inherit from a JUnit class
+      creationConfig.sources.java { javaSources -> fileCollection.from(javaSources.all) }
+      creationConfig.sources.kotlin { kotlinSources -> fileCollection.from(kotlinSources.all) }
     }
 
-    override val applicationId = creationConfig.applicationId
+  init {
+    // lazily set the instrumentationRunnerArguments
+    instrumentationRunnerArguments.set(creationConfig.instrumentationRunnerArguments)
+    instrumentationRunnerArguments.putAll(extraInstrumentationTestRunnerArgs)
+    // memoize the value which makes it similar to `by lazy`
+    instrumentationRunnerArguments.finalizeValueOnRead()
+  }
 
-    // Note: creationConfig.testedApplicationId returns the instrumentation target application ID.
-    // testedApplicationId and instrumentationTargetPackageID are usually the same value
-    // except for the one case where there are test.apk and app.apk and the self-instrumenting
-    // flag is enabled. See TestApplicationTestData class.
-    override val testedApplicationId = creationConfig.testedApplicationId
+  override fun getAsStaticData(): StaticTestData {
+    return StaticTestData(
+      applicationId.get(),
+      testedApplicationId.orNull,
+      instrumentationTargetPackageId.get(),
+      instrumentationRunner.get(),
+      instrumentationRunnerArguments.get(),
+      animationsDisabled.get(),
+      testCoverageEnabled.get(),
+      minSdkVersion.get(),
+      libraryType.get(),
+      flavorName.get(),
+      getTestApk().get(),
+      testDirectories.files.toList(),
+      testedApksFinder,
+    )
+  }
 
-    override val instrumentationTargetPackageId = creationConfig.testedApplicationId
-
-    override val instrumentationRunner = creationConfig.instrumentationRunner
-
-    final override val instrumentationRunnerArguments =
-        creationConfig.services.mapProperty(String::class.java, String::class.java)
-
-    override var animationsDisabled = creationConfig.services.provider { false }
-
-    override val testCoverageEnabled =
-        creationConfig.services.provider { creationConfig.codeCoverageEnabled }
-
-    override val minSdkVersion = creationConfig.services.provider { creationConfig.minSdk }
-
-    override val flavorName = creationConfig.services.provider { creationConfig.flavorName ?: "" }
-
-    override val testDirectories: ConfigurableFileCollection =
-        creationConfig.services.fileCollection().also { fileCollection ->
-            // For now we check if there are any test sources. We could inspect the test classes and
-            // apply JUnit logic to see if there's something to run, but that would not catch the case
-            // where user makes a typo in a test name or forgets to inherit from a JUnit class
-            creationConfig.sources.java { javaSources -> fileCollection.from(javaSources.all) }
-            creationConfig.sources.kotlin { kotlinSources -> fileCollection.from(kotlinSources.all) }
-        }
-
-    init {
-        // lazily set the instrumentationRunnerArguments
-        instrumentationRunnerArguments.set(creationConfig.instrumentationRunnerArguments)
-        instrumentationRunnerArguments.putAll(extraInstrumentationTestRunnerArgs)
-        // memoize the value which makes it similar to `by lazy`
-        instrumentationRunnerArguments.finalizeValueOnRead()
-    }
-
-    override fun getAsStaticData(): StaticTestData {
-        return StaticTestData(
-                applicationId.get(),
-                testedApplicationId.orNull,
-                instrumentationTargetPackageId.get(),
-                instrumentationRunner.get(),
-                instrumentationRunnerArguments.get(),
-                animationsDisabled.get(),
-                testCoverageEnabled.get(),
-                minSdkVersion.get(),
-                libraryType.get(),
-                flavorName.get(),
-                getTestApk().get(),
-                testDirectories.files.toList(),
-                testedApksFinder,
-                privacyInstallBundlesFinder
+  override fun hasTests(allClasses: FileCollection, rClasses: FileCollection, buildConfig: FileCollection): Provider<Boolean> =
+    allClasses.minus(rClasses).minus(buildConfig).elements.map { testClasses ->
+      val namespaceDir = namespace.get().replace('.', '/')
+      val DATA_BINDER_MAPPER_IMPL = "DataBinderMapperImpl"
+      val ignoredPaths =
+        setOf(
+          "${namespaceDir}/${SdkConstants.FN_BUILD_CONFIG_BASE}${SdkConstants.DOT_CLASS}",
+          "${namespaceDir}/${SdkConstants.FN_MANIFEST_BASE}${SdkConstants.DOT_CLASS}",
+          "${namespaceDir}/${DATA_BINDING_TRIGGER_CLASS}${SdkConstants.DOT_CLASS}",
+          "${namespaceDir}/$DATA_BINDER_MAPPER_IMPL${SdkConstants.DOT_CLASS}",
         )
+      val regexIgnoredPaths =
+        setOf(
+          "androidx/databinding/.*\\${SdkConstants.DOT_CLASS}".toRegex(), // Classes in androidx/databinding
+          "${namespaceDir}/$DATA_BINDER_MAPPER_IMPL\\\$.*\\${SdkConstants.DOT_CLASS}".toRegex(), // DataBinderMapplerImpl inner classes
+          ".*/BR${SdkConstants.DOT_CLASS}".toRegex(), // BR.class files
+        )
+      val isNotIgnoredClass = { relativePath: String ->
+        Files.getFileExtension(relativePath) == SdkConstants.EXT_CLASS &&
+          relativePath !in ignoredPaths &&
+          !regexIgnoredPaths.any { it.matches(relativePath) }
+      }
+
+      for (fileSystemLocation in testClasses) {
+        val jarOrDirectory = fileSystemLocation.asFile
+        if (!jarOrDirectory.exists()) {
+          continue
+        }
+        if (jarOrDirectory.isDirectory) {
+          for (file in jarOrDirectory.walk()) {
+            if (isNotIgnoredClass(jarOrDirectory.toPath().relativize(file.toPath()).toPathString().portablePath)) {
+              return@map true
+            }
+          }
+        } else {
+          ZipFile(jarOrDirectory).use {
+            for (entry in it.entries()) {
+              if (isNotIgnoredClass(entry.name)) {
+                return@map true
+              }
+            }
+          }
+        }
+      }
+      false
     }
 
-    override fun hasTests(
-        allClasses: FileCollection,
-        rClasses: FileCollection,
-        buildConfig: FileCollection
-    ): Provider<Boolean> =
-        allClasses
-            .minus(rClasses)
-            .minus(buildConfig).elements.map { testClasses ->
-                val namespaceDir = namespace.get().replace('.', '/')
-                val DATA_BINDER_MAPPER_IMPL = "DataBinderMapperImpl"
-                val ignoredPaths = setOf(
-                    "${namespaceDir}/${SdkConstants.FN_BUILD_CONFIG_BASE}${SdkConstants.DOT_CLASS}",
-                    "${namespaceDir}/${SdkConstants.FN_MANIFEST_BASE}${SdkConstants.DOT_CLASS}",
-                    "${namespaceDir}/${DATA_BINDING_TRIGGER_CLASS}${SdkConstants.DOT_CLASS}",
-                    "${namespaceDir}/$DATA_BINDER_MAPPER_IMPL${SdkConstants.DOT_CLASS}",
-                )
-                val regexIgnoredPaths = setOf(
-                    "androidx/databinding/.*\\${SdkConstants.DOT_CLASS}".toRegex(), // Classes in androidx/databinding
-                    "${namespaceDir}/$DATA_BINDER_MAPPER_IMPL\\\$.*\\${SdkConstants.DOT_CLASS}".toRegex(), // DataBinderMapplerImpl inner classes
-                    ".*/BR${SdkConstants.DOT_CLASS}".toRegex(), // BR.class files
-                )
-                val isNotIgnoredClass = { relativePath: String ->
-                    Files.getFileExtension(relativePath)==SdkConstants.EXT_CLASS &&
-                            relativePath !in ignoredPaths &&
-                            !regexIgnoredPaths.any { it.matches(relativePath) }
-                }
-
-                for (fileSystemLocation in testClasses) {
-                    val jarOrDirectory = fileSystemLocation.asFile
-                    if (!jarOrDirectory.exists()) {
-                        continue
-                    }
-                    if (jarOrDirectory.isDirectory) {
-                        for (file in jarOrDirectory.walk()) {
-                            if (isNotIgnoredClass(jarOrDirectory.toPath()
-                                    .relativize(file.toPath())
-                                    .toPathString().portablePath)) {
-                                return@map true
-                            }
-                        }
-                    } else {
-                        ZipFile(jarOrDirectory).use {
-                            for (entry in it.entries()) {
-                                if (isNotIgnoredClass(entry.name)) {
-                                    return@map true
-                                }
-                            }
-                        }
-                    }
-                }
-                false
-            }
-
-    override fun findTestedApks(deviceConfigProvider: DeviceConfigProvider): List<File> =
-        testedApksFinder.findApks(deviceConfigProvider)
-
-    override fun privacySandboxInstallBundlesFinder(
-        deviceConfigProvider: DeviceConfigProvider): List<List<Path>> =
-        privacyInstallBundlesFinder.findBundles(deviceConfigProvider)
+  override fun findTestedApks(deviceConfigProvider: DeviceConfigProvider): List<File> = testedApksFinder.findApks(deviceConfigProvider)
 }

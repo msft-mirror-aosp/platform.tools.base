@@ -48,128 +48,112 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
 /**
- * Transform desugar lib jar into a desugared version using L8. This desugared desugar lib jar is in
- * classfile format, which is used by trace reference tool to generate keep rules for shrinking the
- * desugar lib jar into dex format.
+ * Transform desugar lib jar into a desugared version using L8. This desugared desugar lib jar is in classfile format, which is used by
+ * trace reference tool to generate keep rules for shrinking the desugar lib jar into dex format.
  */
 @CacheableTransform
 abstract class L8DesugarLibTransform : TransformAction<L8DesugarLibTransform.Parameters> {
-    interface Parameters: GenericTransformParameters {
-        @get:InputFiles
-        @get:PathSensitive(PathSensitivity.NONE)
-        val desugarLibConfigFiles: ConfigurableFileCollection
-        @get:Input
-        val minSdkVersion: Property<Int>
-        @get:Classpath
-        val fullBootClasspath: ConfigurableFileCollection
-    }
+  interface Parameters : GenericTransformParameters {
+    @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val desugarLibConfigFiles: ConfigurableFileCollection
+    @get:Input val minSdkVersion: Property<Int>
+    @get:Classpath val fullBootClasspath: ConfigurableFileCollection
+  }
 
-    @get:Classpath
-    @get:InputArtifact
-    abstract val primaryInput: Provider<FileSystemLocation>
+  @get:Classpath @get:InputArtifact abstract val primaryInput: Provider<FileSystemLocation>
 
-    @get:Classpath
-    @get:InputArtifactDependencies
-    abstract val dependencies: FileCollection
+  @get:Classpath @get:InputArtifactDependencies abstract val dependencies: FileCollection
 
-    override fun transform(outputs: TransformOutputs) {
-        logger.verbose("Running ${L8DesugarLibTransform::class.simpleName}" +
-                " with minSdkVersion = ${parameters.minSdkVersion.get()}" +
-                " for input file '${primaryInput.get().asFile.path}'"
-        )
+  override fun transform(outputs: TransformOutputs) {
+    logger.verbose(
+      "Running ${L8DesugarLibTransform::class.simpleName}" +
+        " with minSdkVersion = ${parameters.minSdkVersion.get()}" +
+        " for input file '${primaryInput.get().asFile.path}'"
+    )
 
-        val inputFiles = mutableListOf(primaryInput.get().asFile.toPath())
-        inputFiles.addAll(dependencies.files.map { it.toPath() })
-        val outputDir = outputs.dir(primaryInput.get().asFile.nameWithoutExtension)
+    val inputFiles = mutableListOf(primaryInput.get().asFile.toPath())
+    inputFiles.addAll(dependencies.files.map { it.toPath() })
+    val outputDir = outputs.dir(primaryInput.get().asFile.nameWithoutExtension)
 
-        runL8(
-            inputFiles,
-            outputDir.toPath(),
-            combineFileContents(parameters.desugarLibConfigFiles.files) ?: error("desugarLibConfigFiles is empty"),
-            parameters.fullBootClasspath.files.map { it.toPath() },
-            parameters.minSdkVersion.get(),
-            KeepRulesConfig(emptyList(), emptyList()),
-            false,
-            L8OutputMode.ClassFile
-        )
-    }
+    runL8(
+      inputFiles,
+      outputDir.toPath(),
+      combineFileContents(parameters.desugarLibConfigFiles.files) ?: error("desugarLibConfigFiles is empty"),
+      parameters.fullBootClasspath.files.map { it.toPath() },
+      parameters.minSdkVersion.get(),
+      KeepRulesConfig(emptyList(), emptyList()),
+      false,
+      L8OutputMode.ClassFile,
+    )
+  }
 }
 
 object L8DesugarLibTransformRegistration {
 
-    /** Parameters that are shared across all [ComponentCreationConfig]s. */
-    private class ComponentAgnosticParameters(
-        taskCreationServices: TaskCreationServices,
-        globalTaskCreationConfig: GlobalTaskCreationConfig
-    ) {
-        val desugarLibConfigFiles: FileCollection = getDesugarLibConfigFiles(taskCreationServices)
-        val fullBootClasspath: FileCollection = globalTaskCreationConfig.fullBootClasspath
+  /** Parameters that are shared across all [ComponentCreationConfig]s. */
+  private class ComponentAgnosticParameters(
+    taskCreationServices: TaskCreationServices,
+    globalTaskCreationConfig: GlobalTaskCreationConfig,
+  ) {
+    val desugarLibConfigFiles: FileCollection = getDesugarLibConfigFiles(taskCreationServices)
+    val fullBootClasspath: FileCollection = globalTaskCreationConfig.fullBootClasspath
+  }
+
+  /**
+   * Parameters that are specific to a given [ComponentCreationConfig].
+   *
+   * See [DexingRegistration.ComponentSpecificParameters] for more info on this pattern.
+   */
+  private data class ComponentSpecificParameters(val minSdkVersion: Int) {
+    constructor(creationConfig: ApkCreationConfig) : this(minSdkVersion = creationConfig.dexing.minSdkVersionForDexing)
+
+    fun getAttributes() =
+      AndroidAttributes(Attribute.of("${L8DesugarLibTransform::class.simpleName}-attributes", String::class.java) to this.toString())
+  }
+
+  /**
+   * Registers [L8DesugarLibTransform] with attribute values computed from the given [creationConfig].
+   *
+   * If this transform with this specific set of attribute values has been registered in the current project, this method will not register
+   * it again.
+   */
+  fun registerTransformIfAbsent(creationConfig: ApkCreationConfig) {
+    val parameters = ComponentSpecificParameters(creationConfig)
+
+    val transformRegistered = "_agp_internal_${L8DesugarLibTransform::class.simpleName}_attributes_${parameters.getAttributes()}_registered"
+    if (creationConfig.services.extraProperties.has(transformRegistered)) {
+      return
     }
+    creationConfig.services.extraProperties[transformRegistered] = true
 
-    /**
-     * Parameters that are specific to a given [ComponentCreationConfig].
-     *
-     * See [DexingRegistration.ComponentSpecificParameters] for more info on this pattern.
-     */
-    private data class ComponentSpecificParameters(
-        val minSdkVersion: Int
-    ) {
-        constructor(creationConfig: ApkCreationConfig) : this(
-            minSdkVersion = creationConfig.dexing.minSdkVersionForDexing,
-        )
+    val sharedParameters = ComponentAgnosticParameters(creationConfig.services, creationConfig.global)
 
-        fun getAttributes() = AndroidAttributes(
-            Attribute.of("${L8DesugarLibTransform::class.simpleName}-attributes", String::class.java) to this.toString()
-        )
+    registerTransform(creationConfig.services.dependencies, sharedParameters, parameters)
+  }
+
+  private fun registerTransform(
+    dependencyHandler: DependencyHandler,
+    sharedParameters: ComponentAgnosticParameters,
+    parameters: ComponentSpecificParameters,
+  ) {
+    dependencyHandler.registerTransform(L8DesugarLibTransform::class.java) { spec ->
+      spec.parameters.apply {
+        desugarLibConfigFiles.setFrom(sharedParameters.desugarLibConfigFiles)
+        fullBootClasspath.from(sharedParameters.fullBootClasspath)
+        minSdkVersion.set(parameters.minSdkVersion)
+      }
+      parameters.getAttributes().apply {
+        addAttributesToContainer(spec.from)
+        addAttributesToContainer(spec.to)
+      }
+      spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, JAR_TYPE)
+      spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, DESUGARED_DESUGAR_LIB)
     }
+  }
 
-    /**
-     * Registers [L8DesugarLibTransform] with attribute values computed from the given
-     * [creationConfig].
-     *
-     * If this transform with this specific set of attribute values has been registered in the
-     * current project, this method will not register it again.
-     */
-    fun registerTransformIfAbsent(creationConfig: ApkCreationConfig) {
-        val parameters = ComponentSpecificParameters(creationConfig)
-
-        val transformRegistered = "_agp_internal_${L8DesugarLibTransform::class.simpleName}_attributes_${parameters.getAttributes()}_registered"
-        if (creationConfig.services.extraProperties.has(transformRegistered)) {
-            return
-        }
-        creationConfig.services.extraProperties[transformRegistered] = true
-
-        val sharedParameters = ComponentAgnosticParameters(creationConfig.services, creationConfig.global)
-
-        registerTransform(creationConfig.services.dependencies, sharedParameters, parameters)
-    }
-
-    private fun registerTransform(
-        dependencyHandler: DependencyHandler,
-        sharedParameters: ComponentAgnosticParameters,
-        parameters: ComponentSpecificParameters
-    ) {
-        dependencyHandler.registerTransform(L8DesugarLibTransform::class.java) { spec ->
-            spec.parameters.apply {
-                desugarLibConfigFiles.setFrom(sharedParameters.desugarLibConfigFiles)
-                fullBootClasspath.from(sharedParameters.fullBootClasspath)
-                minSdkVersion.set(parameters.minSdkVersion)
-            }
-            parameters.getAttributes().apply {
-                addAttributesToContainer(spec.from)
-                addAttributesToContainer(spec.to)
-            }
-            spec.from.attribute(ARTIFACT_TYPE_ATTRIBUTE, JAR_TYPE)
-            spec.to.attribute(ARTIFACT_TYPE_ATTRIBUTE, DESUGARED_DESUGAR_LIB)
-        }
-    }
-
-    /** Returns [AndroidAttributes] for the output artifact of [L8DesugarLibTransform]. */
-    fun getOutputArtifactAttributes(creationConfig: ApkCreationConfig): AndroidAttributes {
-        return ComponentSpecificParameters(creationConfig).getAttributes() +
-                AndroidAttributes(ARTIFACT_TYPE_ATTRIBUTE to DESUGARED_DESUGAR_LIB)
-    }
-
+  /** Returns [AndroidAttributes] for the output artifact of [L8DesugarLibTransform]. */
+  fun getOutputArtifactAttributes(creationConfig: ApkCreationConfig): AndroidAttributes {
+    return ComponentSpecificParameters(creationConfig).getAttributes() + AndroidAttributes(ARTIFACT_TYPE_ATTRIBUTE to DESUGARED_DESUGAR_LIB)
+  }
 }
 
 private val logger = LoggerWrapper.getLogger(L8DesugarLibTransform::class.java)

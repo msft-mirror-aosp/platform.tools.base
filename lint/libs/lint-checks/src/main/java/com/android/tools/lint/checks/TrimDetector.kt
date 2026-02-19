@@ -78,9 +78,7 @@ class TrimDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> = listOf("trim")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (
-      node.valueArgumentCount == 1 && method.containingClass?.qualifiedName == STRING_TRIM_OWNER
-    ) {
+    if (node.valueArgumentCount == 1 && method.containingClass?.qualifiedName == STRING_TRIM_OWNER) {
       val argument = node.valueArguments[0] as? ULambdaExpression ?: return
       val lambda = argument.sourcePsi as? KtLambdaExpression ?: return
       if (!isDefaultLambda(lambda)) {
@@ -92,11 +90,7 @@ class TrimDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun createRemovalFix(
-    lambda: KtLambdaExpression,
-    context: JavaContext,
-    node: UCallExpression,
-  ): Pair<LintFix, String> {
+  private fun createRemovalFix(lambda: KtLambdaExpression, context: JavaContext, node: UCallExpression): Pair<LintFix, String> {
     val replacement =
       if ((node.sourcePsi as? KtCallExpression)?.valueArgumentList?.rightParenthesis == null) {
         "()"
@@ -116,10 +110,7 @@ class TrimDetector : Detector(), SourceCodeScanner {
     return Pair(fix, message)
   }
 
-  /**
-   * Returns true if this [lambda] is structurally the same as either `{ it <= ' ' }` or `{
-   * it.isWhitespace() }`
-   */
+  /** Returns true if this [lambda] is structurally the same as either `{ it <= ' ' }` or `{ it.isWhitespace() }` */
   private fun isDefaultLambda(lambda: KtLambdaExpression): Boolean {
     val body = lambda.bodyExpression ?: return false
     val statements = body.statements
@@ -134,18 +125,12 @@ class TrimDetector : Detector(), SourceCodeScanner {
       if (
         selector is KtCallExpression &&
           selector.valueArguments.isEmpty() &&
-          lambda.isLambdaParameterReference(
-            statement.receiverExpression.skipParenthesizedExprDown()
-          )
+          lambda.isLambdaParameterReference(statement.receiverExpression.skipParenthesizedExprDown())
       ) {
         // Make sure you're calling isWhitespace on the character
         analyze(selector) {
           val symbol = selector.resolveToCall()?.singleFunctionCallOrNull()?.symbol
-          if (
-            symbol is KaNamedFunctionSymbol &&
-              symbol.name.identifier == "isWhitespace" &&
-              symbol.containingFile == null
-          ) {
+          if (symbol is KaNamedFunctionSymbol && symbol.name.identifier == "isWhitespace" && symbol.containingFile == null) {
             return true
           }
         }
@@ -173,9 +158,7 @@ class TrimDetector : Detector(), SourceCodeScanner {
     return false
   }
 
-  /**
-   * Returns true if [element] references the implicit or explicit first parameter in this lambda.
-   */
+  /** Returns true if [element] references the implicit or explicit first parameter in this lambda. */
   private fun KtLambdaExpression.isLambdaParameterReference(element: KtElement): Boolean {
     analyze(element) {
       val symbol = element.resolveToCall()?.singleVariableAccessCall()?.symbol

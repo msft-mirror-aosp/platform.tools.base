@@ -33,132 +33,100 @@ import com.android.adblib.tools.debugging.packets.ddms.withPayload
 import com.android.adblib.utils.ResizableBuffer
 
 internal data class DdmsHeloChunk(
-    /**
-     * The protocol version of this DDM command, currently always `1`
-     * (i.e. [SERVER_PROTOCOL_VERSION])
-     */
-    val protocolVersion: Int,
-    /**
-     * The process ID, always valid
-     */
-    val pid: Int,
-    /**
-     * Some arbitrary JVM description/identifier.
-     */
-    val vmIdentifier: String,
-    /**
-     * Process name, often equal to [packageName], unless the package name
-     * is changed in the application manifest.
-     */
-    val processName: String,
-    /**
-     * Returns the user ID, or `null` if not available
-     */
-    val userId: Int? = null,
-    /**
-     * ABI or `null`` if not available
-     */
-    val abi: String? = null,
-    /**
-     * JVM flags or `null`` if not available
-     */
-    val jvmFlags: String? = null,
-    /**
-     * Whether the process is debuggable using native debugger, or `null` if not available.
-     */
-    val isNativeDebuggable: Boolean? = null,
-    /**
-     * Application package name, or `null` if not available
-     */
-    val packageName: String? = null,
+  /** The protocol version of this DDM command, currently always `1` (i.e. [SERVER_PROTOCOL_VERSION]) */
+  val protocolVersion: Int,
+  /** The process ID, always valid */
+  val pid: Int,
+  /** Some arbitrary JVM description/identifier. */
+  val vmIdentifier: String,
+  /** Process name, often equal to [packageName], unless the package name is changed in the application manifest. */
+  val processName: String,
+  /** Returns the user ID, or `null` if not available */
+  val userId: Int? = null,
+  /** ABI or `null`` if not available */
+  val abi: String? = null,
+  /** JVM flags or `null`` if not available */
+  val jvmFlags: String? = null,
+  /** Whether the process is debuggable using native debugger, or `null` if not available. */
+  val isNativeDebuggable: Boolean? = null,
+  /** Application package name, or `null` if not available */
+  val packageName: String? = null,
 ) {
 
-    companion object {
+  companion object {
 
-        const val SERVER_PROTOCOL_VERSION = 1
+    const val SERVER_PROTOCOL_VERSION = 1
 
-        internal suspend fun parse(
-            chunk: DdmsChunkView,
-            workBuffer: ResizableBuffer = ResizableBuffer()
-        ): DdmsHeloChunk {
-            // Read payload into "buffer"
-            workBuffer.clear()
-            val buffer = chunk.withPayload { payload ->
-                payload.readNBytes(workBuffer, chunk.length)
-                workBuffer.afterChannelRead()
-            }
-
-            // Version, pid, vm identifier and process name are always present
-            buffer.order(DDMS_CHUNK_BYTE_ORDER)
-            val version = readInt(buffer)
-            val pid = readInt(buffer)
-            val vmIdentifierLength = readInt(buffer)
-            val processNameLength = readInt(buffer)
-            val vmIdentifier = readString(buffer, vmIdentifierLength)
-            val processName = readString(buffer, processNameLength)
-
-            // UserID was added in 2012
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/d693dfa75b7a156898890014e7192a792314b757
-            val userId = readOptionalInt(buffer)
-
-            // ABI and VM Flags were added in 2014
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/e901dbdee242182e4c768edebebc5bc9cbf67563
-            val abi = readOptionalLengthPrefixedString(buffer)
-            val jvmFlags = readOptionalLengthPrefixedString(buffer)
-
-            // nativeDebuggable was added in 2016:
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/b68bcbdfe755540f3c21186211d4d9d30d4d0c7a
-            val nativeDebuggable = readOptionalByte(buffer)?.let { it == 1 }
-
-            // Package name was added in 2019:
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/ab720ee1611da9fd4579d1adeb0acd6358b4f424
-            val packageName = readOptionalLengthPrefixedString(buffer)
-
-            // Process boot stage was introduced in 2023, but later removed. Read and ignore it.
-            // https://cs.android.com/android/_/android/platform/frameworks/base/+/3878a7736ec3465c212180985f6c986be08d310a
-            readOptionalInt(buffer)
-
-            // All done, return chunk
-            return DdmsHeloChunk(
-                version,
-                pid,
-                vmIdentifier,
-                processName,
-                userId,
-                abi,
-                jvmFlags,
-                nativeDebuggable,
-                packageName
-            )
+    internal suspend fun parse(chunk: DdmsChunkView, workBuffer: ResizableBuffer = ResizableBuffer()): DdmsHeloChunk {
+      // Read payload into "buffer"
+      workBuffer.clear()
+      val buffer =
+        chunk.withPayload { payload ->
+          payload.readNBytes(workBuffer, chunk.length)
+          workBuffer.afterChannelRead()
         }
 
-        // This method is used only by tests
-        internal fun writePayload(
-            buffer: ResizableBuffer,
-            protocolVersion: Int,
-            pid: Int,
-            vmIdentifier: String,
-            processName: String,
-            userId: Int? = null,
-            abi: String? = null,
-            jvmFlags: String? = null,
-            isNativeDebuggable: Boolean? = null,
-            packageName: String? = null,
-            deprecatedStage: Int? = null
-        ) {
-            writeInt(buffer, protocolVersion)
-            writeInt(buffer, pid)
-            writeInt(buffer, vmIdentifier.length)
-            writeInt(buffer, processName.length)
-            writeString(buffer, vmIdentifier)
-            writeString(buffer, processName)
+      // Version, pid, vm identifier and process name are always present
+      buffer.order(DDMS_CHUNK_BYTE_ORDER)
+      val version = readInt(buffer)
+      val pid = readInt(buffer)
+      val vmIdentifierLength = readInt(buffer)
+      val processNameLength = readInt(buffer)
+      val vmIdentifier = readString(buffer, vmIdentifierLength)
+      val processName = readString(buffer, processNameLength)
 
-            writeOptionalInt(buffer, userId)
-            writeOptionalLengthPrefixedString(buffer, abi)
-            writeOptionalLengthPrefixedString(buffer, jvmFlags)
-            writeOptionalByte(buffer, isNativeDebuggable?.let { if (it) 1 else 0 })
-            writeOptionalLengthPrefixedString(buffer, packageName)
-            writeOptionalInt(buffer, deprecatedStage)
-        }
+      // UserID was added in 2012
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/d693dfa75b7a156898890014e7192a792314b757
+      val userId = readOptionalInt(buffer)
+
+      // ABI and VM Flags were added in 2014
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/e901dbdee242182e4c768edebebc5bc9cbf67563
+      val abi = readOptionalLengthPrefixedString(buffer)
+      val jvmFlags = readOptionalLengthPrefixedString(buffer)
+
+      // nativeDebuggable was added in 2016:
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/b68bcbdfe755540f3c21186211d4d9d30d4d0c7a
+      val nativeDebuggable = readOptionalByte(buffer)?.let { it == 1 }
+
+      // Package name was added in 2019:
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/ab720ee1611da9fd4579d1adeb0acd6358b4f424
+      val packageName = readOptionalLengthPrefixedString(buffer)
+
+      // Process boot stage was introduced in 2023, but later removed. Read and ignore it.
+      // https://cs.android.com/android/_/android/platform/frameworks/base/+/3878a7736ec3465c212180985f6c986be08d310a
+      readOptionalInt(buffer)
+
+      // All done, return chunk
+      return DdmsHeloChunk(version, pid, vmIdentifier, processName, userId, abi, jvmFlags, nativeDebuggable, packageName)
     }
+
+    // This method is used only by tests
+    internal fun writePayload(
+      buffer: ResizableBuffer,
+      protocolVersion: Int,
+      pid: Int,
+      vmIdentifier: String,
+      processName: String,
+      userId: Int? = null,
+      abi: String? = null,
+      jvmFlags: String? = null,
+      isNativeDebuggable: Boolean? = null,
+      packageName: String? = null,
+      deprecatedStage: Int? = null,
+    ) {
+      writeInt(buffer, protocolVersion)
+      writeInt(buffer, pid)
+      writeInt(buffer, vmIdentifier.length)
+      writeInt(buffer, processName.length)
+      writeString(buffer, vmIdentifier)
+      writeString(buffer, processName)
+
+      writeOptionalInt(buffer, userId)
+      writeOptionalLengthPrefixedString(buffer, abi)
+      writeOptionalLengthPrefixedString(buffer, jvmFlags)
+      writeOptionalByte(buffer, isNativeDebuggable?.let { if (it) 1 else 0 })
+      writeOptionalLengthPrefixedString(buffer, packageName)
+      writeOptionalInt(buffer, deprecatedStage)
+    }
+  }
 }

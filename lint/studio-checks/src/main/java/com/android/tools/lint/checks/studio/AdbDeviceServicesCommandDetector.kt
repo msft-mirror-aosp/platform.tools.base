@@ -35,8 +35,7 @@ class AdbDeviceServicesCommandDetector : Detector(), SourceCodeScanner {
 
     private val exemptedPackages = setOf("com.android.adblib", "com.android.adblib.impl")
 
-    private val IMPLEMENTATION =
-      Implementation(AdbDeviceServicesCommandDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(AdbDeviceServicesCommandDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =

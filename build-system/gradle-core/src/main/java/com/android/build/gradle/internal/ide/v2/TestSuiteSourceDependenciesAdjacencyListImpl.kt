@@ -22,13 +22,11 @@ import com.android.builder.model.v2.models.TestSuiteSourceDependenciesAdjacencyL
 import java.io.Serializable
 
 data class TestSuiteSourceDependenciesAdjacencyListImpl(
-    override val name: String,
-    override val type: SourceType,
-    override val artifactDependencies: ArtifactDependenciesAdjacencyList
-): TestSuiteSourceDependenciesAdjacencyList, Serializable
-{
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  override val name: String,
+  override val type: SourceType,
+  override val artifactDependencies: ArtifactDependenciesAdjacencyList,
+) : TestSuiteSourceDependenciesAdjacencyList, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

@@ -26,80 +26,73 @@ import org.junit.Rule
 import org.junit.Test
 
 class DifferentCompileSdkPerModuleTest {
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                mapOf(
-                    ":libA" to MinimalSubProject.lib("com.example.androidLibA"),
-                    ":libB" to MinimalSubProject.lib("com.example.androidLibB"),
-                    ":libC" to MinimalSubProject.lib("com.example.androidLibC")
-                )
-            )
-        ).create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf(
+            ":libA" to MinimalSubProject.lib("com.example.androidLibA"),
+            ":libB" to MinimalSubProject.lib("com.example.androidLibB"),
+            ":libC" to MinimalSubProject.lib("com.example.androidLibC"),
+          )
+        )
+      )
+      .create()
 
-    @Before
-    fun setUp() {
-        setupLibrary(":libA", "30", "com.example.androidLibA")
-        setupLibrary(":libB", "31", "com.example.androidLibB").also {
-            it.file("src/main/java/libA").mkdirs()
-            Files.asCharSink(
-                it.file("src/main/java/libA/TestClass.java"),
-                Charsets.UTF_8)
-                .write("""
-                    |package libA;
-                    |
-                    |import android.os.Build;
-                    |
-                    |public class TestClass {
-                    |    public void test() {
-                    |        int ver = Build.VERSION_CODES.N;
-                    |    }
-                    |}
-                """.trimMargin())
-        }
-        setupLibrary(":libC", "32", "com.example.androidLibC")
+  @Before
+  fun setUp() {
+    setupLibrary(":libA", "30", "com.example.androidLibA")
+    setupLibrary(":libB", "31", "com.example.androidLibB").also {
+      it.file("src/main/java/libA").mkdirs()
+      Files.asCharSink(it.file("src/main/java/libA/TestClass.java"), Charsets.UTF_8)
+        .write(
+          """
+          |package libA;
+          |
+          |import android.os.Build;
+          |
+          |public class TestClass {
+          |    public void test() {
+          |        int ver = Build.VERSION_CODES.N;
+          |    }
+          |}
+          """
+            .trimMargin()
+        )
     }
+    setupLibrary(":libC", "32", "com.example.androidLibC")
+  }
 
-    @Test
-    fun build() {
-        project.executor().run("assembleDebug")
-    }
+  @Test
+  fun build() {
+    project.executor().run("assembleDebug")
+  }
 
-    @Test
-    fun modelTest() {
-        project.execute("help")
-        val container = project.modelV2().fetchModels().container
-        Truth.assertThat(
-            container.getProject(":libA").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-30")
-        Truth.assertThat(
-            container.getProject(":libB").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-31")
-        Truth.assertThat(
-            container.getProject(":libC").basicAndroidProject?.bootClasspath?.first()?.absolutePath
-        ).contains("android-32")
-    }
+  @Test
+  fun modelTest() {
+    project.execute("help")
+    val container = project.modelV2().fetchModels().container
+    Truth.assertThat(container.getProject(":libA").basicAndroidProject?.bootClasspath?.first()?.absolutePath).contains("android-30")
+    Truth.assertThat(container.getProject(":libB").basicAndroidProject?.bootClasspath?.first()?.absolutePath).contains("android-31")
+    Truth.assertThat(container.getProject(":libC").basicAndroidProject?.bootClasspath?.first()?.absolutePath).contains("android-32")
+  }
 
-    private fun setupLibrary(
-        name: String,
-        compileSdkVersion: String,
-        namespace: String
-    ): GradleTestProject {
-        return project.getSubproject(name).also { project ->
-            project.buildFile.also {
-                it.writeText(
-                    """
+  private fun setupLibrary(name: String, compileSdkVersion: String, namespace: String): GradleTestProject {
+    return project.getSubproject(name).also { project ->
+      project.buildFile.also {
+        it.writeText(
+          """
                     |apply plugin: 'com.android.library'
                     |android {
                     |    namespace = "$namespace"
                     |    compileSdkVersion $compileSdkVersion
                     |}
-                    |""".trimMargin()
-                )
-            }
-        }
-
+                    |"""
+            .trimMargin()
+        )
+      }
     }
+  }
 }

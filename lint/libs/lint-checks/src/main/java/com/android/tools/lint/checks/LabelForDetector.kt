@@ -66,17 +66,13 @@ class LabelForDetector : LayoutDetector() {
       var labelForProvided = false
       when {
         labels.contains(id) -> labelForProvided = true
-        id.startsWith(NEW_ID_PREFIX) ->
-          labelForProvided = labels.contains(ID_PREFIX + stripIdPrefix(id))
-        id.startsWith(ID_PREFIX) ->
-          labelForProvided = labels.contains(NEW_ID_PREFIX + stripIdPrefix(id))
+        id.startsWith(NEW_ID_PREFIX) -> labelForProvided = labels.contains(ID_PREFIX + stripIdPrefix(id))
+        id.startsWith(ID_PREFIX) -> labelForProvided = labels.contains(NEW_ID_PREFIX + stripIdPrefix(id))
       }
 
       // Note: if only android:hint is provided, no need for a warning.
       if (
-        (!hintProvided || !labelForProvided) &&
-          (hintProvided || labelForProvided) &&
-          (!labelForProvided || context.project.minSdk >= 17)
+        (!hintProvided || !labelForProvided) && (hintProvided || labelForProvided) && (!labelForProvided || context.project.minSdk >= 17)
       ) {
         return
       }
@@ -138,18 +134,12 @@ class LabelForDetector : LayoutDetector() {
     ) {
       val fix =
         fix()
-          .alternatives(
-            fix().set().todo(ANDROID_URI, ATTR_TEXT).build(),
-            fix().set().todo(ANDROID_URI, ATTR_CONTENT_DESCRIPTION).build(),
-          )
+          .alternatives(fix().set().todo(ANDROID_URI, ATTR_TEXT).build(), fix().set().todo(ANDROID_URI, ATTR_CONTENT_DESCRIPTION).build())
       context.report(
         ISSUE,
         element,
         context.getElementLocation(element, null, ANDROID_URI, ATTR_LABEL_FOR),
-        messageWithPrefix(
-          "when using `android:labelFor`, you must also define an " +
-            "`android:text` or an `android:contentDescription`"
-        ),
+        messageWithPrefix("when using `android:labelFor`, you must also define an " + "`android:text` or an `android:contentDescription`"),
         fix,
       )
     }
@@ -159,12 +149,7 @@ class LabelForDetector : LayoutDetector() {
     if (element.hasAttributeNS(ANDROID_URI, ATTR_HINT)) {
       val hintAttributeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_HINT)
       if (hintAttributeNode.value.isEmpty()) {
-        context.report(
-          ISSUE,
-          hintAttributeNode,
-          context.getLocation(hintAttributeNode),
-          "Empty `android:hint` attribute",
-        )
+        context.report(ISSUE, hintAttributeNode, context.getLocation(hintAttributeNode), "Empty `android:hint` attribute")
       }
     }
     val fields = editableTextFields ?: mutableListOf<Element>().also { editableTextFields = it }
@@ -198,8 +183,7 @@ class LabelForDetector : LayoutDetector() {
     private const val PREFIX = "Missing accessibility label"
     private const val PROVIDE_HINT = "where minSdk < 17, you should provide an `android:hint`"
     private const val PROVIDE_LABEL_FOR_OR_HINT =
-      "provide either a view with an " +
-        "`android:labelFor` that references this view or provide an `android:hint`"
+      "provide either a view with an " + "`android:labelFor` that references this view or provide an `android:hint`"
     private const val KEY_HINT = "hint"
     private const val KEY_LABEL = "label"
 

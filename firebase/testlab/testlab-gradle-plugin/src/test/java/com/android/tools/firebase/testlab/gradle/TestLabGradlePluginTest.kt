@@ -45,22 +45,17 @@ class TestLabGradlePluginTest {
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockProject: Project
 
-  @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-  lateinit var mockAndroidPlugin: AndroidComponentsExtension<*, *, *>
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockAndroidPlugin: AndroidComponentsExtension<*, *, *>
 
   @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockCommonExtension: CommonExtension
 
-  @Mock(answer = Answers.RETURNS_DEEP_STUBS)
-  lateinit var mockTestLabExtension: TestLabGradlePluginExtension
+  @Mock(answer = Answers.RETURNS_DEEP_STUBS) lateinit var mockTestLabExtension: TestLabGradlePluginExtension
 
   @Before
   fun setupMocks() {
-    `when`(mockProject.extensions.getByType(eq(AndroidComponentsExtension::class.java)))
-      .thenReturn(mockAndroidPlugin)
-    `when`(mockProject.extensions.getByType(eq(CommonExtension::class.java)))
-      .thenReturn(mockCommonExtension)
-    `when`(mockProject.extensions.getByType(eq(TestLabGradlePluginExtension::class.java)))
-      .thenReturn(mockTestLabExtension)
+    `when`(mockProject.extensions.getByType(eq(AndroidComponentsExtension::class.java))).thenReturn(mockAndroidPlugin)
+    `when`(mockProject.extensions.getByType(eq(CommonExtension::class.java))).thenReturn(mockCommonExtension)
+    `when`(mockProject.extensions.getByType(eq(TestLabGradlePluginExtension::class.java))).thenReturn(mockTestLabExtension)
   }
 
   private fun applyFtlPlugin(agpVersion: AndroidPluginVersion = AndroidPluginVersion(8, 1)) {
@@ -70,8 +65,7 @@ class TestLabGradlePluginTest {
     plugin.apply(mockProject)
 
     val captor = argumentCaptor<Action<AndroidBasePlugin>>()
-    verify(mockProject.plugins, atLeastOnce())
-      .withType(eq(AndroidBasePlugin::class.java), captor.capture())
+    verify(mockProject.plugins, atLeastOnce()).withType(eq(AndroidBasePlugin::class.java), captor.capture())
 
     captor.firstValue.execute(AndroidBasePlugin())
   }
@@ -80,10 +74,7 @@ class TestLabGradlePluginTest {
   fun agpVersionCheck() {
     val unsupportedVersions = listOf(AndroidPluginVersion(8, 2), AndroidPluginVersion(10, 0))
     val supportedVersions =
-      listOf(
-        AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE),
-        AndroidPluginVersion(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE).dev(),
-      )
+      listOf(AndroidPluginVersion(9, Int.MAX_VALUE, Int.MAX_VALUE), AndroidPluginVersion(Int.MAX_VALUE, Int.MAX_VALUE, Int.MAX_VALUE).dev())
 
     unsupportedVersions.forEach {
       val e = assertThrows(IllegalStateException::class.java) { applyFtlPlugin(it) }

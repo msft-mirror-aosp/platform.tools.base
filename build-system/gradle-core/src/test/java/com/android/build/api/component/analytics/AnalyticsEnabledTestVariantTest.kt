@@ -36,151 +36,131 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledTestVariantTest {
-    private val delegate: TestVariant = mock()
+  private val delegate: TestVariant = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledTestVariant
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledTestVariant
 
-    @Before
-    fun setup() {
-        proxy = AnalyticsEnabledTestVariant(delegate, stats, FakeObjectFactory.factory)
-    }
+  @Before
+  fun setup() {
+    proxy = AnalyticsEnabledTestVariant(delegate, stats, FakeObjectFactory.factory)
+  }
 
-    @Test
-    fun getApplicationId() {
-        whenever(delegate.applicationId).thenReturn(FakeGradleProperty("myApp"))
-        Truth.assertThat(proxy.applicationId.get()).isEqualTo("myApp")
+  @Test
+  fun getApplicationId() {
+    whenever(delegate.applicationId).thenReturn(FakeGradleProperty("myApp"))
+    Truth.assertThat(proxy.applicationId.get()).isEqualTo("myApp")
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.APPLICATION_ID_VALUE)
-        verify(delegate, times(1))
-            .applicationId
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.APPLICATION_ID_VALUE)
+    verify(delegate, times(1)).applicationId
+  }
 
-    @Test
-    fun getAndroidResources() {
-        val androidResources = mock<AndroidResources>()
-        whenever(delegate.androidResources).thenReturn(androidResources)
-        val proxiedAndroidResources = proxy.androidResources
-        Truth.assertThat(proxiedAndroidResources).isInstanceOf(
-            AnalyticsEnabledAndroidResources::class.java
+  @Test
+  fun getAndroidResources() {
+    val androidResources = mock<AndroidResources>()
+    whenever(delegate.androidResources).thenReturn(androidResources)
+    val proxiedAndroidResources = proxy.androidResources
+    Truth.assertThat(proxiedAndroidResources).isInstanceOf(AnalyticsEnabledAndroidResources::class.java)
+    Truth.assertThat((proxiedAndroidResources as AnalyticsEnabledAndroidResources).delegate).isEqualTo(androidResources)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.AAPT_OPTIONS_VALUE)
+    verify(delegate, times(1)).androidResources
+  }
+
+  @Test
+  fun testedApplicationId() {
+    whenever(delegate.testedApplicationId).thenReturn(FakeGradleProvider("myApp"))
+    Truth.assertThat(proxy.testedApplicationId.get()).isEqualTo("myApp")
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TESTED_APPLICATION_ID_VALUE)
+    verify(delegate, times(1)).testedApplicationId
+  }
+
+  @Test
+  fun instrumentationRunner() {
+    whenever(delegate.instrumentationRunner).thenReturn(FakeGradleProperty("my_runner"))
+    Truth.assertThat(proxy.instrumentationRunner.get()).isEqualTo("my_runner")
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE)
+    verify(delegate, times(1)).instrumentationRunner
+  }
+
+  @Test
+  fun handleProfiling() {
+    whenever(delegate.handleProfiling).thenReturn(FakeGradleProperty(true))
+    Truth.assertThat(proxy.handleProfiling.get()).isEqualTo(true)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.HANDLE_PROFILING_VALUE)
+    verify(delegate, times(1)).handleProfiling
+  }
+
+  @Test
+  fun functionalTest() {
+    whenever(delegate.functionalTest).thenReturn(FakeGradleProperty(true))
+    Truth.assertThat(proxy.functionalTest.get()).isEqualTo(true)
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE)
+    verify(delegate, times(1)).functionalTest
+  }
+
+  @Test
+  fun testLabel() {
+    whenever(delegate.testLabel).thenReturn(FakeGradleProperty("some_label"))
+    Truth.assertThat(proxy.testLabel.get()).isEqualTo("some_label")
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TEST_LABEL_VALUE)
+    verify(delegate, times(1)).testLabel
+  }
+
+  @Test
+  fun getRenderscript() {
+    val renderscript = mock<Renderscript>()
+    whenever(delegate.renderscript).thenReturn(renderscript)
+    // simulate a user configuring packaging options for jniLibs and resources
+    proxy.renderscript
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.RENDERSCRIPT_VALUE)
+    verify(delegate, times(1)).renderscript
+  }
+
+  @Test
+  fun getApkPackaging() {
+    val apkPackaging = mock<ApkPackaging>()
+    val jniLibsApkPackagingOptions = mock<JniLibsApkPackaging>()
+    val resourcesPackagingOptions = mock<ResourcesPackaging>()
+    whenever(apkPackaging.jniLibs).thenReturn(jniLibsApkPackagingOptions)
+    whenever(apkPackaging.resources).thenReturn(resourcesPackagingOptions)
+    whenever(delegate.packaging).thenReturn(apkPackaging)
+    // simulate a user configuring packaging options for jniLibs and resources
+    proxy.packaging.jniLibs
+    proxy.packaging.resources
+
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.map { it.type })
+      .containsExactlyElementsIn(
+        listOf(
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
+          VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE,
         )
-        Truth.assertThat((proxiedAndroidResources as AnalyticsEnabledAndroidResources).delegate)
-            .isEqualTo(androidResources)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.AAPT_OPTIONS_VALUE)
-        verify(delegate, times(1))
-            .androidResources
-    }
-
-    @Test
-    fun testedApplicationId() {
-        whenever(delegate.testedApplicationId).thenReturn(FakeGradleProvider("myApp"))
-        Truth.assertThat(proxy.testedApplicationId.get()).isEqualTo("myApp")
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TESTED_APPLICATION_ID_VALUE)
-        verify(delegate, times(1))
-            .testedApplicationId
-    }
-
-    @Test
-    fun instrumentationRunner() {
-        whenever(delegate.instrumentationRunner).thenReturn(FakeGradleProperty("my_runner"))
-        Truth.assertThat(proxy.instrumentationRunner.get()).isEqualTo("my_runner")
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.INSTRUMENTATION_RUNNER_VALUE)
-        verify(delegate, times(1))
-            .instrumentationRunner
-    }
-
-    @Test
-    fun handleProfiling() {
-        whenever(delegate.handleProfiling).thenReturn(FakeGradleProperty(true))
-        Truth.assertThat(proxy.handleProfiling.get()).isEqualTo(true)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.HANDLE_PROFILING_VALUE)
-        verify(delegate, times(1))
-            .handleProfiling
-    }
-
-    @Test
-    fun functionalTest() {
-        whenever(delegate.functionalTest).thenReturn(FakeGradleProperty(true))
-        Truth.assertThat(proxy.functionalTest.get()).isEqualTo(true)
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.FUNCTIONAL_TEST_VALUE)
-        verify(delegate, times(1))
-            .functionalTest
-    }
-
-    @Test
-    fun testLabel() {
-        whenever(delegate.testLabel).thenReturn(FakeGradleProperty("some_label"))
-        Truth.assertThat(proxy.testLabel.get()).isEqualTo("some_label")
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TEST_LABEL_VALUE)
-        verify(delegate, times(1))
-            .testLabel
-    }
-
-
-    @Test
-    fun getRenderscript() {
-        val renderscript = mock<Renderscript>()
-        whenever(delegate.renderscript).thenReturn(renderscript)
-        // simulate a user configuring packaging options for jniLibs and resources
-        proxy.renderscript
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.RENDERSCRIPT_VALUE)
-        verify(delegate, times(1)).renderscript
-    }
-
-    @Test
-    fun getApkPackaging() {
-        val apkPackaging = mock<ApkPackaging>()
-        val jniLibsApkPackagingOptions = mock<JniLibsApkPackaging>()
-        val resourcesPackagingOptions = mock<ResourcesPackaging>()
-        whenever(apkPackaging.jniLibs).thenReturn(jniLibsApkPackagingOptions)
-        whenever(apkPackaging.resources).thenReturn(resourcesPackagingOptions)
-        whenever(delegate.packaging).thenReturn(apkPackaging)
-        // simulate a user configuring packaging options for jniLibs and resources
-        proxy.packaging.jniLibs
-        proxy.packaging.resources
-
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(4)
-        Truth.assertThat(
-                stats.variantApiAccess.variantPropertiesAccessList.map { it.type }
-        ).containsExactlyElementsIn(
-                listOf(
-                        VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.JNI_LIBS_PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.PACKAGING_OPTIONS_VALUE,
-                        VariantPropertiesMethodType.RESOURCES_PACKAGING_OPTIONS_VALUE
-                )
-        )
-        verify(delegate, times(1)).packaging
-    }
+      )
+    verify(delegate, times(1)).packaging
+  }
 }

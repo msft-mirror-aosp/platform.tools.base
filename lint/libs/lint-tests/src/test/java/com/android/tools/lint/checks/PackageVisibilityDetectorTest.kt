@@ -115,10 +115,7 @@ class PackageVisibilityDetectorTest : AbstractCheckTest() {
 
   fun testTargetSdkTooLow() {
     // App visibility restrictions did not go into effect until Android R (API 30).
-    lint()
-      .files(manifest().targetSdk(29), kotlin(ACTIVITY_WITH_APP_QUERIES).indented())
-      .run()
-      .expectClean()
+    lint().files(manifest().targetSdk(29), kotlin(ACTIVITY_WITH_APP_QUERIES).indented()).run().expectClean()
   }
 
   companion object {

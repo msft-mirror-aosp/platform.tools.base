@@ -24,40 +24,38 @@ import org.junit.Rule
 import org.junit.Test
 
 class DifferentNdkPerModuleTest {
-    @Rule
-    @JvmField
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject(
-                mapOf(
-                    ":libA" to MinimalSubProject.lib("com.example.androidLibA"),
-                    ":libB" to MinimalSubProject.lib("com.example.androidLibB"),
-                    ":libC" to MinimalSubProject.lib("com.example.androidLibC")
-                )
-            )
-        ).create()
+  @Rule
+  @JvmField
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MultiModuleTestProject(
+          mapOf(
+            ":libA" to MinimalSubProject.lib("com.example.androidLibA"),
+            ":libB" to MinimalSubProject.lib("com.example.androidLibB"),
+            ":libC" to MinimalSubProject.lib("com.example.androidLibC"),
+          )
+        )
+      )
+      .create()
 
-    @Before
-    fun setUp() {
-        setupLibrary(":libA", "19", "com.example.androidLibA")
-        setupLibrary(":libB", "24", "com.example.androidLibB")
-        setupLibrary(":libC", "23", "com.example.androidLibC")
-    }
+  @Before
+  fun setUp() {
+    setupLibrary(":libA", "19", "com.example.androidLibA")
+    setupLibrary(":libB", "24", "com.example.androidLibB")
+    setupLibrary(":libC", "23", "com.example.androidLibC")
+  }
 
-    @Test
-    fun build() {
-        project.executor().run("help")
-    }
+  @Test
+  fun build() {
+    project.executor().run("help")
+  }
 
-    private fun setupLibrary(
-        name: String,
-        ndkVersion: String,
-        namespace: String
-    ): GradleTestProject {
-        return project.getSubproject(name).also { project ->
-            project.buildFile.also {
-                it.writeText(
-                    """
+  private fun setupLibrary(name: String, ndkVersion: String, namespace: String): GradleTestProject {
+    return project.getSubproject(name).also { project ->
+      project.buildFile.also {
+        it.writeText(
+          """
                 |apply plugin: 'com.android.library'
                 |android {
                 |   namespace = "$namespace"
@@ -75,9 +73,10 @@ class DifferentNdkPerModuleTest {
                 |      }
                 |   })
                 |}
-            """.trimMargin()
-                )
-            }
-        }
+            """
+            .trimMargin()
+        )
+      }
     }
+  }
 }

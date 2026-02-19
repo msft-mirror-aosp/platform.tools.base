@@ -35,11 +35,7 @@ class TileServiceActivityDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
 
-    val IMPLEMENTATION =
-      Implementation(
-        TileServiceActivityDetector::class.java,
-        EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST),
-      )
+    val IMPLEMENTATION = Implementation(TileServiceActivityDetector::class.java, EnumSet.of(Scope.BINARY_RESOURCE_FILE, Scope.MANIFEST))
 
     private const val UPSIDE_DOWN_CAKE_API_VERSION: Int = 34
 
@@ -57,8 +53,7 @@ class TileServiceActivityDetector : Detector(), SourceCodeScanner {
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
-        implementation =
-          Implementation(TileServiceActivityDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(TileServiceActivityDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
   }
@@ -66,9 +61,7 @@ class TileServiceActivityDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames() = listOf("startActivityAndCollapse")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-    if (
-      !context.evaluator.isMemberInSubClassOf(method, "android.service.quicksettings.TileService")
-    ) {
+    if (!context.evaluator.isMemberInSubClassOf(method, "android.service.quicksettings.TileService")) {
       return
     }
     val argument = node.valueArguments.firstOrNull() ?: return
@@ -78,8 +71,7 @@ class TileServiceActivityDetector : Detector(), SourceCodeScanner {
     val message =
       "TileService#startActivityAndCollapse(Intent) is deprecated. Use TileService#startActivityAndCollapse(PendingIntent) instead."
     context.report(
-      Incident(START_ACTIVITY_AND_COLLAPSE_DEPRECATED, node, location, message)
-        .overrideSeverity(Severity.WARNING),
+      Incident(START_ACTIVITY_AND_COLLAPSE_DEPRECATED, node, location, message).overrideSeverity(Severity.WARNING),
       targetSdkLessThan(UPSIDE_DOWN_CAKE_API_VERSION),
     )
     context.report(

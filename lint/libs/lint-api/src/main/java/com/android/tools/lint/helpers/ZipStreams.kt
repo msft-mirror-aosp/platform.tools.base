@@ -24,8 +24,7 @@ import java.util.zip.ZipInputStream
 /**
  * Reads all the bytes for ZipEntry
  *
- * Method to avoid allocating temporary buffer, and byte array cloning when uncompressed size is
- * known and reasonably small.
+ * Method to avoid allocating temporary buffer, and byte array cloning when uncompressed size is known and reasonably small.
  *
  * Inspired by java.util.jar.JarFile#getBytes
  *

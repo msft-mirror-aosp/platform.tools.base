@@ -213,6 +213,8 @@ public abstract class ExtractAnnotations extends NonIncrementalTask {
         args.add("--no-sort");
         if (getUastInputs().getUseK2Uast()) {
             args.add("--XuseK2Uast");
+        } else {
+            args.add("--XuseK1Uast");
         }
         getLintTool()
                 .submit(

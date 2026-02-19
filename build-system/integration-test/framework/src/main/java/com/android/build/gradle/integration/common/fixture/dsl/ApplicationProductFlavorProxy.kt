@@ -22,106 +22,111 @@ import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.TargetSdkSpec
 
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks the normal Java Proxy feature (class is
+ * considered broken)
  */
 @Suppress("OVERRIDE_DEPRECATION")
-class ApplicationProductFlavorProxy(
-    dslRecorder: DslRecorder
-): ProductFlavorProxy(dslRecorder), ApplicationProductFlavor {
+class ApplicationProductFlavorProxy(dslRecorder: DslRecorder) : ProductFlavorProxy(dslRecorder), ApplicationProductFlavor {
 
-    override var isDefault: Boolean
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.setBoolean("isDefault", value, usingIsNotation = true)
-        }
-    override var applicationId: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("applicationId", value)
-        }
-    override var versionCode: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("versionCode", value)
-        }
-    override var versionName: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("versionName", value)
-        }
-    override var targetSdk: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("targetSdk", value)
-        }
-
-    override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
-        dslRecorder.runNestedBlock(
-            name = "targetSdk",
-            parameters = listOf(),
-            instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) }
-        ) {
-            action(this)
-        }
+  override var isDefault: Boolean
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.setBoolean("isDefault", value, usingIsNotation = true)
     }
 
-    override fun targetSdkVersion(targetSdkVersion: Int) {
-        dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override var applicationId: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("applicationId", value)
     }
 
-    override fun targetSdkVersion(targetSdkVersion: String?) {
-        dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override var versionCode: Int?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("versionCode", value)
     }
 
-    override var targetSdkPreview: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("targetSdkPreview", value)
-        }
-
-    override fun setTargetSdkVersion(targetSdkVersion: String?) {
-        dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  override var versionName: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("versionName", value)
     }
 
-    override var maxSdk: Int?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("maxSdk", value)
-        }
-
-    override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
-        dslRecorder.runNestedBlock(
-            name = "maxSdk",
-            parameters = listOf(),
-            instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) }
-        ) {
-            action(this)
-        }
+  override var targetSdk: Int?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("targetSdk", value)
     }
 
-    override fun maxSdkVersion(maxSdkVersion: Int) {
-        dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
+  override fun targetSdk(action: TargetSdkSpec.() -> Unit) {
+    dslRecorder.runNestedBlock(
+      name = "targetSdk",
+      parameters = listOf(),
+      instanceProvider = { DslProxy.createProxy(TargetSdkSpec::class.java, it) },
+    ) {
+      action(this)
+    }
+  }
+
+  override fun targetSdkVersion(targetSdkVersion: Int) {
+    dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override fun targetSdkVersion(targetSdkVersion: String?) {
+    dslRecorder.call("targetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override var targetSdkPreview: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("targetSdkPreview", value)
     }
 
-    override var applicationIdSuffix: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("applicationIdSuffix", value)
-        }
-    override var versionNameSuffix: String?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("versionNameSuffix", value)
-        }
-    override var multiDexEnabled: Boolean?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            dslRecorder.set("multiDexEnabled", value)
-        }
-    override var signingConfig: ApkSigningConfig?
-        get() = throw RuntimeException("Not yet supported")
-        set(value) {
-            throw RuntimeException("Not yet supported")
-        }
+  override fun setTargetSdkVersion(targetSdkVersion: String?) {
+    dslRecorder.call("setTargetSdkVersion", listOf(targetSdkVersion), isVarArgs = false)
+  }
+
+  override var maxSdk: Int?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("maxSdk", value)
+    }
+
+  override fun maxSdk(action: MaxSdkSpec.() -> Unit) {
+    dslRecorder.runNestedBlock(
+      name = "maxSdk",
+      parameters = listOf(),
+      instanceProvider = { DslProxy.createProxy(MaxSdkSpec::class.java, it) },
+    ) {
+      action(this)
+    }
+  }
+
+  override fun maxSdkVersion(maxSdkVersion: Int) {
+    dslRecorder.call("maxSdkVersion", listOf(maxSdkVersion), isVarArgs = false)
+  }
+
+  override var applicationIdSuffix: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("applicationIdSuffix", value)
+    }
+
+  override var versionNameSuffix: String?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("versionNameSuffix", value)
+    }
+
+  override var multiDexEnabled: Boolean?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      dslRecorder.set("multiDexEnabled", value)
+    }
+
+  override var signingConfig: ApkSigningConfig?
+    get() = throw RuntimeException("Not yet supported")
+    set(value) {
+      throw RuntimeException("Not yet supported")
+    }
 }

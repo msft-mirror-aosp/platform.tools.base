@@ -27,65 +27,75 @@ import java.nio.file.Path
 
 /** Handle R8-specific warning/errors and capture additional information. */
 class R8DiagnosticsHandler(
-    private val missingKeepRulesFile: Path,
-    private val messageReceiver: MessageReceiver,
-    private val mainDexListDisallowed: Boolean,
-    tool: String,
+  private val missingKeepRulesFile: Path,
+  private val messageReceiver: MessageReceiver,
+  private val mainDexListDisallowed: Boolean,
+  tool: String,
 ) : D8DiagnosticsHandler(messageReceiver, tool) {
 
-    // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
-    override fun warning(warning: Diagnostic?) {
-        if (warning is UnsupportedMainDexListUsageDiagnostic) {
-            messageReceiver.receiveMessage(
-                Message(
-                    Message.Kind.WARNING,
-                    "Using multiDexKeepFile property with R8 is deprecated and will be fully" +
-                            " removed in AGP 9.0. Please migrate to use multiDexKeepProguard instead."
-                )
-            )
-        }
-
-        super.warning(warning)
+  // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
+  override fun warning(warning: Diagnostic?) {
+    if (warning is UnsupportedMainDexListUsageDiagnostic) {
+      messageReceiver.receiveMessage(
+        Message(
+          Message.Kind.WARNING,
+          "Using multiDexKeepFile property with R8 is deprecated and will be fully" +
+            " removed in AGP 9.0. Please migrate to use multiDexKeepProguard instead.",
+        )
+      )
     }
 
-    override fun error(warning: Diagnostic?) {
-        if (warning is MissingDefinitionsDiagnostic) {
-            generateMissingRulesFile(warning, Message.Kind.ERROR)
-        }
+    super.warning(warning)
+  }
 
-        super.error(warning)
+  override fun error(warning: Diagnostic?) {
+    if (warning is MissingDefinitionsDiagnostic) {
+      generateMissingRulesFile(warning, Message.Kind.ERROR)
     }
 
-    // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
-    override fun modifyDiagnosticsLevel(level: DiagnosticsLevel?, diagnostic: Diagnostic?): DiagnosticsLevel? {
-      if (!mainDexListDisallowed && diagnostic is UnsupportedMainDexListUsageDiagnostic) {
-        return DiagnosticsLevel.WARNING
-      }
+    super.error(warning)
+  }
 
-      return level
+  // TODO(b/181858113): Remove this when main dex list support is removed from AGP.
+  override fun modifyDiagnosticsLevel(level: DiagnosticsLevel?, diagnostic: Diagnostic?): DiagnosticsLevel? {
+    if (!mainDexListDisallowed && diagnostic is UnsupportedMainDexListUsageDiagnostic) {
+      return DiagnosticsLevel.WARNING
     }
 
-    private fun generateMissingRulesFile(warning: MissingDefinitionsDiagnostic, messageKind: Message.Kind) {
-        messageReceiver.receiveMessage(
-                Message(
-                        messageKind,
-                        """
+    return level
+  }
+
+  private fun generateMissingRulesFile(warning: MissingDefinitionsDiagnostic, messageKind: Message.Kind) {
+    messageReceiver.receiveMessage(
+      Message(
+        messageKind,
+        """
                                 Missing classes detected while running R8. Please add the missing classes or apply additional keep rules that are generated in $missingKeepRulesFile.
-                                """.trimIndent()))
-        val missingClasses = warning.missingDefinitions.mapNotNull {
-            if (it.isMissingClass) {
-                it.asMissingClass().classReference.typeName
-            } else null
-        }
-        missingKeepRulesFile.toFile().writeText(
-                missingClasses.joinToString(
-                        separator = System.lineSeparator(),
-                        prefix = """
-                                # Please add these rules to your existing keep rules in order to suppress warnings.
-                                # This is generated automatically by the Android Gradle plugin.
+                                """
+          .trimIndent(),
+      )
+    )
+    val missingClasses =
+      warning.missingDefinitions.mapNotNull {
+        if (it.isMissingClass) {
+          it.asMissingClass().classReference.typeName
+        } else null
+      }
+    missingKeepRulesFile
+      .toFile()
+      .writeText(
+        missingClasses.joinToString(
+          separator = System.lineSeparator(),
+          prefix =
+            """
+            # Please add these rules to your existing keep rules in order to suppress warnings.
+            # This is generated automatically by the Android Gradle plugin.
 
-                            """.trimIndent()) {
-                    "-dontwarn $it"
-                })
-    }
+            """
+              .trimIndent(),
+        ) {
+          "-dontwarn $it"
+        }
+      )
+  }
 }

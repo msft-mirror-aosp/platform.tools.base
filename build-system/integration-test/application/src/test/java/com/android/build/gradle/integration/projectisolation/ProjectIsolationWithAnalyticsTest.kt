@@ -23,24 +23,21 @@ import org.junit.Test
 
 class ProjectIsolationWithAnalyticsTest {
 
-    @get:Rule
-    val rule = GradleRule.configure()
-        .withProfileOutput()
-        .from {
-            androidApplication {  }
-            androidLibrary {  }
-            androidTest {
-                android.targetProjectPath = ":app"
-            }
+  @get:Rule
+  val rule =
+    GradleRule.configure().withProfileOutput().from {
+      androidApplication {}
+      androidLibrary {}
+      androidTest { android.targetProjectPath = ":app" }
     }
 
-    @Before
-    fun setUp() {
-        rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
-    }
+  @Before
+  fun setUp() {
+    rule.getMainBuildDirectory().resolve(".gradle/configuration-cache").toFile().deleteRecursively()
+  }
 
-    @Test
-    fun testWithProjectIsolation() {
-        rule.build.executor.run("assemble")
-    }
+  @Test
+  fun testWithProjectIsolation() {
+    rule.build.executor.run("assemble")
+  }
 }

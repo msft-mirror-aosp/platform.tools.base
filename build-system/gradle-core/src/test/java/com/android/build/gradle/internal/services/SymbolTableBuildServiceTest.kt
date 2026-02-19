@@ -22,123 +22,110 @@ import com.android.resources.ResourceType
 import com.google.common.cache.CacheBuilderSpec
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 /** Unit tests for ClasspathBuildService */
 class SymbolTableBuildServiceTest {
 
-    @get:Rule
-    val temporaryDirectory = TemporaryFolder()
+  @get:Rule val temporaryDirectory = TemporaryFolder()
 
-    class TestCaching() : SymbolTableBuildService(STRONG_KEYED_CACHE) {
-        override fun getParameters() = throw UnsupportedOperationException()
-    }
+  class TestCaching() : SymbolTableBuildService(STRONG_KEYED_CACHE) {
+    override fun getParameters() = throw UnsupportedOperationException()
+  }
 
-    /** Smoke test for the classpath build service, check things work as expected. */
-    @Test
-    fun smokeTest() {
-        val classpathBuildService = TestCaching()
+  /** Smoke test for the classpath build service, check things work as expected. */
+  @Test
+  fun smokeTest() {
+    val classpathBuildService = TestCaching()
 
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
-        assertThat(content1).isEqualTo(
-            SymbolTable.builder()
-                .tablePackage("com.example.lib1")
-                .add(Symbol.normalSymbol(ResourceType.STRING, "foo"))
-                .build()
-        )
-    }
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    assertThat(content1)
+      .isEqualTo(SymbolTable.builder().tablePackage("com.example.lib1").add(Symbol.normalSymbol(ResourceType.STRING, "foo")).build())
+  }
 
-    @Test
-    fun checkSymbolIoPersistence() {
-        val classpathBuildService = TestCaching()
+  @Test
+  fun checkSymbolIoPersistence() {
+    val classpathBuildService = TestCaching()
 
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        // Check that loading a new file reuses the loader.
-        val file2 = fileWithContent("com.example.lib2\nstring foo")
-        val content2 = classpathBuildService.loadClasspath(listOf(file2)).single()
+    // Check that loading a new file reuses the loader.
+    val file2 = fileWithContent("com.example.lib2\nstring foo")
+    val content2 = classpathBuildService.loadClasspath(listOf(file2)).single()
 
-        assertWithMessage("SymbolIO should be reused")
-            .that(content2.onlySymbol()).isSameInstanceAs(content1.onlySymbol())
-    }
+    assertWithMessage("SymbolIO should be reused").that(content2.onlySymbol()).isSameInstanceAs(content1.onlySymbol())
+  }
 
-    @Test
-    fun checkSymbolInternerReloading() {
-        val classpathBuildService = TestCaching()
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+  @Test
+  fun checkSymbolInternerReloading() {
+    val classpathBuildService = TestCaching()
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        classpathBuildService.dropSymbolInterner()
+    classpathBuildService.dropSymbolInterner()
 
-        // Check that loading a new file reuses the loader.
-        val file2 = fileWithContent("com.example.lib2\nstring foo")
-        val content2 = classpathBuildService.loadClasspath(listOf(file2)).single()
+    // Check that loading a new file reuses the loader.
+    val file2 = fileWithContent("com.example.lib2\nstring foo")
+    val content2 = classpathBuildService.loadClasspath(listOf(file2)).single()
 
-        assertWithMessage("Symbol interner is reinitialized correctly")
-            .that(content2.onlySymbol()).isSameInstanceAs(content1.onlySymbol())
-    }
+    assertWithMessage("Symbol interner is reinitialized correctly").that(content2.onlySymbol()).isSameInstanceAs(content1.onlySymbol())
+  }
 
-    @Test
-    fun checkSymbolTablePersistence() {
-        val classpathBuildService = TestCaching()
+  @Test
+  fun checkSymbolTablePersistence() {
+    val classpathBuildService = TestCaching()
 
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        val content1Again = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val content1Again = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        assertWithMessage("Symbol table was persisted")
-            .that(content1Again)
-            .isSameInstanceAs(content1)
-    }
+    assertWithMessage("Symbol table was persisted").that(content1Again).isSameInstanceAs(content1)
+  }
 
-    @Test
-    fun checkSymbolTableReloading() {
-        val classpathBuildService = TestCaching()
+  @Test
+  fun checkSymbolTableReloading() {
+    val classpathBuildService = TestCaching()
 
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        classpathBuildService.dropSymbolTables()
+    classpathBuildService.dropSymbolTables()
 
-        val content1Again = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val content1Again = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        assertThat(content1Again).isEqualTo(content1)
-        assertWithMessage("Symbol table is reloaded")
-            .that(content1Again)
-            .isNotSameInstanceAs(content1)
-        // No assertion that the symbol is or is not reloaded here, as the intern table may or may
-        // not be dropped as it is held in a soft reference.
-    }
+    assertThat(content1Again).isEqualTo(content1)
+    assertWithMessage("Symbol table is reloaded").that(content1Again).isNotSameInstanceAs(content1)
+    // No assertion that the symbol is or is not reloaded here, as the intern table may or may
+    // not be dropped as it is held in a soft reference.
+  }
 
-    @Test
-    fun checkAllReloading() {
-        val classpathBuildService = TestCaching()
+  @Test
+  fun checkAllReloading() {
+    val classpathBuildService = TestCaching()
 
-        val file1 = fileWithContent("com.example.lib1\nstring foo")
-        val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val file1 = fileWithContent("com.example.lib1\nstring foo")
+    val content1 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        classpathBuildService.dropSymbolTables()
-        classpathBuildService.dropSymbolInterner()
+    classpathBuildService.dropSymbolTables()
+    classpathBuildService.dropSymbolInterner()
 
-        val content2 = classpathBuildService.loadClasspath(listOf(file1)).single()
+    val content2 = classpathBuildService.loadClasspath(listOf(file1)).single()
 
-        assertWithMessage("Symbol table is reloaded").that(content2).isNotSameInstanceAs(content1)
-        assertWithMessage("Symbol intern table is dropped")
-            .that(content2.onlySymbol())
-            .isNotSameInstanceAs(content1.onlySymbol())
-    }
+    assertWithMessage("Symbol table is reloaded").that(content2).isNotSameInstanceAs(content1)
+    assertWithMessage("Symbol intern table is dropped").that(content2.onlySymbol()).isNotSameInstanceAs(content1.onlySymbol())
+  }
 
-    private fun SymbolTable.onlySymbol(): Symbol = symbols.values().single()
-    private fun fileWithContent(content: String): File =
-        temporaryDirectory.newFile().also { it.writeText(content) }
+  private fun SymbolTable.onlySymbol(): Symbol = symbols.values().single()
 
-    companion object {
-        val STRONG_KEYED_CACHE: CacheBuilderSpec = CacheBuilderSpec.parse("")
-    }
+  private fun fileWithContent(content: String): File = temporaryDirectory.newFile().also { it.writeText(content) }
+
+  companion object {
+    val STRONG_KEYED_CACHE: CacheBuilderSpec = CacheBuilderSpec.parse("")
+  }
 }

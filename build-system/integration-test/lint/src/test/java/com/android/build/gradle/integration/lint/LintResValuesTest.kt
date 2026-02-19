@@ -22,38 +22,36 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test testing that lint analyzes Android resources specified via resValue.
- */
+/** Integration test testing that lint analyzes Android resources specified via resValue. */
 class LintResValuesTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
-                            android {
-                                defaultConfig {
-                                    resValue "string", "foo", "foo"
-                                }
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
+            android {
+                defaultConfig {
+                    resValue "string", "foo", "foo"
+                }
 
-                                lintOptions {
-                                    abortOnError = false
-                                    textOutput = file("lint-results.txt")
-                                }
-                                buildFeatures { resValues = true }
-                            }
-                        """.trimIndent()
-                    )
-            ).create()
+                lintOptions {
+                    abortOnError = false
+                    textOutput = file("lint-results.txt")
+                }
+                buildFeatures { resValues = true }
+            }
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    @Test
-    fun testResValues() {
-        project.executor().run("lintDebug")
-        assertThat(project.file("lint-results.txt")).contains(
-            "Warning: The resource R.string.foo appears to be unused [UnusedResources]"
-        )
-    }
+  @Test
+  fun testResValues() {
+    project.executor().run("lintDebug")
+    assertThat(project.file("lint-results.txt")).contains("Warning: The resource R.string.foo appears to be unused [UnusedResources]")
+  }
 }

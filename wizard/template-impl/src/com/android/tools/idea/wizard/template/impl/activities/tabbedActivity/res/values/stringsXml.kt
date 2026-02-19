@@ -16,9 +16,7 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.res.values
 
-
 fun stringsXml() =
-
   """<resources>
     <string name="tab_text_1">Tab 1</string>
     <string name="tab_text_2">Tab 2</string>

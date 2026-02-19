@@ -27,64 +27,54 @@ import java.nio.file.Path
 /**
  * A version of [GradleBuild] that can reverse the changes made during a test.
  *
- * when [GradleBuild.withReversibleModifications] is called, the current [GradleBuild] is wrapped
- * with this class and the action interacts with the wrapped version.
+ * when [GradleBuild.withReversibleModifications] is called, the current [GradleBuild] is wrapped with this class and the action interacts
+ * with the wrapped version.
  *
- * The implementation of the wrapper simply replaces the implementation of [GradleProjectFiles] with
- * one that records the changes so that they can be reverted.
- *
+ * The implementation of the wrapper simply replaces the implementation of [GradleProjectFiles] with one that records the changes so that
+ * they can be reverted.
  */
-internal class ReversibleGradleBuild(
-    private val parentBuild: GradleBuildImpl,
-    private val fileChangeController: FileChangeController,
-): BaseGradleBuildImpl() {
+internal class ReversibleGradleBuild(private val parentBuild: GradleBuildImpl, private val fileChangeController: FileChangeController) :
+  BaseGradleBuildImpl() {
 
-    private val modifiableSubProject = mutableMapOf<String, GradleProject<*>>()
-    private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
+  private val modifiableSubProject = mutableMapOf<String, GradleProject<*>>()
+  private val wrappedIncludedBuild = mutableMapOf<String, ReversibleGradleBuild>()
 
-    override val directory: Path
-        get() = parentBuild.directory
+  override val directory: Path
+    get() = parentBuild.directory
 
-    /**
-     * For validation, we use the parent list which is more complete because the local list
-     * is built on demand
-     */
-    override val subProjectsForValidation: Map<String, GradleProject<*>>
-        get() = parentBuild.subProjectsForValidation
+  /** For validation, we use the parent list which is more complete because the local list is built on demand */
+  override val subProjectsForValidation: Map<String, GradleProject<*>>
+    get() = parentBuild.subProjectsForValidation
 
-    override fun subProject(path: String): GradleProject<*> {
-        val project = parentBuild.subProject(path)
+  override fun subProject(path: String): GradleProject<*> {
+    val project = parentBuild.subProject(path)
 
-        return modifiableSubProject.computeIfAbsent(path) {
-            (project as GradleProjectImpl<*>).getReversibleInstance(fileChangeController)
-        }
-    }
+    return modifiableSubProject.computeIfAbsent(path) { (project as GradleProjectImpl<*>).getReversibleInstance(fileChangeController) }
+  }
 
-    override fun includedBuild(name: String): GradleBuild {
-        val b = parentBuild.includedBuild(name) as GradleBuildImpl
-        return wrappedIncludedBuild.computeIfAbsent(name) {
-            ReversibleGradleBuild(b, fileChangeController)
-        }
-    }
+  override fun includedBuild(name: String): GradleBuild {
+    val b = parentBuild.includedBuild(name) as GradleBuildImpl
+    return wrappedIncludedBuild.computeIfAbsent(name) { ReversibleGradleBuild(b, fileChangeController) }
+  }
 
-    override val executor: GradleTaskExecutor
-        get() = parentBuild.executor
+  override val executor: GradleTaskExecutor
+    get() = parentBuild.executor
 
-    override val modelBuilder: ModelBuilderV2
-        get() = parentBuild.modelBuilder
+  override val modelBuilder: ModelBuilderV2
+    get() = parentBuild.modelBuilder
 
-    override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
-        throw RuntimeException("Cannot reconfigure settings inside withReversibleModifications")
-    }
+  override fun reconfigureSettings(action: GradleSettingsDefinition.() -> Unit) {
+    throw RuntimeException("Cannot reconfigure settings inside withReversibleModifications")
+  }
 
-    override fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
-        throw RuntimeException("Cannot reconfigure properties inside withReversibleModifications")
-    }
+  override fun reconfigureGradleProperties(action: GradlePropertiesBuilder.() -> Unit) {
+    throw RuntimeException("Cannot reconfigure properties inside withReversibleModifications")
+  }
 
-    override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
-        throw RuntimeException("Cannot nest withReversibleModifications")
-    }
+  override fun withReversibleModifications(action: (GradleBuild) -> Unit) {
+    throw RuntimeException("Cannot nest withReversibleModifications")
+  }
 
-    override val profileDirectory: Path?
-        get() = parentBuild.profileDirectory
+  override val profileDirectory: Path?
+    get() = parentBuild.profileDirectory
 }

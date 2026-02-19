@@ -53,4 +53,9 @@ public final class PropertyOverrides implements FlagValueProvider {
         }
         return cache.get(key);
     }
+
+    @Override
+    public String toString() {
+        return "PropertyOverrides(cache.size=" + cache.size() + ")";
+    }
 }

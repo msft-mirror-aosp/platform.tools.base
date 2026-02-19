@@ -22,8 +22,7 @@ class RegisterReceiverFlagDetectorTest : AbstractCheckTest() {
 
   override fun getDetector(): Detector = RegisterReceiverFlagDetector()
 
-  override fun getIssues(): List<Issue> =
-    listOf(RegisterReceiverFlagDetector.RECEIVER_EXPORTED_FLAG)
+  override fun getIssues(): List<Issue> = listOf(RegisterReceiverFlagDetector.RECEIVER_EXPORTED_FLAG)
 
   fun testProtectedBroadcast() {
     lint()

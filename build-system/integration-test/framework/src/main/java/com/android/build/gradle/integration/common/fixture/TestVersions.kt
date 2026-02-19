@@ -15,22 +15,24 @@
  */
 
 @file:JvmName("TestVersions")
+
 package com.android.build.gradle.integration.common.fixture
 
 /**
- * When updating the DEFAULT_COMPILE_SDK_VERSION, the bazel filegroup
- * //tools/base/build-system/integration-test:android_platform_for_tests will also need to be
- * updated to match
+ * When updating the DEFAULT_COMPILE_SDK_VERSION, the bazel filegroup //tools/base/build-system/integration-test:android_platform_for_tests
+ * will also need to be updated to match
  *
- * Do not use directly. use [com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION]
- * or [GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION]
-*/
+ * Do not use directly. use
+ * [com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION] or
+ * [GradleTestProject.Companion.DEFAULT_COMPILE_SDK_VERSION]
+ */
 @Deprecated(
-    "Use GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
-    replaceWith = ReplaceWith(
-        "GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
-        imports = arrayOf("com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition")
-    )
+  "Use GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
+  replaceWith =
+    ReplaceWith(
+      "GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION",
+      imports = arrayOf("com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition"),
+    ),
 )
 const val DEFAULT_COMPILE_SDK_VERSION = 36
 

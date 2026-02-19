@@ -27,54 +27,43 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/**
- * Tests that probe abseil build benchmark so that issues might be caught earlier
- * than the next perfgate run.
- */
+/** Tests that probe abseil build benchmark so that issues might be caught earlier than the next perfgate run. */
 @RunWith(Parameterized::class)
-class AbseilTest(
-    private val setupDiff : String
-) {
-    companion object {
-        @Parameterized.Parameters(name = "{0}")
-        @JvmStatic
-        fun data() = arrayOf(
-            "notNoop.diff",
-        )
-    }
+class AbseilTest(private val setupDiff: String) {
+  companion object {
+    @Parameterized.Parameters(name = "{0}") @JvmStatic fun data() = arrayOf("notNoop.diff")
+  }
 
-    @Rule
-    @JvmField
-    val temporaryFolder = TemporaryFolder()
+  @Rule @JvmField val temporaryFolder = TemporaryFolder()
 
-    private lateinit var project: NativeBuildBenchmarkProject
+  private lateinit var project: NativeBuildBenchmarkProject
 
-    @Before
-    fun before() {
-        project = NativeBuildBenchmarkProject(
-            relativeBuildRoot = "android",
-            workingFolder = temporaryFolder.newFolder(),
-            buildbenchmark = "abseil-cpp.731689ff"
-        )
-        project.applyDiff(setupDiff)
-    }
+  @Before
+  fun before() {
+    project =
+      NativeBuildBenchmarkProject(
+        relativeBuildRoot = "android",
+        workingFolder = temporaryFolder.newFolder(),
+        buildbenchmark = "abseil-cpp.731689ff",
+      )
+    project.applyDiff(setupDiff)
+  }
 
-    @Test
-    fun `simulate Abseil_cleanBuild`() : Unit = with(project) {
-        addArgument("-Pandroid.injected.build.abi=arm64-v8a")
+  @Test
+  fun `simulate Abseil_cleanBuild`(): Unit =
+    with(project) {
+      addArgument("-Pandroid.injected.build.abi=arm64-v8a")
 
-        // Warm up
-        run("assembleDebug")
-        run("clean")
+      // Warm up
+      run("assembleDebug")
+      run("clean")
 
-        // Actual test
-        enableCxxStructuredLogging()
-        run("assembleDebug")
+      // Actual test
+      enableCxxStructuredLogging()
+      run("assembleDebug")
 
-        // Expect no C/C++ configure
-        val configure = readStructuredLogs(::decodeConfigureInvalidationState).single()
-        assertThat(configure.configureType)
-            .named("$configure")
-            .isEqualTo(ConfigureType.NO_CONFIGURE)
+      // Expect no C/C++ configure
+      val configure = readStructuredLogs(::decodeConfigureInvalidationState).single()
+      assertThat(configure.configureType).named("$configure").isEqualTo(ConfigureType.NO_CONFIGURE)
     }
 }

@@ -74,22 +74,18 @@ import org.jetbrains.uast.UYieldExpression
 import org.jetbrains.uast.visitor.UastVisitor
 
 /**
- * The [UElementHandler] is similar to a [UastVisitor], but it is used to only visit a single
- * element. Detectors tell lint which types of elements they want to be called for by invoking
- * [SourceCodeScanner.getApplicableUastTypes].
+ * The [UElementHandler] is similar to a [UastVisitor], but it is used to only visit a single element. Detectors tell lint which types of
+ * elements they want to be called for by invoking [SourceCodeScanner.getApplicableUastTypes].
  *
- * If you want to actually perform a full file visitor iteration you should implement the link
- * [visitFile] and then create a [UastVisitor] and then invoke that on `file.accept(visitor)`.
+ * If you want to actually perform a full file visitor iteration you should implement the link [visitFile] and then create a [UastVisitor]
+ * and then invoke that on `file.accept(visitor)`.
  */
 open class UElementHandler {
 
   internal open fun error(parameterType: Class<out UElement>) {
     val name = parameterType.simpleName
     require(name.startsWith("U")) { name }
-    throw RuntimeException(
-      "You must override visit${name.substring(1)} " +
-        "(and don't call super.visit${name.substring(1)}!)"
-    )
+    throw RuntimeException("You must override visit${name.substring(1)} " + "(and don't call super.visit${name.substring(1)}!)")
   }
 
   open fun visitAnnotation(node: UAnnotation) {
@@ -301,8 +297,7 @@ open class UElementHandler {
     error(UYieldExpression::class.java)
   }
 
-  @Suppress("UnstableApiUsage")
-  open fun visitBinaryExpressionWithPattern(node: UBinaryExpressionWithPattern) {}
+  @Suppress("UnstableApiUsage") open fun visitBinaryExpressionWithPattern(node: UBinaryExpressionWithPattern) {}
 
   @Suppress("UnstableApiUsage") open fun visitPatternExpression(node: UPatternExpression) {}
 

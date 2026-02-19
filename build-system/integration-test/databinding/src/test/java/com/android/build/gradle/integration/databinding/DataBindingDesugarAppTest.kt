@@ -32,19 +32,16 @@ import org.junit.Test
  */
 class DataBindingDesugarAppTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    private val projectExecutor: GradleTaskExecutor
-        get() = project.executor()
+  private val projectExecutor: GradleTaskExecutor
+    get() = project.executor()
 
-    @Test
-    fun testDatabinding() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-                """
+  @Test
+  fun testDatabinding() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 |android.compileOptions.sourceCompatibility 1.8
                 |android.compileOptions.targetCompatibility 1.8
                 |android.buildFeatures.dataBinding = true
@@ -52,9 +49,10 @@ class DataBindingDesugarAppTest {
                 |dependencies {
                 |    implementation 'com.android.support:support-v4:$SUPPORT_LIB_VERSION'
                 |}
-                """.trimMargin("|")
-        )
+                """
+        .trimMargin("|"),
+    )
 
-        projectExecutor.run("assembleDebug")
-    }
+    projectExecutor.run("assembleDebug")
+  }
 }

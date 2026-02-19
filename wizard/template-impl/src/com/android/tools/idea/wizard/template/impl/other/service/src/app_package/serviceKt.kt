@@ -18,10 +18,8 @@ package com.android.tools.idea.wizard.template.impl.other.service.src.app_packag
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun serviceKt(
-  className: String,
-  packageName: String
-) = """
+fun serviceKt(className: String, packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.app.Service

@@ -60,20 +60,13 @@ import org.jetbrains.kotlin.psi.psiUtil.startOffset
 import org.w3c.dom.Element
 
 /**
- * Test mode which looks at the expected error locations (from the default test mode) and based on
- * those locations, inserts suppress directives and checks that all the errors are now removed from
- * the report. This helps track down problems with detectors which are not supporting suppressing
- * errors at the report sites.
+ * Test mode which looks at the expected error locations (from the default test mode) and based on those locations, inserts suppress
+ * directives and checks that all the errors are now removed from the report. This helps track down problems with detectors which are not
+ * supporting suppressing errors at the report sites.
  *
- * StringFormatDetectorTest.testIncremental StringFormatDetectorTest.testAll
- * UnusedResourceDetectorTest.testMultiProject2
+ * StringFormatDetectorTest.testIncremental StringFormatDetectorTest.testAll UnusedResourceDetectorTest.testMultiProject2
  */
-class SuppressibleTestMode :
-  SourceTransformationTestMode(
-    description = "Suppressible",
-    "TestMode.SUPPRESSIBLE",
-    "suppressible",
-  ) {
+class SuppressibleTestMode : SourceTransformationTestMode(description = "Suppressible", "TestMode.SUPPRESSIBLE", "suppressible") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -105,16 +98,10 @@ class SuppressibleTestMode :
     return path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA) || path.endsWith(DOT_XML)
   }
 
-  private fun getIncidents(
-    lintTextReport: String,
-    task: TestLintTask? = null,
-  ): List<LintIssueDocGenerator.Companion.ReportedIncident> {
+  private fun getIncidents(lintTextReport: String, task: TestLintTask? = null): List<LintIssueDocGenerator.Companion.ReportedIncident> {
     // If this unit test is referencing lint warnings that are not suppressible,
     // don't attempt to enforce suppressions
-    if (
-      lintTextReport.contains("is not allowed to be suppressed") &&
-        lintTextReport.contains(" [LintError]")
-    ) {
+    if (lintTextReport.contains("is not allowed to be suppressed") && lintTextReport.contains(" [LintError]")) {
       return emptyList()
     }
 
@@ -131,9 +118,7 @@ class SuppressibleTestMode :
         val issue = issues.firstOrNull { issue -> it.id == issue.id }
         val scope = issue?.implementation?.scope
         scope == null ||
-          !(scope.contains(Scope.CLASS_FILE) ||
-            scope.contains(Scope.ALL_CLASS_FILES) ||
-            scope.contains(Scope.JAVA_LIBRARIES))
+          !(scope.contains(Scope.CLASS_FILE) || scope.contains(Scope.ALL_CLASS_FILES) || scope.contains(Scope.JAVA_LIBRARIES))
       }
   }
 
@@ -155,8 +140,7 @@ class SuppressibleTestMode :
       return false
     }
 
-    val paths =
-      outputIncidents.map { it.path.dos2unix().removePrefix("../").removePrefix(("../")) }.toSet()
+    val paths = outputIncidents.map { it.path.dos2unix().removePrefix("../").removePrefix(("../")) }.toSet()
     val pathToFile = mutableMapOf<String, File>()
     projectFolders.forEach { root ->
       root
@@ -219,11 +203,7 @@ class SuppressibleTestMode :
     return changed
   }
 
-  private fun rewriteXml(
-    file: File,
-    source: String,
-    incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>,
-  ): List<Edit> {
+  private fun rewriteXml(file: File, source: String, incidents: List<LintIssueDocGenerator.Companion.ReportedIncident>): List<Edit> {
     val client = TestLintClient()
     val parser = client.xmlParser
     val root = parser.parseXml(source, file)?.documentElement ?: return emptyList()
@@ -277,9 +257,7 @@ class SuppressibleTestMode :
         while (i < source.length) {
           if (source[i] == ' ' || source[i] == '/' || source[i] == '>') {
             // Found the end
-            while (
-              i < source.length - 1 && source[i].isWhitespace() && source[i + 1].isWhitespace()
-            ) {
+            while (i < source.length - 1 && source[i].isWhitespace() && source[i + 1].isWhitespace()) {
               i++
             }
             val insert = " tools:ignore=\"${ids.joinToString(",")}\""
@@ -309,12 +287,7 @@ class SuppressibleTestMode :
     return edits
   }
 
-  private fun Element.find(
-    offset: Int,
-    client: LintClient,
-    file: File,
-    parser: XmlParser,
-  ): Element {
+  private fun Element.find(offset: Int, client: LintClient, file: File, parser: XmlParser): Element {
     for (child in this) {
       val start = parser.getNodeStartOffset(client, file, child)
       if (offset >= start) {
@@ -377,9 +350,7 @@ class SuppressibleTestMode :
       }
       if (element is PsiModifierListOwner && element.hasAnnotation("java.lang.SuppressWarnings")) {
         // Update existing
-        val parameters =
-          element.modifierList?.findAnnotation("java.lang.SuppressWarnings")?.parameterList
-            ?: continue
+        val parameters = element.modifierList?.findAnnotation("java.lang.SuppressWarnings")?.parameterList ?: continue
         val attributes = parameters.attributes
         val count = attributes.size
         val begin = attributes.firstOrNull()?.startOffset ?: continue
@@ -399,10 +370,7 @@ class SuppressibleTestMode :
         }
         continue
       } else if (element is KtDeclaration) {
-        val annotation =
-          element.annotationEntries
-            .firstOrNull { it.shortName?.identifier?.contains("Suppress") == true }
-            ?.valueArgumentList
+        val annotation = element.annotationEntries.firstOrNull { it.shortName?.identifier?.contains("Suppress") == true }?.valueArgumentList
         if (annotation != null) {
           val begin = annotation.arguments.first().startOffset
           val code = ids.joinToString(", ") { "\"$it\"" } + ", "
@@ -414,12 +382,7 @@ class SuppressibleTestMode :
 
       val offset = element.startOffset
 
-      val suppress =
-        Context.Companion.getSuppressionDirective(
-          Context.SUPPRESS_JAVA_COMMENT_PREFIX,
-          source,
-          offset,
-        )
+      val suppress = Context.Companion.getSuppressionDirective(Context.SUPPRESS_JAVA_COMMENT_PREFIX, source, offset)
       if (suppress != null) {
         var start = source.lastIndexOf(Context.SUPPRESS_JAVA_COMMENT_PREFIX, offset)
         if (start != -1) {
@@ -436,8 +399,7 @@ class SuppressibleTestMode :
           is PsiAnnotationOwner,
           is PsiModifierListOwner ->
             "@SuppressWarnings(${if (ids.size > 1) "{" else ""}${ids.joinToString(", ") { "\"$it\"" }}${if (ids.size > 1) "}" else ""}) "
-          is KtAnnotated ->
-            "@${if (element is KtPackageDirective) "file:" else ""}Suppress(${ids.joinToString(", ") { "\"$it\"" }}) "
+          is KtAnnotated -> "@${if (element is KtPackageDirective) "file:" else ""}Suppress(${ids.joinToString(", ") { "\"$it\"" }}) "
           else -> {
             val indent = getIndent(source, offset)
             "//noinspection ${ids.joinToString(",")}\n$indent"
@@ -453,8 +415,7 @@ class SuppressibleTestMode :
   override fun sameOutput(expected: String, actual: String, type: OutputKind): Boolean {
     return getIncidents(actual).none {
       val path = it.path
-      (path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA) || path.endsWith(DOT_XML)) &&
-        it.lineNumber != -1
+      (path.endsWith(DOT_KT) || path.endsWith(DOT_JAVA) || path.endsWith(DOT_XML)) && it.lineNumber != -1
     }
   }
 
@@ -489,10 +450,7 @@ class SuppressibleTestMode :
       this is KtPackageDirective
   }
 
-  /**
-   * Like [findJavaAnnotationTarget], but also includes other PsiElements where we can place
-   * suppression comments
-   */
+  /** Like [findJavaAnnotationTarget], but also includes other PsiElements where we can place suppression comments */
   private fun findJavaSuppressElement(element: PsiElement): PsiElement? {
     // In addition to valid annotation targets we can also place suppress directives
     // using comments on import or package statements
@@ -504,9 +462,7 @@ class SuppressibleTestMode :
   private fun findJavaAnnotationTarget(element: PsiElement?): PsiModifierListOwner? {
     val modifier = PsiTreeUtil.getParentOfType(element, PsiModifierListOwner::class.java, false)
     return if (
-      modifier is PsiClassInitializer ||
-        modifier is PsiAnonymousClass ||
-        modifier is PsiParameter && modifier.isLambdaParameter()
+      modifier is PsiClassInitializer || modifier is PsiAnonymousClass || modifier is PsiParameter && modifier.isLambdaParameter()
     ) {
       findJavaAnnotationTarget(modifier.parent)
     } else {

@@ -17,15 +17,15 @@
 package com.android.tools.profgen
 
 import com.google.common.truth.Truth
+import java.nio.ByteBuffer
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import java.nio.ByteBuffer
 
 @RunWith(JUnit4::class)
 class Leb128Test {
-    @Test
-    fun test() {
-        Truth.assertThat(ByteBuffer.wrap(byteArrayOf(0x7f)).leb128).isEqualTo(127)
-    }
+  @Test
+  fun test() {
+    Truth.assertThat(ByteBuffer.wrap(byteArrayOf(0x7f)).leb128).isEqualTo(127)
+  }
 }

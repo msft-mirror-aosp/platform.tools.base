@@ -26,40 +26,24 @@ import org.junit.Test
 
 class AppWithCompileIndirectJarTest : ModelComparator() {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                implementation(project(DEFAULT_LIB_PATH))
-            }
-        }
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-            dependencies {
-                api("com.google.guava:guava:18.0")
-            }
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android { enableKotlin = false }
+        dependencies { implementation(project(DEFAULT_LIB_PATH)) }
+      }
+      androidLibrary {
+        android { enableKotlin = false }
+        dependencies { api("com.google.guava:guava:18.0") }
+      }
     }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_APP_PATH) },
-            goldenFile = "app_VariantDependencies"
-        )
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(DEFAULT_LIB_PATH) },
-            goldenFile = "library_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_APP_PATH) }, goldenFile = "app_VariantDependencies")
+    with(result).compareVariantDependencies(projectAction = { getProject(DEFAULT_LIB_PATH) }, goldenFile = "library_VariantDependencies")
+  }
 }

@@ -18,44 +18,42 @@ package com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.ProfilerState
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
-/**
- * SPSS: 'Sampling Profiling Streaming Start'
- */
+/** SPSS: 'Sampling Profiling Streaming Start' */
 class SpssHandler : DdmPacketHandler {
 
-    @Suppress("UsePropertyAccessSyntax")
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
-        val bufferSize = payload.getInt()
-        val flags = payload.getInt()
-        val intervalMicros = payload.getInt()
+  @Suppress("UsePropertyAccessSyntax")
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val payload = ByteBuffer.wrap(packet.payload).order(ByteOrder.BIG_ENDIAN)
+    val bufferSize = payload.getInt()
+    val flags = payload.getInt()
+    val intervalMicros = payload.getInt()
 
-        client.profilerState.status = ProfilerState.Status.Sampling
-        client.profilerState.samplingData.bufferSize = bufferSize
-        client.profilerState.samplingData.flags = flags
-        client.profilerState.samplingData.intervalMicros = intervalMicros
+    client.profilerState.status = ProfilerState.Status.Sampling
+    client.profilerState.samplingData.bufferSize = bufferSize
+    client.profilerState.samplingData.flags = flags
+    client.profilerState.samplingData.intervalMicros = intervalMicros
 
-        // Empty response used to be sent out before the release of Android 28
-        if (device.apiLevel < 28) {
-            JdwpPacket.createEmptyDdmsResponse(packet.id).write(jdwpHandlerOutput)
-        }
-
-        // Keep JDWP connection open
-        return true
+    // Empty response used to be sent out before the release of Android 28
+    if (device.apiLevel < 28) {
+      JdwpPacket.createEmptyDdmsResponse(packet.id).write(jdwpHandlerOutput)
     }
 
-    companion object {
+    // Keep JDWP connection open
+    return true
+  }
 
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("SPSS")
-    }
+  companion object {
+
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("SPSS")
+  }
 }

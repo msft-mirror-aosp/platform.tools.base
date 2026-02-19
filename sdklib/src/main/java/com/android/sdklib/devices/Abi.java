@@ -86,7 +86,7 @@ public enum Abi {
      * @return An existing {@link Abi} description or null.
      */
     @Nullable
-    public static Abi getEnum(@NonNull String abi) {
+    public static Abi getEnum(@Nullable String abi) {
         for (Abi a : values()) {
             if (a.mAbi.equals(abi)) {
                 return a;

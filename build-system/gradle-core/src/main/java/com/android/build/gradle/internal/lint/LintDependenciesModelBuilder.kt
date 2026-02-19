@@ -30,83 +30,81 @@ import com.android.tools.lint.model.LintModelExternalLibrary
 import com.android.tools.lint.model.LintModelLibrary
 import com.android.tools.lint.model.LintModelModuleLibrary
 import com.google.common.collect.ImmutableList
+import java.io.File
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import java.io.File
 
 class LintDependencyModelBuilder(
-    private val artifactHandler: ArtifactHandler<LintModelLibrary>,
-    private val libraryMap: MutableMap<String, LintModelLibrary> = mutableMapOf(),
-    private val mavenCoordinatesCache: MavenCoordinatesCacheBuildService
+  private val artifactHandler: ArtifactHandler<LintModelLibrary>,
+  private val libraryMap: MutableMap<String, LintModelLibrary> = mutableMapOf(),
+  private val mavenCoordinatesCache: MavenCoordinatesCacheBuildService,
 ) : DependencyModelBuilder<LintModelDependencies> {
 
-    private val libraryResolver = DefaultLintModelLibraryResolver(libraryMap)
+  private val libraryResolver = DefaultLintModelLibraryResolver(libraryMap)
 
-    private val compileRoots = mutableListOf<LintModelDependency>()
-    private val runtimeRoots = mutableListOf<LintModelDependency>()
+  private val compileRoots = mutableListOf<LintModelDependency>()
+  private val runtimeRoots = mutableListOf<LintModelDependency>()
 
-    override fun createModel(): LintModelDependencies = DefaultLintModelDependencies(
-        compileDependencies = DefaultLintModelDependencyGraph(
-            compileRoots,
-            libraryResolver
-        ),
-        packageDependencies = DefaultLintModelDependencyGraph(
-            runtimeRoots,
-            libraryResolver
-        ),
-        libraryResolver = libraryResolver
+  override fun createModel(): LintModelDependencies =
+    DefaultLintModelDependencies(
+      compileDependencies = DefaultLintModelDependencyGraph(compileRoots, libraryResolver),
+      packageDependencies = DefaultLintModelDependencyGraph(runtimeRoots, libraryResolver),
+      libraryResolver = libraryResolver,
     )
 
-    override val needFullRuntimeClasspath: Boolean
-        get() = true
-    override val needRuntimeOnlyClasspath: Boolean
-        get() = false
+  override val needFullRuntimeClasspath: Boolean
+    get() = true
 
-    override fun addArtifact(
-        artifact: ResolvedArtifact,
-        isProvided: Boolean,
-        lintJarMap: Map<ComponentIdentifier, File>?,
-        type: DependencyModelBuilder.ClasspathType
+  override val needRuntimeOnlyClasspath: Boolean
+    get() = false
+
+  override fun addArtifact(
+    artifact: ResolvedArtifact,
+    isProvided: Boolean,
+    lintJarMap: Map<ComponentIdentifier, File>?,
+    type: DependencyModelBuilder.ClasspathType,
+  ) {
+    // TODO(b/198449627) Handle java libraries with external Android library dependencies.
+    if (
+      (artifact.componentIdentifier !is ProjectComponentIdentifier || artifact.isWrappedModule) &&
+        artifact.dependencyType === ResolvedArtifact.DependencyType.ANDROID &&
+        artifact.extractedFolder == null
     ) {
-        // TODO(b/198449627) Handle java libraries with external Android library dependencies.
-        if ((artifact.componentIdentifier !is ProjectComponentIdentifier
-                    || artifact.isWrappedModule)
-            && artifact.dependencyType === ResolvedArtifact.DependencyType.ANDROID
-            && artifact.extractedFolder == null) {
-            return
-        }
-
-        // check if this particular artifact was created before, if not we create it and record it
-        // Even though we are not yet handling full graph, and only flat list, this will happen
-        // because most artifacts are in both compile and runtime
-        val lintModelLibrary = libraryMap.computeIfAbsent(artifact.computeModelAddress(mavenCoordinatesCache)) {
-            artifactHandler.handleArtifact(artifact, isProvided, lintJarMap)
-        }
-
-        val artifactName =
-            when (lintModelLibrary) {
-                is LintModelExternalLibrary ->
-                    "${lintModelLibrary.resolvedCoordinates.groupId}:${lintModelLibrary.resolvedCoordinates.artifactId}"
-                is LintModelModuleLibrary -> "artifacts:${lintModelLibrary.projectPath}"
-                else -> throw RuntimeException("Not supported library type")
-            }
-
-        // create a graph node with no transitive dependencies (at the moment)
-        val dependency = DefaultLintModelDependency(
-            identifier = lintModelLibrary.identifier,
-            artifactName = artifactName,
-            requestedCoordinates = null, // FIXME
-            dependencies = listOf(),
-            libraryResolver = libraryResolver
-        )
-
-        when (type) {
-            DependencyModelBuilder.ClasspathType.COMPILE -> compileRoots.add(dependency)
-            DependencyModelBuilder.ClasspathType.RUNTIME -> runtimeRoots.add(dependency)
-        }
+      return
     }
 
-    override fun setRuntimeOnlyClasspath(files: ImmutableList<File>) {
-        throw RuntimeException("LintModel does not support runtimeOnlyClasspath")
+    // check if this particular artifact was created before, if not we create it and record it
+    // Even though we are not yet handling full graph, and only flat list, this will happen
+    // because most artifacts are in both compile and runtime
+    val lintModelLibrary =
+      libraryMap.computeIfAbsent(artifact.computeModelAddress(mavenCoordinatesCache)) {
+        artifactHandler.handleArtifact(artifact, isProvided, lintJarMap)
+      }
+
+    val artifactName =
+      when (lintModelLibrary) {
+        is LintModelExternalLibrary -> "${lintModelLibrary.resolvedCoordinates.groupId}:${lintModelLibrary.resolvedCoordinates.artifactId}"
+        is LintModelModuleLibrary -> "artifacts:${lintModelLibrary.projectPath}"
+        else -> throw RuntimeException("Not supported library type")
+      }
+
+    // create a graph node with no transitive dependencies (at the moment)
+    val dependency =
+      DefaultLintModelDependency(
+        identifier = lintModelLibrary.identifier,
+        artifactName = artifactName,
+        requestedCoordinates = null, // FIXME
+        dependencies = listOf(),
+        libraryResolver = libraryResolver,
+      )
+
+    when (type) {
+      DependencyModelBuilder.ClasspathType.COMPILE -> compileRoots.add(dependency)
+      DependencyModelBuilder.ClasspathType.RUNTIME -> runtimeRoots.add(dependency)
     }
+  }
+
+  override fun setRuntimeOnlyClasspath(files: ImmutableList<File>) {
+    throw RuntimeException("LintModel does not support runtimeOnlyClasspath")
+  }
 }

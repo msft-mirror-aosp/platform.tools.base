@@ -20,43 +20,43 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-class NameAnonymizerSerializer: TypeAdapter<NameAnonymizer>() {
+class NameAnonymizerSerializer : TypeAdapter<NameAnonymizer>() {
 
-    override fun write(writer: JsonWriter, anonymizer: NameAnonymizer) {
-        val deanonymizer = anonymizer.createDeanonymizer()
-        writer.beginObject()
-        var projectId = 1L
-        while (true) {
-            val project = deanonymizer[projectId] ?: break
-            writer.name(project.first)
-            writer.beginArray()
-            var variantId = 1L
-            while (true) {
-                val variantName = project.second[variantId] ?: break
-                writer.value(variantName)
-                variantId++
-            }
-            writer.endArray()
-            projectId++
-        }
-        writer.endObject()
+  override fun write(writer: JsonWriter, anonymizer: NameAnonymizer) {
+    val deanonymizer = anonymizer.createDeanonymizer()
+    writer.beginObject()
+    var projectId = 1L
+    while (true) {
+      val project = deanonymizer[projectId] ?: break
+      writer.name(project.first)
+      writer.beginArray()
+      var variantId = 1L
+      while (true) {
+        val variantName = project.second[variantId] ?: break
+        writer.value(variantName)
+        variantId++
+      }
+      writer.endArray()
+      projectId++
     }
+    writer.endObject()
+  }
 
-    // Serialized form:
-    // {":a":["debug","release"],":b":["release","debug"]}
-    override fun read(reader: JsonReader): NameAnonymizer {
-        return NameAnonymizer().apply {
-            reader.beginObject()
-            while (reader.hasNext()) {
-                val projectPath = reader.nextName()
-                anonymizeProjectPath(projectPath)
-                reader.beginArray()
-                    while (reader.hasNext()) {
-                        anonymizeVariant(projectPath, reader.nextString())
-                    }
-                reader.endArray()
-            }
-            reader.endObject()
+  // Serialized form:
+  // {":a":["debug","release"],":b":["release","debug"]}
+  override fun read(reader: JsonReader): NameAnonymizer {
+    return NameAnonymizer().apply {
+      reader.beginObject()
+      while (reader.hasNext()) {
+        val projectPath = reader.nextName()
+        anonymizeProjectPath(projectPath)
+        reader.beginArray()
+        while (reader.hasNext()) {
+          anonymizeVariant(projectPath, reader.nextString())
         }
+        reader.endArray()
+      }
+      reader.endObject()
     }
+  }
 }

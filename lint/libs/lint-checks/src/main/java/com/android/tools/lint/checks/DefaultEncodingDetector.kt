@@ -47,8 +47,7 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 class DefaultEncodingDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(DefaultEncodingDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(DefaultEncodingDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -89,8 +88,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
     private const val JAVA_IO_INPUT_STREAM = "java.io.InputStream"
     private const val JAVA_IO_FILE_READER = "java.io.FileReader"
     private const val JAVA_UTIL_SCANNER = "java.util.Scanner"
-    private const val JAVA_NIO_CHANNELS_READABLE_BYTE_CHANNEL =
-      "java.nio.channels.ReadableByteChannel"
+    private const val JAVA_NIO_CHANNELS_READABLE_BYTE_CHANNEL = "java.nio.channels.ReadableByteChannel"
     private const val JAVA_IO_FILE = "java.io.File"
     private const val JAVA_NIO_FILE_PATH = "java.nio.file.Path"
     private const val JAVA_IO_OUTPUT_STREAM = "java.io.OutputStream"
@@ -102,8 +100,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
 
     private const val JAVA_UTF8_CHARSET = "java.nio.charset.StandardCharsets.UTF_8"
     private const val KOTLIN_UTF8_CHARSET = "kotlin.text.Charsets.UTF_8"
-    private const val DEFAULT_CHARSET =
-      "java.nio.charset.Charset.defaultCharset()" // Same for both Java and Kotlin
+    private const val DEFAULT_CHARSET = "java.nio.charset.Charset.defaultCharset()" // Same for both Java and Kotlin
     private const val TYPE_BYTE_ARRAY = "byte[]"
   }
 
@@ -112,15 +109,9 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val name = method.name
     val evaluator = context.evaluator
-    if (
-      name == "toString" &&
-        node.valueArgumentCount == 0 &&
-        evaluator.isMemberInClass(method, JAVA_IO_BYTE_ARRAY_OUTPUT_STREAM)
-    ) {
+    if (name == "toString" && node.valueArgumentCount == 0 && evaluator.isMemberInClass(method, JAVA_IO_BYTE_ARRAY_OUTPUT_STREAM)) {
       report(context, node, method, JAVA_IO_BYTE_ARRAY_OUTPUT_STREAM)
-    } else if (
-      name == "getBytes" && evaluator.isMemberInClass(method, TYPE_STRING) && !haveCharset(node, 0)
-    ) {
+    } else if (name == "getBytes" && evaluator.isMemberInClass(method, TYPE_STRING) && !haveCharset(node, 0)) {
       val constant = node.receiver?.evaluateString()
       if (constant != null && constant.all { it.code <= 128 }) {
         return
@@ -163,11 +154,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
     return false
   }
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     val qualifiedName = constructor.containingClass?.qualifiedName ?: return
     val evaluator = context.evaluator
     when (qualifiedName) {
@@ -181,10 +168,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
       JAVA_IO_FILE_READER,
       JAVA_IO_FILE_WRITER -> {
         if (!haveCharset(node)) {
-          if (
-            node.valueArgumentCount == 1 &&
-              node.valueArguments[0].getExpressionType()?.canonicalText == JAVA_IO_FILE_DESCRIPTOR
-          ) {
+          if (node.valueArgumentCount == 1 && node.valueArguments[0].getExpressionType()?.canonicalText == JAVA_IO_FILE_DESCRIPTOR) {
             return
           }
           report(context, node, constructor, qualifiedName)
@@ -206,10 +190,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
             // PrintWriter(OutputStream, boolean)
             // PrintWriter(OutputStream, Charset)
             canonicalText.endsWith("Stream") ||
-            evaluator.extendsClass(
-              evaluator.getTypeClass(expressionType),
-              JAVA_IO_OUTPUT_STREAM,
-            )) && !haveCharset(node)
+            evaluator.extendsClass(evaluator.getTypeClass(expressionType), JAVA_IO_OUTPUT_STREAM)) && !haveCharset(node)
         ) {
           report(context, node, constructor, qualifiedName)
         }
@@ -236,31 +217,22 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun report(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    qualifiedName: String,
-  ) {
+  private fun report(context: JavaContext, node: UCallExpression, method: PsiMethod, qualifiedName: String) {
     val charset = if (isKotlin(node.lang)) "Charsets.UTF_8" else "StandardCharsets.UTF_8"
     val typeName = qualifiedName.substringAfterLast('.')
 
     val message =
       when {
         qualifiedName == TYPE_STRING ->
-          "This string will be interpreted with the default system encoding instead of a " +
-            "specific charset which is usually a mistake"
+          "This string will be interpreted with the default system encoding instead of a " + "specific charset which is usually a mistake"
         typeName.startsWith("File") ->
           "This file will be ${
                 if (typeName.endsWith("Writer")) "written" else "read"
                 } with the default system encoding " +
             "instead of a specific charset which is usually a mistake"
         qualifiedName == JAVA_IO_BYTE_ARRAY_OUTPUT_STREAM ->
-          "This string will be decoded with the default system encoding instead of a " +
-            "specific charset which is usually a mistake"
-        else ->
-          "This `$typeName` will use the default system encoding instead of a " +
-            "specific charset which is usually a mistake"
+          "This string will be decoded with the default system encoding instead of a " + "specific charset which is usually a mistake"
+        else -> "This `$typeName` will use the default system encoding instead of a " + "specific charset which is usually a mistake"
       }
 
     val fix = createFix(context, node, method, qualifiedName)
@@ -274,22 +246,12 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
       } else {
         "add `$charset`"
       }
-    val incident =
-      Incident(
-        ISSUE,
-        context.getLocation(node),
-        "$message; ${fixSuggestion?.replaceFirstChar { it.lowercase(Locale.US) }}?",
-      )
+    val incident = Incident(ISSUE, context.getLocation(node), "$message; ${fixSuggestion?.replaceFirstChar { it.lowercase(Locale.US) }}?")
     incident.fix(fix)
     context.report(incident, notAndroidProject())
   }
 
-  private fun createFix(
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    qualifiedName: String,
-  ): LintFix? {
+  private fun createFix(context: JavaContext, node: UCallExpression, method: PsiMethod, qualifiedName: String): LintFix? {
     val fixes = mutableListOf<LintFix>()
     addFix(fixes, context, node, method, qualifiedName)
     return if (fixes.size > 1) {
@@ -299,13 +261,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun addFix(
-    fixes: MutableList<LintFix>,
-    context: JavaContext,
-    node: UCallExpression,
-    method: PsiMethod,
-    qualifiedName: String,
-  ) {
+  private fun addFix(fixes: MutableList<LintFix>, context: JavaContext, node: UCallExpression, method: PsiMethod, qualifiedName: String) {
     val isKotlin = isKotlin(node.lang)
     val name = method.name
     val call = node.methodIdentifier?.name ?: method.name
@@ -318,16 +274,9 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
           // Kotlin: String.getBytes()/String.bytes => String.encodeToByteArray /
           // String.toByteArray(charset)
           if (isKotlin) {
-            val pattern =
-              if (node.methodIdentifier?.name == "bytes") "bytes" else """getBytes\s*\(\s*\)"""
+            val pattern = if (node.methodIdentifier?.name == "bytes") "bytes" else """getBytes\s*\(\s*\)"""
             fixes.add(
-              fix()
-                .name("Replace with `encodeToByteArray()`")
-                .replace()
-                .pattern(pattern)
-                .with("encodeToByteArray()")
-                .shortenNames()
-                .build()
+              fix().name("Replace with `encodeToByteArray()`").replace().pattern(pattern).with("encodeToByteArray()").shortenNames().build()
             )
             fixes.add(
               fix()
@@ -375,8 +324,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
           // Kotlin: java.lang.String(ByteArray) (already using UTF-8), String(ByteArray, CharSet)
           // Can only fix the two signatures that take an extra charset:
           if (
-            evaluator.parametersMatch(method, TYPE_BYTE_ARRAY) ||
-              evaluator.parametersMatch(method, TYPE_BYTE_ARRAY, TYPE_INT, TYPE_INT)
+            evaluator.parametersMatch(method, TYPE_BYTE_ARRAY) || evaluator.parametersMatch(method, TYPE_BYTE_ARRAY, TYPE_INT, TYPE_INT)
           ) {
             addCharsetArgFixes(context, fixes, isKotlin, call)
           }
@@ -401,8 +349,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
         if (fileBased && !evaluator.parameterHasType(method, 0, JAVA_IO_FILE)) {
           return
         }
-        val reading =
-          qualifiedName == JAVA_IO_FILE_READER || qualifiedName == JAVA_IO_INPUT_STREAM_READER
+        val reading = qualifiedName == JAVA_IO_FILE_READER || qualifiedName == JAVA_IO_INPUT_STREAM_READER
         if (isKotlin) {
           val outer = getOuterBufferWrapper(node)
           val rangeNode = outer ?: node
@@ -443,15 +390,11 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
             addCharsetArgFixes(context, fixes, false, call, LanguageLevel.JDK_11)
           } else if (fileBased) {
             val replacement =
-              if (reading)
-                "new $JAVA_IO_INPUT_STREAM_READER(new $JAVA_IO_FILE_INPUT_STREAM(\\k<2>), %1\$s)"
-              else
-                "new $JAVA_IO_OUTPUT_STREAM_WRITER(new $JAVA_IO_FILE_OUTPUT_STREAM(\\k<2>), %1\$s)"
+              if (reading) "new $JAVA_IO_INPUT_STREAM_READER(new $JAVA_IO_FILE_INPUT_STREAM(\\k<2>), %1\$s)"
+              else "new $JAVA_IO_OUTPUT_STREAM_WRITER(new $JAVA_IO_FILE_OUTPUT_STREAM(\\k<2>), %1\$s)"
             val range = context.getLocation(node, LocationType.ALL)
             val oldPattern = """(.*\(\s*([^)]+)\s*\).*)"""
-            val summary =
-              if (reading) "InputStreamReader(FileInputStream("
-              else "OutputStreamWriter(FileOutputStream(..., "
+            val summary = if (reading) "InputStreamReader(FileInputStream(" else "OutputStreamWriter(FileOutputStream(..., "
             fixes.add(
               fix()
                 .name("Replace with `$summary..., UTF8)`")
@@ -506,13 +449,7 @@ class DefaultEncodingDetector : Detector(), SourceCodeScanner {
       val utf8 = if (isKotlin) KOTLIN_UTF8_CHARSET else JAVA_UTF8_CHARSET
       val pattern = """\(\s*(.*)\)"""
       fixes.add(
-        fix()
-          .name("Add charset argument, `$name(..., UTF_8)`")
-          .replace()
-          .pattern(pattern)
-          .with("\\k<1>, $utf8")
-          .shortenNames()
-          .build()
+        fix().name("Add charset argument, `$name(..., UTF_8)`").replace().pattern(pattern).with("\\k<1>, $utf8").shortenNames().build()
       )
       fixes.add(
         fix()

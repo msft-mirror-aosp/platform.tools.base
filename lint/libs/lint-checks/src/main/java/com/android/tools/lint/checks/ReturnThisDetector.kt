@@ -40,8 +40,7 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 /** Makes sure that you return "this" from methods annotated `@ReturnThis`. */
 class ReturnThisDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(ReturnThisDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ReturnThisDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Not returning this from annotated methods */
     @JvmField
@@ -65,8 +64,7 @@ class ReturnThisDetector : Detector(), SourceCodeScanner {
 
   override fun applicableAnnotations(): List<String> = listOf(RETURN_THIS_ANNOTATION)
 
-  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean =
-    type == METHOD_OVERRIDE || type == DEFINITION
+  override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean = type == METHOD_OVERRIDE || type == DEFINITION
 
   override fun visitAnnotationUsage(
     context: JavaContext,
@@ -74,9 +72,7 @@ class ReturnThisDetector : Detector(), SourceCodeScanner {
     annotationInfo: AnnotationInfo,
     usageInfo: AnnotationUsageInfo,
   ) {
-    val method =
-      if (usageInfo.type == DEFINITION) element.getParentOfType<UMethod>(true) ?: return
-      else element as? UMethod ?: return
+    val method = if (usageInfo.type == DEFINITION) element.getParentOfType<UMethod>(true) ?: return else element as? UMethod ?: return
     method.accept(
       object : AbstractUastVisitor() {
         override fun visitReturnExpression(node: UReturnExpression): Boolean {
@@ -87,8 +83,7 @@ class ReturnThisDetector : Detector(), SourceCodeScanner {
 
           val expression = node.returnExpression
           if (expression !is UThisExpression) {
-            val message =
-              "This method should `return this` (because it has been annotated with `@ReturnThis`)"
+            val message = "This method should `return this` (because it has been annotated with `@ReturnThis`)"
             context.report(ISSUE, node, context.getLocation(node), message)
           }
           return super.visitReturnExpression(node)

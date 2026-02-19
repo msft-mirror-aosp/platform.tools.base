@@ -23,27 +23,22 @@ import com.android.build.gradle.internal.component.features.RenderscriptCreation
 import com.android.build.gradle.internal.component.features.ShadersCreationConfig
 
 /**
- * CreationConfig for variants that produces an artifact that is directly install-able to devices
- * like APKs or AABs or used by other projects as a versioned reusable logic like AARs.
+ * CreationConfig for variants that produces an artifact that is directly install-able to devices like APKs or AABs or used by other
+ * projects as a versioned reusable logic like AARs.
  */
-interface ConsumableCreationConfig: ComponentCreationConfig {
-    val packaging: Packaging
+interface ConsumableCreationConfig : ComponentCreationConfig {
+  val packaging: Packaging
 
-    val optimizationCreationConfig: OptimizationCreationConfig
+  val optimizationCreationConfig: OptimizationCreationConfig
 
-    /**
-     * Returns true if the [com.android.build.gradle.internal.tasks.JacocoTask] should be created
-     * for this component.
-     */
-    val requiresJacocoTransformation: Boolean
+  /** Returns true if the [com.android.build.gradle.internal.tasks.JacocoTask] should be created for this component. */
+  val requiresJacocoTransformation: Boolean
 
-    /**
-     * Used by lint to run checks related to core library desugaring.
-     */
-    val isCoreLibraryDesugaringEnabledLintCheck: Boolean
+  /** Used by lint to run checks related to core library desugaring. */
+  val isCoreLibraryDesugaringEnabledLintCheck: Boolean
 
-    // optional features
-    val renderscriptCreationConfig: RenderscriptCreationConfig?
-    val shadersCreationConfig: ShadersCreationConfig?
-    val nativeBuildCreationConfig: NativeBuildCreationConfig?
+  // optional features
+  val renderscriptCreationConfig: RenderscriptCreationConfig?
+  val shadersCreationConfig: ShadersCreationConfig?
+  val nativeBuildCreationConfig: NativeBuildCreationConfig?
 }

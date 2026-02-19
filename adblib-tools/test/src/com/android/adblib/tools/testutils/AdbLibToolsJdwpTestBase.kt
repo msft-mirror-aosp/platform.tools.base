@@ -29,7 +29,6 @@ import com.android.adblib.tools.debugging.impl.AbstractJdwpProcess
 import com.android.adblib.tools.debugging.impl.JdwpProcessManager
 import com.android.adblib.tools.debugging.impl.JdwpProcessSessionFinder
 import com.android.adblib.tools.debugging.impl.addJdwpProcessSessionFinder
-import com.android.adblib.tools.debugging.jdwpProcessFlow
 import com.android.adblib.tools.debugging.jdwpProcessTracker
 import com.android.adblib.tools.debugging.jdwpProxySocketServer
 import com.android.adblib.tools.debugging.packets.JdwpPacketView
@@ -48,199 +47,163 @@ import com.android.adblib.waitForDevice
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.io.EOFException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.transform
-import java.io.EOFException
-import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 
 open class AdbLibToolsJdwpTestBase : AdbLibToolsTestBase() {
-    protected class JdwpProxySessionInfo(
-        val fakeDevice: DeviceState,
-        val process: JdwpProcess,
-        val debuggerJdwpSession: JdwpSession
-    )
+  protected class JdwpProxySessionInfo(val fakeDevice: DeviceState, val process: JdwpProcess, val debuggerJdwpSession: JdwpSession)
 
-    protected suspend fun createJdwpProxySession(pid: Int): JdwpProxySessionInfo {
-        val deviceID = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceID,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-        fakeDevice.startClient(pid, 0, "a.b.c", false)
-        val process =
-            connectedDevice.jdwpProcessFlow.map { processes -> processes.find { it.pid == pid } }
-                .filterNotNull()
-                .first()
-        CoroutineTestUtils.yieldUntil {
-             process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.hasValue &&
-                    process.properties.processName.hasValue
-        }
-        val jdwpSession = attachDebuggerSession(process)
-        return JdwpProxySessionInfo(
-            fakeDevice = fakeDevice,
-            process = process,
-            debuggerJdwpSession = jdwpSession
-        )
+  protected suspend fun createJdwpProxySession(pid: Int): JdwpProxySessionInfo {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(30), // SDK >= 30 is required for abb_exec feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    val connectedDevice = session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+    fakeDevice.startClient(pid, 0, "a.b.c", false)
+    val process =
+      connectedDevice.jdwpProcessTracker.processesFlow.map { processes -> processes.find { it.pid == pid } }.filterNotNull().first()
+    CoroutineTestUtils.yieldUntil {
+      process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.hasValue && process.properties.processName.hasValue
     }
+    val jdwpSession = attachDebuggerSession(process)
+    return JdwpProxySessionInfo(fakeDevice = fakeDevice, process = process, debuggerJdwpSession = jdwpSession)
+  }
 
-    protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
-        process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress.hasValue }
-        val clientSocket = registerCloseable(
-            session.channelFactory.connectSocket(
-                process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.getOrThrow()
-            )
-        )
-        return registerCloseable(
-            JdwpSession.wrapSocketChannel(
-                process.device,
-                clientSocket,
-                process.pid,
-                2_000
-            )
-        )
-    }
+  protected suspend fun attachDebuggerSession(process: JdwpProcess): JdwpSession {
+    process.jdwpProxySocketServer.proxyStatusFlow.first { it.socketAddress.hasValue }
+    val clientSocket =
+      registerCloseable(
+        session.channelFactory.connectSocket(process.jdwpProxySocketServer.proxyStatusFlow.value.socketAddress.getOrThrow())
+      )
+    return registerCloseable(JdwpSession.wrapSocketChannel(process.device, clientSocket, process.pid, 2_000))
+  }
 
-    protected fun createVmVersionPacket(jdwpSession: JdwpSession): JdwpPacketView {
-        val packet = MutableJdwpPacket()
-        packet.id = jdwpSession.nextPacketId()
-        packet.length = 11
-        packet.isCommand = true
-        packet.cmdSet = JdwpCommands.CmdSet.SET_VM.value
-        packet.cmd = JdwpCommands.VmCmd.CMD_VM_VERSION.value
-        return packet
-    }
+  protected fun createVmVersionPacket(jdwpSession: JdwpSession): JdwpPacketView {
+    val packet = MutableJdwpPacket()
+    packet.id = jdwpSession.nextPacketId()
+    packet.length = 11
+    packet.isCommand = true
+    packet.cmdSet = JdwpCommands.CmdSet.SET_VM.value
+    packet.cmd = JdwpCommands.VmCmd.CMD_VM_VERSION.value
+    return packet
+  }
 
-    protected suspend fun sendVmVersionPacket(jdwpSession: JdwpSession): JdwpPacketView {
-        return coroutineScope {
-            val packet = createVmVersionPacket(jdwpSession)
+  protected suspend fun sendVmVersionPacket(jdwpSession: JdwpSession): JdwpPacketView {
+    return coroutineScope {
+      val packet = createVmVersionPacket(jdwpSession)
 
-            val reply = async {
-                val replyPacket: JdwpPacketView
-                while (true) {
-                    val r = jdwpSession.receivePacket()
-                    if (r.id == packet.id) {
-                        replyPacket = r
-                        break
-                    }
-                }
-                replyPacket
-            }
-
-            jdwpSession.sendPacket(packet)
-            reply.await()
-        }
-    }
-
-    protected suspend fun createDdmsHeloPacket(jdwpSession: JdwpSession): JdwpPacketView {
-        val heloChunk = EphemeralDdmsChunk(
-            type = DdmsChunkType.HELO,
-            length = 0,
-            payloadProvider = PayloadProvider.emptyPayload()
-        )
-
-        val packet = MutableJdwpPacket()
-        packet.id = jdwpSession.nextPacketId()
-        packet.length = 11 + 8
-        packet.isCommand = true
-        packet.cmdSet = DdmsPacketConstants.DDMS_CMD_SET
-        packet.cmd = DdmsPacketConstants.DDMS_CMD
-        packet.payloadProvider =
-            PayloadProvider.forInputChannel(heloChunk.toRewindableInputChannel())
-        return packet
-    }
-
-    private suspend fun DdmsChunkView.toRewindableInputChannel(): AdbRewindableInputChannel {
-        val workBuffer = ResizableBuffer()
-        val outputChannel = ByteBufferAdbOutputChannel(workBuffer)
-        this.writeToChannel(outputChannel)
-        val serializedChunk = workBuffer.forChannelWrite()
-        return AdbRewindableInputChannel.forByteBuffer(serializedChunk)
-    }
-
-    protected fun JdwpSession.receivedPacketFlow() = flow {
+      val reply = async {
+        val replyPacket: JdwpPacketView
         while (true) {
-            val packet = try {
-                this@receivedPacketFlow.receivePacket()
-            } catch (e: EOFException) {
-                // Reached EOF, flow terminates
-                break
-            }
-            emit(packet)
+          val r = jdwpSession.receivePacket()
+          if (r.id == packet.id) {
+            replyPacket = r
+            break
+          }
         }
-    }
+        replyPacket
+      }
 
-    internal fun JdwpProcessManager.getProcess(pid: Int): AbstractJdwpProcess {
-        return this.addProcesses(setOf(pid))[pid]!! as AbstractJdwpProcess
+      jdwpSession.sendPacket(packet)
+      reply.await()
     }
+  }
 
-    /**
-     * Return a new "child" [AdbSession] of this [AdbSession]. A "child" session delegates JDWP
-     * facilities to its parent session (see [JdwpProcessSessionFinder]).
-     */
-    protected fun AdbSession.createDelegatingChildSession(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
-        val childSession = AdbSession.createChildSession(
-            this,
-            fakeAdbRule.host,
-            fakeAdbRule.fakeAdb.createChannelProvider(fakeAdbRule.host)
-        )
-        childSession.addJdwpProcessSessionFinder(object : JdwpProcessSessionFinder {
-            override fun findDelegateSession(forSession: AdbSession): AdbSession {
-                return if (forSession == childSession) {
-                    this@createDelegatingChildSession
-                } else {
-                    forSession
-                }
-            }
-        })
-        return childSession
-    }
+  protected suspend fun createDdmsHeloPacket(jdwpSession: JdwpSession): JdwpPacketView {
+    val heloChunk = EphemeralDdmsChunk(type = DdmsChunkType.HELO, length = 0, payloadProvider = PayloadProvider.emptyPayload())
 
-    /**
-     * Given [sourceProcess], a [JdwpProcess] in a given [AdbSession], waits for and returns
-     * a [JdwpProcess] instance from this [AdbSession] that has the same process ID as
-     * [sourceProcess]. Typically, the wait should be small, as it is only intended to take
-     * into account the fact that [AdbSession] instances are notified of new [JdwpProcess]
-     * instances asynchronously.
-     *
-     * This method is intended to be used in conjunction with [createDelegatingChildSession].
-     */
-    protected suspend fun AdbSession.awaitJdwpProcess(sourceProcess: JdwpProcess): JdwpProcess {
-        // Find the device in this session, then look for process with same pid
-        val sessionDevice = connectedDevicesTracker.waitForDevice(sourceProcess.device.serialNumber)
-        return sessionDevice.jdwpProcessTracker.processesFlow.transform { processList ->
-            processList.firstOrNull { it.pid == sourceProcess.pid }?.also {
-                emit(it)
-            }
-        }.first()
-    }
+    val packet = MutableJdwpPacket()
+    packet.id = jdwpSession.nextPacketId()
+    packet.length = 11 + 8
+    packet.isCommand = true
+    packet.cmdSet = DdmsPacketConstants.DDMS_CMD_SET
+    packet.cmd = DdmsPacketConstants.DDMS_CMD
+    packet.payloadProvider = PayloadProvider.forInputChannel(heloChunk.toRewindableInputChannel())
+    return packet
+  }
 
-    internal suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
-        val fakeAdb = this
-        val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
-        return session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-    }
+  private suspend fun DdmsChunkView.toRewindableInputChannel(): AdbRewindableInputChannel {
+    val workBuffer = ResizableBuffer()
+    val outputChannel = ByteBufferAdbOutputChannel(workBuffer)
+    this.writeToChannel(outputChannel)
+    val serializedChunk = workBuffer.forChannelWrite()
+    return AdbRewindableInputChannel.forByteBuffer(serializedChunk)
+  }
 
-    internal suspend fun ConnectedDevice.createFakeAdbProcess(
-        pid: Int = 10,
-        waitForDebugger: Boolean = false
-    ): ClientState {
-        return fakeAdb.device(serialNumber).startClient(
-            pid = pid,
-            userId = 2,
-            processName = "p1",
-            packageName = "pkg",
-            isWaiting = waitForDebugger
-        )
+  protected fun JdwpSession.receivedPacketFlow() = flow {
+    while (true) {
+      val packet =
+        try {
+          this@receivedPacketFlow.receivePacket()
+        } catch (e: EOFException) {
+          // Reached EOF, flow terminates
+          break
+        }
+      emit(packet)
     }
+  }
+
+  internal fun JdwpProcessManager.getProcess(pid: Int): AbstractJdwpProcess {
+    return this.addProcesses(setOf(pid))[pid]!! as AbstractJdwpProcess
+  }
+
+  /**
+   * Return a new "child" [AdbSession] of this [AdbSession]. A "child" session delegates JDWP facilities to its parent session (see
+   * [JdwpProcessSessionFinder]).
+   */
+  protected fun AdbSession.createDelegatingChildSession(fakeAdbRule: FakeAdbServerProviderRule): AdbSession {
+    val childSession = AdbSession.createChildSession(this, fakeAdbRule.host, fakeAdbRule.fakeAdb.createChannelProvider(fakeAdbRule.host))
+    childSession.addJdwpProcessSessionFinder(
+      object : JdwpProcessSessionFinder {
+        override fun findDelegateSession(forSession: AdbSession): AdbSession {
+          return if (forSession == childSession) {
+            this@createDelegatingChildSession
+          } else {
+            forSession
+          }
+        }
+      }
+    )
+    return childSession
+  }
+
+  /**
+   * Given [sourceProcess], a [JdwpProcess] in a given [AdbSession], waits for and returns a [JdwpProcess] instance from this [AdbSession]
+   * that has the same process ID as [sourceProcess]. Typically, the wait should be small, as it is only intended to take into account the
+   * fact that [AdbSession] instances are notified of new [JdwpProcess] instances asynchronously.
+   *
+   * This method is intended to be used in conjunction with [createDelegatingChildSession].
+   */
+  protected suspend fun AdbSession.awaitJdwpProcess(sourceProcess: JdwpProcess): JdwpProcess {
+    // Find the device in this session, then look for process with same pid
+    val sessionDevice = connectedDevicesTracker.waitForDevice(sourceProcess.device.serialNumber)
+    return sessionDevice.jdwpProcessTracker.processesFlow
+      .transform { processList -> processList.firstOrNull { it.pid == sourceProcess.pid }?.also { emit(it) } }
+      .first()
+  }
+
+  internal suspend fun FakeAdbServerProvider.addDevice(deviceApi: Int = 30): ConnectedDevice {
+    val fakeAdb = this
+    val fakeDevice = addFakeDevice(fakeAdb, deviceApi)
+    return session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  }
+
+  internal suspend fun ConnectedDevice.createFakeAdbProcess(pid: Int = 10, waitForDebugger: Boolean = false): ClientState {
+    return fakeAdb
+      .device(serialNumber)
+      .startClient(pid = pid, userId = 2, processName = "p1", packageName = "pkg", isWaiting = waitForDebugger)
+  }
 }

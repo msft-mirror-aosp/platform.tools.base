@@ -18,120 +18,99 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.variant.SourceDirectories
 import com.android.build.gradle.internal.services.VariantServices
+import java.io.File
 import org.gradle.api.file.ConfigurableFileTree
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.util.PatternFilterable
-import java.io.File
 
 /**
  * A set of source directories for a specific [SourceType]
  *
  * @param _name name of the source directories, as returned by [SourceType.name]
  * @param variantServices the variant's [VariantServices]
- * @param variantDslFilters filters set on the variant specific source directory in the DSL, may be null if
- * the is no variant specific source directory.
+ * @param variantDslFilters filters set on the variant specific source directory in the DSL, may be null if the is no variant specific
+ *   source directory.
  */
-open class FlatSourceDirectoriesImpl(
-    _name: String,
-    protected val variantServices: VariantServices,
-    variantDslFilters: PatternFilterable?
-): SourceDirectoriesImpl(_name, variantServices, variantDslFilters),
-    SourceDirectories.Flat {
+open class FlatSourceDirectoriesImpl(_name: String, protected val variantServices: VariantServices, variantDslFilters: PatternFilterable?) :
+  SourceDirectoriesImpl(_name, variantServices, variantDslFilters), SourceDirectories.Flat {
 
-    // For compatibility with the old variant API, we must allow reading the content of this list
-    // before it is finalized.
-    internal val variantSources = variantServices.newListPropertyForInternalUse(
-        type = DirectoryEntry::class.java,
-    )
+  // For compatibility with the old variant API, we must allow reading the content of this list
+  // before it is finalized.
+  internal val variantSources = variantServices.newListPropertyForInternalUse(type = DirectoryEntry::class.java)
 
-    // this will contain all the directories
-    internal val directories = variantServices.newListPropertyForInternalUse(
-        type = Directory::class.java,
-    )
+  // this will contain all the directories
+  internal val directories = variantServices.newListPropertyForInternalUse(type = Directory::class.java)
 
-    // this will contain only non generated directories - having list to preserve order
-    private val staticDirectories = variantServices.newListPropertyForInternalUse(
-        type = Directory::class.java,
-    )
+  // this will contain only non generated directories - having list to preserve order
+  private val staticDirectories = variantServices.newListPropertyForInternalUse(type = Directory::class.java)
 
-    override val all: Provider<out Collection<Directory>> = directories
+  override val all: Provider<out Collection<Directory>> = directories
 
-    override val static: Provider<out Collection<Directory>> = staticDirectories
+  override val static: Provider<out Collection<Directory>> = staticDirectories
 
-    //
-    // Internal APIs.
-    //
-    override fun addSource(directoryEntry: DirectoryEntry){
-        variantSources.add(directoryEntry)
-        directoryEntry.addTo(variantServices.projectInfo.projectDirectory, directories)
+  //
+  // Internal APIs.
+  //
+  override fun addSource(directoryEntry: DirectoryEntry) {
+    variantSources.add(directoryEntry)
+    directoryEntry.addTo(variantServices.projectInfo.projectDirectory, directories)
+  }
+
+  override fun addStaticSource(directoryEntry: DirectoryEntry) {
+    if (directoryEntry.isGenerated)
+      throw IllegalArgumentException("The task ${directoryEntry.name} is generating code and should not be added as a Static source")
+
+    addSource(directoryEntry)
+    directoryEntry.addTo(variantServices.projectInfo.projectDirectory, staticDirectories)
+  }
+
+  internal fun getAsFileTrees(): Provider<List<Provider<List<ConfigurableFileTree>>>> {
+    val fileTreeFactory = variantServices.fileTreeFactory()
+    return variantSources.map { entries: MutableList<DirectoryEntry> ->
+      entries.map { sourceDirectory -> sourceDirectory.asFileTree(fileTreeFactory) }
     }
+  }
 
-    override fun addStaticSource(directoryEntry: DirectoryEntry){
-        if (directoryEntry.isGenerated) throw IllegalArgumentException(
-            "The task ${directoryEntry.name} is generating code and should not be added as a Static source")
+  /**
+   * version of the [getAsFileTrees] for consumers that are resolving the content during configuration time, see b/259343260
+   *
+   * New code MUST NOT call this method.
+   */
+  internal fun getAsFileTreesForOldVariantAPI(): Provider<List<ConfigurableFileTree>> {
+    val fileTreeFactory = variantServices.fileTreeFactory()
+    return variantSources.map { entries: MutableList<DirectoryEntry> ->
+      entries.map { sourceDirectory -> sourceDirectory.asFileTreeWithoutTaskDependency(fileTreeFactory) }.flatten()
+    }
+  }
 
+  internal fun getVariantSources(): List<DirectoryEntry> = variantSources.get()
+
+  internal fun addStaticOrGeneratedSources(sourceDirectories: Iterable<DirectoryEntry>) {
+    sourceDirectories.forEach { directoryEntry ->
+      if (directoryEntry.isGenerated) {
         addSource(directoryEntry)
-        directoryEntry.addTo(variantServices.projectInfo.projectDirectory,staticDirectories)
+      } else {
+        addStaticSource(directoryEntry)
+      }
     }
+  }
 
-    internal fun getAsFileTrees(): Provider<List<Provider<List<ConfigurableFileTree>>>> {
-        val fileTreeFactory = variantServices.fileTreeFactory()
-        return variantSources.map { entries: MutableList<DirectoryEntry> ->
-            entries.map { sourceDirectory ->
-                sourceDirectory.asFileTree(fileTreeFactory)
-            }
-        }
-    }
+  /*
+   * Internal API that can only be used by the model.
+   */
+  override fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean): List<File> =
+    variantSourcesFileCollectionForModel(filter).files.toList()
 
-    /**
-     * version of the [getAsFileTrees] for consumers that are resolving the content during
-     * configuration time, see b/259343260
-     *
-     * New code MUST NOT call this method.
-     *
-     */
-    internal fun getAsFileTreesForOldVariantAPI(): Provider<List<ConfigurableFileTree>> {
-        val fileTreeFactory = variantServices.fileTreeFactory()
-        return variantSources.map { entries: MutableList<DirectoryEntry> ->
-            entries.map { sourceDirectory ->
-                sourceDirectory.asFileTreeWithoutTaskDependency(fileTreeFactory)
-            }.flatten()
-        }
-    }
+  internal fun variantSourcesFileCollectionForModel(filter: (DirectoryEntry) -> Boolean): FileCollection {
+    val fileCollection = variantServices.fileCollection()
+    variantSources.get().filter { filter.invoke(it) }.forEach { it.addTo(variantServices.projectInfo.projectDirectory, fileCollection) }
+    fileCollection.disallowChanges()
+    return fileCollection
+  }
 
-    internal fun getVariantSources(): List<DirectoryEntry> = variantSources.get()
-
-    internal fun addStaticOrGeneratedSources(sourceDirectories: Iterable<DirectoryEntry>) {
-        sourceDirectories.forEach { directoryEntry ->
-            if (directoryEntry.isGenerated) {
-                addSource(directoryEntry)
-            } else {
-                addStaticSource(directoryEntry)
-            }
-        }
-    }
-    /*
-     * Internal API that can only be used by the model.
-     */
-    override fun variantSourcesForModel(filter: (DirectoryEntry) -> Boolean ): List<File> =
-        variantSourcesFileCollectionForModel(filter).files.toList()
-
-    internal fun variantSourcesFileCollectionForModel(
-        filter: (DirectoryEntry) -> Boolean
-    ): FileCollection {
-        val fileCollection = variantServices.fileCollection()
-        variantSources.get()
-            .filter { filter.invoke(it) }
-            .forEach {
-                it.addTo(variantServices.projectInfo.projectDirectory, fileCollection)
-            }
-        fileCollection.disallowChanges()
-        return fileCollection
-    }
-
-    override fun forAllSources(action:(DirectoryEntry) -> Unit) {
-        getVariantSources().forEach(action::invoke)
-    }
+  override fun forAllSources(action: (DirectoryEntry) -> Unit) {
+    getVariantSources().forEach(action::invoke)
+  }
 }

@@ -29,119 +29,107 @@ import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformAarMetadataTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":shared") { }
+  @get:Rule val rule = GradleRule.from { androidKotlinMultiplatformLibrary(":shared") {} }
+
+  @Test
+  fun testBasic() {
+    rule.build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:assembleAndroidMain")
+    rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
+      aarMetadata {
+        formatVersion().isEqualTo("1.0")
+        metadataVersion().isEqualTo("1.0")
+        minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
+        minAgpVersion().isEqualTo("1.0.0")
+        minCompileSdkExtension().isEqualTo("0")
+        coreLibraryDesugaringEnabled().isEqualTo("false")
+        desugarJdkLibId().isNull()
+      }
     }
+  }
 
-    @Test
-    fun testBasic() {
-        rule.build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:assembleAndroidMain")
-        rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
-            aarMetadata {
-                formatVersion().isEqualTo("1.0")
-                metadataVersion().isEqualTo("1.0")
-                minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
-                minAgpVersion().isEqualTo("1.0.0")
-                minCompileSdkExtension().isEqualTo("0")
-                coreLibraryDesugaringEnabled().isEqualTo("false")
-                desugarJdkLibId().isNull()
-            }
+  @Test
+  fun testDsl() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":shared") {
+          android {
+            aarMetadata.minCompileSdk = 27
+            aarMetadata.minAgpVersion = "3.0.0"
+            aarMetadata.minCompileSdkExtension = 2
+          }
         }
+      }
+
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:assembleAndroidMain")
+    build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
+      aarMetadata {
+        minCompileSdk().isEqualTo("27")
+        minAgpVersion().isEqualTo("3.0.0")
+        minCompileSdkExtension().isEqualTo("2")
+        coreLibraryDesugaringEnabled().isEqualTo("false")
+        desugarJdkLibId().isNull()
+      }
     }
+  }
 
-    @Test
-    fun testDsl() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":shared") {
-                android {
-                    aarMetadata.minCompileSdk = 27
-                    aarMetadata.minAgpVersion = "3.0.0"
-                    aarMetadata.minCompileSdkExtension = 2
-                }
-            }
-        }
+  @Test
+  fun testCompileSdkPreview() {
+    val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdkPreview = "Tiramisu" } } }
 
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:assembleAndroidMain")
-        build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
-            aarMetadata {
-                minCompileSdk().isEqualTo("27")
-                minAgpVersion().isEqualTo("3.0.0")
-                minCompileSdkExtension().isEqualTo("2")
-                coreLibraryDesugaringEnabled().isEqualTo("false")
-                desugarJdkLibId().isNull()
-            }
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:writeAndroidMainAarMetadata")
+
+    val aarMetadataFile =
+      build
+        .kotlinMultiplatformLibrary(":shared")
+        .resolve(InternalArtifactType.AAR_METADATA)
+        .resolve("androidMain/writeAndroidMainAarMetadata/${AarMetadataTask.AAR_METADATA_FILE_NAME}")
+
+    AarMetadataSubject.assertThat(aarMetadataFile) { forceCompileSdkPreview().isEqualTo("Tiramisu") }
+  }
+
+  @Test
+  fun testVariantApi() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":shared") {
+          android {
+            aarMetadata.minCompileSdk = 26
+            aarMetadata.minAgpVersion = "2.0.0"
+            aarMetadata.minCompileSdkExtension = 1
+          }
+          pluginCallbacks += Callback::class.java
         }
+      }
+
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:assembleAndroidMain")
+    build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
+      aarMetadata {
+        minCompileSdk().isEqualTo("27")
+        minAgpVersion().isEqualTo("3.0.0")
+        minCompileSdkExtension().isEqualTo("2")
+        coreLibraryDesugaringEnabled().isEqualTo("false")
+        desugarJdkLibId().isNull()
+      }
     }
+  }
 
-    @Test
-    fun testCompileSdkPreview() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":shared") {
-                android {
-                    compileSdkPreview = "Tiramisu"
-                }
-            }
+  class Callback : AndroidKotlinMultiplatformLibraryComponentCallback {
+    override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {
+      extension.apply {
+        onVariants(selector().all()) {
+          it.aarMetadata.minCompileSdk.set(27)
+          it.aarMetadata.minAgpVersion.set("3.0.0")
+          it.aarMetadata.minCompileSdkExtension.set(2)
         }
-
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:writeAndroidMainAarMetadata")
-
-        val aarMetadataFile = build.kotlinMultiplatformLibrary(":shared")
-            .resolve(InternalArtifactType.AAR_METADATA)
-            .resolve("androidMain/writeAndroidMainAarMetadata/${AarMetadataTask.AAR_METADATA_FILE_NAME}")
-
-        AarMetadataSubject.assertThat(aarMetadataFile) {
-            forceCompileSdkPreview().isEqualTo("Tiramisu")
-        }
+      }
     }
-
-    @Test
-    fun testVariantApi() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":shared") {
-                android {
-                    aarMetadata.minCompileSdk = 26
-                    aarMetadata.minAgpVersion = "2.0.0"
-                    aarMetadata.minCompileSdkExtension = 1
-                }
-                pluginCallbacks += Callback::class.java
-            }
-        }
-
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:assembleAndroidMain")
-        build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
-            aarMetadata {
-                minCompileSdk().isEqualTo("27")
-                minAgpVersion().isEqualTo("3.0.0")
-                minCompileSdkExtension().isEqualTo("2")
-                coreLibraryDesugaringEnabled().isEqualTo("false")
-                desugarJdkLibId().isNull()
-            }
-        }
-    }
-
-    class Callback: AndroidKotlinMultiplatformLibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: KotlinMultiplatformAndroidComponentsExtension
-        ) {
-            extension.apply {
-                onVariants(selector().all()) {
-                    it.aarMetadata.minCompileSdk.set(27)
-                    it.aarMetadata.minAgpVersion.set("3.0.0")
-                    it.aarMetadata.minCompileSdkExtension.set(2)
-                }
-            }
-        }
-    }
-
-
+  }
 }

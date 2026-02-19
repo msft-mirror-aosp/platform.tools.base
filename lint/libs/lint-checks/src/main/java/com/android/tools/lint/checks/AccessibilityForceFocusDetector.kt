@@ -32,10 +32,7 @@ import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
-/**
- * Reports calls to
- * `View.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, ...)`.
- */
+/** Reports calls to `View.performAccessibilityAction(AccessibilityNodeInfo.ACTION_ACCESSIBILITY_FOCUS, ...)`. */
 class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames() = listOf("performAccessibilityAction")
@@ -43,12 +40,10 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
 
     fun isViewMethod(methodName: String, vararg argumentTypes: String): Boolean =
-      method.name == methodName &&
-        context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
+      method.name == methodName && context.evaluator.methodMatches(method, CLASS_VIEW, allowInherit = true, *argumentTypes)
 
     when {
-      isViewMethod("performAccessibilityAction", TYPE_INT, CLASS_BUNDLE) ->
-        checkPerformAccessibilityAction(context, node)
+      isViewMethod("performAccessibilityAction", TYPE_INT, CLASS_BUNDLE) -> checkPerformAccessibilityAction(context, node)
     }
   }
 
@@ -72,9 +67,7 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
       var referencesFocus = false
       this.accept(
         object : AbstractUastVisitor() {
-          override fun visitSimpleNameReferenceExpression(
-            node: USimpleNameReferenceExpression
-          ): Boolean {
+          override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
             if (node.identifier == "ACTION_ACCESSIBILITY_FOCUS") {
               referencesFocus = true
               // Stop visiting.
@@ -115,8 +108,7 @@ class AccessibilityForceFocusDetector : Detector(), SourceCodeScanner {
         category = Category.A11Y,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(AccessibilityForceFocusDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(AccessibilityForceFocusDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
       )
   }

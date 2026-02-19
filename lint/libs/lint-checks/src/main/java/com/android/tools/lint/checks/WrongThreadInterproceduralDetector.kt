@@ -39,11 +39,7 @@ import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiVariable
 import java.util.EnumSet
 
-data class AnnotatedCallPath(
-  val contextualNodes: List<ContextualEdge>,
-  val sourceAnnotation: String,
-  val sinkAnnotation: String,
-)
+data class AnnotatedCallPath(val contextualNodes: List<ContextualEdge>, val sourceAnnotation: String, val sinkAnnotation: String)
 
 /** Returns a collection of call paths that violate thread annotations found in source code. */
 // public because accessed from tools/adt/idea tests
@@ -53,17 +49,12 @@ fun searchForInterproceduralThreadAnnotationViolations(
 ): Collection<AnnotatedCallPath> {
 
   fun PsiModifierListOwner.isAnnotatedWith(annotation: String) =
-    AnnotationUtil.isAnnotated(
-      this,
-      annotation,
-      AnnotationUtil.CHECK_HIERARCHY xor AnnotationUtil.CHECK_EXTERNAL,
-    )
+    AnnotationUtil.isAnnotated(this, annotation, AnnotationUtil.CHECK_HIERARCHY xor AnnotationUtil.CHECK_EXTERNAL)
 
   fun CallTarget.isAnnotatedWith(annotation: String) =
     when (this) {
       is CallTarget.Method -> {
-        element.isAnnotatedWith(annotation) ||
-          element.javaPsi.containingClass?.isAnnotatedWith(annotation) ?: false
+        element.isAnnotatedWith(annotation) || element.javaPsi.containingClass?.isAnnotatedWith(annotation) ?: false
       }
       is CallTarget.Lambda -> element.uAnnotations.any { it.qualifiedName == annotation }
       is CallTarget.DefaultCtor -> element.isAnnotatedWith(annotation)
@@ -72,8 +63,7 @@ fun searchForInterproceduralThreadAnnotationViolations(
   val contextualGraph = callGraph.buildContextualCallGraph(receiverEval)
   val uiSearchNodes =
     contextualGraph.contextualNodes.filter {
-      it.node.target.isAnnotatedWith(UI_THREAD_ANNOTATION.oldName()) ||
-        it.node.target.isAnnotatedWith(UI_THREAD_ANNOTATION.newName())
+      it.node.target.isAnnotatedWith(UI_THREAD_ANNOTATION.oldName()) || it.node.target.isAnnotatedWith(UI_THREAD_ANNOTATION.newName())
     }
   val workerSearchNodes =
     contextualGraph.contextualNodes.filter {
@@ -105,15 +95,10 @@ fun searchForInterproceduralThreadAnnotationViolations(
         target?.let { ContextualNode(callGraph.getNode(it.element), ParamContext.EMPTY) }
       }
 
-  val allUiSearchNodes =
-    uiSearchNodes +
-      paramSearchNodes(UI_THREAD_ANNOTATION.oldName()) +
-      paramSearchNodes(UI_THREAD_ANNOTATION.newName())
+  val allUiSearchNodes = uiSearchNodes + paramSearchNodes(UI_THREAD_ANNOTATION.oldName()) + paramSearchNodes(UI_THREAD_ANNOTATION.newName())
 
   val allWorkerSearchNodes =
-    workerSearchNodes +
-      paramSearchNodes(WORKER_THREAD_ANNOTATION.oldName()) +
-      paramSearchNodes(WORKER_THREAD_ANNOTATION.newName())
+    workerSearchNodes + paramSearchNodes(WORKER_THREAD_ANNOTATION.oldName()) + paramSearchNodes(WORKER_THREAD_ANNOTATION.newName())
 
   val uiThreadAnnotationName = UI_THREAD_ANNOTATION.defaultName().substringAfterLast(".")
   val workerThreadAnnotationName = WORKER_THREAD_ANNOTATION.defaultName().substringAfterLast(".")
@@ -135,11 +120,7 @@ class WrongThreadInterproceduralDetector : Detector(), SourceCodeScanner {
   override fun isCallGraphRequired(): Boolean = true
 
   override fun analyzeCallGraph(context: Context, callGraph: CallGraphResult) {
-    val badPaths =
-      searchForInterproceduralThreadAnnotationViolations(
-        callGraph.callGraph,
-        callGraph.receiverEval,
-      )
+    val badPaths = searchForInterproceduralThreadAnnotationViolations(callGraph.callGraph, callGraph.receiverEval)
     for ((searchNodes, sourceAnnotation, sinkAnnotation) in badPaths) {
       if (searchNodes.size == 1) {
         // This means that a node in the graph was annotated with both UiThread and
@@ -150,12 +131,10 @@ class WrongThreadInterproceduralDetector : Detector(), SourceCodeScanner {
       val pathBeginning = second.cause
       val parser = context.client.getUastParser(context.project)
       val location = parser.createLocation(pathBeginning)
-      val pathStr =
-        searchNodes.joinToString(separator = " -> ") { it.contextualNode.node.shortName }
+      val pathStr = searchNodes.joinToString(separator = " -> ") { it.contextualNode.node.shortName }
       val sourceStr = sourceAnnotation.substringAfterLast('.')
       val sinkStr = sinkAnnotation.substringAfterLast('.')
-      val message =
-        "Interprocedural thread annotation violation " + "($sourceStr to $sinkStr):\n$pathStr"
+      val message = "Interprocedural thread annotation violation " + "($sourceStr to $sinkStr):\n$pathStr"
       context.report(ISSUE, location, message, null)
     }
   }
@@ -172,18 +151,13 @@ class WrongThreadInterproceduralDetector : Detector(), SourceCodeScanner {
                 in the program. Tracks the flow of instantiated types and lambda \
                 expressions to increase accuracy across method boundaries.
                 """,
-        moreInfo =
-          "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
+        moreInfo = "https://developer.android.com/guide/components/processes-and-threads.html#Threads",
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
         enabledByDefault = false,
         androidSpecific = true,
-        implementation =
-          Implementation(
-            WrongThreadInterproceduralDetector::class.java,
-            EnumSet.of(Scope.ALL_JAVA_FILES),
-          ),
+        implementation = Implementation(WrongThreadInterproceduralDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES)),
       )
   }
 }

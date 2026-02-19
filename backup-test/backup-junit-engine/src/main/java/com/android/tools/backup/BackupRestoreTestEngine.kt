@@ -18,17 +18,17 @@ package com.android.tools.backup
 
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.ExecutionRequest
-import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 class BackupRestoreTestEngine : TestEngine {
-    override fun getId(): String = "backup-restore-test-engine"
+  override fun getId(): String = "backup-restore-test-engine"
 
-    override fun discover(request: EngineDiscoveryRequest, id: UniqueId): TestDescriptor {
-        return EngineDescriptor(id, "Backup Restore Test Engine")
-    }
+  override fun discover(request: EngineDiscoveryRequest, id: UniqueId): TestDescriptor {
+    return EngineDescriptor(id, "Backup Restore Test Engine")
+  }
 
-    override fun execute(request: ExecutionRequest) {}
+  override fun execute(request: ExecutionRequest) {}
 }

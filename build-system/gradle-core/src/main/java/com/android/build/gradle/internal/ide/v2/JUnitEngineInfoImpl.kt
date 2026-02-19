@@ -19,15 +19,10 @@ package com.android.build.gradle.internal.ide.v2
 import com.android.builder.model.v2.ide.JUnitEngineInfo
 import java.io.Serializable
 
-/**
- * Implementation of [JUnitEngineInfo] for serialization via the Tooling API.
- */
-data class JUnitEngineInfoImpl(
-    override val includedEngines: Set<String>
-): JUnitEngineInfo, Serializable {
+/** Implementation of [JUnitEngineInfo] for serialization via the Tooling API. */
+data class JUnitEngineInfoImpl(override val includedEngines: Set<String>) : JUnitEngineInfo, Serializable {
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

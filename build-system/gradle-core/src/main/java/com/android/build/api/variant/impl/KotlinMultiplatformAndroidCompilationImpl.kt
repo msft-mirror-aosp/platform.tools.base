@@ -26,33 +26,23 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.external.DecoratedExternalKotlinCo
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 @OptIn(ExternalKotlinTargetApi::class)
-open class KotlinMultiplatformAndroidCompilationImpl(
-    delegate: Delegate
-) : DecoratedExternalKotlinCompilation(delegate), KotlinMultiplatformAndroidCompilation {
+open class KotlinMultiplatformAndroidCompilationImpl(delegate: Delegate) :
+  DecoratedExternalKotlinCompilation(delegate), KotlinMultiplatformAndroidCompilation {
 
-    @Suppress("UNCHECKED_CAST")
-    override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
-        get() = super.compileTaskProvider as TaskProvider<KotlinCompilationTask<KotlinJvmCompilerOptions>>
+  @Suppress("UNCHECKED_CAST")
+  override val compileTaskProvider: TaskProvider<out KotlinCompilationTask<KotlinJvmCompilerOptions>>
+    get() = super.compileTaskProvider as TaskProvider<KotlinCompilationTask<KotlinJvmCompilerOptions>>
 
-    override val componentName: String
-        get() = this.compilationName.getNamePrefixedWithAndroidTarget()
+  override val componentName: String
+    get() = this.compilationName.getNamePrefixedWithAndroidTarget()
 }
 
 internal enum class KmpAndroidCompilationType(
-    val defaultCompilationName: String,
-    val defaultSourceSetName: String = defaultCompilationName.getNamePrefixedWithAndroidTarget(),
-    val defaultSourceSetTreeName: String?
+  val defaultCompilationName: String,
+  val defaultSourceSetName: String = defaultCompilationName.getNamePrefixedWithAndroidTarget(),
+  val defaultSourceSetTreeName: String?,
 ) {
-    MAIN(
-        defaultCompilationName = "main",
-        defaultSourceSetTreeName = KotlinSourceSetTree.main.name
-    ),
-    HOST_TEST(
-        defaultCompilationName = "hostTest",
-        defaultSourceSetTreeName = KotlinSourceSetTree.test.name
-    ),
-    DEVICE_TEST(
-        defaultCompilationName = "deviceTest",
-        defaultSourceSetTreeName = null
-    )
+  MAIN(defaultCompilationName = "main", defaultSourceSetTreeName = KotlinSourceSetTree.main.name),
+  HOST_TEST(defaultCompilationName = "hostTest", defaultSourceSetTreeName = KotlinSourceSetTree.test.name),
+  DEVICE_TEST(defaultCompilationName = "deviceTest", defaultSourceSetTreeName = null),
 }

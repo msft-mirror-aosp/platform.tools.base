@@ -33,14 +33,10 @@ import org.jetbrains.uast.UElement
 import org.jetbrains.uast.UMethod
 import org.jetbrains.uast.getParentOfType
 
-/**
- * Detector that identifies instances when the app trusts unsanitized filenames which might be
- * maliciously constructed.
- */
+/** Detector that identifies instances when the app trusts unsanitized filenames which might be maliciously constructed. */
 class UnsafeFilenameDetector : Detector(), SourceCodeScanner {
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf(METHOD_GET_COLUMN_INDEX, METHOD_GET_COLUMN_INDEX_OR_THROW)
+  override fun getApplicableMethodNames(): List<String> = listOf(METHOD_GET_COLUMN_INDEX, METHOD_GET_COLUMN_INDEX_OR_THROW)
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val parentMethod = node.getParentOfType(UMethod::class.java) ?: return
@@ -56,21 +52,15 @@ class UnsafeFilenameDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Tracks `cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)` flowing into
-   * `cursor.getString(tracked)`, which is then tracked further using [FilenameDataFlowAnalyzer].
+   * Tracks `cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)` flowing into `cursor.getString(tracked)`, which is then tracked further
+   * using [FilenameDataFlowAnalyzer].
    */
-  private class DisplayNameDataFlowAnalyzer(
-    val trackedNode: UElement,
-    val context: JavaContext,
-    val evaluator: JavaEvaluator,
-  ) : DataFlowAnalyzer(setOf(trackedNode)) {
+  private class DisplayNameDataFlowAnalyzer(val trackedNode: UElement, val context: JavaContext, val evaluator: JavaEvaluator) :
+    DataFlowAnalyzer(setOf(trackedNode)) {
     override fun argument(call: UCallExpression, reference: UElement) {
       val psiMethod = call.resolve() ?: return
 
-      if (
-        call.methodName == METHOD_GET_STRING &&
-          evaluator.methodMatches(psiMethod, CLASS_CURSOR, allowInherit = true, TYPE_INT)
-      ) {
+      if (call.methodName == METHOD_GET_STRING && evaluator.methodMatches(psiMethod, CLASS_CURSOR, allowInherit = true, TYPE_INT)) {
         val parentMethod = call.getParentOfType(UMethod::class.java)
         parentMethod?.accept(FilenameDataFlowAnalyzer(call, evaluator, context))
       }
@@ -78,14 +68,11 @@ class UnsafeFilenameDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Tracks and reports cases where the `filename` String (returned by a call to
-   * `cursor.getString(...)`) flows into a `File(...tracked...)` constructor.
+   * Tracks and reports cases where the `filename` String (returned by a call to `cursor.getString(...)`) flows into a `File(...tracked...)`
+   * constructor.
    */
-  private class FilenameDataFlowAnalyzer(
-    val trackedFilename: UElement,
-    val evaluator: JavaEvaluator,
-    val context: JavaContext,
-  ) : DataFlowAnalyzer(setOf(trackedFilename)) {
+  private class FilenameDataFlowAnalyzer(val trackedFilename: UElement, val evaluator: JavaEvaluator, val context: JavaContext) :
+    DataFlowAnalyzer(setOf(trackedFilename)) {
     private var isPotentiallySanitized = false
 
     override fun receiver(call: UCallExpression) {
@@ -136,8 +123,7 @@ class UnsafeFilenameDetector : Detector(), SourceCodeScanner {
           client app with a maliciously constructed filename. The client app should never trust \
           this filename and should either sanitize it or completely discard it.
         """,
-        moreInfo =
-          "https://developer.android.com/privacy-and-security/risks/untrustworthy-contentprovider-provided-filename",
+        moreInfo = "https://developer.android.com/privacy-and-security/risks/untrustworthy-contentprovider-provided-filename",
         category = Category.SECURITY,
         priority = 6,
         severity = Severity.WARNING,

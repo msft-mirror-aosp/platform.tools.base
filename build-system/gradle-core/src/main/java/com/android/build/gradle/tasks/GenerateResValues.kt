@@ -21,11 +21,12 @@ import com.android.build.gradle.internal.generators.ResValueGenerator
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
-import com.android.build.gradle.internal.tasks.factory.features.ResValuesTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
+import com.android.build.gradle.internal.tasks.factory.features.ResValuesTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.features.ResValuesTaskCreationActionImpl
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
+import java.io.File
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.tasks.CacheableTask
@@ -33,69 +34,59 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskProvider
-import java.io.File
 
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES, secondaryTaskCategories = [TaskCategory.SOURCE_GENERATION])
 abstract class GenerateResValues : NonIncrementalTask() {
 
-    // ----- PUBLIC TASK API -----
+  // ----- PUBLIC TASK API -----
 
-    @get:Internal
-    val resOutputDir: File
-        get() {
-            return outputDirectory.get().asFile
-        }
-
-    // ----- PRIVATE TASK API -----
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
-
-    @get:Input
-    abstract val items: MapProperty<ResValue.Key, ResValue>
-
-    override fun doTaskAction() {
-        val folder = outputDirectory.get().asFile
-
-        // Always clean up the directory before use.
-        FileUtils.cleanOutputDir(folder)
-
-        if (items.get().isNotEmpty()) {
-            ResValueGenerator(folder, items.get()).generate()
-        }
+  @get:Internal
+  val resOutputDir: File
+    get() {
+      return outputDirectory.get().asFile
     }
 
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<GenerateResValues, ComponentCreationConfig>(
-        creationConfig
-    ), ResValuesTaskCreationAction by ResValuesTaskCreationActionImpl(creationConfig) {
+  // ----- PRIVATE TASK API -----
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-        override val name = computeTaskName("generate", "ResValues")
-        override val type = GenerateResValues::class.java
+  @get:Input abstract val items: MapProperty<ResValue.Key, ResValue>
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<GenerateResValues>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.generateResValuesTask = taskProvider
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider, GenerateResValues::outputDirectory
-            ).atLocation(deprecatedGeneratedResOutputDir.get().asFile.absolutePath)
-                .on(InternalArtifactType.GENERATED_RES)
-        }
+  override fun doTaskAction() {
+    val folder = outputDirectory.get().asFile
 
-        override fun configure(
-            task: GenerateResValues
-        ) {
-            super.configure(task)
+    // Always clean up the directory before use.
+    FileUtils.cleanOutputDir(folder)
 
-            task.items.set(resValuesCreationConfig.resValues)
-        }
-
-        // use the old generated res output dir since some released plugins are directly referencing
-        // the output folder location to generate resources in.
-        val deprecatedGeneratedResOutputDir by lazy {
-            creationConfig.paths.getGeneratedResourcesDir("resValues") }
+    if (items.get().isNotEmpty()) {
+      ResValueGenerator(folder, items.get()).generate()
     }
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<GenerateResValues, ComponentCreationConfig>(creationConfig),
+    ResValuesTaskCreationAction by ResValuesTaskCreationActionImpl(creationConfig) {
+
+    override val name = computeTaskName("generate", "ResValues")
+    override val type = GenerateResValues::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<GenerateResValues>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.generateResValuesTask = taskProvider
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, GenerateResValues::outputDirectory)
+        .atLocation(deprecatedGeneratedResOutputDir.get().asFile.absolutePath)
+        .on(InternalArtifactType.GENERATED_RES)
+    }
+
+    override fun configure(task: GenerateResValues) {
+      super.configure(task)
+
+      task.items.set(resValuesCreationConfig.resValues)
+    }
+
+    // use the old generated res output dir since some released plugins are directly referencing
+    // the output folder location to generate resources in.
+    val deprecatedGeneratedResOutputDir by lazy { creationConfig.paths.getGeneratedResourcesDir("resValues") }
+  }
 }

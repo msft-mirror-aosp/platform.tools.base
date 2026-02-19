@@ -129,8 +129,8 @@ public class HelloWorldJniApp extends GradleProject {
                     "HelloJniTest.java",
                     "package com.example.hellojni;\n"
                             + "\n"
-                            + "import android.support.test.rule.ActivityTestRule;\n"
-                            + "import android.support.test.runner.AndroidJUnit4;\n"
+                            + "import androidx.test.rule.ActivityTestRule;\n"
+                            + "import androidx.test.runner.AndroidJUnit4;\n"
                             + "import org.junit.Assert;\n"
                             + "import org.junit.Rule;\n"
                             + "import org.junit.Test;\n"

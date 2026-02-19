@@ -17,46 +17,31 @@
 package com.android.testutils
 
 /**
- * Base class to write given/expect test using lambdas returning the [GivenT] and [ResulT]
- * objects.
+ * Base class to write given/expect test using lambdas returning the [GivenT] and [ResulT] objects.
  *
  * A good use case is when the input and the result are a single objects
  *
  * Use with:
  *
- * given {
- *     10
- * }
+ * given { 10 }
  *
- * `when` {
- *     it.pow(2)
- *  }
+ * `when` { it.pow(2) }
  *
- *  expect {
- *     100
- *  }
+ * expect { 100 }
  */
-abstract class AbstractReturnGivenReturnExpectTest<GivenT, ResultT> :
-    AbstractGivenExpectTest<GivenT, ResultT>() {
+abstract class AbstractReturnGivenReturnExpectTest<GivenT, ResultT> : AbstractGivenExpectTest<GivenT, ResultT>() {
 
-    private var givenAction: (() -> GivenT)? = null
+  private var givenAction: (() -> GivenT)? = null
 
-    /**
-     * Registers an action block returning the given state as a single object
-     */
-    open fun given(action: () -> GivenT) {
-        checkState(TestState.START)
-        givenAction = action
-        state = TestState.GIVEN
-    }
+  /** Registers an action block returning the given state as a single object */
+  open fun given(action: () -> GivenT) {
+    checkState(TestState.START)
+    givenAction = action
+    state = TestState.GIVEN
+  }
 
-    /**
-     * Registers an action block return the expected result values. This also runs the test.
-     */
-    fun expect(expectedProvider: () -> ResultT?) {
-        runTest(
-            givenAction?.invoke() ?: throw RuntimeException("No given data"),
-            expectedProvider.invoke()
-        )
-    }
+  /** Registers an action block return the expected result values. This also runs the test. */
+  fun expect(expectedProvider: () -> ResultT?) {
+    runTest(givenAction?.invoke() ?: throw RuntimeException("No given data"), expectedProvider.invoke())
+  }
 }

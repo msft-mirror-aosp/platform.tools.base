@@ -16,63 +16,33 @@
 
 package com.android.build.gradle.internal.api
 
-import com.android.build.api.variant.impl.FileBasedDirectoryEntryImpl
+import com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
+import com.android.build.api.dsl.AgpTestSuiteDependencies
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.services.VariantServices
 import java.io.File
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 
 internal class HostJarTestSuiteSourceSet(
-    sourceSetName: String,
-    private val variantServices: VariantServices,
-): TestSuiteSourceSet.HostJar {
+  sourceSetName: String,
+  variantServices: VariantServices,
+  userAddedSourceSets: Collection<Directory>,
+  javaEnabled: Boolean,
+  kotlinEnabled: Boolean,
+  includeAndroidResources: Provider<Boolean>,
+  override val dependencies: AgpTestSuiteDependencies?,
+) :
+  AbstractTestSuiteSourceSet(sourceSetName, variantServices, userAddedSourceSets, javaEnabled, kotlinEnabled), TestSuiteSourceSet.HostJar {
 
-    private val javaSourcesFolder = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
-        it.addSource(FileBasedDirectoryEntryImpl(
-            name = sourceSetName,
-            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/java"),
-            filter = null,
-            isUserAdded = false,
-            shouldBeAddedToIdeModel = true
-        ))
-    }
+  val manifestFileCandidate = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/$FN_ANDROID_MANIFEST_XML")
 
-    private val kotlinSourcesFolder = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
-        it.addSource(FileBasedDirectoryEntryImpl(
-            name = sourceSetName,
-            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/kotlin"),
-            filter = null,
-            isUserAdded = false,
-            shouldBeAddedToIdeModel = true
-        ))
-    }
+  override val manifestFile: File? = manifestFileCandidate.takeIf { includeAndroidResources.get() }
 
+  override val java: FlatSourceDirectoriesImpl? = if (javaEnabled) createJavaSources(variantServices) else null
 
-    private val resourcesSourcesFolder = FlatSourceDirectoriesImpl(
-        sourceSetName,
-        variantServices,
-        null,
-    ).also {
-        it.addSource(FileBasedDirectoryEntryImpl(
-            name = sourceSetName,
-            directory = File(variantServices.projectInfo.projectDirectory.asFile, "src/$sourceSetName/resources"),
-            filter = null,
-            isUserAdded = false,
-            shouldBeAddedToIdeModel = true
-        ))
-    }
+  override val kotlin: FlatSourceDirectoriesImpl? = if (kotlinEnabled) createKotlinSources(variantServices) else null
 
-
-    override fun java(): FlatSourceDirectoriesImpl = javaSourcesFolder
-
-    override fun kotlin(): FlatSourceDirectoriesImpl = kotlinSourcesFolder
-
-    override fun resources(): FlatSourceDirectoriesImpl = resourcesSourcesFolder
+  override val resources: FlatSourceDirectoriesImpl = resourcesSourcesFolder
 }

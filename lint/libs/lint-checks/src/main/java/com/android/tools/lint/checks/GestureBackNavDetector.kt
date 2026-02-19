@@ -50,21 +50,13 @@ import org.jetbrains.uast.skipParenthesizedExprUp
  * - `KeyEvent.KEYCODE_BACK` in an if/switch condition
  * - overrides of `{Activity,Dialog}.onBackPressed`
  *
- *   Incidents are filtered (and severity may be increased) depending on a manifest flag and the
- *   targetSdkVersion.
+ *   Incidents are filtered (and severity may be increased) depending on a manifest flag and the targetSdkVersion.
  */
 class GestureBackNavDetector : Detector(), SourceCodeScanner {
   override fun getApplicableReferenceNames(): List<String> = listOf("KEYCODE_BACK")
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
-    if (
-      referenced is PsiField &&
-        context.evaluator.isMemberInClass(referenced, "android.view.KeyEvent")
-    ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
+    if (referenced is PsiField && context.evaluator.isMemberInClass(referenced, "android.view.KeyEvent")) {
       val keycodeBack = skipParenthesizedExprUp(reference.uastParent) ?: return
       val parent = skipParenthesizedExprUp(keycodeBack.uastParent) ?: return
       val ifExpression = skipParenthesizedExprUp(parent.uastParent) ?: return
@@ -78,40 +70,20 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
       // as a replacement. In other cases, the reference to KeyEvent probably needs to remain for
       // old versions of Android, so we can't report it.
       if (
-        !context.evaluator.isMemberInSubClassOf(
-          containingMethod,
-          SdkConstants.CLASS_ACTIVITY,
-          true,
-        ) &&
+        !context.evaluator.isMemberInSubClassOf(containingMethod, SdkConstants.CLASS_ACTIVITY, true) &&
           !context.evaluator.isMemberInSubClassOf(containingMethod, DIALOG_CLASS, true) &&
-          !context.evaluator.isMemberInSubClassOf(
-            containingMethod,
-            DIALOG_INTERFACE_ON_KEY_LISTENER,
-            true,
-          )
+          !context.evaluator.isMemberInSubClassOf(containingMethod, DIALOG_INTERFACE_ON_KEY_LISTENER, true)
       ) {
         return
       }
 
-      if (
-        ifExpression is UIfExpression ||
-          ifExpression is USwitchClauseExpression ||
-          parent is USwitchClauseExpression
-      ) {
+      if (ifExpression is UIfExpression || ifExpression is USwitchClauseExpression || parent is USwitchClauseExpression) {
         val message =
           "If intercepting back events, this should be handled through " +
             "the registration of callbacks; " +
             "see https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
-        val fix =
-          fix()
-            .url(
-              "https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture"
-            )
-            .build()
-        context.report(
-          Incident(ISSUE, reference, context.getLocation(keycodeBack), message, fix),
-          map(),
-        )
+        val fix = fix().url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture").build()
+        context.report(Incident(ISSUE, reference, context.getLocation(keycodeBack), message, fix), map())
       }
     }
   }
@@ -128,10 +100,7 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
       )
         continue
 
-      val fix =
-        fix()
-          .url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture")
-          .build()
+      val fix = fix().url("https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture").build()
 
       context.report(
         Incident(
@@ -152,8 +121,7 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
     // Don't report for library modules.
     if (project.isLibrary) return false
 
-    val applicationTag =
-      project.mergedManifest?.documentElement?.subtag(TAG_APPLICATION) ?: return false
+    val applicationTag = project.mergedManifest?.documentElement?.subtag(TAG_APPLICATION) ?: return false
     val flag = applicationTag.getAttributeNS(ANDROID_URI, ENABLE_ON_BACK_INVOKED_CALLBACK)
 
     if (project.targetSdk < 36) {
@@ -175,8 +143,7 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
     private const val ENABLE_ON_BACK_INVOKED_CALLBACK = "enableOnBackInvokedCallback"
 
     private const val DIALOG_CLASS = "android.app.Dialog"
-    private const val DIALOG_INTERFACE_ON_KEY_LISTENER =
-      "android.content.DialogInterface.OnKeyListener"
+    private const val DIALOG_INTERFACE_ON_KEY_LISTENER = "android.content.DialogInterface.OnKeyListener"
 
     @JvmField
     val ISSUE =
@@ -199,8 +166,7 @@ class GestureBackNavDetector : Detector(), SourceCodeScanner {
         severity = Severity.WARNING,
         implementation = Implementation(GestureBackNavDetector::class.java, Scope.JAVA_FILE_SCOPE),
         androidSpecific = true,
-        moreInfo =
-          "https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture",
+        moreInfo = "https://developer.android.com/guide/navigation/custom-back/predictive-back-gesture",
       )
   }
 }

@@ -27,59 +27,50 @@ import org.junit.Test
 
 class KotlinMultiplatformSigningTest {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Test
-    fun testDefaultSigningConfig() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            """
-                kotlin {
-                    android {
-                        withDeviceTestBuilder {}
-                    }
-                }
-            """.trimIndent()
-        )
+  @Test
+  fun testDefaultSigningConfig() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
+      kotlin {
+          android {
+              withDeviceTestBuilder {}
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
-        project.getSubproject("kmpSecondLib").assertApk(
-            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
-        ) {
-            javaResources().contains("META-INF/CERT.RSA")
-            javaResources().contains("META-INF/CERT.SF")
-        }
-
-        val signingConfigData = project.getSubproject("kmpSecondLib").getIntermediateFile(
-            "signing_config_data", "androidDeviceTest", "signingConfigWriterAndroidDeviceTest", "signing-config-data.json")
-        PathSubject.assertThat(signingConfigData).contains("\"keyAlias\":\"AndroidDebugKey\"")
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
+    project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      javaResources().contains("META-INF/CERT.RSA")
+      javaResources().contains("META-INF/CERT.SF")
     }
 
-    @Test
-    fun testSingingConfigWithDsl() {
-        val storePassword = "storePassword"
-        val keyPassword = "keyPassword"
-        val keyAlias = "key0"
+    val signingConfigData =
+      project
+        .getSubproject("kmpSecondLib")
+        .getIntermediateFile("signing_config_data", "androidDeviceTest", "signingConfigWriterAndroidDeviceTest", "signing-config-data.json")
+    PathSubject.assertThat(signingConfigData).contains("\"keyAlias\":\"AndroidDebugKey\"")
+  }
 
-        val keyStoreFile = project.file("keystore")
-        KeystoreHelper.createNewStore(
-            "jks",
-            keyStoreFile,
-            storePassword,
-            keyPassword,
-            keyAlias,
-            "CN=Bundle signing test",
-            100
-        )
+  @Test
+  fun testSingingConfigWithDsl() {
+    val storePassword = "storePassword"
+    val keyPassword = "keyPassword"
+    val keyAlias = "key0"
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpSecondLib").ktsBuildFile,
-            """
+    val keyStoreFile = project.file("keystore")
+    KeystoreHelper.createNewStore("jks", keyStoreFile, storePassword, keyPassword, keyAlias, "CN=Bundle signing test", 100)
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpSecondLib").ktsBuildFile,
+      """
                 kotlin {
                     android {
                         withDeviceTestBuilder {
@@ -92,21 +83,23 @@ class KotlinMultiplatformSigningTest {
                         }
                     }
                 }
-            """.trimIndent()
-        )
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
+            """
+        .trimIndent(),
+    )
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpSecondLib:assembleAndroidTest", ":kmpSecondLib:signingConfigWriterAndroidDeviceTest")
 
-        project.getSubproject("kmpSecondLib").assertApk(
-            ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")
-        ) {
-            javaResources().contains("META-INF/CERT.RSA")
-            javaResources().contains("META-INF/CERT.SF")
-        }
-
-        val signingConfigData = project.getSubproject("kmpSecondLib").getIntermediateFile(
-            "signing_config_data", "androidDeviceTest", "signingConfigWriterAndroidDeviceTest", "signing-config-data.json")
-        PathSubject.assertThat(signingConfigData).contains("\"keyAlias\":\"key0\"")
+    project.getSubproject("kmpSecondLib").assertApk(ApkSelector.NO_BUILD_TYPE.forTestSuite("androidTest")) {
+      javaResources().contains("META-INF/CERT.RSA")
+      javaResources().contains("META-INF/CERT.SF")
     }
+
+    val signingConfigData =
+      project
+        .getSubproject("kmpSecondLib")
+        .getIntermediateFile("signing_config_data", "androidDeviceTest", "signingConfigWriterAndroidDeviceTest", "signing-config-data.json")
+    PathSubject.assertThat(signingConfigData).contains("\"keyAlias\":\"key0\"")
+  }
 }

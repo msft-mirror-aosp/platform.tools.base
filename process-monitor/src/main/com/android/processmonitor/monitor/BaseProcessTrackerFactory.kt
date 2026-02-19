@@ -23,53 +23,42 @@ import com.android.processmonitor.common.ProcessTracker
 
 private const val AGENT_MIN_SDK = 21
 
-/**
- * A [ProcessTrackerFactory] creates a tracker that is optionally merged with an [AgentProcessTracker]
- */
+/** A [ProcessTrackerFactory] creates a tracker that is optionally merged with an [AgentProcessTracker] */
 internal abstract class BaseProcessTrackerFactory<T>(
-    private val adbSession: AdbSession,
-    private val agentConfig: AgentProcessTrackerConfig?,
-    private val logger: AdbLogger,
+  private val adbSession: AdbSession,
+  private val agentConfig: AgentProcessTrackerConfig,
+  private val logger: AdbLogger,
 ) : ProcessTrackerFactory<T> {
 
-    override suspend fun createProcessTracker(device: T): ProcessTracker {
-        val agentTracker = createAgentProcessTracker(device)
-        val mainTracker = createMainTracker(device)
-        return when (agentTracker) {
-            null -> mainTracker
-            else -> MergedProcessTracker(mainTracker, agentTracker)
-        }
+  override suspend fun createProcessTracker(device: T): ProcessTracker {
+    val agentTracker = createAgentProcessTracker(device)
+    val mainTracker = createMainTracker(device)
+    return when (agentTracker) {
+      null -> mainTracker
+      else -> MergedProcessTracker(mainTracker, agentTracker)
     }
+  }
 
-    abstract fun createMainTracker(device: T): ProcessTracker
+  abstract fun createMainTracker(device: T): ProcessTracker
 
-    abstract suspend fun getDeviceApiLevel(device: T): Int
+  abstract suspend fun getDeviceApiLevel(device: T): Int
 
-    abstract suspend fun getDeviceAbi(device: T): String?
+  abstract suspend fun getDeviceAbi(device: T): String?
 
-    abstract fun getDeviceSerialNumber(device: T): String
+  abstract fun getDeviceSerialNumber(device: T): String
 
-    private suspend fun createAgentProcessTracker(device: T): ProcessTracker? {
-        if (agentConfig == null) {
-            return null
-        }
-        val sdk = getDeviceApiLevel(device)
-        // The agent is a native executable, and we don't have the ability build it for API<21
-        if (sdk < AGENT_MIN_SDK || !agentConfig.shouldUseAgentForSdk(sdk)) {
-            return null
-        }
-        val serialNumber = getDeviceSerialNumber(device)
-        val abi = getDeviceAbi(device) ?: return null
-        val agentProcessTracker = AgentProcessTracker(
-            adbSession,
-            serialNumber,
-            abi,
-            agentConfig.sourcePath,
-            agentConfig.pollingIntervalMillis,
-            logger,
-        )
-
-        // Don't let failures in the agent tracker to fail the main tracker
-        return SafeProcessTracker(agentProcessTracker, "Agent tracker error", logger)
+  private suspend fun createAgentProcessTracker(device: T): ProcessTracker? {
+    val sdk = getDeviceApiLevel(device)
+    // The agent is a native executable, and we don't have the ability build it for API<21
+    if (sdk < AGENT_MIN_SDK || !agentConfig.shouldUseAgentForSdk(sdk)) {
+      return null
     }
+    val serialNumber = getDeviceSerialNumber(device)
+    val abi = getDeviceAbi(device) ?: return null
+    val agentProcessTracker =
+      AgentProcessTracker(adbSession, serialNumber, abi, agentConfig.sourcePath, agentConfig.pollingIntervalMillis, logger)
+
+    // Don't let failures in the agent tracker to fail the main tracker
+    return SafeProcessTracker(agentProcessTracker, "Agent tracker error", logger)
+  }
 }

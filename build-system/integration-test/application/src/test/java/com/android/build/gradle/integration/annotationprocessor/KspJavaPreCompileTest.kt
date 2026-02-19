@@ -34,97 +34,105 @@ import org.junit.runners.Parameterized
 @RunWith(FilterableParameterized::class)
 class KspJavaPreCompileTest(private val useKagp: Boolean) {
 
-    companion object {
+  companion object {
 
-        @Parameterized.Parameters(name = "useKagp_{0}")
-        @JvmStatic
-        fun parameters() = listOf(true, false)
-    }
+    @Parameterized.Parameters(name = "useKagp_{0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("kotlinAppWithKsp")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("kotlinAppWithKsp").create()
 
-    @Before
-    fun setup() {
-        if (useKagp) {
-            TestFileUtils.appendToFile(
-                project.gradlePropertiesFile, """
-                android.builtInKotlin=false
-                android.newDsl=false
-            """.trimIndent()
-            )
+  @Before
+  fun setup() {
+    if (useKagp) {
+      TestFileUtils.appendToFile(
+        project.gradlePropertiesFile,
+        """
+        android.builtInKotlin=false
+        android.newDsl=false
+        """
+          .trimIndent(),
+      )
 
-            TestFileUtils.searchAndReplace(
-                project.buildFile, "dependencies {", """
-                dependencies {
-                    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\$\{libs.versions.kotlinVersion.get()}"
-            """.trimIndent()
-            )
+      TestFileUtils.searchAndReplace(
+        project.buildFile,
+        "dependencies {",
+        """
+        dependencies {
+            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:\$\{libs.versions.kotlinVersion.get()}"
+        """
+          .trimIndent(),
+      )
 
-            TestFileUtils.searchAndReplace(
-                project.getSubproject("app").buildFile,
-                "apply plugin: 'com.android.application'", """
-                apply plugin: 'com.android.application'
-                apply plugin: 'kotlin-android'
-            """.trimIndent()
-            )
+      TestFileUtils.searchAndReplace(
+        project.getSubproject("app").buildFile,
+        "apply plugin: 'com.android.application'",
+        """
+        apply plugin: 'com.android.application'
+        apply plugin: 'kotlin-android'
+        """
+          .trimIndent(),
+      )
 
-            TestFileUtils.searchAndReplace(
-                project.getSubproject("app").buildFile,
-                "buildToolsVersion = libs.versions.buildToolsVersion.get()",
-                """
-                    buildToolsVersion = libs.versions.buildToolsVersion.get()
+      TestFileUtils.searchAndReplace(
+        project.getSubproject("app").buildFile,
+        "buildToolsVersion = libs.versions.buildToolsVersion.get()",
+        """
+        buildToolsVersion = libs.versions.buildToolsVersion.get()
 
-                    kotlinOptions {
-                        jvmTarget = JavaVersion.VERSION_11
-                    }
-            """.trimIndent()
-            )
-
-            TestFileUtils.searchAndReplace(
-                project.getSubproject("app").buildFile, "dependencies {", """
-                dependencies {
-                    implementation "org.jetbrains.kotlin:kotlin-stdlib:\$\{libs.versions.kotlinVersion.get()}"
-            """.trimIndent()
-            )
+        kotlinOptions {
+            jvmTarget = JavaVersion.VERSION_11
         }
+        """
+          .trimIndent(),
+      )
+
+      TestFileUtils.searchAndReplace(
+        project.getSubproject("app").buildFile,
+        "dependencies {",
+        """
+        dependencies {
+            implementation "org.jetbrains.kotlin:kotlin-stdlib:\$\{libs.versions.kotlinVersion.get()}"
+        """
+          .trimIndent(),
+      )
     }
+  }
 
-    @Test
-    fun kspJavaPreCompileTest() {
-        project.executor().run(":app:javaPreCompileDebug")
+  @Test
+  fun kspJavaPreCompileTest() {
+    project.executor().run(":app:javaPreCompileDebug")
 
-        val annotationProcessorList =
-            InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
-                .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME").readText()
-        Truth.assertThat(annotationProcessorList).isEqualTo(
-            "{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
-    }
+    val annotationProcessorList =
+      InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
+        .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
+        .readText()
+    Truth.assertThat(annotationProcessorList).isEqualTo("{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
+  }
 
-    /** Regression test for b/331806519. */
-    @Test
-    fun annotationProcessorsFromKspClasspathShouldBeIgnored() {
-        val processorJar =
-            project.getSubproject(":app").projectDir.resolve("annotationProcessor.jar")
-        writeJarWithEmptyEntries(
-            processorJar.toPath(),
-            listOf("META-INF/services/javax.annotation.processing.Processor")
-        )
-        project.getSubproject(":app").buildFile.appendText("""
+  /** Regression test for b/331806519. */
+  @Test
+  fun annotationProcessorsFromKspClasspathShouldBeIgnored() {
+    val processorJar = project.getSubproject(":app").projectDir.resolve("annotationProcessor.jar")
+    writeJarWithEmptyEntries(processorJar.toPath(), listOf("META-INF/services/javax.annotation.processing.Processor"))
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
 
             dependencies {
               ksp files("${processorJar.invariantSeparatorsPath}")
             }
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        project.executor().run(":app:javaPreCompileDebug")
+    project.executor().run(":app:javaPreCompileDebug")
 
-        val annotationProcessorList =
-            InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
-                .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME").readText()
-        Truth.assertThat(annotationProcessorList).isEqualTo(
-            "{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
-    }
-
+    val annotationProcessorList =
+      InternalArtifactType.ANNOTATION_PROCESSOR_LIST.getOutputDir(project.getSubproject("app").buildDir)
+        .resolve("debug/javaPreCompileDebug/$ANNOTATION_PROCESSOR_LIST_FILE_NAME")
+        .readText()
+    Truth.assertThat(annotationProcessorList).isEqualTo("{\"mock-processor.jar (project :mock-processor)\":\"KSP_PROCESSOR\"}")
+  }
 }

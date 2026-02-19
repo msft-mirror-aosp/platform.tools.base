@@ -35,78 +35,68 @@ import org.jetbrains.kotlin.gradle.idea.tcs.extras.artifactsClasspath
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.plugin.ide.IdeDependencyResolver
 
-/**
- * An implementation of [IdeDependencyResolver] that resolves project dependencies.
- */
+/** An implementation of [IdeDependencyResolver] that resolves project dependencies. */
 @OptIn(ExternalKotlinTargetApi::class)
 internal class ProjectDependencyResolver(
-    libraryResolver: LibraryResolver,
-    sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
-    val configType: AndroidArtifacts.ConsumedConfigType
-) : BaseIdeDependencyResolver(
-    libraryResolver,
-    sourceSetToCreationConfigMap
-), IdeDependencyResolver {
-    override fun resolve(sourceSet: KotlinSourceSet): Set<IdeaKotlinDependency> {
-        val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return emptySet()
+  libraryResolver: LibraryResolver,
+  sourceSetToCreationConfigMap: Lazy<Map<KotlinSourceSet, KmpComponentCreationConfig>>,
+  val configType: AndroidArtifacts.ConsumedConfigType,
+) : BaseIdeDependencyResolver(libraryResolver, sourceSetToCreationConfigMap), IdeDependencyResolver {
+  override fun resolve(sourceSet: KotlinSourceSet): Set<IdeaKotlinDependency> {
+    val component = sourceSetToCreationConfigMap.value[sourceSet] ?: return emptySet()
 
-        libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
+    libraryResolver.registerSourceSetArtifacts(sourceSet, configType)
 
-        // The actual artifact type doesn't matter, this will be picked up on the IDE side and
-        // mapped to a project dependency. We query for jar artifacts since both android and
-        // non-android projects will produce it.
-        val artifacts = getArtifactsForComponent(
-            component,
-            AndroidArtifacts.ArtifactType.JAR,
-            configType
-        ) {
-            it is ProjectComponentIdentifier
+    // The actual artifact type doesn't matter, this will be picked up on the IDE side and
+    // mapped to a project dependency. We query for jar artifacts since both android and
+    // non-android projects will produce it.
+    val artifacts = getArtifactsForComponent(component, AndroidArtifacts.ArtifactType.JAR, configType) { it is ProjectComponentIdentifier }
+
+    val projectBuildTreePath = getProjectBuildTreePath(component.variantDependencies).get()
+    return artifacts
+      .mapNotNull { artifact ->
+        val componentId = artifact.id.componentIdentifier as ProjectComponentIdentifier
+
+        // This is a dependency on the same module, usually from unitTest/instrumentationTest on
+        // the main module. This should be handled as a friend dependency which will allow the
+        // test components to view the internals of the main. So we just ignore this case here.
+        if (projectBuildTreePath == componentId.buildTreePath) {
+          return@mapNotNull null
         }
 
-        val projectBuildTreePath = getProjectBuildTreePath(component.variantDependencies).get()
-        return artifacts.mapNotNull { artifact ->
-            val componentId = artifact.id.componentIdentifier as ProjectComponentIdentifier
+        val buildPath = componentId.build.buildPath
 
-            // This is a dependency on the same module, usually from unitTest/instrumentationTest on
-            // the main module. This should be handled as a friend dependency which will allow the
-            // test components to view the internals of the main. So we just ignore this case here.
-            if (projectBuildTreePath == componentId.buildTreePath) {
-                return@mapNotNull null
+        IdeaKotlinProjectArtifactDependency(
+            type = IdeaKotlinSourceDependency.Type.Regular,
+            coordinates =
+              IdeaKotlinProjectCoordinates(
+                buildName = if (buildPath == ":") ":" else buildPath.split(":").last(),
+                buildPath = buildPath,
+                projectPath = componentId.projectPath,
+                projectName = componentId.projectName,
+              ),
+          )
+          .also { dependency ->
+            val library = libraryResolver.getLibrary(variant = artifact.variant, sourceSet = sourceSet, configType = configType)
+            if (library != null && isAndroidProject(artifact)) {
+              // Android project, could be kmp or android lib, let the IDE extension points
+              // handle each case
+              dependency.extras[androidDependencyKey] =
+                DependencyInfo.newBuilder()
+                  .setLibrary(
+                    // The key is redundant since we depend on the kotlin definition.
+                    library.convert().clearKey()
+                  )
+                  .build()
+            } else {
+              // Not android, let kmp resolvers handle the resolution
+              dependency.artifactsClasspath.add(artifact.file)
             }
+          }
+      }
+      .toSet()
+  }
 
-            val buildPath = componentId.build.buildPath
-
-            IdeaKotlinProjectArtifactDependency(
-                type = IdeaKotlinSourceDependency.Type.Regular,
-                coordinates = IdeaKotlinProjectCoordinates(
-                    buildName = if (buildPath == ":") ":" else buildPath.split(":").last(),
-                    buildPath = buildPath,
-                    projectPath = componentId.projectPath,
-                    projectName = componentId.projectName
-                )
-            ).also { dependency ->
-                val library = libraryResolver.getLibrary(
-                    variant = artifact.variant,
-                    sourceSet = sourceSet,
-                    configType = configType
-                )
-                if (library != null && isAndroidProject(artifact)) {
-                    // Android project, could be kmp or android lib, let the IDE extension points
-                    // handle each case
-                    dependency.extras[androidDependencyKey] =
-                        DependencyInfo.newBuilder()
-                            .setLibrary(
-                                // The key is redundant since we depend on the kotlin definition.
-                                library.convert().clearKey()
-                            )
-                            .build()
-                } else {
-                    // Not android, let kmp resolvers handle the resolution
-                    dependency.artifactsClasspath.add(artifact.file)
-                }
-            }
-        }.toSet()
-    }
-
-    private fun isAndroidProject(artifact: ResolvedArtifactResult): Boolean = artifact.variant.attributes.getAttribute(AgpVersionAttr.ATTRIBUTE) != null
+  private fun isAndroidProject(artifact: ResolvedArtifactResult): Boolean =
+    artifact.variant.attributes.getAttribute(AgpVersionAttr.ATTRIBUTE) != null
 }

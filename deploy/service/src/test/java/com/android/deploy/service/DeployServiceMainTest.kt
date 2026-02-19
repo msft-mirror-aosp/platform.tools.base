@@ -22,19 +22,19 @@ import org.junit.Test
 
 class DeployServiceMainTest {
 
-    var myLogger: TestValidationLogger = TestValidationLogger()
+  var myLogger: TestValidationLogger = TestValidationLogger()
 
-    @Before
-    fun setup() {
-        Log.addLogger(myLogger)
-    }
+  @Before
+  fun setup() {
+    Log.addLogger(myLogger)
+  }
 
-    @Test
-    fun invalidArguments() {
-        DeployServiceMain.main(arrayOf())
-        val output = myLogger.nextLogLine
-        Truth.assertThat<Log.LogLevel?>(output!!.logLevel).isEqualTo(Log.LogLevel.ERROR)
-        Truth.assertThat(output.message).contains("--port")
-        Truth.assertThat(output.message).contains("--adbPath")
-    }
+  @Test
+  fun invalidArguments() {
+    DeployServiceMain.main(arrayOf())
+    val output = myLogger.nextLogLine
+    Truth.assertThat<Log.LogLevel?>(output!!.logLevel).isEqualTo(Log.LogLevel.ERROR)
+    Truth.assertThat(output.message).contains("--port")
+    Truth.assertThat(output.message).contains("--adbPath")
+  }
 }

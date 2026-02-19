@@ -36,8 +36,8 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
- * Check which makes sure that an application restrictions file is correct. The rules are specified
- * in https://developer.android.com/reference/android/content/RestrictionsManager.html.
+ * Check which makes sure that an application restrictions file is correct. The rules are specified in
+ * https://developer.android.com/reference/android/content/RestrictionsManager.html.
  */
 class RestrictionsDetector : ResourceXmlDetector() {
 
@@ -138,12 +138,7 @@ class RestrictionsDetector : ResourceXmlDetector() {
   }
 
   /** Validates a `<restriction>` element (and recurses to validate the children) */
-  private fun validateRestriction(
-    context: XmlContext,
-    node: Node,
-    depth: Int,
-    keys: MutableMap<String, Element>,
-  ) {
+  private fun validateRestriction(context: XmlContext, node: Node, depth: Int, keys: MutableMap<String, Element>) {
 
     if (node.nodeType != Node.ELEMENT_NODE) {
       return
@@ -165,12 +160,7 @@ class RestrictionsDetector : ResourceXmlDetector() {
       key.startsWith(STRING_PREFIX) -> {
         val attribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_KEY)
         val valueLocation = context.getValueLocation(attribute)
-        context.report(
-          ISSUE,
-          element,
-          valueLocation,
-          "Keys cannot be localized, they should be specified with a string literal",
-        )
+        context.report(ISSUE, element, valueLocation, "Keys cannot be localized, they should be specified with a string literal")
       }
       keys.containsKey(key) -> {
         val thisAttribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_KEY)
@@ -209,41 +199,24 @@ class RestrictionsDetector : ResourceXmlDetector() {
     validateNestedRestrictions(context, element, restrictionType, keys, depth)
   }
 
-  /**
-   * Makes sure that the given element corresponds to a restriction tag, and if not, reports it and
-   * return false.
-   */
+  /** Makes sure that the given element corresponds to a restriction tag, and if not, reports it and return false. */
   private fun verifyRestrictionTagName(context: XmlContext, element: Element): Boolean {
     val tagName = element.tagName
     if (tagName != TAG_RESTRICTION) {
-      context.report(
-        ISSUE,
-        element,
-        context.getNameLocation(element),
-        "Unexpected tag `<$tagName>`, expected `<$TAG_RESTRICTION>`",
-      )
+      context.report(ISSUE, element, context.getNameLocation(element), "Unexpected tag `<$tagName>`, expected `<$TAG_RESTRICTION>`")
       return false
     }
     return true
   }
 
-  private fun checkRequiredAttribute(
-    context: XmlContext,
-    element: Element,
-    attribute: String,
-  ): String? {
+  private fun checkRequiredAttribute(context: XmlContext, element: Element, attribute: String): String? {
     var fullAttribute = attribute
     if (!element.hasAttributeNS(ANDROID_URI, fullAttribute)) {
       val prefix: String? = element.lookupPrefix(ANDROID_URI)
       if (prefix != null) {
         fullAttribute = "$prefix:$fullAttribute"
       }
-      context.report(
-        ISSUE,
-        element,
-        context.getElementLocation(element),
-        "Missing required attribute `$fullAttribute`",
-      )
+      context.report(ISSUE, element, context.getElementLocation(element), "Missing required attribute `$fullAttribute`")
       return null
     }
     return element.getAttributeNS(ANDROID_URI, fullAttribute)
@@ -264,8 +237,7 @@ class RestrictionsDetector : ResourceXmlDetector() {
         id = "ValidRestrictions",
         briefDescription = "Invalid Restrictions Descriptor",
         explanation = "Ensures that an applications restrictions XML file is properly formed",
-        moreInfo =
-          "https://developer.android.com/reference/android/content/RestrictionsManager.html",
+        moreInfo = "https://developer.android.com/reference/android/content/RestrictionsManager.html",
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.FATAL,

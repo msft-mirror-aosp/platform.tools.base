@@ -30,14 +30,16 @@ fun mainActivityJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
   """
-  else "setContentView(R.layout.$layoutName);"
+    else "setContentView(R.layout.$layoutName);"
 
   return """
 package ${packageName};
@@ -72,7 +74,7 @@ ${renderIf(isViewBindingSupported) {"""
         NavigationUI.setupWithNavController(${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "nav_view")}, navController);
+          id = "nav_view",)}, navController);
     }
 
 }

@@ -304,15 +304,11 @@ class ManifestDetectorTest : AbstractCheckTest() {
   }
 
   fun testDuplicateActivityAcrossSourceSets() {
-    val library =
-      project(manifest().minSdk(14), projectProperties().library(true), libraryCode, libraryStrings)
-        .name("LibraryProject")
+    val library = project(manifest().minSdk(14), projectProperties().library(true), libraryCode, libraryStrings).name("LibraryProject")
     val main =
       project(
           manifest().minSdk(14),
-          projectProperties()
-            .property("android.library.reference.1", "../LibraryProject")
-            .property("manifestmerger.enabled", "true"),
+          projectProperties().property("android.library.reference.1", "../LibraryProject").property("manifestmerger.enabled", "true"),
           mainCode,
         )
         .name("MainProject")
@@ -970,11 +966,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
   }
 
   fun testMissingApplicationIconOk() {
-    lint()
-      .files(manifest().minSdk(14), strings)
-      .issues(ManifestDetector.APPLICATION_ICON)
-      .run()
-      .expectClean()
+    lint().files(manifest().minSdk(14), strings).issues(ManifestDetector.APPLICATION_ICON).run().expectClean()
   }
 
   fun testDeviceAdmin() {
@@ -1214,9 +1206,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
           )
           .indented(),
       )
-      .issues(
-        ManifestDetector.GRADLE_OVERRIDES
-      ) // Exclude because the testing framework for partial analysis will
+      .issues(ManifestDetector.GRADLE_OVERRIDES) // Exclude because the testing framework for partial analysis will
       // change a string in the error message that is just a manifestation
       // of the way it mutates the project (to lower the minSdkVersion)
       .skipTestModes(TestMode.PARTIAL)
@@ -1226,11 +1216,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
   }
 
   fun testGradleOverridesOk() {
-    lint()
-      .files(gradleOverride, gradle("android {\n}"))
-      .issues(ManifestDetector.GRADLE_OVERRIDES)
-      .run()
-      .expectClean()
+    lint().files(gradleOverride, gradle("android {\n}")).issues(ManifestDetector.GRADLE_OVERRIDES).run().expectClean()
   }
 
   fun testGradleOverrideManifestMergerOverride() {
@@ -1754,11 +1740,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
             .indented()
         )
         .dependsOn(library)
-    lint()
-      .projects(main, library)
-      .issues(ManifestDetector.DATA_EXTRACTION_RULES)
-      .run()
-      .expectClean()
+    lint().projects(main, library).issues(ManifestDetector.DATA_EXTRACTION_RULES).run().expectClean()
   }
 
   fun testWearableBindListener() {
@@ -1862,7 +1844,8 @@ class ManifestDetectorTest : AbstractCheckTest() {
             """
     lint()
       .files(
-        // When not specifying compileSdkVersion, it will always be >= 24 (so we don't need to pick
+        // When not specifying compileSdkVersion, it will always be >= 24 (so we don't need to
+        // pick
         // a specific one)
         xml(
             "src/main/AndroidManifest.xml",
@@ -1896,9 +1879,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
           )
           .indented(),
       )
-      .issues(
-        ManifestDetector.WEARABLE_BIND_LISTENER
-      ) // This test uses a mock SDK home to ensure that the latest expected
+      .issues(ManifestDetector.WEARABLE_BIND_LISTENER) // This test uses a mock SDK home to ensure that the latest expected
       // version is 8.4.0 rather than whatever happens to actually be the
       // latest version at the time (such as 9.6.1 at the moment of this writing)
       .sdkHome(mockSupportLibraryInstallation)
@@ -2521,9 +2502,7 @@ class ManifestDetectorTest : AbstractCheckTest() {
           fail(e.message)
         }
         val paths =
-          arrayOf(
-            "extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar"
-          )
+          arrayOf("extras/google/m2repository/com/google/android/gms/play-services-wearable/8.4.0/play-services-wearable-8.4.0.aar")
         createRelativePaths(sdkDir!!, paths)
       }
       return sdkDir

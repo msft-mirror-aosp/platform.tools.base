@@ -26,114 +26,81 @@ import org.junit.Test
 
 class KotlinMultiplatformAndroidVitalsTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":shared") { }
-    }
+  @get:Rule val rule = GradleRule.from { androidKotlinMultiplatformLibrary(":shared") {} }
 
-    @Test
-    fun testMissingCompileSdkException() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":shared") {
-                android {
-                    compileSdk = null
-                }
-            }
+  @Test
+  fun testMissingCompileSdkException() {
+    val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdk = null } } }
+    val result = build.executor.expectFailure().run(":shared:assembleAndroidMain")
+    result.assertErrorContains(
+      "compileSdk version is not set.\n" +
+        "Specify the compileSdk version in the module's build file like so:\n" +
+        "kotlin {\n" +
+        "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
+        "        compileSdk { version = release(${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.majorVersion.apiLevel}) }\n" +
+        "}\n"
+    )
+  }
+
+  @Test
+  fun testCompileSdkSet() {
+    val build = rule.build { androidKotlinMultiplatformLibrary(":shared") { android { compileSdk { version = release(36) } } } }
+    val result =
+      build.executor
+        .withFailOnWarning(false) // b/455891987
+        .run(":shared:assembleAndroidMain")
+    result.assertOutputContains("compileSdkVersion=android-36")
+  }
+
+  /** To ensure hooks against the kotlin multiplatform plugin can be invoked eagerly if kmp is applied first. */
+  @Test
+  fun kotlinMultiplatformPluginIsAppliedFirst() {
+    rule.build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":shared:androidPrebuild")
+  }
+
+  @Test
+  fun `fail when another android plugin is applied before kmp android`() {
+    val build =
+      rule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().build {
+        androidKotlinMultiplatformLibrary(":kmpModule") {
+          // Android lib plugin has to be applied before the kotlin multiplatform lib plugin
+          applyPlugin(PluginType.ANDROID_LIB, applyFirst = true)
         }
-        val result = build.executor.expectFailure().run(":shared:assembleAndroidMain")
-        result.assertErrorContains(
-            "compileSdk version is not set.\n" +
-                    "Specify the compileSdk version in the module's build file like so:\n" +
-                    "kotlin {\n" +
-                    "    $ANDROID_EXTENSION_ON_KOTLIN_EXTENSION_NAME {\n" +
-                    "        compileSdk { version = release(${MAX_SUPPORTED_ANDROID_PLATFORM_VERSION.majorVersion.apiLevel}) }\n" +
-                    "}\n"
-        )
-    }
-
-    @Test
-    fun testCompileSdkSet() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":shared") {
-                android {
-                    compileSdk {
-                        version = release(36)
-                    }
-                }
-            }
+        gradleProperties {
+          add(BooleanOption.BUILT_IN_KOTLIN, false)
+          add(BooleanOption.USE_NEW_DSL, false)
         }
-        val result = build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:assembleAndroidMain")
-        result.assertOutputContains(
-            "compileSdkVersion=android-36"
-        )
-    }
+      }
+    val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+    result.assertErrorContains(
+      "'com.android.kotlin.multiplatform.library' and 'com.android.library' plugins cannot be applied in the same project."
+    )
+  }
 
-    /**
-     * To ensure hooks against the kotlin multiplatform plugin can be invoked eagerly if kmp is
-     * applied first.
-     */
-    @Test
-    fun kotlinMultiplatformPluginIsAppliedFirst() {
-        rule.build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":shared:androidPrebuild")
-    }
-
-    @Test
-    fun `fail when another android plugin is applied before kmp android`() {
-        val build = rule.configure()
-            .disableBrokenBuiltInKotlinOptOutChecks()
-            .disableBrokenNewDslOptOutChecks()
-            .build {
-                androidKotlinMultiplatformLibrary(":kmpModule") {
-                    // Android lib plugin has to be applied before the kotlin multiplatform lib plugin
-                    applyPlugin(PluginType.ANDROID_LIB, applyFirst = true)
-                }
-                gradleProperties {
-                    add(BooleanOption.BUILT_IN_KOTLIN, false)
-                    add(BooleanOption.USE_NEW_DSL, false)
-                }
-            }
-        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
-        result.assertErrorContains(
-            "'com.android.kotlin.multiplatform.library' and 'com.android.library' plugins cannot be applied in the same project."
-        )
-    }
-
-    @Test
-    fun creatingTwoUnitTestCompilationsShouldFail() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":kmpModule") {
-                android {
-                    withHostTest {}
-                }
-                android {
-                    withHostTest {}
-                }
-            }
+  @Test
+  fun creatingTwoUnitTestCompilationsShouldFail() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":kmpModule") {
+          android { withHostTest {} }
+          android { withHostTest {} }
         }
+      }
 
-        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
-        result.assertErrorContains(
-            "Android host tests have already been enabled, and a corresponding compilation (`hostTest`) has already been created."
-        )
-    }
+    val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+    result.assertErrorContains(
+      "Android host tests have already been enabled, and a corresponding compilation (`hostTest`) has already been created."
+    )
+  }
 
-    @Test
-    fun creatingArbitraryCompilationShouldFail() {
-        val build = rule.build {
-            androidKotlinMultiplatformLibrary(":kmpModule") {
-                android {
-                    compilations.create("randomCompilationName") { }
-                }
-            }
-        }
+  @Test
+  fun creatingArbitraryCompilationShouldFail() {
+    val build =
+      rule.build { androidKotlinMultiplatformLibrary(":kmpModule") { android { compilations.create("randomCompilationName") {} } } }
 
-        val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
-        result.assertErrorContains(
-            "Kotlin multiplatform android plugin doesn't support creating arbitrary compilations."
-        )
-    }
+    val result = build.executor.expectFailure().run(":kmpModule:assembleAndroidMain")
+    result.assertErrorContains("Kotlin multiplatform android plugin doesn't support creating arbitrary compilations.")
+  }
 }

@@ -20,49 +20,39 @@ import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
-import com.android.build.gradle.integration.common.truth.ScannerSubject
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * A test that validates injecting custom plugins into a test project via the
- * [GradleRule] fixture.
- */
+/** A test that validates injecting custom plugins into a test project via the [GradleRule] fixture. */
 class LibPluginTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary(":lib") {
-            pluginCallbacks += LibCallback::class.java
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary(":lib") {
+        pluginCallbacks += LibCallback::class.java
 
-            files {
-                HelloWorldAndroid.setupJava(this)
-                add("src/main/assets/FileToTransform.txt", "initial content")
-            }
+        files {
+          HelloWorldAndroid.setupJava(this)
+          add("src/main/assets/FileToTransform.txt", "initial content")
         }
+      }
     }
 
-    @Test
-    fun testReleaseVariantIsDisabled() {
-        val build = rule.build
+  @Test
+  fun testReleaseVariantIsDisabled() {
+    val build = rule.build
 
-        build.executor.expectFailure().run(":lib:assembleRelease")
-            .assertErrorContains(
-                "Cannot locate tasks that match ':lib:assembleRelease' as task 'assembleRelease' not found in project ':lib'."
-            )
-    }
+    build.executor
+      .expectFailure()
+      .run(":lib:assembleRelease")
+      .assertErrorContains("Cannot locate tasks that match ':lib:assembleRelease' as task 'assembleRelease' not found in project ':lib'.")
+  }
 
-    class LibCallback: LibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: LibraryAndroidComponentsExtension
-        ) {
-            androidComponents.apply {
-                beforeVariants(selector().withBuildType("release")) { variant ->
-                    variant.enable = false
-                }
-            }
-        }
+  class LibCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.apply { beforeVariants(selector().withBuildType("release")) { variant -> variant.enable = false } }
     }
+  }
 }

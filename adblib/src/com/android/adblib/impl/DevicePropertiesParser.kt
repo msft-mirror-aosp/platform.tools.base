@@ -17,82 +17,72 @@ package com.android.adblib.impl
 
 import com.android.adblib.DeviceProperty
 
-/**
- * A single line property
- */
-private val SingleLinePattern = Regex("^\\[([^]]+)]:\\s*\\[(.*)]$") //$NON-NLS-1$
+/** A single line property */
+private val SingleLinePattern = Regex("^\\[([^]]+)]:\\s*\\[(.*)]$") // $NON-NLS-1$
 
-/** Two patterns in case the property span several lines.  */
-private val StartLinePattern = Regex("^\\[([^]]+)]:\\s*\\[(.*)$") //$NON-NLS-1$
+/** Two patterns in case the property span several lines. */
+private val StartLinePattern = Regex("^\\[([^]]+)]:\\s*\\[(.*)$") // $NON-NLS-1$
 
-private val EndLinePattern = Regex("(.*)]$") //$NON-NLS-1$
+private val EndLinePattern = Regex("(.*)]$") // $NON-NLS-1$
 
 /**
  * Parser to process the result of a device `getprop` shell command output into a [List] of [DeviceProperty] entries.
- *
- * * Some properties are single line, e.g.
- *         [foo.bar] = [blah]
- *
- * * Some properties span multiple lines, e.g.
- *         [foo.bar] = [line 1\n
- *         line 2\n
- *         line 3]
+ * * Some properties are single line, e.g. [foo.bar] = [blah]
+ * * Some properties span multiple lines, e.g. [foo.bar] = [line 1\n line 2\n line 3]
  */
 internal class DevicePropertiesParser {
 
-    fun parse(lines: Sequence<String>, removeTrailingCr: Boolean = false): List<DeviceProperty> {
-        // Remove trailing '\r' if needed
-        val strippedCrLines = if (removeTrailingCr) {
-            lines.map {
-                if (it.endsWith('\r')) {
-                    it.substring(0, it.length - 1)
-                } else {
-                    it
-                }
-            }
+  fun parse(lines: Sequence<String>, removeTrailingCr: Boolean = false): List<DeviceProperty> {
+    // Remove trailing '\r' if needed
+    val strippedCrLines =
+      if (removeTrailingCr) {
+        lines.map {
+          if (it.endsWith('\r')) {
+            it.substring(0, it.length - 1)
+          } else {
+            it
+          }
+        }
+      } else {
+        lines
+      }
+    val result = ArrayList<DeviceProperty>()
+    val iterator = strippedCrLines.iterator()
+    while (iterator.hasNext()) {
+      matchOneEntry(iterator)?.let { result.add(it) }
+    }
+
+    return result
+  }
+
+  private fun matchOneEntry(iterator: Iterator<String>): DeviceProperty? {
+    val line = iterator.next()
+    return matchOneLine(line) ?: matchMultiLine(line, iterator)
+  }
+
+  private fun matchOneLine(line: String): DeviceProperty? {
+    val matchResult = SingleLinePattern.matchEntire(line)
+    return matchResult?.let { DeviceProperty(matchResult.groupValues[1], matchResult.groupValues[2]) }
+  }
+
+  private fun matchMultiLine(line: String, iterator: Iterator<String>): DeviceProperty? {
+    val matchResult = StartLinePattern.matchEntire(line)
+    return matchResult?.let {
+      val propName = matchResult.groupValues[1]
+      val sb = StringBuilder()
+      sb.append(matchResult.groupValues[2])
+      while (iterator.hasNext()) {
+        val nextLine = iterator.next()
+        sb.append("\n")
+        val endLineMatchResult = EndLinePattern.matchEntire(nextLine)
+        if (endLineMatchResult == null) {
+          sb.append(nextLine)
         } else {
-            lines
+          sb.append(endLineMatchResult.groupValues[1])
+          break
         }
-        val result = ArrayList<DeviceProperty>()
-        val iterator = strippedCrLines.iterator()
-        while (iterator.hasNext()) {
-            matchOneEntry(iterator)?.let { result.add(it) }
-        }
-
-        return result
+      }
+      DeviceProperty(propName, sb.toString())
     }
-
-    private fun matchOneEntry(iterator: Iterator<String>): DeviceProperty? {
-        val line = iterator.next()
-        return matchOneLine(line) ?: matchMultiLine(line, iterator)
-    }
-
-    private fun matchOneLine(line: String): DeviceProperty? {
-        val matchResult = SingleLinePattern.matchEntire(line)
-        return matchResult?.let {
-            DeviceProperty(matchResult.groupValues[1], matchResult.groupValues[2])
-        }
-    }
-
-    private fun matchMultiLine(line: String, iterator: Iterator<String>): DeviceProperty? {
-        val matchResult = StartLinePattern.matchEntire(line)
-        return matchResult?.let {
-            val propName = matchResult.groupValues[1]
-            val sb = StringBuilder()
-            sb.append(matchResult.groupValues[2])
-            while (iterator.hasNext()) {
-                val nextLine = iterator.next()
-                sb.append("\n")
-                val endLineMatchResult = EndLinePattern.matchEntire(nextLine)
-                if (endLineMatchResult == null) {
-                    sb.append(nextLine)
-                } else {
-                    sb.append(endLineMatchResult.groupValues[1])
-                    break
-                }
-            }
-            DeviceProperty(propName, sb.toString())
-        }
-    }
+  }
 }
-

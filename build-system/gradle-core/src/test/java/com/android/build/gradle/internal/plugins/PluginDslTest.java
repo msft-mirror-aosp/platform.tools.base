@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.plugins;
 
 
 import static com.android.build.gradle.internal.fixture.VariantCreationConfigCheckerKt.countVariants;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.SdkConstants;
@@ -70,7 +71,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-/** Tests for checking the "application" and "atom" DSLs. */
+/** Tests for checking the "application" DSL. */
 public class PluginDslTest {
 
     @Rule public TemporaryFolder projectDirectory = new TemporaryFolder();

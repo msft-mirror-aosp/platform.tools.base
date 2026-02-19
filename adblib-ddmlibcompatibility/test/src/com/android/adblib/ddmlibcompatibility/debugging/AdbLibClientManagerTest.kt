@@ -20,15 +20,15 @@ import junit.framework.Assert
 import org.junit.Test
 
 class AdbLibClientManagerTest {
-    @Test
-    fun testSessionIsStored() {
-        // Prepare
-        val session = FakeAdbSession()
+  @Test
+  fun testSessionIsStored() {
+    // Prepare
+    val session = FakeAdbSession()
 
-        // Act
-        val clientManager = AdbLibClientManager(session)
+    // Act
+    val clientManager = AdbLibClientManager(session)
 
-        // Assert
-        Assert.assertEquals(session, clientManager.session)
-    }
+    // Assert
+    Assert.assertEquals(session, clientManager.session)
+  }
 }

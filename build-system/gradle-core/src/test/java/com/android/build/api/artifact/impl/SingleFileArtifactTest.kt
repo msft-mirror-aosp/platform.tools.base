@@ -20,17 +20,15 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.OutputFile
 
-/**
- * Unit tests for [SingleArtifact<RegularFile>]
- */
-class SingleFileArtifactTest:
-    AbstractSingleArtifactTest<RegularFile>(
-        { objectFactory -> objectFactory.fileProperty() },
-        { directory, name -> directory.file(name) },
-        { tasks, name -> tasks.register(name, FileProducerTask::class.java)}) {
+/** Unit tests for [SingleArtifact<RegularFile>] */
+class SingleFileArtifactTest :
+  AbstractSingleArtifactTest<RegularFile>(
+    { objectFactory -> objectFactory.fileProperty() },
+    { directory, name -> directory.file(name) },
+    { tasks, name -> tasks.register(name, FileProducerTask::class.java) },
+  ) {
 
-    internal abstract class FileProducerTask: ProducerTask<RegularFile>() {
-        @OutputFile
-        abstract override fun getOutputFile(): RegularFileProperty
-    }
+  internal abstract class FileProducerTask : ProducerTask<RegularFile>() {
+    @OutputFile abstract override fun getOutputFile(): RegularFileProperty
+  }
 }

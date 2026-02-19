@@ -20,30 +20,27 @@ import com.android.builder.model.v2.AndroidModel
 import com.android.builder.model.v2.ide.ArtifactDependenciesAdjacencyList
 import com.android.builder.model.v2.ide.Library
 
-interface VariantDependenciesAdjacencyList: AndroidModel {
-    /**
-     * Returns the name of the variant. It is made up of the build type and flavors (if applicable)
-     *
-     * @return the name of the variant.
-     */
-    val name: String
+interface VariantDependenciesAdjacencyList : AndroidModel {
+  /**
+   * Returns the name of the variant. It is made up of the build type and flavors (if applicable)
+   *
+   * @return the name of the variant.
+   */
+  val name: String
 
-    val mainArtifact: ArtifactDependenciesAdjacencyList
+  val mainArtifact: ArtifactDependenciesAdjacencyList
 
-    val deviceTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>
-    @Deprecated("Contained in deviceTestArtifacts")
-    val androidTestArtifact: ArtifactDependenciesAdjacencyList?
-    val hostTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>
-    val testSuiteArtifacts: Map<String, TestSuiteDependenciesAdjacencyList>
-    @Deprecated("Contained in hostTestArtifacts")
-    val unitTestArtifact: ArtifactDependenciesAdjacencyList?
-    val testFixturesArtifact: ArtifactDependenciesAdjacencyList?
+  val deviceTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>
+  @Deprecated("Contained in deviceTestArtifacts") val androidTestArtifact: ArtifactDependenciesAdjacencyList?
+  val hostTestArtifacts: Map<String, ArtifactDependenciesAdjacencyList>
+  val testSuiteArtifacts: Map<String, TestSuiteDependenciesAdjacencyList>
+  @Deprecated("Contained in hostTestArtifacts") val unitTestArtifact: ArtifactDependenciesAdjacencyList?
+  val testFixturesArtifact: ArtifactDependenciesAdjacencyList?
 
-    /**
-     * The list of external libraries used by all the variants in the module.
-     *
-     * The key for the map entries is the keys used in [Edge.from] or [Edge.to]
-     * and [Library.key]
-     */
-    val libraries: Map<String, Library>
+  /**
+   * The list of external libraries used by all the variants in the module.
+   *
+   * The key for the map entries is the keys used in [Edge.from] or [Edge.to] and [Library.key]
+   */
+  val libraries: Map<String, Library>
 }

@@ -46,17 +46,11 @@ private const val PENDING_INTENT_REQUEST_CODE = 3
 private const val PENDING_INTENT_FLAGS = 0x1234
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class AlarmHandlerTest {
   private val inspectorRule = BackgroundTaskInspectorRule()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
   private val context
     get() = RuntimeEnvironment.getApplication()
@@ -82,14 +76,9 @@ class AlarmHandlerTest {
         component = ComponentName("package", "classname"),
         categories = setOf("c1", "c2"),
         flags = 0x321,
-        extras =
-          Bundle()
-            .put("INT_EXTRA", 1)
-            .put("STRING_EXTRA", "Foo")
-            .put("BUNDLE_EXTRA", Bundle().put("INNER_EXTRA", "inner")),
+        extras = Bundle().put("INT_EXTRA", 1).put("STRING_EXTRA", "Foo").put("BUNDLE_EXTRA", Bundle().put("INNER_EXTRA", "inner")),
       )
-    val pendingIntent =
-      PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
+    val pendingIntent = PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
     pendingIntentHandler.handlePendingIntent(pendingIntent)
     alarmHandler.onAlarmSet(
       RTC_WAKEUP,
@@ -119,11 +108,7 @@ class AlarmHandlerTest {
                     .setData("http://google.com")
                     .maybeSetIdentifier("identifier")
                     .setPackage("package")
-                    .setComponentName(
-                      ComponentNameProto.newBuilder()
-                        .setPackageName("package")
-                        .setClassName("classname")
-                    )
+                    .setComponentName(ComponentNameProto.newBuilder().setPackageName("package").setClassName("classname"))
                     .addAllCategories(listOf("c1", "c2"))
                     .setFlags(0x321)
                     .setExtras(
@@ -132,7 +117,7 @@ class AlarmHandlerTest {
                           INNER_EXTRA: inner
                       INT_EXTRA: 1
                       STRING_EXTRA: Foo
-                    """
+                      """
                         .trimIndent()
                     )
                 )
@@ -158,8 +143,7 @@ class AlarmHandlerTest {
         extras = null,
         flags = 0,
       )
-    val pendingIntent =
-      PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
+    val pendingIntent = PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
     pendingIntentHandler.handlePendingIntent(pendingIntent)
     alarmHandler.onAlarmSet(
       RTC_WAKEUP,
@@ -171,8 +155,7 @@ class AlarmHandlerTest {
       listenerTag = null,
     )
     inspectorRule.connection.consume {
-      assertThat(alarmSet.operation.intentList)
-        .containsExactly(IntentProto.newBuilder().setAction("action").setType("type").build())
+      assertThat(alarmSet.operation.intentList).containsExactly(IntentProto.newBuilder().setAction("action").setType("type").build())
     }
   }
 
@@ -191,8 +174,7 @@ class AlarmHandlerTest {
         flags = 0,
         extras = null,
       )
-    val pendingIntent =
-      PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
+    val pendingIntent = PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
     pendingIntentHandler.handlePendingIntent(pendingIntent)
     alarmHandler.onAlarmSet(
       RTC_WAKEUP,
@@ -253,8 +235,7 @@ class AlarmHandlerTest {
   fun alarmFiredWithIntent() {
     val alarmHandler = inspectorRule.inspector.alarmHandler
     val intent = Intent()
-    val operation =
-      PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
+    val operation = PendingIntent.getActivity(context, PENDING_INTENT_REQUEST_CODE, intent, PENDING_INTENT_FLAGS)
 
     pendingIntentHandler.handlePendingIntent(operation)
 
@@ -319,8 +300,7 @@ class AlarmHandlerTest {
 class IntentHolder(@JvmField val intent: Intent) {}
 
 // Actual values of requestCode, intent & flags are not used by the test
-private fun pendingIntent(): PendingIntent =
-  PendingIntent.getActivity(RuntimeEnvironment.getApplication(), 0, Intent(), 0)
+private fun pendingIntent(): PendingIntent = PendingIntent.getActivity(RuntimeEnvironment.getApplication(), 0, Intent(), 0)
 
 @Suppress("SameParameterValue")
 private fun intent(

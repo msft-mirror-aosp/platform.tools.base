@@ -39,11 +39,9 @@ import org.w3c.dom.Element
 class WearableConfigurationActionDetector : Detector(), XmlScanner {
   companion object Issues {
 
-    const val WEARABLE_CONFIGURATION_ACTION =
-      "com.google.android.wearable.watchface.wearableConfigurationAction"
+    const val WEARABLE_CONFIGURATION_ACTION = "com.google.android.wearable.watchface.wearableConfigurationAction"
 
-    const val CATEGORY_WEARABLE_CONFIGURATION =
-      "com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION"
+    const val CATEGORY_WEARABLE_CONFIGURATION = "com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION"
 
     const val WATCH_FACE_EDITOR_ACTION = "androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR"
 
@@ -62,8 +60,7 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
       )
 
@@ -82,8 +79,7 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(WearableConfigurationActionDetector::class.java, Scope.MANIFEST_SCOPE),
         androidSpecific = true,
       )
   }
@@ -94,9 +90,7 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
   private var foundMetaData: Element? = null
 
   override fun checkMergedProject(context: Context) {
-    context.project.buildVariant
-      ?.mainArtifact
-      ?.findCompileDependency("androidx.wear.watchface:watchface") ?: return
+    context.project.buildVariant?.mainArtifact?.findCompileDependency("androidx.wear.watchface:watchface") ?: return
     beforeScanningManifest()
     val document = context.mainProject.mergedManifest?.documentElement ?: return
     document.visitElements { visitManifestElement(it) }
@@ -119,44 +113,24 @@ class WearableConfigurationActionDetector : Detector(), XmlScanner {
     if (duplicateAction != null) {
       val location = context.getLocation(duplicateAction)
       context.report(
-        Incident(
-          ACTION_DUPLICATE,
-          location.source ?: duplicateAction,
-          location,
-          "Duplicate watch face configuration activities found",
-        )
+        Incident(ACTION_DUPLICATE, location.source ?: duplicateAction, location, "Duplicate watch face configuration activities found")
       )
     }
     if (foundMetaData != null && foundAction == null) {
       val location = context.getLocation(foundMetaData.getAttributeNodeNS(ANDROID_URI, "name"))
       context.report(
-        Incident(
-          CONFIGURATION_ACTION,
-          location.source ?: foundMetaData,
-          location,
-          "Watch face configuration activity is missing",
-        )
+        Incident(CONFIGURATION_ACTION, location.source ?: foundMetaData, location, "Watch face configuration activity is missing")
       )
     } else if (foundMetaData != null && foundAction != null && foundCategory == null) {
       val location = context.getLocation(foundAction)
       context.report(
-        Incident(
-          CONFIGURATION_ACTION,
-          location.source ?: foundAction,
-          location,
-          "Watch face configuration tag is required",
-        ),
+        Incident(CONFIGURATION_ACTION, location.source ?: foundAction, location, "Watch face configuration tag is required"),
         minSdkLessThan(30),
       )
     } else if (foundAction != null && foundMetaData == null) {
       val location = context.getLocation(foundAction.getAttributeNodeNS(ANDROID_URI, "name"))
       context.report(
-        Incident(
-          CONFIGURATION_ACTION,
-          location.source ?: foundAction,
-          location,
-          "`wearableConfigurationAction` metadata is missing",
-        ),
+        Incident(CONFIGURATION_ACTION, location.source ?: foundAction, location, "`wearableConfigurationAction` metadata is missing"),
         minSdkLessThan(30),
       )
     }

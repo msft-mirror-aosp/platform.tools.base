@@ -26,12 +26,7 @@ import com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.res.
 import com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.src.app_package.scrollFragmentJava
 import com.android.tools.idea.wizard.template.impl.fragments.scrollFragment.src.app_package.scrollFragmentKt
 
-fun RecipeExecutor.scrollFragmentRecipe(
-  moduleData: ModuleTemplateData,
-  fragmentClass: String,
-  layoutName: String,
-  packageName: String
-) {
+fun RecipeExecutor.scrollFragmentRecipe(moduleData: ModuleTemplateData, fragmentClass: String, layoutName: String, packageName: String) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
   val ktOrJavaExt = projectData.language.extension
@@ -43,10 +38,11 @@ fun RecipeExecutor.scrollFragmentRecipe(
   save(simpleXml(fragmentClass, packageName, useAndroidX), resOut.resolve("layout/${layoutName}.xml"))
   open(resOut.resolve("layout/${layoutName}.xml"))
 
-  val scrollFragment = when (projectData.language) {
-    Language.Java -> scrollFragmentJava(fragmentClass, layoutName, packageName, useAndroidX)
-    Language.Kotlin -> scrollFragmentKt(fragmentClass, layoutName, packageName, useAndroidX)
-  }
+  val scrollFragment =
+    when (projectData.language) {
+      Language.Java -> scrollFragmentJava(fragmentClass, layoutName, packageName, useAndroidX)
+      Language.Kotlin -> scrollFragmentKt(fragmentClass, layoutName, packageName, useAndroidX)
+    }
   save(scrollFragment, srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${fragmentClass}.${ktOrJavaExt}"))

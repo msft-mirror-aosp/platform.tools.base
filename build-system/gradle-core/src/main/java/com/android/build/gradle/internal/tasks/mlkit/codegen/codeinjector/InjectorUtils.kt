@@ -27,11 +27,10 @@ import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.codebl
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.codeblock.processor.ImagePreprocessorInitInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.codeblock.processor.ImageProcessInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.fields.FieldInjector
-import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.innerclass.OutputsClassInjector
-import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.DefaultGetMethodInjector
-import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.ImageGetMethodInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.AxisLabelsListGetMethodInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.BoundingBoxGetMethodInjector
+import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.DefaultGetMethodInjector
+import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.ImageGetMethodInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.MethodInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.NoMetadataGetMethodInjector
 import com.android.build.gradle.internal.tasks.mlkit.codegen.codeinjector.methods.ValueLabelsGetMethodInjector
@@ -39,44 +38,44 @@ import com.android.tools.mlkit.ModelInfo
 import com.android.tools.mlkit.TensorInfo
 
 fun getFieldInjector(): FieldInjector {
-    return FieldInjector()
+  return FieldInjector()
 }
 
 fun getAssociatedFileInjector(): AssociatedFileInjector {
-    return AssociatedFileInjector()
+  return AssociatedFileInjector()
 }
 
 fun getGetterMethodInjector(tensorInfo: TensorInfo, modelInfo: ModelInfo): MethodInjector {
-    return when {
-        tensorInfo.isRGBImage -> ImageGetMethodInjector()
-        tensorInfo.fileType == TensorInfo.FileType.TENSOR_AXIS_LABELS -> AxisLabelsListGetMethodInjector()
-        tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS -> ValueLabelsGetMethodInjector()
-        tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX -> BoundingBoxGetMethodInjector(modelInfo)
-        tensorInfo.isMetadataExisted -> DefaultGetMethodInjector()
-        else -> NoMetadataGetMethodInjector()
-    }
+  return when {
+    tensorInfo.isRGBImage -> ImageGetMethodInjector()
+    tensorInfo.fileType == TensorInfo.FileType.TENSOR_AXIS_LABELS -> AxisLabelsListGetMethodInjector()
+    tensorInfo.fileType == TensorInfo.FileType.TENSOR_VALUE_LABELS -> ValueLabelsGetMethodInjector()
+    tensorInfo.contentType == TensorInfo.ContentType.BOUNDING_BOX -> BoundingBoxGetMethodInjector(modelInfo)
+    tensorInfo.isMetadataExisted -> DefaultGetMethodInjector()
+    else -> NoMetadataGetMethodInjector()
+  }
 }
 
 fun getInputProcessorInjector(tensorInfo: TensorInfo): CodeBlockInjector {
-    return if (tensorInfo.isRGBImage) {
-        ImagePreprocessorInitInjector()
-    } else {
-        DefaultPreprocessorInitInjector()
-    }
+  return if (tensorInfo.isRGBImage) {
+    ImagePreprocessorInitInjector()
+  } else {
+    DefaultPreprocessorInitInjector()
+  }
 }
 
 fun getProcessInjector(tensorInfo: TensorInfo): CodeBlockInjector {
-    return if (tensorInfo.isRGBImage) {
-        ImageProcessInjector()
-    } else {
-        DefaultProcessInjector()
-    }
+  return if (tensorInfo.isRGBImage) {
+    ImageProcessInjector()
+  } else {
+    DefaultProcessInjector()
+  }
 }
 
 fun getOutputProcessorInjector(tensorInfo: TensorInfo): CodeBlockInjector {
-    return if (tensorInfo.isRGBImage) {
-        ImagePostprocessorInitInjector()
-    } else {
-        DefaultPostprocessorInitInjector()
-    }
+  return if (tensorInfo.isRGBImage) {
+    ImagePostprocessorInitInjector()
+  } else {
+    DefaultPostprocessorInitInjector()
+  }
 }

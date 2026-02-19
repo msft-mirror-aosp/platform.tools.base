@@ -44,46 +44,27 @@ val CellValue.valueType: Pair<Any?, String>
       else -> throw IllegalArgumentException()
     }
 
-fun GetSchemaResponse.toTableList(): List<Table> =
-  tablesList.map { t -> Table(t.name, t.columnsList.map { c -> Column(c.name, c.type) }) }
+fun GetSchemaResponse.toTableList(): List<Table> = tablesList.map { t -> Table(t.name, t.columnsList.map { c -> Column(c.name, c.type) }) }
 
 object MessageFactory {
-  fun createTrackDatabasesCommand(
-    forceOpen: Boolean = false,
-    ignoreFrameworkApi: Boolean = false,
-  ): Command =
+  fun createTrackDatabasesCommand(forceOpen: Boolean = false, ignoreFrameworkApi: Boolean = false): Command =
     Command.newBuilder()
-      .setTrackDatabases(
-        TrackDatabasesCommand.newBuilder()
-          .setForceOpen(forceOpen)
-          .setIgnoreFrameworkApi(ignoreFrameworkApi)
-      )
+      .setTrackDatabases(TrackDatabasesCommand.newBuilder().setForceOpen(forceOpen).setIgnoreFrameworkApi(ignoreFrameworkApi))
       .build()
 
   fun createTrackDatabasesResponse(): Response =
     Response.newBuilder().setTrackDatabases(TrackDatabasesResponse.getDefaultInstance()).build()
 
   fun createKeepDatabasesOpenCommand(setEnabled: Boolean): Command =
-    Command.newBuilder()
-      .setKeepDatabasesOpen(KeepDatabasesOpenCommand.newBuilder().setSetEnabled(setEnabled))
-      .build()
+    Command.newBuilder().setKeepDatabasesOpen(KeepDatabasesOpenCommand.newBuilder().setSetEnabled(setEnabled)).build()
 
   fun createKeepDatabasesOpenResponse(): Response =
-    Response.newBuilder()
-      .setKeepDatabasesOpen(KeepDatabasesOpenResponse.getDefaultInstance())
-      .build()
+    Response.newBuilder().setKeepDatabasesOpen(KeepDatabasesOpenResponse.getDefaultInstance()).build()
 
   fun createGetSchemaCommand(databaseId: Int): Command =
-    Command.newBuilder()
-      .setGetSchema(GetSchemaCommand.newBuilder().setDatabaseId(databaseId).build())
-      .build()
+    Command.newBuilder().setGetSchema(GetSchemaCommand.newBuilder().setDatabaseId(databaseId).build()).build()
 
-  fun createQueryCommand(
-    databaseId: Int,
-    query: String,
-    queryParams: List<String?>? = null,
-    responseSizeLimitHint: Long? = null,
-  ): Command =
+  fun createQueryCommand(databaseId: Int, query: String, queryParams: List<String?>? = null, responseSizeLimitHint: Long? = null): Command =
     Command.newBuilder()
       .setQuery(
         QueryCommand.newBuilder()
@@ -93,9 +74,7 @@ object MessageFactory {
             if (queryParams != null)
               queryCommandBuilder.addAllQueryParameterValues(
                 queryParams.map { param ->
-                  QueryParameterValue.newBuilder()
-                    .also { builder -> if (param != null) builder.stringValue = param }
-                    .build()
+                  QueryParameterValue.newBuilder().also { builder -> if (param != null) builder.stringValue = param }.build()
                 }
               )
             if (responseSizeLimitHint != null) {

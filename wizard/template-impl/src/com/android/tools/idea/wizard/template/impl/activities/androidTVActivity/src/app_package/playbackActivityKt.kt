@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun playbackActivityKt(
-  packageName: String
-) = """
+fun playbackActivityKt(packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

@@ -85,7 +85,7 @@ val bottomNavigationActivityTemplate
       LanguageWidget(),
 
       // Invisible widget. Defining this to impose constraints
-      TextFieldWidget(navGraphName)
+      TextFieldWidget(navGraphName),
     )
 
     thumb { File("bottom-navigation-activity").resolve("template_bottom_navigation_activity.png") }
@@ -96,7 +96,7 @@ val bottomNavigationActivityTemplate
         activityClass = activityClass.value,
         layoutName = layoutName.value,
         packageName = packageName.value,
-        navGraphName = navGraphName.value
+        navGraphName = navGraphName.value,
       )
     }
   }

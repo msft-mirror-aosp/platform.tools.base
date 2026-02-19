@@ -19,7 +19,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.1.0"
+GRADLE_VERSION = "9.3.1"
 
 filegroup(
     name = "gradle-distrib",
@@ -44,9 +44,21 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_1.9.20",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.21",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.3.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.3.1"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.2.1",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.2.1"],
     visibility = ["//visibility:public"],
 )
 
@@ -508,6 +520,7 @@ maven_repository(
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/analytics-library/tracker:tools.analytics-tracker",
         "//tools/apkzlib",
+        "//tools/base/android-test/android-test-junit-engine:android-test-engine",
         "//tools/base/annotations:annotations",
         "//tools/base/build-system:tools.apksig",
         "//tools/base/common:tools.common",
@@ -554,8 +567,6 @@ maven_repository(
         "@maven//:com.google.jimfs.jimfs",
         "@maven//:com.google.protobuf.protobuf-gradle-plugin",
         "@maven//:com.google.protobuf.protoc_3.22.3",
-        "@maven//:com.google.testing.platform.android-driver-instrumentation",
-        "@maven//:com.google.testing.platform.core-proto",
         "@maven//:com.google.truth.extensions.truth-java8-extension",
         "@maven//:com.googlecode.jarjar.jarjar",
         "@maven//:com.googlecode.juniversalchardet.juniversalchardet",

@@ -59,8 +59,7 @@ class FineLocationDetector : Detector(), XmlScanner {
         Incident(
           ISSUE,
           context.getLocation(fineElement),
-          "If you need access to FINE location, you must request both " +
-            "`ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`",
+          "If you need access to FINE location, you must request both " + "`ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION`",
         )
       )
     }

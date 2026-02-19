@@ -19,20 +19,12 @@ import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import java.net.Socket
 
-/**
- * host-prefix:get-devpath return the last known state of the device
- */
+/** host-prefix:get-devpath return the last known state of the device */
 class GetDevPathCommandHandler : SimpleHostCommandHandler("get-devpath") {
 
-    override fun invoke(
-        fakeAdbServer: FakeAdbServer,
-        responseSocket: Socket,
-        device: DeviceState?,
-        args: String
-    ): Boolean {
-        assert(device != null)
-        writeOkayResponse(responseSocket.getOutputStream(), "dev-path-reply")
-        return false
-    }
-
+  override fun invoke(fakeAdbServer: FakeAdbServer, responseSocket: Socket, device: DeviceState?, args: String): Boolean {
+    assert(device != null)
+    writeOkayResponse(responseSocket.getOutputStream(), "dev-path-reply")
+    return false
+  }
 }

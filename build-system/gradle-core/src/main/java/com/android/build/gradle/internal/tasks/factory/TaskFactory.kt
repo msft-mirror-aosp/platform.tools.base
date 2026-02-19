@@ -20,45 +20,34 @@ import org.gradle.api.Action
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
 
-/**
- * Interface for a container that can create Task.
- */
+/** Interface for a container that can create Task. */
 interface TaskFactory {
 
-    fun named(name: String): TaskProvider<Task>
+  fun named(name: String): TaskProvider<Task>
 
-    fun register(name: String): TaskProvider<Task>
+  fun register(name: String): TaskProvider<Task>
 
-    fun <T : Task> register(
-        creationAction: TaskCreationAction<T>
-    ): TaskProvider<T>
+  fun <T : Task> register(creationAction: TaskCreationAction<T>): TaskProvider<T>
 
-    fun <T : Task> register(
-        creationAction: TaskCreationAction<T>,
-        secondaryPreConfigAction: PreConfigAction? = null,
-        secondaryAction: TaskConfigAction<in T>? = null,
-        secondaryProviderCallback: TaskProviderCallback<T>? = null
-    ): TaskProvider<T>
+  fun <T : Task> register(
+    creationAction: TaskCreationAction<T>,
+    secondaryPreConfigAction: PreConfigAction? = null,
+    secondaryAction: TaskConfigAction<in T>? = null,
+    secondaryProviderCallback: TaskProviderCallback<T>? = null,
+  ): TaskProvider<T>
 
-    fun register(
-        taskName: String,
-        preConfigAction: PreConfigAction? = null,
-        action: TaskConfigAction<in Task>? = null,
-        providerCallback: TaskProviderCallback<Task>? = null
-    ): TaskProvider<Task>
+  fun register(
+    taskName: String,
+    preConfigAction: PreConfigAction? = null,
+    action: TaskConfigAction<in Task>? = null,
+    providerCallback: TaskProviderCallback<Task>? = null,
+  ): TaskProvider<Task>
 
-    fun <T: Task> register(
-        taskName: String,
-        taskType: Class<T>,
-        action: Action<in T>
-    ): TaskProvider<T>
+  fun <T : Task> register(taskName: String, taskType: Class<T>, action: Action<in T>): TaskProvider<T>
 
-    fun register(
-        taskName: String,
-        action: Action<in Task>
-    ): TaskProvider<Task>
+  fun register(taskName: String, action: Action<in Task>): TaskProvider<Task>
 
-    fun configure(name: String, action: Action<in Task>)
+  fun configure(name: String, action: Action<in Task>)
 
-    fun <T : Task> configure(name: String, type: Class<T>, action: Action<in T>)
+  fun <T : Task> configure(name: String, type: Class<T>, action: Action<in T>)
 }

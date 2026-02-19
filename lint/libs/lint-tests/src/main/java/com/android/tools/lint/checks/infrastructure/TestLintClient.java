@@ -2311,6 +2311,30 @@ public class TestLintClient extends LintCliClient {
             return generatedSourceFolders;
         }
 
+      @NonNull
+      @Override
+      public List<File> getKeepRulesSourceFolders() {
+        if (keepRulesFolders == null) {
+          if (mocker != null) {
+            keepRulesFolders =
+                mocker.getKeepRulesSourceFolders().stream()
+                    .filter(File::exists)
+                    .collect(Collectors.toList());
+          }
+          if (keepRulesFolders == null || keepRulesFolders.isEmpty()) {
+            keepRulesFolders = super.getGeneratedSourceFolders();
+            if (keepRulesFolders.isEmpty()) {
+              File generated = new File(dir, "keepRules");
+              if (generated.isDirectory()) {
+                keepRulesFolders = singletonList(generated);
+              }
+            }
+          }
+        }
+
+        return keepRulesFolders;
+      }
+
         @NonNull
         @Override
         public List<File> getGeneratedResourceFolders() {

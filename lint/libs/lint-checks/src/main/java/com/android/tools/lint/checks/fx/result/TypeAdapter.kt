@@ -83,10 +83,7 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
         is PsiWildcardType -> Type.WildCard // TODO
         is PsiEllipsisType -> Type.Ellipsis(translate(env, t.componentType))
         is PsiArrayType -> Type.Application(ClassId.Array, listOf(translate(env, t.componentType)))
-        is PsiDisjunctionType ->
-          Type.Union(
-            t.disjunctions.map(::loop).fold(persistentSetOf<Type<Nothing>>()) { acc, t -> acc + t }
-          )
+        is PsiDisjunctionType -> Type.Union(t.disjunctions.map(::loop).fold(persistentSetOf<Type<Nothing>>()) { acc, t -> acc + t })
         is UastErrorType -> Type.WildCard
         is PsiCapturedWildcardType -> Type.WildCard // TODO
         else -> throw NotImplementedError("Translate XXX $t of type '${t::class.java}'")
@@ -106,22 +103,16 @@ internal object PsiTypeAdapter : TypeAdapter<PsiType> {
 
 internal object KtTypeReferenceAdapter : TypeAdapter<KtTypeReference?> {
   internal val resolveProviderService: BaseKotlinUastResolveProviderService by
-    lazy(LazyThreadSafetyMode.NONE) {
-      ApplicationManager.getApplication()
-        .getService(BaseKotlinUastResolveProviderService::class.java)
-    }
+    lazy(LazyThreadSafetyMode.NONE) { ApplicationManager.getApplication().getService(BaseKotlinUastResolveProviderService::class.java) }
 
   override fun translate(env: Set<String>, repr: KtTypeReference?) =
     when (repr) {
       null -> Type.WildCard
-      else ->
-        resolveProviderService.resolveToType(repr, null)?.let { PsiTypeAdapter.translate(env, it) }
-          ?: Type.WildCard
+      else -> resolveProviderService.resolveToType(repr, null)?.let { PsiTypeAdapter.translate(env, it) } ?: Type.WildCard
     }
 
   override fun isFinal(repr: KtTypeReference?) =
-    repr != null &&
-      resolveProviderService.resolveToType(repr, null)?.let(PsiTypeAdapter::isFinal) == true
+    repr != null && resolveProviderService.resolveToType(repr, null)?.let(PsiTypeAdapter::isFinal) == true
 }
 
 object KTypeAdapter : TypeAdapter<KType> {
@@ -135,11 +126,7 @@ object KTypeAdapter : TypeAdapter<KType> {
       Float::class -> Type.Float
       Double::class -> Type.Double
       Unit::class -> Type.Unit
-      is KClass<*> ->
-        Type.Application(
-          ClassId.of(c),
-          repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) },
-        )
+      is KClass<*> -> Type.Application(ClassId.of(c), repr.arguments.map { translate(env, it.type ?: return@map Type.WildCard) })
       is KTypeParameter -> Type.Sym.Param(c.name)
       else -> throw NotImplementedError("Translate $repr")
     }

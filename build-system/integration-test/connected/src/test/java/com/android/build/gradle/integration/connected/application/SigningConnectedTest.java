@@ -17,7 +17,6 @@
 package com.android.build.gradle.integration.connected.application;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.integration.common.fixture.Adb;
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.runner.FilterableParameterized;
@@ -60,7 +59,6 @@ public class SigningConnectedTest {
                     .fromTestApp(HelloWorldApp.noBuildFile())
                     .create();
 
-    @Rule public Adb adb = new Adb();
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();
 
     @Parameterized.Parameters(name = "{0}, {2}")
@@ -120,14 +118,6 @@ public class SigningConnectedTest {
                         + "\n"
                         + "        customSigning {\n"
                         + "            initWith release\n"
-                        + "        }\n"
-                        + "    }\n"
-                        + "\n"
-                        + "    applicationVariants.all { variant ->\n"
-                        + "        if (variant.buildType.name == \"customSigning\") {\n"
-                        + "            variant.outputsAreSigned = true\n"
-                        + "            // This usually means there is a task that generates the final outputs\n"
-                        + "            // and variant.outputs*.outputFile is set to point to these files.\n"
                         + "        }\n"
                         + "    }\n"
                         + "}\n"

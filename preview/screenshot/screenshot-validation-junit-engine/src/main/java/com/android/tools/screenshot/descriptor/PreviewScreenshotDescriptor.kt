@@ -24,6 +24,8 @@ import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
 import com.android.tools.screenshot.differ.PixelPerfect
+import java.io.File
+import java.util.Optional
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.TestSource
 import org.junit.platform.engine.UniqueId
@@ -31,92 +33,74 @@ import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
-import java.io.File
-import java.util.Optional
 
 class PreviewScreenshotDescriptor(
-    parentId: UniqueId, className: String, private val methodName: String,
-    previewName: String,
-    private val previewDisplayName: String,
-    previewScreenshotResultIndex: Int,
-    private val previewScreenshotResult: PreviewScreenshotResult) :
-    AbstractTestDescriptor(
-        parentId.append(SEGMENT_TYPE, previewScreenshotResult.previewId + "_${previewScreenshotResultIndex}"),
-        methodName + previewName
-    ), Node<PreviewScreenshotExecutionContext> {
-    companion object {
-        const val SEGMENT_TYPE: String = "previewId"
-    }
+  parentId: UniqueId,
+  className: String,
+  private val methodName: String,
+  previewName: String,
+  private val previewDisplayName: String,
+  previewScreenshotResultIndex: Int,
+  private val previewScreenshotResult: PreviewScreenshotResult,
+) :
+  AbstractTestDescriptor(
+    parentId.append(SEGMENT_TYPE, previewScreenshotResult.previewId + "_${previewScreenshotResultIndex}"),
+    methodName + previewName,
+  ),
+  Node<PreviewScreenshotExecutionContext> {
+  companion object {
+    const val SEGMENT_TYPE: String = "previewId"
+  }
 
-    private val source: MethodSource = MethodSource.from(className, methodName)
+  private val source: MethodSource = MethodSource.from(className, methodName)
 
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
 
-    override fun getSource(): Optional<TestSource> {
-        return Optional.of(source)
-    }
+  override fun getSource(): Optional<TestSource> {
+    return Optional.of(source)
+  }
 
-    override fun execute(
-        context: PreviewScreenshotExecutionContext,
-        dynamicTestExecutor: Node.DynamicTestExecutor
-    ): PreviewScreenshotExecutionContext {
-        val newImagePath = "${context.previewImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
-        val refImagePath = "${context.referenceImageDir.absolutePath}/${previewScreenshotResult.imagePath}"
-        val diffImagePath = "${context.previewDiffImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
+  override fun execute(
+    context: PreviewScreenshotExecutionContext,
+    dynamicTestExecutor: Node.DynamicTestExecutor,
+  ): PreviewScreenshotExecutionContext {
+    val newImagePath = "${context.previewImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
+    val refImagePath = "${context.referenceImageDir.absolutePath}/${previewScreenshotResult.imagePath}"
+    val diffImagePath = "${context.previewDiffImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
 
-        previewScreenshotResult.error?.let {
-            System.err.println(it)
+    previewScreenshotResult.error?.let { System.err.println(it) }
+
+    val imageVerifier = ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
+    var verificationResult: com.android.tools.screenshot.differ.VerificationResult? = null
+
+    try {
+      if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
+        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImagePath, refImagePath)
+      } else {
+        verificationResult = imageVerifier.verify(newImagePath, refImagePath, diffImagePath)
+
+        if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
+          throw ImageVerifier.ImageComparisonAssertionError(refImagePath, newImagePath, verificationResult.diffPercent, diffImagePath)
         }
+      }
+    } finally {
+      // Always report diffPercentValue from the verification result
+      verificationResult?.diffPercent?.let {
+        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString()))
+      }
+      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName))
+      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.methodName", methodName))
+      // Always publish refImagePath, this is required in IDE
+      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath))
 
-        val imageVerifier = ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
-        var verificationResult: com.android.tools.screenshot.differ.VerificationResult? = null
-
-        try {
-            if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
-                ImageUpdater(PixelPerfect(ImageDifferInput.threshold))
-                    .updateIfDifferent(newImagePath, refImagePath)
-            } else {
-                verificationResult = imageVerifier.verify(newImagePath, refImagePath, diffImagePath)
-
-                if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
-                    throw ImageVerifier.ImageComparisonAssertionError(
-                        refImagePath,
-                        newImagePath,
-                        verificationResult.diffPercent,
-                        diffImagePath
-                    )
-                }
-            }
-        } finally {
-            // Always report diffPercentValue from the verification result
-            verificationResult?.diffPercent?.let {
-                context.executionListener.reportingEntryPublished(
-                    this, ReportEntry.from("PreviewScreenshot.diffPercent", it.toString())
-                )
-            }
-            context.executionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName)
-            )
-            context.executionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.methodName", methodName)
-            )
-            // Always publish refImagePath, this is required in IDE
-            context.executionListener.reportingEntryPublished(
-                this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath)
-            )
-
-            if (File(newImagePath).exists()) {
-                context.executionListener.reportingEntryPublished(
-                    this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath)
-                )
-            }
-            if (File(diffImagePath).exists()) {
-                context.executionListener.reportingEntryPublished(
-                    this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath)
-                )
-            }
-        }
-
-        return context
+      if (File(newImagePath).exists()) {
+        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath))
+      }
+      if (File(diffImagePath).exists()) {
+        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath))
+      }
     }
+
+    return context
+  }
 }

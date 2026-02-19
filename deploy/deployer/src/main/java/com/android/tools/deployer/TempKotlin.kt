@@ -16,5 +16,5 @@
 package com.android.tools.deployer
 
 class TempKotlin {
-    fun test() = setOf("This is a temp file to make sure deployer build can compile Kotlin")
+  fun test() = setOf("This is a temp file to make sure deployer build can compile Kotlin")
 }

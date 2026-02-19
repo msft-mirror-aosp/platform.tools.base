@@ -21,33 +21,14 @@ import com.android.build.gradle.internal.cxx.configure.CmakeProperty
 /**
  * Schema of cache-v2-{hash}.json file
  *
- *  "entries" : [{
- *    "name" : "ANDROID_ABI",
- *    "properties" : [{
- *      "name" : "HELPSTRING",
- *      "value" : "No help, variable specified on the command line."
- *    }],
- *    "type" : "UNINITIALIZED",
- *    "value" : "x86_64"}],
- *  "kind" : "cache",
- *  "version" : { "major" : 2, "minor" : 0 }
+ * "entries" :
+ * [{ "name" : "ANDROID_ABI", "properties" : [{ "name" : "HELPSTRING", "value" : "No help, variable specified on the command line." }],
+ * "type" : "UNINITIALIZED", "value" : "x86_64"}], "kind" : "cache", "version" : { "major" : 2, "minor" : 0 }
  */
-data class CmakeFileApiCacheDataV2(val entries : List<CacheEntryV2>) {
-    /**
-     * Get a CMake property value from the cache entries.
-     * Return null if there is no property with that name
-     */
-    fun getCacheString(property : CmakeProperty) = entries
-            .filter { it.name == property.name }
-            .map { it.value }
-            .singleOrNull()
+data class CmakeFileApiCacheDataV2(val entries: List<CacheEntryV2>) {
+  /** Get a CMake property value from the cache entries. Return null if there is no property with that name */
+  fun getCacheString(property: CmakeProperty) = entries.filter { it.name == property.name }.map { it.value }.singleOrNull()
 }
 
-/**
- *    "name" : "ANDROID_ABI",
- *    "value" : "x86_64",
- */
-data class CacheEntryV2(
-        val name : String,
-        val value : String
-)
+/** "name" : "ANDROID_ABI", "value" : "x86_64", */
+data class CacheEntryV2(val name: String, val value: String)

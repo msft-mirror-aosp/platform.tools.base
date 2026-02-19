@@ -39,188 +39,193 @@ import com.android.tools.apk.analyzer.ApkAnalyzerImpl
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.VariantPropertiesAccess
-import org.junit.Test
-import org.mockito.Mockito
-import org.mockito.kotlin.mock
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.PrintStream
 import kotlin.test.assertNotNull
+import org.junit.Test
+import org.mockito.kotlin.mock
 
-class AddJavaSourceTest: VariantApiBaseTest(TestType.Script) {
-    @Test
-    fun addJavaSourceFromTask() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources", ":app:assembleDebug"))
-            addModule(":app") {
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
-                plugins {
-                        id("com.android.application")
-                        kotlin("android")
-                }
-                import org.gradle.api.DefaultTask
-                import org.gradle.api.file.DirectoryProperty
-                import org.gradle.api.file.FileTree
-                import org.gradle.api.tasks.InputFiles
-                import org.gradle.api.tasks.TaskAction
-                import org.gradle.api.provider.Property
-                import org.gradle.api.tasks.Internal
+class AddJavaSourceTest : VariantApiBaseTest(TestType.Script) {
+  @Test
+  fun addJavaSourceFromTask() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources", ":app:assembleDebug"))
+      addModule(":app") {
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
+          plugins {
+                  id("com.android.application")
+                  kotlin("android")
+          }
+          import org.gradle.api.DefaultTask
+          import org.gradle.api.file.DirectoryProperty
+          import org.gradle.api.file.FileTree
+          import org.gradle.api.tasks.InputFiles
+          import org.gradle.api.tasks.TaskAction
+          import org.gradle.api.provider.Property
+          import org.gradle.api.tasks.Internal
 
-                abstract class AddJavaSources: DefaultTask() {
+          abstract class AddJavaSources: DefaultTask() {
 
-                    @get:OutputDirectory
-                    abstract val outputFolder: DirectoryProperty
+              @get:OutputDirectory
+              abstract val outputFolder: DirectoryProperty
 
-                    @TaskAction
-                    fun taskAction() {
-                        val outputFile = File(outputFolder.asFile.get(), "com/foo/Bar.java")
-                        outputFile.parentFile.mkdirs()
-                        outputFile.writeText(""${'"'}
-                        package com.foo;
+              @TaskAction
+              fun taskAction() {
+                  val outputFile = File(outputFolder.asFile.get(), "com/foo/Bar.java")
+                  outputFile.parentFile.mkdirs()
+                  outputFile.writeText(""${'"'}
+                  package com.foo;
 
-                        public class Bar {
-                            public String toString() {
-                                return "a Bar instance";
-                            }
-                        }
-                        ""${'"'})
-                    }
-                }
+                  public class Bar {
+                      public String toString() {
+                          return "a Bar instance";
+                      }
+                  }
+                  ""${'"'})
+              }
+          }
 
-                abstract class DisplayAllSources: DefaultTask() {
+          abstract class DisplayAllSources: DefaultTask() {
 
-                    @get:InputFiles
-                    abstract val sourceFolders: ListProperty<Directory>
+              @get:InputFiles
+              abstract val sourceFolders: ListProperty<Directory>
 
-                    @TaskAction
-                    fun taskAction() {
+              @TaskAction
+              fun taskAction() {
 
-                        sourceFolders.get().forEach { directory ->
-                            println(">>> Got a Directory ${'$'}directory")
-                            println("<<<")
-                        }
-                    }
-                }
+                  sourceFolders.get().forEach { directory ->
+                      println(">>> Got a Directory ${'$'}directory")
+                      println("<<<")
+                  }
+              }
+          }
 
-                android {
-                    compileSdkVersion(29)
-                    defaultConfig {
-                        minSdkVersion(21)
-                        targetSdkVersion(29)
-                    }
-                    namespace = "com.example.addjavasource"
-                }
+          android {
+              compileSdkVersion(29)
+              defaultConfig {
+                  minSdkVersion(21)
+                  targetSdkVersion(29)
+              }
+              namespace = "com.example.addjavasource"
+          }
 
-                androidComponents {
-                    onVariants { variant ->
-                        val addSourceTaskProvider =  project.tasks.register<AddJavaSources>("${'$'}{variant.name}AddSources")
+          androidComponents {
+              onVariants { variant ->
+                  val addSourceTaskProvider =  project.tasks.register<AddJavaSources>("${'$'}{variant.name}AddSources")
 
-                        variant.sources.java?.let { java ->
-                            java.addGeneratedSourceDirectory(addSourceTaskProvider, AddJavaSources::outputFolder)
+                  variant.sources.java?.let { java ->
+                      java.addGeneratedSourceDirectory(addSourceTaskProvider, AddJavaSources::outputFolder)
 
-                            project.tasks.register<DisplayAllSources>("${'$'}{variant.name}DisplayAllSources") {
-                                sourceFolders.set(java.all)
-                            }
-                        }
-                    }
-                }
-                """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
-                """
-# Sources.java.getAll in Kotlin
-This sample shows how to obtain the java sources and add a [Directory] to the list of java sources
-that will be used for compilation.
-
-To access all java sources, you just need to use
-`sourceFolders.set(variant.sources.java.all`
-which can be used as [Task] input directly.
-
-To add a folder which content will be  a execution time by a [Task] execution, you need
-to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
-where source files will be generated and added to the compilation task.
-
-## To Run
-./gradlew :app:debugDisplayAllSources
-
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("addJavaSourceFromTask/app/build/gen")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(4)
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
-                        .containsExactly(
-                            VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                            VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE,
-                            VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE,
-                            VariantPropertiesMethodType.SOURCES_DIRECTORIES_ADD_VALUE,
-                        )
-                }
-            }
-
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-            // check that resulting APK contains the newly added interface
-            val apk = File(outFolder, "app-debug.apk").toPath()
-            val byteArrayOutputStream = object : ByteArrayOutputStream() {
-                @Synchronized
-                override fun toString(): String =
-                    super.toString().replace(System.getProperty("line.separator"), "\n")
-            }
-            val ps = PrintStream(byteArrayOutputStream)
-            val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-            apkAnalyzer.dexCode(apk, "com.foo.Bar", null, null, null)
-            Truth.assertThat(byteArrayOutputStream.toString()).contains(".class public Lcom/foo/Bar;")
-
-        }
+                      project.tasks.register<DisplayAllSources>("${'$'}{variant.name}DisplayAllSources") {
+                          sourceFolders.set(java.all)
+                      }
+                  }
+              }
+          }
+          """
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # Sources.java.getAll in Kotlin
+        This sample shows how to obtain the java sources and add a [Directory] to the list of java sources
+        that will be used for compilation.
 
-    @Test
-    fun addJavaSource() {
-        given {
-            tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources", ":app:assembleDebug"))
-            addModule(":app") {
+        To access all java sources, you just need to use
+        `sourceFolders.set(variant.sources.java.all`
+        which can be used as [Task] input directly.
 
-                addDirectory("custom/src/java/debug/com/foo") {
-                    File(this, "Bar.java").writeText("""
-                        package com.foo;
+        To add a folder which content will be  a execution time by a [Task] execution, you need
+        to use the [SourceDirectories.add] method providing a [TaskProvider] and the pointer to the output folder
+        where source files will be generated and added to the compilation task.
 
-                        public class Bar {
-                            public String toString() {
-                                return "a debug Bar instance";
-                            }
-                        }
-                    """.trimIndent())
-                }
-                addDirectory("custom/src/java/release/com/foo") {
-                    File(this, "Bar.java").writeText("""
-                        package com.foo;
+        ## To Run
+        ./gradlew :app:debugDisplayAllSources
 
-                        public class Bar {
-                            public String toString() {
-                                return "a release Bar instance";
-                            }
-                        }
-                    """.trimIndent())
-                }
-                @Suppress("RemoveExplicitTypeArguments")
-                buildFile =
-                        // language=kotlin
-                    """
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("addJavaSourceFromTask/app/build/gen")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(4)
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
+            .containsExactly(
+              VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+              VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE,
+              VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE,
+              VariantPropertiesMethodType.SOURCES_DIRECTORIES_ADD_VALUE,
+            )
+        }
+      }
+
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+      // check that resulting APK contains the newly added interface
+      val apk = File(outFolder, "app-debug.apk").toPath()
+      val byteArrayOutputStream =
+        object : ByteArrayOutputStream() {
+          @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+        }
+      val ps = PrintStream(byteArrayOutputStream)
+      val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+      apkAnalyzer.dexCode(apk, "com.foo.Bar", null, null, null)
+      Truth.assertThat(byteArrayOutputStream.toString()).contains(".class public Lcom/foo/Bar;")
+    }
+  }
+
+  @Test
+  fun addJavaSource() {
+    given {
+      tasksToInvoke.addAll(listOf("clean", ":app:debugDisplayAllSources", ":app:assembleDebug"))
+      addModule(":app") {
+        addDirectory("custom/src/java/debug/com/foo") {
+          File(this, "Bar.java")
+            .writeText(
+              """
+              package com.foo;
+
+              public class Bar {
+                  public String toString() {
+                      return "a debug Bar instance";
+                  }
+              }
+              """
+                .trimIndent()
+            )
+        }
+        addDirectory("custom/src/java/release/com/foo") {
+          File(this, "Bar.java")
+            .writeText(
+              """
+              package com.foo;
+
+              public class Bar {
+                  public String toString() {
+                      return "a release Bar instance";
+                  }
+              }
+              """
+                .trimIndent()
+            )
+        }
+        @Suppress("RemoveExplicitTypeArguments")
+        buildFile =
+          // language=kotlin
+          """
                 plugins {
                         id("com.android.application")
                         kotlin("android")
@@ -266,65 +271,63 @@ where source files will be generated and added to the compilation task.
                         }
                     }
                 }
-                """.trimIndent()
-                testingElements.addManifest( this)
-            }
-        }
-        withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
-        withDocs {
-            index =
-                    // language=markdown
                 """
-# artifacts.get in Kotlin
-This sample shows how to obtain the java sources and add a [Directory] to the list of java sources
-that will be used for compilation.
-
-To access all java sources, you just need to use
-`sourceFolders.set(variant.sources.java.all`
-which can be used as [Task] input directly.
-
-To add a folder and its content to the list of folders used for compilation, you need
-to use the [SourceDirectories.srcDir] family of methods
-
-## To Run
-./gradlew :app:debugDisplayAllSources
-
-            """.trimIndent()
-        }
-        check {
-            assertNotNull(this)
-            Truth.assertThat(output).contains("addJavaSource/app/custom/src/java/debug")
-            Truth.assertThat(output).contains("BUILD SUCCESSFUL")
-            super.onVariantStats {
-                if (it.isDebug) {
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(4)
-                    Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
-                        .containsExactly(
-                            VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
-                            VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE,
-                            VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE,
-                            VariantPropertiesMethodType.SOURCES_DIRECTORIES_SRC_DIR_VALUE,
-                    )
-                }
-            }
-
-            val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
-            Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name }).containsExactly(
-                "app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME
-            )
-            // check that resulting APK contains the newly added interface
-            val apk = File(outFolder, "app-debug.apk").toPath()
-            val byteArrayOutputStream = object : ByteArrayOutputStream() {
-                @Synchronized
-                override fun toString(): String =
-                    super.toString().replace(System.getProperty("line.separator"), "\n")
-            }
-            val ps = PrintStream(byteArrayOutputStream)
-            val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
-            apkAnalyzer.dexCode(apk, "com.foo.Bar", null, null, null)
-            Truth.assertThat(byteArrayOutputStream.toString()).contains(".class public Lcom/foo/Bar;")
-
-        }
+            .trimIndent()
+        testingElements.addManifest(this)
+      }
     }
-}
+    withOptions(mapOf(BooleanOption.ENABLE_PROFILE_JSON to true))
+    withDocs {
+      index =
+        // language=markdown
+        """
+        # artifacts.get in Kotlin
+        This sample shows how to obtain the java sources and add a [Directory] to the list of java sources
+        that will be used for compilation.
 
+        To access all java sources, you just need to use
+        `sourceFolders.set(variant.sources.java.all`
+        which can be used as [Task] input directly.
+
+        To add a folder and its content to the list of folders used for compilation, you need
+        to use the [SourceDirectories.srcDir] family of methods
+
+        ## To Run
+        ./gradlew :app:debugDisplayAllSources
+
+        """
+          .trimIndent()
+    }
+    check {
+      assertNotNull(this)
+      Truth.assertThat(output).contains("addJavaSource/app/custom/src/java/debug")
+      Truth.assertThat(output).contains("BUILD SUCCESSFUL")
+      super.onVariantStats {
+        if (it.isDebug) {
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList).hasSize(4)
+          Truth.assertThat(it.variantApiAccess.variantPropertiesAccessList.map(VariantPropertiesAccess::getType))
+            .containsExactly(
+              VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE,
+              VariantPropertiesMethodType.SOURCES_JAVA_ACCESS_VALUE,
+              VariantPropertiesMethodType.SOURCES_DIRECTORIES_GET_ALL_VALUE,
+              VariantPropertiesMethodType.SOURCES_DIRECTORIES_SRC_DIR_VALUE,
+            )
+        }
+      }
+
+      val outFolder = File(testProjectDir.root, "${testName.methodName}/app/build/outputs/apk/debug/")
+      Truth.assertThat(outFolder.listFiles()?.asList()?.map { it.name })
+        .containsExactly("app-debug.apk", BuiltArtifactsImpl.METADATA_FILE_NAME)
+      // check that resulting APK contains the newly added interface
+      val apk = File(outFolder, "app-debug.apk").toPath()
+      val byteArrayOutputStream =
+        object : ByteArrayOutputStream() {
+          @Synchronized override fun toString(): String = super.toString().replace(System.getProperty("line.separator"), "\n")
+        }
+      val ps = PrintStream(byteArrayOutputStream)
+      val apkAnalyzer = ApkAnalyzerImpl(ps, mock<AaptInvoker>())
+      apkAnalyzer.dexCode(apk, "com.foo.Bar", null, null, null)
+      Truth.assertThat(byteArrayOutputStream.toString()).contains(".class public Lcom/foo/Bar;")
+    }
+  }
+}

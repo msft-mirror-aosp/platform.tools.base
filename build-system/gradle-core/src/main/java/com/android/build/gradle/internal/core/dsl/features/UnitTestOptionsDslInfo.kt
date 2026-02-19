@@ -19,10 +19,11 @@ package com.android.build.gradle.internal.core.dsl.features
 import org.gradle.api.tasks.testing.Test
 
 /**
- * Contains the final dsl info computed from the DSL object model (extension, default config,
- * build type, flavors) that are needed by components that configure and run unit tests
+ * Contains the final dsl info computed from the DSL object model (extension, default config, build type, flavors) that are needed by
+ * components that configure and run unit tests
  */
-interface UnitTestOptionsDslInfo: TestOptionsDslInfo {
-    val isReturnDefaultValues: Boolean
-    fun applyConfiguration(task: Test)
+interface UnitTestOptionsDslInfo : TestOptionsDslInfo {
+  val isReturnDefaultValues: Boolean
+
+  fun applyConfiguration(task: Test)
 }

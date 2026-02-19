@@ -20,59 +20,51 @@ import java.util.concurrent.AbstractExecutorService
 import java.util.concurrent.TimeUnit
 
 /**
- * [ExecutorService] that queues the tasks and will only execute them when [run] or [runAll]
- * are called.
+ * [ExecutorService] that queues the tasks and will only execute them when [run] or [runAll] are called.
  *
  * This class is thread-safe.
  */
 class OnDemandExecutorService : AbstractExecutorService() {
-    private var isTerminated = false
-    private val taskQueue = LinkedList<Runnable>()
-    val queueSize: Int get() = taskQueue.size
+  private var isTerminated = false
+  private val taskQueue = LinkedList<Runnable>()
+  val queueSize: Int
+    get() = taskQueue.size
 
-    @Synchronized
-    override fun isTerminated(): Boolean = this.isTerminated
+  @Synchronized override fun isTerminated(): Boolean = this.isTerminated
 
-    @Synchronized
-    override fun execute(command: Runnable) {
-        if (!isTerminated) taskQueue.offer(command)
-    }
+  @Synchronized
+  override fun execute(command: Runnable) {
+    if (!isTerminated) taskQueue.offer(command)
+  }
 
-    @Synchronized
-    override fun shutdownNow(): MutableList<Runnable> {
-        isTerminated = true
-        return taskQueue
-    }
+  @Synchronized
+  override fun shutdownNow(): MutableList<Runnable> {
+    isTerminated = true
+    return taskQueue
+  }
 
-    override fun shutdown() {
-        shutdownNow()
-    }
+  override fun shutdown() {
+    shutdownNow()
+  }
 
-    @Synchronized
-    override fun isShutdown(): Boolean = isTerminated
+  @Synchronized override fun isShutdown(): Boolean = isTerminated
 
-    override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
-        shutdown()
-        return true
-    }
+  override fun awaitTermination(timeout: Long, unit: TimeUnit): Boolean {
+    shutdown()
+    return true
+  }
 
-    /**
-     * Runs [tasks] from the queue
-     */
-    @Synchronized
-    fun run(tasks: Int) {
-        repeat(tasks) {
-            taskQueue.remove().run()
-        }
-    }
+  /** Runs [tasks] from the queue */
+  @Synchronized
+  fun run(tasks: Int) {
+    repeat(tasks) { taskQueue.remove().run() }
+  }
 
-    /**
-     * Runs all the pending tasks
-     */
-    @Synchronized
-    fun runAll(): Int {
-        val numberOfTasksToRun = taskQueue.size
-        run(numberOfTasksToRun)
-        return numberOfTasksToRun
-    }
+  /** Runs all the pending tasks */
+  @Synchronized
+  fun runAll(): Int {
+    val numberOfTasksToRun = taskQueue.size
+    run(numberOfTasksToRun)
+    return numberOfTasksToRun
+  }
 }

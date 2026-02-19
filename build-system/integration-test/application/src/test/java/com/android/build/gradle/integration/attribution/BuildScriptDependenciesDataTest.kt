@@ -16,126 +16,43 @@
 
 package com.android.build.gradle.integration.attribution
 
-import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
-import com.android.build.gradle.integration.common.fixture.DEFAULT_COMPILE_SDK_VERSION
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor.ConfigurationCaching
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.prebuilts.HelloWorldAndroid
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.AndroidGradlePluginAttributionData
 import com.android.testutils.TestUtils
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
+/** Tests the contents of [AndroidGradlePluginAttributionData.buildscriptDependenciesInfo]. */
 class BuildScriptDependenciesDataTest {
 
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
-
-    @get:Rule
-    var project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .withPluginManagementBlock(true)
-        .disableBuiltInKotlin()
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-        .create()
-
-    @Test
-    fun testKotlinPluginDependencyNotDetectedWhenNotAdded() {
-        val attributionFileLocation = temporaryFolder.newFolder()
-
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION,
-                        attributionFileLocation.absolutePath)
-                .run(":compileDebugJavaWithJavac")
-
-        val originalAttributionData =
-                AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo).isNotEmpty()
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo)
-                .doesNotContain("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication { HelloWorldAndroid.setupKotlin(files) }
+      // Setting useLatestKgpVersion = true will add
+      // org.jetbrains.kotlin:kotlin-gradle-plugin:<KOTLIN_VERSION_FOR_TESTS>
+      // to the build script classpath
+      useLatestKgpVersion = true
     }
 
-    @Test
-    fun testKotlinPluginDependencyDetectedInBuildscriptDependencies() {
-        val attributionFileLocation = temporaryFolder.newFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-        TestFileUtils.appendToFile(project.buildFile, """
-buildscript {
-    dependencies {
-        // Provides the 'android-kotlin' build plugin for the app
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}"
-    }
-}
-        """.trimIndent())
+  @Test
+  fun `test Kotlin Gradle plugin is present in buildscriptDependenciesInfo`() {
+    val attributionDir = temporaryFolder.newFolder()
+    rule.build.executor
+      .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION, attributionDir.path)
+      // buildscriptDependenciesInfo can't be collected when Isolated Projects is enabled
+      .withConfigurationCaching(ConfigurationCaching.ON)
+      .run("help")
 
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION,
-                        attributionFileLocation.absolutePath)
-                .run(":compileDebugJavaWithJavac")
-
-        val originalAttributionData =
-                AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo).isNotEmpty()
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo)
-                .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-    }
-
-    @Test
-    fun testKotlinPluginDependencyDetectedAppliedWithPluginsDsl() {
-        val attributionFileLocation = temporaryFolder.newFolder()
-        project.file("build.gradle").delete()
-        project.file("build.gradle").writeText("""
-
-plugins {
-    id 'com.android.application'
-    id 'org.jetbrains.kotlin.android' version "${TestUtils.KOTLIN_VERSION_FOR_TESTS}"
-}
-apply from: "../commonHeader.gradle"
-
-// Treat javac warnings as errors
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
-
-    // Configure common java toolchain
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-}
-
-android {
-    namespace = "${HelloWorldApp.NAMESPACE}"
-    defaultConfig.minSdkVersion 14
-    compileSdkVersion $DEFAULT_COMPILE_SDK_VERSION
-    lintOptions.checkReleaseBuilds = false
-    defaultConfig {
-        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
-    }
-}
-dependencies {
-    androidTestImplementation "com.android.support.test:runner:${"$"}{libs.versions.testSupportLibVersion.get()}"
-    androidTestImplementation "com.android.support.test:rules:${"$"}{libs.versions.testSupportLibVersion.get()}"
-}
-
-        """.trimIndent())
-
-        project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .with(StringOption.IDE_ATTRIBUTION_FILE_LOCATION,
-                        attributionFileLocation.absolutePath)
-                .run(":compileDebugJavaWithJavac")
-
-        val originalAttributionData =
-                AndroidGradlePluginAttributionData.load(attributionFileLocation)!!
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo).isNotEmpty()
-        Truth.assertThat(originalAttributionData.buildscriptDependenciesInfo)
-                .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
-    }
-
-//TODO(b/181326671): check kotlin-gradle-plugin are detected when in buildSrc
+    val attributionData = AndroidGradlePluginAttributionData.load(attributionDir)!!
+    assertThat(attributionData.buildscriptDependenciesInfo)
+      .contains("org.jetbrains.kotlin:kotlin-gradle-plugin:${TestUtils.KOTLIN_VERSION_FOR_TESTS}")
+  }
 }

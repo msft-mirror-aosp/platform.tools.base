@@ -95,593 +95,554 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runInterruptible
 
 /**
- * Timeout for fake adb server APIs that go through the server's internal
- * sequential executor. In most cases, API calls take only a few milliseconds,
- * but the time can dramatically increase under stress testing.
+ * Timeout for fake adb server APIs that go through the server's internal sequential executor. In most cases, API calls take only a few
+ * milliseconds, but the time can dramatically increase under stress testing.
  */
 val FAKE_ADB_SERVER_EXECUTOR_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(2)
 
-/** See `FakeAdbServerTest#testInteractiveServer()` for example usage.  */
-class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEATURES) :
-    AutoCloseable {
+/** See `FakeAdbServerTest#testInteractiveServer()` for example usage. */
+class FakeAdbServer private constructor(var features: Set<String> = DEFAULT_FEATURES) : AutoCloseable {
 
-    val coroutineScope = SupervisorScope(Dispatchers.IO)
+  val coroutineScope = SupervisorScope(Dispatchers.IO)
 
-    private val mServerSocket: ServerSocketChannel
-    private var mServerSocketLocalAddress: InetSocketAddress? = null
-    private val emulatorConsoles = mutableMapOf<Int, FakeEmulatorConsole>()
+  private val mServerSocket: ServerSocketChannel
+  private var mServerSocketLocalAddress: InetSocketAddress? = null
+  private val emulatorConsoles = mutableMapOf<Int, FakeEmulatorConsole>()
 
-    /**
-     * The [CommandHandler]s have internal state. To allow for reentrancy, instead of using a
-     * pre-allocated [CommandHandler] object, the constructor is passed in and a new object is
-     * created as-needed.
-     */
-    private val mHostCommandHandlers = mutableListOf<HostCommandHandler>()
-    val handlers = mutableListOf<DeviceCommandHandler>()
-    private val mDevices: MutableMap<String, DeviceState> = HashMap()
+  /**
+   * The [CommandHandler]s have internal state. To allow for reentrancy, instead of using a pre-allocated [CommandHandler] object, the
+   * constructor is passed in and a new object is created as-needed.
+   */
+  private val mHostCommandHandlers = mutableListOf<HostCommandHandler>()
+  val handlers = mutableListOf<DeviceCommandHandler>()
+  private val mDevices: MutableMap<String, DeviceState> = HashMap()
 
-    // Device ip address to DeviceState. Device may or may not currently be connected to adb.
-    private val mNetworkDevices: MutableMap<String, DeviceState> = HashMap()
-    private val mMdnsServices: MutableSet<MdnsService> = HashSet()
+  // Device ip address to DeviceState. Device may or may not currently be connected to adb.
+  private val mNetworkDevices: MutableMap<String, DeviceState> = HashMap()
+  private val mMdnsServices: MutableSet<MdnsService> = HashSet()
+  var mdnsEnabled = true
 
-    /**
-     * Grabs the DeviceStateChangeHub from the server. This should only be used for implementations
-     * for handlers that inherit from [CommandHandler]. The purpose of the hub is to propagate
-     * server events to existing connections with the server.
-     *
-     *
-     * For example, if [.connectDevice] is called, an event will be sent
-     * through the [DeviceStateChangeHub] to all open connections waiting on
-     * host:track-devices messages.
-     */
-    val deviceChangeHub = DeviceStateChangeHub()
-    val mdnsChangeHub = MdnsStateChangeHub()
-    private val mLastTransportId = AtomicInteger()
+  /**
+   * Grabs the DeviceStateChangeHub from the server. This should only be used for implementations for handlers that inherit from
+   * [CommandHandler]. The purpose of the hub is to propagate server events to existing connections with the server.
+   *
+   * For example, if [.connectDevice] is called, an event will be sent through the [DeviceStateChangeHub] to all open connections waiting on
+   * host:track-devices messages.
+   */
+  val deviceChangeHub = DeviceStateChangeHub()
+  val mdnsChangeHub = MdnsStateChangeHub()
+  private val mLastTransportId = AtomicInteger()
 
-    // This is the executor for accepting incoming connections as well as handling the execution of
-    // the commands over the connection. There is one task for accepting connections, and multiple
-    // tasks to handle the execution of the commands.
-    private val mThreadPoolExecutor = Executors.newCachedThreadPool(
-        ThreadFactoryBuilder().setNameFormat("fake-adb-server-connection-pool-%d").build()
+  // This is the executor for accepting incoming connections as well as handling the execution of
+  // the commands over the connection. There is one task for accepting connections, and multiple
+  // tasks to handle the execution of the commands.
+  private val mThreadPoolExecutor =
+    Executors.newCachedThreadPool(ThreadFactoryBuilder().setNameFormat("fake-adb-server-connection-pool-%d").build())
+  private var mConnectionHandlerTask: Future<*>? = null
+
+  // All "external" server controls are synchronized through a central executor, much like the EDT
+  // thread in Swing.
+  private val mMainServerThreadExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor())
+
+  @Volatile private var mServerKeepAccepting = false
+
+  @GuardedBy("this") @Volatile private var mStopRequestTask: Future<*>? = null
+
+  init {
+    mServerSocket = ServerSocketChannel.open()
+  }
+
+  @Throws(IOException::class)
+  fun start() {
+    assert(
+      mConnectionHandlerTask == null // Do not reuse the server.
     )
-    private var mConnectionHandlerTask: Future<*>? = null
+    mServerSocket.bind(InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
+    mServerSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true)
+    mServerSocketLocalAddress = mServerSocket.localAddress as InetSocketAddress
+    mServerKeepAccepting = true
+    mConnectionHandlerTask =
+      mThreadPoolExecutor.submit {
+        while (mServerKeepAccepting) {
+          try { // Socket can not be closed in finally block, because a separate
+            // thread will
+            // read from the socket. Closing the socket leads to a race
+            // condition.
+            val socket = mServerSocket.accept()
+            val handler = ConnectionHandler(this, socket)
+            mThreadPoolExecutor.execute(handler)
+          } catch (ignored: IOException) { // close() is called in a separate thread, and will cause
+            // accept() to throw an
+            // exception if closed here.
+          }
+        }
+      }
+  }
 
-    // All "external" server controls are synchronized through a central executor, much like the EDT
-    // thread in Swing.
-    private val mMainServerThreadExecutor = MoreExecutors.listeningDecorator(Executors.newSingleThreadExecutor())
+  val inetAddress: InetAddress
+    get() = mServerSocketLocalAddress!!.address
 
-    @Volatile
-    private var mServerKeepAccepting = false
+  val port: Int
+    get() = mServerSocketLocalAddress!!.port
 
-    @GuardedBy("this")
-    @Volatile
-    private var mStopRequestTask: Future<*>? = null
+  /** This method allows for the caller thread to wait until the server shuts down. */
+  @JvmOverloads
+  @Throws(InterruptedException::class)
+  fun awaitServerTermination(time: Long = Int.MAX_VALUE.toLong(), unit: TimeUnit? = TimeUnit.DAYS): Boolean {
+    return (mMainServerThreadExecutor.awaitTermination(time, unit) && mThreadPoolExecutor.awaitTermination(time, unit))
+  }
+
+  /**
+   * Stops the server. This method records the first stop request and all subsequent ones will get that value. This ensures no task
+   * submissions are attempted after [ ][.mMainServerThreadExecutor] is shut down.
+   *
+   * @return a [Future] if the caller needs to wait until the server is stopped.
+   */
+  @Synchronized
+  fun stop(): Future<*>? {
+    if (mStopRequestTask == null) {
+      mStopRequestTask =
+        mMainServerThreadExecutor.submit {
+          if (!mServerKeepAccepting) {
+            return@submit
+          }
+          mServerKeepAccepting = false
+          deviceChangeHub.stop()
+          mdnsChangeHub.stop()
+          emulatorConsoles.values.forEach { it.close() }
+          emulatorConsoles.clear()
+          mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
+          mConnectionHandlerTask!!.cancel(true)
+          try {
+            mServerSocket.close()
+          } catch (ignored: IOException) {}
+
+          // Note: Use "shutdownNow()" to ensure threads of long-running tasks
+          // are interrupted, as opposed
+          // to merely waiting for the tasks to finish. This is because
+          // mThreadPoolExecutor is used to
+          // run CommandHandler implementations, and some of them (e.g.
+          // TrackJdwpCommandHandler) wait
+          // indefinitely on queues and expect to be interrupted as a signal
+          // to terminate.
+          mThreadPoolExecutor.shutdownNow()
+          mMainServerThreadExecutor.shutdown()
+        }
+    }
+    return mStopRequestTask
+  }
+
+  @Throws(Exception::class)
+  override fun close() {
+    coroutineScope.cancel("${this::class.simpleName} has been closed")
+    try {
+      stop()!!.get()
+    } catch (ignored: InterruptedException) { // Catch InterruptedException as specified by JavaDoc.
+    } catch (ignored: RejectedExecutionException) { // The server has already been closed once
+    }
+  }
+
+  /**
+   * Connects a device to the ADB server. Must be called on the EDT/main thread.
+   *
+   * @param deviceId the unique device ID of the device, e.g. a device serial for a USB-connected device
+   * @param manufacturer the manufacturer name of the device
+   * @param deviceModel the model name of the device
+   * @param release an arbitrary string that will be used as the Android version
+   * @param sdk the SDK version of the device
+   * @param cpuAbi the ABI of the device CPU
+   * @param properties the device properties
+   * @param hostConnectionType the simulated connection type to the device
+   * @return a future to allow synchronization of the side effects of the call
+   */
+  fun connectDevice(
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    cpuAbi: String,
+    properties: Map<String, String>,
+    hostConnectionType: HostConnectionType,
+    isRoot: Boolean = false,
+    maxSpeedMbps: Long = 0,
+    negotiatedSpeedMbps: Long = 0,
+  ): Future<DeviceState> {
+    val device =
+      DeviceState(
+        this,
+        deviceId,
+        manufacturer,
+        deviceModel,
+        release,
+        sdk,
+        cpuAbi,
+        properties,
+        hostConnectionType,
+        newTransportId(),
+        isRoot,
+        maxSpeedMbps,
+        negotiatedSpeedMbps,
+      )
+    return connectDevice(device)
+  }
+
+  fun connectEmulatorConsole(avdName: String, avdPath: String): Future<FakeEmulatorConsole> {
+    return mMainServerThreadExecutor.submit<FakeEmulatorConsole> {
+      val newEmulatorConsole = FakeEmulatorConsole(avdName, avdPath)
+      newEmulatorConsole.start()
+      emulatorConsoles[newEmulatorConsole.port] = newEmulatorConsole
+      newEmulatorConsole
+    }
+  }
+
+  private fun connectDevice(device: DeviceState): Future<DeviceState> {
+    val deviceId = device.deviceId
+    return if (mConnectionHandlerTask == null) {
+      assert(!mDevices.containsKey(deviceId))
+      mDevices[deviceId] = device
+      Futures.immediateFuture(device)
+    } else {
+      mMainServerThreadExecutor.submit<DeviceState> {
+        assert(!mDevices.containsKey(deviceId))
+        mDevices[deviceId] = device
+        deviceChangeHub.deviceListChanged(mDevices.values)
+        device
+      }
+    }
+  }
+
+  @JvmOverloads
+  fun connectDevice(
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    hostConnectionType: HostConnectionType,
+    maxSpeedMbps: Long = DEFAULT_SPEED,
+    negotiatedSpeedMbps: Long = DEFAULT_SPEED,
+  ): Future<DeviceState> {
+    return connectDevice(
+      deviceId,
+      manufacturer,
+      deviceModel,
+      release,
+      sdk,
+      "x86_64",
+      emptyMap(),
+      hostConnectionType,
+      maxSpeedMbps = maxSpeedMbps,
+      negotiatedSpeedMbps = negotiatedSpeedMbps,
+    )
+  }
+
+  fun addDevice(deviceConfig: DeviceStateConfig?) {
+    val device = DeviceState(this, newTransportId(), deviceConfig!!)
+    mDevices[device.deviceId] = device
+  }
+
+  fun registerNetworkDevice(
+    address: String,
+    deviceId: String,
+    manufacturer: String,
+    deviceModel: String,
+    release: String,
+    sdk: AndroidApiLevel,
+    hostConnectionType: HostConnectionType,
+    isRoot: Boolean = false,
+    maxSpeedMbps: Long,
+    negotiatedSpeedMbps: Long,
+  ) {
+    val device =
+      DeviceState(
+        this,
+        deviceId,
+        manufacturer,
+        deviceModel,
+        release,
+        sdk,
+        "x86_64",
+        emptyMap(),
+        hostConnectionType,
+        newTransportId(),
+        isRoot,
+        maxSpeedMbps,
+        negotiatedSpeedMbps,
+      )
+    mNetworkDevices[address] = device
+  }
+
+  fun connectNetworkDevice(address: String): Future<DeviceState> {
+    val device = mNetworkDevices[address]
+    return device?.let { connectDevice(it) } ?: Futures.immediateFailedFuture(Exception("Device $address not found"))
+  }
+
+  fun disconnectNetworkDevice(address: String): Future<*> {
+    val device = mNetworkDevices[address]
+    return if (device != null) {
+      disconnectDevice(device.deviceId)
+    } else { // The real adb will disconnect ongoing sessions, but this is an edge case.
+      Futures.immediateFuture<Any?>(null)
+    }
+  }
+
+  fun addMdnsService(service: MdnsService): Future<*> {
+    return if (mConnectionHandlerTask == null) {
+      assert(!mMdnsServices.contains(service))
+      mMdnsServices.add(service)
+      mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
+      Futures.immediateFuture<Any?>(null)
+    } else {
+      mMainServerThreadExecutor.submit<Any?> {
+        assert(!mMdnsServices.contains(service))
+        mMdnsServices.add(service)
+        null
+      }
+    }
+  }
+
+  fun removeMdnsService(service: MdnsService): Future<*> {
+    return if (mConnectionHandlerTask == null) {
+      mMdnsServices.remove(service)
+      mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
+      Futures.immediateFuture<Any?>(null)
+    } else {
+      mMainServerThreadExecutor.submit<Any?> {
+        mMdnsServices.remove(service)
+        null
+      }
+    }
+  }
+
+  val mdnsServicesCopy: Future<List<MdnsService>>
+    /** Thread-safely gets a copy of the mDNS service list. This is useful for asynchronous handlers. */
+    get() = mMainServerThreadExecutor.submit<List<MdnsService>> { ArrayList(mMdnsServices) }
+
+  private fun newTransportId(): Int {
+    return mLastTransportId.incrementAndGet()
+  }
+
+  /**
+   * Removes a device from the ADB server. Must be called on the EDT/main thread.
+   *
+   * @param deviceId the unique device ID of the device, e.g. a device serial for a USB-connected device
+   * @return a future to allow synchronization of the side effects of the call
+   */
+  fun disconnectDevice(deviceId: String): Future<*> {
+    return mMainServerThreadExecutor.submit {
+      assert(mDevices.containsKey(deviceId))
+      val removedDevice = mDevices.remove(deviceId)
+      removedDevice?.stop()
+      deviceChangeHub.deviceListChanged(mDevices.values)
+    }
+  }
+
+  /**
+   * Simulate `adbd` (Adb Daemon) restarting for a given [device] and returns the new [DeviceState] with a [DeviceStateConfig] modified by
+   * the mapping function [mapDeviceConfig]. The new device will have the same serial number but a new [DeviceState.transportId].
+   */
+  fun restartDeviceAsync(device: DeviceState, mapDeviceConfig: (DeviceStateConfig) -> DeviceStateConfig): Deferred<DeviceState> {
+    return coroutineScope.async {
+      val deviceConfig = device.config
+
+      // Disconnect device
+      runInterruptible { disconnectDevice(device.deviceId).get() }
+
+      // Simulate adbd restarting
+      delay(100)
+
+      // Modify the device config if needed
+      val newDeviceConfig = mapDeviceConfig(deviceConfig)
+
+      // Reconnect device with the new config and new transport ID (same serial
+      // number though)
+      runInterruptible {
+        connectDevice(
+            deviceId = device.deviceId,
+            manufacturer = newDeviceConfig.manufacturer,
+            deviceModel = newDeviceConfig.model,
+            release = newDeviceConfig.buildVersionRelease,
+            sdk = newDeviceConfig.buildVersionSdk,
+            cpuAbi = newDeviceConfig.cpuAbi,
+            properties = newDeviceConfig.properties,
+            hostConnectionType = newDeviceConfig.hostConnectionType,
+            isRoot = newDeviceConfig.isRoot,
+          )
+          .get()
+      }
+    }
+  }
+
+  val deviceListCopy: ListenableFuture<List<DeviceState>>
+    /** Thread-safely gets a copy of the device list. This is useful for asynchronous handlers. */
+    get() = mMainServerThreadExecutor.submit<List<DeviceState>> { ArrayList(mDevices.values) }
+
+  /** Returns the [HostCommandHandler] for [command] with the highest priority */
+  fun getHostCommandHandler(command: String): HostCommandHandler? {
+    return mHostCommandHandlers.filter { handler -> handler.handles(command) }.maxByOrNull { it.priority }
+  }
+
+  val currentConfig: FakeAdbServerConfig
+    get() {
+      val config = FakeAdbServerConfig()
+      config.hostHandlers.addAll(mHostCommandHandlers)
+      config.deviceHandlers.addAll(handlers)
+      config.mdnsServices.addAll(mMdnsServices)
+      mDevices.forEach { (serial: String?, device: DeviceState) ->
+        val deviceConfig = device.config
+        config.devices.add(deviceConfig)
+      }
+      return config
+    }
+
+  class Builder {
+
+    private val mServer: FakeAdbServer
+    private var mConfig: FakeAdbServerConfig? = null
 
     init {
-        mServerSocket = ServerSocketChannel.open()
+      mServer = FakeAdbServer()
     }
 
-    @Throws(IOException::class)
-    fun start() {
-        assert(
-            mConnectionHandlerTask == null // Do not reuse the server.
-        )
-        mServerSocket.bind(InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
-        mServerSocket.setOption(StandardSocketOptions.SO_REUSEADDR, true)
-        mServerSocketLocalAddress = mServerSocket.localAddress as InetSocketAddress
-        mServerKeepAccepting = true
-        mConnectionHandlerTask = mThreadPoolExecutor.submit {
-            while (mServerKeepAccepting) {
-                try { // Socket can not be closed in finally block, because a separate
-                    // thread will
-                    // read from the socket. Closing the socket leads to a race
-                    // condition.
-                    val socket = mServerSocket.accept()
-                    val handler = ConnectionHandler(this, socket)
-                    mThreadPoolExecutor.execute(handler)
-                } catch (ignored: IOException) { // close() is called in a separate thread, and will cause
-                    // accept() to throw an
-                    // exception if closed here.
-                }
-            }
-        }
-    }
-
-    val inetAddress: InetAddress
-        get() = mServerSocketLocalAddress!!.address
-    val port: Int
-        get() = mServerSocketLocalAddress!!.port
-
-    /** This method allows for the caller thread to wait until the server shuts down.  */
-    @JvmOverloads
-    @Throws(InterruptedException::class)
-    fun awaitServerTermination(
-        time: Long = Int.MAX_VALUE.toLong(),
-        unit: TimeUnit? = TimeUnit.DAYS
-    ): Boolean {
-        return (mMainServerThreadExecutor.awaitTermination(
-            time,
-            unit
-        ) && mThreadPoolExecutor.awaitTermination(time, unit))
+    /** Used to restore a [FakeAdbServer] instance from a previously running instance */
+    fun setConfig(config: FakeAdbServerConfig): Builder {
+      mConfig = config
+      return this
     }
 
     /**
-     * Stops the server. This method records the first stop request and all subsequent ones will get
-     * that value. This ensures no task submissions are attempted after [ ][.mMainServerThreadExecutor] is shut down.
+     * Sets the handler for a specific host ADB command. This only needs to be called if the test author requires additional functionality
+     * that is not provided by the default [ ]s.
      *
-     * @return a [Future] if the caller needs to wait until the server is stopped.
+     * @param command The ADB protocol string of the command.
+     * @param handlerConstructor The constructor for the handler.
      */
-    @Synchronized
-    fun stop(): Future<*>? {
-        if (mStopRequestTask == null) {
-            mStopRequestTask = mMainServerThreadExecutor.submit {
-                if (!mServerKeepAccepting) {
-                    return@submit
-                }
-                mServerKeepAccepting = false
-                deviceChangeHub.stop()
-                mdnsChangeHub.stop()
-                emulatorConsoles.values.forEach { it.close() }
-                emulatorConsoles.clear()
-                mDevices.forEach { (id: String?, device: DeviceState) -> device.stop() }
-                mConnectionHandlerTask!!.cancel(true)
-                try {
-                    mServerSocket.close()
-                } catch (ignored: IOException) {
-                }
-
-                // Note: Use "shutdownNow()" to ensure threads of long-running tasks
-                // are interrupted, as opposed
-                // to merely waiting for the tasks to finish. This is because
-                // mThreadPoolExecutor is used to
-                // run CommandHandler implementations, and some of them (e.g.
-                // TrackJdwpCommandHandler) wait
-                // indefinitely on queues and expect to be interrupted as a signal
-                // to terminate.
-                mThreadPoolExecutor.shutdownNow()
-                mMainServerThreadExecutor.shutdown()
-            }
-        }
-        return mStopRequestTask
+    fun addHostHandler(handler: HostCommandHandler): Builder {
+      mServer.mHostCommandHandlers.add(handler)
+      return this
     }
 
-    @Throws(Exception::class)
-    override fun close() {
-        coroutineScope.cancel("${this::class.simpleName} has been closed")
-        try {
-            stop()!!.get()
-        } catch (ignored: InterruptedException) { // Catch InterruptedException as specified by JavaDoc.
-        } catch (ignored: RejectedExecutionException) { // The server has already been closed once
-        }
+    /** Adds the handler for a device command. Handlers added last take priority over existing handlers. */
+    fun addDeviceHandler(handler: DeviceCommandHandler): Builder {
+      mServer.handlers.add(0, handler)
+      return this
     }
 
-    /**
-     * Connects a device to the ADB server. Must be called on the EDT/main thread.
-     *
-     * @param deviceId           the unique device ID of the device, e.g. a device serial for a USB-connected device
-     * @param manufacturer       the manufacturer name of the device
-     * @param deviceModel        the model name of the device
-     * @param release            an arbitrary string that will be used as the Android version
-     * @param sdk                the SDK version of the device
-     * @param cpuAbi             the ABI of the device CPU
-     * @param properties         the device properties
-     * @param hostConnectionType the simulated connection type to the device
-     * @return a future to allow synchronization of the side effects of the call
-     */
-    fun connectDevice(
-        deviceId: String,
-        manufacturer: String,
-        deviceModel: String,
-        release: String,
-        sdk: AndroidApiLevel,
-        cpuAbi: String,
-        properties: Map<String, String>,
-        hostConnectionType: HostConnectionType,
-        isRoot: Boolean = false,
-        maxSpeedMbps: Long = 0,
-        negotiatedSpeedMbps: Long = 0,
-    ): Future<DeviceState> {
-        val device = DeviceState(
-            this,
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            cpuAbi,
-            properties,
-            hostConnectionType,
-            newTransportId(),
-            isRoot,
-            maxSpeedMbps,
-            negotiatedSpeedMbps
+    /** Installs the default set of host command handlers. The user may override any command handler. */
+    fun installDefaultCommandHandlers(): Builder {
+      addHostHandler(KillCommandHandler())
+      addHostHandler(ListDevicesCommandHandler())
+      addHostHandler(TrackDevicesCommandHandler())
+      addHostHandler(TrackMdnsServicesCommandHandler())
+      addHostHandler(ForwardCommandHandler())
+      addHostHandler(KillForwardCommandHandler())
+      addHostHandler(KillForwardAllCommandHandler())
+      addHostHandler(ListForwardCommandHandler())
+      addHostHandler(FeaturesCommandHandler())
+      addHostHandler(HostFeaturesCommandHandler())
+      addHostHandler(VersionCommandHandler())
+      addHostHandler(MdnsCommandHandler())
+      addHostHandler(PairCommandHandler())
+      addHostHandler(GetStateCommandHandler())
+      addHostHandler(GetSerialNoCommandHandler())
+      addHostHandler(GetDevPathCommandHandler())
+      addHostHandler(NetworkConnectCommandHandler())
+      addHostHandler(NetworkDisconnectCommandHandler())
+      addHostHandler(WaitForCommandHandler())
+      addHostHandler(ServerStatusCommandHandler())
+
+      addDeviceHandler(TrackJdwpCommandHandler())
+      addDeviceHandler(TrackAppCommandHandler())
+      addDeviceHandler(SyncCommandHandler())
+      addDeviceHandler(ReverseForwardCommandHandler())
+      addDeviceHandler(PingCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(LogcatCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(GetPropCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(GetPropCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(GetPropCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(SetPropCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(WriteNoStopCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(CmdCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(CmdCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(DumpsysCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(CatCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(CatCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(CatCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(EchoCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(EchoCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(ShellProtocolEchoCommandHandler())
+      addDeviceHandler(AbbCommandHandler())
+      addDeviceHandler(AbbExecCommandHandler())
+      addDeviceHandler(ActivityManagerCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(ActivityManagerCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(JdwpCommandHandler())
+      addDeviceHandler(StatCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(ServiceCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(ServiceCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(RootCommandHandler())
+      addDeviceHandler(UnRootCommandHandler())
+      addDeviceHandler(InteractiveShellHandler())
+      addDeviceHandler(InteractiveShellV2Handler())
+      addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL_V2))
+      addDeviceHandler(ExitCommandHandler(ShellProtocolType.EXEC))
+      addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL))
+      addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL_V2))
+      return this
+    }
+
+    fun build(): FakeAdbServer {
+      if (mConfig != null) {
+        mConfig!!.hostHandlers.forEach { handler -> addHostHandler(handler) }
+        mConfig!!.deviceHandlers.forEach { handler -> addDeviceHandler(handler) }
+        mConfig!!.devices.forEach { deviceConfig: DeviceStateConfig? -> mServer.addDevice(deviceConfig) }
+        mConfig!!.mdnsServices.forEach { service: MdnsService -> mServer.addMdnsService(service) }
+      }
+      return mServer
+    }
+
+    fun setFeatures(features: Set<String>): Builder {
+      mServer.features = features
+      return this
+    }
+
+    fun setMdnsEnabled(mdnsEnabled: Boolean): Builder {
+      mServer.mdnsEnabled = mdnsEnabled
+      return this
+    }
+  }
+
+  companion object {
+
+    private val DEFAULT_FEATURES =
+      Collections.unmodifiableSet(
+        HashSet(
+          mutableListOf(
+            "push_sync",
+            "fixed_push_mkdir",
+            "shell_v2",
+            "apex",
+            "stat_v2",
+            "ls_v2",
+            "cmd",
+            "abb",
+            "abb_exec",
+            "track_app",
+            "server_status",
+            "devicetracker_proto_format",
+            "app_info",
+          )
         )
-        return connectDevice(device)
-    }
-
-    fun connectEmulatorConsole(avdName: String, avdPath: String): Future<FakeEmulatorConsole> {
-        return mMainServerThreadExecutor.submit<FakeEmulatorConsole> {
-            val newEmulatorConsole = FakeEmulatorConsole(avdName, avdPath)
-            newEmulatorConsole.start()
-            emulatorConsoles[newEmulatorConsole.port] = newEmulatorConsole
-            newEmulatorConsole
-        }
-    }
-
-    private fun connectDevice(device: DeviceState): Future<DeviceState> {
-        val deviceId = device.deviceId
-        return if (mConnectionHandlerTask == null) {
-            assert(!mDevices.containsKey(deviceId))
-            mDevices[deviceId] = device
-            Futures.immediateFuture(device)
-        } else {
-            mMainServerThreadExecutor.submit<DeviceState> {
-                assert(!mDevices.containsKey(deviceId))
-                mDevices[deviceId] = device
-                deviceChangeHub.deviceListChanged(mDevices.values)
-                device
-            }
-        }
-    }
-
-    @JvmOverloads
-    fun connectDevice(
-        deviceId: String,
-        manufacturer: String,
-        deviceModel: String,
-        release: String,
-        sdk: AndroidApiLevel,
-        hostConnectionType: HostConnectionType,
-        maxSpeedMbps: Long = DEFAULT_SPEED,
-        negotiatedSpeedMbps: Long = DEFAULT_SPEED,
-    ): Future<DeviceState> {
-        return connectDevice(
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            "x86_64",
-            emptyMap(),
-            hostConnectionType,
-            maxSpeedMbps = maxSpeedMbps,
-            negotiatedSpeedMbps = negotiatedSpeedMbps
-        )
-    }
-
-    fun addDevice(deviceConfig: DeviceStateConfig?) {
-        val device = DeviceState(this, newTransportId(), deviceConfig!!)
-        mDevices[device.deviceId] = device
-    }
-
-    fun registerNetworkDevice(
-        address: String,
-        deviceId: String,
-        manufacturer: String,
-        deviceModel: String,
-        release: String,
-        sdk: AndroidApiLevel,
-        hostConnectionType: HostConnectionType,
-        isRoot: Boolean = false,
-        maxSpeedMbps: Long,
-        negotiatedSpeedMbps: Long,
-    ) {
-        val device = DeviceState(
-            this,
-            deviceId,
-            manufacturer,
-            deviceModel,
-            release,
-            sdk,
-            "x86_64",
-            emptyMap(),
-            hostConnectionType,
-            newTransportId(),
-            isRoot,
-            maxSpeedMbps,
-            negotiatedSpeedMbps,
-        )
-        mNetworkDevices[address] = device
-    }
-
-    fun connectNetworkDevice(address: String): Future<DeviceState> {
-        val device = mNetworkDevices[address]
-        return device?.let { connectDevice(it) }
-            ?: Futures.immediateFailedFuture(Exception("Device $address not found"))
-    }
-
-    fun disconnectNetworkDevice(address: String): Future<*> {
-        val device = mNetworkDevices[address]
-        return if (device != null) {
-            disconnectDevice(device.deviceId)
-        } else { // The real adb will disconnect ongoing sessions, but this is an edge case.
-            Futures.immediateFuture<Any?>(null)
-        }
-    }
-
-    fun addMdnsService(service: MdnsService): Future<*> {
-        return if (mConnectionHandlerTask == null) {
-            assert(!mMdnsServices.contains(service))
-            mMdnsServices.add(service)
-            mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
-            Futures.immediateFuture<Any?>(null)
-        } else {
-            mMainServerThreadExecutor.submit<Any?> {
-                assert(!mMdnsServices.contains(service))
-                mMdnsServices.add(service)
-                null
-            }
-        }
-    }
-
-    fun removeMdnsService(service: MdnsService): Future<*> {
-        return if (mConnectionHandlerTask == null) {
-            mMdnsServices.remove(service)
-            mdnsChangeHub.mdnsServiceListChanged(ArrayList(mMdnsServices))
-            Futures.immediateFuture<Any?>(null)
-        } else {
-            mMainServerThreadExecutor.submit<Any?> {
-                mMdnsServices.remove(service)
-                null
-            }
-        }
-    }
-
-    val mdnsServicesCopy: Future<List<MdnsService>>
-        /**
-         * Thread-safely gets a copy of the mDNS service list. This is useful for asynchronous handlers.
-         */
-        get() = mMainServerThreadExecutor.submit<List<MdnsService>> { ArrayList(mMdnsServices) }
-
-    private fun newTransportId(): Int {
-        return mLastTransportId.incrementAndGet()
-    }
-
-    /**
-     * Removes a device from the ADB server. Must be called on the EDT/main thread.
-     *
-     * @param deviceId the unique device ID of the device, e.g. a device serial for a USB-connected device
-     * @return a future to allow synchronization of the side effects of the call
-     */
-    fun disconnectDevice(deviceId: String): Future<*> {
-        return mMainServerThreadExecutor.submit {
-            assert(mDevices.containsKey(deviceId))
-            val removedDevice = mDevices.remove(deviceId)
-            removedDevice?.stop()
-            deviceChangeHub.deviceListChanged(mDevices.values)
-        }
-    }
-
-    /**
-     * Simulate `adbd` (Adb Daemon) restarting for a given [device] and returns
-     * the new [DeviceState] with a [DeviceStateConfig] modified by the mapping
-     * function [mapDeviceConfig]. The new device will have the same serial number
-     * but a new [DeviceState.transportId].
-     */
-    fun restartDeviceAsync(
-        device: DeviceState,
-        mapDeviceConfig: (DeviceStateConfig) -> DeviceStateConfig
-    ): Deferred<DeviceState> {
-        return coroutineScope.async {
-            val deviceConfig = device.config
-
-            // Disconnect device
-            runInterruptible {
-                disconnectDevice(device.deviceId).get()
-            }
-
-            // Simulate adbd restarting
-            delay(100)
-
-            // Modify the device config if needed
-            val newDeviceConfig = mapDeviceConfig(deviceConfig)
-
-            // Reconnect device with the new config and new transport ID (same serial
-            // number though)
-            runInterruptible {
-                connectDevice(
-                    deviceId = device.deviceId,
-                    manufacturer = newDeviceConfig.manufacturer,
-                    deviceModel = newDeviceConfig.model,
-                    release = newDeviceConfig.buildVersionRelease,
-                    sdk = newDeviceConfig.buildVersionSdk,
-                    cpuAbi = newDeviceConfig.cpuAbi,
-                    properties = newDeviceConfig.properties,
-                    hostConnectionType = newDeviceConfig.hostConnectionType,
-                    isRoot = newDeviceConfig.isRoot,
-                ).get()
-            }
-        }
-    }
-
-    val deviceListCopy: ListenableFuture<List<DeviceState>>
-        /**
-         * Thread-safely gets a copy of the device list. This is useful for asynchronous handlers.
-         */
-        get() = mMainServerThreadExecutor.submit<List<DeviceState>> { ArrayList(mDevices.values) }
-
-    /**
-     * Returns the [HostCommandHandler] for [command] with the highest priority
-     */
-    fun getHostCommandHandler(command: String): HostCommandHandler? {
-        return mHostCommandHandlers.filter { handler ->
-            handler.handles(command)
-        }.maxByOrNull {
-            it.priority
-        }
-    }
-
-    val currentConfig: FakeAdbServerConfig
-        get() {
-            val config = FakeAdbServerConfig()
-            config.hostHandlers.addAll(mHostCommandHandlers)
-            config.deviceHandlers.addAll(handlers)
-            config.mdnsServices.addAll(mMdnsServices)
-            mDevices.forEach { (serial: String?, device: DeviceState) ->
-                val deviceConfig = device.config
-                config.devices.add(deviceConfig)
-            }
-            return config
-        }
-
-    class Builder {
-
-        private val mServer: FakeAdbServer
-        private var mConfig: FakeAdbServerConfig? = null
-
-        init {
-            mServer = FakeAdbServer()
-        }
-
-        /** Used to restore a [FakeAdbServer] instance from a previously running instance  */
-        fun setConfig(config: FakeAdbServerConfig): Builder {
-            mConfig = config
-            return this
-        }
-
-        /**
-         * Sets the handler for a specific host ADB command. This only needs to be called if the
-         * test author requires additional functionality that is not provided by the default [ ]s.
-         *
-         * @param command            The ADB protocol string of the command.
-         * @param handlerConstructor The constructor for the handler.
-         */
-        fun addHostHandler(handler: HostCommandHandler): Builder {
-            mServer.mHostCommandHandlers.add(handler)
-            return this
-        }
-
-        /**
-         * Adds the handler for a device command. Handlers added last take priority over existing
-         * handlers.
-         */
-        fun addDeviceHandler(handler: DeviceCommandHandler): Builder {
-            mServer.handlers.add(0, handler)
-            return this
-        }
-
-        /**
-         * Installs the default set of host command handlers. The user may override any command
-         * handler.
-         */
-        fun installDefaultCommandHandlers(): Builder {
-            addHostHandler(KillCommandHandler())
-            addHostHandler(ListDevicesCommandHandler())
-            addHostHandler(TrackDevicesCommandHandler())
-            addHostHandler(TrackMdnsServicesCommandHandler())
-            addHostHandler(ForwardCommandHandler())
-            addHostHandler(KillForwardCommandHandler())
-            addHostHandler(KillForwardAllCommandHandler())
-            addHostHandler(ListForwardCommandHandler())
-            addHostHandler(FeaturesCommandHandler())
-            addHostHandler(HostFeaturesCommandHandler())
-            addHostHandler(VersionCommandHandler())
-            addHostHandler(MdnsCommandHandler())
-            addHostHandler(PairCommandHandler())
-            addHostHandler(GetStateCommandHandler())
-            addHostHandler(GetSerialNoCommandHandler())
-            addHostHandler(GetDevPathCommandHandler())
-            addHostHandler(NetworkConnectCommandHandler())
-            addHostHandler(NetworkDisconnectCommandHandler())
-            addHostHandler(WaitForCommandHandler())
-            addHostHandler(ServerStatusCommandHandler())
-
-            addDeviceHandler(TrackJdwpCommandHandler())
-            addDeviceHandler(TrackAppCommandHandler())
-            addDeviceHandler(SyncCommandHandler())
-            addDeviceHandler(ReverseForwardCommandHandler())
-            addDeviceHandler(PingCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(PingCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(RmCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(LogcatCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(GetPropCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(GetPropCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(GetPropCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(SetPropCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(WriteNoStopCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(PackageManagerCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(WindowManagerCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(CmdCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(CmdCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(DumpsysCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(CatCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(CatCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(CatCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(EchoCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(EchoCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(ShellProtocolEchoCommandHandler())
-            addDeviceHandler(AbbCommandHandler())
-            addDeviceHandler(AbbExecCommandHandler())
-            addDeviceHandler(ActivityManagerCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(ActivityManagerCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(JdwpCommandHandler())
-            addDeviceHandler(StatCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(ServiceCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(ServiceCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(RootCommandHandler())
-            addDeviceHandler(UnRootCommandHandler())
-            addDeviceHandler(InteractiveShellHandler())
-            addDeviceHandler(InteractiveShellV2Handler())
-            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(ScreenRecordCommandHandler(ShellProtocolType.SHELL_V2))
-            addDeviceHandler(ExitCommandHandler(ShellProtocolType.EXEC))
-            addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL))
-            addDeviceHandler(ExitCommandHandler(ShellProtocolType.SHELL_V2))
-            return this
-        }
-
-        fun build(): FakeAdbServer {
-            if (mConfig != null) {
-                mConfig!!.hostHandlers.forEach { handler ->
-                    addHostHandler(handler)
-                }
-                mConfig!!.deviceHandlers.forEach { handler ->
-                    addDeviceHandler(handler)
-                }
-                mConfig!!.devices.forEach { deviceConfig: DeviceStateConfig? ->
-                    mServer.addDevice(
-                        deviceConfig
-                    )
-                }
-                mConfig!!.mdnsServices.forEach { service: MdnsService ->
-                    mServer.addMdnsService(
-                        service
-                    )
-                }
-            }
-            return mServer
-        }
-
-        fun setFeatures(features: Set<String>) {
-            mServer.features = features
-        }
-    }
-
-    companion object {
-
-        private val DEFAULT_FEATURES = Collections.unmodifiableSet(
-            HashSet(
-                mutableListOf(
-                    "push_sync",
-                    "fixed_push_mkdir",
-                    "shell_v2",
-                    "apex",
-                    "stat_v2",
-                    "ls_v2",
-                    "cmd",
-                    "abb",
-                    "abb_exec",
-                    "track_app",
-                    "server_status",
-                    "devicetracker_proto_format",
-                    "app_info",
-                )
-            )
-        )
-    }
+      )
+  }
 }

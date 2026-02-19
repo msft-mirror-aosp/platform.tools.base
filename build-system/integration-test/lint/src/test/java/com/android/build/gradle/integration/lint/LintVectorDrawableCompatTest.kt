@@ -25,18 +25,16 @@ import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Integration test for VectorDrawableCompatDetector.
- */
+/** Integration test for VectorDrawableCompatDetector. */
 class LintVectorDrawableCompatTest {
 
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MinimalSubProject.app("com.example.app")
-                    .appendToBuild(
-                        """
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(
+        MinimalSubProject.app("com.example.app")
+          .appendToBuild(
+            """
                             android {
                                 defaultConfig {
                                     vectorDrawables.useSupportLibrary = false
@@ -51,54 +49,60 @@ class LintVectorDrawableCompatTest {
                             dependencies {
                                 implementation 'com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION'
                             }
-                        """.trimIndent()
-                    ).withFile(
-                        "src/main/res/drawable/foo.xml",
                         """
-                            <vector xmlns:android="http://schemas.android.com/apk/res/android"
-                                android:width="108dp"
-                                android:height="108dp"
-                                android:viewportWidth="108"
-                                android:viewportHeight="108">
+              .trimIndent()
+          )
+          .withFile(
+            "src/main/res/drawable/foo.xml",
+            """
+            <vector xmlns:android="http://schemas.android.com/apk/res/android"
+                android:width="108dp"
+                android:height="108dp"
+                android:viewportWidth="108"
+                android:viewportHeight="108">
 
-                                <path
-                                    android:fillColor="#3DDC84"
-                                    android:pathData="M0,0h108v108h-108z" />
+                <path
+                    android:fillColor="#3DDC84"
+                    android:pathData="M0,0h108v108h-108z" />
 
-                            </vector>
-                        """.trimIndent()
-                    ).withFile(
-                        "src/main/res/layout/main_activity.xml",
-                        """
-                            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                xmlns:app="http://schemas.android.com/apk/res-auto">
+            </vector>
+            """
+              .trimIndent(),
+          )
+          .withFile(
+            "src/main/res/layout/main_activity.xml",
+            """
+            <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:app="http://schemas.android.com/apk/res-auto">
 
-                                <ImageView app:srcCompat="@drawable/foo" />
-                            </FrameLayout>
-                        """.trimIndent()
-                    )
-            ).create()
+                <ImageView app:srcCompat="@drawable/foo" />
+            </FrameLayout>
+            """
+              .trimIndent(),
+          )
+      )
+      .create()
 
-    // Regression test for b/187341964
-    @Test
-    fun testVectorDrawableCompat() {
-        val executor = project.executor()
-            // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-            .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
-        executor.run("lintDebug")
-        assertThat(project.file("lint-results.txt")).exists()
-        assertThat(project.file("lint-results.txt")).contains(
-            "Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true"
-        )
-        TestFileUtils.searchAndReplace(
-            project.buildFile,
-            "vectorDrawables.useSupportLibrary = false",
-            "vectorDrawables.useSupportLibrary = true"
-        )
-        executor.run("lintDebug")
-        assertThat(project.file("lint-results.txt")).exists()
-        assertThat(project.file("lint-results.txt")).doesNotContain(
-            "Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true"
-        )
-    }
+  // Regression test for b/187341964
+  @Test
+  fun testVectorDrawableCompat() {
+    val executor =
+      project
+        .executor()
+        // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
+        .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
+    executor.run("lintDebug")
+    assertThat(project.file("lint-results.txt")).exists()
+    assertThat(project.file("lint-results.txt"))
+      .contains("Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true")
+    TestFileUtils.searchAndReplace(
+      project.buildFile,
+      "vectorDrawables.useSupportLibrary = false",
+      "vectorDrawables.useSupportLibrary = true",
+    )
+    executor.run("lintDebug")
+    assertThat(project.file("lint-results.txt")).exists()
+    assertThat(project.file("lint-results.txt"))
+      .doesNotContain("Error: To use VectorDrawableCompat, you need to set android.defaultConfig.vectorDrawables.useSupportLibrary = true")
+  }
 }

@@ -28,11 +28,8 @@ interface LintModelResourceField {
   operator fun component3(): String = value
 }
 
-data class DefaultLintModelResourceField(
-  override val type: String,
-  override val name: String,
-  override val value: String,
-) : LintModelResourceField {
+data class DefaultLintModelResourceField(override val type: String, override val name: String, override val value: String) :
+  LintModelResourceField {
   override fun toString(): String {
     return "$name:$type=$value"
   }

@@ -19,10 +19,7 @@ package com.android.build.gradle.internal.fixtures
 import org.gradle.api.model.ObjectFactory
 
 class FakeObjectFactory {
-    companion object {
-        @JvmStatic
-        val factory: ObjectFactory by lazy {
-            ProjectFactory.project.objects
-        }
-    }
+  companion object {
+    @JvmStatic val factory: ObjectFactory by lazy { ProjectFactory.project.objects }
+  }
 }

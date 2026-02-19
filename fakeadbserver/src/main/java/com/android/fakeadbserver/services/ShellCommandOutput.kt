@@ -26,243 +26,233 @@ import kotlin.time.DurationUnit
 /**
  * Abstraction over access to stdin/stdout/stderr/exit code of an ADB shell command.
  *
- * This allows shell command implementor in [FakeAdbServer] to have a single implementation
- * that can deal with the simplified stdin/stdout protocol, or the full [ShellV2Protocol].
+ * This allows shell command implementor in [FakeAdbServer] to have a single implementation that can deal with the simplified stdin/stdout
+ * protocol, or the full [ShellV2Protocol].
  */
 interface ShellCommandOutput {
-    val exitCode: Int?
+  val exitCode: Int?
 
-    fun writeStdout(bytes: ByteArray)
-    fun writeStderr(bytes: ByteArray)
+  fun writeStdout(bytes: ByteArray)
 
-    fun writeStdout(text: String) {
-        writeStdout(text.toByteArray(UTF_8))
-    }
+  fun writeStderr(bytes: ByteArray)
 
-    fun writeStderr(text: String) {
-        writeStderr(text.toByteArray(UTF_8))
-    }
+  fun writeStdout(text: String) {
+    writeStdout(text.toByteArray(UTF_8))
+  }
 
-    fun writeExitCode(exitCode: Int)
+  fun writeStderr(text: String) {
+    writeStderr(text.toByteArray(UTF_8))
+  }
 
-    fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int
+  fun writeExitCode(exitCode: Int)
 
-    /**
-     * Returns number of bytes available in `stdin`, or `-1` if unknown
-     */
-    fun availableStdinByteCount(): Int
+  fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int
+
+  /** Returns number of bytes available in `stdin`, or `-1` if unknown */
+  fun availableStdinByteCount(): Int
 }
 
 fun ShellCommandOutput.readStdinByte(): Int {
-    val temp = ByteArray(1)
-    val count = this.readStdin(temp, 0, 1)
-    if (count < 1) {
-        throw EOFException("stdin has been closed")
-    }
-    return temp[0].toInt()
+  val temp = ByteArray(1)
+  val count = this.readStdin(temp, 0, 1)
+  if (count < 1) {
+    throw EOFException("stdin has been closed")
+  }
+  return temp[0].toInt()
 }
 
 /**
- * Wrapper around [ShellCommandOutput] that tracks if an exit code has been written, and offers a
- * method for writing an exit code if none has been written yet.
+ * Wrapper around [ShellCommandOutput] that tracks if an exit code has been written, and offers a method for writing an exit code if none
+ * has been written yet.
  */
-class ShellCommandOutputWithDefaultExitCode(val delegate: ShellCommandOutput):
-    ShellCommandOutput by delegate {
+class ShellCommandOutputWithDefaultExitCode(val delegate: ShellCommandOutput) : ShellCommandOutput by delegate {
 
-    private var exitCodeWritten = false
+  private var exitCodeWritten = false
 
-    override fun writeExitCode(exitCode: Int) {
-        delegate.writeExitCode(exitCode)
-        exitCodeWritten = true
+  override fun writeExitCode(exitCode: Int) {
+    delegate.writeExitCode(exitCode)
+    exitCodeWritten = true
+  }
+
+  /** If [writeExitCode] has already been called, does nothing; otherwise, writes a zero exit code. */
+  fun writeDefaultExitCode() {
+    if (!exitCodeWritten) {
+      writeExitCode(0)
     }
-
-    /**
-     * If [writeExitCode] has already been called, does nothing; otherwise, writes a zero exit code.
-     */
-    fun writeDefaultExitCode() {
-        if (!exitCodeWritten) {
-            writeExitCode(0)
-        }
-    }
+  }
 }
 
 /**
- * Wrapper around [ShellCommandOutput] that tracks the value of the last exit code.
- * The tracked exit code value is only stored in memory and not delegated to the underlying logic
+ * Wrapper around [ShellCommandOutput] that tracks the value of the last exit code. The tracked exit code value is only stored in memory and
+ * not delegated to the underlying logic
  */
-class ShellCommandOutputWithCachedExitCode(private val delegate: ShellCommandOutput):
-    ShellCommandOutput by delegate {
+class ShellCommandOutputWithCachedExitCode(private val delegate: ShellCommandOutput) : ShellCommandOutput by delegate {
 
-    override var exitCode = 0
+  override var exitCode = 0
 
-    override fun writeExitCode(exitCode: Int) {
-        this.exitCode = exitCode
-    }
+  override fun writeExitCode(exitCode: Int) {
+    this.exitCode = exitCode
+  }
 }
 
 /**
- * Implementation of [ShellCommandOutput] that writes stdout/stderr directly to
- * [Socket.getOutputStream], and ignores exit code. This corresponds to how
- * the legacy "shell:" ADB service works.
+ * Implementation of [ShellCommandOutput] that writes stdout/stderr directly to [Socket.getOutputStream], and ignores exit code. This
+ * corresponds to how the legacy "shell:" ADB service works.
  */
 class LegacyShellOutput(socket: Socket, val device: DeviceState) : ShellCommandOutput {
 
-    override val exitCode: Int?
-        get() = null
+  override val exitCode: Int?
+    get() = null
 
-    private val input = socket.getInputStream()
-    private val output = socket.getOutputStream()
+  private val input = socket.getInputStream()
+  private val output = socket.getOutputStream()
 
-    override fun writeStdout(bytes: ByteArray) {
-        if (device.delayStdout != Duration.ZERO) {
-            Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
-        }
-        output.write(bytes.replaceNewLineForOlderDevices(device))
+  override fun writeStdout(bytes: ByteArray) {
+    if (device.delayStdout != Duration.ZERO) {
+      Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
     }
+    output.write(bytes.replaceNewLineForOlderDevices(device))
+  }
 
-    override fun writeStderr(bytes: ByteArray) {
-        output.write(bytes.replaceNewLineForOlderDevices(device))
-    }
+  override fun writeStderr(bytes: ByteArray) {
+    output.write(bytes.replaceNewLineForOlderDevices(device))
+  }
 
-    override fun writeExitCode(exitCode: Int) {
-        // This is not implemented for this version of the protocol
-    }
+  override fun writeExitCode(exitCode: Int) {
+    // This is not implemented for this version of the protocol
+  }
 
-    override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
-        return input.read(bytes, offset, length)
-    }
+  override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
+    return input.read(bytes, offset, length)
+  }
 
-    override fun availableStdinByteCount(): Int {
-        return -1
-    }
+  override fun availableStdinByteCount(): Int {
+    return -1
+  }
 }
 
 /**
- * Implementation of [ShellCommandOutput] that writes stdout/stderr directly to
- * [Socket.getOutputStream], and ignores exit code. This corresponds to how
- * the legacy "exec:" ADB service works
+ * Implementation of [ShellCommandOutput] that writes stdout/stderr directly to [Socket.getOutputStream], and ignores exit code. This
+ * corresponds to how the legacy "exec:" ADB service works
  */
-class ExecOutput(socket: Socket, val device: DeviceState) :
-    ShellCommandOutput {
+class ExecOutput(socket: Socket, val device: DeviceState) : ShellCommandOutput {
 
-    private val input = socket.getInputStream()
-    private val output = socket.getOutputStream()
+  private val input = socket.getInputStream()
+  private val output = socket.getOutputStream()
 
-    override val exitCode: Int?
-        get() = null
+  override val exitCode: Int?
+    get() = null
 
-    override fun writeStdout(bytes: ByteArray) {
-        if (device.delayStdout != Duration.ZERO) {
-            Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
-        }
-        output.write(bytes)
+  override fun writeStdout(bytes: ByteArray) {
+    if (device.delayStdout != Duration.ZERO) {
+      Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
     }
+    output.write(bytes)
+  }
 
-    override fun writeStderr(bytes: ByteArray) {
-        output.write(bytes)
-    }
+  override fun writeStderr(bytes: ByteArray) {
+    output.write(bytes)
+  }
 
-    override fun writeExitCode(exitCode: Int) {
-        // This is not implemented for this version of the protocol
-    }
+  override fun writeExitCode(exitCode: Int) {
+    // This is not implemented for this version of the protocol
+  }
 
-    override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
-        return input.read(bytes, offset, length)
-    }
+  override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
+    return input.read(bytes, offset, length)
+  }
 
-    override fun availableStdinByteCount(): Int {
-        return -1
-    }
+  override fun availableStdinByteCount(): Int {
+    return -1
+  }
 }
 
 /** Replaces '\n'->'\r\n' for older devices */
 fun ByteArray.replaceNewLineForOlderDevices(device: DeviceState): ByteArray {
-    val newLineByte = '\n'.code.toByte()
-    if (device.apiLevel > 23 || !contains(newLineByte)) {
-        return this
-    }
+  val newLineByte = '\n'.code.toByte()
+  if (device.apiLevel > 23 || !contains(newLineByte)) {
+    return this
+  }
 
-    val newLineCount = this.count { it == newLineByte }
-    val result = ByteArray(size + newLineCount)
-    var outputIndex = 0
-    for (byte in this) {
-        if (byte == newLineByte) {
-            result[outputIndex++] = '\r'.code.toByte()
-        }
-        result[outputIndex++] = byte
+  val newLineCount = this.count { it == newLineByte }
+  val result = ByteArray(size + newLineCount)
+  var outputIndex = 0
+  for (byte in this) {
+    if (byte == newLineByte) {
+      result[outputIndex++] = '\r'.code.toByte()
     }
-    return result
+    result[outputIndex++] = byte
+  }
+  return result
 }
 
 /**
- * Implementation of [ShellCommandOutput] that read and writes from/to the underlying socket
- * using the [ShellV2Protocol]. This corresponds to how the "shell,v2:" ADB service works.
+ * Implementation of [ShellCommandOutput] that read and writes from/to the underlying socket using the [ShellV2Protocol]. This corresponds
+ * to how the "shell,v2:" ADB service works.
  */
 class ShellV2Output(socket: Socket, val device: DeviceState) : ShellCommandOutput {
 
-    private val protocol = ShellV2Protocol(socket)
+  private val protocol = ShellV2Protocol(socket)
 
-    private var currentStdinPacket: ShellV2Protocol.Packet? = null
-    private var currentStdinPacketOffset = 0
+  private var currentStdinPacket: ShellV2Protocol.Packet? = null
+  private var currentStdinPacketOffset = 0
 
-    override var exitCode: Int? = null
+  override var exitCode: Int? = null
 
-    override fun writeStdout(bytes: ByteArray) {
-        if (device.delayStdout != Duration.ZERO) {
-            Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
+  override fun writeStdout(bytes: ByteArray) {
+    if (device.delayStdout != Duration.ZERO) {
+      Thread.sleep(device.delayStdout.toLong(DurationUnit.MILLISECONDS))
+    }
+    protocol.writeStdout(bytes)
+  }
+
+  override fun writeStderr(bytes: ByteArray) {
+    protocol.writeStderr(bytes)
+  }
+
+  override fun writeExitCode(exitCode: Int) {
+    this.exitCode = exitCode
+    protocol.writeExitCode(exitCode)
+  }
+
+  override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
+    while (true) {
+      // Process current packet if there is one (and it has remaining data)
+      val packet = currentStdinPacket
+      if (packet != null) {
+        if (currentStdinPacketOffset < packet.bytes.size) {
+          val count = Integer.min(length, packet.bytes.size - currentStdinPacketOffset)
+          System.arraycopy(packet.bytes, currentStdinPacketOffset, bytes, offset, count)
+          currentStdinPacketOffset += count
+          return count
         }
-        protocol.writeStdout(bytes)
-    }
+      }
 
-    override fun writeStderr(bytes: ByteArray) {
-        protocol.writeStderr(bytes)
-    }
+      // We need a new packet, forget the old one and read a new one
+      assert(currentStdinPacket.let { it == null || it.bytes.size == currentStdinPacketOffset })
+      currentStdinPacket = null
+      currentStdinPacketOffset = 0
 
-    override fun writeExitCode(exitCode: Int) {
-        this.exitCode = exitCode
-        protocol.writeExitCode(exitCode)
-    }
-
-    override fun readStdin(bytes: ByteArray, offset: Int, length: Int): Int {
-        while (true) {
-            // Process current packet if there is one (and it has remaining data)
-            val packet = currentStdinPacket
-            if (packet != null) {
-                if (currentStdinPacketOffset < packet.bytes.size) {
-                    val count = Integer.min(length, packet.bytes.size - currentStdinPacketOffset)
-                    System.arraycopy(packet.bytes, currentStdinPacketOffset, bytes, offset, count)
-                    currentStdinPacketOffset += count
-                    return count
-                }
-            }
-
-            // We need a new packet, forget the old one and read a new one
-            assert(currentStdinPacket.let { it == null || it.bytes.size == currentStdinPacketOffset })
-            currentStdinPacket = null
-            currentStdinPacketOffset = 0
-
-            try {
-                val newPacket = protocol.readPacket()
-                when (newPacket.kind) {
-                    ShellV2Protocol.PacketKind.STDIN -> {
-                        currentStdinPacket = newPacket
-                    }
-                    ShellV2Protocol.PacketKind.CLOSE_STDIN -> {
-                        return -1
-                    }
-                    else -> {
-                        // TODO: Handle other type of packets
-                    }
-                }
-            } catch (e: EOFException) {
-                return -1
-            }
+      try {
+        val newPacket = protocol.readPacket()
+        when (newPacket.kind) {
+          ShellV2Protocol.PacketKind.STDIN -> {
+            currentStdinPacket = newPacket
+          }
+          ShellV2Protocol.PacketKind.CLOSE_STDIN -> {
+            return -1
+          }
+          else -> {
+            // TODO: Handle other type of packets
+          }
         }
+      } catch (e: EOFException) {
+        return -1
+      }
     }
+  }
 
-    override fun availableStdinByteCount(): Int {
-        return currentStdinPacket?.let {
-            it.bytes.size - currentStdinPacketOffset
-        } ?: -1
-    }
+  override fun availableStdinByteCount(): Int {
+    return currentStdinPacket?.let { it.bytes.size - currentStdinPacketOffset } ?: -1
+  }
 }

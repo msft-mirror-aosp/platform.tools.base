@@ -36,61 +36,34 @@ import com.android.build.gradle.internal.services.VariantServices
 import com.android.builder.core.ComponentType
 import org.gradle.api.file.DirectoryProperty
 
-internal abstract class ConsumableComponentDslInfoImpl internal constructor(
-    componentIdentity: ComponentIdentity,
-    componentType: ComponentType,
-    defaultConfig: DefaultConfig,
-    buildTypeObj: BuildType,
-    productFlavorList: List<ProductFlavor>,
-    services: VariantServices,
-    buildDirectory: DirectoryProperty,
-    extension: CommonExtension
-) : ComponentDslInfoImpl(
-    componentIdentity,
-    componentType,
-    defaultConfig,
-    buildTypeObj,
-    productFlavorList,
-    services,
-    extension
-), ConsumableComponentDslInfo {
+internal abstract class ConsumableComponentDslInfoImpl
+internal constructor(
+  componentIdentity: ComponentIdentity,
+  componentType: ComponentType,
+  defaultConfig: DefaultConfig,
+  buildTypeObj: BuildType,
+  productFlavorList: List<ProductFlavor>,
+  services: VariantServices,
+  buildDirectory: DirectoryProperty,
+  extension: CommonExtension,
+) :
+  ComponentDslInfoImpl(componentIdentity, componentType, defaultConfig, buildTypeObj, productFlavorList, services, extension),
+  ConsumableComponentDslInfo {
 
-    override val shadersDslInfo: ShadersDslInfo? by lazy(LazyThreadSafetyMode.NONE) {
-        ShadersDslInfoImpl(
-            defaultConfig, buildTypeObj, productFlavorList
-        )
+  override val shadersDslInfo: ShadersDslInfo? by
+    lazy(LazyThreadSafetyMode.NONE) { ShadersDslInfoImpl(defaultConfig, buildTypeObj, productFlavorList) }
+
+  override val optimizationDslInfo: OptimizationDslInfo by
+    lazy(LazyThreadSafetyMode.NONE) {
+      OptimizationDslInfoImpl(componentType, defaultConfig, buildTypeObj, productFlavorList, services, buildDirectory)
     }
 
-    override val optimizationDslInfo: OptimizationDslInfo by lazy(LazyThreadSafetyMode.NONE) {
-        OptimizationDslInfoImpl(
-            componentType,
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList,
-            services,
-            buildDirectory
-        )
-    }
+  override val renderscriptDslInfo: RenderscriptDslInfo? by
+    lazy(LazyThreadSafetyMode.NONE) { RenderscriptDslInfoImpl(mergedFlavor, buildTypeObj) }
 
-    override val renderscriptDslInfo: RenderscriptDslInfo? by lazy(LazyThreadSafetyMode.NONE) {
-        RenderscriptDslInfoImpl(
-            mergedFlavor,
-            buildTypeObj
-        )
-    }
+  override val buildConfigDslInfo: BuildConfigDslInfo? by
+    lazy(LazyThreadSafetyMode.NONE) { BuildConfigDslInfoImpl(defaultConfig, buildTypeObj, productFlavorList) }
 
-    override val buildConfigDslInfo: BuildConfigDslInfo? by lazy(LazyThreadSafetyMode.NONE) {
-        BuildConfigDslInfoImpl(
-            defaultConfig,
-            buildTypeObj,
-            productFlavorList
-        )
-    }
-
-    override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? by lazy(LazyThreadSafetyMode.NONE) {
-        ManifestPlaceholdersDslInfoImpl(
-            mergedFlavor,
-            buildTypeObj
-        )
-    }
+  override val manifestPlaceholdersDslInfo: ManifestPlaceholdersDslInfo? by
+    lazy(LazyThreadSafetyMode.NONE) { ManifestPlaceholdersDslInfoImpl(mergedFlavor, buildTypeObj) }
 }

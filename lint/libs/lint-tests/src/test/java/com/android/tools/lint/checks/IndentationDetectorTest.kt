@@ -60,7 +60,7 @@ class IndentationDetectorTest : AbstractCheckTest() {
                 }
                 """,
           )
-          .indented(),
+          .indented()
       )
       .skipTestModes(TestMode.PARENTHESIZED, TestMode.WHITESPACE)
       .run()
@@ -88,7 +88,7 @@ class IndentationDetectorTest : AbstractCheckTest() {
     lint()
       .files(
         java(
-          """
+            """
                 class Java {
                   public void test(Object context) {
                     if (context == null)
@@ -99,11 +99,11 @@ class IndentationDetectorTest : AbstractCheckTest() {
                   }
                 }
                 """
-        )
+          )
           .indented(),
         kotlin(
-          "src/Kotlin.kt",
-          """
+            "src/Kotlin.kt",
+            """
                 fun String.getLineAndColumn(offset: Int): Pair<Int,Int> {
                     var line = 1
                     var column = 1
@@ -181,7 +181,7 @@ class IndentationDetectorTest : AbstractCheckTest() {
                     return Pair(line, column)
                 }
                 """,
-        )
+          )
           .indented(),
       )
       .skipTestModes(TestMode.PARENTHESIZED, TestMode.WHITESPACE)
@@ -745,12 +745,7 @@ class IndentationDetectorTest : AbstractCheckTest() {
                 """
 
     // Option off, IDE, batch mode: warn
-    lint()
-      .files(testFile)
-      .clientFactory(clientFactory)
-      .configureOption(IndentationDetector.ALWAYS_RUN_OPTION, false)
-      .run()
-      .expect(warnings)
+    lint().files(testFile).clientFactory(clientFactory).configureOption(IndentationDetector.ALWAYS_RUN_OPTION, false).run().expect(warnings)
 
     // Option on, IDE, incremental/on the fly mode: warn
     lint()
@@ -766,11 +761,7 @@ class IndentationDetectorTest : AbstractCheckTest() {
       .files(testFile)
       .clientFactory {
         object : com.android.tools.lint.checks.infrastructure.TestLintClient(CLIENT_STUDIO) {
-          override fun isEdited(
-            file: File,
-            returnIfUnknown: Boolean,
-            savedSinceMsAgo: Long,
-          ): Boolean {
+          override fun isEdited(file: File, returnIfUnknown: Boolean, savedSinceMsAgo: Long): Boolean {
             return false
           }
         }

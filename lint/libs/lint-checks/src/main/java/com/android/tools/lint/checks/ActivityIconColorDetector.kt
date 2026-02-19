@@ -57,8 +57,7 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
             The resources passed to `setAnimatedIcon` and `setStaticIcon` should be white \
             with a transparent background, preferably a VectorDrawable or AnimatedVectorDrawable.
             """,
-        moreInfo =
-          "https://developer.android.com/training/wearables/ongoing-activity#best-practices",
+        moreInfo = "https://developer.android.com/training/wearables/ongoing-activity#best-practices",
         category = Category.ICONS,
         priority = 4,
         severity = Severity.WARNING,
@@ -75,12 +74,7 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
     const val ONGOING_ACTIVITY_BUILDER_METHOD = "androidx.wear.ongoing.OngoingActivity.Builder"
   }
 
-  data class IconSetterInfo(
-    val url: ResourceUrl,
-    val element: UElement,
-    val location: Location,
-    val message: String,
-  )
+  data class IconSetterInfo(val url: ResourceUrl, val element: UElement, val location: Location, val message: String)
 
   private val iconSetCalls: MutableMap<String, IconSetterInfo> = mutableMapOf()
 
@@ -122,8 +116,7 @@ class ActivityIconColorDetector : Detector(), SourceCodeScanner, BinaryResourceS
         url = url,
         element = node,
         location = context.getLocation(iconResource),
-        message =
-          "The $iconKind for an ongoing activity should be white with a transparent background",
+        message = "The $iconKind for an ongoing activity should be white with a transparent background",
       )
   }
 

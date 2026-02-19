@@ -21,12 +21,8 @@ import android.os.CancellationSignal
 import com.android.tools.appinspection.database.AbstractDatabase
 import com.android.tools.appinspection.database.Cursor
 
-/**
- * A [com.android.tools.appinspection.database.Database] wrapping the Android Framework
- * [SQLiteDatabase]
- */
-internal class FrameworkDatabase(database: SQLiteDatabase) :
-  AbstractDatabase<SQLiteDatabase>(database, database.path) {
+/** A [com.android.tools.appinspection.database.Database] wrapping the Android Framework [SQLiteDatabase] */
+internal class FrameworkDatabase(database: SQLiteDatabase) : AbstractDatabase<SQLiteDatabase>(database, database.path) {
   override val isReadOnly = delegate.isReadOnly
 
   override val apiClassName = "android.database.sqlite.SQLiteDatabase"
@@ -41,22 +37,14 @@ internal class FrameworkDatabase(database: SQLiteDatabase) :
 
   override fun releaseReference() = delegate.releaseReference()
 
-  override fun execSql(
-    sql: String,
-    selectionArgs: Array<String?>,
-    cancellationSignal: CancellationSignal?,
-  ) {
+  override fun execSql(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?) {
     when (cancellationSignal) {
       null -> delegate.execSQL(sql, selectionArgs)
       else -> delegate.rawQuery(sql, selectionArgs, cancellationSignal).use { it.moveToNext() }
     }
   }
 
-  override fun rawQuery(
-    sql: String,
-    selectionArgs: Array<String?>,
-    cancellationSignal: CancellationSignal?,
-  ): Cursor {
+  override fun rawQuery(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?): Cursor {
     val cursorFactory =
       SQLiteDatabase.CursorFactory { _, driver, editTable, query ->
         selectionArgs.forEachIndexed { i, value ->
@@ -69,8 +57,6 @@ internal class FrameworkDatabase(database: SQLiteDatabase) :
         }
         SQLiteCursor(driver, editTable, query)
       }
-    return FrameworkCursor(
-      delegate.rawQueryWithFactory(cursorFactory, sql, null, null, cancellationSignal)
-    )
+    return FrameworkCursor(delegate.rawQueryWithFactory(cursorFactory, sql, null, null, cancellationSignal))
   }
 }

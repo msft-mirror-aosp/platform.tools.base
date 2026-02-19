@@ -47,13 +47,13 @@ Status HeapDump::ExecuteOn(Daemon* daemon) {
 
   int64_t session_id = command().session_id();
   SessionsManager* sessions_manager = sessions_manager_;
-  bool is_task_based_ux_enabled = is_task_based_ux_enabled_;
 
+  bool should_end_session = command().should_end_session();
   bool dump_started = heap_dumper_->TriggerHeapDump(
       command().pid(), start_timestamp,
       // Use the start_event to construct the end_event
       [daemon, start_event, session_id, sessions_manager,
-       is_task_based_ux_enabled](bool dump_success) {
+       should_end_session](bool dump_success) {
         int64_t end_timestamp = daemon->clock()->GetCurrentTime();
         Event end_event;
         end_event.CopyFrom(start_event);
@@ -65,15 +65,14 @@ Status HeapDump::ExecuteOn(Daemon* daemon) {
         dump_info->set_success(dump_success);
         daemon->buffer()->Add(end_event);
         if (dump_success) {
-          Log::D(Log::Tag::PROFILER, "Heap dump SUCCEEDED for dump id: %lld.",
+          Log::D(Log::Tag::PROFILER, "Heap dump SUCCEEDED for dump id: %ld.",
                  start_event.group_id());
         } else {
-          Log::W(Log::Tag::PROFILER, "Heap dump FAILED for dump id: %lld.",
+          Log::W(Log::Tag::PROFILER, "Heap dump FAILED for dump id: %ld.",
                  start_event.group_id());
         }
-        // In the Task-Based UX, when the heap dump is complete, as indicated by
-        // the end event, we want to also end the session wrapping such capture.
-        if (is_task_based_ux_enabled) {
+
+        if (should_end_session) {
           sessions_manager->EndSession(daemon, session_id);
         }
       });

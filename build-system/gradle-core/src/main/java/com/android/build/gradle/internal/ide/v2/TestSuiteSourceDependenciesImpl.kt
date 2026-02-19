@@ -22,12 +22,11 @@ import com.android.builder.model.v2.models.TestSuiteSourceDependencies
 import java.io.Serializable
 
 data class TestSuiteSourceDependenciesImpl(
-    override val name: String,
-    override val type: SourceType,
-    override val artifactDependencies: ArtifactDependencies
-): TestSuiteSourceDependencies, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  override val name: String,
+  override val type: SourceType,
+  override val artifactDependencies: ArtifactDependencies,
+) : TestSuiteSourceDependencies, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

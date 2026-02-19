@@ -31,37 +31,35 @@ import kotlinx.coroutines.flow.transform
  * A [DeviceTracker] for Adblib
  *
  * Uses [DeviceProvisioner.devices] flow to track devices.
- *
  */
-internal class DeviceTrackerAdblib(
-    private val deviceProvisioner: DeviceProvisioner,
-    private val logger: AdbLogger,
-) : DeviceTracker<DeviceState.Connected> {
+internal class DeviceTrackerAdblib(private val deviceProvisioner: DeviceProvisioner, private val logger: AdbLogger) :
+  DeviceTracker<DeviceState.Connected> {
 
+  override fun trackDevices(): Flow<DeviceEvent<DeviceState.Connected>> {
+    val currentDevices = mutableSetOf<String>()
+    return deviceProvisioner
+      .mapStateNotNull { _, state -> state.asOnline() }
+      .transform { states ->
+        val serialToState = states.associateBy { it.connectedDevice.serialNumber }
+        val removed = currentDevices - serialToState.keys
+        val added = serialToState.keys - currentDevices
 
-    override fun trackDevices(): Flow<DeviceEvent<DeviceState.Connected>> {
-        val currentDevices = mutableSetOf<String>()
-        return deviceProvisioner.mapStateNotNull { _, state -> state.asOnline() }
-            .transform { states ->
-                val serialToState = states.associateBy { it.connectedDevice.serialNumber }
-                val removed = currentDevices - serialToState.keys
-                val added = serialToState.keys - currentDevices
+        removed.forEach {
+          logger.debug { "DeviceDisconnected($it)" }
+          currentDevices.remove(it)
+          emit(DeviceDisconnected(it))
+        }
+        added
+          .mapNotNull { serialToState[it] }
+          .forEach {
+            currentDevices.add(it.connectedDevice.serialNumber)
+            logger.debug { "DeviceOnline(${it.connectedDevice.serialNumber})" }
+            emit(DeviceOnline(it))
+          }
+      }
+  }
 
-                removed.forEach {
-                    logger.debug { "DeviceDisconnected($it)" }
-                    currentDevices.remove(it)
-                    emit(DeviceDisconnected(it))
-                }
-                added.mapNotNull { serialToState[it] }.forEach {
-                    currentDevices.add(it.connectedDevice.serialNumber)
-                    logger.debug { "DeviceOnline(${it.connectedDevice.serialNumber})" }
-                    emit(DeviceOnline(it))
-                }
-            }
-    }
-
-    override fun getDeviceSerialNumber(device: DeviceState.Connected): String =
-        device.connectedDevice.serialNumber
+  override fun getDeviceSerialNumber(device: DeviceState.Connected): String = device.connectedDevice.serialNumber
 }
 
 private fun DeviceState.asOnline() = takeIf { it.isOnline() } as? DeviceState.Connected

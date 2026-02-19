@@ -53,8 +53,7 @@ class ToastDetector : Detector(), SourceCodeScanner {
             ISSUE,
             duration,
             context.getLocation(duration),
-            "Expected duration `Toast.LENGTH_SHORT` or `Toast.LENGTH_LONG`, a custom " +
-              "duration value is not supported",
+            "Expected duration `Toast.LENGTH_SHORT` or `Toast.LENGTH_LONG`, a custom " + "duration value is not supported",
           )
         }
       }
@@ -62,8 +61,7 @@ class ToastDetector : Detector(), SourceCodeScanner {
       checkShown(context, node, "Toast")
     } else if (
       name == "make" &&
-        (className == "com.google.android.material.snackbar.Snackbar" ||
-          className == "android.support.design.widget.Snackbar")
+        (className == "com.google.android.material.snackbar.Snackbar" || className == "android.support.design.widget.Snackbar")
     ) {
       checkShown(context, node, "Snackbar")
     }
@@ -74,13 +72,7 @@ class ToastDetector : Detector(), SourceCodeScanner {
     if (method.isMissingTarget(TargetMethodDataFlowAnalyzer.create(node, "show", null))) {
       val fix =
         if (CheckResultDetector.isExpressionValueUnused(node)) {
-          fix()
-            .replace()
-            .name("Call show()")
-            .range(context.getLocation(node))
-            .end()
-            .with(".show()")
-            .build()
+          fix().replace().name("Call show()").range(context.getLocation(node)).end().with(".show()").build()
         } else {
           null
         }

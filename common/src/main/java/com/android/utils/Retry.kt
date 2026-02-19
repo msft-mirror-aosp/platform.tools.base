@@ -20,18 +20,12 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeSource
 
-/**
- * Executes [block] at least once and up to [maxRetries] additional times, retrying if it throws
- * [E].
- */
+/** Executes [block] at least once and up to [maxRetries] additional times, retrying if it throws [E]. */
 inline fun <reified E : Throwable> executeWithRetries(maxRetries: Int, block: () -> Unit) {
   executeWithRetries<E, Unit>(maxRetries, block)
 }
 
-/**
- * Executes [block] at least once and up to [maxRetries] additional times, returning its result and
- * retrying if it throws [E].
- */
+/** Executes [block] at least once and up to [maxRetries] additional times, returning its result and retrying if it throws [E]. */
 inline fun <reified E : Throwable, T> executeWithRetries(maxRetries: Int, block: () -> T): T {
   var retriesRemaining = maxRetries
   return executeWithRetries<E, T>({ retriesRemaining-- > 0 }, block)
@@ -49,10 +43,7 @@ inline fun <reified E : Throwable> executeWithRetries(
   executeWithRetries<E, Unit>(duration, sleepBetweenRetries, timeSource, threadSleeper, block)
 }
 
-/**
- * Executes [block] at least once, returning its result and retrying if it throws [E] and [duration]
- * has not elapsed.
- */
+/** Executes [block] at least once, returning its result and retrying if it throws [E] and [duration] has not elapsed. */
 @OptIn(ExperimentalTime::class) // For Duration which is no longer experimental
 inline fun <reified E : Throwable, T> executeWithRetries(
   duration: Duration,
@@ -73,21 +64,12 @@ inline fun <reified E : Throwable, T> executeWithRetries(
 }
 
 /** Executes [block] at least once, retrying if it throws [E] and [retryCondition] returns true. */
-inline fun <reified E : Throwable> executeWithRetries(
-  retryCondition: () -> Boolean,
-  block: () -> Unit,
-) {
+inline fun <reified E : Throwable> executeWithRetries(retryCondition: () -> Boolean, block: () -> Unit) {
   executeWithRetries<E, Unit>(retryCondition, block)
 }
 
-/**
- * Executes [block] at least once, returning its result and retrying if it throws [E] and
- * [retryCondition] returns true.
- */
-inline fun <reified E : Throwable, T> executeWithRetries(
-  retryCondition: () -> Boolean,
-  block: () -> T,
-): T {
+/** Executes [block] at least once, returning its result and retrying if it throws [E] and [retryCondition] returns true. */
+inline fun <reified E : Throwable, T> executeWithRetries(retryCondition: () -> Boolean, block: () -> T): T {
   while (true) {
     try {
       return block()

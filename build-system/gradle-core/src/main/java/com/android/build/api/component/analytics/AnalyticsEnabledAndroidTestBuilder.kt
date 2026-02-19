@@ -22,58 +22,52 @@ import com.google.wireless.android.sdk.stats.GradleBuildVariant
 
 @Suppress("DEPRECATION")
 open class AnalyticsEnabledAndroidTestBuilder(
-        val delegate: com.android.build.api.variant.AndroidTestBuilder,
-        val stats: GradleBuildVariant.Builder,
-): com.android.build.api.variant.AndroidTestBuilder {
+  val delegate: com.android.build.api.variant.AndroidTestBuilder,
+  val stats: GradleBuildVariant.Builder,
+) : com.android.build.api.variant.AndroidTestBuilder {
 
-    @Deprecated("replaced with DeviceTestBuilder.enable")
-    override var enable: Boolean
-        get() = delegate.enable
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                    VariantMethodType.ANDROID_TEST_ENABLED_VALUE
-            delegate.enable = value
-        }
+  @Deprecated("replaced with DeviceTestBuilder.enable")
+  override var enable: Boolean
+    get() = delegate.enable
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ANDROID_TEST_ENABLED_VALUE
+      delegate.enable = value
+    }
 
-    @Deprecated("replaced with DeviceTestBuilder.setEnableMultiDex")
-    override var enableMultiDex: Boolean?
-        get() =  throw PropertyAccessNotAllowedException("enableMultiDex", "AndroidTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                    VariantMethodType.ENABLE_MULTI_DEX_VALUE
-            @Suppress("DEPRECATION")
-            delegate.enableMultiDex = value
-        }
+  @Deprecated("replaced with DeviceTestBuilder.setEnableMultiDex")
+  override var enableMultiDex: Boolean?
+    get() = throw PropertyAccessNotAllowedException("enableMultiDex", "AndroidTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.ENABLE_MULTI_DEX_VALUE
+      @Suppress("DEPRECATION")
+      delegate.enableMultiDex = value
+    }
 
-    override var enableCodeCoverage: Boolean
-        get() =  throw PropertyAccessNotAllowedException("enableCodeCoverage", "AndroidTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE
-            delegate.enableCodeCoverage = value
-        }
+  override var enableCodeCoverage: Boolean
+    get() = throw PropertyAccessNotAllowedException("enableCodeCoverage", "AndroidTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.DEVICE_TEST_ENABLE_CODE_COVERAGE_VALUE
+      delegate.enableCodeCoverage = value
+    }
 
-    override var targetSdk: Int?
-        get() = delegate.targetSdk
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
-            delegate.targetSdk = value
-        }
+  override var targetSdk: Int?
+    get() = delegate.targetSdk
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_VERSION_VALUE_VALUE
+      delegate.targetSdk = value
+    }
 
-    override var targetSdkPreview: String?
-        get() = delegate.targetSdkPreview
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.TARGET_SDK_PREVIEW_VALUE
-            delegate.targetSdkPreview = value
-        }
+  override var targetSdkPreview: String?
+    get() = delegate.targetSdkPreview
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.TARGET_SDK_PREVIEW_VALUE
+      delegate.targetSdkPreview = value
+    }
 
-    override var debuggable: Boolean
-        get() = throw PropertyAccessNotAllowedException("debuggable", "AndroidTestBuilder")
-        set(value) {
-            stats.variantApiAccessBuilder.addVariantAccessBuilder().type =
-                VariantMethodType.DEVICE_TEST_DEBUGGABLE_VALUE
-            delegate.debuggable = value
-        }
+  override var debuggable: Boolean
+    get() = throw PropertyAccessNotAllowedException("debuggable", "AndroidTestBuilder")
+    set(value) {
+      stats.variantApiAccessBuilder.addVariantAccessBuilder().type = VariantMethodType.DEVICE_TEST_DEBUGGABLE_VALUE
+      delegate.debuggable = value
+    }
 }

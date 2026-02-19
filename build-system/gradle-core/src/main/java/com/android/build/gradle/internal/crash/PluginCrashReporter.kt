@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.internal.crash
 
-import com.google.common.annotations.VisibleForTesting
 import com.android.Version
 import com.android.tools.analytics.AnalyticsSettings
 import com.android.tools.analytics.crash.CrashReporter
 import com.android.tools.analytics.crash.GoogleCrashReporter
+import com.google.common.annotations.VisibleForTesting
 
 /** This cannot be changed without updating the go/crash configuration. */
 internal const val PRODUCT_ID = "AndroidGradlePlugin"
@@ -28,42 +28,41 @@ internal const val PRODUCT_ID = "AndroidGradlePlugin"
 /** Reporter used to upload crashes in AGP, in order to help debug user issues. */
 object PluginCrashReporter {
 
-    private val reporter: CrashReporter?
+  private val reporter: CrashReporter?
 
-    init {
-        reporter = getCrashReporter()
+  init {
+    reporter = getCrashReporter()
+  }
+
+  /**
+   * Reports the exception if it is one of the types we are interested in reporting. Returns true if reporting is enabled, and exception
+   * type should be reported, false otherwise.
+   */
+  @JvmStatic fun maybeReportException(ex: Throwable): Boolean = maybeReportExceptionImpl(reporter, ex)
+
+  @VisibleForTesting
+  fun maybeReportExceptionForTest(ex: Throwable): Boolean {
+    val crashReporter = getCrashReporter(forTest = true)
+    return maybeReportExceptionImpl(crashReporter, ex)
+  }
+
+  private fun getCrashReporter(forTest: Boolean = false): CrashReporter? {
+    return if (AnalyticsSettings.optedIn) {
+      val isDebugBuild = Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")
+      GoogleCrashReporter(false, isDebugBuild || forTest)
+    } else {
+      null
+    }
+  }
+
+  private fun maybeReportExceptionImpl(reporter: CrashReporter?, ex: Throwable): Boolean {
+    if (reporter == null) {
+      return false
     }
 
-    /**
-     * Reports the exception if it is one of the types we are interested in reporting. Returns true
-     * if reporting is enabled, and exception type should be reported, false otherwise.
-     */
-    @JvmStatic
-    fun maybeReportException(ex: Throwable): Boolean = maybeReportExceptionImpl(reporter, ex)
-
-    @VisibleForTesting
-    fun maybeReportExceptionForTest(ex: Throwable): Boolean {
-        val crashReporter = getCrashReporter(forTest = true)
-        return maybeReportExceptionImpl(crashReporter, ex)
-    }
-
-    private fun getCrashReporter(forTest: Boolean = false): CrashReporter? {
-        return if (AnalyticsSettings.optedIn) {
-            val isDebugBuild = Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")
-            GoogleCrashReporter(false, isDebugBuild || forTest)
-        } else {
-            null
-        }
-    }
-
-    private fun maybeReportExceptionImpl(reporter: CrashReporter?, ex: Throwable): Boolean {
-        if (reporter == null) {
-            return false
-        }
-
-        return PluginExceptionReport.create(ex)?.let {
-            reporter.submit(it)
-            return true
-        } ?: false
-    }
+    return PluginExceptionReport.create(ex)?.let {
+      reporter.submit(it)
+      return true
+    } ?: false
+  }
 }

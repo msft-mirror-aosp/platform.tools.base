@@ -250,9 +250,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         tag = TAG_NAME_PREFIX + tag
       } else {
         val resourceUrl = ResourceEvaluator.getResource(context.evaluator, first)
-        if (
-          resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework
-        ) {
+        if (resourceUrl != null && resourceUrl.type == ResourceType.ID && !resourceUrl.isFramework) {
           id = resourceUrl.name
         }
       }
@@ -260,8 +258,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         // We can't search for tags in the resource repository incrementally
         if (id != null) {
           val resources =
-            if (context.isGlobalAnalysis())
-              client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+            if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
             else client.getResources(context.project, PROJECT_ONLY)
           val items = resources.getResources(ResourceNamespace.TODO(), ResourceType.ID, id)
           if (items.isNotEmpty()) {
@@ -274,57 +271,23 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
             }
             if (compatible.isNotEmpty()) {
               val layoutTypes = ArrayList(compatible)
-              checkCompatible(
-                context,
-                castType,
-                castTypeClass,
-                null,
-                layoutTypes,
-                errorNode,
-                first,
-                items,
-                findView,
-              )
+              checkCompatible(context, castType, castTypeClass, null, layoutTypes, errorNode, first, items, findView)
             }
           }
         } else {
           val types = idToViewTag[tag]
           if (types is String) {
-            checkCompatible(
-              context,
-              castType,
-              castTypeClass,
-              types,
-              null,
-              errorNode,
-              first,
-              null,
-              false,
-            )
+            checkCompatible(context, castType, castTypeClass, types, null, errorNode, first, null, false)
           } else if (types is List<*>) {
             @Suppress("UNCHECKED_CAST") val layoutTypes = types as List<String>
-            checkCompatible(
-              context,
-              castType,
-              castTypeClass,
-              null,
-              layoutTypes,
-              errorNode,
-              first,
-              null,
-              false,
-            )
+            checkCompatible(context, castType, castTypeClass, null, layoutTypes, errorNode, first, null, false)
           }
         }
       }
     }
   }
 
-  private fun checkMissingCast(
-    context: JavaContext,
-    findViewByIdCall: UCallExpression,
-    surroundingCall: UCallExpression,
-  ) {
+  private fun checkMissingCast(context: JavaContext, findViewByIdCall: UCallExpression, surroundingCall: UCallExpression) {
     // This issue only applies in Java, not Kotlin etc - and for language level 1.8 and above
     val languageLevel = getLanguageLevel(surroundingCall, JDK_1_7)
     if (languageLevel.isLessThan(JDK_1_8)) {
@@ -333,13 +296,9 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     var selector: UElement = surroundingCall
     var parent: UQualifiedReferenceExpression =
-      skipParenthesizedExprUp(surroundingCall.uastParent) as? UQualifiedReferenceExpression
-        ?: return
+      skipParenthesizedExprUp(surroundingCall.uastParent) as? UQualifiedReferenceExpression ?: return
     val parentParent: UElement = skipParenthesizedExprUp(parent.uastParent) ?: return
-    if (
-      parentParent is UQualifiedReferenceExpression &&
-        parentParent.receiver.skipParenthesizedExprDown() === parent
-    ) {
+    if (parentParent is UQualifiedReferenceExpression && parentParent.receiver.skipParenthesizedExprDown() === parent) {
       selector = parent
       parent = parentParent
     }
@@ -381,14 +340,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
 
     val callName = findViewByIdCall.methodName ?: return
     val fix =
-      LintFix.create()
-        .replace()
-        .name("Add cast")
-        .text(callName)
-        .shortenNames()
-        .reformat(true)
-        .with("(android.view.View)$callName")
-        .build()
+      LintFix.create().replace().name("Add cast").text(callName).shortenNames().reformat(true).with("(android.view.View)$callName").build()
 
     context.report(
       ADD_CAST,
@@ -570,15 +522,10 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
     }
   }
 
-  private fun createCastFix(
-    node: UBinaryExpressionWithType,
-    displayTag: String,
-    context: JavaContext,
-  ): LintFix? {
+  private fun createCastFix(node: UBinaryExpressionWithType, displayTag: String, context: JavaContext): LintFix? {
     val typeReference = node.typeReference ?: return null
     val className =
-      if (displayTag.contains('.')) displayTag.replace('$', '.')
-      else findViewForTag(displayTag, context)?.qualifiedName ?: return null
+      if (displayTag.contains('.')) displayTag.replace('$', '.') else findViewForTag(displayTag, context)?.qualifiedName ?: return null
     return fix()
       .replace()
       .all()
@@ -590,12 +537,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
       .build()
   }
 
-  private fun createSecondary(
-    context: JavaContext,
-    tag: String,
-    resourceReference: UExpression,
-    sampleLayout: String?,
-  ): Location {
+  private fun createSecondary(context: JavaContext, tag: String, resourceReference: UExpression, sampleLayout: String?): Location {
     val secondary = context.getLocation(resourceReference)
     if (sampleLayout != null) {
       val article =
@@ -659,11 +601,7 @@ open class ViewTypeDetector : ResourceXmlDetector(), SourceCodeScanner {
         severity = Severity.ERROR,
         androidSpecific = true,
         implementation =
-          Implementation(
-            ViewTypeDetector::class.java,
-            EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES),
-            Scope.JAVA_FILE_SCOPE,
-          ),
+          Implementation(ViewTypeDetector::class.java, EnumSet.of(Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES), Scope.JAVA_FILE_SCOPE),
       )
 
     /** Mismatched view types. */

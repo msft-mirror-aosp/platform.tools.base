@@ -10,10 +10,10 @@ kotlin_library(
     resources = glob(["src/main/resources/**"]),
     deps = [
         "//tools/base/common:tools.common",
+        "//tools/base/utp:com.google.testing.platform.android-device-provider-local",
+        "//tools/base/utp:com.google.testing.platform.launcher",
         "//tools/base/utp/android-test-plugin-host-coverage-proto",
         "@maven//:com.google.protobuf.protobuf-java",
-        "@maven//:com.google.testing.platform.android-device-provider-local",
-        "@maven//:com.google.testing.platform.launcher",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     ],
 )
@@ -33,9 +33,9 @@ kotlin_test(
         "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/sdklib:tools.sdklib",
         "//tools/base/testutils:tools.testutils",
+        "//tools/base/utp:com.google.testing.platform.launcher",
         "//tools/base/utp/android-test-plugin-host-coverage-proto",
         "@maven//:com.google.protobuf.protobuf-java",
-        "@maven//:com.google.testing.platform.launcher",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.mockito.kotlin.mockito-kotlin",

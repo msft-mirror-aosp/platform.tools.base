@@ -17,9 +17,8 @@
 package com.android.tools.idea.wizard.template.impl.activities.bottomNavigationActivity.src.app_package
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.ViewBindingSupport
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -32,13 +31,16 @@ fun mainActivityKt(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
      setContentView(binding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}
@@ -64,7 +66,7 @@ ${renderIf(isViewBindingSupported) {"""
         val navView: BottomNavigationView = ${findViewById(
           language = Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,
-          id = "nav_view")}
+          id = "nav_view",)}
 
         val navController = findNavController(R.id.${navHostFragmentId})
         // Passing each menu ID as a set of Ids because each

@@ -98,11 +98,7 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
     val psiClass = evaluator.findClass(className.replace('$', '.'))
     if (psiClass == null) {
       val shortName = className.substringAfterLast('.')
-      context.report(
-        ISSUE,
-        context.getLocation(node),
-        "Class `$shortName` not found in the current module or its dependencies",
-      )
+      context.report(ISSUE, context.getLocation(node), "Class `$shortName` not found in the current module or its dependencies")
     }
   }
 
@@ -115,8 +111,7 @@ class PluginXmlDetector : Detector(), OtherFileScanner {
 }
 
 /** Keywords that suggest association with a class name. */
-private val CLASS_KEYWORDS =
-  arrayOf("class", "instance", "implementation", "interface", "topic", "provider")
+private val CLASS_KEYWORDS = arrayOf("class", "instance", "implementation", "interface", "topic", "provider")
 
 /** Suffixes that refute association with a class name. */
 private val NOT_CLASS_SUFFIXES = arrayOf("id", "key")

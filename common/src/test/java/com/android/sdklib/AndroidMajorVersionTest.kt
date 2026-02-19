@@ -29,8 +29,7 @@ class AndroidMajorVersionTest {
   fun order() {
     assertThat(AndroidMajorVersion(34)).isLessThan(AndroidMajorVersion(35))
     assertThat(AndroidMajorVersion(34)).isLessThan(AndroidMajorVersion(34, "VanillaIceCream"))
-    assertThat(AndroidMajorVersion(34, "Codename"))
-      .isLessThan(AndroidMajorVersion(34, "VanillaIceCream"))
+    assertThat(AndroidMajorVersion(34, "Codename")).isLessThan(AndroidMajorVersion(34, "VanillaIceCream"))
   }
 
   @Test

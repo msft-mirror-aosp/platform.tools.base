@@ -30,16 +30,14 @@ import java.util.EnumSet
 import org.jetbrains.uast.UCallExpression
 
 /**
- * Reports calls to `setDefaultUncaughtExceptionHandler` unless we see a call to
- * `getDefaultUncaughtExceptionHandler` (to get the existing handler) in the same module.
+ * Reports calls to `setDefaultUncaughtExceptionHandler` unless we see a call to `getDefaultUncaughtExceptionHandler` (to get the existing
+ * handler) in the same module.
  *
- * A prototype version of this check also required seeing
- * `Thread.UncaughtExceptionHandler.uncaughtException` (to call the existing handler) to not report
- * a warning, and used partial analysis to allow the elements to appear in any module. However, it
- * seems unlikely for the `{get,set}DefaultUncaughtExceptionHandler` calls to occur in different
- * modules, and by avoiding partial results, we can report a warning in more cases, such as when the
- * user is not using checkDependencies or when the user is running Lint on just a library module
- * (without an app module).
+ * A prototype version of this check also required seeing `Thread.UncaughtExceptionHandler.uncaughtException` (to call the existing handler)
+ * to not report a warning, and used partial analysis to allow the elements to appear in any module. However, it seems unlikely for the
+ * `{get,set}DefaultUncaughtExceptionHandler` calls to occur in different modules, and by avoiding partial results, we can report a warning
+ * in more cases, such as when the user is not using checkDependencies or when the user is running Lint on just a library module (without an
+ * app module).
  */
 class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
 
@@ -60,22 +58,14 @@ class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
     incidents.clear()
   }
 
-  override fun getApplicableMethodNames() =
-    listOf("setDefaultUncaughtExceptionHandler", "getDefaultUncaughtExceptionHandler")
+  override fun getApplicableMethodNames() = listOf("setDefaultUncaughtExceptionHandler", "getDefaultUncaughtExceptionHandler")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (seenGetCall) return
 
     when (method.name) {
       "setDefaultUncaughtExceptionHandler" -> {
-        if (
-          context.evaluator.methodMatches(
-            method,
-            THREAD_CLASS,
-            false,
-            "java.lang.Thread.UncaughtExceptionHandler",
-          )
-        ) {
+        if (context.evaluator.methodMatches(method, THREAD_CLASS, false, "java.lang.Thread.UncaughtExceptionHandler")) {
           incidents.add(
             Incident(context)
               .issue(ISSUE)
@@ -95,8 +85,7 @@ class UncaughtExceptionHandlerDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(UncaughtExceptionHandlerDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
+    private val IMPLEMENTATION = Implementation(UncaughtExceptionHandlerDetector::class.java, EnumSet.of(Scope.ALL_JAVA_FILES))
 
     @JvmField
     val ISSUE =

@@ -34,11 +34,15 @@ import random
 from typing import Optional, List, Tuple
 from tools.base.bazel.mutation.proto import mutation_pb2
 from google.protobuf import text_format
+from tools.base.bazel.mutation.utils import exclude_filter, filter
 
 # Default paths for picking files
-DEFAULT_PATHS = ["tools/adt/idea", "tools/base", "tools/vendor/google", "tools/vendor/google3"]
+DEFAULT_PATHS = ["tools/base/adblib", "tools/base/adblib-tools"]
 DEFAULT_IGNORE_PATHS = [
     re.compile(r".*build-system/.*"),
+    re.compile(r"(?i).*/test/.*"),
+    re.compile(r"Test\.(kt|java)$"),
+    re.compile(r".*/(testSrc|testData)/.*"),
 ]
 
 # Allowed file format for mutation
@@ -47,6 +51,12 @@ ALLOWED_FILE_FORMAT = (".kt", ".java")
 # Proto file header details
 MUTATION_PROTO_FILE = "tools/base/bazel/mutation/proto/mutation.proto"
 MUTATION_PROTO_MESSAGE = "MutationFileMetadata"
+
+EXCLUDE_FILTERS = [
+    exclude_filter.CommentFilter(),
+    exclude_filter.AbstractInterfaceFilter(),
+    exclude_filter.AbstractMethodFilter()
+]
 
 class MutationChange:
     def __init__(self, line_number: int, original_content: str, mutated_content: str):
@@ -122,7 +132,6 @@ def get_all_source_files(workspace_directory: str, allowed_paths: List[str], ign
                 # Ensure the file has valid extension and is not a test file or a part of ignored_paths
                 if (
                         full_file_path.endswith(ALLOWED_FILE_FORMAT)
-                        and not is_test(full_file_path)
                         and not is_part_of_ignored_paths(path=rel_path, ignore_paths=ignore_paths)
                     ):
                     # Appending relative path to the workspace directory
@@ -250,8 +259,12 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
 
     # List to hold all possible mutations of the file
     possible_mutations_list = []
+    lines = content.splitlines()
+    # Get exclusion list
+    excluded_lines = filter.apply_exclude_filters(lines=lines, exclude_filters=EXCLUDE_FILTERS)
     # Iterate through each line with its number
-    for line_number, line in enumerate(content.splitlines(), 1):
+    for line_index in filter.get_valid_indexes(start=0, stop=len(lines), exclude_list=excluded_lines):
+        line = lines[line_index]
         # Try each pattern on the current line
         for version, pattern, regex_function, exclusion_function in regex_patterns:
             # Check if the line needs to be excluded from regex matching
@@ -265,20 +278,13 @@ def mutate(source: str, content: str) -> Optional[List[MutationChange]]:
                 # A mutation was successful for this line, create an MutationChange object and add it to the list
                 possible_mutations_list.append(
                     MutationChange(
-                        line_number=line_number,
+                        line_number=line_index+1,
                         original_content=line,
                         mutated_content=modified_line
                     )
                 )
 
     return possible_mutations_list
-
-def is_test(source: str) -> bool:
-    if "/testSrc/" in source or "/testData/" in source:
-        return True
-    if source.endswith("Test.kt") or source.endswith("Test.java"):
-        return True
-    return False
 
 def main(args):
     build_workspace_directory = os.environ.get("BUILD_WORKSPACE_DIRECTORY")

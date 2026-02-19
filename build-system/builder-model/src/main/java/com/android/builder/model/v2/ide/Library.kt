@@ -18,89 +18,72 @@ package com.android.builder.model.v2.ide
 import com.android.builder.model.v2.AndroidModel
 import java.io.File
 
-/**
- * Represent a variant/module/artifact dependency.
- */
-interface Library: AndroidModel {
-    /**
-     * A Unique key representing the library, and allowing to match it with [GraphItem] instances
-     */
-    val key: String
+/** Represent a variant/module/artifact dependency. */
+interface Library : AndroidModel {
+  /** A Unique key representing the library, and allowing to match it with [GraphItem] instances */
+  val key: String
 
-    /**
-     * The type of the dependency.
-     */
-    val type: LibraryType
+  /** The type of the dependency. */
+  val type: LibraryType
 
-    /**
-     * Returns the project info to uniquely identify it (and its variant)
-     *
-     * Only valid for instances where [type] is [LibraryType.PROJECT]. It is null in other cases.
-     */
-    val projectInfo: ProjectInfo?
+  /**
+   * Returns the project info to uniquely identify it (and its variant)
+   *
+   * Only valid for instances where [type] is [LibraryType.PROJECT]. It is null in other cases.
+   */
+  val projectInfo: ProjectInfo?
 
-    /**
-     * Returns the external library info to uniquely identify it (and its variant)
-     *
-     * Only valid for instances where [type] is [LibraryType.ANDROID_LIBRARY], or
-     * [LibraryType.JAVA_LIBRARY]. It is null in other cases.
-     */
-    val libraryInfo: LibraryInfo?
+  /**
+   * Returns the external library info to uniquely identify it (and its variant)
+   *
+   * Only valid for instances where [type] is [LibraryType.ANDROID_LIBRARY], or [LibraryType.JAVA_LIBRARY]. It is null in other cases.
+   */
+  val libraryInfo: LibraryInfo?
 
-    /**
-     * The artifact location.
-     *
-     * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or
-     * [LibraryType.ANDROID_LIBRARY]
-     */
-    val artifact: File?
+  /**
+   * The artifact location.
+   *
+   * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or [LibraryType.ANDROID_LIBRARY]
+   */
+  val artifact: File?
 
-    /**
-     * The jar containing custom lint checks for consumers to use. This is filled by the
-     * lintPublish configuration.
-     *
-     * The file may not exist.
-     *
-     * Only valid for instances where [type] is [LibraryType.ANDROID_LIBRARY]
-     */
-    val lintJar: File?
+  /**
+   * The jar containing custom lint checks for consumers to use. This is filled by the lintPublish configuration.
+   *
+   * The file may not exist.
+   *
+   * Only valid for instances where [type] is [LibraryType.ANDROID_LIBRARY]
+   */
+  val lintJar: File?
 
-    /**
-     * The jar containing the sources for the [artifact]
-     *
-     * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or
-     * [LibraryType.ANDROID_LIBRARY]
-     */
-    @Deprecated("Use srcJars to get the source jar together with the sample source jar")
-    val srcJar: File?
+  /**
+   * The jar containing the sources for the [artifact]
+   *
+   * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or [LibraryType.ANDROID_LIBRARY]
+   */
+  @Deprecated("Use srcJars to get the source jar together with the sample source jar") val srcJar: File?
 
-    /**
-     * Provides the sources for the [artifact] including regular source and sample source
-     *
-     * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or
-     * [LibraryType.ANDROID_LIBRARY]
-     */
-    val srcJars: List<File>
+  /**
+   * Provides the sources for the [artifact] including regular source and sample source
+   *
+   * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or [LibraryType.ANDROID_LIBRARY]
+   */
+  val srcJars: List<File>
 
-    /**
-     * The jar containing the documentation for the [artifact]
-     *
-     * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or
-     * [LibraryType.ANDROID_LIBRARY]
-     */
-    val docJar: File?
+  /**
+   * The jar containing the documentation for the [artifact]
+   *
+   * Only valid for instances where [type] is [LibraryType.JAVA_LIBRARY] or [LibraryType.ANDROID_LIBRARY]
+   */
+  val docJar: File?
 
-    /**
-     * The jar containing samples for the [artifact]
-     *
-     * Only valid for instance where [type] is [LibraryType.JAVA_LIBRARY] or
-     * [LibraryType.ANDROID_LIBRARY]
-     */
-    @Deprecated("Sample source jar is now part of the source jars")
-    val samplesJar: File?
+  /**
+   * The jar containing samples for the [artifact]
+   *
+   * Only valid for instance where [type] is [LibraryType.JAVA_LIBRARY] or [LibraryType.ANDROID_LIBRARY]
+   */
+  @Deprecated("Sample source jar is now part of the source jars") val samplesJar: File?
 
-    /**
-     * Data for libraries of type [LibraryType.ANDROID_LIBRARY]. It is null in other cases.
-     */
-    val androidLibraryData: AndroidLibraryData?
+  /** Data for libraries of type [LibraryType.ANDROID_LIBRARY]. It is null in other cases. */
+  val androidLibraryData: AndroidLibraryData?
 }

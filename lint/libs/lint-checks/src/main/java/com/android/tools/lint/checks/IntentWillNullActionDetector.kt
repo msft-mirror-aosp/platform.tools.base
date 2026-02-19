@@ -48,8 +48,7 @@ import org.jetbrains.uast.getParentOfType
  *
  * Reports the call where the intent is instantiated.
  *
- * This scenario indicates that the developer needs to either set an action or make the intent
- * explicit by component
+ * This scenario indicates that the developer needs to either set an action or make the intent explicit by component
  *
  * For example:
  *
@@ -69,11 +68,7 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   override fun getApplicableConstructorTypes() = listOf(CLASS_INTENT)
 
-  override fun visitConstructor(
-    context: JavaContext,
-    node: UCallExpression,
-    constructor: PsiMethod,
-  ) {
+  override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
     // This is an Intent constructor. We will track the Intent to see if it
     // satisfies various conditions.
 
@@ -181,11 +176,7 @@ class IntentWillNullActionDetector : Detector(), SourceCodeScanner, XmlScanner {
 
   companion object {
     private val IMPLEMENTATION =
-      Implementation(
-        IntentWillNullActionDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST),
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(IntentWillNullActionDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.MANIFEST), Scope.JAVA_FILE_SCOPE)
 
     /** Issue describing the problem and pointing to the detector implementation. */
     @JvmField

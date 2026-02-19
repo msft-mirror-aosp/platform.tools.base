@@ -18,17 +18,17 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
-import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacketHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.chunkTypeToString
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.fromJdwpPacket
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.isDdmPacket
+import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacketHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.ExitHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.FeatHandler
-import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpHandlerOutput
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.HeloHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.HpgcHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpCommandId
+import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpHandlerOutput
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpPacket
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpPacket.Companion.readFrom
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.JdwpPacketHandler
@@ -46,221 +46,191 @@ import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.SpssHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.VulwHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.VuopHandler
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.VurtHandler
-import kotlinx.coroutines.CoroutineScope
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.CoroutineScope
 
-/**
- * jdwp:pid changes the connection to communicate with the pid's (required: Client) JDWP interface.
- */
+/** jdwp:pid changes the connection to communicate with the pid's (required: Client) JDWP interface. */
 class JdwpCommandHandler : DeviceCommandHandler("jdwp") {
 
-    private val ddmPacketHandlers: MutableMap<Int, DdmPacketHandler> = HashMap()
-    private val jdwpPacketHandlers: MutableMap<JdwpCommandId, JdwpPacketHandler> = HashMap()
+  private val ddmPacketHandlers: MutableMap<Int, DdmPacketHandler> = HashMap()
+  private val jdwpPacketHandlers: MutableMap<JdwpCommandId, JdwpPacketHandler> = HashMap()
 
-    init {
-        addDdmPacketHandler(HeloHandler.CHUNK_TYPE, HeloHandler())
-        addDdmPacketHandler(HpgcHandler.CHUNK_TYPE, HpgcHandler())
-        addDdmPacketHandler(ExitHandler.CHUNK_TYPE, ExitHandler())
-        addDdmPacketHandler(FeatHandler.CHUNK_TYPE, FeatHandler())
-        addDdmPacketHandler(ReaeHandler.CHUNK_TYPE, ReaeHandler())
-        addDdmPacketHandler(RealHandler.CHUNK_TYPE, RealHandler())
-        addDdmPacketHandler(ReaqHandler.CHUNK_TYPE, ReaqHandler())
-        addDdmPacketHandler(SpssHandler.CHUNK_TYPE, SpssHandler())
-        addDdmPacketHandler(SpseHandler.CHUNK_TYPE, SpseHandler())
-        addDdmPacketHandler(MpssHandler.CHUNK_TYPE, MpssHandler())
-        addDdmPacketHandler(MpseHandler.CHUNK_TYPE, MpseHandler())
-        addDdmPacketHandler(VulwHandler.CHUNK_TYPE, VulwHandler())
-        addDdmPacketHandler(VuopHandler.CHUNK_TYPE, VuopHandler())
-        addDdmPacketHandler(VurtHandler.CHUNK_TYPE, VurtHandler())
-        addDdmPacketHandler(MprqHandler.CHUNK_TYPE, MprqHandler())
-        addJdwpPacketHandler(JdwpVmExitHandler.commandId, JdwpVmExitHandler())
-        addJdwpPacketHandler(
-            JdwpVmVersionHandler.commandId, JdwpVmVersionHandler()
-        )
-        addJdwpPacketHandler(
-            JdwpVmIdSizesHandler.commandId, JdwpVmIdSizesHandler()
-        )
+  init {
+    addDdmPacketHandler(HeloHandler.CHUNK_TYPE, HeloHandler())
+    addDdmPacketHandler(HpgcHandler.CHUNK_TYPE, HpgcHandler())
+    addDdmPacketHandler(ExitHandler.CHUNK_TYPE, ExitHandler())
+    addDdmPacketHandler(FeatHandler.CHUNK_TYPE, FeatHandler())
+    addDdmPacketHandler(ReaeHandler.CHUNK_TYPE, ReaeHandler())
+    addDdmPacketHandler(RealHandler.CHUNK_TYPE, RealHandler())
+    addDdmPacketHandler(ReaqHandler.CHUNK_TYPE, ReaqHandler())
+    addDdmPacketHandler(SpssHandler.CHUNK_TYPE, SpssHandler())
+    addDdmPacketHandler(SpseHandler.CHUNK_TYPE, SpseHandler())
+    addDdmPacketHandler(MpssHandler.CHUNK_TYPE, MpssHandler())
+    addDdmPacketHandler(MpseHandler.CHUNK_TYPE, MpseHandler())
+    addDdmPacketHandler(VulwHandler.CHUNK_TYPE, VulwHandler())
+    addDdmPacketHandler(VuopHandler.CHUNK_TYPE, VuopHandler())
+    addDdmPacketHandler(VurtHandler.CHUNK_TYPE, VurtHandler())
+    addDdmPacketHandler(MprqHandler.CHUNK_TYPE, MprqHandler())
+    addJdwpPacketHandler(JdwpVmExitHandler.commandId, JdwpVmExitHandler())
+    addJdwpPacketHandler(JdwpVmVersionHandler.commandId, JdwpVmVersionHandler())
+    addJdwpPacketHandler(JdwpVmIdSizesHandler.commandId, JdwpVmIdSizesHandler())
+  }
+
+  fun addDdmPacketHandler(chunkType: Int, packetHandler: DdmPacketHandler) {
+    ddmPacketHandlers[chunkType] = packetHandler
+  }
+
+  fun addJdwpPacketHandler(commandId: JdwpCommandId, packetHandler: JdwpPacketHandler) {
+    jdwpPacketHandlers[commandId] = packetHandler
+  }
+
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
+    val oStream: OutputStream
+    val iStream: InputStream
+    try {
+      oStream = socket.getOutputStream()
+      iStream = socket.getInputStream()
+    } catch (ignored: IOException) {
+      return
+    }
+    val pid: Int
+    pid =
+      try {
+        args.toInt()
+      } catch (ignored: NumberFormatException) {
+        writeFailResponse(oStream, "Invalid pid specified: $args")
+        return
+      }
+    val client = device.getClient(pid)
+    if (client == null) {
+      writeFailResponse(oStream, "No client exists for pid: $pid")
+      return
     }
 
-    fun addDdmPacketHandler(chunkType: Int, packetHandler: DdmPacketHandler) {
-        ddmPacketHandlers[chunkType] = packetHandler
-    }
-
-    fun addJdwpPacketHandler(commandId: JdwpCommandId, packetHandler: JdwpPacketHandler) {
-        jdwpPacketHandlers[commandId] = packetHandler
-    }
-
-    override fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        val oStream: OutputStream
-        val iStream: InputStream
+    // Make sure there is only one JDWP session for this process
+    while (!client.startJdwpSession(socket)) {
+      // There is one active JDWP session.
+      // On API < 28 and API >= 35, we return EOF right away.
+      // On API >= 28 and API < 35, we wait until the previous session is released
+      if (device.apiLevel < 28 || device.apiLevel >= 35) {
+        writeFailResponse(oStream, "JDWP Session already opened for pid: $pid")
+        return
+      } else {
         try {
-            oStream = socket.getOutputStream()
-            iStream = socket.getInputStream()
-        } catch (ignored: IOException) {
-            return
+          Thread.sleep(50)
+        } catch (e: InterruptedException) {
+          throw RuntimeException(e)
         }
-        val pid: Int
-        pid = try {
-            args.toInt()
-        } catch (ignored: NumberFormatException) {
-            writeFailResponse(oStream, "Invalid pid specified: $args")
-            return
-        }
-        val client = device.getClient(pid)
-        if (client == null) {
-            writeFailResponse(oStream, "No client exists for pid: $pid")
-            return
-        }
+      }
+    }
+    try {
+      jdwpLoop(device, client, iStream, oStream, socketScope)
+    } finally {
+      client.stopJdwpSession()
+    }
+  }
 
-        // Make sure there is only one JDWP session for this process
-        while (!client.startJdwpSession(socket)) {
-            // There is one active JDWP session.
-            // On API < 28 and API >= 35, we return EOF right away.
-            // On API >= 28 and API < 35, we wait until the previous session is released
-            if (device.apiLevel < 28 || device.apiLevel >= 35) {
-                writeFailResponse(oStream, "JDWP Session already opened for pid: $pid")
-                return
-            } else {
-                try {
-                    Thread.sleep(50)
-                } catch (e: InterruptedException) {
-                    throw RuntimeException(e)
-                }
-            }
-        }
-        try {
-            jdwpLoop(device, client, iStream, oStream, socketScope)
-        } finally {
-            client.stopJdwpSession()
-        }
+  private fun jdwpLoop(device: DeviceState, client: ClientState, iStream: InputStream, oStream: OutputStream, socketScope: CoroutineScope) {
+    try {
+      writeOkay(oStream)
+    } catch (ignored: IOException) {
+      return
+    }
+    val handshake = ByteArray(14)
+    try {
+      val readCount = iStream.read(handshake)
+      if (handshake.size != readCount) {
+        writeFailResponse(oStream, "Could not read full handshake.")
+        return
+      }
+    } catch (ignored: IOException) {
+      writeFailResponse(oStream, "Could not read handshake.")
+      return
+    }
+    if (HANDSHAKE_STRING != String(handshake, StandardCharsets.US_ASCII)) {
+      return
+    }
+    try {
+      writeString(oStream, HANDSHAKE_STRING)
+    } catch (ignored: IOException) {
+      return
     }
 
-    private fun jdwpLoop(
-        device: DeviceState,
-        client: ClientState,
-        iStream: InputStream,
-        oStream: OutputStream,
-        socketScope: CoroutineScope
-    ) {
-        try {
-            writeOkay(oStream)
-        } catch (ignored: IOException) {
-            return
-        }
-        val handshake = ByteArray(14)
-        try {
-            val readCount = iStream.read(handshake)
-            if (handshake.size != readCount) {
-                writeFailResponse(oStream, "Could not read full handshake.")
-                return
-            }
-        } catch (ignored: IOException) {
-            writeFailResponse(oStream, "Could not read handshake.")
-            return
-        }
-        if (HANDSHAKE_STRING != String(handshake, StandardCharsets.US_ASCII)) {
-            return
-        }
-        try {
-            writeString(oStream, HANDSHAKE_STRING)
-        } catch (ignored: IOException) {
-            return
-        }
-
-        // default - ignore the packet and keep listening
-        val defaultDdmHandler =
-            DdmPacketHandler { device1: DeviceState, client1: ClientState, packet1: DdmPacket, jdwpHandlerOutput: JdwpHandlerOutput, socketScope: CoroutineScope ->
-                handleUnknownDdmsPacket(
-                    device1,
-                    client1,
-                    packet1,
-                    jdwpHandlerOutput,
-                    socketScope
-                )
-            }
-        val defaultJdwpHandler =
-            JdwpPacketHandler { state: DeviceState, clientState: ClientState, packet1: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput ->
-                handleUnknownJdwpPacket(
-                    state,
-                    clientState,
-                    packet1,
-                    jdwpHandlerOutput
-                )
-            }
-
-        var running = true
-        val jdwpHandlerOutput = JdwpHandlerOutput(oStream)
-        var jdwpPacketCount = 0
-        while (running) {
-            running = try {
-                val packet = readFrom(iStream)
-                if (isDdmPacket(packet)) {
-                    val ddmPacket = fromJdwpPacket(packet)
-                    ddmPacketHandlers
-                        .getOrDefault(ddmPacket.chunkType, defaultDdmHandler)
-                        .handlePacket(device, client, ddmPacket, jdwpHandlerOutput, socketScope)
-                } else {
-                    if (jdwpPacketCount++ == 0) {
-                        // On the very first JDWP packet in the JDWP session, reset the
-                        // `isWaitingForDebugger` to `false` and notify
-                        if (client.getWaitingForDebuggerAndReset()) {
-                            // The process state has changed, make sure `track-app-info` sends an updated list
-                            // if needed.
-                            device.clientChangeHub.appProcessListChanged()
-                        }
-                    }
-
-                    val commandId = JdwpCommandId(packet.cmdSet, packet.cmd)
-                    jdwpPacketHandlers
-                        .getOrDefault(commandId, defaultJdwpHandler)
-                        .handlePacket(device, client, packet, jdwpHandlerOutput)
-                }
-            } catch (e: IOException) {
-                writeFailResponse(oStream, "Could not read packet.")
-                return
-            }
-        }
-    }
-
-    private fun handleUnknownJdwpPacket(
-        state: DeviceState,
-        clientState: ClientState,
-        packet: JdwpPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput
-    ): Boolean {
-        System.err.printf(
-            "FakeAdbServer: Unsupported JDWP packet: id=%d, cmdSet=%d, cmd=%d%n",
-            packet.id, packet.cmdSet, packet.cmd
-        )
-        return true
-    }
-
-    private fun handleUnknownDdmsPacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
+    // default - ignore the packet and keep listening
+    val defaultDdmHandler =
+      DdmPacketHandler {
+        device1: DeviceState,
+        client1: ClientState,
+        packet1: DdmPacket,
         jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        System.err.printf(
-            "FakeAdbServer: Unsupported DDMS command: '%s'%n",
-            chunkTypeToString(packet.chunkType)
-        )
-        return true
-    }
+        socketScope: CoroutineScope ->
+        handleUnknownDdmsPacket(device1, client1, packet1, jdwpHandlerOutput, socketScope)
+      }
+    val defaultJdwpHandler =
+      JdwpPacketHandler { state: DeviceState, clientState: ClientState, packet1: JdwpPacket, jdwpHandlerOutput: JdwpHandlerOutput ->
+        handleUnknownJdwpPacket(state, clientState, packet1, jdwpHandlerOutput)
+      }
 
-    companion object {
+    var running = true
+    val jdwpHandlerOutput = JdwpHandlerOutput(oStream)
+    var jdwpPacketCount = 0
+    while (running) {
+      running =
+        try {
+          val packet = readFrom(iStream)
+          if (isDdmPacket(packet)) {
+            val ddmPacket = fromJdwpPacket(packet)
+            ddmPacketHandlers
+              .getOrDefault(ddmPacket.chunkType, defaultDdmHandler)
+              .handlePacket(device, client, ddmPacket, jdwpHandlerOutput, socketScope)
+          } else {
+            if (jdwpPacketCount++ == 0) {
+              // On the very first JDWP packet in the JDWP session, reset the
+              // `isWaitingForDebugger` to `false` and notify
+              if (client.getWaitingForDebuggerAndReset()) {
+                // The process state has changed, make sure `track-app-info` sends an updated list
+                // if needed.
+                device.clientChangeHub.appProcessListChanged()
+              }
+            }
 
-        private const val HANDSHAKE_STRING = "JDWP-Handshake"
+            val commandId = JdwpCommandId(packet.cmdSet, packet.cmd)
+            jdwpPacketHandlers.getOrDefault(commandId, defaultJdwpHandler).handlePacket(device, client, packet, jdwpHandlerOutput)
+          }
+        } catch (e: IOException) {
+          writeFailResponse(oStream, "Could not read packet.")
+          return
+        }
     }
+  }
+
+  private fun handleUnknownJdwpPacket(
+    state: DeviceState,
+    clientState: ClientState,
+    packet: JdwpPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+  ): Boolean {
+    System.err.printf("FakeAdbServer: Unsupported JDWP packet: id=%d, cmdSet=%d, cmd=%d%n", packet.id, packet.cmdSet, packet.cmd)
+    return true
+  }
+
+  private fun handleUnknownDdmsPacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    System.err.printf("FakeAdbServer: Unsupported DDMS command: '%s'%n", chunkTypeToString(packet.chunkType))
+    return true
+  }
+
+  companion object {
+
+    private const val HANDSHAKE_STRING = "JDWP-Handshake"
+  }
 }

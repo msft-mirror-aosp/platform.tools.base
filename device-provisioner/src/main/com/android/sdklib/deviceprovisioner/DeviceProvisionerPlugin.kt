@@ -28,28 +28,26 @@ import kotlinx.coroutines.job
 interface DeviceProvisionerPlugin : Extensible {
 
   /**
-   * The relative priority of this plugin for claiming devices; the [DeviceProvisioner] will offer a
-   * [ConnectedDevice] to plugins with higher [priority] values first.
+   * The relative priority of this plugin for claiming devices; the [DeviceProvisioner] will offer a [ConnectedDevice] to plugins with
+   * higher [priority] values first.
    */
   val priority: Int
 
   /**
-   * Offers the given [ConnectedDevice] to the plugin. If the plugin accepts, it returns the
-   * [DeviceHandle] that is now linked to the offered device, otherwise null.
+   * Offers the given [ConnectedDevice] to the plugin. If the plugin accepts, it returns the [DeviceHandle] that is now linked to the
+   * offered device, otherwise null.
    */
   suspend fun claim(device: ConnectedDevice): DeviceHandle?
 
   /**
-   * The [device handles][DeviceHandle] that this [DeviceProvisionerPlugin] is aware of and manages.
-   * These may come from a backend service or persistent storage managed by the plugin, or they may
-   * be created based on a [ConnectedDevice] provided in [claim].
+   * The [device handles][DeviceHandle] that this [DeviceProvisionerPlugin] is aware of and manages. These may come from a backend service
+   * or persistent storage managed by the plugin, or they may be created based on a [ConnectedDevice] provided in [claim].
    */
   val devices: StateFlow<List<DeviceHandle>>
 
   /**
-   * The [device templates][DeviceTemplate] that this [DeviceProvisionerPlugin] is aware of and
-   * manages. These may come from a backend service or persistent storage managed by the plugin, or
-   * they may be created by a [CreateDeviceTemplateAction].
+   * The [device templates][DeviceTemplate] that this [DeviceProvisionerPlugin] is aware of and manages. These may come from a backend
+   * service or persistent storage managed by the plugin, or they may be created by a [CreateDeviceTemplateAction].
    */
   val templates: StateFlow<List<DeviceTemplate>>
     get() = MutableStateFlow(emptyList<DeviceTemplate>()).asStateFlow()

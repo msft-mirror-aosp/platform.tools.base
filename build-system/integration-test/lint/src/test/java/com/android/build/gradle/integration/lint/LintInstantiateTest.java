@@ -33,7 +33,6 @@ public class LintInstantiateTest {
     public final GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("lintInstantiate")
-                    .disableBuiltInKotlin()
                     .create();
 
     @Test
@@ -49,8 +48,6 @@ public class LintInstantiateTest {
         File sarifFile =
                 new File(project.getSubproject("app").getBuildDir(), "reports/lint-results.sarif");
         assertThat(sarifFile).exists();
-        assertThat(sarifFile)
-                .contains(
-                        "\"$schema\" : \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/");
+        assertThat(sarifFile).contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
     }
 }

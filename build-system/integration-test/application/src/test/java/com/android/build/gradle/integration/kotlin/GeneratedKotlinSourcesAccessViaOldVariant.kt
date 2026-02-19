@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Plugi
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
@@ -37,109 +38,92 @@ import org.gradle.api.tasks.TaskAction
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /**
- * Test to assert that a kotlin sources generated via the new variant api can be consumed using the
- * legacy getSourceFolder() API, which is still in use by kotlin-android plugin
+ * Test to assert that a kotlin sources generated via the new variant api can be consumed using the legacy getSourceFolder() API, which is
+ * still in use by kotlin-android plugin
  */
 class GeneratedKotlinSourcesAccessViaOldVariant {
-    @get:Rule
-    val project = GradleRule.from {
-        gradleProperties {
-            add(BooleanOption.USE_NEW_DSL, false)
-            add(BooleanOption.BUILT_IN_KOTLIN, false)
-        }
+  @get:Rule
+  val project =
+    GradleRule.from {
+      gradleProperties {
+        add(BooleanOption.USE_NEW_DSL, false)
+        add(BooleanOption.BUILT_IN_KOTLIN, false)
+      }
 
-        androidApplication {
-            android {
-                applyPlugin(PluginType.KOTLIN_ANDROID)
-                kotlin {
-                    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+      androidApplication {
+        android {
+          applyPlugin(PluginType.KOTLIN_ANDROID)
+          kotlin { compilerOptions.jvmTarget.set(JvmTarget.JVM_11) }
+        }
+        files {
+          add(
+            "src/main/kotlin/com/foo/bar/app/MyClass.kt",
+            """
+            package com.foo.bar.app
+
+            import com.kotlingen.MyKotlinClass
+
+            class MyClass {
+                fun someFunctionUsingGeneratedAPIs() {
+                    MyKotlinClass().someFunctionUsingGeneratedAPIs()
                 }
             }
-            files {
-                add("src/main/kotlin/com/foo/bar/app/MyClass.kt",
-                    """
-                        package com.foo.bar.app
-
-                        import com.kotlingen.MyKotlinClass
-
-                        class MyClass {
-                            fun someFunctionUsingGeneratedAPIs() {
-                                MyKotlinClass().someFunctionUsingGeneratedAPIs()
-                            }
-                        }
-                    """.trimIndent()
-                )
-            }
-            pluginCallbacks += MyAppCallback::class.java
+            """
+              .trimIndent(),
+          )
         }
+        pluginCallbacks += MyAppCallback::class.java
+      }
     }
 
-    @Test
-    fun testGeneratedFilesExist() {
-        val gradleBuild = project.build
-        val result = gradleBuild
-            .executor
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
-            .run("assembleDebug")
-        Truth.assertThat(result.failedTasks).isEmpty()
-        gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
-            classes().containsAtLeast(
-                "com/foo/bar/app/MyClass",
-                "com/kotlingen/MyKotlinClass"
-            )
-        }
+  @Test
+  fun testGeneratedFilesExist() {
+    val gradleBuild = project.build
+    val result = gradleBuild.executor.withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF).run("assembleDebug")
+    Truth.assertThat(result.failedTasks).isEmpty()
+    gradleBuild.androidApplication(":app").assertApk(ApkSelector.DEBUG) {
+      classes().containsAtLeast("com/foo/bar/app/MyClass", "com/kotlingen/MyKotlinClass")
     }
+  }
 
-    class MyAppCallback: ApplicationComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            androidComponents: ApplicationAndroidComponentsExtension
-        ) {
-            androidComponents.onVariants { variant ->
-                val kotlinGenTaskProvider = project.tasks.register(
-                    "generate${variant.name}KotlinSources",
-                    SourceGeneratingTask::class.java
-                ) { task ->
-                    task.packageName.set("com.kotlingen")
-                    task.sourceFiles.set(
-                        variant.sources.kotlin!!.static
-                    )
-                    task.sourceFiles.addAll(
-                        variant.sources.java!!.static
-                    )
-                }
-                variant.sources.kotlin!!.addGeneratedSourceDirectory(
-                    kotlinGenTaskProvider, SourceGeneratingTask::outputDir
-                )
-            }
-        }
+  class MyAppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants { variant ->
+        val kotlinGenTaskProvider =
+          project.tasks.register("generate${variant.name}KotlinSources", SourceGeneratingTask::class.java) { task ->
+            task.packageName.set("com.kotlingen")
+            task.sourceFiles.set(variant.sources.kotlin!!.static)
+            task.sourceFiles.addAll(variant.sources.java!!.static)
+          }
+        variant.sources.kotlin!!.addGeneratedSourceDirectory(kotlinGenTaskProvider, SourceGeneratingTask::outputDir)
+      }
     }
+  }
 }
 
-abstract class SourceGeneratingTask: DefaultTask() {
-    @get:Input
-    abstract val packageName: Property<String>
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
-    @get:InputFiles
-    abstract val sourceFiles: ListProperty<Directory>
-    @TaskAction
-    fun generate() {
+abstract class SourceGeneratingTask : DefaultTask() {
+  @get:Input abstract val packageName: Property<String>
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
+  @get:InputFiles abstract val sourceFiles: ListProperty<Directory>
 
-        val outputFolder = File(outputDir.get().asFile, packageName.get().replace('.', File.separatorChar))
-        outputFolder.mkdirs()
-        File(outputFolder, "MyKotlinClass.kt").writeText(
-            """
+  @TaskAction
+  fun generate() {
+
+    val outputFolder = File(outputDir.get().asFile, packageName.get().replace('.', File.separatorChar))
+    outputFolder.mkdirs()
+    File(outputFolder, "MyKotlinClass.kt")
+      .writeText(
+        """
                 package ${packageName.get()}
                 class MyKotlinClass {
                     fun someFunctionUsingGeneratedAPIs() {
                         System.err.println("Hello world !")
                     }
                 }
-            """.trimIndent()
-        )
-    }
+            """
+          .trimIndent()
+      )
+  }
 }

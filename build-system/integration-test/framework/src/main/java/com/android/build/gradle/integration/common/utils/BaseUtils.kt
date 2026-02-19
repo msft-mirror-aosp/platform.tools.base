@@ -15,51 +15,32 @@
  */
 
 @file:JvmName("ModelHelper")
+
 package com.android.build.gradle.integration.common.utils
 
 import java.util.Optional
 import java.util.function.BinaryOperator
 
-/**
- * Utils used by other <Class>Utils extension functions.
- */
-
-fun <T> searchForOptionalItem(
-        items: Collection<T>,
-        name: String,
-        nameFunction: (T) -> String): T? {
-    return searchForSingleItemInList(items, name, nameFunction).orElse(null)
-
+/** Utils used by other <Class>Utils extension functions. */
+fun <T> searchForOptionalItem(items: Collection<T>, name: String, nameFunction: (T) -> String): T? {
+  return searchForSingleItemInList(items, name, nameFunction).orElse(null)
 }
 
-fun <T> searchForExistingItem(
-        items: Collection<T>,
-        name: String,
-        nameFunction: (T) -> String,
-        className: String): T {
-    return searchForSingleItemInList(items, name, nameFunction)
-            .orElseThrow {
-                AssertionError(
-                        "Unable to find $className '$name'. Options are: " +
-                                items.map(nameFunction))
-            }
+fun <T> searchForExistingItem(items: Collection<T>, name: String, nameFunction: (T) -> String, className: String): T {
+  return searchForSingleItemInList(items, name, nameFunction).orElseThrow {
+    AssertionError("Unable to find $className '$name'. Options are: " + items.map(nameFunction))
+  }
 }
 
-fun <T> searchForSingleItemInList(
-        items: Collection<T>,
-        name: String,
-        nameFunction: (T)-> String): Optional<T> =
-        items.stream().filter { name == nameFunction(it) }.reduce(toSingleItem())
+fun <T> searchForSingleItemInList(items: Collection<T>, name: String, nameFunction: (T) -> String): Optional<T> =
+  items.stream().filter { name == nameFunction(it) }.reduce(toSingleItem())
 
 /**
- * The goal of this operator is not to reduce anything but to ensure that
- * there is a single item in the list. If it gets called it means
+ * The goal of this operator is not to reduce anything but to ensure that there is a single item in the list. If it gets called it means
  * that there are two object in the list that had the same name, and this is an error.
  *
  * @see .searchForSingleItemInList
  */
 fun <T> toSingleItem(): BinaryOperator<T> {
-    return BinaryOperator{ name1, _ ->
-        throw IllegalArgumentException("Duplicate objects with name: " + name1)
-    }
+  return BinaryOperator { name1, _ -> throw IllegalArgumentException("Duplicate objects with name: " + name1) }
 }

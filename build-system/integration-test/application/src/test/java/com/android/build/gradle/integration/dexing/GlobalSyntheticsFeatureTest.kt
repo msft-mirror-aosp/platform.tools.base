@@ -23,95 +23,97 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.options.OptionalBooleanOption.ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS
 import com.android.testutils.apk.AndroidArchive
 import com.google.common.truth.Truth
+import kotlin.test.assertFalse
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertFalse
 
 class GlobalSyntheticsFeatureTest {
 
-    private val app = MinimalSubProject.app("com.example.app").also {
-        it.appendToBuild("""
+  private val app =
+    MinimalSubProject.app("com.example.app").also {
+      it.appendToBuild(
+        """
 
-            android.defaultConfig.minSdkVersion = 21
-            android.dynamicFeatures = [":feature"]
-        """.trimIndent())
+        android.defaultConfig.minSdkVersion = 21
+        android.dynamicFeatures = [":feature"]
+        """
+          .trimIndent()
+      )
     }
 
-    private val feature = MinimalSubProject.dynamicFeature("com.example.feature").also {
-        it.appendToBuild("""
+  private val feature =
+    MinimalSubProject.dynamicFeature("com.example.feature").also {
+      it.appendToBuild(
+        """
 
-            android.defaultConfig.minSdkVersion = 21
-            dependencies {
-                implementation project('::app')
-            }
-        """.trimIndent())
-        it.addFile("src/main/java/com/example/feature/IllformedLocaleExceptionUsage.java",
-            """
-                package com.example.feature;
-
-                    public class IllformedLocaleExceptionUsage {
-                        public void function() {
-                            try {
-                                throw new android.icu.util.IllformedLocaleException();
-                            } catch (android.icu.util.IllformedLocaleException e) {}
-                        }
-                    }
-            """.trimIndent()
-        )
-    }
-
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(
-            MultiModuleTestProject.builder()
-                .subproject("app", app)
-                .subproject("feature", feature)
-                .build()
-        ).create()
-
-    @Test
-    fun basicTest() {
-        project.executor().with(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS, true)
-            .run("assembleDebug")
-
-        checkPackagedGlobal("Landroid/icu/util/IllformedLocaleException;")
-    }
-
-    @Test
-    fun testEnableGlobalSyntheticsFlagNotSet() {
-        project.executor().run("assembleRelease").also {
-            assert(it.tasks.contains(":feature:dexBuilderRelease"))
+        android.defaultConfig.minSdkVersion = 21
+        dependencies {
+            implementation project('::app')
         }
+        """
+          .trimIndent()
+      )
+      it.addFile(
+        "src/main/java/com/example/feature/IllformedLocaleExceptionUsage.java",
+        """
+        package com.example.feature;
 
-        project.executor().run("assembleDebug").also {
-            assertFalse { it.tasks.contains(":feature:dexBuilderRelease") }
-        }
-
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    compileOptions {
-                        sourceCompatibility JavaVersion.VERSION_14
-                        targetCompatibility JavaVersion.VERSION_14
-                    }
+            public class IllformedLocaleExceptionUsage {
+                public void function() {
+                    try {
+                        throw new android.icu.util.IllformedLocaleException();
+                    } catch (android.icu.util.IllformedLocaleException e) {}
                 }
-            """.trimIndent()
-        )
-
-        project.executor().run("assembleDebug").also {
-            assert(it.tasks.contains(":feature:dexBuilderDebug"))
-        }
+            }
+        """
+          .trimIndent(),
+      )
     }
 
-    private fun checkPackagedGlobal(global: String) {
-        val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
+  @get:Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject("app", app).subproject("feature", feature).build())
+      .create()
 
-        // there should only be a single global synthetics of specific type in the apk
-        val dexes = apk.allDexes.filter {
-            AndroidArchive.checkValidClassName(global)
-            it.classes.keys.contains(global)
-        }
-        Truth.assertThat(dexes.size).isEqualTo(1)
-    }
+  @Test
+  fun basicTest() {
+    project.executor().with(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS, true).run("assembleDebug")
+
+    checkPackagedGlobal("Landroid/icu/util/IllformedLocaleException;")
+  }
+
+  @Test
+  fun testEnableGlobalSyntheticsFlagNotSet() {
+    project.executor().run("assembleRelease").also { assert(it.tasks.contains(":feature:dexBuilderRelease")) }
+
+    project.executor().run("assembleDebug").also { assertFalse { it.tasks.contains(":feature:dexBuilderRelease") } }
+
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          compileOptions {
+              sourceCompatibility JavaVersion.VERSION_14
+              targetCompatibility JavaVersion.VERSION_14
+          }
+      }
+      """
+        .trimIndent(),
+    )
+
+    project.executor().run("assembleDebug").also { assert(it.tasks.contains(":feature:dexBuilderDebug")) }
+  }
+
+  private fun checkPackagedGlobal(global: String) {
+    val apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG)
+
+    // there should only be a single global synthetics of specific type in the apk
+    val dexes =
+      apk.allDexes.filter {
+        AndroidArchive.checkValidClassName(global)
+        it.classes.keys.contains(global)
+      }
+    Truth.assertThat(dexes.size).isEqualTo(1)
+  }
 }

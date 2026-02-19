@@ -77,6 +77,7 @@ public class MultiDexTest {
                 project.getBuildFile(), "\nandroid.dexOptions.keepRuntimeAnnotatedClasses = false");
 
         project.executor()
+                .with(BooleanOption.USE_NEW_DSL, false)
                 .run("assembleDebug", "makeApkFromBundleForIcsDebug", "assembleAndroidTest");
 
         List<String> mandatoryClasses =

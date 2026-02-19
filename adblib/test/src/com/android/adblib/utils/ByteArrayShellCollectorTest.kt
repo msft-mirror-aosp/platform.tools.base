@@ -22,118 +22,97 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Test
 
-/**
- * Tests for [ByteArrayShellCollector]
- */
+/** Tests for [ByteArrayShellCollector] */
 class ByteArrayShellCollectorTest {
 
-    @Test
-    fun testNoOutputIsEmptyBytes() {
-        // Prepare
-        val bytesCollector = ByteArrayShellCollector()
-        val flowCollector = BytesFlowCollector()
+  @Test
+  fun testNoOutputIsEmptyBytes() {
+    // Prepare
+    val bytesCollector = ByteArrayShellCollector()
+    val flowCollector = BytesFlowCollector()
 
-        // Act
-        collect(bytesCollector, flowCollector)
+    // Act
+    collect(bytesCollector, flowCollector)
 
-        // Assert
-        Assert.assertEquals(listOf(""), flowCollector.stdout)
-        Assert.assertEquals(listOf(""), flowCollector.stderr)
-        Assert.assertEquals(0, flowCollector.exitCode)
+    // Assert
+    Assert.assertEquals(listOf(""), flowCollector.stdout)
+    Assert.assertEquals(listOf(""), flowCollector.stderr)
+    Assert.assertEquals(0, flowCollector.exitCode)
+  }
+
+  @Test
+  fun testEmptyBytesIsEmptyBytes() {
+    // Prepare
+    val shellCollector = ByteArrayShellCollector()
+    val flowCollector = BytesFlowCollector()
+
+    // Act
+    collect(shellCollector, flowCollector, "")
+
+    // Assert
+    Assert.assertEquals(listOf(""), flowCollector.stdout)
+    Assert.assertEquals(listOf(""), flowCollector.stderr)
+    Assert.assertEquals(0, flowCollector.exitCode)
+  }
+
+  @Test
+  fun test_multipleBuffers() {
+    // Prepare
+    val shellCollector = ByteArrayShellCollector()
+    val flowCollector = BytesFlowCollector()
+
+    // Act
+    collect(shellCollector, flowCollector, "a", "b", "c")
+
+    // Assert
+    Assert.assertEquals(listOf("abc"), flowCollector.stdout)
+    Assert.assertEquals(listOf(""), flowCollector.stderr)
+    Assert.assertEquals(0, flowCollector.exitCode)
+  }
+
+  @Test
+  fun test_error() {
+    // Prepare
+    val shellCollector = ByteArrayShellCollector()
+    val flowCollector = BytesFlowCollector()
+
+    // Act
+    collectError(shellCollector, flowCollector, "a", "b", "c")
+
+    // Assert
+    Assert.assertEquals(listOf(""), flowCollector.stdout)
+    Assert.assertEquals(listOf("abc"), flowCollector.stderr)
+    Assert.assertEquals(-1, flowCollector.exitCode)
+  }
+
+  private fun collect(shellCollector: ByteArrayShellCollector, flowCollector: BytesFlowCollector, vararg values: String) {
+    runBlocking {
+      shellCollector.start(flowCollector)
+      values.forEach { value -> shellCollector.collectStdout(flowCollector, ByteBufferUtils.stringToByteBuffer(value)) }
+      shellCollector.end(flowCollector, 0)
     }
+  }
 
-    @Test
-    fun testEmptyBytesIsEmptyBytes() {
-        // Prepare
-        val shellCollector = ByteArrayShellCollector()
-        val flowCollector = BytesFlowCollector()
-
-        // Act
-        collect(shellCollector, flowCollector, "")
-
-        // Assert
-        Assert.assertEquals(listOf(""), flowCollector.stdout)
-        Assert.assertEquals(listOf(""), flowCollector.stderr)
-        Assert.assertEquals(0, flowCollector.exitCode)
+  private fun collectError(shellCollector: ByteArrayShellCollector, flowCollector: BytesFlowCollector, vararg errors: String) {
+    runBlocking {
+      shellCollector.start(flowCollector)
+      errors.forEach { value -> shellCollector.collectStderr(flowCollector, ByteBufferUtils.stringToByteBuffer(value)) }
+      shellCollector.end(flowCollector, -1)
     }
+  }
 
-    @Test
-    fun test_multipleBuffers() {
-        // Prepare
-        val shellCollector = ByteArrayShellCollector()
-        val flowCollector = BytesFlowCollector()
+  private class BytesFlowCollector : FlowCollector<CommandResult> {
 
-        // Act
-        collect(shellCollector, flowCollector, "a", "b", "c")
+    var stdout = mutableListOf<String>()
+    var stderr = mutableListOf<String>()
+    var exitCode: Int? = null
 
-        // Assert
-        Assert.assertEquals(listOf("abc"), flowCollector.stdout)
-        Assert.assertEquals(listOf(""), flowCollector.stderr)
-        Assert.assertEquals(0, flowCollector.exitCode)
+    override suspend fun emit(value: CommandResult) {
+      // ByteArray does not have equals() and it's also easier to read the test if we convert
+      // them to strings.
+      stdout.add(String(value.stdout))
+      stderr.add(value.stderr)
+      exitCode = value.exitCode
     }
-
-    @Test
-    fun test_error() {
-        // Prepare
-        val shellCollector = ByteArrayShellCollector()
-        val flowCollector = BytesFlowCollector()
-
-        // Act
-        collectError(shellCollector, flowCollector, "a", "b", "c")
-
-        // Assert
-        Assert.assertEquals(listOf(""), flowCollector.stdout)
-        Assert.assertEquals(listOf("abc"), flowCollector.stderr)
-        Assert.assertEquals(-1, flowCollector.exitCode)
-    }
-
-    private fun collect(
-        shellCollector: ByteArrayShellCollector,
-        flowCollector: BytesFlowCollector,
-        vararg values: String
-    ) {
-        runBlocking {
-            shellCollector.start(flowCollector)
-            values.forEach { value ->
-                shellCollector.collectStdout(
-                    flowCollector,
-                    ByteBufferUtils.stringToByteBuffer(value)
-                )
-            }
-            shellCollector.end(flowCollector, 0)
-        }
-    }
-
-    private fun collectError(
-        shellCollector: ByteArrayShellCollector,
-        flowCollector: BytesFlowCollector,
-        vararg errors: String
-    ) {
-        runBlocking {
-            shellCollector.start(flowCollector)
-            errors.forEach { value ->
-                shellCollector.collectStderr(
-                    flowCollector,
-                    ByteBufferUtils.stringToByteBuffer(value)
-                )
-            }
-            shellCollector.end(flowCollector, -1)
-        }
-    }
-
-    private class BytesFlowCollector : FlowCollector<CommandResult> {
-
-        var stdout = mutableListOf<String>()
-        var stderr = mutableListOf<String>()
-        var exitCode: Int? = null
-
-        override suspend fun emit(value: CommandResult) {
-            // ByteArray does not have equals() and it's also easier to read the test if we convert
-            // them to strings.
-            stdout.add(String(value.stdout))
-            stderr.add(value.stderr)
-            exitCode = value.exitCode
-        }
-    }
-
+  }
 }

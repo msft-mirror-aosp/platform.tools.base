@@ -16,18 +16,17 @@
 
 package com.android.aaptcompiler
 
-import com.android.resources.ResourceType
 import java.io.File
 
 /**
  * Class for keeping track of Resource File of any kind.
  *
  * @param source The original source of this file.
- * @param extension The extension of the file as recognized by the Kotlin Resource Compiler. The
- *   extension will always be the lowercase of the original extension.
+ * @param extension The extension of the file as recognized by the Kotlin Resource Compiler. The extension will always be the lowercase of
+ *   the original extension.
  * @param name The name of the file.
- * @param resourceDirectory The generic name for the directory type that this resource was found in.
- *   i.e. ".../values-en/strings.xml" would have a [resourceDirectory] or "values"
+ * @param resourceDirectory The generic name for the directory type that this resource was found in. i.e. ".../values-en/strings.xml" would
+ *   have a [resourceDirectory] or "values"
  * @param configString the configuration associated with this resource.
  */
 data class ResourcePathData(
@@ -38,7 +37,7 @@ data class ResourcePathData(
   // Keep the original and append extra configs at the end.
   var configString: String,
   var file: File,
-  var config: ConfigDescription
+  var config: ConfigDescription,
 ) {
   val type: AaptResourceType? = resourceTypeFromTag(resourceDirectory)
 
@@ -47,36 +46,34 @@ data class ResourcePathData(
   }
 }
 
-fun extractPathData(file: File, sourcePath: String = file.absolutePath) : ResourcePathData {
-  val extension = if (file.name.lowercase().endsWith(".9.png")) {
-    "9.png"
-  } else {
-    file.name.substringAfterLast(".", "")
-  }
+fun extractPathData(file: File, sourcePath: String = file.absolutePath): ResourcePathData {
+  val extension =
+    if (file.name.lowercase().endsWith(".9.png")) {
+      "9.png"
+    } else {
+      file.name.substringAfterLast(".", "")
+    }
   // Again the file name can contain multiple dots, and also because of the '.9.png' we can't just
   // get substringBeforeLast('.').
-  val resName =
-    if (extension.isNotEmpty()) file.name.substringBefore(".$extension")
-    else file.name
+  val resName = if (extension.isNotEmpty()) file.name.substringBefore(".$extension") else file.name
   val source = Source(sourcePath)
   // TODO(b/142481190): think about obfuscation
   val parentName = file.parentFile.name
   val type = parentName.substringBefore("-")
-  val config = if (type != parentName) {
-    file.parentFile.name.substringAfter(type).substring(1)
-  } else {
-    ""
-  }
+  val config =
+    if (type != parentName) {
+      file.parentFile.name.substringAfter(type).substring(1)
+    } else {
+      ""
+    }
   val configDescription = parse(config)
 
-  return ResourcePathData(
-    source, extension.toLowerCase(), resName, type, config, file, configDescription)
+  return ResourcePathData(source, extension.toLowerCase(), resName, type, config, file, configDescription)
 }
 
 /**
- * Obtains the renaming for compilation for the given file. When compiling a file, `aapt2`
- * will output a file with a name that depends on the file being compiled, as well as its path.
- * This method will compute what the output name is for a given input.
+ * Obtains the renaming for compilation for the given file. When compiling a file, `aapt2` will output a file with a name that depends on
+ * the file being compiled, as well as its path. This method will compute what the output name is for a given input.
  *
  * @param f the file
  * @return the new file's name (this will take the file's path into consideration)
@@ -85,8 +82,7 @@ fun extractPathData(file: File, sourcePath: String = file.absolutePath) : Resour
 internal fun compilationRename(f: File): String {
   var fileName = f.name
 
-  val fileParent = f.parentFile
-    ?: error("Could not get parent of file '" + f.absolutePath + "'")
+  val fileParent = f.parentFile ?: error("Could not get parent of file '" + f.absolutePath + "'")
 
   val parentName = fileParent.name
 

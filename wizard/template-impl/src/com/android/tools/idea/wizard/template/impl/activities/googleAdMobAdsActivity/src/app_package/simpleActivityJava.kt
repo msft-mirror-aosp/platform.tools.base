@@ -31,14 +31,17 @@ fun simpleActivityJava(
   menuName: String,
   packageName: String,
   superClassFqcn: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val importBlock = when (adFormat) {
-    AdFormat.Banner -> """
+  val importBlock =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.AdView;
     """
-    AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
 import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
@@ -51,30 +54,34 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 
 import androidx.annotation.NonNull;
     """
-  }
+    }
 
-  val interstitialVariablesBlock = renderIf(adFormat == AdFormat.Interstitial) {
-    """
+  val interstitialVariablesBlock =
+    renderIf(adFormat == AdFormat.Interstitial) {
+      """
     private static final int START_LEVEL = 1;
     private int mLevel;
     private Button mNextLevelButton;
     private InterstitialAd mInterstitialAd;
     private TextView mLevelTextView;
   """
-  }
+    }
 
-  val onCreateBlock = when (adFormat) {
-    AdFormat.Banner -> """
+  val onCreateBlock =
+    when (adFormat) {
+      AdFormat.Banner ->
+        """
         // Load an ad into the AdMob banner view.
         AdView adView = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "ad_view")};
+          id = "ad_view",)};
         AdRequest adRequest = new AdRequest.Builder()
                 .setRequestAgent("android_studio:ad_template").build();
         adView.loadInterstitialAd(adRequest);
     """
-    AdFormat.Interstitial -> """
+      AdFormat.Interstitial ->
+        """
         MobileAds.initialize(this, new OnInitializationCompleteListener() {
             @Override
             public void onInitializationComplete(InitializationStatus initializationStatus) {}
@@ -87,7 +94,7 @@ import androidx.annotation.NonNull;
         mNextLevelButton = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "next_level_button")};
+          id = "next_level_button",)};
         mNextLevelButton.setEnabled(false);
         mNextLevelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,13 +107,14 @@ import androidx.annotation.NonNull;
         mLevelTextView = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "level")};
+          id = "level",)};
         mLevel = START_LEVEL;
     """
-  }
+    }
 
-  val interstitialSpecificBlock = renderIf(adFormat == AdFormat.Interstitial) {
-    """
+  val interstitialSpecificBlock =
+    renderIf(adFormat == AdFormat.Interstitial) {
+      """
     public void loadInterstitialAd() {
         AdRequest adRequest = new AdRequest.Builder().build();
         InterstitialAd.load(this, getString(R.string.interstitial_ad_unit_id), adRequest,
@@ -186,12 +194,15 @@ import androidx.annotation.NonNull;
         }
     }
 """
-  }
+    }
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
 
   return """
 package ${packageName};

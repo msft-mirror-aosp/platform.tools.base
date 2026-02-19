@@ -34,6 +34,7 @@ maven_library(
     ]),
     coordinates = "com.android.tools.layoutlib:layoutlib-api",
     description = "Library to use the rendering library for Android layouts: layoutlib",
+    javacopts = ["--release 17"],  # AGP supports up to Java 17. Targets Java 17 bytecode.
     notice = "NOTICE",
     pom_name = "Android Tools layoutlib-api",
     resource_strip_prefix = "tools/base/layoutlib-api",

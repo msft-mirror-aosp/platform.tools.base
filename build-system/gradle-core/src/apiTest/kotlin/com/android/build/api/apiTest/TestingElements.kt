@@ -18,66 +18,59 @@ package com.android.build.api.apiTest
 
 import com.android.build.api.apiTest.VariantApiBaseTest.ScriptingLanguage
 
-/**
- * repository of Gradle tasks and Android related artifacts like build files or manifest files that
- * can be used to assemble tests.
- */
+/** repository of Gradle tasks and Android related artifacts like build files or manifest files that can be used to assemble tests. */
 @Suppress("ClassNameDiffersFromFileName")
 class TestingElements(val language: ScriptingLanguage) {
 
-    fun addGitVersionTask(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.addSource(
-            constructFilePath("GitVersion"),
-            """
+  fun addGitVersionTask(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.addSource(
+      constructFilePath("GitVersion"),
+      """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.OutputFile
             import org.gradle.api.tasks.TaskAction
             ${getGitVersionTask()}
-            """
-        )
-    }
+            """,
+    )
+  }
 
-    fun addManifestProducerTask(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.addSource(
-            constructFilePath("ManifestProducerTask"),
-            """
+  fun addManifestProducerTask(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.addSource(
+      constructFilePath("ManifestProducerTask"),
+      """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.InputFile
             import org.gradle.api.tasks.OutputFile
             import org.gradle.api.tasks.TaskAction
             ${getManifestProducerTask()}
-            """
+            """,
+    )
+  }
 
-        )
-    }
-
-    fun addManifestTransformerTask(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.addSource(
-            constructFilePath("ManifestTransformerTask"),
-            """
+  fun addManifestTransformerTask(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.addSource(
+      constructFilePath("ManifestTransformerTask"),
+      """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.InputFile
             import org.gradle.api.tasks.OutputFile
             import org.gradle.api.tasks.TaskAction
             ${getGitVersionManifestTransformerTask()}
-            """
-        )
-    }
+            """,
+    )
+  }
 
-    fun addManifestVerifierTask(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.addSource(
-            constructFilePath("VerifyManifestTask"),
-            getManifestVerifierTask()
-        )
-    }
+  fun addManifestVerifierTask(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.addSource(constructFilePath("VerifyManifestTask"), getManifestVerifierTask())
+  }
 
-    fun addCopyApksTask(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.addSource(
-            constructFilePath("CopyApksTask"),
-            """
+  fun addCopyApksTask(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.addSource(
+      constructFilePath("CopyApksTask"),
+      """
             import java.io.Serializable
             import java.io.File
             import javax.inject.Inject
@@ -102,52 +95,56 @@ class TestingElements(val language: ScriptingLanguage) {
             import com.android.build.api.variant.BuiltArtifact
 
             ${getCopyApksTask()}
-            """
-        )
-    }
+            """,
+    )
+  }
 
-    fun addCommonAndroidBuildLogic(namespace: String = "com.android.build.example.minimal") =
-                """namespace = "$namespace"
+  fun addCommonAndroidBuildLogic(namespace: String = "com.android.build.example.minimal") =
+    """namespace = "$namespace"
                 compileSdkVersion(29)
                 defaultConfig {
                     minSdkVersion(21)
                 }"""
 
-    fun addManifest(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.manifest =
-            // language=xml
-            """<?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application android:label="Minimal">
-                        <activity android:name="MainActivity">
-                            <intent-filter>
-                                <action android:name="android.intent.action.MAIN" />
-                                <category android:name="android.intent.category.LAUNCHER" />
-                            </intent-filter>
-                        </activity>
-                    </application>
-                </manifest>
-            """.trimIndent()
-    }
+  fun addManifest(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.manifest =
+      // language=xml
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+                      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                          <application android:label="Minimal">
+                              <activity android:name="MainActivity">
+                                  <intent-filter>
+                                      <action android:name="android.intent.action.MAIN" />
+                                      <category android:name="android.intent.category.LAUNCHER" />
+                                  </intent-filter>
+                              </activity>
+                          </application>
+                      </manifest>
+      """
+        .trimIndent()
+  }
 
-    fun addLibraryManifest(builder: VariantApiBaseTest.GivenBuilder) {
-        builder.manifest =
-                // language=xml
-            """<?xml version="1.0" encoding="utf-8"?>
-                <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                    <application>
-                    </application>
-                </manifest>
-            """.trimIndent()
-    }
+  fun addLibraryManifest(builder: VariantApiBaseTest.GivenBuilder) {
+    builder.manifest =
+      // language=xml
+      """
+      <?xml version="1.0" encoding="utf-8"?>
+                      <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+                          <application>
+                          </application>
+                      </manifest>
+      """
+        .trimIndent()
+  }
 
-    fun addMainActivity(builder: VariantApiBaseTest.GivenBuilder) =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-                builder.addSource(
-                    constructFilePath("com/android/build/example/minimal/MainActivity.kt"),
-            //language=kotlin
-            """
+  fun addMainActivity(builder: VariantApiBaseTest.GivenBuilder) =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        builder.addSource(
+          constructFilePath("com/android/build/example/minimal/MainActivity.kt"),
+          // language=kotlin
+          """
             package com.android.build.example.minimal
 
             import android.app.Activity
@@ -162,12 +159,13 @@ class TestingElements(val language: ScriptingLanguage) {
                     setContentView(label)
                 }
             }
-            """)
-            ScriptingLanguage.Groovy ->
-                builder.addSource(
-                    constructFilePath("com/android/build/example/minimal/MainActivity"),
-            // language=java
-            """
+            """,
+        )
+      ScriptingLanguage.Groovy ->
+        builder.addSource(
+          constructFilePath("com/android/build/example/minimal/MainActivity"),
+          // language=java
+          """
             package com.android.build.example.minimal;
 
             import android.app.Activity;
@@ -186,22 +184,21 @@ class TestingElements(val language: ScriptingLanguage) {
                     setContentView(label);
                 }
             }
-            """)
+            """,
+        )
     }
 
-    private fun constructFilePath(relativePath: String) =
-        when(language) {
-            ScriptingLanguage.Kotlin -> "src/main/kotlin/$relativePath.kt"
-            ScriptingLanguage.Groovy -> "src/main/java/$relativePath.groovy"
-        }
+  private fun constructFilePath(relativePath: String) =
+    when (language) {
+      ScriptingLanguage.Kotlin -> "src/main/kotlin/$relativePath.kt"
+      ScriptingLanguage.Groovy -> "src/main/java/$relativePath.groovy"
+    }
 
-
-
-    fun getGitVersionTask() =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+  fun getGitVersionTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class GitVersionTask: DefaultTask() {
 
                 @get:OutputFile
@@ -224,9 +221,9 @@ class TestingElements(val language: ScriptingLanguage) {
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-            // language=groovy
-            """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.OutputFile
@@ -248,13 +245,13 @@ class TestingElements(val language: ScriptingLanguage) {
                 }
             }
             """
-        }
+    }
 
-    fun getStringProducerTask(valueToProduce: String) =
-            when(language) {
-                ScriptingLanguage.Kotlin ->
-                    // language=kotlin
-                    """
+  fun getStringProducerTask(valueToProduce: String) =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class StringProducerTask: DefaultTask() {
 
                 @get:OutputFile
@@ -267,9 +264,9 @@ class TestingElements(val language: ScriptingLanguage) {
                 }
             }
             """
-                ScriptingLanguage.Groovy ->
-                    // language=groovy
-                    """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.OutputFile
@@ -286,13 +283,13 @@ class TestingElements(val language: ScriptingLanguage) {
                 }
             }
             """
-            }
+    }
 
-fun getManifestProducerTask() =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+  fun getManifestProducerTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class ManifestProducerTask: DefaultTask() {
                 @get:InputFile
                 abstract val gitInfoFile: RegularFileProperty
@@ -324,9 +321,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-            // language=groovy
-            """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.tasks.InputFile
@@ -363,13 +360,13 @@ fun getManifestProducerTask() =
                 }
             }
             """
-        }
+    }
 
-    fun getSimpleManifestTransformerTask() =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-                // language=kotlin
-                """
+  fun getSimpleManifestTransformerTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class ManifestTransformerTask: DefaultTask() {
 
                 @get:Input
@@ -392,9 +389,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-                // language=groovy
-                """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.file.RegularFileProperty
             import org.gradle.api.provider.Property
 
@@ -418,13 +415,13 @@ fun getManifestProducerTask() =
                 }
             }
             """
-        }
+    }
 
-    fun getGitVersionManifestTransformerTask() =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+  fun getGitVersionManifestTransformerTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class ManifestTransformerTask: DefaultTask() {
 
                 @get:InputFile
@@ -447,9 +444,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-            // language=groovy
-            """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.file.RegularFileProperty
 
             abstract class ManifestTransformerTask extends DefaultTask {
@@ -473,13 +470,13 @@ fun getManifestProducerTask() =
                 }
             }
             """
-        }
+    }
 
-    private fun getManifestVerifierTask() =
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+  private fun getManifestVerifierTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.DirectoryProperty
             import org.gradle.api.tasks.InputFiles
@@ -512,17 +509,18 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-                """
+      ScriptingLanguage.Groovy ->
+        """
 
-                """.trimIndent()
-        }
+        """
+          .trimIndent()
+    }
 
-        fun getDisplayApksTask()=
-            when(language) {
-                ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+  fun getDisplayApksTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             abstract class DisplayApksTask: DefaultTask() {
 
                 @get:InputFiles
@@ -542,9 +540,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-                ScriptingLanguage.Groovy ->
-            // language=groovy
-                    """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.DirectoryProperty
             import org.gradle.api.tasks.InputFiles
@@ -576,13 +574,13 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            }
+    }
 
-    fun getAllClassesAccessTask()=
-        when(language) {
-            ScriptingLanguage.Kotlin ->
-                // language=kotlin
-                """
+  fun getAllClassesAccessTask() =
+    when (language) {
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.Directory
             import org.gradle.api.provider.ListProperty
@@ -612,9 +610,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Groovy ->
-                // language=groovy
-                """
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.Directory
             import org.gradle.api.file.RegularFile
@@ -645,13 +643,13 @@ fun getManifestProducerTask() =
                 }
             }
             """
-        }
+    }
 
-    fun getCopyApksTask()=
-        when(language) {
-            ScriptingLanguage.Groovy ->
-                // language=groovy
-                """
+  fun getCopyApksTask() =
+    when (language) {
+      ScriptingLanguage.Groovy ->
+        // language=groovy
+        """
             import org.gradle.api.DefaultTask
             import org.gradle.api.file.Directory
             import org.gradle.api.file.DirectoryProperty
@@ -725,9 +723,9 @@ fun getManifestProducerTask() =
                 }
             }
             """
-            ScriptingLanguage.Kotlin ->
-            // language=kotlin
-            """
+      ScriptingLanguage.Kotlin ->
+        // language=kotlin
+        """
             interface WorkItemParameters: WorkParameters, Serializable {
                 val inputApkFile: RegularFileProperty
                 val outputApkFile: RegularFileProperty
@@ -770,5 +768,5 @@ fun getManifestProducerTask() =
                 }
             }
             """
-        }
+    }
 }

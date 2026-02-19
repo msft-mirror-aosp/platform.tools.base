@@ -18,8 +18,8 @@ package com.android.tools.lint.detector.api
 object GraphUtils {
 
   /**
-   * Given a non-cyclic graph, return a linearization where nodes always appear before their parents
-   * If the graph is cyclic, there's no guarantee of anything
+   * Given a non-cyclic graph, return a linearization where nodes always appear before their parents If the graph is cyclic, there's no
+   * guarantee of anything
    */
   fun <T> reverseTopologicalSort(roots: Iterable<T>, next: (T) -> Sequence<T>): Sequence<T> {
     val seen = hashSetOf<T>()

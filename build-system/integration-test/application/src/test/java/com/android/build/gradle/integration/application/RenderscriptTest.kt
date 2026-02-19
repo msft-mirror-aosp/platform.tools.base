@@ -17,27 +17,22 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
 /** Assemble tests for renderscript with NDK mode enabled. */
 class RenderscriptTest {
 
-    @get:Rule
-    var project = GradleTestProject.builder()
-            .fromTestProject("BasicRenderScript")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .create()
+  @get:Rule var project = GradleTestProject.builder().fromTestProject("BasicRenderScript").create()
 
-    @Test
-    fun build() {
-        project.execute("clean", "assembleDebug")
-    }
+  @Test
+  fun build() {
+    project.execute("clean", "assembleDebug")
+  }
 
-    @Test
-    fun testApiLevelDoesNotTriggerError() {
-        project.buildFile.appendText("android.defaultConfig.minSdkVersion 30")
-        project.execute("clean", "assembleDebug")
-    }
+  @Test
+  fun testApiLevelDoesNotTriggerError() {
+    project.buildFile.appendText("android.defaultConfig.minSdkVersion 30")
+    project.execute("clean", "assembleDebug")
+  }
 }

@@ -88,47 +88,76 @@ public class DataBindingIncrementalTest {
 
     private final boolean useAndroidX;
     private final boolean withKotlin;
+    private final boolean withBuiltInKotlin;
 
     private final List<String> mainActivityBindingClasses;
 
-    @Parameterized.Parameters(name = "useAndroidX_{0}_withKotlin_{1}")
+    @Parameterized.Parameters(name = "useAndroidX_{0}_withKotlin_{1}_withBuiltInKotlin_{2}")
     public static Iterable<Boolean[]> classNames() {
         return ImmutableList.of(
-                new Boolean[] {false, false},
-                new Boolean[] {true, false},
-                // Test one scenario with Kotlin is probably enough (instead of two)
-                new Boolean[] {true, true});
+                new Boolean[] {false, false, false},
+                new Boolean[] {true, false, true},
+                // Two scenarios with Kotlin is probably enough (instead of four)
+                new Boolean[] {true, true, false},
+                new Boolean[] {true, true, true}
+                );
     }
 
-    public DataBindingIncrementalTest(boolean useAndroidX, boolean withKotlin) {
+    public DataBindingIncrementalTest(boolean useAndroidX, boolean withKotlin, boolean withBuiltInKotlin) {
         this.useAndroidX = useAndroidX;
         this.withKotlin = withKotlin;
+        this.withBuiltInKotlin = withBuiltInKotlin;
         mainActivityBindingClasses =
                 ImmutableList.of(MAIN_ACTIVITY_BINDING_CLASS, MAIN_ACTIVITY_BINDING_CLASS_IMPL);
         GradleTestProjectBuilder builder =
                 GradleTestProject.builder()
                         .fromTestProject("databindingIncremental")
                         .addGradleProperties(
-                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
-                        .disableBuiltInKotlin()
-                        .withKotlinGradlePlugin(withKotlin);
-
+                                BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX);
+        if (!withBuiltInKotlin) {
+            builder
+                    .disableBuiltInKotlin()
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+                    .withKotlinGradlePlugin(withKotlin);
+        }
         project = builder.create();
     }
 
     @Before
     public void setUp() throws IOException {
         if (withKotlin) {
-            TestFileUtils.searchAndReplace(
-                    project.getBuildFile(),
-                    "apply plugin: 'com.android.application'",
-                    "apply plugin: 'com.android.application'\n"
-                            + "apply plugin: 'kotlin-android'\n"
-                            + "apply plugin: 'kotlin-kapt'");
+            if (withBuiltInKotlin) {
+                TestFileUtils.searchAndReplace(
+                        project.getBuildFile(),
+                        "buildscript { apply from: \"../commonBuildScript.gradle\" }",
+                        "buildscript {\n" +
+                                "  apply from: \"../commonBuildScript.gradle\"\n" +
+                                "  dependencies {\n" +
+                                "    classpath \"com.android.tools.build:gradle-kotlin:\\${libs.versions.buildVersion.get()}\"\n" +
+                                "  }\n" +
+                                "}\n"
+                );
+                TestFileUtils.searchAndReplace(
+                        project.getBuildFile(),
+                        "apply plugin: 'com.android.application'",
+                        "apply plugin: 'com.android.application'\n"
+                                + "apply plugin: 'com.android.legacy-kapt'\n");
+            }
+            else {
+                TestFileUtils.searchAndReplace(
+                        project.getBuildFile(),
+                        "apply plugin: 'com.android.application'",
+                        "apply plugin: 'com.android.application'\n"
+                                + "apply plugin: 'kotlin-android'\n"
+                                + "apply plugin: 'kotlin-kapt'");
+                TestFileUtils.appendToFile(
+                        project.getBuildFile(),
+                        "android.kotlinOptions.jvmTarget = '11'\n"
+                );
+            }
             TestFileUtils.appendToFile(
                     project.getBuildFile(),
-                    "android.kotlinOptions.jvmTarget = '11'\n"
-                        + "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach"
+                        "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).configureEach"
                         + " {\n"
                         + "  compilerOptions {\n"
                         + "    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)\n"

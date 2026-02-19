@@ -18,28 +18,28 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.AgpTestSuiteDependencies
 import com.android.build.api.dsl.TestSuiteAssetsSpec
-import com.android.build.gradle.internal.api.AssetsTestSuiteSourceSet
-import com.android.build.gradle.internal.api.TestSuiteSourceSet
+import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.testsuites.TestSuiteSourceCreationConfig
-import org.gradle.api.model.ObjectFactory
+import com.android.build.gradle.internal.testsuites.impl.AssetsTestSuiteSourceSet
 import javax.inject.Inject
+import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.model.ObjectFactory
 
-open class TestSuiteAssetsSpecImpl @Inject constructor(
-    objects: ObjectFactory,
-    override val name: String,
-): TestSuiteAssetsSpec, TestSuiteSourceCreationConfig {
+open class TestSuiteAssetsSpecImpl
+@Inject
+constructor(objects: ObjectFactory, override val name: String, projectDirectory: Directory, buildDirectory: DirectoryProperty) :
+  TestSuiteAssetsSpec, TestSuiteSourceCreationConfig {
 
-    /**
-     * INTERNAL APIs
-     */
-    override fun createTestSuiteSourceSet(variantServices: VariantServices): TestSuiteSourceSet {
-        return AssetsTestSuiteSourceSet(
-            sourceSetName = name,
-            variantServices = variantServices,
-        )
-    }
+  /** INTERNAL APIs */
+  override fun createTestSuiteSourceSet(
+    variantServices: VariantServices,
+    javaEnabled: Boolean,
+    kotlinEnabled: Boolean,
+  ): TestSuiteSourceSet {
+    return AssetsTestSuiteSourceSet(sourceSetName = name, variantServices = variantServices, dependencies = dependencies)
+  }
 
-    override val dependencies: AgpTestSuiteDependencies =
-        objects.newInstance(AgpTestSuiteDependencies::class.java)
+  override val dependencies: AgpTestSuiteDependencies = objects.newInstance(AgpTestSuiteDependencies::class.java)
 }

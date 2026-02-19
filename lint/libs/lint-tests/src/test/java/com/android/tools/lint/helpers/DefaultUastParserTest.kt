@@ -80,18 +80,18 @@ class DefaultUastParserTest {
 
         assertEquals(
           """
-                var variable = ""
-                ~~~~~~~~~~~~~~~~~
-                """
+          var variable = ""
+          ~~~~~~~~~~~~~~~~~
+          """
             .trimIndent(),
           propertyLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
         )
 
         assertEquals(
           """
-                var variable = ""
-                    ~~~~~~~~
-                """
+          var variable = ""
+              ~~~~~~~~
+          """
             .trimIndent(),
           propertyNameLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
         )
@@ -104,16 +104,14 @@ class DefaultUastParserTest {
 
         assertEquals(
           """
-                var variable = ""
-                ~~~~~~~~~~~~~~~~~
-                """
+          var variable = ""
+          ~~~~~~~~~~~~~~~~~
+          """
             .trimIndent(),
           setterParameterLocation!!.getErrorLines { context.getContents() }?.trimIndent(),
         )
 
-        assertNull(
-          setterParameterNameLocation!!.getErrorLines { context.getContents() }?.trimIndent()
-        )
+        assertNull(setterParameterNameLocation!!.getErrorLines { context.getContents() }?.trimIndent())
       }
   }
 
@@ -157,18 +155,18 @@ class DefaultUastParserTest {
 
         assertEquals(
           """
-                System.out.println("foo");
-                ~~~~~~~~~~~~~~~~~~~~~~~~~
-                """
+          System.out.println("foo");
+          ~~~~~~~~~~~~~~~~~~~~~~~~~
+          """
             .trimIndent(),
           callLocation?.getErrorLines { context.getContents() }?.trimIndent(),
         )
 
         assertEquals(
           """
-                String bar = "bar";
-                ~~~~~~~~~~~~~~~~~~~
-                """
+          String bar = "bar";
+          ~~~~~~~~~~~~~~~~~~~
+          """
             .trimIndent(),
           declarationLocation?.getErrorLines { context.getContents() }?.trimIndent(),
         )

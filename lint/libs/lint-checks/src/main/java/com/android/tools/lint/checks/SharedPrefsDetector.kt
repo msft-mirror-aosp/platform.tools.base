@@ -33,8 +33,7 @@ import org.jetbrains.uast.getParentOfType
 /** Some lint checks around SharedPreferences. */
 class SharedPrefsDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(SharedPrefsDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(SharedPrefsDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Modifying a string set. */
     @JvmField
@@ -73,18 +72,8 @@ class SharedPrefsDetector : Detector(), SourceCodeScanner {
       object : DataFlowAnalyzer(listOf(node), emptySet()) {
         override fun receiver(call: UCallExpression) {
           val methodName = getMethodName(call) ?: return
-          if (
-            methodName.startsWith("add") ||
-              methodName.startsWith("remove") ||
-              methodName == "retainAll" ||
-              methodName == "clear"
-          ) {
-            context.report(
-              ISSUE,
-              call,
-              context.getLocation(call),
-              "Do not modify the set returned by `SharedPreferences.getStringSet()``",
-            )
+          if (methodName.startsWith("add") || methodName.startsWith("remove") || methodName == "retainAll" || methodName == "clear") {
+            context.report(ISSUE, call, context.getLocation(call), "Do not modify the set returned by `SharedPreferences.getStringSet()``")
           }
         }
       }

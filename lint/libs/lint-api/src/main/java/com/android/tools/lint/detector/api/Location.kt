@@ -35,24 +35,20 @@ import org.w3c.dom.Node
 /** Location information for a warning */
 open class Location
 /**
- * (Private constructor, use one of the factory methods [Location.create], [Location.create], or
- * [Location.create].)
+ * (Private constructor, use one of the factory methods [Location.create], [Location.create], or [Location.create].)
  *
- * Constructs a new location range for the given file, from start to end. If the length of the range
- * is not known, end may be null.
+ * Constructs a new location range for the given file, from start to end. If the length of the range is not known, end may be null.
  *
- * @param file the associated file (but see the documentation for [Location.file] for more
- *   information on what the file represents)
+ * @param file the associated file (but see the documentation for [Location.file] for more information on what the file represents)
  * @param start the starting position, or null
  * @param end the ending position, or null
  */
 protected constructor(
   /**
-   * Returns the file containing the warning. Note that the file *itself* may not yet contain the
-   * error. When editing a file in the IDE for example, the tool could generate warnings in the
-   * background even before the document is saved. However, the file is used as a identifying token
-   * for the document being edited, and the IDE integration can map this back to error locations in
-   * the editor source code.
+   * Returns the file containing the warning. Note that the file *itself* may not yet contain the error. When editing a file in the IDE for
+   * example, the tool could generate warnings in the background even before the document is saved. However, the file is used as a
+   * identifying token for the document being edited, and the IDE integration can map this back to error locations in the editor source
+   * code.
    *
    * @return the file handle for the location
    */
@@ -72,11 +68,10 @@ protected constructor(
 ) {
 
   /**
-   * The custom message for this location, if any. This is typically used for secondary locations,
-   * to describe the significance of this alternate location. For example, for a duplicate id
-   * warning, the primary location might say "This is a duplicate id", pointing to the second
-   * occurrence of id declaration, and then the secondary location could point to the original
-   * declaration with the custom message "Originally defined here".
+   * The custom message for this location, if any. This is typically used for secondary locations, to describe the significance of this
+   * alternate location. For example, for a duplicate id warning, the primary location might say "This is a duplicate id", pointing to the
+   * second occurrence of id declaration, and then the secondary location could point to the original declaration with the custom message
+   * "Originally defined here".
    */
   var message: String? = null
     set(value) {
@@ -85,26 +80,24 @@ protected constructor(
     }
 
   /**
-   * Returns the client data associated with this location - an optional field which can be used by
-   * the creator of the [Location] to store temporary state associated with the location.
+   * Returns the client data associated with this location - an optional field which can be used by the creator of the [Location] to store
+   * temporary state associated with the location.
    */
   open var clientData: Any? = null
 
   /**
-   * Whether this location should be visible on its own. "Visible" here refers to whether the
-   * location is shown in the IDE if the user navigates to the given location.
+   * Whether this location should be visible on its own. "Visible" here refers to whether the location is shown in the IDE if the user
+   * navigates to the given location.
    *
-   * For visible locations, especially those that appear far away from the primary location, it's
-   * important that the error message make sense on its own. For example, for duplicate
-   * declarations, usually the primary error message says something like "foo has already been
-   * defined", and the secondary error message says "previous definition here". In something like a
-   * text or HTML report, this makes sense -- you see the "foo has already been defined" error
-   * message, and it also reports the locations of the previous error message. But if the secondary
-   * error message is visible, the user may encounter that error first, and if that error message
-   * just says "previous definition here", that doesn't make a lot of sense.
+   * For visible locations, especially those that appear far away from the primary location, it's important that the error message make
+   * sense on its own. For example, for duplicate declarations, usually the primary error message says something like "foo has already been
+   * defined", and the secondary error message says "previous definition here". In something like a text or HTML report, this makes sense --
+   * you see the "foo has already been defined" error message, and it also reports the locations of the previous error message. But if the
+   * secondary error message is visible, the user may encounter that error first, and if that error message just says "previous definition
+   * here", that doesn't make a lot of sense.
    *
-   * This attribute is ignored for the primary location for an issue (e.g. the location passed to
-   * [LintClient.report], and it applies for all the secondary locations linked from that location.
+   * This attribute is ignored for the primary location for an issue (e.g. the location passed to [LintClient.report], and it applies for
+   * all the secondary locations linked from that location.
    */
   open var visible = true
 
@@ -113,35 +106,26 @@ protected constructor(
   /** Returns a secondary location associated with this location (if applicable), or null. */
   open var secondary: Location? = null
 
-  /**
-   * Returns the source element for this location provided it's of the given type, if applicable.
-   */
+  /** Returns the source element for this location provided it's of the given type, if applicable. */
   open var source: Any? = null
 
   /**
-   * Returns the source element for this location if it was originally requested for a broader range
-   * than the actual error. For example, if you ask for the location of a method, we'll return just
-   * the range for the method name, but the [originalSource] will point to the [UMethod] itself,
-   * instead of the [UIdentifier].
+   * Returns the source element for this location if it was originally requested for a broader range than the actual error. For example, if
+   * you ask for the location of a method, we'll return just the range for the method name, but the [originalSource] will point to the
+   * [UMethod] itself, instead of the [UIdentifier].
    */
   open var originalSource: Any? = null
 
   /**
-   * Sets a secondary location with the given message and returns the current location updated with
-   * the given secondary location.
+   * Sets a secondary location with the given message and returns the current location updated with the given secondary location.
    *
    * @param secondary a secondary location associated with this location
    * @param message a message to be set on the secondary location
-   * @param selfExplanatory if true, the message is itself self-explanatory; see
-   *   [isSelfExplanatory]}
+   * @param selfExplanatory if true, the message is itself self-explanatory; see [isSelfExplanatory]}
    * @return current location updated with the secondary location
    */
   @JvmOverloads
-  fun withSecondary(
-    secondary: Location,
-    message: String,
-    selfExplanatory: Boolean = false,
-  ): Location {
+  fun withSecondary(secondary: Location, message: String, selfExplanatory: Boolean = false): Location {
     this.secondary = secondary
     secondary.message = message
     secondary.selfExplanatory = selfExplanatory
@@ -169,7 +153,8 @@ protected constructor(
   fun <T> getSource(clz: Class<T>): T? {
     val source = source ?: return null
     if (clz.isAssignableFrom(source.javaClass)) {
-      @Suppress("UNCHECKED_CAST") return source as T?
+      @Suppress("UNCHECKED_CAST")
+      return source as T?
     }
 
     return null
@@ -187,16 +172,14 @@ protected constructor(
   }
 
   /**
-   * Sets a custom message for this location. This is typically used for secondary locations, to
-   * describe the significance of this alternate location. For example, for a duplicate id warning,
-   * the primary location might say "This is a duplicate id", pointing to the second occurrence of
-   * id declaration, and then the secondary location could point to the original declaration with
-   * the custom message "Originally defined here".
+   * Sets a custom message for this location. This is typically used for secondary locations, to describe the significance of this alternate
+   * location. For example, for a duplicate id warning, the primary location might say "This is a duplicate id", pointing to the second
+   * occurrence of id declaration, and then the secondary location could point to the original declaration with the custom message
+   * "Originally defined here".
    *
    * @param message the message to apply to this location
-   * @param selfExplanatory if true, the message is itself self-explanatory; if false, it's just
-   *   describing this particular location and the primary error message is necessary. Controls
-   *   whether (for example) the IDE will include the original error message along with this
+   * @param selfExplanatory if true, the message is itself self-explanatory; if false, it's just describing this particular location and the
+   *   primary error message is necessary. Controls whether (for example) the IDE will include the original error message along with this
    *   location when showing the message.
    * @return this, for constructor chaining
    */
@@ -207,9 +190,9 @@ protected constructor(
   }
 
   /**
-   * Whether this message is self-explanatory. If false, it's just describing this particular
-   * location and the primary error message is necessary. Controls whether (for example) the IDE
-   * will include the original error message along with this location when showing the message.
+   * Whether this message is self-explanatory. If false, it's just describing this particular location and the primary error message is
+   * necessary. Controls whether (for example) the IDE will include the original error message along with this location when showing the
+   * message.
    *
    * @return whether this message is self explanatory.
    */
@@ -227,8 +210,8 @@ protected constructor(
   }
 
   /**
-   * Sets the client data associated with this location. This is an optional field which can be used
-   * by the creator of the [Location] to store temporary state associated with the location.
+   * Sets the client data associated with this location. This is an optional field which can be used by the creator of the [Location] to
+   * store temporary state associated with the location.
    *
    * @param clientData the data to store with this location
    * @return this, for constructor chaining
@@ -252,21 +235,18 @@ protected constructor(
     return thisStart <= otherStart && thisEnd >= otherEnd
   }
 
-  override fun toString(): String =
-    "Location [file=${file.name}, start=$start, end=$end, message=$message]"
+  override fun toString(): String = "Location [file=${file.name}, start=$start, end=$end, message=$message]"
 
   /**
-   * A [Handle] is a reference to a location. The point of a location handle is to be able to create
-   * them cheaply, and then resolve them into actual locations later (if needed). This makes it
-   * possible to for example delay looking up line numbers, for locations that are offset based.
+   * A [Handle] is a reference to a location. The point of a location handle is to be able to create them cheaply, and then resolve them
+   * into actual locations later (if needed). This makes it possible to for example delay looking up line numbers, for locations that are
+   * offset based.
    */
   interface Handle {
     /** Computes a full location for the given handle. */
     fun resolve(): Location
 
-    /**
-     * Checks whether there is a suppress directive (`tools:ignore`) for the given resource item.
-     */
+    /** Checks whether there is a suppress directive (`tools:ignore`) for the given resource item. */
     fun isSuppressed(driver: LintDriver, issue: Issue): Boolean {
       val location = resolve()
       val source = location.source as? Node
@@ -274,8 +254,8 @@ protected constructor(
     }
 
     /**
-     * The client data associated with this location - an optional field which can be used by the
-     * creator of the [Location] to store temporary state associated with the location.
+     * The client data associated with this location - an optional field which can be used by the creator of the [Location] to store
+     * temporary state associated with the location.
      */
     var clientData: Any?
   }
@@ -348,12 +328,11 @@ protected constructor(
   }
 
   /**
-   * Whether to look forwards, or backwards, or in both directions, when searching for a pattern in
-   * the source code to determine the right position range for a given symbol.
+   * Whether to look forwards, or backwards, or in both directions, when searching for a pattern in the source code to determine the right
+   * position range for a given symbol.
    *
-   * When dealing with bytecode for example, there are only line number entries within method
-   * bodies, so when searching for the method declaration, we should only search backwards from the
-   * first line entry in the method.
+   * When dealing with bytecode for example, there are only line number entries within method bodies, so when searching for the method
+   * declaration, we should only search backwards from the first line entry in the method.
    */
   enum class SearchDirection {
     /** Only search forwards. */
@@ -362,27 +341,17 @@ protected constructor(
     /** Only search backwards. */
     BACKWARD,
 
-    /**
-     * Search backwards from the current end of line (normally it's the beginning of the current
-     * line)
-     */
+    /** Search backwards from the current end of line (normally it's the beginning of the current line) */
     EOL_BACKWARD,
 
-    /**
-     * Search both forwards and backwards from the given line, and prefer the match that is closest.
-     */
+    /** Search both forwards and backwards from the given line, and prefer the match that is closest. */
     NEAREST,
 
-    /**
-     * Search both forwards and backwards from the end of the given line, and prefer the match that
-     * is closest.
-     */
+    /** Search both forwards and backwards from the end of the given line, and prefer the match that is closest. */
     EOL_NEAREST,
   }
 
-  /**
-   * Extra information pertaining to finding a symbol in a source buffer, used by [Location.create]
-   */
+  /** Extra information pertaining to finding a symbol in a source buffer, used by [Location.create] */
   class SearchHints
   private constructor(
     /** the direction to search for the nearest match in (provided `patternStart` is non null) */
@@ -395,15 +364,13 @@ protected constructor(
       private set
 
     /**
-     * Whether the matched pattern should be a Java symbol (so for example, a match inside a comment
-     * or string literal should not be used)
+     * Whether the matched pattern should be a Java symbol (so for example, a match inside a comment or string literal should not be used)
      */
     var isJavaSymbol: Boolean = false
       private set
 
     /**
-     * Whether the matched pattern corresponds to a constructor; if so, look for some other possible
-     * source aliases too, such as "super".
+     * Whether the matched pattern corresponds to a constructor; if so, look for some other possible source aliases too, such as "super".
      */
     var isConstructor: Boolean = false
       private set
@@ -432,8 +399,7 @@ protected constructor(
     }
 
     /**
-     * Indicates that pattern matches should apply to constructors. If so, look for some other
-     * possible source aliases too, such as "super".
+     * Indicates that pattern matches should apply to constructors. If so, look for some other possible source aliases too, such as "super".
      *
      * @return this, for constructor chaining
      */
@@ -461,10 +427,9 @@ protected constructor(
     private const val SUPER_KEYWORD = "super"
 
     /**
-     * Special marker location which means location not available, or not applicable, or filtered
-     * out, etc. For example, the infrastructure may return [NONE] if you ask
-     * [UastParser.getLocation] for an element which is not in the current file during an
-     * incremental lint run in a single file.
+     * Special marker location which means location not available, or not applicable, or filtered out, etc. For example, the infrastructure
+     * may return [NONE] if you ask [UastParser.getLocation] for an element which is not in the current file during an incremental lint run
+     * in a single file.
      */
     @JvmField
     val NONE: Location =
@@ -548,12 +513,10 @@ protected constructor(
      * @param end the ending position
      * @return a new location
      */
-    @JvmStatic
-    fun create(file: File, start: Position, end: Position?): Location = Location(file, start, end)
+    @JvmStatic fun create(file: File, start: Position, end: Position?): Location = Location(file, start, end)
 
     /**
-     * Creates a new location for the given file, with the given contents, for the given offset
-     * range.
+     * Creates a new location for the given file, with the given contents, for the given offset range.
      *
      * @param file the file containing the location
      * @param contents the current contents of the file
@@ -569,11 +532,7 @@ protected constructor(
       }
 
       if (contents == null) {
-        return Location(
-          file,
-          DefaultPosition(-1, -1, startOffset),
-          DefaultPosition(-1, -1, endOffset),
-        )
+        return Location(file, DefaultPosition(-1, -1, startOffset), DefaultPosition(-1, -1, endOffset))
       }
 
       val size = contents.length
@@ -600,41 +559,30 @@ protected constructor(
     }
 
     /**
-     * Creates a new location for the given file, with the given contents, for the given line
-     * number.
+     * Creates a new location for the given file, with the given contents, for the given line number.
      *
      * @param file the file containing the location
      * @param contents the current contents of the file
      * @param line the line number (0-based) for the position
      * @return a new location
      */
-    @JvmStatic
-    fun create(file: File, contents: String, line: Int): Location =
-      create(file, contents, line, null, null, null)
+    @JvmStatic fun create(file: File, contents: String, line: Int): Location = create(file, contents, line, null, null, null)
 
     /**
-     * Creates a new location for the given file, with the given contents, for the given line
-     * number.
+     * Creates a new location for the given file, with the given contents, for the given line number.
      *
      * @param file the file containing the location
      * @param contents the current contents of the file
      * @param line the line number (0-based) for the position
-     * @param patternStart an optional pattern to search for from the line match; if found, adjust
-     *   the column and offsets to begin at the pattern start
-     * @param patternEnd an optional pattern to search for behind the start pattern; if found,
-     *   adjust the end offset to match the end of the pattern
+     * @param patternStart an optional pattern to search for from the line match; if found, adjust the column and offsets to begin at the
+     *   pattern start
+     * @param patternEnd an optional pattern to search for behind the start pattern; if found, adjust the end offset to match the end of the
+     *   pattern
      * @param hints optional additional information regarding the pattern search
      * @return a new location
      */
     @JvmStatic
-    fun create(
-      file: File,
-      contents: CharSequence,
-      line: Int,
-      patternStart: String?,
-      patternEnd: String?,
-      hints: SearchHints?,
-    ): Location {
+    fun create(file: File, contents: CharSequence, line: Int, patternStart: String?, patternEnd: String?, hints: SearchHints?): Location {
 
       var targetLine = line
       var targetPattern = patternStart
@@ -695,10 +643,7 @@ protected constructor(
                 newLinesAfter++
               }
             }
-            if (
-              newLinesBefore < newLinesAfter ||
-                newLinesBefore == newLinesAfter && offset - before < after - offset
-            ) {
+            if (newLinesBefore < newLinesAfter || newLinesBefore == newLinesAfter && offset - before < after - offset) {
               index = before
               targetLine = adjustLine(contents, targetLine, offset, index)
             } else {
@@ -719,11 +664,7 @@ protected constructor(
           if (patternEnd != null) {
             val end = indexOf(contents, patternEnd, offset + targetPattern.length)
             if (end != -1) {
-              return Location(
-                file,
-                DefaultPosition(targetLine, column, index),
-                DefaultPosition(targetLine, -1, end + patternEnd.length),
-              )
+              return Location(file, DefaultPosition(targetLine, column, index), DefaultPosition(targetLine, -1, end + patternEnd.length))
             }
           } else if (hints != null && (hints.isJavaSymbol || hints.isWholeWord)) {
             if (hints.isConstructor && startsWith(contents, SUPER_KEYWORD, index)) {
@@ -732,11 +673,7 @@ protected constructor(
             return Location(
               file,
               DefaultPosition(targetLine, column, index),
-              DefaultPosition(
-                targetLine,
-                column + targetPattern.length,
-                index + targetPattern.length,
-              ),
+              DefaultPosition(targetLine, column + targetPattern.length, index + targetPattern.length),
             )
           }
           return Location(
@@ -752,12 +689,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun findPreviousMatch(
-      contents: CharSequence,
-      offset: Int,
-      pattern: String,
-      hints: SearchHints?,
-    ): Int {
+    private fun findPreviousMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Int {
       var currentOffset = offset
       val loopDecrement = max(1, pattern.length)
       while (true) {
@@ -775,12 +707,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun findNextMatch(
-      contents: CharSequence,
-      offset: Int,
-      pattern: String,
-      hints: SearchHints?,
-    ): Int {
+    private fun findNextMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Int {
       var currentOffset = offset
       var constructorIndex = -1
       if (hints != null && hints.isConstructor) {
@@ -811,12 +738,7 @@ protected constructor(
     }
 
     @JvmStatic
-    private fun isMatch(
-      contents: CharSequence,
-      offset: Int,
-      pattern: String,
-      hints: SearchHints?,
-    ): Boolean {
+    private fun isMatch(contents: CharSequence, offset: Int, pattern: String, hints: SearchHints?): Boolean {
       if (!startsWith(contents, pattern, offset)) {
         return false
       }
@@ -831,9 +753,7 @@ protected constructor(
         }
 
         if (hints.isJavaSymbol) {
-          if (
-            Character.isJavaIdentifierPart(prevChar) || Character.isJavaIdentifierPart(nextChar)
-          ) {
+          if (Character.isJavaIdentifierPart(prevChar) || Character.isJavaIdentifierPart(nextChar)) {
             return false
           }
 

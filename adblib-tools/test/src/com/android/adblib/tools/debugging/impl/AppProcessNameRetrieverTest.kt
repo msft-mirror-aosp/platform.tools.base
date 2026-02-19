@@ -23,209 +23,193 @@ import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.time.Duration
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.junit.Assert
 import org.junit.Test
-import java.time.Duration
-import kotlin.coroutines.cancellation.CancellationException
-import kotlin.time.Duration.Companion.seconds
 
 class AppProcessNameRetrieverTest : AdbLibToolsTestBase() {
 
-    @Test
-    fun retrieveProcessNameFromJdwpProcess(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val deviceId = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceId,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice =
-            hostServices.session.connectedDevicesTracker.connectedDevices
-                .mapNotNull { connectedDevices ->
-                    connectedDevices.firstOrNull { device ->
-                        device.serialNumber == fakeDevice.deviceId
-                    }
-                }.first()
-        val pid10 = 10
-        fakeDevice.startClient(pid10, 0, "a.b.c", false)
-        val appTracker = AppProcessTracker.create(connectedDevice)
-        val appProcesses =
-            appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
-        val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+  @Test
+  fun retrieveProcessNameFromJdwpProcess(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceId = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceId,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == fakeDevice.deviceId } }
+          .first()
+      val pid10 = 10
+      fakeDevice.startClient(pid10, 0, "a.b.c", false)
+      val appTracker = AppProcessTracker.create(connectedDevice)
+      val appProcesses = appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
+      val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
 
-        // Act
-        val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
+      // Act
+      val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
-        // Assert
-        Assert.assertEquals("a.b.c", appProcessName)
+      // Assert
+      Assert.assertEquals("a.b.c", appProcessName)
     }
 
-    @Test
-    fun retrieveProcessNameFromProc(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val deviceId = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceId,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice =
-            hostServices.session.connectedDevicesTracker.connectedDevices
-                .mapNotNull { connectedDevices ->
-                    connectedDevices.firstOrNull { device ->
-                        device.serialNumber == fakeDevice.deviceId
-                    }
-                }.first()
-        val pid10 = 10
-        fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
-        val appTracker = AppProcessTracker.create(connectedDevice)
-        val appProcesses =
-            appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
-        val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+  @Test
+  fun retrieveProcessNameFromProc(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceId = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceId,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == fakeDevice.deviceId } }
+          .first()
+      val pid10 = 10
+      fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
+      val appTracker = AppProcessTracker.create(connectedDevice)
+      val appProcesses = appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
+      val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
 
-        // Act
-        val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
+      // Act
+      val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
-        // Assert
-        Assert.assertEquals("a.b.c", appProcessName)
+      // Assert
+      Assert.assertEquals("a.b.c", appProcessName)
     }
 
-    @Test
-    fun retrieveProcessNameFromTrackAppAndAppInfo(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val deviceId = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceId,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(36), // SDK >= 36 is required for `app_info` feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice =
-            hostServices.session.connectedDevicesTracker.connectedDevices
-                .mapNotNull { connectedDevices ->
-                    connectedDevices.firstOrNull { device ->
-                        device.serialNumber == fakeDevice.deviceId
-                    }
-                }.first()
-        val pid10 = 10
-        fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
-        val appTracker = AppProcessTracker.create(connectedDevice)
-        val appProcesses =
-            appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
-        val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+  @Test
+  fun retrieveProcessNameFromTrackAppAndAppInfo(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceId = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceId,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(36), // SDK >= 36 is required for `app_info` feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == fakeDevice.deviceId } }
+          .first()
+      val pid10 = 10
+      fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
+      val appTracker = AppProcessTracker.create(connectedDevice)
+      val appProcesses = appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
+      val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
 
-        // Act
-        Assert.assertTrue(connectedDevice.useAppInfoForProcessProperties())
-        val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
+      // Act
+      Assert.assertTrue(connectedDevice.useAppInfoForProcessProperties())
+      val appProcessName = appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
-        // Assert
-        Assert.assertEquals("a.b.c", appProcessName)
+      // Assert
+      Assert.assertEquals("a.b.c", appProcessName)
     }
 
-    @Test
-    fun retrieveProcessNameFromProc_throwsCancellationException_whenAppProcessIsClosed(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val deviceId = "1234"
-            val fakeDevice =
-                fakeAdb.connectDevice(
-                    deviceId,
-                    "test1",
-                    "test2",
-                    "model",
-                    AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                    DeviceState.HostConnectionType.USB
-                )
-            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-            val connectedDevice =
-                hostServices.session.connectedDevicesTracker.connectedDevices
-                    .mapNotNull { connectedDevices ->
-                        connectedDevices.firstOrNull { device ->
-                            device.serialNumber == fakeDevice.deviceId
-                        }
-                    }.first()
-            val appTracker = AppProcessTracker.create(connectedDevice)
+  @Test
+  fun retrieveProcessNameFromProc_throwsCancellationException_whenAppProcessIsClosed(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceId = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceId,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == fakeDevice.deviceId } }
+          .first()
+      val appTracker = AppProcessTracker.create(connectedDevice)
 
-            val pid10 = 10
-            fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
-            val appProcess =
-                appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }[0]
-            val appProcessNameRetriever = AppProcessNameRetriever(appProcess)
-            // Delay output so that we could close the `AppProcess` while retrieving AppProcessName
-            fakeDevice.delayStdout = 2.seconds
-            exceptionRule.expect(CancellationException::class.java)
+      val pid10 = 10
+      fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
+      val appProcess = appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }[0]
+      val appProcessNameRetriever = AppProcessNameRetriever(appProcess)
+      // Delay output so that we could close the `AppProcess` while retrieving AppProcessName
+      fakeDevice.delayStdout = 2.seconds
+      exceptionRule.expect(CancellationException::class.java)
 
-            // Act
-            launch {
-                // delay closing `appProcess` to give `AppProcessNameRetriever` time to start process name retrieval
-                delay(500)
-            }.invokeOnCompletion {
-                (appProcess as AppProcessImpl).close()
-            }
-            appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
-
-            // Assert
-            Assert.fail("Should not reach")
+      // Act
+      launch {
+          // delay closing `appProcess` to give `AppProcessNameRetriever` time to start process
+          // name retrieval
+          delay(500)
         }
+        .invokeOnCompletion { (appProcess as AppProcessImpl).close() }
+      appProcessNameRetriever.retrieve(1, Duration.ofMillis(0))
 
-    @Test
-    fun retrieveProcessNameFromProc_canIgnoreNonfinalizedName(): Unit = CoroutineTestUtils.runBlockingWithTimeout {
-        // Prepare
-        val deviceId = "1234"
-        val fakeDevice =
-            fakeAdb.connectDevice(
-                deviceId,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(31), // SDK >= 30 is required for track_app feature.
-                DeviceState.HostConnectionType.USB
-            )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        val connectedDevice =
-            hostServices.session.connectedDevicesTracker.connectedDevices
-                .mapNotNull { connectedDevices ->
-                    connectedDevices.firstOrNull { device ->
-                        device.serialNumber == fakeDevice.deviceId
-                    }
-                }.first()
-        val pid10 = 10
-        val process = fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
-        val appTracker = AppProcessTracker.create(connectedDevice)
-        val appProcesses =
-            appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
-        val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+      // Assert
+      Assert.fail("Should not reach")
+    }
 
-        // Act
-        launch {
-            for (i in 0 .. 10) {
-                process.commandLine = "cmdline-$i"
-                delay(10)
-            }
+  @Test
+  fun retrieveProcessNameFromProc_canIgnoreNonfinalizedName(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceId = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceId,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 30 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == fakeDevice.deviceId } }
+          .first()
+      val pid10 = 10
+      val process = fakeDevice.startProfileableProcess(pid10, "x86", "a.b.c")
+      val appTracker = AppProcessTracker.create(connectedDevice)
+      val appProcesses = appTracker.appProcessFlow.first { appProcesses -> appProcesses.isNotEmpty() }
+      val appProcessNameRetriever = AppProcessNameRetriever(appProcesses[0])
+
+      // Act
+      launch {
+        for (i in 0..10) {
+          process.commandLine = "cmdline-$i"
+          delay(10)
         }
-        // Note that retrying an unstable cmdline value does not count towards a retry count
-        val appProcessName = appProcessNameRetriever.retrieve(0, Duration.ofMillis(100))
+      }
+      // Note that retrying an unstable cmdline value does not count towards a retry count
+      val appProcessName = appProcessNameRetriever.retrieve(0, Duration.ofMillis(100))
 
-        // Assert
-        Assert.assertEquals("cmdline-10", appProcessName)
+      // Assert
+      Assert.assertEquals("cmdline-10", appProcessName)
     }
 }

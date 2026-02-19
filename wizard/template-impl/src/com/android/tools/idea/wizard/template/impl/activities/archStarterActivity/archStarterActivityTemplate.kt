@@ -18,7 +18,6 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 import com.android.tools.idea.wizard.template.Category
 import com.android.tools.idea.wizard.template.CheckBoxWidget
 import com.android.tools.idea.wizard.template.Constraint.CLASS
-import com.android.tools.idea.wizard.template.Constraint.KOTLIN_FUNCTION
 import com.android.tools.idea.wizard.template.Constraint.NONEMPTY
 import com.android.tools.idea.wizard.template.Constraint.UNIQUE
 import com.android.tools.idea.wizard.template.FormFactor
@@ -27,6 +26,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.PackageNameWidget
 import com.android.tools.idea.wizard.template.TemplateConstraint
 import com.android.tools.idea.wizard.template.TemplateData
+import com.android.tools.idea.wizard.template.TemplateFlag
 import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.booleanParameter
@@ -40,19 +40,15 @@ val archStarterActivityTemplate
     name = "Architecture Sample"
     description = "Create a new activity based on recommended Android architecture"
     minApi = 21
-    constraints =
-      listOf(
-        TemplateConstraint.AndroidX,
-        TemplateConstraint.Kotlin,
-        TemplateConstraint.Material3,
-        TemplateConstraint.Compose,
-      )
-    category = Category.Compose
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
+    category = Category.Application
+    flags = listOf(TemplateFlag.NewProjectAgent)
     formFactor = FormFactor.Mobile
-    screens = listOfNotNull(
+    screens =
+      listOfNotNull(
         // Only used for Gemini-based project creation for now, and for testing.
         WizardUiContext.NewProject
-    )
+      )
 
     val activityClass = stringParameter {
       name = "Activity Name"
@@ -67,27 +63,14 @@ val archStarterActivityTemplate
     val isLauncher = booleanParameter {
       name = "Launcher Activity"
       default = false
-      help =
-        "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
+      help = "If true, this activity will have a CATEGORY_LAUNCHER intent filter, making it visible in the launcher"
     }
 
-    widgets(
-      TextFieldWidget(activityClass),
-      PackageNameWidget(packageName),
-      CheckBoxWidget(isLauncher),
-      LanguageWidget(),
-    )
+    widgets(TextFieldWidget(activityClass), PackageNameWidget(packageName), CheckBoxWidget(isLauncher), LanguageWidget())
 
-    thumb {
-      File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png")
-    }
+    thumb { File("compose-activity-material3").resolve("template_compose_empty_activity_material3.png") }
 
     recipe = { data: TemplateData ->
-      archStarterActivityRecipe(
-        data as ModuleTemplateData,
-        activityClass.value,
-        packageName.value,
-        isLauncher.value,
-      )
+      archStarterActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value, isLauncher.value)
     }
   }

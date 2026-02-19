@@ -29,12 +29,15 @@ fun firstFragmentJava(
   firstFragmentClass: String,
   secondFragmentClass: String,
   firstFragmentLayoutName: String,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
-  val onCreateViewBlock = if (isViewBindingSupported) """
+  val onCreateViewBlock =
+    if (isViewBindingSupported)
+      """
       binding = ${layoutToViewBindingClass(firstFragmentLayoutName)}.inflate(inflater, container, false);
       return binding.getRoot();
-  """ else "return inflater.inflate(R.layout.$firstFragmentLayoutName, container, false);"
+  """
+    else "return inflater.inflate(R.layout.$firstFragmentLayoutName, container, false);"
 
   return """package ${packageName};
 
@@ -69,7 +72,7 @@ ${renderIf(isViewBindingSupported) {"""
           Language.Java,
           isViewBindingSupported,
           id = "button_first",
-          parentView = "view")}.setOnClickListener(v ->
+          parentView = "view",)}.setOnClickListener(v ->
                 NavHostFragment.findNavController(${firstFragmentClass}.this)
                         .navigate(R.id.action_${firstFragmentClass}_to_${secondFragmentClass})
         );

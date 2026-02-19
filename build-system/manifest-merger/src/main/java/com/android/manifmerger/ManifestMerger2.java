@@ -523,7 +523,7 @@ public class ManifestMerger2 {
                     k.setAttributeNS(SdkConstants.TOOLS_URI, "tools:node", v.toXmlName());
                 });
 
-        PostValidator.validate(finalMergedDocument, mergingReportBuilder);
+        PostValidator.validate(finalMergedDocument, mergingReportBuilder, mOptionalFeatures);
         if (mergingReportBuilder.hasErrors()
                 && !mOptionalFeatures.contains(Invoker.Feature.KEEP_GOING_AFTER_ERRORS)) {
             mergingReportBuilder.addMessage(
@@ -1888,6 +1888,12 @@ public class ManifestMerger2 {
              * this tag will be allowed for the purpose of `tools:overrideLibrary` only.
              */
             USES_SDK_IN_MANIFEST_LENIENT_HANDLING,
+
+            /**
+             * When androidTest manifest can have `replace` attributes. AGP merge it with generated
+             * manifest triggering false warnings.
+             */
+            DISABLE_REPLACE_WARNING,
         }
 
         /**

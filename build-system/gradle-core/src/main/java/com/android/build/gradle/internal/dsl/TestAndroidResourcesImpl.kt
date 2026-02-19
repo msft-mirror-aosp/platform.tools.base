@@ -20,7 +20,4 @@ import com.android.build.api.dsl.TestAndroidResources
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class TestAndroidResourcesImpl @Inject constructor(dslServices: DslServices) :
-        TestAndroidResources, AaptOptions(dslServices) {
-
-}
+abstract class TestAndroidResourcesImpl @Inject constructor(dslServices: DslServices) : TestAndroidResources, AaptOptions(dslServices) {}

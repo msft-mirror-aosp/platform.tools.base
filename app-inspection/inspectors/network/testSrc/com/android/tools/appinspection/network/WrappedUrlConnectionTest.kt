@@ -52,16 +52,9 @@ class WrappedUrlConnectionTest {
 
             override fun trackRequestBody(stream: OutputStream) = stream
 
-            override fun trackRequest(
-              method: String,
-              headers: Map<String, List<String>>,
-              transport: HttpTransport,
-            ) = Unit
+            override fun trackRequest(method: String, headers: Map<String, List<String>>, transport: HttpTransport) = Unit
 
-            override fun trackResponseHeaders(
-              responseCode: Int,
-              headers: Map<String?, List<String>>,
-            ) = Unit
+            override fun trackResponseHeaders(responseCode: Int, headers: Map<String?, List<String>>) = Unit
 
             override fun trackResponseBody(stream: InputStream) = stream
 
@@ -78,8 +71,7 @@ class WrappedUrlConnectionTest {
     // Setup
     val interceptionService =
       object : InterceptionRuleService {
-        override fun interceptResponse(connection: NetworkConnection, response: NetworkResponse) =
-          response
+        override fun interceptResponse(connection: NetworkConnection, response: NetworkResponse) = response
 
         override fun addRule(ruleId: Int, rule: InterceptionRule) = Unit
 
@@ -194,8 +186,7 @@ class WrappedUrlConnectionTest {
       )
     val interceptionService =
       object : InterceptionRuleService {
-        override fun interceptResponse(connection: NetworkConnection, response: NetworkResponse) =
-          newResponse
+        override fun interceptResponse(connection: NetworkConnection, response: NetworkResponse) = newResponse
 
         override fun addRule(ruleId: Int, rule: InterceptionRule) = Unit
 

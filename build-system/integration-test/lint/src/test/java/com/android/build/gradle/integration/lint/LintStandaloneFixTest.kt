@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.testutils.truth.PathSubject
-import com.google.common.truth.Truth
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,7 +28,6 @@ import org.junit.Test
  * Test for running lintFix with the standalone lint plugin.
  *
  * <p>Tip: To execute just this test run:
- *
  * <pre>
  *     $ cd tools
  *     $ ./gradlew :base:build-system:integration-test:lint:test --tests=LintStandaloneFixTest
@@ -37,63 +35,63 @@ import org.junit.Test
  */
 class LintStandaloneFixTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.javaLibrary()).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(MinimalSubProject.javaLibrary()).create()
 
-    @Before
-    fun before() {
-        project.buildFile.appendText("\n" +
-            """
-                apply plugin: 'com.android.lint'
+  @Before
+  fun before() {
+    project.buildFile.appendText(
+      "\n" +
+        """
+        apply plugin: 'com.android.lint'
 
-                lintOptions {
-                    error 'SyntheticAccessor'
-                }
-            """.trimIndent()
-        )
-
-        val sourceFile = project.file("src/main/java/com/example/foo/Foo.java")
-        sourceFile.parentFile.mkdirs()
-        sourceFile.writeText(
-            """
-                package com.example.foo;
-
-                public class Foo {
-
-                    private void foo() {
-                        new InnerClass().bar();
-                    }
-
-                    static class InnerClass {
-                        private void bar() {}
-                    }
-                }
-            """.trimIndent()
-        )
-    }
-
-    @Test
-    fun checkStandaloneLintFix() {
-        project.executor().expectFailure().run("lintFixJvm").apply {
-            assertErrorContains(
-                "Aborting build since sources were modified to apply quickfixes after compilation"
-            )
-            assertTask(":lintFixJvm").failed()
+        lintOptions {
+            error 'SyntheticAccessor'
         }
+        """
+          .trimIndent()
+    )
 
-        // Make sure quickfix worked too
-        val sourceFile = project.file("src/main/java/com/example/foo/Foo.java")
-        // The original source has this:
-        //    ...
-        //    private void bar() {}
-        //    ...
-        // After applying quickfixes, it contains this:
-        //    ...
-        //    void bar() {}
-        //    ...
-        PathSubject.assertThat(sourceFile).doesNotContain("private void bar()")
-        PathSubject.assertThat(sourceFile).contains("void bar()")
-        val result2 = project.executor().run("clean", "lintFixJvm")
-        assertThat(result2.stdout).contains("BUILD SUCCESSFUL")
+    val sourceFile = project.file("src/main/java/com/example/foo/Foo.java")
+    sourceFile.parentFile.mkdirs()
+    sourceFile.writeText(
+      """
+      package com.example.foo;
+
+      public class Foo {
+
+          private void foo() {
+              new InnerClass().bar();
+          }
+
+          static class InnerClass {
+              private void bar() {}
+          }
+      }
+      """
+        .trimIndent()
+    )
+  }
+
+  @Test
+  fun checkStandaloneLintFix() {
+    project.executor().expectFailure().run("lintFixJvm").apply {
+      assertErrorContains("Aborting build since sources were modified to apply quickfixes after compilation")
+      assertTask(":lintFixJvm").failed()
     }
+
+    // Make sure quickfix worked too
+    val sourceFile = project.file("src/main/java/com/example/foo/Foo.java")
+    // The original source has this:
+    //    ...
+    //    private void bar() {}
+    //    ...
+    // After applying quickfixes, it contains this:
+    //    ...
+    //    void bar() {}
+    //    ...
+    PathSubject.assertThat(sourceFile).doesNotContain("private void bar()")
+    PathSubject.assertThat(sourceFile).contains("void bar()")
+    val result2 = project.executor().run("clean", "lintFixJvm")
+    assertThat(result2.stdout).contains("BUILD SUCCESSFUL")
+  }
 }

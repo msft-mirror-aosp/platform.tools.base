@@ -18,5 +18,5 @@ package com.android.build.api.dsl
 
 interface HasConfigurableValue<T> {
 
-    fun configure(action: T.() -> Unit)
+  fun configure(action: T.() -> Unit)
 }

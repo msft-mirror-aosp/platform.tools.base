@@ -19,195 +19,126 @@ package com.android.build.gradle.integration.resources
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.integration.common.runner.FilterableParameterized
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(FilterableParameterized::class)
-class ResourcesOverridingTest(private val precompileDependenciesResources: Boolean) {
+class ResourcesOverridingTest {
 
-    companion object {
-        @Parameterized.Parameters(name = "precompileDependenciesResources_{0}")
-        @JvmStatic
-        fun params() = listOf(
-            arrayOf(true),
-            arrayOf(false)
-        )
-    }
+  private val publishedLib =
+    MinimalSubProject.lib("com.example.publishedLib")
+      .withFile("src/main/res/raw/shared_between_app_and_local_lib", "fromPublishedLib")
+      .withFile("src/main/res/raw/shared_between_local_and_published_lib", "fromPublishedLib")
 
-    private val publishedLib = MinimalSubProject.lib("com.example.publishedLib")
-        .withFile(
-            "src/main/res/raw/shared_between_app_and_local_lib",
-            "fromPublishedLib"
-        )
-        .withFile(
-            "src/main/res/raw/shared_between_local_and_published_lib",
-            "fromPublishedLib"
-        )
+  private val localLib =
+    MinimalSubProject.lib("com.example.localLib")
+      .withFile("src/main/res/raw/shared_between_local_and_published_lib", "fromLocalLib")
+      .withFile("src/main/res/raw/shared_between_app_and_local_lib", "fromLocalLib")
 
-    private val localLib = MinimalSubProject.lib("com.example.localLib")
-        .withFile(
-            "src/main/res/raw/shared_between_local_and_published_lib",
-            "fromLocalLib"
-        )
-        .withFile(
-            "src/main/res/raw/shared_between_app_and_local_lib",
-            "fromLocalLib"
-        )
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile("src/main/res/raw/shared_between_app_and_local_lib", "fromApp")
+      .withFile("src/main/res/raw/shared_between_app_and_local_lib", "fromApp")
 
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile(
-            "src/main/res/raw/shared_between_app_and_local_lib",
-            "fromApp"
-        )
-        .withFile(
-            "src/main/res/raw/shared_between_app_and_local_lib",
-            "fromApp"
-        )
+  private val testApp =
+    MultiModuleTestProject.builder()
+      .subproject(":publishedLib", publishedLib)
+      .subproject(":localLib", localLib)
+      .subproject(":app", app)
+      .build()
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":publishedLib", publishedLib)
-            .subproject(":localLib", localLib)
-            .subproject(":app", app)
-            .build()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).disableBuiltInKotlin().create()
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(testApp)
-        .disableBuiltInKotlin()
-        .create()
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.settingsFile,
+      """
+      dependencyResolutionManagement {
+          repositories {
+              flatDir { dirs 'publishedLib/build/outputs/aar/' }
+          }
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-                project.settingsFile,
-                """
-                    dependencyResolutionManagement {
-                        repositories {
-                            flatDir { dirs 'publishedLib/build/outputs/aar/' }
-                        }
-                    }
-                """.trimIndent()
-        )
-    }
+  /** app -> localLib -> publishedLib */
+  @Test
+  fun testLocalLibraryDependingOnRemoteLibrary() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("localLib").buildFile,
+      """
+      dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }
+      """
+        .trimIndent(),
+    )
 
-    /**
-     * app -> localLib -> publishedLib
-     */
-    @Test
-    fun testLocalLibraryDependingOnRemoteLibrary() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("localLib").buildFile,
-            """
-                dependencies { implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar")) }
-            """.trimIndent()
-        )
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies { api project(':localLib') }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies { api project(':localLib') }
-            """.trimIndent()
-        )
+    project.executor().run(":publishedLib:assembleRelease")
+    project.executor().run(":app:assembleDebug")
 
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":publishedLib:assembleRelease")
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":app:assembleDebug")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_app_and_local_lib", "fromApp")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_local_and_published_lib", "fromLocalLib")
+  }
 
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_app_and_local_lib",
-                "fromApp"
-            )
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_local_and_published_lib",
-                "fromLocalLib"
-            )
-    }
+  /** app -> localLib -> publishedLib */
+  @Test
+  fun testAppDependingOnLocalLibraryAndRemoteLibrary() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          implementation project(':localLib')
+          implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
+      }
+      """
+        .trimIndent(),
+    )
 
-    /**
-     * app -> localLib
-     *     -> publishedLib
-     */
-    @Test
-    fun testAppDependingOnLocalLibraryAndRemoteLibrary() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    implementation project(':localLib')
-                    implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
-                }
-            """.trimIndent()
-        )
+    project.executor().run(":publishedLib:assembleRelease")
+    project.executor().run(":app:assembleDebug")
 
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":publishedLib:assembleRelease")
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":app:assembleDebug")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_app_and_local_lib", "fromApp")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_local_and_published_lib", "fromLocalLib")
+  }
 
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_app_and_local_lib",
-                "fromApp"
-            )
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_local_and_published_lib",
-                "fromLocalLib"
-            )
-    }
+  /** app -> publishedLib -> localLib */
+  @Test
+  fun testAppDependingOnRemoteLibraryAndLocalLibrary() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
+          implementation project(':localLib')
+      }
+      """
+        .trimIndent(),
+    )
 
-    /**
-     * app -> publishedLib
-     *     -> localLib
-     */
-    @Test
-    fun testAppDependingOnRemoteLibraryAndLocalLibrary() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
-                    implementation project(':localLib')
-                }
-            """.trimIndent()
-        )
+    project.executor().run(":publishedLib:assembleRelease")
+    project.executor().run(":app:assembleDebug")
 
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":publishedLib:assembleRelease")
-        project.executor()
-            .with(BooleanOption.PRECOMPILE_DEPENDENCIES_RESOURCES, precompileDependenciesResources)
-            .run(":app:assembleDebug")
-
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_app_and_local_lib",
-                "fromApp"
-            )
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_local_and_published_lib",
-                "fromPublishedLib"
-            )
-        assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
-            .containsFileWithContent(
-                "res/raw/shared_between_app_and_local_lib",
-                "fromApp"
-            )
-    }
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_app_and_local_lib", "fromApp")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_local_and_published_lib", "fromPublishedLib")
+    assertThatApk(project.getSubproject("app").getApk(GradleTestProject.ApkType.DEBUG))
+      .containsFileWithContent("res/raw/shared_between_app_and_local_lib", "fromApp")
+  }
 }

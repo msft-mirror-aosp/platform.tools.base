@@ -16,33 +16,26 @@
 
 package com.android.build.api.variant
 
-interface AndroidTestBuilder: DeviceTestBuilder {
+interface AndroidTestBuilder : DeviceTestBuilder {
 
-    /**
-     * Set to `true` if the variant's has any android tests, false otherwise.
-     * Value is [Boolean#True] by default.
-     */
-    override var enable: Boolean
+  /** Set to `true` if the variant's has any android tests, false otherwise. Value is [Boolean#True] by default. */
+  override var enable: Boolean
 
-    /**
-     * Sets whether multi-dex is enabled for this variant.
-     *
-     * This can be null, in which case the default value is used.
-     *
-     * It is not safe to read the value of this property as other plugins that were applied
-     * later can change this value so there is no guarantee you would get the final value.
-     * To get the final value, use the [AndroidComponentsExtension.onVariants] API :
-     * ```kotlin
-     * onVariants { variant ->
-     *   variant.dexing.isMultiDexEnabled
-     * }
-     * ```
-     * Note the a [RuntimeException] will be thrown at Runtime if a java or groovy code tries
-     * to read the property value.
-     */
-    @get:Deprecated(
-        message="Other plugins can change this value, it is not safe to read it at this stage",
-        level = DeprecationLevel.ERROR
-    )
-    override var enableMultiDex: Boolean?
+  /**
+   * Sets whether multi-dex is enabled for this variant.
+   *
+   * This can be null, in which case the default value is used.
+   *
+   * It is not safe to read the value of this property as other plugins that were applied later can change this value so there is no
+   * guarantee you would get the final value. To get the final value, use the [AndroidComponentsExtension.onVariants] API :
+   * ```kotlin
+   * onVariants { variant ->
+   *   variant.dexing.isMultiDexEnabled
+   * }
+   * ```
+   *
+   * Note the a [RuntimeException] will be thrown at Runtime if a java or groovy code tries to read the property value.
+   */
+  @get:Deprecated(message = "Other plugins can change this value, it is not safe to read it at this stage", level = DeprecationLevel.ERROR)
+  override var enableMultiDex: Boolean?
 }

@@ -20,10 +20,10 @@ import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.support.hierarchical.EngineExecutionContext
 
 data class JourneysExecutionContext(
-    val journeyRunId: String,
-    val executionListener: EngineExecutionListener,
-    val proxy: Proxy,
-    val targetDeviceId: String? = null,
-    val targetDeviceName: String? = null,
-    val backendId: String = "ROBO"
+  val journeyRunId: String,
+  val executionListener: EngineExecutionListener,
+  val proxy: Proxy,
+  val targetDeviceId: String? = null,
+  val targetDeviceName: String? = null,
+  val backendId: String = "ROBO",
 ) : EngineExecutionContext

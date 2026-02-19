@@ -16,9 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.androidTVActivity.src.app_package
 
-fun playbackActivityJava(
-  packageName: String
-) = """
+fun playbackActivityJava(packageName: String) =
+  """
 package ${packageName};
 
 import android.os.Bundle;

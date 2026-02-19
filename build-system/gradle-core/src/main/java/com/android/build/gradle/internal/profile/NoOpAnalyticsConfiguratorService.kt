@@ -26,53 +26,47 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.build.event.BuildEventsListenerRegistry
 
-/**
- * No-op implementation of [AnalyticsConfiguratorService], which is used when analytics is disabled.
- */
+/** No-op implementation of [AnalyticsConfiguratorService], which is used when analytics is disabled. */
 abstract class NoOpAnalyticsConfiguratorService : AnalyticsConfiguratorService() {
 
-    override fun getProjectBuilder(projectPath: String): GradleBuildProject.Builder? = null
+  override fun getProjectBuilder(projectPath: String): GradleBuildProject.Builder? = null
 
-    override fun getVariantBuilder(
-        projectPath: String,
-        variantName: String
-    ): GradleBuildVariant.Builder? {
-        return null
-    }
+  override fun getVariantBuilder(projectPath: String, variantName: String): GradleBuildVariant.Builder? {
+    return null
+  }
 
-    override fun createAnalyticsService(
-        project: Project,
-        registry: BuildEventsListenerRegistry,
-        parameters: AnalyticsService.Params,
-        configurationCacheActive: Boolean,
-        projectIsolationActive: Boolean,
-    ) {}
+  override fun createAnalyticsService(
+    project: Project,
+    registry: BuildEventsListenerRegistry,
+    parameters: AnalyticsService.Params,
+    configurationCacheActive: Boolean,
+    projectIsolationActive: Boolean,
+  ) {}
 
-    override fun recordBlock(
-        executionType: GradleBuildProfileSpan.ExecutionType,
-        projectPath: String,
-        variant: String?,
-        block: Recorder.VoidBlock
-    ) {
-        block.call()
-    }
+  override fun recordBlock(
+    executionType: GradleBuildProfileSpan.ExecutionType,
+    projectPath: String,
+    variant: String?,
+    block: Recorder.VoidBlock,
+  ) {
+    block.call()
+  }
 
-    override fun recordApplicationId(applicationId: Provider<String>) {}
+  override fun recordApplicationId(applicationId: Provider<String>) {}
 
-    /**
-     * Registers [NoOpAnalyticsConfiguratorService] service. The name of the service needs to match
-     * the [AnalyticsConfiguratorService] ones, as we fetch them by name, and they should be
-     * interchangeable.
-     */
-    class RegistrationAction(project: Project)
-        : ServiceRegistrationAction<NoOpAnalyticsConfiguratorService, Params>(
-        project,
-        NoOpAnalyticsConfiguratorService::class.java,
-        name = getBuildServiceName(AnalyticsConfiguratorService::class.java)
+  /**
+   * Registers [NoOpAnalyticsConfiguratorService] service. The name of the service needs to match the [AnalyticsConfiguratorService] ones,
+   * as we fetch them by name, and they should be interchangeable.
+   */
+  class RegistrationAction(project: Project) :
+    ServiceRegistrationAction<NoOpAnalyticsConfiguratorService, Params>(
+      project,
+      NoOpAnalyticsConfiguratorService::class.java,
+      name = getBuildServiceName(AnalyticsConfiguratorService::class.java),
     ) {
 
-        override fun configure(parameters: Params) {
-            // do nothing
-        }
+    override fun configure(parameters: Params) {
+      // do nothing
     }
+  }
 }

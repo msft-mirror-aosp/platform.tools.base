@@ -19,23 +19,17 @@ package com.android.build.api.variant
 import org.gradle.api.Incubating
 import org.gradle.api.Named
 
-/**
- * Test suite target builder.
- */
+/** Test suite target builder. */
 @Incubating
-interface TestSuiteTargetBuilder: Named {
+interface TestSuiteTargetBuilder : Named {
 
-    @get:Incubating
-    @set:Incubating
-    var enable: Boolean
+  @get:Incubating @set:Incubating var enable: Boolean
 
-    /**
-     * Targeted devices for this test suite in this variant.
-     *
-     * AGP may choose to allocate multiple Test tasks for running the test suites depending on the
-     * targeted devices, so the list of devices must be fixed before the
-     * [AndroidComponentsExtension.onVariants] run.
-     */
-    @get:Incubating
-    val targetDevices: MutableList<String>
+  /**
+   * Targeted devices for this test suite in this variant.
+   *
+   * AGP may choose to allocate multiple Test tasks for running the test suites depending on the targeted devices, so the list of devices
+   * must be fixed before the [AndroidComponentsExtension.onVariants] run.
+   */
+  @get:Incubating val targetDevices: MutableList<String>
 }

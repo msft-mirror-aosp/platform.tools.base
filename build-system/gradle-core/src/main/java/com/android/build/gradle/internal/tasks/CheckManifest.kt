@@ -22,75 +22,62 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
 
 /**
  * Class that checks the presence of the manifest file, if it is required to exist.
  *
- * REMOVE ME (bug 139855995): This task can be removed when the new variant API is ready, we haven't
- * removed it yet for compatibility reasons.
+ * REMOVE ME (bug 139855995): This task can be removed when the new variant API is ready, we haven't removed it yet for compatibility
+ * reasons.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.VERIFICATION, secondaryTaskCategories = [TaskCategory.MANIFEST])
 abstract class CheckManifest : NonIncrementalTask() {
 
-    /** Whether the manifest file is required to exist. */
-    private var manifestRequired: Boolean = false
+  /** Whether the manifest file is required to exist. */
+  private var manifestRequired: Boolean = false
 
-    /** The path to the manifest file. */
-    private lateinit var manifestFile: RegularFileProperty
+  /** The path to the manifest file. */
+  private lateinit var manifestFile: RegularFileProperty
 
-    /** A fake output directory, used for task dependencies and UP-TO-DATE purposes. */
-    @get:OutputDirectory
-    abstract val fakeOutputDir: DirectoryProperty
+  /** A fake output directory, used for task dependencies and UP-TO-DATE purposes. */
+  @get:OutputDirectory abstract val fakeOutputDir: DirectoryProperty
 
-    @Input
-    fun isManifestRequiredButNotPresent() = manifestRequired && !manifestFile.asFile.get().isFile
+  @Input fun isManifestRequiredButNotPresent() = manifestRequired && !manifestFile.asFile.get().isFile
 
-    override fun doTaskAction() {
-        if (isManifestRequiredButNotPresent()) {
-            error(
-                "Main manifest is missing for variant $variantName." +
-                        " Expected path: ${manifestFile.asFile.get().absolutePath}"
-            )
-        }
+  override fun doTaskAction() {
+    if (isManifestRequiredButNotPresent()) {
+      error("Main manifest is missing for variant $variantName." + " Expected path: ${manifestFile.asFile.get().absolutePath}")
+    }
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<CheckManifest, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("check", "Manifest")
+
+    override val type: Class<CheckManifest>
+      get() = CheckManifest::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<CheckManifest>) {
+      super.handleProvider(taskProvider)
+      creationConfig.taskContainer.checkManifestTask = taskProvider
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, CheckManifest::fakeOutputDir)
+        .withName("out")
+        .on(InternalArtifactType.CHECK_MANIFEST_RESULT)
     }
 
-    class CreationAction(creationConfig: ComponentCreationConfig) :
-        VariantTaskCreationAction<CheckManifest, ComponentCreationConfig>(
-            creationConfig
-    ) {
+    override fun configure(task: CheckManifest) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("check", "Manifest")
-
-        override val type: Class<CheckManifest>
-            get() = CheckManifest::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<CheckManifest>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.taskContainer.checkManifestTask = taskProvider
-
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                CheckManifest::fakeOutputDir
-            ).withName("out").on(InternalArtifactType.CHECK_MANIFEST_RESULT)
-        }
-
-        override fun configure(
-            task: CheckManifest
-        ) {
-            super.configure(task)
-
-            task.manifestRequired = creationConfig.componentType.requiresManifest
-            task.manifestFile = creationConfig.services.regularFileProperty()
-        }
+      task.manifestRequired = creationConfig.componentType.requiresManifest
+      task.manifestFile = creationConfig.services.regularFileProperty()
     }
+  }
 }

@@ -16,5 +16,4 @@
 
 package com.android.build.gradle.internal.component
 
-interface TestFixturesCreationConfig: ComponentCreationConfig, NestedComponentCreationConfig,
-    AarCreationConfig, PublishableCreationConfig
+interface TestFixturesCreationConfig : ComponentCreationConfig, NestedComponentCreationConfig, AarCreationConfig, PublishableCreationConfig

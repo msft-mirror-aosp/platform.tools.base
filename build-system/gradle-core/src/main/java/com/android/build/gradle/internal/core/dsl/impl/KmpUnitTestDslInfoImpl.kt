@@ -20,12 +20,12 @@ import com.android.build.api.component.impl.ComponentIdentityImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.HostTestBuilder
-import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
-import com.android.build.gradle.internal.core.dsl.KmpVariantDslInfo
-import com.android.build.gradle.internal.core.dsl.HostTestComponentDslInfo
 import com.android.build.api.variant.ResValue
 import com.android.build.gradle.internal.core.dsl.AgpTestSuiteDslInfo
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
+import com.android.build.gradle.internal.core.dsl.HostTestComponentDslInfo
+import com.android.build.gradle.internal.core.dsl.KmpComponentDslInfo
+import com.android.build.gradle.internal.core.dsl.KmpVariantDslInfo
 import com.android.build.gradle.internal.core.dsl.features.AndroidResourcesDslInfo
 import com.android.build.gradle.internal.dsl.KotlinMultiplatformAndroidLibraryExtensionImpl
 import com.android.build.gradle.internal.plugins.KotlinMultiplatformAndroidPlugin.Companion.getNamePrefixedWithAndroidTarget
@@ -38,68 +38,65 @@ import com.google.common.collect.ImmutableSet
 import org.gradle.api.provider.Provider
 
 class KmpUnitTestDslInfoImpl(
-    extension: KotlinMultiplatformAndroidLibraryExtension,
-    services: VariantServices,
-    override val mainVariantDslInfo: KmpVariantDslInfo,
-    withJava: Boolean,
-    dslServices: DslServices
-): KmpComponentDslInfoImpl(
-    extension, services, withJava
-), HostTestComponentDslInfo, KmpComponentDslInfo {
+  extension: KotlinMultiplatformAndroidLibraryExtension,
+  services: VariantServices,
+  override val mainVariantDslInfo: KmpVariantDslInfo,
+  withJava: Boolean,
+  dslServices: DslServices,
+) : KmpComponentDslInfoImpl(extension, services, withJava), HostTestComponentDslInfo, KmpComponentDslInfo {
 
-    private val testOnJvmConfig = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnJvmOptions!!
+  private val testOnJvmConfig = (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnJvmOptions!!
 
-    override val componentType = ComponentTypeImpl.UNIT_TEST
-    override val componentIdentity = ComponentIdentityImpl(
-        (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnJvmBuilder!!.compilationName.getNamePrefixedWithAndroidTarget()
+  override val componentType = ComponentTypeImpl.UNIT_TEST
+  override val componentIdentity =
+    ComponentIdentityImpl(
+      (extension as KotlinMultiplatformAndroidLibraryExtensionImpl)
+        .androidTestOnJvmBuilder!!
+        .compilationName
+        .getNamePrefixedWithAndroidTarget()
     )
 
-    override val namespace: Provider<String> by lazy {
-        extension.testNamespace?.let { services.provider { it } }
-            ?: extension.namespace?.let { services.provider {"$it.test" } }
-            ?: mainVariantDslInfo.namespace.map { testedVariantNamespace ->
-                "$testedVariantNamespace.test"
-            }
-    }
+  override val namespace: Provider<String> by lazy {
+    extension.testNamespace?.let { services.provider { it } }
+      ?: extension.namespace?.let { services.provider { "$it.test" } }
+      ?: mainVariantDslInfo.namespace.map { testedVariantNamespace -> "$testedVariantNamespace.test" }
+  }
 
-    override val androidResourcesDsl: AndroidResourcesDslInfo? by lazy {
-        if (testOnJvmConfig.isIncludeAndroidResources) {
-            object : AndroidResourcesDslInfo {
-                override val androidResources = extension.androidResources
-                override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
-                override val vectorDrawables: VectorDrawablesOptions =
-                    DefaultVectorDrawablesOptions()
-                override val isPseudoLocalesEnabled: Boolean = false
-                override val isCrunchPngs: Boolean = false
-                override val isCrunchPngsDefault: Boolean = false
+  override val androidResourcesDsl: AndroidResourcesDslInfo? by lazy {
+    if (testOnJvmConfig.isIncludeAndroidResources) {
+      object : AndroidResourcesDslInfo {
+        override val androidResources = extension.androidResources
+        override val resourceConfigurations: ImmutableSet<String> = ImmutableSet.of()
+        override val vectorDrawables: VectorDrawablesOptions = DefaultVectorDrawablesOptions()
+        override val isPseudoLocalesEnabled: Boolean = false
+        override val isCrunchPngs: Boolean = false
+        override val isCrunchPngsDefault: Boolean = false
 
-                override fun getResValues(): Map<ResValue.Key, ResValue> {
-                    return emptyMap()
-                }
-            }
-        } else {
-            null
+        override fun getResValues(): Map<ResValue.Key, ResValue> {
+          return emptyMap()
         }
+      }
+    } else {
+      null
     }
+  }
 
-    // TODO: Provide a generic setting on KMP extension for code coverage with running host tests
-    override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
-        get() = listOf(
-            ComponentDslInfo.DslDefinedHostTest(HostTestBuilder.UNIT_TEST_TYPE,
-                testOnJvmConfig.enableCoverage,
-                testOnJvmConfig.isIncludeAndroidResources)
+  // TODO: Provide a generic setting on KMP extension for code coverage with running host tests
+  override val dslDefinedHostTests: List<ComponentDslInfo.DslDefinedHostTest>
+    get() =
+      listOf(
+        ComponentDslInfo.DslDefinedHostTest(
+          HostTestBuilder.UNIT_TEST_TYPE,
+          testOnJvmConfig.enableCoverage,
+          testOnJvmConfig.isIncludeAndroidResources,
         )
+      )
 
-    override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> =
-        (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.let {
-            listOf(
-                ComponentDslInfo.DslDefinedDeviceTest(
-                    DeviceTestBuilder.Companion.ANDROID_TEST_TYPE,
-                    it.enableCoverage)
-            )
-        } ?: listOf()
+  override val dslDefinedDeviceTests: List<ComponentDslInfo.DslDefinedDeviceTest> =
+    (extension as KotlinMultiplatformAndroidLibraryExtensionImpl).androidTestOnDeviceOptions?.let {
+      listOf(ComponentDslInfo.DslDefinedDeviceTest(DeviceTestBuilder.Companion.ANDROID_TEST_TYPE, it.enableCoverage))
+    } ?: listOf()
 
-    override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
-        get() = listOf()
-
+  override val dslDefinedTestSuites: List<AgpTestSuiteDslInfo>
+    get() = listOf()
 }

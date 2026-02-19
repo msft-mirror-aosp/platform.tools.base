@@ -26,37 +26,27 @@ import com.android.adblib.tools.debugging.handleDdmsREAL
 import com.android.adblib.tools.debugging.handleDdmsREAQ
 import com.android.adblib.withProcessPrefix
 
-internal class JdwpProcessAllocationTrackerImpl(
-    private val jdwpProcess: JdwpProcess
-) : JdwpProcessAllocationTracker {
+internal class JdwpProcessAllocationTrackerImpl(private val jdwpProcess: JdwpProcess) : JdwpProcessAllocationTracker {
 
-    private val device: ConnectedDevice
-        get() = jdwpProcess.device
+  private val device: ConnectedDevice
+    get() = jdwpProcess.device
 
-    private val logger = adbLogger(device.session).withProcessPrefix(device, jdwpProcess.pid)
+  private val logger = adbLogger(device.session).withProcessPrefix(device, jdwpProcess.pid)
 
-    override suspend fun isEnabled(progress: JdwpCommandProgress?): Boolean {
-        return jdwpProcess.withJdwpSession {
-            handleDdmsREAQ(progress)
-        }.also {
-            logger.debug { "Allocation tracker status query: enabled=$it" }
-        }
-    }
+  override suspend fun isEnabled(progress: JdwpCommandProgress?): Boolean {
+    return jdwpProcess.withJdwpSession { handleDdmsREAQ(progress) }.also { logger.debug { "Allocation tracker status query: enabled=$it" } }
+  }
 
-    override suspend fun enable(enabled: Boolean, progress: JdwpCommandProgress?) {
-        jdwpProcess.withJdwpSession {
-            handleDdmsREAE(enabled, progress)
-        }.also {
-            logger.debug { "Allocation tracker update: enabled=$enabled" }
-        }
-    }
+  override suspend fun enable(enabled: Boolean, progress: JdwpCommandProgress?) {
+    jdwpProcess
+      .withJdwpSession { handleDdmsREAE(enabled, progress) }
+      .also { logger.debug { "Allocation tracker update: enabled=$enabled" } }
+  }
 
-    override suspend fun <R> fetchAllocationDetails(
-        progress: JdwpCommandProgress?,
-        replyHandler: suspend (data: AdbInputChannel, length: Int) -> R
-    ): R {
-        return jdwpProcess.withJdwpSession {
-            handleDdmsREAL(progress, replyHandler)
-        }
-    }
+  override suspend fun <R> fetchAllocationDetails(
+    progress: JdwpCommandProgress?,
+    replyHandler: suspend (data: AdbInputChannel, length: Int) -> R,
+  ): R {
+    return jdwpProcess.withJdwpSession { handleDdmsREAL(progress, replyHandler) }
+  }
 }

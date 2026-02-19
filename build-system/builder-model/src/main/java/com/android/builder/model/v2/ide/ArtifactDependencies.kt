@@ -22,31 +22,26 @@ import com.android.builder.model.v2.AndroidModel
  *
  * It contains the compile graph, always, and optionally the runtime graph.
  *
- * Each graph is fairly lightweight, with each artifact node being mostly an address, children,
- * and modifiers that are specific to this particular usage of the artifact rather than
- * artifact properties.*
+ * Each graph is fairly lightweight, with each artifact node being mostly an address, children, and modifiers that are specific to this
+ * particular usage of the artifact rather than artifact properties.*
  *
  * @since 4.2
  */
-interface ArtifactDependencies: AndroidModel {
-    /**
-     * The compile dependency graph.
-     */
-    val compileDependencies: List<GraphItem>
+interface ArtifactDependencies : AndroidModel {
+  /** The compile dependency graph. */
+  val compileDependencies: List<GraphItem>
 
-    /**
-     * The runtime dependency graph, this may be null if the IDE plugin requests that building
-     * runtime classpath be skipped.
-     *
-     * See [com.android.builder.model.v2.models.ModelBuilderParameter].
-     *
-     */
-    val runtimeDependencies: List<GraphItem>?
+  /**
+   * The runtime dependency graph, this may be null if the IDE plugin requests that building runtime classpath be skipped.
+   *
+   * See [com.android.builder.model.v2.models.ModelBuilderParameter].
+   */
+  val runtimeDependencies: List<GraphItem>?
 
-    val unresolvedDependencies: List<UnresolvedDependency>
+  val unresolvedDependencies: List<UnresolvedDependency>
 }
 
 interface UnresolvedDependency {
-    val name: String
-    val cause: String?
+  val name: String
+  val cause: String?
 }

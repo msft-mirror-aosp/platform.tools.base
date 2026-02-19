@@ -18,12 +18,10 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 
-interface ApplicationInstallation: Installation {
-    /** The list of FULL_APK installation options. */
-    override val installOptions: MutableList<String>
+interface ApplicationInstallation : Installation {
+  /** The list of FULL_APK installation options. */
+  override val installOptions: MutableList<String>
 
-    /** Whether to generate per-SDK level baseline profiles to install with an APK. */
-    @get:Incubating
-    @set:Incubating
-    var enableBaselineProfile: Boolean
+  /** Whether to generate per-SDK level baseline profiles to install with an APK. */
+  @get:Incubating @set:Incubating var enableBaselineProfile: Boolean
 }

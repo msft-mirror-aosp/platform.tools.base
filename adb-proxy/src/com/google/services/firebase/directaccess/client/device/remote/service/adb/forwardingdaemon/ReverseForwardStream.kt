@@ -36,6 +36,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.URI
 import java.nio.ByteBuffer
+import java.nio.file.FileSystemNotFoundException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -71,9 +72,7 @@ internal class ReverseForwardStream(
   private val responseWriter: ResponseWriter,
   private val scope: CoroutineScope,
   private val sendsDaemon: Boolean = true,
-  private val socketFactory: suspend (InetSocketAddress) -> AdbChannel = { address ->
-    adbSession.channelFactory.connectSocket(address)
-  },
+  private val socketFactory: suspend (InetSocketAddress) -> AdbChannel = { address -> adbSession.channelFactory.connectSocket(address) },
 ) : Stream {
   private val openSockets = mutableMapOf<Int, AdbChannel>()
   var localPort: String = localPort
@@ -86,12 +85,7 @@ internal class ReverseForwardStream(
   suspend fun run() {
     val device = DeviceSelector.fromSerialNumber(deviceId)
     if (sendsDaemon) {
-      adbSession.deviceServices.syncSend(
-        device,
-        daemonPath,
-        "/data/local/tmp/reverse_daemon.dex",
-        RemoteFileMode.DEFAULT,
-      )
+      adbSession.deviceServices.syncSend(device, daemonPath, "/data/local/tmp/reverse_daemon.dex", RemoteFileMode.DEFAULT)
     }
     scope.launch(Dispatchers.Default) {
       val stdinInputChannel = adbSession.channelFactory.createPipedChannel()
@@ -132,15 +126,12 @@ internal class ReverseForwardStream(
   }
 
   /**
-   * Sometimes screen sharing agent starts up before ReverseDaemon has set up sockets causing screen
-   * sharing agent to fail because the socket doesn't exist yet. This is likely because app_process
-   * launcher takes some time to actually execute the binary. We wait for a ready signal after which
-   * we send OKAY back to Android Studio ensuring screen sharing agent starts after everything is
-   * set up.
+   * Sometimes screen sharing agent starts up before ReverseDaemon has set up sockets causing screen sharing agent to fail because the
+   * socket doesn't exist yet. This is likely because app_process launcher takes some time to actually execute the binary. We wait for a
+   * ready signal after which we send OKAY back to Android Studio ensuring screen sharing agent starts after everything is set up.
    *
-   * We wait for 5 seconds since this process is pretty fast but sometimes slower for non-Google
-   * devices. If we do not receive the ready signal because something went wrong on ReverseDaemon,
-   * the behavior remains the same as receiving the signal.
+   * We wait for 5 seconds since this process is pretty fast but sometimes slower for non-Google devices. If we do not receive the ready
+   * signal because something went wrong on ReverseDaemon, the behavior remains the same as receiving the signal.
    */
   private suspend fun waitForReverseDaemonReady() =
     withTimeoutOrNull(5000) {
@@ -156,9 +147,8 @@ internal class ReverseForwardStream(
   /**
    * Kill the reverse forward.
    *
-   * Note that this does not kill active connections, in order to mimic what Android does already.
-   * It simply sends a signal ot the device that it should close the server socket of whatever is
-   * currently listening.
+   * Note that this does not kill active connections, in order to mimic what Android does already. It simply sends a signal ot the device
+   * that it should close the server socket of whatever is currently listening.
    */
   suspend fun kill() {
     logger.info("Killing reverse forward")
@@ -180,10 +170,7 @@ internal class ReverseForwardStream(
   }
 
   /** A reader class that reads and processes data from [shellCommandInput]. */
-  private inner class StreamReader(
-    private val shellCommandInput: AdbInputChannel,
-    private val shellCommandOutput: AdbOutputChannel,
-  ) {
+  private inner class StreamReader(private val shellCommandInput: AdbInputChannel, private val shellCommandOutput: AdbOutputChannel) {
     private val buffer = ByteBuffer.allocate(1024 * 1024)
     private val headerBuffer = ByteBuffer.allocate(12)
 
@@ -238,12 +225,7 @@ internal class ReverseForwardStream(
       if (openSockets.containsKey(header.streamId)) return
       logger.info("Opening new port (stream ${header.streamId}) at localhost:$localPort")
       val newSocket =
-        socketFactory(
-          InetSocketAddress(
-            localhost,
-            Integer.parseInt(localPort.substringAfter("tcp:").substringBefore('\u0000')),
-          )
-        )
+        socketFactory(InetSocketAddress(localhost, Integer.parseInt(localPort.substringAfter("tcp:").substringBefore('\u0000'))))
       openSockets[header.streamId] = newSocket
       scope.launch { SocketReader(header.streamId, newSocket, shellCommandOutput).run() }
     }
@@ -272,8 +254,7 @@ internal class ReverseForwardStream(
   }
 
   /**
-   * A reader class that reads data from [socketChannel], wraps the data to [StreamDataHeader] and
-   * forwards them to [shellCommandOutput].
+   * A reader class that reads data from [socketChannel], wraps the data to [StreamDataHeader] and forwards them to [shellCommandOutput].
    */
   private inner class SocketReader(
     private val streamId: Int,
@@ -294,19 +275,13 @@ internal class ReverseForwardStream(
         if (bytesRead == -1) break
 
         outputLock.withLock {
-          shellCommandOutput.writeExactly(
-            StreamDataHeader(MessageType.DATA, streamId, bytesRead).toByteBuffer()
-          )
+          shellCommandOutput.writeExactly(StreamDataHeader(MessageType.DATA, streamId, bytesRead).toByteBuffer())
           shellCommandOutput.writeExactly(buffer.flip())
         }
       }
 
       try {
-        outputLock.withLock {
-          shellCommandOutput.writeExactly(
-            StreamDataHeader(MessageType.CLSE, streamId, 0).toByteBuffer()
-          )
-        }
+        outputLock.withLock { shellCommandOutput.writeExactly(StreamDataHeader(MessageType.CLSE, streamId, 0).toByteBuffer()) }
       } catch (e: IOException) {
         // Output channel might be closed while writing CLSE message
         if (!scope.coroutineContext.job.isCancelled) {
@@ -321,8 +296,7 @@ internal class ReverseForwardStream(
     /** The localhost address, preferring IPv4 if it is present on the system. */
     private val localhost: InetAddress by lazy {
       val localhostAddresses = InetAddress.getAllByName("localhost")
-      localhostAddresses.filterIsInstance<Inet4Address>().firstOrNull()
-        ?: localhostAddresses.first()
+      localhostAddresses.filterIsInstance<Inet4Address>().firstOrNull() ?: localhostAddresses.first()
     }
 
     private val daemonPath: Path by lazy {
@@ -330,13 +304,14 @@ internal class ReverseForwardStream(
       val devRoot = ClassLoader.getSystemResource(".")
       var result: Path? = null
       if (devRoot != null) {
-        val pluginDir = Paths.get(devRoot.toURI())
-        val devPath =
-          pluginDir.resolve(
-            "../../../../../../bazel-bin/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex"
-          )
-        if (Files.exists(devPath)) {
-          result = devPath
+        try {
+          val pluginDir = Paths.get(devRoot.toURI())
+          val devPath = pluginDir.resolve("../../../../../../bazel-bin/tools/base/adb-proxy/reverse-daemon/reverse_daemon.dex")
+          if (Files.exists(devPath)) {
+            result = devPath
+          }
+        } catch (e: FileSystemNotFoundException) {
+          logger.info("Couldn't find reverse_daemon.dex from devRoot: ${e.message}")
         }
       }
       if (result == null) {
@@ -345,8 +320,7 @@ internal class ReverseForwardStream(
           // we're just looking for the jar location, so remove the path within the jar.
           // (after the !). Also on Windows there can be a leading / before the drive letter, which
           // is invalid. Strip it off.
-          val path =
-            URI(resource.path).path.substringBefore("!").replaceFirst(Regex("^/(?=[a-zA-Z]:/)"), "")
+          val path = URI(resource.path).path.substringBefore("!").replaceFirst(Regex("^/(?=[a-zA-Z]:/)"), "")
           val proxyRoot = Paths.get(path).parent
           val builtRoot = proxyRoot.parent
           result = builtRoot.resolve("resources/reverse_daemon.dex")

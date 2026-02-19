@@ -72,8 +72,7 @@ class PrivateApiParser {
   }
 }
 
-private fun String.fromSignature(): String =
-  if (startsWith("L") && endsWith(";")) substring(1, length - 1) else this
+private fun String.fromSignature(): String = if (startsWith("L") && endsWith(";")) substring(1, length - 1) else this
 
 private fun parse(name: String): Restriction =
   when (name) {

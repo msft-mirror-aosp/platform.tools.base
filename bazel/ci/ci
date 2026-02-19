@@ -31,6 +31,7 @@ if [[ "${INCREMENTAL_BUILD}" == "true" ]]; then
   echo "startup --output_user_root=${WORKSPACE}/out/bazel_user_root" >> ci.bazelrc
   echo "startup --output_base=${WORKSPACE}/out/bazel_out" >> ci.bazelrc
   echo "startup --install_base=${WORKSPACE}/out/bazel_install" >> ci.bazelrc
+  export BAZELISK_HOME="${WORKSPACE}/out/bazelisk"
 fi
 
 # Add JDK to the PATH, so rules_jvm_external can find the 'java' binary.

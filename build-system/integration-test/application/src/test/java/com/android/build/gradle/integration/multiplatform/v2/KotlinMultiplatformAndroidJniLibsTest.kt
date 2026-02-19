@@ -25,32 +25,22 @@ import org.junit.Rule
 import org.junit.Test
 
 class KotlinMultiplatformAndroidJniLibsTest {
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        FileUtils.writeToFile(
-            project.getSubproject("kmpFirstLib").file("src/androidMain/jniLibs/x86/something.so"), ""
-        )
+  @Before
+  fun setUp() {
+    FileUtils.writeToFile(project.getSubproject("kmpFirstLib").file("src/androidMain/jniLibs/x86/something.so"), "")
+  }
+
+  @Test
+  fun testLibraryAarContents() {
+    project
+      .executor()
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpFirstLib:bundleAndroidMainAar")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      folder(SdkConstants.FD_JNI) { containsExactly("x86/something.so") }
     }
-
-    @Test
-    fun testLibraryAarContents() {
-        project.executor()
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpFirstLib:bundleAndroidMainAar")
-
-        project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
-            folder(SdkConstants.FD_JNI) {
-                containsExactly(
-                    "x86/something.so",
-                )
-            }
-        }
-    }
-
+  }
 }

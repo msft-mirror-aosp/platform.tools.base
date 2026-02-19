@@ -24,12 +24,10 @@ import org.w3c.dom.NodeList
 operator fun NodeList.get(index: Int) = item(index)
 
 fun NodeList.asSequence(): Sequence<Node> {
-    var i = 0
-    return generateSequence { if (i < length) item(i++) else null }
+  var i = 0
+  return generateSequence { if (i < length) item(i++) else null }
 }
 
-fun assertThatNodeList(nodeList: NodeList): IterableSubject =
-    assertThat(nodeList.asSequence().toList())
+fun assertThatNodeList(nodeList: NodeList): IterableSubject = assertThat(nodeList.asSequence().toList())
 
-fun Node.getNamedAttributeAndroidNS(localName: String) =
-    attributes.getNamedItemNS("http://schemas.android.com/apk/res/android", localName)
+fun Node.getNamedAttributeAndroidNS(localName: String) = attributes.getNamedItemNS("http://schemas.android.com/apk/res/android", localName)

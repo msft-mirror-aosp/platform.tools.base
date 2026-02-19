@@ -43,6 +43,7 @@ register_toolchains(
 register_toolchains(
     "//tools/base/bazel/toolchains/darwin:python_toolchain",
     "//prebuilts/python/linux-x86:python_toolchain",
+    "//prebuilts/python/linux-x86:exec_tools_toolchain",
     # Bazel cannot auto-detect python on Windows yet
     # See: https://github.com/bazelbuild/bazel/issues/7844
     "@windows_toolchains//:python_toolchain",

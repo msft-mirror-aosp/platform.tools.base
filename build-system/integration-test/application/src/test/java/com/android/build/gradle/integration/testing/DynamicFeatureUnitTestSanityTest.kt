@@ -27,9 +27,8 @@ import org.junit.Test
 /**
  * Sanity test for dynamic feature unit tests.
  *
- * Check classes from the app and the dynamic features and library dependencies of each
- * can be accessed in tests at both compile and runtime.
- *
+ * Check classes from the app and the dynamic features and library dependencies of each can be accessed in tests at both compile and
+ * runtime.
  *
  * The project setup is as follows:
  * ```
@@ -39,101 +38,117 @@ import org.junit.Test
  */
 class DynamicFeatureUnitTestSanityTest {
 
-    private fun MinimalSubProject.withMarkerJavaFile(
-        name: String = namespace!!.substringAfterLast('.').usLocaleCapitalize(),
-        expression: String = "\"$name\""
-    ): MinimalSubProject =
-        withFile(
-            "src/main/java/${namespace!!.replace('.', '/')}/$name.java",
-            """
+  private fun MinimalSubProject.withMarkerJavaFile(
+    name: String = namespace!!.substringAfterLast('.').usLocaleCapitalize(),
+    expression: String = "\"$name\"",
+  ): MinimalSubProject =
+    withFile(
+      "src/main/java/${namespace!!.replace('.', '/')}/$name.java",
+      """
                 package $namespace;
                 public class $name {
                     public static String getName() {
                         return $expression;
                     }
                 }
-            """.trimIndent()
-        )
-
-    private val lib0 = MinimalSubProject.lib("com.example.lib0").withMarkerJavaFile()
-
-    private val app = MinimalSubProject.app("com.example.app")
-        .appendToBuild("android.dynamicFeatures = [':dynamicFeature1', ':dynamicFeature2']")
-        .withMarkerJavaFile(expression = """
-            "App can call lib0:\n" +
-            "    " + com.example.lib0.Lib0.getName()
-            """.trimIndent())
-
-    private val lib1 = MinimalSubProject.lib("com.example.lib1").withMarkerJavaFile()
-
-    private val df1 = MinimalSubProject.dynamicFeature("com.example.df1")
-        .withMarkerJavaFile(expression = """
-            "DF1 can call app:\n" +
-            "    " + com.example.app.App.getName().replace("\n", "\n    ") + "\n" +
-            "DF1 can call lib1:\n" +
-            "    " + com.example.lib1.Lib1.getName()
-            """.trimIndent())
-
-    private val lib2 = MinimalSubProject.lib("com.example.lib2").withMarkerJavaFile()
-
-    private val df2 = MinimalSubProject.dynamicFeature("com.example.df2")
-        .withMarkerJavaFile(expression = """
-            "DF2 can call DF1:\n" +
-            "    " + com.example.df1.Df1.getName().replace("\n", "\n    ") + "\n" +
-            "DF2 can call lib2:\n" +
-            "    " + com.example.lib2.Lib2.getName()
-            """.trimIndent())
-        .withFile(
-            "src/test/java/com/example/df2/SanityTest.java",
             """
-                    package com.example.df2;
+        .trimIndent(),
+    )
 
-                    import static org.junit.Assert.assertEquals;
-                    import org.junit.Test;
+  private val lib0 = MinimalSubProject.lib("com.example.lib0").withMarkerJavaFile()
 
-                    /** Check that we compile and run against classes from all six locations */
-                    public class SanityTest {
-                        @Test
-                        public void testClasspathComplete() {
-                            assertEquals(
-                                "DF2 can call DF1:\n" +
-                                "    DF1 can call app:\n" +
-                                "        App can call lib0:\n" +
-                                "            Lib0\n" +
-                                "    DF1 can call lib1:\n" +
-                                "        Lib1\n" +
-                                "DF2 can call lib2:\n" +
-                                "    Lib2",
-                                com.example.df2.Df2.getName());
-                        }
-                    }
-            """.trimIndent()
-        )
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .appendToBuild("android.dynamicFeatures = [':dynamicFeature1', ':dynamicFeature2']")
+      .withMarkerJavaFile(
+        expression =
+          """
+          "App can call lib0:\n" +
+          "    " + com.example.lib0.Lib0.getName()
+          """
+            .trimIndent()
+      )
 
-    private val gradleBuild = MultiModuleTestProject.builder()
-        .subproject(":lib0", lib0)
-        .subproject(":lib1", lib1)
-        .subproject(":lib2", lib2)
-        .subproject(":app", app)
-        .subproject(":dynamicFeature1", df1)
-        .subproject(":dynamicFeature2", df2)
-        .dependency(app, lib0)
-        .dependency(df1, app)
-        .dependency(df1, lib1)
-        .dependency(df2, app) // TODO(b/151407022): should this be necessary?
-        .dependency(df2, df1)
-        .dependency(df2, lib2)
-        .unitTestDependency(df2, "junit:junit:4.12")
-        .build()
+  private val lib1 = MinimalSubProject.lib("com.example.lib1").withMarkerJavaFile()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(gradleBuild)
-        .create()
+  private val df1 =
+    MinimalSubProject.dynamicFeature("com.example.df1")
+      .withMarkerJavaFile(
+        expression =
+          """
+          "DF1 can call app:\n" +
+          "    " + com.example.app.App.getName().replace("\n", "\n    ") + "\n" +
+          "DF1 can call lib1:\n" +
+          "    " + com.example.lib1.Lib1.getName()
+          """
+            .trimIndent()
+      )
 
-    @Test
-    fun sanityTest() {
-        project.executor().run(":dynamicFeature2:testDebugUnitTest")
-        val resultsXml = project.file("dynamicFeature2/build/test-results/testDebugUnitTest/TEST-com.example.df2.SanityTest.xml")
-        assertThat(resultsXml).contains("testClasspathComplete")
-    }
+  private val lib2 = MinimalSubProject.lib("com.example.lib2").withMarkerJavaFile()
+
+  private val df2 =
+    MinimalSubProject.dynamicFeature("com.example.df2")
+      .withMarkerJavaFile(
+        expression =
+          """
+          "DF2 can call DF1:\n" +
+          "    " + com.example.df1.Df1.getName().replace("\n", "\n    ") + "\n" +
+          "DF2 can call lib2:\n" +
+          "    " + com.example.lib2.Lib2.getName()
+          """
+            .trimIndent()
+      )
+      .withFile(
+        "src/test/java/com/example/df2/SanityTest.java",
+        """
+        package com.example.df2;
+
+        import static org.junit.Assert.assertEquals;
+        import org.junit.Test;
+
+        /** Check that we compile and run against classes from all six locations */
+        public class SanityTest {
+            @Test
+            public void testClasspathComplete() {
+                assertEquals(
+                    "DF2 can call DF1:\n" +
+                    "    DF1 can call app:\n" +
+                    "        App can call lib0:\n" +
+                    "            Lib0\n" +
+                    "    DF1 can call lib1:\n" +
+                    "        Lib1\n" +
+                    "DF2 can call lib2:\n" +
+                    "    Lib2",
+                    com.example.df2.Df2.getName());
+            }
+        }
+        """
+          .trimIndent(),
+      )
+
+  private val gradleBuild =
+    MultiModuleTestProject.builder()
+      .subproject(":lib0", lib0)
+      .subproject(":lib1", lib1)
+      .subproject(":lib2", lib2)
+      .subproject(":app", app)
+      .subproject(":dynamicFeature1", df1)
+      .subproject(":dynamicFeature2", df2)
+      .dependency(app, lib0)
+      .dependency(df1, app)
+      .dependency(df1, lib1)
+      .dependency(df2, app) // TODO(b/151407022): should this be necessary?
+      .dependency(df2, df1)
+      .dependency(df2, lib2)
+      .unitTestDependency(df2, "junit:junit:4.12")
+      .build()
+
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(gradleBuild).create()
+
+  @Test
+  fun sanityTest() {
+    project.executor().run(":dynamicFeature2:testDebugUnitTest")
+    val resultsXml = project.file("dynamicFeature2/build/test-results/testDebugUnitTest/TEST-com.example.df2.SanityTest.xml")
+    assertThat(resultsXml).contains("testClasspathComplete")
+  }
 }

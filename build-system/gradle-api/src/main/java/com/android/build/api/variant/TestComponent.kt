@@ -36,20 +36,18 @@ import org.gradle.api.provider.MapProperty
  * }
  * ```
  *
- * Not all subtype of [Variant] will have access to all sub-types of [TestComponent], this
- * is handled via [HasUnitTest], and [HasDeviceTests].
+ * Not all subtype of [Variant] will have access to all sub-types of [TestComponent], this is handled via [HasUnitTest], and
+ * [HasDeviceTests].
  *
  * The test components are also part of [Variant.nestedComponents]
- *
  */
-interface TestComponent: Component {
-    /**
-     * [MapProperty] of the test component's manifest placeholders.
-     *
-     * Placeholders are organized with a key and a value. The value is a [String] that will be
-     * used as is in the merged manifest.
-     *
-     * @return the [MapProperty] with keys as [String]
-     */
-    val manifestPlaceholders: MapProperty<String, String>
+interface TestComponent : Component {
+  /**
+   * [MapProperty] of the test component's manifest placeholders.
+   *
+   * Placeholders are organized with a key and a value. The value is a [String] that will be used as is in the merged manifest.
+   *
+   * @return the [MapProperty] with keys as [String]
+   */
+  val manifestPlaceholders: MapProperty<String, String>
 }

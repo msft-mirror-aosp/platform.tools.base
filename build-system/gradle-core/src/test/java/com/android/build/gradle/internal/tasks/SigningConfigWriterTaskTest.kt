@@ -16,9 +16,8 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.google.common.truth.Truth.assertThat
-
 import com.android.build.gradle.internal.signing.SigningConfigData
+import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.io.IOException
 import org.gradle.api.Project
@@ -28,42 +27,42 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-/** Tests for the [SigningConfigWriterTask]  */
+/** Tests for the [SigningConfigWriterTask] */
 class SigningConfigWriterTaskTest {
-    @Rule
-    @JvmField
-    var temporaryFolder = TemporaryFolder()
+  @Rule @JvmField var temporaryFolder = TemporaryFolder()
 
-    internal lateinit var project: Project
-    internal lateinit var task: SigningConfigWriterTask
-    lateinit var outputFile : File
+  internal lateinit var project: Project
+  internal lateinit var task: SigningConfigWriterTask
+  lateinit var outputFile: File
 
-    @Before
-    @Throws(IOException::class)
-    fun setUp() {
-        val testDir = temporaryFolder.newFolder()
-        outputFile = temporaryFolder.newFile()
-        project = ProjectBuilder.builder().withProjectDir(testDir).build()
+  @Before
+  @Throws(IOException::class)
+  fun setUp() {
+    val testDir = temporaryFolder.newFolder()
+    outputFile = temporaryFolder.newFile()
+    project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        task = project.tasks.create("test", SigningConfigWriterTask::class.java)
-        task.outputFile.set(outputFile)
-    }
+    task = project.tasks.create("test", SigningConfigWriterTask::class.java)
+    task.outputFile.set(outputFile)
+  }
 
-    @Test
-    @Throws(IOException::class)
-    fun testTask() {
-        task.signingConfigData.set(SigningConfigData(
-            name = "signingConfig_name",
-            storePassword = "foobar",
-            storeFile = null,
-            keyAlias = null,
-            keyPassword = null,
-            storeType = null
-        ))
+  @Test
+  @Throws(IOException::class)
+  fun testTask() {
+    task.signingConfigData.set(
+      SigningConfigData(
+        name = "signingConfig_name",
+        storePassword = "foobar",
+        storeFile = null,
+        keyAlias = null,
+        keyPassword = null,
+        storeType = null,
+      )
+    )
 
-        task.doTaskAction()
+    task.doTaskAction()
 
-        val loadedSigningConfigData = SigningConfigUtils.loadSigningConfigData(outputFile)
-        assertThat(loadedSigningConfigData).isEqualTo(task.signingConfigData.get())
-    }
+    val loadedSigningConfigData = SigningConfigUtils.loadSigningConfigData(outputFile)
+    assertThat(loadedSigningConfigData).isEqualTo(task.signingConfigData.get())
+  }
 }

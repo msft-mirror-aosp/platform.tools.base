@@ -16,6 +16,9 @@
 package com.android.tools.lint.checks.fx
 
 import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Companion.build
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Container
+import com.android.tools.lint.checks.fx.AssumptionTableBuilder.Pkg
+import com.android.tools.lint.checks.fx.result.ClassId
 import com.android.tools.lint.checks.fx.result.Constraint
 import com.android.tools.lint.checks.fx.result.MethodId
 import com.android.tools.lint.checks.fx.result.Type
@@ -60,12 +63,10 @@ class AssumptionTableBuilderTest {
     val assumptions =
       SideEffect.build {
         // Math::max : (Int, Int) -> Int @ pure
-        static<Int, Int>(Math::max) assumedAs
-          given(Int::class(), Int::class()) { range = Int::class() }
+        static<Int, Int>(Math::max) assumedAs given(Int::class(), Int::class()) { range = Int::class() }
 
         // Math::max : (Float, Float) -> Float @ pure
-        static<Float, Float>(Math::max) assumedAs
-          given(Float::class(), Float::class()) { range = Float::class() }
+        static<Float, Float>(Math::max) assumedAs given(Float::class(), Float::class()) { range = Float::class() }
 
         // println : () -> Unit @ effectful
         static(::println) assumedAs
@@ -134,12 +135,33 @@ class AssumptionTableBuilderTest {
         Truth.assertThat(domains).hasSize(2)
         Truth.assertThat(range).isInstanceOf(Type.Application::class.java)
         Truth.assertThat((range as Type.Application).args).hasSize(1)
-        Truth.assertThat((range as Type.Application).args.first())
-          .isInstanceOf(Type.Sym.Param::class.java)
+        Truth.assertThat((range as Type.Application).args.first()).isInstanceOf(Type.Sym.Param::class.java)
         Truth.assertThat(effect.concrete).isEqualTo(SideEffect.Pure)
         Truth.assertThat(effect.constraint).isEqualTo(Constraint.MostPermissive)
         Truth.assertThat(effect.invocations).hasSize(1)
       }
+    }
+  }
+
+  @Test
+  fun `test packages and classes giving correct names`() {
+    with(Pkg<SideEffect>("com.pkg")) {
+      Truth.assertThat(path).isEqualTo("com.pkg")
+
+      with(child("internal")) {
+        Truth.assertThat(path).isEqualTo("com.pkg.internal")
+
+        with(klass("Class1")) {
+          Truth.assertThat(prefix).isEqualTo("com.pkg.internal")
+          Truth.assertThat(path).isEqualTo("com.pkg.internal")
+          Truth.assertThat(self).isEqualTo(ClassId.of("com.pkg.internal.Class1"))
+        }
+      }
+    }
+
+    with(Container<SideEffect>("com.pkg.Class2")) {
+      Truth.assertThat(prefix).isEqualTo("com.pkg")
+      Truth.assertThat(self).isEqualTo(ClassId.of("com.pkg.Class2"))
     }
   }
 

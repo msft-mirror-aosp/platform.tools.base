@@ -38,8 +38,8 @@ import org.junit.rules.TemporaryFolder
 /**
  * Test for [SimplePlatformLookup].
  *
- * Idea: run the SDK lookup on the user's real SDK folder too and compare [SimplePlatformLookup]
- * with one backed with [AndroidSdkHandler] as the [testAllPlatforms] test currently does.
+ * Idea: run the SDK lookup on the user's real SDK folder too and compare [SimplePlatformLookup] with one backed with [AndroidSdkHandler] as
+ * the [testAllPlatforms] test currently does.
  */
 class SimplePlatformLookupTest {
   @get:Rule var temporaryFolder = TemporaryFolder()
@@ -59,11 +59,7 @@ class SimplePlatformLookupTest {
   private fun checkWithFull(sdkFolder: File, checks: (PlatformLookup) -> Unit) {
     // Now process the same folder with the real SDK manager to see
     // how it does
-    val handler =
-      AndroidSdkHandler.getInstance(
-        FakeAndroidLocationsProvider(homeFolder.root.toPath()),
-        sdkFolder.toPath(),
-      )
+    val handler = AndroidSdkHandler.getInstance(FakeAndroidLocationsProvider(homeFolder.root.toPath()), sdkFolder.toPath())
 
     val logger =
       object : ConsoleProgressIndicator() {
@@ -114,10 +110,7 @@ class SimplePlatformLookupTest {
   @Test
   fun testLatest() {
     checkQueries { lookup ->
-      assertEquals(
-        "Platform android-31; api=API 31, rev=2",
-        lookup.getLatestSdkTarget(includePreviews = false).describe(),
-      )
+      assertEquals("Platform android-31; api=API 31, rev=2", lookup.getLatestSdkTarget(includePreviews = false).describe())
     }
   }
 
@@ -163,15 +156,9 @@ class SimplePlatformLookupTest {
       // Has both stable and preview at this level: return the stable one
       assertEquals("Platform android-29; api=API 29, rev=5", lookup.getTarget(29).describe())
       // Return preview if we specifically ask for it
-      assertEquals(
-        "Platform android-R; api=API 29, R preview, rev=4",
-        lookup.getTarget("android-R").describe(),
-      )
+      assertEquals("Platform android-R; api=API 29, R preview, rev=4", lookup.getTarget("android-R").describe())
       // Only has preview at that API level: return it
-      assertEquals(
-        "Platform android-O; api=API 25, O preview, rev=1",
-        lookup.getTarget(25).describe(),
-      )
+      assertEquals("Platform android-O; api=API 25, O preview, rev=1", lookup.getTarget(25).describe())
     }
   }
 
@@ -208,20 +195,10 @@ class SimplePlatformLookupTest {
     val sdk = createSampleSdk()
     val lookup = createSimpleLookup(sdk)
 
-    lookup
-      .getTargets()
-      .asSequence()
-      .filter { !it.isPlatform }
-      .firstOrNull { error("Expected only platforms") }
+    lookup.getTargets().asSequence().filter { !it.isPlatform }.firstOrNull { error("Expected only platforms") }
 
-    assertEquals(
-      "Add-on google:google_apis:18: api=18",
-      lookup.getTarget("google:google_apis:18").describe(),
-    )
-    assertEquals(
-      "Add-on barnes_and_noble_inc:nook_tablet:10: api=10",
-      lookup.getTarget("barnes_and_noble_inc:nook_tablet:10").describe(),
-    )
+    assertEquals("Add-on google:google_apis:18: api=18", lookup.getTarget("google:google_apis:18").describe())
+    assertEquals("Add-on barnes_and_noble_inc:nook_tablet:10: api=10", lookup.getTarget("barnes_and_noble_inc:nook_tablet:10").describe())
   }
 
   @Test
@@ -296,10 +273,7 @@ class SimplePlatformLookupTest {
       val string = sb.toString().trim()
 
       // Check sorting, correct parsing of package.xml and source.properties files
-      assertEquals(
-        "Platform stable; api=API 26, rev=8\n" + "Platform experimental; api=API 30, rev=1",
-        string,
-      )
+      assertEquals("Platform stable; api=API 26, rev=8\n" + "Platform experimental; api=API 30, rev=1", string)
     }
   }
 
@@ -422,14 +396,7 @@ class SimplePlatformLookupTest {
     return sdk
   }
 
-  private fun createSamplePlatform(
-    sdk: File,
-    hash: String,
-    api: Int,
-    codename: String?,
-    revision: Int,
-    minor: Int = 0,
-  ) {
+  private fun createSamplePlatform(sdk: File, hash: String, api: Int, codename: String?, revision: Int, minor: Int = 0) {
     val platforms = File(sdk, "platforms")
     val folder = File(platforms, hash)
     folder.mkdirs()
@@ -516,29 +483,29 @@ class SimplePlatformLookupTest {
       File(optional, "optional.json")
         .writeText(
           """
-                [
-                  {
-                    "name": "org.apache.http.legacy",
-                    "jar": "org.apache.http.legacy.jar",
-                    "manifest": false
-                  },
-                  {
-                    "name": "android.test.mock",
-                    "jar": "android.test.mock.jar",
-                    "manifest": false
-                  },
-                  {
-                    "name": "android.test.base",
-                    "jar": "android.test.base.jar",
-                    "manifest": false
-                  },
-                  {
-                    "name": "android.test.runner",
-                    "jar": "android.test.runner.jar",
-                    "manifest": true
-                  }
-                ]
-                """
+          [
+            {
+              "name": "org.apache.http.legacy",
+              "jar": "org.apache.http.legacy.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.mock",
+              "jar": "android.test.mock.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.base",
+              "jar": "android.test.base.jar",
+              "manifest": false
+            },
+            {
+              "name": "android.test.runner",
+              "jar": "android.test.runner.jar",
+              "manifest": true
+            }
+          ]
+          """
             .trimIndent()
         )
     }
@@ -564,15 +531,9 @@ class SimplePlatformLookupTest {
     File(folder, "package.xml").writeText(content)
   }
 
-  class SdkManagerPlatformLookup(
-    private val sdkHandler: AndroidSdkHandler,
-    private val logger: ProgressIndicatorAdapter = TestLogger(),
-  ) : PlatformLookup {
-    override fun getLatestSdkTarget(
-      minApi: Int,
-      includePreviews: Boolean,
-      includeAddOns: Boolean,
-    ): IAndroidTarget? {
+  class SdkManagerPlatformLookup(private val sdkHandler: AndroidSdkHandler, private val logger: ProgressIndicatorAdapter = TestLogger()) :
+    PlatformLookup {
+    override fun getLatestSdkTarget(minApi: Int, includePreviews: Boolean, includeAddOns: Boolean): IAndroidTarget? {
       val targets = getTargets(includeAddOns)
       for (i in targets.indices.reversed()) {
         val target = targets[i]

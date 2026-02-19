@@ -18,13 +18,12 @@ package com.android.build.api
 
 class IncubatingApiUpdater {
 
-    companion object {
+  companion object {
 
-        @JvmStatic
-        fun main(args: Array<String>) {
-            IncubatingApiTest.getApiTester(args.firstOrNull()).updateFile(
-                "tools/base/build-system/gradle-api/src/test/resources/com/android/build/api"
-            )
-        }
+    @JvmStatic
+    fun main(args: Array<String>) {
+      IncubatingApiTest.getApiTester(args.firstOrNull())
+        .updateFile("tools/base/build-system/gradle-api/src/test/resources/com/android/build/api")
     }
+  }
 }

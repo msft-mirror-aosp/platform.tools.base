@@ -145,14 +145,7 @@ class NamespaceDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-    lint()
-      .files(
-        manifest().pkg("foo.library").minSdk(14),
-        projectProperties().library(true),
-        mCustomview,
-      )
-      .run()
-      .expect(expected)
+    lint().files(manifest().pkg("foo.library").minSdk(14), projectProperties().library(true), mCustomview).run().expect(expected)
   }
 
   fun testGradle() {
@@ -562,14 +555,7 @@ class NamespaceDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-    lint()
-      .files(
-        mNamespace3,
-        manifest().pkg("foo.library").minSdk(14),
-        projectProperties().library(true),
-      )
-      .run()
-      .expect(expected)
+    lint().files(mNamespace3, manifest().pkg("foo.library").minSdk(14), projectProperties().library(true)).run().expect(expected)
   }
 
   fun testLayoutAttributes2() {
@@ -580,14 +566,7 @@ class NamespaceDetectorTest : AbstractCheckTest() {
                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             1 errors, 0 warnings
             """
-    lint()
-      .files(
-        mNamespace4,
-        manifest().pkg("foo.library").minSdk(14),
-        projectProperties().library(true),
-      )
-      .run()
-      .expect(expected)
+    lint().files(mNamespace4, manifest().pkg("foo.library").minSdk(14), projectProperties().library(true)).run().expect(expected)
   }
 
   fun testWrongResAutoUrl() {
@@ -671,10 +650,7 @@ class NamespaceDetectorTest : AbstractCheckTest() {
             "    <string name=\"bar\">Bar</string>\n" +
             "</resources>",
         ),
-        xml(
-          "res/xml/random.xml",
-          "" + "<foo xmlns:foo=\"https://schemas.android.com/apk/res/android\"/>\n",
-        ),
+        xml("res/xml/random.xml", "" + "<foo xmlns:foo=\"https://schemas.android.com/apk/res/android\"/>\n"),
       )
       .run()
       .expect(
@@ -740,11 +716,6 @@ class NamespaceDetectorTest : AbstractCheckTest() {
 
   fun testSkipsRawResources() {
     // Regression test for https://issuetracker.google.com/130711188
-    lint()
-      .files(
-        xml("res/raw/wrong_namespace.xml", "<LinearLayout xmlns:abcd=\"invalid-namespace\" />")
-      )
-      .run()
-      .expectClean()
+    lint().files(xml("res/raw/wrong_namespace.xml", "<LinearLayout xmlns:abcd=\"invalid-namespace\" />")).run().expectClean()
   }
 }

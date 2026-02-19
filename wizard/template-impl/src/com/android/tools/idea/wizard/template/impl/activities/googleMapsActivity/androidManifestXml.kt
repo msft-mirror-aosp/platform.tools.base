@@ -16,10 +16,11 @@
 
 package com.android.tools.idea.wizard.template.impl.activities.googleMapsActivity
 
-import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 import com.android.tools.idea.wizard.template.impl.activities.common.collapseEmptyActivityTags
+import com.android.tools.idea.wizard.template.impl.activities.common.commonActivityBody
 
-fun geoApiKeyMetadataEntry() = """
+fun geoApiKeyMetadataEntry() =
+  """
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -40,7 +41,7 @@ fun androidManifestXml(
   isLibrary: Boolean,
   packageName: String,
   simpleName: String,
-  isNewModule: Boolean
+  isNewModule: Boolean,
 ): String {
   // TODO: add activityLabel like in other activity templates
   val launcher = isLauncher || isNewModule
@@ -60,5 +61,6 @@ fun androidManifestXml(
     </application>
 
 </manifest>
-""".collapseEmptyActivityTags()
+"""
+    .collapseEmptyActivityTags()
 }

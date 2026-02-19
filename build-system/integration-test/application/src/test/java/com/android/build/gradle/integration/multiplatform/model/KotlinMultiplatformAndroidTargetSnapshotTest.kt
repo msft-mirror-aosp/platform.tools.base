@@ -24,28 +24,26 @@ import com.android.utils.FileUtils
 import org.junit.Rule
 import org.junit.Test
 
-class KotlinMultiplatformAndroidTargetSnapshotTest: BaseModelComparator {
+class KotlinMultiplatformAndroidTargetSnapshotTest : BaseModelComparator {
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule
+  val project =
+    GradleTestProjectBuilder()
+      .fromTestProject("kotlinMultiplatform")
+      .withIncludedBuilds("build-logic")
+      .addGradleProperties("${BooleanOption.R8_PROGUARD_ANDROID_TXT_DISALLOWED.propertyName}=true")
+      .create()
 
-    @Test
-    fun testModels() {
-        KmpModelComparator(
-            project = project,
-            testClass = this,
-            modelSnapshotTask = "dumpAndroidTarget",
-            taskOutputsLocator = { projectPath ->
-                FileUtils.join(
-                    project.getSubproject(projectPath).buildDir,
-                    "ide",
-                    "targets"
-                ).listFiles()!!.toList()
-            },
-        ).fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib"))
-    }
+  @Test
+  fun testModels() {
+    KmpModelComparator(
+        project = project,
+        testClass = this,
+        modelSnapshotTask = "dumpAndroidTarget",
+        taskOutputsLocator = { projectPath ->
+          FileUtils.join(project.getSubproject(projectPath).buildDir, "ide", "targets").listFiles()!!.toList()
+        },
+      )
+      .fetchAndCompareModels(listOf(":kmpFirstLib", ":kmpSecondLib", ":build-logic:lib-foo"))
+  }
 }

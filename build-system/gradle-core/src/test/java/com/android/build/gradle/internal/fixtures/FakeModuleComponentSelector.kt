@@ -24,49 +24,46 @@ import org.gradle.api.artifacts.component.ModuleComponentSelector
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.capabilities.Capability
 
-class FakeModuleComponentSelector(
-    private val group: String,
-    private val module: String,
-    private val version: String,
-) : ModuleComponentSelector {
+class FakeModuleComponentSelector(private val group: String, private val module: String, private val version: String) :
+  ModuleComponentSelector {
 
-    override fun getDisplayName(): String {
-        TODO("Not yet implemented")
-    }
+  override fun getDisplayName(): String {
+    TODO("Not yet implemented")
+  }
 
-    override fun matchesStrictly(identifier: ComponentIdentifier): Boolean {
-        TODO("Not yet implemented")
-    }
+  override fun matchesStrictly(identifier: ComponentIdentifier): Boolean {
+    TODO("Not yet implemented")
+  }
 
-    override fun getAttributes(): AttributeContainer {
-        TODO("Not yet implemented")
-    }
+  override fun getAttributes(): AttributeContainer {
+    TODO("Not yet implemented")
+  }
 
-    override fun getRequestedCapabilities(): MutableList<Capability> {
-        TODO("Not yet implemented")
-    }
+  override fun getRequestedCapabilities(): MutableList<Capability> {
+    TODO("Not yet implemented")
+  }
 
-    override fun getCapabilitySelectors(): MutableSet<CapabilitySelector> {
-        TODO("Not yet implemented")
-    }
+  override fun getCapabilitySelectors(): MutableSet<CapabilitySelector> {
+    TODO("Not yet implemented")
+  }
 
-    override fun getGroup(): String {
-        return group
-    }
+  override fun getGroup(): String {
+    return group
+  }
 
-    override fun getModule(): String {
-        return module
-    }
+  override fun getModule(): String {
+    return module
+  }
 
-    override fun getVersion(): String {
-        return version
-    }
+  override fun getVersion(): String {
+    return version
+  }
 
-    override fun getVersionConstraint(): VersionConstraint {
-        TODO("Not yet implemented")
-    }
+  override fun getVersionConstraint(): VersionConstraint {
+    TODO("Not yet implemented")
+  }
 
-    override fun getModuleIdentifier(): ModuleIdentifier {
-        TODO("Not yet implemented")
-    }
+  override fun getModuleIdentifier(): ModuleIdentifier {
+    TODO("Not yet implemented")
+  }
 }

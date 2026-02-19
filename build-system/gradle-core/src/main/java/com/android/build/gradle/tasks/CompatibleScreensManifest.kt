@@ -38,80 +38,59 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
 
 /**
- * Task to generate a manifest snippet that just contains a compatible-screens node with the given
- * density and the given list of screen sizes.
+ * Task to generate a manifest snippet that just contains a compatible-screens node with the given density and the given list of screen
+ * sizes.
  *
- * Caching disabled by default for this task because the task does very little work.
- * Input files are written to a minimal XML file and no computation is required.
- * Calculating cache hit/miss and fetching results is likely more expensive than
- * simply executing the task.
+ * Caching disabled by default for this task because the task does very little work. Input files are written to a minimal XML file and no
+ * computation is required. Calculating cache hit/miss and fetching results is likely more expensive than simply executing the task.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.MANIFEST, secondaryTaskCategories = [TaskCategory.SOURCE_GENERATION])
 abstract class CompatibleScreensManifest : NonIncrementalTask() {
 
-    @get:Input
-    abstract val applicationId: Property<String>
+  @get:Input abstract val applicationId: Property<String>
 
-    @get:Input
-    abstract val screenSizes: SetProperty<String>
+  @get:Input abstract val screenSizes: SetProperty<String>
 
-    @get:OutputDirectory
-    abstract val outputFolder: DirectoryProperty
+  @get:OutputDirectory abstract val outputFolder: DirectoryProperty
 
-    @get:Nested
-    abstract val variantOutputs: ListProperty<VariantOutputImpl>
+  @get:Nested abstract val variantOutputs: ListProperty<VariantOutputImpl>
 
-    @get:Input
-    @get:Optional
-    abstract val minSdkVersion: Property<String>
+  @get:Input @get:Optional abstract val minSdkVersion: Property<String>
 
-    override fun doTaskAction() {
-        BuiltArtifactsImpl(
-            artifactType = COMPATIBLE_SCREEN_MANIFEST,
-            applicationId = applicationId.get(),
-            variantName = variantName,
-            elements = emptyList()
-        ).save(outputFolder.get())
+  override fun doTaskAction() {
+    BuiltArtifactsImpl(
+        artifactType = COMPATIBLE_SCREEN_MANIFEST,
+        applicationId = applicationId.get(),
+        variantName = variantName,
+        elements = emptyList(),
+      )
+      .save(outputFolder.get())
+  }
+
+  class CreationAction(creationConfig: ApplicationCreationConfig, private val screenSizes: Set<String>) :
+    VariantTaskCreationAction<CompatibleScreensManifest, ApplicationCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("create", "CompatibleScreenManifests")
+
+    override val type: Class<CompatibleScreensManifest>
+      get() = CompatibleScreensManifest::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<CompatibleScreensManifest>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts.setInitialProvider(taskProvider, CompatibleScreensManifest::outputFolder).on(COMPATIBLE_SCREEN_MANIFEST)
     }
 
-    class CreationAction(
-        creationConfig: ApplicationCreationConfig,
-        private val screenSizes: Set<String>
-    ): VariantTaskCreationAction<CompatibleScreensManifest, ApplicationCreationConfig>(
-        creationConfig
-    ) {
+    override fun configure(task: CompatibleScreensManifest) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("create", "CompatibleScreenManifests")
-        override val type: Class<CompatibleScreensManifest>
-            get() = CompatibleScreensManifest::class.java
+      task.screenSizes.setDisallowChanges(screenSizes)
+      task.applicationId.setDisallowChanges(creationConfig.applicationId)
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<CompatibleScreensManifest>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                CompatibleScreensManifest::outputFolder
-            ).on(COMPATIBLE_SCREEN_MANIFEST)
-        }
+      task.variantOutputs.setDisallowChanges(creationConfig.outputs.getEnabledVariantOutputs())
 
-        override fun configure(
-            task: CompatibleScreensManifest
-        ) {
-            super.configure(task)
-
-            task.screenSizes.setDisallowChanges(screenSizes)
-            task.applicationId.setDisallowChanges(creationConfig.applicationId)
-
-            task.variantOutputs.setDisallowChanges(
-                creationConfig.outputs.getEnabledVariantOutputs()
-            )
-
-            task.minSdkVersion.setDisallowChanges(
-                task.project.provider { creationConfig.minSdk.getApiString() }
-            )
-        }
+      task.minSdkVersion.setDisallowChanges(task.project.provider { creationConfig.minSdk.getApiString() })
     }
+  }
 }

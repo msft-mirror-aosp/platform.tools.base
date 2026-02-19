@@ -27,19 +27,19 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-      AndroidManifest.xml:7: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
-          <application
-           ~~~~~~~~~~~
-      1 error
-      """
+        AndroidManifest.xml:7: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
+            <application
+             ~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 7: Set hasCode="false":
-      @@ -10 +10
-      +         android:hasCode="false"
-    """
+        Fix for AndroidManifest.xml line 7: Set hasCode="false":
+        @@ -10 +10
+        +         android:hasCode="false"
+        """
           .trimIndent()
       )
   }
@@ -50,20 +50,20 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-      AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
-              android:hasCode="true">
-              ~~~~~~~~~~~~~~~~~~~~~~
-      1 error
-      """
+        AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
+                android:hasCode="true">
+                ~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 10: Set hasCode="false":
-      @@ -10 +10
-      -         android:hasCode="true"
-      +         android:hasCode="false"
-    """
+        Fix for AndroidManifest.xml line 10: Set hasCode="false":
+        @@ -10 +10
+        -         android:hasCode="true"
+        +         android:hasCode="false"
+        """
           .trimIndent()
       )
   }
@@ -85,20 +85,20 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-      AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
-              android:hasCode="@bool/editable">
-              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      1 error
-      """
+        AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
+                android:hasCode="@bool/editable">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 10: Set hasCode="false":
-      @@ -10 +10
-      -         android:hasCode="@bool/editable"
-      +         android:hasCode="false"
-    """
+        Fix for AndroidManifest.xml line 10: Set hasCode="false":
+        @@ -10 +10
+        -         android:hasCode="@bool/editable"
+        +         android:hasCode="false"
+        """
           .trimIndent()
       )
   }
@@ -128,29 +128,26 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-      AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
-              android:hasCode="@bool/editable">
-              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      1 error
-      """
+        AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
+                android:hasCode="@bool/editable">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 10: Set hasCode="false":
-      @@ -10 +10
-      -         android:hasCode="@bool/editable"
-      +         android:hasCode="false"
-    """
+        Fix for AndroidManifest.xml line 10: Set hasCode="false":
+        @@ -10 +10
+        -         android:hasCode="@bool/editable"
+        +         android:hasCode="false"
+        """
           .trimIndent()
       )
   }
 
   fun `test no issue is reported when there is no watch face version and DWF file`() {
-    lint()
-      .files(manifestWithHasCodeAttribute("true", withWatchFaceVersion = false))
-      .run()
-      .expectClean()
+    lint().files(manifestWithHasCodeAttribute("true", withWatchFaceVersion = false)).run().expectClean()
   }
 
   fun `test an issue is reported when a watch face file exists and the watch face version is not declared`() {
@@ -168,20 +165,20 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-      AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
-              android:hasCode="true">
-              ~~~~~~~~~~~~~~~~~~~~~~
-      1 error
-      """
+        AndroidManifest.xml:10: Error: Applications using Watch Face Format must declare hasCode=false [WatchFaceFormatDeclaresHasNoCode]
+                android:hasCode="true">
+                ~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
       .expectFixDiffs(
         """
-      Fix for AndroidManifest.xml line 10: Set hasCode="false":
-      @@ -10 +10
-      -         android:hasCode="true"
-      +         android:hasCode="false"
-    """
+        Fix for AndroidManifest.xml line 10: Set hasCode="false":
+        @@ -10 +10
+        -         android:hasCode="true"
+        +         android:hasCode="false"
+        """
           .trimIndent()
       )
   }
@@ -252,14 +249,11 @@ class WatchFaceFormatDeclaresHasNoCodeDetectorTest : AbstractCheckTest() {
                   android:value="1" />
           </application>
       </manifest>
-    """
+      """
         .trimIndent()
     )
 
-  private fun manifestWithHasCodeAttribute(
-    hasCode: String,
-    withWatchFaceVersion: Boolean = true,
-  ): TestFile {
+  private fun manifestWithHasCodeAttribute(hasCode: String, withWatchFaceVersion: Boolean = true): TestFile {
     val watchFaceVersionProperty =
       if (withWatchFaceVersion) {
         // language=XML

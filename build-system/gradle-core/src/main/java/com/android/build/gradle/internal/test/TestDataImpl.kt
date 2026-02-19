@@ -17,37 +17,18 @@ package com.android.build.gradle.internal.test
 
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import org.gradle.api.file.Directory
-import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Input
 
-/**
- * Implementation of [TestData] on top of a [DeviceTestCreationConfig]
- */
+/** Implementation of [TestData] on top of a [DeviceTestCreationConfig] */
 class TestDataImpl(
-    namespace: Provider<String>,
-    testConfig: DeviceTestCreationConfig,
-    testApkDir: Provider<Directory>,
-    testedApksDir: Provider<Directory>?,
-    privacySandboxSdkApks: FileCollection?,
-    privacySandboxCompatSdkApksDir: Provider<Directory>?,
-    additionalSdkSupportedApkSplits: Provider<Directory>?,
-    extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>
-) : AbstractTestDataImpl(
-    namespace,
-    testConfig,
-    testApkDir,
-    testedApksDir,
-    privacySandboxSdkApks,
-    privacySandboxCompatSdkApksDir,
-    additionalSdkSupportedApkSplits,
-    extraInstrumentationTestRunnerArgs
-) {
-    @get: Input
-    override val supportedAbis: Set<String> =
-        testConfig.nativeBuildCreationConfig?.supportedAbis ?: emptySet()
+  namespace: Provider<String>,
+  testConfig: DeviceTestCreationConfig,
+  testApkDir: Provider<Directory>,
+  testedApksDir: Provider<Directory>?,
+  extraInstrumentationTestRunnerArgs: Provider<Map<String, String>>,
+) : AbstractTestDataImpl(namespace, testConfig, testApkDir, testedApksDir, extraInstrumentationTestRunnerArgs) {
+  @get:Input override val supportedAbis: Set<String> = testConfig.nativeBuildCreationConfig?.supportedAbis ?: emptySet()
 
-
-    override val libraryType =
-        testConfig.services.provider { testConfig.mainVariant.componentType.isAar }
+  override val libraryType = testConfig.services.provider { testConfig.mainVariant.componentType.isAar }
 }

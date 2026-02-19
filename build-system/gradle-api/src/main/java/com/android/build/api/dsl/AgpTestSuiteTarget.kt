@@ -18,15 +18,13 @@ package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
 import org.gradle.api.Named
-import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.base.TestSuiteTarget
 
 /**
- * A test suite target is a collection of tests that run in a particular context. The context is
- * defined by the devices they run on when dealing with a device test.
+ * A test suite target is a collection of tests that run in a particular context. The context is defined by the devices they run on when
+ * dealing with a device test.
  *
- * android {
- *     // ... other android configurations like compileSdk, defaultConfig, etc.
+ * android { // ... other android configurations like compileSdk, defaultConfig, etc.
  *
  *     testOptions {
  *         managedDevices {
@@ -48,25 +46,21 @@ import org.gradle.testing.base.TestSuiteTarget
  *                     systemImageSource = "aosp"
  *                 }
  *             }
- *
  *             groups {
  *                 // Now, define your groups referencing the devices above
  *                 create("phoneGroup") {
  *                     // This group targets specific phone-like devices
  *                     targetDevices.add(allDevices.getByName("pixel2api30"))
  *                     targetDevices.add(allDevices.getByName("pixel6api33"))
- *
  *                     // You can also set properties for all devices in this group
  *                     // if they are not already set on the individual device.
  *                     // For example:
  *                     // systemImageSource = "aosp-atd" // if all devices in this group should use this
  *                 }
- *
  *                 create("tabletGroup") {
  *                     // This group targets tablet-like devices
  *                     targetDevices.add(devices.getByName("largeScreenApi31"))
  *                 }
- *
  *                 create("allMyCiDevices") {
  *                     // This group could target all devices you use for CI
  *                     targetDevices.addAll(devices.getByName("pixel2api30"), devices.getByName("pixel6api33"), devices.getByName("largeScreenApi31"))
@@ -74,7 +68,6 @@ import org.gradle.testing.base.TestSuiteTarget
  *             }
  *         }
  *     }
- *
  *     testOptions {
  *         suites {
  *              create("someTestSuite") {
@@ -86,16 +79,16 @@ import org.gradle.testing.base.TestSuiteTarget
  *              }
  *         }
  *     }
+ *
  * }
  */
 @Suppress("UnstableApiUsage")
 @Incubating
-interface AgpTestSuiteTarget: TestSuiteTarget, Named {
+interface AgpTestSuiteTarget : TestSuiteTarget, Named {
 
-    /**
-     * Defines which group of devices or devices to run the test suite tests against. If the test runs on the host machine,
-     * this list will be ignored.
-     */
-    @get:Incubating
-    val targetDevices: MutableList<String>
+  /**
+   * Defines which group of devices or devices to run the test suite tests against. If the test runs on the host machine, this list will be
+   * ignored.
+   */
+  @get:Incubating val targetDevices: MutableList<String>
 }

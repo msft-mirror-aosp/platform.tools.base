@@ -16,41 +16,41 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.viewModelFragment.src.app_package
 
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
+import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
 fun blankFragmentKt(
-    applicationPackage: String?,
-    fragmentClass: String,
-    layoutName: String,
-    packageName: String,
-    useAndroidX: Boolean,
-    viewModelName: String
+  applicationPackage: String?,
+  fragmentClass: String,
+  layoutName: String,
+  packageName: String,
+  useAndroidX: Boolean,
+  viewModelName: String,
 ): String {
 
-    val viewModelImport =
-        if (useAndroidX) {
-            "import androidx.fragment.app.viewModels"
-        } else {
-            "import android.arch.lifecycle.ViewModelProvider"
-        }
+  val viewModelImport =
+    if (useAndroidX) {
+      "import androidx.fragment.app.viewModels"
+    } else {
+      "import android.arch.lifecycle.ViewModelProvider"
+    }
 
-    val viewModelDeclaration =
-        if (useAndroidX) {
-            "private val viewModel: $viewModelName by viewModels()"
-        } else {
-            "private lateinit var viewModel: $viewModelName"
-        }
+  val viewModelDeclaration =
+    if (useAndroidX) {
+      "private val viewModel: $viewModelName by viewModels()"
+    } else {
+      "private lateinit var viewModel: $viewModelName"
+    }
 
-    val viewModelInitializationBlock =
-        if (useAndroidX) {
-            "" // The viewModel is initialized above
-        } else {
-            "viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[${viewModelName}::class.java]"
-        }
+  val viewModelInitializationBlock =
+    if (useAndroidX) {
+      "" // The viewModel is initialized above
+    } else {
+      "viewModel = ViewModelProvider(this, ViewModelProvider.NewInstanceFactory())[${viewModelName}::class.java]"
+    }
 
-    return """
+  return """
 package ${escapeKotlinIdentifier(packageName)}
 
 $viewModelImport

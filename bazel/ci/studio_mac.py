@@ -50,6 +50,7 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
               ('tools/vendor/google/skia/skia_test_support.zip', ''),
           ],
       )
+      studio.collect_logs(build_env, result.bes_path)
     if result.exit_code != bazel.EXITCODE_NO_TESTS_FOUND:
       return
   else:

@@ -34,16 +34,15 @@ import java.io.File
 open class GradleVisitor {
 
   /**
-   * The [JavaContext] used by the visitor, if applicable. For example, if the build script is
-   * Kotlin Script then the [JavaContext] will probably be available and can be used to check for
-   * suppression on a UElement from the build script.
+   * The [JavaContext] used by the visitor, if applicable. For example, if the build script is Kotlin Script then the [JavaContext] will
+   * probably be available and can be used to check for suppression on a UElement from the build script.
    */
   internal open val javaContext: JavaContext?
     get() = null
 
   /**
-   * Manually visiting the build script. Returns true if it has fully handled the file, otherwise
-   * returns true and some of the individual DSL checks below are run.
+   * Manually visiting the build script. Returns true if it has fully handled the file, otherwise returns true and some of the individual
+   * DSL checks below are run.
    */
   open fun visitBuildScript(context: GradleContext, detectors: List<GradleScanner>) {
     // Empty implementation. This class is overridden in modules which have
@@ -51,28 +50,21 @@ open class GradleVisitor {
     // test infrastructure, the Gradle PSI model in the IDE, etc.
   }
 
-  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie"))
-  open fun getPropertyKeyCookie(cookie: Any): Any = cookie
+  @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie")) open fun getPropertyKeyCookie(cookie: Any): Any = cookie
 
   @Deprecated(message = "unused", replaceWith = ReplaceWith(expression = "cookie"))
   open fun getPropertyPairCookie(cookie: Any): Any = cookie
 
   open fun getStartOffset(context: GradleContext, cookie: Any): Int = -1
 
-  open fun findElementByRange(
-    context: GradleContext,
-    cookie: Any,
-    startOffset: Int,
-    endOffset: Int,
-  ): Any? = null
+  open fun findElementByRange(context: GradleContext, cookie: Any, startOffset: Int, endOffset: Int): Any? = null
 
   open fun createLocation(context: GradleContext, cookie: Any): Location = error("Not supported")
 
   /**
-   * During processing of this script we may discover references to other build scripts that are
-   * included; the lint infrastructure will call this method after processing this script to also
-   * process these other files (unless you're in isolated mode, e.g. directly editing the file in
-   * the editor)
+   * During processing of this script we may discover references to other build scripts that are included; the lint infrastructure will call
+   * this method after processing this script to also process these other files (unless you're in isolated mode, e.g. directly editing the
+   * file in the editor)
    */
   open fun getIncludedScripts(): List<File> = includedScripts ?: emptyList()
 
@@ -93,11 +85,7 @@ open class GradleVisitor {
         }
         // TODO(b/463283604): Better not to have this exemption
         val isK2 = System.getProperty("lint.use.fir.uast", "true").toBoolean()
-        if (
-          relative.endsWith(DOT_KTS) &&
-            isK2 &&
-            !includedFile.path.startsWith(context.project.dir.path)
-        ) {
+        if (relative.endsWith(DOT_KTS) && isK2 && !includedFile.path.startsWith(context.project.dir.path)) {
           // We currently can't access kts files outside the project root from the
           // CLI setup when using K2
           return

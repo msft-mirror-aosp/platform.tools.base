@@ -1,38 +1,27 @@
-/*
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.devrel.gmscore.tools.apk.arsc;
 
-import com.android.annotations.Nullable;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.io.Closeables;
 import com.google.common.io.LittleEndianDataOutputStream;
 import com.google.common.primitives.Shorts;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
+import javax.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /** Represents a generic chunk. */
 public abstract class Chunk implements SerializableResource {
 
   /** Types of chunks that can exist. */
+  // See
+  // http://cs/android/frameworks/base/libs/androidfw/include/androidfw/ResourceTypes.h?l=232&rcl=f6703fef0dde077c2e20d4fc87c6765db7ce0b4d
   public enum Type {
     NULL(0x0000),
     STRING_POOL(0x0001),
@@ -50,19 +39,18 @@ public abstract class Chunk implements SerializableResource {
     TABLE_LIBRARY(0x0203),
     TABLE_OVERLAYABLE(0x204),
     TABLE_OVERLAYABLE_POLICY(0x205),
-    TABLE_STAGED_ALIAS(0x206),
-    ;
+    TABLE_STAGED_ALIAS(0x206);
 
     private final short code;
 
     private static final Map<Short, Type> FROM_SHORT;
 
     static {
-      Builder<Short, Type> builder = ImmutableMap.builder();
+      Map<Short, Type> map = new HashMap<>();
       for (Type type : values()) {
-        builder.put(type.code(), type);
+        map.put(type.code(), type);
       }
-      FROM_SHORT = builder.build();
+      FROM_SHORT = Collections.unmodifiableMap(map);
     }
 
     Type(int code) {
@@ -83,6 +71,10 @@ public abstract class Chunk implements SerializableResource {
 
   /** The number of bytes in every chunk that describes chunk type, header size, and chunk size. */
   public static final int METADATA_SIZE = 8;
+  /**
+   * The number of bytes in every chunk that describes header size and chunk size, but not the type.
+   */
+  public static final int METADATA_SIZE_NO_TYPE = METADATA_SIZE - 2;
 
   /** The offset in bytes, from the start of the chunk, where the chunk size can be found. */
   private static final int CHUNK_SIZE_OFFSET = 4;
@@ -145,9 +137,10 @@ public abstract class Chunk implements SerializableResource {
 
   /**
    * Reposition the buffer after this chunk. Use this at the end of a Chunk constructor.
+   *
    * @param buffer The buffer to be repositioned.
    */
-  private final void seekToEndOfChunk(ByteBuffer buffer) {
+  protected final void seekToEndOfChunk(ByteBuffer buffer) {
     buffer.position(offset + chunkSize);
   }
 
@@ -160,13 +153,23 @@ public abstract class Chunk implements SerializableResource {
    */
   protected final void writeHeader(ByteBuffer output, int chunkSize) {
     int start = output.position();
-    output.putShort(getType().code());
+    output.putShort(getTypeValue());
     output.putShort((short) headerSize);
     output.putInt(chunkSize);
     writeHeader(output);
     int headerBytes = output.position() - start;
     Preconditions.checkState(headerBytes == getHeaderSize(),
         "Written header is wrong size. Got %s, want %s", headerBytes, getHeaderSize());
+  }
+
+  /**
+   * Allows overwriting what value gets written as the type of a chunk. Subclasses may use a
+   * specialized type value schema.
+   *
+   * @return The type value for this chunk.
+   */
+  protected short getTypeValue() {
+    return getType().code();
   }
 
   /**
@@ -177,15 +180,15 @@ public abstract class Chunk implements SerializableResource {
   protected void writeHeader(ByteBuffer output) {}
 
   /**
-   * Writes the chunk payload. The payload is data in a chunk which is not in
-   * the first {@code headerSize} bytes of the chunk.
+   * Writes the chunk payload. The payload is data in a chunk which is not in the first {@code
+   * headerSize} bytes of the chunk.
    *
    * @param output The stream that the payload will be written to.
    * @param header The already-written header. This can be modified to fix payload offsets.
-   * @param shrink True if this payload should be optimized for size.
+   * @param options The serialization options to be applied to the result.
    * @throws IOException Thrown if {@code output} could not be written to (out of memory).
    */
-  protected void writePayload(DataOutput output, ByteBuffer header, boolean shrink)
+  protected void writePayload(DataOutput output, ByteBuffer header, int options)
       throws IOException {}
 
   /**
@@ -196,7 +199,8 @@ public abstract class Chunk implements SerializableResource {
    * @return The new length of {@code output}
    * @throws IOException Thrown if {@code output} could not be written to.
    */
-  protected int writePad(DataOutput output, int currentLength) throws IOException {
+  @CanIgnoreReturnValue
+  protected static int writePad(DataOutput output, int currentLength) throws IOException {
     while (currentLength % PAD_BOUNDARY != 0) {
       output.write(0);
       ++currentLength;
@@ -206,7 +210,7 @@ public abstract class Chunk implements SerializableResource {
 
   @Override
   public final byte[] toByteArray() throws IOException {
-    return toByteArray(false);
+    return toByteArray(SerializableResource.NONE);
   }
 
   /**
@@ -214,13 +218,15 @@ public abstract class Chunk implements SerializableResource {
    * override this method unless your header changes based on the contents / size of the payload.
    */
   @Override
-  public final byte[] toByteArray(boolean shrink) throws IOException {
+  public final byte[] toByteArray(int options) throws IOException {
     ByteBuffer header = ByteBuffer.allocate(getHeaderSize()).order(ByteOrder.LITTLE_ENDIAN);
     writeHeader(header, 0);  // The chunk size isn't known yet. This will be filled in later.
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-    try (LittleEndianDataOutputStream payload = new LittleEndianDataOutputStream(baos)) {
-      writePayload(payload, header, shrink);
+    LittleEndianDataOutputStream payload = new LittleEndianDataOutputStream(baos);
+    try {
+      writePayload(payload, header, options);
+    } finally {
+      Closeables.close(payload, true);
     }
 
     byte[] payloadBytes = baos.toByteArray();
@@ -254,51 +260,26 @@ public abstract class Chunk implements SerializableResource {
   public static Chunk newInstance(ByteBuffer buffer, @Nullable Chunk parent) {
     Chunk result;
     Type type = Type.fromCode(buffer.getShort());
-    switch (type) {
-      case STRING_POOL:
-        result = new StringPoolChunk(buffer, parent);
-        break;
-      case TABLE:
-        result = new ResourceTableChunk(buffer, parent);
-        break;
-      case XML:
-        result = new XmlChunk(buffer, parent);
-        break;
-      case XML_START_NAMESPACE:
-        result = new XmlNamespaceStartChunk(buffer, parent);
-        break;
-      case XML_END_NAMESPACE:
-        result = new XmlNamespaceEndChunk(buffer, parent);
-        break;
-      case XML_START_ELEMENT:
-        result = new XmlStartElementChunk(buffer, parent);
-        break;
-      case XML_END_ELEMENT:
-        result = new XmlEndElementChunk(buffer, parent);
-        break;
-      case XML_CDATA:
-        result = new XmlCdataChunk(buffer, parent);
-        break;
-      case XML_RESOURCE_MAP:
-        result = new XmlResourceMapChunk(buffer, parent);
-        break;
-      case TABLE_PACKAGE:
-        result = new PackageChunk(buffer, parent);
-        break;
-      case TABLE_TYPE:
-        result = new TypeChunk(buffer, parent);
-        break;
-      case TABLE_TYPE_SPEC:
-        result = new TypeSpecChunk(buffer, parent);
-        break;
-      case TABLE_LIBRARY:
-        result = new LibraryChunk(buffer, parent);
-        break;
-      default:
-        result = new UnknownChunk(buffer, parent);
-    }
+    result =
+        switch (type) {
+          case STRING_POOL -> new StringPoolChunk(buffer, parent);
+          case TABLE -> new ResourceTableChunk(buffer, parent);
+          case XML -> new XmlChunk(buffer, parent);
+          case XML_START_NAMESPACE -> new XmlNamespaceStartChunk(buffer, parent);
+          case XML_END_NAMESPACE -> new XmlNamespaceEndChunk(buffer, parent);
+          case XML_START_ELEMENT -> new XmlStartElementChunk(buffer, parent);
+          case XML_END_ELEMENT -> new XmlEndElementChunk(buffer, parent);
+          case XML_CDATA -> new XmlCdataChunk(buffer, parent);
+          case XML_RESOURCE_MAP -> new XmlResourceMapChunk(buffer, parent);
+          case TABLE_PACKAGE -> new PackageChunk(buffer, parent);
+          case TABLE_TYPE -> new TypeChunk(buffer, parent);
+          case TABLE_TYPE_SPEC -> new TypeSpecChunk(buffer, parent);
+          case TABLE_LIBRARY -> new LibraryChunk(buffer, parent);
+          default -> new UnknownChunk(buffer, parent);
+        };
     result.init(buffer);
     result.seekToEndOfChunk(buffer);
     return result;
   }
+
 }

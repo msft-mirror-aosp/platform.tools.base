@@ -15,8 +15,8 @@
  */
 package com.android.tools.idea.wizard.template.impl.activities.fullscreenActivity.res.values
 
-import com.android.tools.idea.wizard.template.ThemesData
 import com.android.tools.idea.wizard.template.MaterialColor.*
+import com.android.tools.idea.wizard.template.ThemesData
 
 fun fullscreenThemes(themesData: ThemesData): String {
   val mainThemeName = themesData.main.name
@@ -36,4 +36,5 @@ fun fullscreenThemes(themesData: ThemesData): String {
 }
 
 fun getFullscreenTheme(themeName: String) = "${themeName}.Fullscreen"
+
 fun getFullscreenContainerThemeOverlay(overlayThemeName: String) = "${overlayThemeName}.FullscreenContainer"

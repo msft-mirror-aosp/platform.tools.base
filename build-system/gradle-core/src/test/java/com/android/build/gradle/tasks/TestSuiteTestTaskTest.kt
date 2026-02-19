@@ -19,33 +19,26 @@ package com.android.build.gradle.tasks
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
 import com.android.build.api.testsuites.TestEngineInputProperty
 import com.google.common.truth.Truth.assertThat
-import org.junit.Rule
-import org.junit.rules.TemporaryFolder
-import org.junit.Test
 import java.io.FileReader
 import java.util.Properties
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class TestSuiteTestTaskTest {
 
-    @get:Rule
-    val folder = TemporaryFolder()
+  @get:Rule val folder = TemporaryFolder()
 
-    @Test
-    fun testSerializer() {
-        val outputFile = folder.newFile()
-        TestSuiteTestTask.AgpTestSuiteInputsSerializer.serialize(
-            engineInputParameters = listOf(
-                TestEngineInputProperty(
-                    AgpTestSuiteInputParameters.TESTED_APKS.propertyName,
-                    "some/random/location"
-                )),
-            engineInputProperties = mapOf("foo" to "fooValue"),
-            outputFile
-        )
-        assertThat(outputFile.exists()).isTrue()
-        val serializedInputs = Properties().also {
-            it.load(FileReader(outputFile))
-        }
-        assertThat(serializedInputs).hasSize(2)
-    }
- }
+  @Test
+  fun testSerializer() {
+    val outputFile = folder.newFile()
+    TestSuiteTestTask.AgpTestSuiteInputsSerializer.serialize(
+      engineInputParameters = listOf(TestEngineInputProperty(AgpTestSuiteInputParameters.TESTED_APKS.propertyName, "some/random/location")),
+      engineInputProperties = mapOf("foo" to "fooValue"),
+      outputFile,
+    )
+    assertThat(outputFile.exists()).isTrue()
+    val serializedInputs = Properties().also { it.load(FileReader(outputFile)) }
+    assertThat(serializedInputs).hasSize(2)
+  }
+}

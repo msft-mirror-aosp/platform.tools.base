@@ -15,66 +15,51 @@
  */
 package com.android.adblib
 
-/**
- * A [List] of [E] elements in addition to an arbitrary list of [ErrorLine] entries.
- */
+/** A [List] of [E] elements in addition to an arbitrary list of [ErrorLine] entries. */
 class ListWithErrors<E>(
-    /**
-     * The list of entries that were successfully parsed.
-     */
-    val entries: List<E>,
-    /**
-     * List of [ErrorLine] corresponding to entries that were not recognized.
-     */
-    val errors: List<ErrorLine>
+  /** The list of entries that were successfully parsed. */
+  val entries: List<E>,
+  /** List of [ErrorLine] corresponding to entries that were not recognized. */
+  val errors: List<ErrorLine>,
 ) : List<E> by entries {
 
-    override fun toString(): String {
-        val entriesStr = entries.joinToString(", ", "[", "]")
-        val errorsStr = errors.joinToString(", ", "[", "]")
-        return "ListWithErrors(entries=$entriesStr, errors=$errorsStr)"
+  override fun toString(): String {
+    val entriesStr = entries.joinToString(", ", "[", "]")
+    val errorsStr = errors.joinToString(", ", "[", "]")
+    return "ListWithErrors(entries=$entriesStr, errors=$errorsStr)"
+  }
 
+  class Builder<E> {
+
+    private val entries: MutableList<E> = ArrayList()
+    private val errors: MutableList<ErrorLine> = ArrayList()
+
+    fun addEntry(entry: E) {
+      entries.add(entry)
     }
 
-    class Builder<E> {
-
-        private val entries: MutableList<E> = ArrayList()
-        private val errors: MutableList<ErrorLine> = ArrayList()
-
-        fun addEntry(entry: E) {
-            entries.add(entry)
-        }
-
-        fun addError(message: String, lineIndex: Int, rawLineText: CharSequence) {
-            errors.add(ErrorLine(message, lineIndex, rawLineText.toString()))
-        }
-
-        fun addError(error: ErrorLine) {
-            errors.add(error)
-        }
-
-        fun build(): ListWithErrors<E> {
-            return ListWithErrors(entries, errors)
-        }
+    fun addError(message: String, lineIndex: Int, rawLineText: CharSequence) {
+      errors.add(ErrorLine(message, lineIndex, rawLineText.toString()))
     }
+
+    fun addError(error: ErrorLine) {
+      errors.add(error)
+    }
+
+    fun build(): ListWithErrors<E> {
+      return ListWithErrors(entries, errors)
+    }
+  }
 }
 
 fun <T> emptyListWithErrors(): ListWithErrors<T> = ListWithErrors.Builder<T>().build()
 
-/**
- * An error collected from a parser producing a [ListWithErrors]
- */
+/** An error collected from a parser producing a [ListWithErrors] */
 class ErrorLine(
-    /**
-     * An arbitrary error message describing this error.
-     */
-    val message: String,
-    /**
-     * The zero-based line number where the error occurred.
-     */
-    val lineIndex: Int,
-    /**
-     * The raw text that was the source of this error.
-     */
-    val rawLineText: String
+  /** An arbitrary error message describing this error. */
+  val message: String,
+  /** The zero-based line number where the error occurred. */
+  val lineIndex: Int,
+  /** The raw text that was the source of this error. */
+  val rawLineText: String,
 )

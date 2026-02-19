@@ -20,171 +20,191 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class ExplainDifferencesTest {
-    @Test
-    fun `basic insert line`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            this is line two
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two
-            this is line three
-            """.trimIndent(),
+  @Test
+  fun `basic insert line`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          this is line two
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two
+          this is line three
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-            INSERTED this is line three (at line 3)
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+        INSERTED this is line three (at line 3)
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `basic delete line`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            this is line two
-            this is line three
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two
-            """.trimIndent(),
+  @Test
+  fun `basic delete line`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          this is line two
+          this is line three
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-            DELETED this is line three (at line 3)
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+        DELETED this is line three (at line 3)
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `basic insert line text insert`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            this is line two
-            this is line three
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two-prime
-            this is line three
-            """.trimIndent(),
+  @Test
+  fun `basic insert line text insert`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          this is line two
+          this is line three
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two-prime
+          this is line three
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-            REPLACED this is line two (at line 2)
-                with this is line two-prime
-                                     ^
-                                     |
-                            [insert]-+
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+        REPLACED this is line two (at line 2)
+            with this is line two-prime
+                                 ^
+                                 |
+                        [insert]-+
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `basic insert line text delete`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            this is line two-prime
-            this is line three
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two
-            this is line three
-            """.trimIndent(),
+  @Test
+  fun `basic insert line text delete`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          this is line two-prime
+          this is line three
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two
+          this is line three
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-                                [delete]-+
-                                         |
-                                         v
-                REPLACED this is line two-prime (at line 2)
-                    with this is line two
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+                        [delete]-+
+                                 |
+                                 v
+        REPLACED this is line two-prime (at line 2)
+            with this is line two
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `basic insert line text line changed`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            this is line two abc
-            this is line three
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two xbc
-            this is line three
-            """.trimIndent(),
+  @Test
+  fun `basic insert line text line changed`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          this is line two abc
+          this is line three
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two xbc
+          this is line three
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-            REPLACED this is line two abc (at line 2)
-                with this is line two xbc
-                                      ^
-                                      |
-                             [change]-+
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+        REPLACED this is line two abc (at line 2)
+            with this is line two xbc
+                                  ^
+                                  |
+                         [change]-+
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `insert two lines`() {
-        assertThat(
-            explainLineDifferences(
-            """
-            this is line one
-            """.trimIndent(),
-            """
-            this is line one
-            this is line two
-            this is line three
-            """.trimIndent(),
+  @Test
+  fun `insert two lines`() {
+    assertThat(
+        explainLineDifferences(
+          """
+          this is line one
+          """
+            .trimIndent(),
+          """
+          this is line one
+          this is line two
+          this is line three
+          """
+            .trimIndent(),
         )
-        ).isEqualTo(
-            """
-            INSERTED this is line two (at line 2)
-            INSERTED this is line three (at line 3)
-            """.trimIndent()
-        )
-    }
+      )
+      .isEqualTo(
+        """
+        INSERTED this is line two (at line 2)
+        INSERTED this is line three (at line 3)
+        """
+          .trimIndent()
+      )
+  }
 
-    @Test
-    fun `check distance count`() {
-        assertThat(minimumEditDistance("", "")).isEqualTo(0)
-        assertThat(minimumEditDistance("", "a")).isEqualTo(1)
-        assertThat(minimumEditDistance("a", "")).isEqualTo(1)
-        assertThat(minimumEditDistance("a", "b")).isEqualTo(1)
-        assertThat(minimumEditDistance("aab", "abb")).isEqualTo(1)
-        assertThat(
-            minimumEditDistance(
-                "nine ladies dancing",
-                "ten lords a-leaping")
-        ).isEqualTo(13)
-        assertThat(
-            explainCharDifferences(
-                "nine ladies dancing",
-                "ten lords a-leaping")
-        ).isEqualTo("""
-                REPLACED 'n' at 0 with 't'
-                REPLACED 'i' at 1 with 'e'
-                DELETED e at line 3
-                INSERTED o at 5
-                REPLACED 'a' at 6 with 'r'
-                REPLACED 'i' at 8 with 's'
-                and 7 more
-            """.trimIndent())
-    }
+  @Test
+  fun `check distance count`() {
+    assertThat(minimumEditDistance("", "")).isEqualTo(0)
+    assertThat(minimumEditDistance("", "a")).isEqualTo(1)
+    assertThat(minimumEditDistance("a", "")).isEqualTo(1)
+    assertThat(minimumEditDistance("a", "b")).isEqualTo(1)
+    assertThat(minimumEditDistance("aab", "abb")).isEqualTo(1)
+    assertThat(minimumEditDistance("nine ladies dancing", "ten lords a-leaping")).isEqualTo(13)
+    assertThat(explainCharDifferences("nine ladies dancing", "ten lords a-leaping"))
+      .isEqualTo(
+        """
+        REPLACED 'n' at 0 with 't'
+        REPLACED 'i' at 1 with 'e'
+        DELETED e at line 3
+        INSERTED o at 5
+        REPLACED 'a' at 6 with 'r'
+        REPLACED 'i' at 8 with 's'
+        and 7 more
+        """
+          .trimIndent()
+      )
+  }
 }

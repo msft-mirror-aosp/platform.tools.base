@@ -54,9 +54,8 @@ import org.jetbrains.uast.visitor.AbstractUastVisitor
 import org.junit.Assert.assertNotEquals
 
 /**
- * Unit tests for the data flow analyzer. Note that there are also a number of additional unit tests
- * in CleanupDetectorTest, ToastDetectorTest, SliceDetectorTest and WorkManagerDetectorTest, and
- * over time possibly others.
+ * Unit tests for the data flow analyzer. Note that there are also a number of additional unit tests in CleanupDetectorTest,
+ * ToastDetectorTest, SliceDetectorTest and WorkManagerDetectorTest, and over time possibly others.
  */
 class DataFlowAnalyzerTest : TestCase() {
   fun testJava() {
@@ -205,10 +204,7 @@ class DataFlowAnalyzerTest : TestCase() {
     Disposer.dispose(parsed.second)
   }
 
-  private fun findMethodCall(
-    parsed: com.android.utils.Pair<JavaContext, Disposable>,
-    targetName: String,
-  ): UCallExpression {
+  private fun findMethodCall(parsed: com.android.utils.Pair<JavaContext, Disposable>, targetName: String): UCallExpression {
     var target: UCallExpression? = null
     val file = parsed.first.uastFile!!
     file.accept(
@@ -229,10 +225,7 @@ class DataFlowAnalyzerTest : TestCase() {
     return target!!
   }
 
-  private fun findVariableDeclaration(
-    parsed: com.android.utils.Pair<JavaContext, Disposable>,
-    targetName: String,
-  ): UVariable {
+  private fun findVariableDeclaration(parsed: com.android.utils.Pair<JavaContext, Disposable>, targetName: String): UVariable {
     var target: UVariable? = null
     val file = parsed.first.uastFile!!
     file.accept(
@@ -763,7 +756,8 @@ class DataFlowAnalyzerTest : TestCase() {
                 """
           )
           .indented(),
-        // Note: using a different stub here since we're adding methods that don't exist in a real
+        // Note: using a different stub here since we're adding methods that don't exist in a
+        // real
         // snackbar
         // to simulate this scenario
         java(
@@ -1109,10 +1103,7 @@ class DataFlowAnalyzerTest : TestCase() {
       }
     )
     assertEquals("fa, fb, fc, fh, fi, fj", argumentCalls.joinToString { it })
-    assertEquals(
-      "it, this, this@l, this@l, this, this@apply",
-      argumentReferences.joinToString { it },
-    )
+    assertEquals("it, this, this@l, this@l, this, this@apply", argumentReferences.joinToString { it })
 
     assertEquals("intentFun", receivers.joinToString { it })
 
@@ -1207,17 +1198,11 @@ class DataFlowAnalyzerTest : TestCase() {
 
     override fun getApplicableConstructorTypes() = listOf("com.pkg.mylib.Intent")
 
-    override fun visitConstructor(
-      context: JavaContext,
-      node: UCallExpression,
-      constructor: PsiMethod,
-    ) {
+    override fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {
       val method = node.getParentOfType(UMethod::class.java)
       val analyzer = EscapeCheckingDataFlowAnalyzer(listOf(node))
       method!!.accept(analyzer)
-      context.report(
-        Incident(ISSUE, node, context.getLocation(node), "Intent use escaped? " + analyzer.escaped)
-      )
+      context.report(Incident(ISSUE, node, context.getLocation(node), "Intent use escaped? " + analyzer.escaped))
     }
 
     companion object {
@@ -1328,10 +1313,8 @@ class DataFlowAnalyzerTest : TestCase() {
     Disposer.dispose(parsed.second)
   }
 
-  class LoggingDataFlowAnalyzer(
-    initial: Collection<UElement>,
-    initialReferences: Collection<PsiVariable> = emptyList(),
-  ) : DataFlowAnalyzer(initial, initialReferences) {
+  class LoggingDataFlowAnalyzer(initial: Collection<UElement>, initialReferences: Collection<PsiVariable> = emptyList()) :
+    DataFlowAnalyzer(initial, initialReferences) {
     val events = mutableListOf<String>()
 
     override fun receiver(call: UCallExpression) {
@@ -1360,9 +1343,7 @@ class DataFlowAnalyzerTest : TestCase() {
     }
 
     override fun argument(call: UCallExpression, reference: UElement) {
-      events.add(
-        "argument(${call.sourcePsi!!.text}, ${reference.sourcePsi?.text ?: reference.asRenderString()})"
-      )
+      events.add("argument(${call.sourcePsi!!.text}, ${reference.sourcePsi?.text ?: reference.asRenderString()})")
       super.argument(call, reference)
     }
   }
@@ -1416,10 +1397,7 @@ class DataFlowAnalyzerTest : TestCase() {
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
-    assertEquals(
-      "argument(a(intent), intent), argument(b(intent2), intent2), returns(return@hello this)",
-      dfa.events.joinToString { it },
-    )
+    assertEquals("argument(a(intent), intent), argument(b(intent2), intent2), returns(return@hello this)", dfa.events.joinToString { it })
     Disposer.dispose(parsed.second)
   }
 
@@ -1468,10 +1446,7 @@ class DataFlowAnalyzerTest : TestCase() {
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
-    assertEquals(
-      "argument(with(intent, handler), intent), receiver(intentFun())",
-      dfa.events.joinToString { it },
-    )
+    assertEquals("argument(with(intent, handler), intent), receiver(intentFun())", dfa.events.joinToString { it })
     Disposer.dispose(parsed.second)
   }
 
@@ -1536,10 +1511,7 @@ class DataFlowAnalyzerTest : TestCase() {
     val method = target.getParentOfType(UMethod::class.java)
     val dfa = LoggingDataFlowAnalyzer(listOf(target))
     method?.accept(dfa)
-    assertEquals(
-      "receiver(apply(handler)), argument(apply(handler), intent), receiver(d()), receiver(e())",
-      dfa.events.joinToString { it },
-    )
+    assertEquals("receiver(apply(handler)), argument(apply(handler), intent), receiver(d()), receiver(e())", dfa.events.joinToString { it })
     Disposer.dispose(parsed.second)
   }
 

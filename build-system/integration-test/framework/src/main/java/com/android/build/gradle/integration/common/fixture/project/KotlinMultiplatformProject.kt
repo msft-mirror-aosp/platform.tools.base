@@ -32,116 +32,84 @@ import java.nio.file.Path
  * Support for Kotlin Multiplatform project in the [GradleRule] fixture
  */
 
-/**
- * Specialized interface for [GenericProjectDefinition]
- */
-interface KotlinMultiplatformDefinition: GradleProjectDefinition {
+/** Specialized interface for [GenericProjectDefinition] */
+interface KotlinMultiplatformDefinition : GradleProjectDefinition {
 
-    /**
-     * the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is
-     * applied
-     */
-    val android: KotlinMultiplatformAndroidLibraryTarget
-    /**
-     * configures the Android DSL object. This is only available if the
-     * [PluginType.ANDROID_KMP_LIBRARY] is applied
-     */
-    fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit)
+  /** the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is applied */
+  val android: KotlinMultiplatformAndroidLibraryTarget
 
-    val kotlin: KotlinMultiplatformExtension
-    fun kotlin(action: KotlinMultiplatformExtension.() -> Unit)
+  /** configures the Android DSL object. This is only available if the [PluginType.ANDROID_KMP_LIBRARY] is applied */
+  fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit)
 
-    /** executes the lambda that adds/updates/removes files from the project */
-    fun files(action: GradleProjectFiles.() -> Unit)
+  val kotlin: KotlinMultiplatformExtension
+
+  fun kotlin(action: KotlinMultiplatformExtension.() -> Unit)
+
+  /** executes the lambda that adds/updates/removes files from the project */
+  fun files(action: GradleProjectFiles.() -> Unit)
 }
 
-/**
- * Implementation of [KotlinMultiplatformDefinition]
- */
-internal class KotlinMultiplatformDefinitionImpl(
-    path: String,
-) : GradleProjectDefinitionImpl(path),
-    KotlinMultiplatformDefinition {
+/** Implementation of [KotlinMultiplatformDefinition] */
+internal class KotlinMultiplatformDefinitionImpl(path: String) : GradleProjectDefinitionImpl(path), KotlinMultiplatformDefinition {
 
-    init {
-        applyPlugin(PluginType.KOTLIN_MPP)
-    }
+  init {
+    applyPlugin(PluginType.KOTLIN_MPP)
+  }
 
-    override fun files (action: GradleProjectFiles.() -> Unit) {
-        action(files)
-    }
+  override fun files(action: GradleProjectFiles.() -> Unit) {
+    action(files)
+  }
 
-    override val android: KotlinMultiplatformAndroidLibraryTarget =
-        DslProxy.createProxy(
-            KotlinMultiplatformAndroidLibraryTarget::class.java,
-            dslRecorder,
-        )
+  override val android: KotlinMultiplatformAndroidLibraryTarget =
+    DslProxy.createProxy(KotlinMultiplatformAndroidLibraryTarget::class.java, dslRecorder)
 
-    override fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit) {
-        if (!hasPlugin(PluginType.ANDROID_KMP_LIBRARY))
-            throw RuntimeException("ANDROID_KMP_PLUGIN not applied")
+  override fun android(action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit) {
+    if (!hasPlugin(PluginType.ANDROID_KMP_LIBRARY)) throw RuntimeException("ANDROID_KMP_PLUGIN not applied")
 
-        action(android)
-    }
+    action(android)
+  }
 
-    private val kotlinDslRecorder = DefaultDslRecorder()
+  private val kotlinDslRecorder = DefaultDslRecorder()
 
-    override val kotlin: KotlinMultiplatformExtension =
-        DslProxy.createProxy(
-            KotlinMultiplatformExtension::class.java,
-            kotlinDslRecorder
-        )
+  override val kotlin: KotlinMultiplatformExtension = DslProxy.createProxy(KotlinMultiplatformExtension::class.java, kotlinDslRecorder)
 
-    override fun kotlin(action: KotlinMultiplatformExtension.() -> Unit) {
-        action(kotlin)
-    }
+  override fun kotlin(action: KotlinMultiplatformExtension.() -> Unit) {
+    action(kotlin)
+  }
 
-    override fun writeExtension(writer: BuildWriter, location: Path) {
-        writer.apply {
-            block("kotlin") {
-                if (hasPlugin(PluginType.ANDROID_KMP_LIBRARY)) {
-                    block("android") {
-                        dslRecorder.writeContent(this)
-                    }
-                }
-                kotlinDslRecorder.writeContent(this)
-            }
-
-            emptyLine()
+  override fun writeExtension(writer: BuildWriter, location: Path) {
+    writer.apply {
+      block("kotlin") {
+        if (hasPlugin(PluginType.ANDROID_KMP_LIBRARY)) {
+          block("android") { dslRecorder.writeContent(this) }
         }
+        kotlinDslRecorder.writeContent(this)
+      }
+
+      emptyLine()
     }
+  }
 }
 
 /**
  * Specialized interface for KMP [GradleProject] to use in the test
  *
- * While it implements [GeneratesAar] this will only find AARs if the android kmp library plugin
- * is applied (obviously)
+ * While it implements [GeneratesAar] this will only find AARs if the android kmp library plugin is applied (obviously)
  */
-interface KotlinMultiplatformProject: GradleProject<KotlinMultiplatformDefinition>, GeneratesAar
+interface KotlinMultiplatformProject : GradleProject<KotlinMultiplatformDefinition>, GeneratesAar
 
-/**
- * Implementation of [GradleProject]
- */
-internal class KotlinMultiplatformProjectImpl(
-    location: Path,
-    projectDefinition: KotlinMultiplatformDefinition,
-) : GradleProjectImpl<KotlinMultiplatformDefinition>(
-    location,
-    projectDefinition,
-), KotlinMultiplatformProject, GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
+/** Implementation of [GradleProject] */
+internal class KotlinMultiplatformProjectImpl(location: Path, projectDefinition: KotlinMultiplatformDefinition) :
+  GradleProjectImpl<KotlinMultiplatformDefinition>(location, projectDefinition),
+  KotlinMultiplatformProject,
+  GeneratesAar by GeneratesAarDelegate(projectDefinition.path, location) {
 
-    override fun getReversibleInstance(fileChangeController: FileChangeController): KotlinMultiplatformProject =
-        ReversibleKotlinMultiplatformProject(this, fileChangeController)
+  override fun getReversibleInstance(fileChangeController: FileChangeController): KotlinMultiplatformProject =
+    ReversibleKotlinMultiplatformProject(this, fileChangeController)
 }
 
-/**
- * Reversible version of [KotlinMultiplatformProject]
- */
-internal class ReversibleKotlinMultiplatformProject(
-    parentProject: KotlinMultiplatformProject,
-    fileChangeController: FileChangeController
-) : ReversibleGradleProject<KotlinMultiplatformProject, KotlinMultiplatformDefinition>(
-    parentProject,
-    fileChangeController
-), KotlinMultiplatformProject, GeneratesAar by GeneratesAarFromParentDelegate(parentProject)
+/** Reversible version of [KotlinMultiplatformProject] */
+internal class ReversibleKotlinMultiplatformProject(parentProject: KotlinMultiplatformProject, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<KotlinMultiplatformProject, KotlinMultiplatformDefinition>(parentProject, fileChangeController),
+  KotlinMultiplatformProject,
+  GeneratesAar by GeneratesAarFromParentDelegate(parentProject)

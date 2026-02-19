@@ -17,85 +17,79 @@
 package com.android.build.gradle.internal.instrumentation
 
 import com.google.common.io.ByteStreams
-import org.objectweb.asm.AnnotationVisitor
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassVisitor
 import java.io.Closeable
 import java.io.InputStream
 import java.util.Collections
+import org.objectweb.asm.AnnotationVisitor
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassVisitor
 
 /**
  * Base class for loading and caching [ClassData] from a source.
  *
- * @param sourceType indicates whether this source is a local project's source or a dependency
- *                   source.
+ * @param sourceType indicates whether this source is a local project's source or a dependency source.
  */
 abstract class ClassesDataSourceCache(val sourceType: SourceType) : Closeable {
-    private val loadedClassesData: MutableMap<String, ClassData> =
-        Collections.synchronizedMap(mutableMapOf())
+  private val loadedClassesData: MutableMap<String, ClassData> = Collections.synchronizedMap(mutableMapOf())
 
-    private fun getClassData(classInputStream: InputStream): ClassData {
-        var superclassName: String? = null
-        val annotationsList = mutableListOf<String>()
-        val interfacesList = mutableListOf<String>()
-        classInputStream.use { inputStream ->
-            val classReader = ClassReader(ByteStreams.toByteArray(inputStream))
-            classReader.accept(object : ClassVisitor(ASM_API_VERSION) {
+  private fun getClassData(classInputStream: InputStream): ClassData {
+    var superclassName: String? = null
+    val annotationsList = mutableListOf<String>()
+    val interfacesList = mutableListOf<String>()
+    classInputStream.use { inputStream ->
+      val classReader = ClassReader(ByteStreams.toByteArray(inputStream))
+      classReader.accept(
+        object : ClassVisitor(ASM_API_VERSION) {
 
-                override fun visitAnnotation(
-                    descriptor: String?,
-                    visible: Boolean
-                ): AnnotationVisitor? {
-                    if (descriptor != "Lkotlin/Metadata;") {
-                        annotationsList.add(descriptor!!.substring(1, descriptor.length - 1))
-                    }
-                    return null
-                }
+          override fun visitAnnotation(descriptor: String?, visible: Boolean): AnnotationVisitor? {
+            if (descriptor != "Lkotlin/Metadata;") {
+              annotationsList.add(descriptor!!.substring(1, descriptor.length - 1))
+            }
+            return null
+          }
 
-                override fun visit(
-                    version: Int,
-                    access: Int,
-                    name: String?,
-                    signature: String?,
-                    superName: String?,
-                    interfaces: Array<out String>?
-                ) {
-                    superclassName = superName
-                    interfacesList.addAll(interfaces!!)
-                }
-            }, ClassReader.SKIP_CODE or ClassReader.SKIP_FRAMES or ClassReader.SKIP_DEBUG)
-        }
-        return ClassData(annotationsList, superclassName, interfacesList)
+          override fun visit(
+            version: Int,
+            access: Int,
+            name: String?,
+            signature: String?,
+            superName: String?,
+            interfaces: Array<out String>?,
+          ) {
+            superclassName = superName
+            interfacesList.addAll(interfaces!!)
+          }
+        },
+        ClassReader.SKIP_CODE or ClassReader.SKIP_FRAMES or ClassReader.SKIP_DEBUG,
+      )
     }
+    return ClassData(annotationsList, superclassName, interfacesList)
+  }
 
-    protected fun loadClassData(className: String, classInputStream: InputStream): ClassData {
-        val classData = getClassData(classInputStream)
-        loadedClassesData[className] = classData
-        return classData
-    }
+  protected fun loadClassData(className: String, classInputStream: InputStream): ClassData {
+    val classData = getClassData(classInputStream)
+    loadedClassesData[className] = classData
+    return classData
+  }
 
-    override fun close() {
-        loadedClassesData.clear()
-    }
+  override fun close() {
+    loadedClassesData.clear()
+  }
 
-    fun getClassDataIfLoaded(className: String): ClassData? {
-        return loadedClassesData[className]
-    }
+  fun getClassDataIfLoaded(className: String): ClassData? {
+    return loadedClassesData[className]
+  }
 
-    fun isClassLoaded(className: String): Boolean {
-        return loadedClassesData.containsKey(className.replace('.', '/'))
-    }
+  fun isClassLoaded(className: String): Boolean {
+    return loadedClassesData.containsKey(className.replace('.', '/'))
+  }
 
-    abstract fun maybeLoadClassData(className: String): ClassData?
+  abstract fun maybeLoadClassData(className: String): ClassData?
 
-    data class ClassData(
-        val annotations: List<String>,
-        val superClass: String?,
-        val interfaces: List<String>
-    )
+  data class ClassData(val annotations: List<String>, val superClass: String?, val interfaces: List<String>)
 
-    enum class SourceType {
-        PROJECT,
-        DEPENDENCY,
-    }
+  enum class SourceType {
+    PROJECT,
+    DEPENDENCY,
+  }
 }

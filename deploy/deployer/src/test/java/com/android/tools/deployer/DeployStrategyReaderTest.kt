@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 package com.android.tools.deployer
+
 import com.android.tools.deployer.model.App
+import java.nio.file.Path
 import org.junit.Assert
 import org.junit.Test
-import java.nio.file.Path
+
 const val BASE = "tools/base/deploy/deployer/src/test/resource/apks/"
+
 class DeployStrategyReaderTest {
-    @Test
-    fun abiFilter() {
-        val app = App.fromStrategy(Path.of(BASE + "arch_filter.json"), TestLogger())
-        Assert.assertEquals("com.example.simpleapp", app.appId)
-        val strategies = app.allStrategies;
-        Assert.assertEquals(3, strategies.size)
-        val targetArm64 = app.getApksForPackageManager("arm64-v8a")
-        Assert.assertEquals(2, targetArm64.size)
-        Assert.assertTrue(targetArm64.any {it.path.endsWith("split.apk")})
-        Assert.assertTrue(targetArm64.any {it.path.endsWith("simple.apk")})
-        Assert.assertFalse(targetArm64.any {it.path.endsWith("split2.apk")})
-    }
+  @Test
+  fun abiFilter() {
+    val app = App.fromStrategy(Path.of(BASE + "arch_filter.json"), TestLogger())
+    Assert.assertEquals("com.example.simpleapp", app.appId)
+    val strategies = app.allStrategies
+    Assert.assertEquals(3, strategies.size)
+    val targetArm64 = app.getApksForPackageManager("arm64-v8a")
+    Assert.assertEquals(2, targetArm64.size)
+    Assert.assertTrue(targetArm64.any { it.path.endsWith("split.apk") })
+    Assert.assertTrue(targetArm64.any { it.path.endsWith("simple.apk") })
+    Assert.assertFalse(targetArm64.any { it.path.endsWith("split2.apk") })
+  }
 }

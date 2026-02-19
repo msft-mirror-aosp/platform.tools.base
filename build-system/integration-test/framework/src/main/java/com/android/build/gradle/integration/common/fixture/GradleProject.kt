@@ -19,126 +19,106 @@ package com.android.build.gradle.integration.common.fixture
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import java.io.File
 
-/**
- * Contains the contents (source code and resources) of a Gradle project ([org.gradle.api.Project]).
- */
+/** Contains the contents (source code and resources) of a Gradle project ([org.gradle.api.Project]). */
 abstract class GradleProject(
 
-    /**
-     * Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it
-     * will be normalized to start with ':'.
-     */
-    path: String? = null
-
+  /** Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it will be normalized to start with ':'. */
+  path: String? = null
 ) : TestProject {
 
-    /**
-     * Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it
-     * will be normalized to start with ':'.
-     */
-    val path: String? = path?.let {
-        if (path.startsWith(':')) {
-            path
-        } else {
-            ":$path"
-        }
+  /** Logical path to this project (e.g., ":app"). If it is provided and doesn't start with ':', it will be normalized to start with ':'. */
+  val path: String? =
+    path?.let {
+      if (path.startsWith(':')) {
+        path
+      } else {
+        ":$path"
+      }
     }
 
-    /** Map from a relative path to the corresponding [TestSourceFile] instance.  */
-    protected val sourceFiles: MutableMap<String, TestSourceFile> = mutableMapOf()
+  /** Map from a relative path to the corresponding [TestSourceFile] instance. */
+  protected val sourceFiles: MutableMap<String, TestSourceFile> = mutableMapOf()
 
-    /** Returns a source file with the specified file path.  */
-    fun getFile(relativePath: String): TestSourceFile {
-        return sourceFiles[relativePath]
-            ?: throw error("$relativePath does not exist, list is ${sourceFiles.keys.joinToString()}")
+  /** Returns a source file with the specified file path. */
+  fun getFile(relativePath: String): TestSourceFile {
+    return sourceFiles[relativePath] ?: throw error("$relativePath does not exist, list is ${sourceFiles.keys.joinToString()}")
+  }
+
+  /** Returns a source file with the specified file name. */
+  fun getFileByName(fileName: String): TestSourceFile {
+    val matchedFiles = sourceFiles.filter { it.value.name == fileName }
+    return when {
+      matchedFiles.isEmpty() -> error("File with name '$fileName' not found")
+      matchedFiles.size > 1 -> error("Found multiple files named '$fileName`:" + " ${matchedFiles.keys.joinToString(", ")}")
+      else -> matchedFiles.values.first()
+    }
+  }
+
+  /** Returns all source files. */
+  fun getAllSourceFiles(): Collection<TestSourceFile> {
+    return sourceFiles.values.toList()
+  }
+
+  /** Adds a file at the given file path with the given contents. The file must not yet exist. */
+  fun addFile(relativePath: String, content: String) {
+    addFile(TestSourceFile(relativePath, content))
+  }
+
+  /** Adds a source file. The file must not yet exist. */
+  fun addFile(file: TestSourceFile) {
+    check(!sourceFiles.containsKey(file.path)) { "${file.path} already exists" }
+    sourceFiles[file.path] = file
+  }
+
+  /** Adds source files. The files must not yet exist. */
+  fun addFiles(vararg files: TestSourceFile) {
+    for (file in files) {
+      addFile(file)
+    }
+  }
+
+  /** Removes a source file with the specified file path. The file must already exist. */
+  fun removeFile(filePath: String) {
+    check(sourceFiles.containsKey(filePath)) { "$filePath does not exist" }
+    sourceFiles.remove(filePath)
+  }
+
+  /** Removes a source file with the specified file name. The file must already exist. */
+  fun removeFileByName(fileName: String) {
+    removeFile(getFileByName(fileName).path)
+  }
+
+  /** Replaces a source file at the corresponding file path, or adds it if the file does not yet exist. */
+  fun replaceFile(relativePath: String, content: String) {
+    replaceFile(TestSourceFile(relativePath, content))
+  }
+
+  /** Replaces a source file at the corresponding file path, or adds it if the file does not yet exist. */
+  fun replaceFile(file: TestSourceFile) {
+    sourceFiles[file.path] = file
+  }
+
+  open fun buildFileName(): String = "build.gradle"
+
+  /** Appends the given snippet to an already existing build file */
+  open fun appendToBuild(snippet: String): GradleProject {
+    replaceFile(getFile(buildFileName()).appendContent("\n" + snippet + "\n"))
+    return this
+  }
+
+  override fun write(projectDir: File, buildScriptContent: String?, projectRepoScript: String) {
+    for (sourceFile in getAllSourceFiles()) {
+      sourceFile.writeToDir(projectDir)
     }
 
-    /** Returns a source file with the specified file name.  */
-    fun getFileByName(fileName: String): TestSourceFile {
-        val matchedFiles = sourceFiles.filter { it.value.name == fileName }
-        return when {
-            matchedFiles.isEmpty() -> error("File with name '$fileName' not found")
-            matchedFiles.size > 1 -> error(
-                "Found multiple files named '$fileName`:" +
-                        " ${matchedFiles.keys.joinToString(", ")}"
-            )
-            else -> matchedFiles.values.first()
-        }
+    if (!buildScriptContent.isNullOrBlank()) {
+      val buildFileName = if (sourceFiles.containsKey("build.gradle.kts")) "build.gradle.kts" else "build.gradle"
+      val buildFile = File(projectDir, buildFileName)
+      if (buildFile.exists()) {
+        buildFile.writeText("$buildScriptContent\n\n${buildFile.readText()}")
+      } else {
+        buildFile.writeText(buildScriptContent)
+      }
     }
-
-    /** Returns all source files.  */
-    fun getAllSourceFiles(): Collection<TestSourceFile> {
-        return sourceFiles.values.toList()
-    }
-
-    /** Adds a file at the given file path with the given contents. The file must not yet exist. */
-    fun addFile(relativePath: String, content: String) {
-        addFile(TestSourceFile(relativePath, content))
-    }
-
-    /** Adds a source file. The file must not yet exist. */
-    fun addFile(file: TestSourceFile) {
-        check(!sourceFiles.containsKey(file.path)) { "${file.path} already exists" }
-        sourceFiles[file.path] = file
-    }
-
-    /** Adds source files. The files must not yet exist. */
-    fun addFiles(vararg files: TestSourceFile) {
-        for (file in files) {
-            addFile(file)
-        }
-    }
-
-    /** Removes a source file with the specified file path. The file must already exist.  */
-    fun removeFile(filePath: String) {
-        check(sourceFiles.containsKey(filePath)) { "$filePath does not exist" }
-        sourceFiles.remove(filePath)
-    }
-
-    /** Removes a source file with the specified file name. The file must already exist.  */
-    fun removeFileByName(fileName: String) {
-        removeFile(getFileByName(fileName).path)
-    }
-
-    /**
-     * Replaces a source file at the corresponding file path, or adds it if the file does not yet
-     * exist.
-     */
-    fun replaceFile(relativePath: String, content: String) {
-        replaceFile(TestSourceFile(relativePath, content))
-    }
-
-    /**
-     * Replaces a source file at the corresponding file path, or adds it if the file does not yet
-     * exist.
-     */
-    fun replaceFile(file: TestSourceFile) {
-        sourceFiles[file.path] = file
-    }
-
-    open fun buildFileName(): String = "build.gradle"
-    /**
-     * Appends the given snippet to an already existing build file
-     */
-    open fun appendToBuild(snippet: String): GradleProject {
-        replaceFile(getFile(buildFileName()).appendContent("\n" + snippet + "\n"))
-        return this
-    }
-
-    override fun write(projectDir: File, buildScriptContent: String?, projectRepoScript: String) {
-        for (sourceFile in getAllSourceFiles()) {
-            sourceFile.writeToDir(projectDir)
-        }
-
-        if (!buildScriptContent.isNullOrBlank()) {
-            val buildFileName =
-                if (sourceFiles.containsKey("build.gradle.kts")) "build.gradle.kts" else "build.gradle"
-            val buildFile = File(projectDir, buildFileName)
-            if (buildFile.exists()) {
-                buildFile.writeText("$buildScriptContent\n\n${buildFile.readText()}")
-            } else {
-                buildFile.writeText(buildScriptContent)
-            }
-        }
-    }
+  }
 }

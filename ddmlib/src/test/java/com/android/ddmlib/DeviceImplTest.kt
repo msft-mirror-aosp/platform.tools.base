@@ -24,82 +24,79 @@ import org.junit.Test
 
 class DeviceImplTest {
 
-    @get:Rule
-    var adbRule = FakeAdbRule()
+  @get:Rule var adbRule = FakeAdbRule()
 
-    @Test
-    fun testComputeUserDataIfPresent() {
-        // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        val key = IUserDataMap.Key<MyClass>()
+  @Test
+  fun testComputeUserDataIfPresent() {
+    // Prepare
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    val key = IUserDataMap.Key<MyClass>()
 
-        // Act
-        val value = device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
+    // Act
+    val value = device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
 
-        // Assert
-        assertThat(value).isNotNull()
-        assertThat(value.key).isSameAs(key)
-    }
+    // Assert
+    assertThat(value).isNotNull()
+    assertThat(value.key).isSameAs(key)
+  }
 
-    @Test
-    fun testComputeUserDataIfPresentDoesNotAllowNull() {
-        // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        val key = IUserDataMap.Key<MyClass>()
+  @Test
+  fun testComputeUserDataIfPresentDoesNotAllowNull() {
+    // Prepare
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    val key = IUserDataMap.Key<MyClass>()
 
-        // Act/Assert
-        assertThrows(IllegalArgumentException::class.java) {
-            device.computeUserDataIfAbsent(key) { null }
-        }
-    }
+    // Act/Assert
+    assertThrows(IllegalArgumentException::class.java) { device.computeUserDataIfAbsent(key) { null } }
+  }
 
-    @Test
-    fun testGetUserDataOrNullReturnsValueIfPresent() {
-        // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        val key = IUserDataMap.Key<MyClass>()
-        device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
+  @Test
+  fun testGetUserDataOrNullReturnsValueIfPresent() {
+    // Prepare
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    val key = IUserDataMap.Key<MyClass>()
+    device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
 
-        // Act
-        val value = device.getUserDataOrNull(key)
+    // Act
+    val value = device.getUserDataOrNull(key)
 
-        // Assert
-        assertThat(value).isNotNull()
-        assertThat(value?.key).isSameAs(key)
-    }
+    // Assert
+    assertThat(value).isNotNull()
+    assertThat(value?.key).isSameAs(key)
+  }
 
-    @Test
-    fun testGetUserDataOrNullReturnsNullIfNotPresent() {
-        // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        val key = IUserDataMap.Key<MyClass>()
+  @Test
+  fun testGetUserDataOrNullReturnsNullIfNotPresent() {
+    // Prepare
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    val key = IUserDataMap.Key<MyClass>()
 
-        // Act
-        val value = device.getUserDataOrNull(key)
+    // Act
+    val value = device.getUserDataOrNull(key)
 
-        // Assert
-        assertThat(value).isNull()
-    }
+    // Assert
+    assertThat(value).isNull()
+  }
 
-    @Test
-    fun testRemoveUserData() {
-        // Prepare
-        adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
-        val device: IDevice = adbRule.bridge.devices.single()
-        val key = IUserDataMap.Key<MyClass>()
-        val value = device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
+  @Test
+  fun testRemoveUserData() {
+    // Prepare
+    adbRule.attachDevice("42", "Google", "Pix3l", "versionX", AndroidApiLevel(29))
+    val device: IDevice = adbRule.bridge.devices.single()
+    val key = IUserDataMap.Key<MyClass>()
+    val value = device.computeUserDataIfAbsent(key) { myKey -> MyClass(myKey) }
 
-        // Act
-        val removedValue = device.removeUserData(key)
+    // Act
+    val removedValue = device.removeUserData(key)
 
-        // Assert
-        assertThat(removedValue).isNotNull()
-        assertThat(removedValue).isSameAs(value)
-    }
+    // Assert
+    assertThat(removedValue).isNotNull()
+    assertThat(removedValue).isSameAs(value)
+  }
 
-    private class MyClass(val key: IUserDataMap.Key<MyClass>)
+  private class MyClass(val key: IUserDataMap.Key<MyClass>)
 }

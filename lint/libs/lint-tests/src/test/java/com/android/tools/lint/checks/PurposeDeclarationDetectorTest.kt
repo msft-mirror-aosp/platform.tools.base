@@ -51,25 +51,25 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
     @Language("XML")
     private val DEFAULT_MOCK_XML =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions>
-                <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38">
-                    <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
-                    <valid-purpose name="purposeForSdk39+" minSdkVersion="39" />
-                    <valid-purpose name="purposeForSdk38+2" minSdkVersion="38" />
-                    <valid-purpose name="purposeForSdk38+3" minSdkVersion="38" />
-                    <valid-purpose name="purposeForSdk38+4" minSdkVersion="38" />
-                </permission>
-            </permissions>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions>
+          <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38">
+              <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
+              <valid-purpose name="purposeForSdk39+" minSdkVersion="39" />
+              <valid-purpose name="purposeForSdk38+2" minSdkVersion="38" />
+              <valid-purpose name="purposeForSdk38+3" minSdkVersion="38" />
+              <valid-purpose name="purposeForSdk38+4" minSdkVersion="38" />
+          </permission>
+      </permissions>
+      """
         .trimIndent()
 
     @Language("XML")
     private val EMPTY_MOCK_XML =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions/>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions/>
+      """
         .trimIndent()
 
     @Language("XML")
@@ -77,54 +77,54 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
       // USE_FOO missing requiresPurposeMinTargetSdkVersion and USE_BAR missing
       // minSdkVersion for purpose.
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions>
-                <permission name="USE_FOO">
-                    <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
-                </permission>
-                <permission name="USE_BAR" requiresPurposeMinTargetSdkVersion="38">
-                    <valid-purpose name="purposeForSdk38+" />
-                </permission>
-            </permissions>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions>
+          <permission name="USE_FOO">
+              <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
+          </permission>
+          <permission name="USE_BAR" requiresPurposeMinTargetSdkVersion="38">
+              <valid-purpose name="purposeForSdk38+" />
+          </permission>
+      </permissions>
+      """
         .trimIndent()
 
     @Language("XML")
     private val MULTI_PERMISSIONS_MOCK_XML =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions>
-                <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38" requiresPurposeMaxSdkVersion="39">
-                    <valid-purpose name="fooPurpose1" minSdkVersion="38" maxSdkVersion="38"/>
-                    <valid-purpose name="fooPurpose2" minSdkVersion="39" />
-                </permission>
-                <permission name="USE_BAR" requiresPurposeMinTargetSdkVersion="39">
-                    <valid-purpose name="barPurpose1" minSdkVersion="39" />
-                </permission>
-            </permissions>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions>
+          <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38" requiresPurposeMaxSdkVersion="39">
+              <valid-purpose name="fooPurpose1" minSdkVersion="38" maxSdkVersion="38"/>
+              <valid-purpose name="fooPurpose2" minSdkVersion="39" />
+          </permission>
+          <permission name="USE_BAR" requiresPurposeMinTargetSdkVersion="39">
+              <valid-purpose name="barPurpose1" minSdkVersion="39" />
+          </permission>
+      </permissions>
+      """
         .trimIndent()
 
     @Language("XML")
     private val PERMISSION_REQUIRING_PURPOSE_STRING =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions>
-                <permission name="USE_FOO" requiresPurposeStringMinTargetSdkVersion="38" />
-            </permissions>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions>
+          <permission name="USE_FOO" requiresPurposeStringMinTargetSdkVersion="38" />
+      </permissions>
+      """
         .trimIndent()
 
     @Language("XML")
     private val PERMISSION_REQUIRING_ALL_PURPOSES =
       """
-            <?xml version="1.0" encoding="utf-8"?>
-            <permissions>
-                <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38" requiresPurposeStringMinTargetSdkVersion="38">
-                    <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
-                </permission>
-            </permissions>
-        """
+      <?xml version="1.0" encoding="utf-8"?>
+      <permissions>
+          <permission name="USE_FOO" requiresPurposeMinTargetSdkVersion="38" requiresPurposeStringMinTargetSdkVersion="38">
+              <valid-purpose name="purposeForSdk38+" minSdkVersion="38" />
+          </permission>
+      </permissions>
+      """
         .trimIndent()
 
     private const val MAX_PURPOSE_STRING_LENGTH = 300
@@ -135,24 +135,15 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
 
     @Language("XML")
     private val validPurposeString =
-      xml(
-        "res/values-en-rUS/strings.xml",
-        """<resources><string name="myPurposeString">$VALID_PURPOSE_STRING</string></resources>""",
-      )
+      xml("res/values-en-rUS/strings.xml", """<resources><string name="myPurposeString">$VALID_PURPOSE_STRING</string></resources>""")
 
     @Language("XML")
     private val invalidLongPurposeString =
-      xml(
-        "res/values/strings.xml",
-        """<resources><string name="myPurposeString">$LONG_PURPOSE_STRING</string></resources>""",
-      )
+      xml("res/values/strings.xml", """<resources><string name="myPurposeString">$LONG_PURPOSE_STRING</string></resources>""")
 
     @Language("XML")
     private val invalidBlankPurposeString =
-      xml(
-        "res/values-en-rNZ/strings.xml",
-        """<resources><string name="myPurposeString">$BLANK_PURPOSE_STRING</string></resources>""",
-      )
+      xml("res/values-en-rNZ/strings.xml", """<resources><string name="myPurposeString">$BLANK_PURPOSE_STRING</string></resources>""")
   }
 
   @Test
@@ -889,10 +880,7 @@ class PurposeDeclarationDetectorTest : AbstractCheckTest() {
     // Find and copy a real SDK to a temporary directory.
     val realSdk = TestUtils.getSdk().toFile()
     val mockSdk = tempFolder.newFolder(MOCK_SDK_DIR)
-    val sourcePlatformDir =
-      File(realSdk, FD_PLATFORMS).listFiles()?.find {
-        it.isDirectory && it.name.startsWith("android-")
-      }!!
+    val sourcePlatformDir = File(realSdk, FD_PLATFORMS).listFiles()?.find { it.isDirectory && it.name.startsWith("android-") }!!
     val platformsDir = File(mockSdk, FD_PLATFORMS + File.separator + sourcePlatformDir.name)
     sourcePlatformDir.copyRecursively(target = platformsDir, overwrite = true)
     val dataDir = File(platformsDir, FD_DATA)

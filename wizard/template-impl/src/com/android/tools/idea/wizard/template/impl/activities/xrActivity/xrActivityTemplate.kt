@@ -37,13 +37,7 @@ val xrActivityTemplate
     name = "Basic Headset Activity"
     description = "Creates a new basic XR headset activity"
     minApi = 30
-    constraints =
-      listOf(
-        TemplateConstraint.AndroidX,
-        TemplateConstraint.Kotlin,
-        TemplateConstraint.Material3,
-        TemplateConstraint.Compose,
-      )
+    constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Activity
     formFactor = FormFactor.XR
@@ -64,7 +58,5 @@ val xrActivityTemplate
 
     thumb { File("xr-activity").resolve("template_xr_activity.png") }
 
-    recipe = { data: TemplateData ->
-      xrActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value)
-    }
+    recipe = { data: TemplateData -> xrActivityRecipe(data as ModuleTemplateData, activityClass.value, packageName.value) }
   }

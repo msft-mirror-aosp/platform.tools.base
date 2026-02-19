@@ -26,206 +26,144 @@ import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
 
-class HelloWorldLibModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            android {
-                defaultConfig.minSdk = 14
-                enableKotlin = false
-            }
+class HelloWorldLibModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary {
+        android {
+          defaultConfig.minSdk = 14
+          enableKotlin = false
         }
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVersions(goldenFile = "Versions")
-        with(result).compareBasicAndroidProject(goldenFile = "BasicAndroidProject")
-        with(result).compareAndroidProject(goldenFile = "AndroidProject")
-        with(result).compareAndroidDsl(goldenFile = "AndroidDsl")
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVersions(goldenFile = "Versions")
+    with(result).compareBasicAndroidProject(goldenFile = "BasicAndroidProject")
+    with(result).compareAndroidProject(goldenFile = "AndroidProject")
+    with(result).compareAndroidDsl(goldenFile = "AndroidDsl")
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }
 
-class DisabledAndroidResourcesInLibModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidLibrary { }
-    },
-    deltaConfig = {
-        androidLibrary {
-            android {
-                buildFeatures {
-                    androidResources = false
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
+class DisabledAndroidResourcesInLibModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidLibrary {} },
+    deltaConfig = { androidLibrary { android { buildFeatures { androidResources = false } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }
 
-class EnabledDataBindingInLibModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidLibrary { }
-    },
-    deltaConfig = {
-        androidLibrary {
-            android {
-                buildFeatures {
-                    dataBinding = true
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
+class EnabledDataBindingInLibModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidLibrary {} },
+    deltaConfig = { androidLibrary { android { buildFeatures { dataBinding = true } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
 
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }
 
-class EnabledTestFixturesInLibModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidLibrary {
-            android {
-                enableKotlin = false
-            }
-        }
-    },
-    deltaConfig = {
-        androidLibrary {
-            android {
-                testFixtures {
-                    enable = true
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test BasicAndroidProject model`() {
-        compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
-    }
+class EnabledTestFixturesInLibModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidLibrary { android { enableKotlin = false } } },
+    deltaConfig = { androidLibrary { android { testFixtures { enable = true } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test BasicAndroidProject model`() {
+    compareBasicAndroidProjectWith(goldenFileSuffix = "BasicAndroidProject")
+  }
 
-    @Test
-    fun `test AndroidProject model`() {
-        compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
-    }
+  @Test
+  fun `test AndroidProject model`() {
+    compareAndroidProjectWith(goldenFileSuffix = "AndroidProject")
+  }
 }
 
 class CompileSdkViaSettingsInLibModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-            }
-        }
-        androidLibrary(createMinimumProject = false) {
-            android {
-                namespace = "com.example.library"
-            }
-            files.setupMinimumManifest()
-        }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { compileSdk = DEFAULT_COMPILE_SDK_VERSION }
+      }
+      androidLibrary(createMinimumProject = false) {
+        android { namespace = "com.example.library" }
+        files.setupMinimumManifest()
+      }
     }
 
-    @Test
-    fun `test compileTarget`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test compileTarget`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidDsl = result.container.getProject().androidDsl
-            ?: throw RuntimeException("Failed to get AndroidDsl Model")
+    val androidDsl = result.container.getProject().androidDsl ?: throw RuntimeException("Failed to get AndroidDsl Model")
 
-        Truth
-            .assertWithMessage("compile target hash")
-            .that(androidDsl.compileTarget)
-            .isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
-    }
+    Truth.assertWithMessage("compile target hash").that(androidDsl.compileTarget).isEqualTo("android-$DEFAULT_COMPILE_SDK_VERSION")
+  }
 }
 
 class MinSdkViaSettingsInLibModelTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        settings {
-            applyPlugin(PluginType.ANDROID_SETTINGS)
-            android {
-                minSdk = 23
-            }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      settings {
+        applyPlugin(PluginType.ANDROID_SETTINGS)
+        android { minSdk = 23 }
+      }
+      androidLibrary(createMinimumProject = false) {
+        android {
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
+          namespace = "com.example.library"
         }
-        androidLibrary(createMinimumProject = false) {
-            android {
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
-                namespace = "com.example.library"
-            }
-            files.setupMinimumManifest()
-        }
+        files.setupMinimumManifest()
+      }
     }
 
-    @Test
-    fun `test minSdkVersion`() {
-        val result = rule.build
-            .modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test minSdkVersion`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        val androidDsl = result.container.getProject().androidDsl
-            ?: throw RuntimeException("Failed to get AndroidDsl Model")
+    val androidDsl = result.container.getProject().androidDsl ?: throw RuntimeException("Failed to get AndroidDsl Model")
 
-        Truth
-            .assertWithMessage("minSdkVersion")
-            .that(androidDsl.defaultConfig?.minSdkVersion)
-            .isNotNull()
+    Truth.assertWithMessage("minSdkVersion").that(androidDsl.defaultConfig?.minSdkVersion).isNotNull()
 
-        Truth
-            .assertWithMessage("minSdkVersion.apiLevel")
-            .that(androidDsl.defaultConfig?.minSdkVersion?.apiLevel)
-            .isEqualTo(23)
+    Truth.assertWithMessage("minSdkVersion.apiLevel").that(androidDsl.defaultConfig?.minSdkVersion?.apiLevel).isEqualTo(23)
 
-        Truth
-            .assertWithMessage("minSdkVersion.codename")
-            .that(androidDsl.defaultConfig?.minSdkVersion?.codename)
-            .isNull()
-    }
+    Truth.assertWithMessage("minSdkVersion.codename").that(androidDsl.defaultConfig?.minSdkVersion?.codename).isNull()
+  }
 }

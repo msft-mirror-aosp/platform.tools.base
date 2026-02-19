@@ -28,11 +28,7 @@ class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBa
     testTopLevelFunction(
       "testInvokeStatic(V)",
       Opcode.INVOKE_STATIC,
-      MethodInfo(
-        name = "foo",
-        owner = "LinvokeInstructions/InvokeInstructionsKt;",
-        signature = "()V",
-      ),
+      MethodInfo(name = "foo", owner = "LinvokeInstructions/InvokeInstructionsKt;", signature = "()V"),
     )
   }
 
@@ -41,11 +37,7 @@ class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBa
     testTopLevelFunction(
       "testInvokeStaticRange(V)",
       Opcode.INVOKE_STATIC_RANGE,
-      MethodInfo(
-        name = "fooRange",
-        owner = "LinvokeInstructions/InvokeInstructionsKt;",
-        signature = "(IIIIII)V",
-      ),
+      MethodInfo(name = "fooRange", owner = "LinvokeInstructions/InvokeInstructionsKt;", signature = "(IIIIII)V"),
     )
   }
 
@@ -108,11 +100,7 @@ class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBa
     testTopLevelFunction(
       "testInvokePolymorphic(VL)",
       Opcode.INVOKE_POLYMORPHIC,
-      MethodInfo(
-        name = "invoke",
-        owner = "Ljava/lang/invoke/MethodHandle;",
-        signature = "([Ljava/lang/Object;)Ljava/lang/Object;",
-      ),
+      MethodInfo(name = "invoke", owner = "Ljava/lang/invoke/MethodHandle;", signature = "([Ljava/lang/Object;)Ljava/lang/Object;"),
     )
   }
 
@@ -136,12 +124,7 @@ class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBa
     )
   }
 
-  private fun test(
-    className: String,
-    methodName: String,
-    expectedOpcode: Opcode,
-    expectedInfo: MethodInfo,
-  ) {
+  private fun test(className: String, methodName: String, expectedOpcode: Opcode, expectedInfo: MethodInfo) {
     val dex = archive.getDex(className)
     val fetchedInfos = mutableSetOf<Pair<Opcode, MethodInfo>>()
     val instructions = archive.getByteCode(className, methodName).instructions
@@ -154,11 +137,7 @@ class InvokeInstructionsTest(archive: DexArchiveBase) : MultipleDexVersionTestBa
     Assert.assertTrue((expectedOpcode to expectedInfo) in fetchedInfos)
   }
 
-  private fun testTopLevelFunction(
-    methodName: String,
-    expectedOpcode: Opcode,
-    expectedInfo: MethodInfo,
-  ) {
+  private fun testTopLevelFunction(methodName: String, expectedOpcode: Opcode, expectedInfo: MethodInfo) {
     test("LinvokeInstructions/InvokeInstructionsKt;", methodName, expectedOpcode, expectedInfo)
   }
 }

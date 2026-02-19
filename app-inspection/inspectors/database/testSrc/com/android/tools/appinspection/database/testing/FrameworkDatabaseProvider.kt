@@ -23,10 +23,7 @@ import org.mockito.Mockito.spy
 import org.mockito.Mockito.`when`
 import org.robolectric.RuntimeEnvironment
 
-internal class FrameworkDatabaseProvider(
-  override val path: String,
-  private val closeablesRule: CloseablesRule,
-) : DatabaseProvider {
+internal class FrameworkDatabaseProvider(override val path: String, private val closeablesRule: CloseablesRule) : DatabaseProvider {
   private val openHelper = OpenHelper()
 
   override fun getReadOnlyDb(autoClose: Boolean) = openHelper.getReadOnlyDb(autoClose)
@@ -37,8 +34,7 @@ internal class FrameworkDatabaseProvider(
     getReadWriteDb().close()
   }
 
-  private inner class OpenHelper :
-    SQLiteOpenHelper(RuntimeEnvironment.getApplication(), path, null, 1) {
+  private inner class OpenHelper : SQLiteOpenHelper(RuntimeEnvironment.getApplication(), path, null, 1) {
 
     override fun onCreate(db: SQLiteDatabase) {}
 

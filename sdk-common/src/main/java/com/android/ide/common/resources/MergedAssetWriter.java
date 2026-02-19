@@ -20,7 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.workers.WorkerExecutorFacade;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Preconditions;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
+
 import javax.inject.Inject;
 
 /** A {@link MergeWriter} for assets, using {@link AssetItem}. */
@@ -146,6 +149,7 @@ public class MergedAssetWriter
         for (AssetItem removedItem : removedItems) {
             File removedFile = new File(getRootFolder(), removedItem.getName());
             removedFile.delete();
+            removeEmptyParents(removedFile.toPath(), getRootFolder().toPath());
         }
 
         // Generate added files
@@ -153,6 +157,20 @@ public class MergedAssetWriter
         for (List<AssetItem> bucket : jobBuckets) {
             getExecutor()
                     .submit(new AssetWorkAction(new AssetWorkParameters(bucket, getRootFolder())));
+        }
+    }
+
+    private void removeEmptyParents(Path file, Path baseFolder) {
+        Path parentToDelete = file.getParent();
+        if (baseFolder.equals(parentToDelete)) return;
+        try {
+            if (Files.list(parentToDelete).findAny().isPresent()) {
+                return;
+            }
+            Files.delete(parentToDelete);
+            removeEmptyParents(parentToDelete, baseFolder);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

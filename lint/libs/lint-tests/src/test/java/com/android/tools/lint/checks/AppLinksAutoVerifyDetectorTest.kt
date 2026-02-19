@@ -292,10 +292,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
       .run()
       .expect(expected)
   }
@@ -334,10 +331,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_MALFORMED_URL,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_MALFORMED_URL)
       .run()
       .expect(expected)
   }
@@ -376,10 +370,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
       .run()
       .expect(expected)
   }
@@ -418,10 +409,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_NOT_FOUND,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_NOT_FOUND)
       .run()
       .expect(expected)
   }
@@ -460,10 +448,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX)
       .run()
       .expect(expected)
   }
@@ -502,10 +487,7 @@ class AppLinksAutoVerifyDetectorTest : AbstractCheckTest() {
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_JSON_PARSE_FAIL,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_JSON_PARSE_FAIL)
       .run()
       .expect(expected)
   }
@@ -630,22 +612,10 @@ AndroidManifest.xml:15: Warning: Unknown host: http://www.example.com. Check if 
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-      )
-      .networkData(
-        "https://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_NOT_FOUND,
-      )
-      .networkData(
-        "http://www.example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-      )
-      .networkData(
-        "https://www.example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
+      .networkData("https://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_NOT_FOUND)
+      .networkData("http://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
+      .networkData("https://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_WRONG_JSON_SYNTAX)
       .run()
       .expect(expected)
   }
@@ -695,14 +665,8 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL,
-      )
-      .networkData(
-        "http://www.example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_HTTP_CONNECT_FAIL)
+      .networkData("http://www.example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
       .run()
       .expect(expected)
   }
@@ -738,10 +702,7 @@ AndroidManifest.xml:20: Warning: Connection to Digital Asset Links JSON file htt
 """,
         )
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
       .run()
       .expectClean()
   }
@@ -796,10 +757,7 @@ android {
 """
         ),
       )
-      .networkData(
-        "http://example.com/.well-known/assetlinks.json",
-        AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST,
-      )
+      .networkData("http://example.com/.well-known/assetlinks.json", AppLinksAutoVerifyDetector.STATUS_UNKNOWN_HOST)
       .run()
       .expect(expected)
   }

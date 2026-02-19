@@ -15,19 +15,15 @@
  */
 package com.android.processmonitor.common
 
-/**
- * Device tracking events
- */
+/** Device tracking events */
 internal sealed class DeviceEvent<T> {
 
-    /**
-     * Sent when a device is and ready to accept ADB request.
-     */
-    data class DeviceOnline<T>(val device: T) : DeviceEvent<T>()
+  /** Sent when a device is and ready to accept ADB request. */
+  data class DeviceOnline<T>(val device: T) : DeviceEvent<T>()
 
-    /**
-     * Sent when a device is disconnected. Note that there is no guarantee this is invoked in all
-     * cases. Also note this can be invoked even if a [DeviceOnline] was never sent.
-     */
-    data class DeviceDisconnected<T>(val serialNumber: String) : DeviceEvent<T>()
+  /**
+   * Sent when a device is disconnected. Note that there is no guarantee this is invoked in all cases. Also note this can be invoked even if
+   * a [DeviceOnline] was never sent.
+   */
+  data class DeviceDisconnected<T>(val serialNumber: String) : DeviceEvent<T>()
 }

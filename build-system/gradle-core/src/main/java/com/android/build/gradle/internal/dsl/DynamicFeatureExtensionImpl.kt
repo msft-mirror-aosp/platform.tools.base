@@ -33,223 +33,210 @@ import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultCon
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
-import org.gradle.api.Action
-import org.gradle.api.NamedDomainObjectContainer
 import java.util.function.Supplier
 import javax.inject.Inject
+import org.gradle.api.Action
+import org.gradle.api.NamedDomainObjectContainer
 
-abstract class DynamicFeatureExtensionImpl @Inject constructor(
-    dslServices: DslServices,
-    dslContainers: DslContainerProvider<
-            DynamicFeatureDefaultConfig,
-            DynamicFeatureBuildType,
-            DynamicFeatureProductFlavor,
-            SigningConfig>
-)  :
-    TestedExtensionImpl<
-            DynamicFeatureBuildType,
-            DynamicFeatureDefaultConfig,
-            DynamicFeatureProductFlavor,
-            DynamicFeatureInstallation>(
-        dslServices,
-        dslContainers
-    ),
-    InternalDynamicFeatureExtension {
+abstract class DynamicFeatureExtensionImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  dslContainers: DslContainerProvider<DynamicFeatureDefaultConfig, DynamicFeatureBuildType, DynamicFeatureProductFlavor, SigningConfig>,
+) :
+  TestedExtensionImpl<DynamicFeatureBuildType, DynamicFeatureDefaultConfig, DynamicFeatureProductFlavor, DynamicFeatureInstallation>(
+    dslServices,
+    dslContainers,
+  ),
+  InternalDynamicFeatureExtension {
 
-    override val buildFeatures: DynamicFeatureBuildFeatures =
-        dslServices.newInstance(DynamicFeatureBuildFeaturesImpl::class.java)
+  override val buildFeatures: DynamicFeatureBuildFeatures = dslServices.newInstance(DynamicFeatureBuildFeaturesImpl::class.java)
 
-    override fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit) {
-        action(buildFeatures)
-    }
+  override fun buildFeatures(action: DynamicFeatureBuildFeatures.() -> Unit) {
+    action(buildFeatures)
+  }
 
-    override fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>) {
-        action.execute(buildFeatures)
-    }
+  override fun buildFeatures(action: Action<DynamicFeatureBuildFeatures>) {
+    action.execute(buildFeatures)
+  }
 
-    override fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit) {
-        action(buildTypes)
-    }
+  override fun buildTypes(action: NamedDomainObjectContainer<DynamicFeatureBuildType>.() -> Unit) {
+    action(buildTypes)
+  }
 
-    override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
-        action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
-    }
+  override fun buildTypes(action: Action<in NamedDomainObjectContainer<BuildType>>) {
+    action.execute(buildTypes as NamedDomainObjectContainer<BuildType>)
+  }
 
-    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.debug(action: DynamicFeatureBuildType.() -> Unit) {
-        getByName("debug", action)
-    }
+  override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.debug(action: DynamicFeatureBuildType.() -> Unit) {
+    getByName("debug", action)
+  }
 
-    override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit)  {
-        getByName("release", action)
-    }
+  override fun NamedDomainObjectContainer<DynamicFeatureBuildType>.release(action: DynamicFeatureBuildType.() -> Unit) {
+    getByName("release", action)
+  }
 
-    override val composeOptions: ComposeOptionsImpl =
-        dslServices.newInstance(ComposeOptionsImpl::class.java, dslServices)
+  override val composeOptions: ComposeOptionsImpl = dslServices.newInstance(ComposeOptionsImpl::class.java, dslServices)
 
-    override fun composeOptions(action: ComposeOptions.() -> Unit) {
-        action.invoke(composeOptions)
-    }
+  override fun composeOptions(action: ComposeOptions.() -> Unit) {
+    action.invoke(composeOptions)
+  }
 
-    override fun composeOptions(action: Action<ComposeOptions>) {
-        action.execute(composeOptions)
-    }
+  override fun composeOptions(action: Action<ComposeOptions>) {
+    action.execute(composeOptions)
+  }
 
-    override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
-        action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
-    }
+  override fun productFlavors(action: Action<NamedDomainObjectContainer<InternalProductFlavor>>) {
+    action.execute(productFlavors as NamedDomainObjectContainer<InternalProductFlavor>)
+  }
 
-    override fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit) {
-        action.invoke(productFlavors)
-    }
+  override fun productFlavors(action: NamedDomainObjectContainer<DynamicFeatureProductFlavor>.() -> Unit) {
+    action.invoke(productFlavors)
+  }
 
-    override fun defaultConfig(action: Action<InternalDefaultConfig>) {
-        action.execute(defaultConfig as InternalDefaultConfig)
-    }
+  override fun defaultConfig(action: Action<InternalDefaultConfig>) {
+    action.execute(defaultConfig as InternalDefaultConfig)
+  }
 
-    override fun defaultConfig(action: DynamicFeatureDefaultConfig.() -> Unit) {
-        action.invoke(defaultConfig)
-    }
+  override fun defaultConfig(action: DynamicFeatureDefaultConfig.() -> Unit) {
+    action.invoke(defaultConfig)
+  }
 
-    override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
-        action.execute(signingConfigs)
-    }
+  override fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>) {
+    action.execute(signingConfigs)
+  }
 
-    override fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit) {
-        action.invoke(signingConfigs)
-    }
+  override fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit) {
+    action.invoke(signingConfigs)
+  }
 
-    override val aaptOptions: AaptOptions get() = androidResources as AaptOptions
+  override val aaptOptions: AaptOptions
+    get() = androidResources as AaptOptions
 
-    override fun aaptOptions(action: com.android.build.api.dsl.AaptOptions.() -> Unit) {
-        action.invoke(aaptOptions)
-    }
+  override fun aaptOptions(action: com.android.build.api.dsl.AaptOptions.() -> Unit) {
+    action.invoke(aaptOptions)
+  }
 
-    override fun aaptOptions(action: Action<AaptOptions>) {
-        action.execute(aaptOptions)
-    }
+  override fun aaptOptions(action: Action<AaptOptions>) {
+    action.execute(aaptOptions)
+  }
 
-    override val adbOptions: AdbOptions get() = installation as AdbOptions
+  override val adbOptions: AdbOptions
+    get() = installation as AdbOptions
 
-    override fun adbOptions(action: com.android.build.api.dsl.AdbOptions.() -> Unit) {
-        action.invoke(adbOptions)
-    }
+  override fun adbOptions(action: com.android.build.api.dsl.AdbOptions.() -> Unit) {
+    action.invoke(adbOptions)
+  }
 
-    override fun adbOptions(action: Action<AdbOptions>) {
-        action.execute(adbOptions)
-    }
+  override fun adbOptions(action: Action<AdbOptions>) {
+    action.execute(adbOptions)
+  }
 
-    override val androidResources: DynamicFeatureAndroidResources
-        = dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
-    override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {
-        action(androidResources)
-    }
-    override fun androidResources(action: Action<DynamicFeatureAndroidResources>) {
-        action.execute(androidResources)
-    }
+  override val androidResources: DynamicFeatureAndroidResources =
+    dslServices.newDecoratedInstance(DynamicFeatureAndroidResourcesImpl::class.java, dslServices)
 
-    override val dataBinding: DataBindingOptions =
-        dslServices.newDecoratedInstance(
-            DataBindingOptions::class.java,
-            Supplier { buildFeatures },
-            dslServices
-        )
+  override fun androidResources(action: DynamicFeatureAndroidResources.() -> Unit) {
+    action(androidResources)
+  }
 
-    override fun dataBinding(action: com.android.build.api.dsl.DataBinding.() -> Unit) {
-        action.invoke(dataBinding)
-    }
+  override fun androidResources(action: Action<DynamicFeatureAndroidResources>) {
+    action.execute(androidResources)
+  }
 
-    override fun dataBinding(action: Action<DataBindingOptions>) {
-        action.execute(dataBinding)
-    }
+  override val dataBinding: DataBindingOptions =
+    dslServices.newDecoratedInstance(DataBindingOptions::class.java, Supplier { buildFeatures }, dslServices)
 
-    override val viewBinding: ViewBindingOptionsImpl
-        get() = dslServices.newDecoratedInstance(
-            ViewBindingOptionsImpl::class.java,
-            Supplier { buildFeatures },
-            dslServices
-        )
+  override fun dataBinding(action: com.android.build.api.dsl.DataBinding.() -> Unit) {
+    action.invoke(dataBinding)
+  }
 
-    override fun viewBinding(action: Action<ViewBindingOptionsImpl>) {
-        action.execute(viewBinding)
-    }
+  override fun dataBinding(action: Action<DataBindingOptions>) {
+    action.execute(dataBinding)
+  }
 
-    override fun viewBinding(action: ViewBinding.() -> Unit) {
-        action.invoke(viewBinding)
-    }
+  override val viewBinding: ViewBindingOptionsImpl
+    get() = dslServices.newDecoratedInstance(ViewBindingOptionsImpl::class.java, Supplier { buildFeatures }, dslServices)
 
-    override val jacoco: JacocoOptions
-        get() = testCoverage as JacocoOptions
+  override fun viewBinding(action: Action<ViewBindingOptionsImpl>) {
+    action.execute(viewBinding)
+  }
 
-    override fun jacoco(action: com.android.build.api.dsl.JacocoOptions.() -> Unit) {
-        action.invoke(jacoco)
-    }
+  override fun viewBinding(action: ViewBinding.() -> Unit) {
+    action.invoke(viewBinding)
+  }
 
-    override fun jacoco(action: Action<JacocoOptions>) {
-        action.execute(jacoco)
-    }
+  override val jacoco: JacocoOptions
+    get() = testCoverage as JacocoOptions
 
-    override val testCoverage: TestCoverage  = dslServices.newInstance(JacocoOptions::class.java)
+  override fun jacoco(action: com.android.build.api.dsl.JacocoOptions.() -> Unit) {
+    action.invoke(jacoco)
+  }
 
-    override fun testCoverage(action: TestCoverage.() -> Unit) {
-        action.invoke(testCoverage)
-    }
+  override fun jacoco(action: Action<JacocoOptions>) {
+    action.execute(jacoco)
+  }
 
-    override fun testCoverage(action: Action<TestCoverage>) {
-        action.execute(testCoverage)
-    }
+  override val testCoverage: TestCoverage = dslServices.newInstance(JacocoOptions::class.java)
 
-    override val testOptions: TestOptions =
-        dslServices.newInstance(TestOptions::class.java, dslServices)
+  override fun testCoverage(action: TestCoverage.() -> Unit) {
+    action.invoke(testCoverage)
+  }
 
-    override fun testOptions(action: com.android.build.api.dsl.TestOptions.() -> Unit) {
-        action.invoke(testOptions)
-    }
+  override fun testCoverage(action: Action<TestCoverage>) {
+    action.execute(testCoverage)
+  }
 
-    override fun testOptions(action: Action<TestOptions>) {
-        action.execute(testOptions)
-    }
+  override val testOptions: TestOptions = dslServices.newInstance(TestOptions::class.java, dslServices)
 
-    override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
-        get() = sourceSetManager.sourceSetsContainer
+  override fun testOptions(action: com.android.build.api.dsl.TestOptions.() -> Unit) {
+    action.invoke(testOptions)
+  }
 
-    override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
-        sourceSetManager.executeAction(action)
-    }
+  override fun testOptions(action: Action<TestOptions>) {
+    action.execute(testOptions)
+  }
 
-    override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
-        action.execute(sourceSets)
-    }
+  override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+    get() = sourceSetManager.sourceSetsContainer
 
-    final override val lintOptions: LintOptions by lazy(LazyThreadSafetyMode.PUBLICATION) {
-        dslServices.newInstance(LintOptions::class.java, dslServices, lint)
-    }
+  override fun sourceSets(action: NamedDomainObjectContainer<out com.android.build.api.dsl.AndroidSourceSet>.() -> Unit) {
+    sourceSetManager.executeAction(action)
+  }
 
-    override fun lintOptions(action: com.android.build.api.dsl.LintOptions.() -> Unit) {
-        action.invoke(lintOptions)
-    }
+  override fun sourceSets(action: Action<NamedDomainObjectContainer<AndroidSourceSet>>) {
+    action.execute(sourceSets)
+  }
 
-    override fun lintOptions(action: Action<LintOptions>) {
-        action.execute(lintOptions)
-    }
+  final override val lintOptions: LintOptions by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { dslServices.newInstance(LintOptions::class.java, dslServices, lint) }
 
-    override val installation: DynamicFeatureInstallation
-        = dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
+  override fun lintOptions(action: com.android.build.api.dsl.LintOptions.() -> Unit) {
+    action.invoke(lintOptions)
+  }
 
-    override fun installation(action: DynamicFeatureInstallation.() -> Unit) {
-        action(installation)
-    }
-    override fun installation(action: Action<DynamicFeatureInstallation>) {
-        action.execute(installation)
-    }
+  override fun lintOptions(action: Action<LintOptions>) {
+    action.execute(lintOptions)
+  }
 
-    override val packagingOptions: PackagingOptions
-        get() = packaging as PackagingOptions
+  override val installation: DynamicFeatureInstallation =
+    dslServices.newDecoratedInstance(DynamicFeatureInstallationImpl::class.java, dslServices)
 
-    override fun packagingOptions(action: Packaging.() -> Unit) {
-        action.invoke(packaging)
-    }
+  override fun installation(action: DynamicFeatureInstallation.() -> Unit) {
+    action(installation)
+  }
 
-    override fun packagingOptions(action: Action<PackagingOptions>) {
-        action.execute(packaging as PackagingOptions)
-    }
+  override fun installation(action: Action<DynamicFeatureInstallation>) {
+    action.execute(installation)
+  }
+
+  override val packagingOptions: PackagingOptions
+    get() = packaging as PackagingOptions
+
+  override fun packagingOptions(action: Packaging.() -> Unit) {
+    action.invoke(packaging)
+  }
+
+  override fun packagingOptions(action: Action<PackagingOptions>) {
+    action.execute(packaging as PackagingOptions)
+  }
 }

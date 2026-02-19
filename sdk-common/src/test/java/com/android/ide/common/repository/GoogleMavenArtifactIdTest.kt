@@ -19,47 +19,35 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class GoogleMavenArtifactIdTest {
-    @Test
-    fun testFindByModuleId() {
-        assertThat(GoogleMavenArtifactId.find("com.android.support:animated-vector-drawable"))
-            .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
-        assertThat(GoogleMavenArtifactId.find("androidx.core:core-ktx"))
-            .isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
-        assertThat(GoogleMavenArtifactId.find("android.arch.core:common"))
-            .isEqualTo(GoogleMavenArtifactId.CORE_COMMON)
-        assertThat(GoogleMavenArtifactId.find("com.google.android.support:wearable"))
-            .isEqualTo(GoogleMavenArtifactId.SUPPORT_WEARABLE)
-        assertThat(GoogleMavenArtifactId.find("androidx.annotation:annotation"))
-            .isEqualTo(GoogleMavenArtifactId.ANDROIDX_ANNOTATION)
-        assertThat(GoogleMavenArtifactId.find("android.arch.work:work-testing"))
-            .isEqualTo(GoogleMavenArtifactId.WORK_TESTING)
-    }
+  @Test
+  fun testFindByModuleId() {
+    assertThat(GoogleMavenArtifactId.find("com.android.support:animated-vector-drawable"))
+      .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
+    assertThat(GoogleMavenArtifactId.find("androidx.core:core-ktx")).isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
+    assertThat(GoogleMavenArtifactId.find("android.arch.core:common")).isEqualTo(GoogleMavenArtifactId.CORE_COMMON)
+    assertThat(GoogleMavenArtifactId.find("com.google.android.support:wearable")).isEqualTo(GoogleMavenArtifactId.SUPPORT_WEARABLE)
+    assertThat(GoogleMavenArtifactId.find("androidx.annotation:annotation")).isEqualTo(GoogleMavenArtifactId.ANDROIDX_ANNOTATION)
+    assertThat(GoogleMavenArtifactId.find("android.arch.work:work-testing")).isEqualTo(GoogleMavenArtifactId.WORK_TESTING)
+  }
 
-    @Test
-    fun testFindReturnsNullForNonGoogleMavenModuleId() {
-        assertThat(GoogleMavenArtifactId.find("com.example:non-existent"))
-            .isNull()
-    }
+  @Test
+  fun testFindReturnsNullForNonGoogleMavenModuleId() {
+    assertThat(GoogleMavenArtifactId.find("com.example:non-existent")).isNull()
+  }
 
-    @Test
-    fun testFindByGroupArtifactPair() {
-        assertThat(GoogleMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
-            .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
-        assertThat(GoogleMavenArtifactId.find("androidx.core", "core-ktx"))
-            .isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
-        assertThat(GoogleMavenArtifactId.find("android.arch.core", "common"))
-            .isEqualTo(GoogleMavenArtifactId.CORE_COMMON)
-        assertThat(GoogleMavenArtifactId.find("com.google.android.support", "wearable"))
-            .isEqualTo(GoogleMavenArtifactId.SUPPORT_WEARABLE)
-        assertThat(GoogleMavenArtifactId.find("androidx.annotation", "annotation"))
-            .isEqualTo(GoogleMavenArtifactId.ANDROIDX_ANNOTATION)
-        assertThat(GoogleMavenArtifactId.find("android.arch.work", "work-testing"))
-            .isEqualTo(GoogleMavenArtifactId.WORK_TESTING)
-    }
+  @Test
+  fun testFindByGroupArtifactPair() {
+    assertThat(GoogleMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
+      .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
+    assertThat(GoogleMavenArtifactId.find("androidx.core", "core-ktx")).isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
+    assertThat(GoogleMavenArtifactId.find("android.arch.core", "common")).isEqualTo(GoogleMavenArtifactId.CORE_COMMON)
+    assertThat(GoogleMavenArtifactId.find("com.google.android.support", "wearable")).isEqualTo(GoogleMavenArtifactId.SUPPORT_WEARABLE)
+    assertThat(GoogleMavenArtifactId.find("androidx.annotation", "annotation")).isEqualTo(GoogleMavenArtifactId.ANDROIDX_ANNOTATION)
+    assertThat(GoogleMavenArtifactId.find("android.arch.work", "work-testing")).isEqualTo(GoogleMavenArtifactId.WORK_TESTING)
+  }
 
-    @Test
-    fun testFindReturnsNullForNonGoogleMavenGroupArtifactPair() {
-        assertThat(GoogleMavenArtifactId.find("com.example", "non-existent"))
-            .isNull()
-    }
+  @Test
+  fun testFindReturnsNullForNonGoogleMavenGroupArtifactPair() {
+    assertThat(GoogleMavenArtifactId.find("com.example", "non-existent")).isNull()
+  }
 }

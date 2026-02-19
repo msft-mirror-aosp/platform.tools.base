@@ -67,8 +67,7 @@ class HighSensorSamplingRateDetector : Detector(), XmlScanner {
         category = Category.CORRECTNESS,
         priority = 5,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(HighSensorSamplingRateDetector::class.java, Scope.MANIFEST_SCOPE),
+        implementation = Implementation(HighSensorSamplingRateDetector::class.java, Scope.MANIFEST_SCOPE),
       )
   }
 }

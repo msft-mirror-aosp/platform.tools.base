@@ -37,15 +37,7 @@ interface Database : AutoCloseable {
 
   fun releaseReference()
 
-  fun execSql(
-    sql: String,
-    selectionArgs: Array<String?> = emptyArray(),
-    cancellationSignal: CancellationSignal? = null,
-  )
+  fun execSql(sql: String, selectionArgs: Array<String?> = emptyArray(), cancellationSignal: CancellationSignal? = null)
 
-  fun rawQuery(
-    sql: String,
-    selectionArgs: Array<String?>,
-    cancellationSignal: CancellationSignal?,
-  ): Cursor
+  fun rawQuery(sql: String, selectionArgs: Array<String?>, cancellationSignal: CancellationSignal?): Cursor
 }

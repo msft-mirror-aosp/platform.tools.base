@@ -23,36 +23,31 @@ import com.android.build.gradle.internal.profile.AnalyticsUtil
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.ArtifactAccess
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.Task
 import org.gradle.api.file.Directory
-import javax.inject.Inject
 
-open class AnalyticsEnabledInAndOutDirectoryOperationRequest<TaskT: Task> @Inject constructor(
-    val delegate: InAndOutDirectoryOperationRequest<TaskT>,
-    val stats: GradleBuildVariant.Builder
-): InAndOutDirectoryOperationRequest<TaskT> {
-    override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
-            where ArtifactTypeT : Artifact.Single<Directory>,
-                  ArtifactTypeT : Artifact.Transformable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_TRANSFORM_DIRECTORY_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.TRANSFORM
-        }
-        delegate.toTransform(type)
+open class AnalyticsEnabledInAndOutDirectoryOperationRequest<TaskT : Task>
+@Inject
+constructor(val delegate: InAndOutDirectoryOperationRequest<TaskT>, val stats: GradleBuildVariant.Builder) :
+  InAndOutDirectoryOperationRequest<TaskT> {
+  override fun <ArtifactTypeT> toTransform(type: ArtifactTypeT)
+    where ArtifactTypeT : Artifact.Single<Directory>, ArtifactTypeT : Artifact.Transformable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_TRANSFORM_DIRECTORY_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.TRANSFORM
     }
+    delegate.toTransform(type)
+  }
 
-    override fun <ArtifactTypeT> toTransformMany(type: ArtifactTypeT): ArtifactTransformationRequest<TaskT>
-            where ArtifactTypeT : Artifact.Single<Directory>,
-                  ArtifactTypeT : Artifact.ContainsMany,
-                  ArtifactTypeT : Artifact.Transformable {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.TO_TRANSFORM_MANY_VALUE
-        stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
-            it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
-            it.type = ArtifactAccess.AccessType.TRANSFORM_MANY
-        }
-        return delegate.toTransformMany(type)
+  override fun <ArtifactTypeT> toTransformMany(type: ArtifactTypeT): ArtifactTransformationRequest<TaskT>
+    where ArtifactTypeT : Artifact.Single<Directory>, ArtifactTypeT : Artifact.ContainsMany, ArtifactTypeT : Artifact.Transformable {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.TO_TRANSFORM_MANY_VALUE
+    stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
+      it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number
+      it.type = ArtifactAccess.AccessType.TRANSFORM_MANY
     }
+    return delegate.toTransformMany(type)
+  }
 }

@@ -26,60 +26,41 @@ import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
 
 class ProviderBasedDirectoryEntryImpl(
-    override val name: String,
-    val elements: Provider<List<Directory>>,
-    override val filter: PatternFilterable?,
-    override val isUserAdded: Boolean = true,
-    override val isGenerated: Boolean = true,
-): DirectoryEntry  {
+  override val name: String,
+  val elements: Provider<List<Directory>>,
+  override val filter: PatternFilterable?,
+  override val isUserAdded: Boolean = true,
+  override val isGenerated: Boolean = true,
+) : DirectoryEntry {
 
-    override val shouldBeAddedToIdeModel: Boolean = true
+  override val shouldBeAddedToIdeModel: Boolean = true
 
-    override fun addTo(
-        projectDir: Directory,
-        listProperty: ListProperty<Directory>,
-    ) {
-        listProperty.addAll(elements)
-    }
+  override fun addTo(projectDir: Directory, listProperty: ListProperty<Directory>) {
+    listProperty.addAll(elements)
+  }
 
-    override fun addTo(
-        projectDir: Directory,
-        into: ConfigurableFileCollection,
-    ) {
-        into.from(elements)
-    }
+  override fun addTo(projectDir: Directory, into: ConfigurableFileCollection) {
+    into.from(elements)
+  }
 
-    override fun asFileTree(
-            fileTreeCreator: () -> ConfigurableFileTree
-    ): Provider<List<ConfigurableFileTree>> {
-        return elements.map {
-            asConfigurableFileTrees(fileTreeCreator, it)
+  override fun asFileTree(fileTreeCreator: () -> ConfigurableFileTree): Provider<List<ConfigurableFileTree>> {
+    return elements.map { asConfigurableFileTrees(fileTreeCreator, it) }
+  }
+
+  override fun asFileTreeWithoutTaskDependency(fileTreeCreator: () -> ConfigurableFileTree): List<ConfigurableFileTree> =
+    asConfigurableFileTrees(fileTreeCreator, elements.get())
+
+  private fun asConfigurableFileTrees(fileTreeCreator: () -> ConfigurableFileTree, directories: Collection<Directory>) =
+    directories.map { directory ->
+      fileTreeCreator().from(directory).also { configurableFileTree ->
+        if (filter != null) {
+          configurableFileTree.include((filter as PatternSet).asIncludeSpec)
+          configurableFileTree.exclude(filter.asExcludeSpec)
         }
+      }
     }
 
-    override fun asFileTreeWithoutTaskDependency(
-            fileTreeCreator: () -> ConfigurableFileTree,
-    ): List<ConfigurableFileTree> =
-            asConfigurableFileTrees(
-                    fileTreeCreator,
-                    elements.get(),
-            )
-
-    private fun asConfigurableFileTrees(
-            fileTreeCreator: () -> ConfigurableFileTree,
-            directories: Collection<Directory>
-    ) = directories.map { directory ->
-        fileTreeCreator()
-                .from(directory)
-                .also { configurableFileTree ->
-                    if (filter != null) {
-                        configurableFileTree.include((filter as PatternSet).asIncludeSpec)
-                        configurableFileTree.exclude(filter.asExcludeSpec)
-                    }
-                }
-    }
-
-    override fun makeDependentOf(task: Task) {
-        task.dependsOn(elements)
-    }
+  override fun makeDependentOf(task: Task) {
+    task.dependsOn(elements)
+  }
 }

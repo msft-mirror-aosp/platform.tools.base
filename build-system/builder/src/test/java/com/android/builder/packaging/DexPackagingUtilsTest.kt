@@ -18,34 +18,34 @@ package com.android.builder.packaging
 
 import com.android.builder.packaging.DexFileComparator.compare
 import com.google.common.truth.Truth.assertThat
-import org.junit.Test
 import java.io.File
+import org.junit.Test
 
 class DexPackagingUtilsTest {
 
-    @Test
-    fun testDexFileComparator() {
-        // Case 1. Both dex files are classes.dex
-        assertThat(compare(File("a/classes.dex"), File("a/classes.dex"))).isEqualTo(0)
-        assertThat(compare(File("a/classes.dex"), File("b/classes.dex"))).isEqualTo(-1)
-        assertThat(compare(File("b/classes.dex"), File("a/classes.dex"))).isEqualTo(1)
+  @Test
+  fun testDexFileComparator() {
+    // Case 1. Both dex files are classes.dex
+    assertThat(compare(File("a/classes.dex"), File("a/classes.dex"))).isEqualTo(0)
+    assertThat(compare(File("a/classes.dex"), File("b/classes.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/classes.dex"), File("a/classes.dex"))).isEqualTo(1)
 
-        // Case 2. Only one dex file is classes.dex
-        assertThat(compare(File("a/classes.dex"), File("a/classes2.dex"))).isEqualTo(-1)
-        assertThat(compare(File("a/classes.dex"), File("b/classes2.dex"))).isEqualTo(-1)
-        assertThat(compare(File("b/classes.dex"), File("a/classes2.dex"))).isEqualTo(-1)
+    // Case 2. Only one dex file is classes.dex
+    assertThat(compare(File("a/classes.dex"), File("a/classes2.dex"))).isEqualTo(-1)
+    assertThat(compare(File("a/classes.dex"), File("b/classes2.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/classes.dex"), File("a/classes2.dex"))).isEqualTo(-1)
 
-        assertThat(compare(File("a/classes2.dex"), File("a/classes.dex"))).isEqualTo(1)
-        assertThat(compare(File("a/classes2.dex"), File("b/classes.dex"))).isEqualTo(1)
-        assertThat(compare(File("b/classes2.dex"), File("a/classes.dex"))).isEqualTo(1)
+    assertThat(compare(File("a/classes2.dex"), File("a/classes.dex"))).isEqualTo(1)
+    assertThat(compare(File("a/classes2.dex"), File("b/classes.dex"))).isEqualTo(1)
+    assertThat(compare(File("b/classes2.dex"), File("a/classes.dex"))).isEqualTo(1)
 
-        // Case 3. Neither dex files are classes.dex
-        assertThat(compare(File("a/classes2.dex"), File("a/classes2.dex"))).isEqualTo(0)
-        assertThat(compare(File("a/classes2.dex"), File("b/classes2.dex"))).isEqualTo(-1)
-        assertThat(compare(File("b/classes2.dex"), File("a/classes2.dex"))).isEqualTo(1)
+    // Case 3. Neither dex files are classes.dex
+    assertThat(compare(File("a/classes2.dex"), File("a/classes2.dex"))).isEqualTo(0)
+    assertThat(compare(File("a/classes2.dex"), File("b/classes2.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/classes2.dex"), File("a/classes2.dex"))).isEqualTo(1)
 
-        assertThat(compare(File("a/classes2.dex"), File("a/classes3.dex"))).isEqualTo(-1)
-        assertThat(compare(File("a/classes2.dex"), File("b/classes3.dex"))).isEqualTo(-1)
-        assertThat(compare(File("b/classes2.dex"), File("a/classes3.dex"))).isEqualTo(1)
-    }
+    assertThat(compare(File("a/classes2.dex"), File("a/classes3.dex"))).isEqualTo(-1)
+    assertThat(compare(File("a/classes2.dex"), File("b/classes3.dex"))).isEqualTo(-1)
+    assertThat(compare(File("b/classes2.dex"), File("a/classes3.dex"))).isEqualTo(1)
+  }
 }

@@ -20,10 +20,7 @@ import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
 import com.android.tools.idea.wizard.template.impl.other.files.aidlFile.src.app_package.interfaceAidl
 
-fun RecipeExecutor.aidlFileRecipe(
-  moduleData: ModuleTemplateData,
-  interfaceName: String
-) {
+fun RecipeExecutor.aidlFileRecipe(moduleData: ModuleTemplateData, interfaceName: String) {
   // At this moment, aidrDir is guaranteed to be non-null by checking the TemplateConstraint.Aidl
   val aidlOut = moduleData.aidlDir!!
   save(interfaceAidl(interfaceName, moduleData.packageName), aidlOut.resolve("${interfaceName}.aidl"))

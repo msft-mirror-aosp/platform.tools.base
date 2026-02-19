@@ -19,56 +19,56 @@ package com.android.build.gradle.integration.common.fixture.app
 /** Builder for the contents of a build.gradle file. */
 class BuildFileBuilder {
 
-    var plugin: String? = null
-    var useKotlin: Boolean = false
-    var compileSdkVersion: String? = null
-    var minSdkVersion: String? = null
+  var plugin: String? = null
+  var useKotlin: Boolean = false
+  var compileSdkVersion: String? = null
+  var minSdkVersion: String? = null
 
-    var dataBindingEnabled: Boolean = false
+  var dataBindingEnabled: Boolean = false
 
-    var namespace: String? = null
+  var namespace: String? = null
 
-    private val dependencies: StringBuilder = StringBuilder()
+  private val dependencies: StringBuilder = StringBuilder()
 
-    fun addDependency(configuration: String = "implementation", dependency: String) {
-        dependencies.append("\n    $configuration $dependency")
+  fun addDependency(configuration: String = "implementation", dependency: String) {
+    dependencies.append("\n    $configuration $dependency")
+  }
+
+  fun build(): String {
+    val contents = StringBuilder()
+
+    if (plugin != null) {
+      contents.append("apply plugin: '$plugin'")
+    }
+    if (useKotlin) {
+      if (plugin?.contains("android") == true) {
+        contents.append("\n\napply plugin: 'kotlin-android'")
+        contents.append("\napply plugin: 'kotlin-kapt'")
+      } else {
+        contents.append("\n\napply plugin: 'kotlin'")
+      }
+    }
+    if (compileSdkVersion != null) {
+      contents.append("\n\nandroid.compileSdkVersion = $compileSdkVersion")
+    }
+    if (minSdkVersion != null) {
+      contents.append("\n\nandroid.defaultConfig.minSdkVersion = $minSdkVersion")
     }
 
-    fun build(): String {
-        val contents = StringBuilder()
-
-        if (plugin != null) {
-            contents.append("apply plugin: '$plugin'")
-        }
-        if (useKotlin) {
-            if (plugin?.contains("android") == true) {
-                contents.append("\n\napply plugin: 'kotlin-android'")
-                contents.append("\napply plugin: 'kotlin-kapt'")
-            } else {
-                contents.append("\n\napply plugin: 'kotlin'")
-            }
-        }
-        if (compileSdkVersion != null) {
-            contents.append("\n\nandroid.compileSdkVersion = $compileSdkVersion")
-        }
-        if (minSdkVersion != null) {
-            contents.append("\n\nandroid.defaultConfig.minSdkVersion = $minSdkVersion")
-        }
-
-        if (dataBindingEnabled) {
-            contents.append("\n\nandroid.buildFeatures.dataBinding = true")
-        }
-
-        if (namespace != null) {
-            contents.append("\n\nandroid.namespace = \"$namespace\"")
-        }
-
-        if (!dependencies.isEmpty()) {
-            contents.append("\n\ndependencies{")
-            contents.append("$dependencies")
-            contents.append("\n}")
-        }
-
-        return contents.toString()
+    if (dataBindingEnabled) {
+      contents.append("\n\nandroid.buildFeatures.dataBinding = true")
     }
+
+    if (namespace != null) {
+      contents.append("\n\nandroid.namespace = \"$namespace\"")
+    }
+
+    if (!dependencies.isEmpty()) {
+      contents.append("\n\ndependencies{")
+      contents.append("$dependencies")
+      contents.append("\n}")
+    }
+
+    return contents.toString()
+  }
 }

@@ -17,131 +17,117 @@ package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.adbLogger
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AppProcess
-import com.android.adblib.tools.debugging.appProcessFlow
+import com.android.adblib.tools.debugging.appProcessTracker
 import com.android.ddmlib.Client
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.ProfileableClient
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 internal class AppProcessTracker(private val trackerHost: ProcessTrackerHost) {
 
-    private val session: AdbSession
-        get() = trackerHost.device.session
+  private val session: AdbSession
+    get() = trackerHost.device.session
 
-    private val device: ConnectedDevice
-        get() = trackerHost.device
+  private val device: ConnectedDevice
+    get() = trackerHost.device
 
-    private val iDevice: IDevice
-        get() = trackerHost.iDevice
+  private val iDevice: IDevice
+    get() = trackerHost.iDevice
 
-    private val logger = adbLogger(session)
+  private val logger = adbLogger(session)
 
-    fun startTracking() {
-        device.scope.launch(session.host.ioDispatcher) {
-            logger.debug { "Starting app process tracking for device $iDevice" }
-            val processEntryMap = mutableMapOf<Int, AdblibProfileableClientWrapper>()
-            try {
-                // Run the 'track-app' service and collect processes info
-                device.appProcessFlow
-                    .collect { appProcessList ->
-                        updateAppProcessList(processEntryMap, appProcessList)
-                    }
-            } finally {
-                updateAppProcessList(processEntryMap, emptyList())
-                logger.debug { "Stop process tracking for device $iDevice (scope.isActive=${device.scope.isActive})" }
-            }
-        }
+  fun startTracking() {
+    device.scope.launch(session.host.ioDispatcher) {
+      logger.debug { "Starting app process tracking for device $iDevice" }
+      val processEntryMap = mutableMapOf<Int, AdblibProfileableClientWrapper>()
+      try {
+        // Collect app process updates
+        device.appProcessTracker.appProcessFlow
+          .takeWhile { it.flowStatus != StateFlowStatus.endOfFlow }
+          .collect { appProcessList -> updateAppProcessList(processEntryMap, appProcessList) }
+      } finally {
+        updateAppProcessList(processEntryMap, emptyList())
+        logger.debug { "Stop process tracking for device $iDevice (scope.isActive=${device.scope.isActive})" }
+      }
+    }
+  }
+
+  /** Update our list of processes and invoke listeners. */
+  private suspend fun updateAppProcessList(
+    currentProcessEntryMap: MutableMap<Int, AdblibProfileableClientWrapper>,
+    newAppProcessList: List<AppProcess>,
+  ) {
+    logger.debug { "Updating list of app processes: " + "before=${currentProcessEntryMap.size}, after=${newAppProcessList.size}" }
+    val knownPids = currentProcessEntryMap.keys.toHashSet()
+    val effectivePids = newAppProcessList.map { it.pid }.toHashSet()
+    val addedPids = effectivePids - knownPids
+    val removedPids = knownPids - effectivePids
+    val changeTracker = ChangeTracker()
+
+    // Remove old pids
+    removedPids.forEach { pid ->
+      logger.verbose { "Removing PID $pid from list of app processes" }
+      val profileableClientWrapper = currentProcessEntryMap.remove(pid)
+      assert(profileableClientWrapper != null)
+      profileableClientWrapper?.also { changeTracker.onChange(it) }
     }
 
-    /**
-     * Update our list of processes and invoke listeners.
-     */
-    private suspend fun updateAppProcessList(
-        currentProcessEntryMap: MutableMap<Int, AdblibProfileableClientWrapper>,
-        newAppProcessList: List<AppProcess>
-    ) {
-        logger.debug {
-            "Updating list of app processes: " +
-                    "before=${currentProcessEntryMap.size}, after=${newAppProcessList.size}"
-        }
-        val knownPids = currentProcessEntryMap.keys.toHashSet()
-        val effectivePids = newAppProcessList.map { it.pid }.toHashSet()
-        val addedPids = effectivePids - knownPids
-        val removedPids = knownPids - effectivePids
-        val changeTracker = ChangeTracker()
-
-        // Remove old pids
-        removedPids.forEach { pid ->
-            logger.verbose { "Removing PID $pid from list of app processes" }
-            val profileableClientWrapper = currentProcessEntryMap.remove(pid)
-            assert(profileableClientWrapper != null)
-            profileableClientWrapper?.also { changeTracker.onChange(it) }
-        }
-
-        // Add new pids
-        addedPids.forEach { pid ->
-            logger.verbose { "Adding PID $pid to list of app processes" }
-            val appProcess = newAppProcessList.first { it.pid == pid }
-            val profileableClientWrapper = AdblibProfileableClientWrapper(trackerHost, appProcess)
-            currentProcessEntryMap[pid] = profileableClientWrapper
-            profileableClientWrapper.startTracking()
-            changeTracker.onChange(profileableClientWrapper)
-        }
-
-        assert(currentProcessEntryMap.keys.size == newAppProcessList.size)
-
-        if (changeTracker.clientsChanged) {
-            val clients = currentProcessEntryMap.values
-                .mapNotNull { it.exportAsClient() }
-                .toList()
-            logger.verbose { "Updated 'Client' list: pids=${clients.map { it.clientData.pid }}" }
-            trackerHost.clientsUpdated(clients)
-        }
-
-        if (changeTracker.profileableClientsChanged) {
-            val profileableClients = currentProcessEntryMap.values
-                .mapNotNull { it.exportAsProfileableClient() }
-                .toList()
-            logger.verbose { "Updated 'ProfileableClient' list: pids=${profileableClients.map { it.profileableClientData.pid }}" }
-            trackerHost.profileableClientsUpdated(profileableClients)
-        }
+    // Add new pids
+    addedPids.forEach { pid ->
+      logger.verbose { "Adding PID $pid to list of app processes" }
+      val appProcess = newAppProcessList.first { it.pid == pid }
+      val profileableClientWrapper = AdblibProfileableClientWrapper(trackerHost, appProcess)
+      currentProcessEntryMap[pid] = profileableClientWrapper
+      profileableClientWrapper.startTracking()
+      changeTracker.onChange(profileableClientWrapper)
     }
 
-    private class ChangeTracker(
-        var clientsChanged: Boolean = false,
-        var profileableClientsChanged: Boolean = false
-    )
+    assert(currentProcessEntryMap.keys.size == newAppProcessList.size)
 
-    private fun ChangeTracker.onChange(profileableClientWrapper: AdblibProfileableClientWrapper) {
-        clientsChanged = clientsChanged or
-                (profileableClientWrapper.exportAsClient() != null)
-
-        profileableClientsChanged = profileableClientsChanged or
-                (profileableClientWrapper.exportAsProfileableClient() != null)
+    if (changeTracker.clientsChanged) {
+      val clients = currentProcessEntryMap.values.mapNotNull { it.exportAsClient() }.toList()
+      logger.verbose { "Updated 'Client' list: pids=${clients.map { it.clientData.pid }}" }
+      trackerHost.clientsUpdated(clients)
     }
 
-    /**
-     * Returns the [Client] for this [AdblibProfileableClientWrapper] if it should
-     * be exported as a [Client] instance to the ddmlib APIs, `null` otherwise.
-     */
-    private fun AdblibProfileableClientWrapper.exportAsClient(): Client? {
-        return clientWrapper
+    if (changeTracker.profileableClientsChanged) {
+      val profileableClients = currentProcessEntryMap.values.mapNotNull { it.exportAsProfileableClient() }.toList()
+      logger.verbose { "Updated 'ProfileableClient' list: pids=${profileableClients.map { it.profileableClientData.pid }}" }
+      trackerHost.profileableClientsUpdated(profileableClients)
     }
+  }
 
-    /**
-     * Returns the [ProfileableClient] for this [AdblibProfileableClientWrapper] if it should
-     * be exported as a [ProfileableClient] instance to the ddmlib APIs, `null` otherwise.
-     */
-    private fun AdblibProfileableClientWrapper.exportAsProfileableClient(): ProfileableClient? {
-        return if (debuggable || profileable) {
-            this
-        } else {
-            null
-        }
+  private class ChangeTracker(var clientsChanged: Boolean = false, var profileableClientsChanged: Boolean = false)
+
+  private fun ChangeTracker.onChange(profileableClientWrapper: AdblibProfileableClientWrapper) {
+    clientsChanged = clientsChanged or (profileableClientWrapper.exportAsClient() != null)
+
+    profileableClientsChanged = profileableClientsChanged or (profileableClientWrapper.exportAsProfileableClient() != null)
+  }
+
+  /**
+   * Returns the [Client] for this [AdblibProfileableClientWrapper] if it should be exported as a [Client] instance to the ddmlib APIs,
+   * `null` otherwise.
+   */
+  private fun AdblibProfileableClientWrapper.exportAsClient(): Client? {
+    return clientWrapper
+  }
+
+  /**
+   * Returns the [ProfileableClient] for this [AdblibProfileableClientWrapper] if it should be exported as a [ProfileableClient] instance to
+   * the ddmlib APIs, `null` otherwise.
+   */
+  private fun AdblibProfileableClientWrapper.exportAsProfileableClient(): ProfileableClient? {
+    return if (debuggable || profileable) {
+      this
+    } else {
+      null
     }
-
+  }
 }

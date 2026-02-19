@@ -28,18 +28,21 @@ fun checkoutActivityKt(
   layoutName: String,
   packageName: String,
   applicationPackage: String?,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
       // Use view binding to access the UI elements
       layoutBinding = ${layoutToViewBindingClass(layoutName)}.inflate(layoutInflater)
       setContentView(layoutBinding.root)
-  """ else "setContentView(R.layout.$layoutName)"
+  """
+    else "setContentView(R.layout.$layoutName)"
 
-  val googlePayButtonBlock = if (isViewBindingSupported)
-    "googlePayButton = layoutBinding.googlePayButton.root"
-  else "googlePayButton = findViewById<View>(R.id.googlePayButton)"
+  val googlePayButtonBlock =
+    if (isViewBindingSupported) "googlePayButton = layoutBinding.googlePayButton.root"
+    else "googlePayButton = findViewById<View>(R.id.googlePayButton)"
 
   return """
 package ${escapeKotlinIdentifier(packageName)}

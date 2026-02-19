@@ -144,10 +144,8 @@ class TestRunnerTest {
     }
 
     storage.apply {
-      `when`(retrieveOrUploadSharedFile(eq(testApkFile), any(), any(), any()))
-        .thenReturn(mockTestApkStorage)
-      `when`(retrieveOrUploadSharedFile(eq(testedApk), any(), any(), any()))
-        .thenReturn(mockTestedApkStorage)
+      `when`(retrieveOrUploadSharedFile(eq(testApkFile), any(), any(), any())).thenReturn(mockTestApkStorage)
+      `when`(retrieveOrUploadSharedFile(eq(testedApk), any(), any(), any())).thenReturn(mockTestedApkStorage)
       `when`(testRunStorage(any(), any(), any())).thenReturn(mockTestRunStorage)
     }
 
@@ -155,8 +153,7 @@ class TestRunnerTest {
 
     // Test Matrices
     `when`(mockResultsMatrix.testExecutions).thenReturn(listOf(mockTestExecution))
-    `when`(testMatrixGenerator.createTestMatrix(any(), any(), any(), any(), any()))
-      .thenReturn(mockGeneratedMatrix)
+    `when`(testMatrixGenerator.createTestMatrix(any(), any(), any(), any(), any())).thenReturn(mockGeneratedMatrix)
 
     `when`(testing.createTestMatrixRun(any(), any(), any())).thenReturn(mockUpdatedMatrix)
 
@@ -256,24 +253,14 @@ class TestRunnerTest {
       // ensure testRunStorage creation and shared file upload.
       inOrder(storage).also {
         it.verify(storage).testRunStorage(any(), eq(expectedBucket), eq("history_id"))
-        it
-          .verify(storage)
-          .retrieveOrUploadSharedFile(testApkFile, expectedBucket, "project", "variant-test_apk")
-        it
-          .verify(storage)
-          .retrieveOrUploadSharedFile(testedApk, expectedBucket, "project", "variant-tested_apk")
+        it.verify(storage).retrieveOrUploadSharedFile(testApkFile, expectedBucket, "project", "variant-test_apk")
+        it.verify(storage).retrieveOrUploadSharedFile(testedApk, expectedBucket, "project", "variant-tested_apk")
         verifyNoMoreInteractions(storage)
       }
     }
 
     verify(testMatrixGenerator)
-      .createTestMatrix(
-        device,
-        staticTestData,
-        mockTestRunStorage,
-        mockTestApkStorage,
-        expectedAppApkStorageObject,
-      )
+      .createTestMatrix(device, staticTestData, mockTestRunStorage, mockTestApkStorage, expectedAppApkStorageObject)
     verifyNoMoreInteractions(testMatrixGenerator)
 
     verify(testing).createTestMatrixRun(eq("my_project"), eq(mockGeneratedMatrix), any())
@@ -349,9 +336,7 @@ class TestRunnerTest {
     // verify storage manually:
     inOrder(storage).also {
       it.verify(storage).testRunStorage(any(), eq("bucket_name"), eq("history_id"))
-      it
-        .verify(storage)
-        .retrieveOrUploadSharedFile(testApkFile, "bucket_name", "project", "variant-test_apk")
+      it.verify(storage).retrieveOrUploadSharedFile(testApkFile, "bucket_name", "project", "variant-test_apk")
       verifyNoMoreInteractions(storage)
     }
 
@@ -388,16 +373,13 @@ class TestRunnerTest {
 
   @Test
   fun test_runTests_testSuiteOverview() {
-    val mockReference =
-      mock<FileReference>().also { `when`(it.fileUri).thenReturn("some/long/fileUri") }
+    val mockReference = mock<FileReference>().also { `when`(it.fileUri).thenReturn("some/long/fileUri") }
     mock<TestSuiteOverview>().also {
       `when`(it.xmlSource).thenReturn(mockReference)
       `when`(mockTestExecutionStep.testSuiteOverviews).thenReturn(listOf(it))
     }
     val fakeOverviewDownload =
-      temporaryFolderRule.newFile("overview").also {
-        `when`(mockTestRunStorage.downloadFromStorage(any(), any())).thenReturn(it)
-      }
+      temporaryFolderRule.newFile("overview").also { `when`(mockTestRunStorage.downloadFromStorage(any(), any())).thenReturn(it) }
 
     val runner = getTestRunner()
 

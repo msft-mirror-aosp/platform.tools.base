@@ -22,46 +22,45 @@ import com.android.build.api.dsl.LibraryProductFlavor
 import java.io.File
 
 /**
- * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks
- * the normal Java Proxy feature (class is considered broken)
+ * Implemented manually due to the conflict between [setDimension] and [dimension] that breaks the normal Java Proxy feature (class is
+ * considered broken)
  */
 @Suppress("OVERRIDE_DEPRECATION", "UNCHECKED_CAST")
-class UnusableLibraryProductFlavorProxy(
-): UnusableProductFlavorProxy(), LibraryProductFlavor {
+class UnusableLibraryProductFlavorProxy() : UnusableProductFlavorProxy(), LibraryProductFlavor {
 
-    override var isDefault: Boolean
-        get() = throwUnusableError("LibraryProductFlavor.isDefault")
-        set(value) {
-            throwUnusableError("LibraryProductFlavor.isDefault")
-        }
-
-    override var multiDexEnabled: Boolean?
-        get() = throwUnusableError("LibraryProductFlavor.multiDexEnabled")
-        set(value) {
-            throwUnusableError("LibraryProductFlavor.multiDexEnabled")
-        }
-
-    override val consumerProguardFiles: MutableList<File>
-        get() = throwUnusableError("LibraryProductFlavor.consumerProguardFiles")
-
-    override fun consumerProguardFile(proguardFile: Any): Any {
-        throwUnusableError("LibraryProductFlavor.consumerProguardFile")
+  override var isDefault: Boolean
+    get() = throwUnusableError("LibraryProductFlavor.isDefault")
+    set(value) {
+      throwUnusableError("LibraryProductFlavor.isDefault")
     }
 
-    override fun consumerProguardFiles(vararg proguardFiles: Any): Any {
-        throwUnusableError("LibraryProductFlavor.consumerProguardFiles")
+  override var multiDexEnabled: Boolean?
+    get() = throwUnusableError("LibraryProductFlavor.multiDexEnabled")
+    set(value) {
+      throwUnusableError("LibraryProductFlavor.multiDexEnabled")
     }
 
-    override var signingConfig: ApkSigningConfig?
-        get() = throwUnusableError("LibraryProductFlavor.signingConfig")
-        set(value) {
-            throwUnusableError("LibraryProductFlavor.signingConfig")
-        }
+  override val consumerProguardFiles: MutableList<File>
+    get() = throwUnusableError("LibraryProductFlavor.consumerProguardFiles")
 
-    override val aarMetadata: AarMetadata
-        get() = throwUnusableError("LibraryProductFlavor.aarMetadata")
+  override fun consumerProguardFile(proguardFile: Any): Any {
+    throwUnusableError("LibraryProductFlavor.consumerProguardFile")
+  }
 
-    override fun aarMetadata(action: AarMetadata.() -> Unit) {
-        throwUnusableError("LibraryProductFlavor.aarMetadata")
+  override fun consumerProguardFiles(vararg proguardFiles: Any): Any {
+    throwUnusableError("LibraryProductFlavor.consumerProguardFiles")
+  }
+
+  override var signingConfig: ApkSigningConfig?
+    get() = throwUnusableError("LibraryProductFlavor.signingConfig")
+    set(value) {
+      throwUnusableError("LibraryProductFlavor.signingConfig")
     }
+
+  override val aarMetadata: AarMetadata
+    get() = throwUnusableError("LibraryProductFlavor.aarMetadata")
+
+  override fun aarMetadata(action: AarMetadata.() -> Unit) {
+    throwUnusableError("LibraryProductFlavor.aarMetadata")
+  }
 }

@@ -29,13 +29,10 @@ import kotlin.math.min
 /**
  * Describes a particular resource configuration.
  *
- * <p>Transliterated from: *
- * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/ResourceTypes.cpp
+ * <p>Transliterated from: * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/ResourceTypes.cpp
  * *
- * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/include/ResourceTypes.h
- * (struct ResTableConfig)
- *
- *
+ * https://android.googlesource.com/platform/frameworks/base/+/android-9.0.0_r12/libs/androidfw/include/ResourceTypes.h (struct
+ * ResTableConfig)
  */
 open class ResTableConfig(
   var size: Int = 0,
@@ -68,7 +65,6 @@ open class ResTableConfig(
   // screenSizeDp block
   var screenWidthDp: Int = 0,
   var screenHeightDp: Int = 0,
-
   val localeScript: ByteArray = ByteArray(4),
   val localeVariant: ByteArray = ByteArray(8),
   // screenConfig2 block
@@ -77,8 +73,8 @@ open class ResTableConfig(
   // padding: Short,
 
   var localeScriptWasComputed: Boolean = false,
-  val localeNumberSystem: ByteArray = ByteArray(8)
-): Comparable<ResTableConfig> {
+  val localeNumberSystem: ByteArray = ByteArray(8),
+) : Comparable<ResTableConfig> {
 
   constructor(
     sizeFromDevice: Int,
@@ -94,8 +90,8 @@ open class ResTableConfig(
     localeScript: ByteArray,
     localeVariant: ByteArray,
     screenConfig2: Int,
-    localeNumberSystem: ByteArray): this(
-
+    localeNumberSystem: ByteArray,
+  ) : this(
     sizeFromDevice.deviceToHost(),
     mccFromImsi(imsi),
     mncFromImsi(imsi),
@@ -122,9 +118,12 @@ open class ResTableConfig(
     screenLayout2FromScreenConfig2(screenConfig2),
     colorModeFromScreenConfig2(screenConfig2),
     false,
-    localeNumberSystem)
+    localeNumberSystem,
+  )
 
-  constructor(other: ResTableConfig): this(
+  constructor(
+    other: ResTableConfig
+  ) : this(
     other.size,
     other.mcc,
     other.mnc,
@@ -151,7 +150,8 @@ open class ResTableConfig(
     other.screenLayout2,
     other.colorMode,
     other.localeScriptWasComputed,
-    other.localeNumberSystem.copyOf())
+    other.localeNumberSystem.copyOf(),
+  )
 
   init {
     Preconditions.checkState(language.size == 2)
@@ -168,47 +168,40 @@ open class ResTableConfig(
   }
 
   /** Returns the imsi block in Little Endian (device) format. */
-  fun getImsi() = ((mcc.toInt() and 0xffff) or
-    (mnc.toInt() shl 16)).hostToDevice()
+  fun getImsi() = ((mcc.toInt() and 0xffff) or (mnc.toInt() shl 16)).hostToDevice()
 
   /** Returns the locale block in Little Endian (device) format. */
-  fun getLocale() = (((language[0].toInt() and 0xff) shl 8) or
-    (language[1].toInt() and 0xff) or
-    ((country[0].toInt() and 0xff) shl 24) or
-    ((country[1].toInt() and 0xff) shl 16)).hostToDevice()
+  fun getLocale() =
+    (((language[0].toInt() and 0xff) shl 8) or
+        (language[1].toInt() and 0xff) or
+        ((country[0].toInt() and 0xff) shl 24) or
+        ((country[1].toInt() and 0xff) shl 16))
+      .hostToDevice()
 
   /** Returns the screenType block in Little Endian (device) format. */
-  fun getScreenType() = ((orientation.toInt() and 0xff) or
-    ((touchscreen.toInt() and 0xff) shl 8) or
-    (density shl 16)).hostToDevice()
+  fun getScreenType() = ((orientation.toInt() and 0xff) or ((touchscreen.toInt() and 0xff) shl 8) or (density shl 16)).hostToDevice()
 
   /** Returns the input block in Little Endian (device) format. */
-  fun getInput() = ((keyboard.toInt() and 0xff) or
-    ((navigation.toInt() and 0xff) shl 8) or
-    ((inputFlags.toInt() and 0xff) shl 16) or
-    (0x00 shl 24)).hostToDevice() // padding.
+  fun getInput() =
+    ((keyboard.toInt() and 0xff) or ((navigation.toInt() and 0xff) shl 8) or ((inputFlags.toInt() and 0xff) shl 16) or (0x00 shl 24))
+      .hostToDevice() // padding.
 
   /** Returns the screenSize block in Little Endian (device) format. */
-  fun getScreenSize() = ((screenWidth and 0xffff) or
-    (screenHeight shl 16)).hostToDevice()
+  fun getScreenSize() = ((screenWidth and 0xffff) or (screenHeight shl 16)).hostToDevice()
 
   /** Returns the version block in Little Endian (device) format. */
-  fun getVersion() = ((sdkVersion.toInt() and 0xffff) or
-    (minorVersion.toInt() shl 16)).hostToDevice()
+  fun getVersion() = ((sdkVersion.toInt() and 0xffff) or (minorVersion.toInt() shl 16)).hostToDevice()
 
   /** Returns the screenConfig block in Little Endian (device) format. */
-  fun getScreenConfig() = ((screenLayout.toInt() and 0xff) or
-    ((uiMode.toInt() and 0xff) shl 8) or
-    (smallestScreenWidthDp shl 16)).hostToDevice()
+  fun getScreenConfig() =
+    ((screenLayout.toInt() and 0xff) or ((uiMode.toInt() and 0xff) shl 8) or (smallestScreenWidthDp shl 16)).hostToDevice()
 
   /** Returns the screenSizeDp block in Little Endian (device) format. */
-  fun getScreenSizeDp() = ((screenWidthDp and 0xffff) or
-    (screenHeightDp shl 16)).hostToDevice()
+  fun getScreenSizeDp() = ((screenWidthDp and 0xffff) or (screenHeightDp shl 16)).hostToDevice()
 
   /** Returns the screenConfig2 block in Little Endian (device) format */
-  fun getScreenConfig2() = ((screenLayout2.toInt() and 0xff) or
-    ((colorMode.toInt() and 0xff) shl 8) or
-    (0x0000 shl 16)).hostToDevice() // padding
+  fun getScreenConfig2() =
+    ((screenLayout2.toInt() and 0xff) or ((colorMode.toInt() and 0xff) shl 8) or (0x0000 shl 16)).hostToDevice() // padding
 
   fun layoutSize() = (screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK).toByte()
 
@@ -243,7 +236,8 @@ open class ResTableConfig(
           GRAMMATICAL_GENDER.FEMININE -> "feminine"
           GRAMMATICAL_GENDER.MASCULINE -> "masculine"
           else -> "grammaticalInflection=$grammaticalInflection"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -254,7 +248,8 @@ open class ResTableConfig(
           SCREEN_LAYOUT.DIR_LTR -> "ldltr"
           SCREEN_LAYOUT.DIR_RTL -> "ldrtl"
           else -> "layoutDir=$layoutDir"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -279,7 +274,8 @@ open class ResTableConfig(
           SCREEN_LAYOUT.SIZE_LARGE -> "large"
           SCREEN_LAYOUT.SIZE_XLARGE -> "xlarge"
           else -> "screenLayoutSize=$screenSizeFlag"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -290,7 +286,8 @@ open class ResTableConfig(
           SCREEN_LAYOUT.SCREENLONG_YES -> "long"
           SCREEN_LAYOUT.SCREENLONG_NO -> "notlong"
           else -> "screenLayoutLong=$screenLong"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -301,7 +298,8 @@ open class ResTableConfig(
           SCREEN_LAYOUT2.SCREENROUND_YES -> "round"
           SCREEN_LAYOUT2.SCREENROUND_NO -> "notround"
           else -> "screenRound=$screenRound"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -312,7 +310,8 @@ open class ResTableConfig(
           COLOR_MODE.WIDE_GAMUT_YES -> "widecg"
           COLOR_MODE.WIDE_GAMUT_NO -> "nowidecg"
           else -> "wideColorGamut=$wideGamut"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -323,7 +322,8 @@ open class ResTableConfig(
           COLOR_MODE.HDR_NO -> "lowdr"
           COLOR_MODE.HDR_YES -> "highdr"
           else -> "hdr=$hdr"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -334,7 +334,8 @@ open class ResTableConfig(
           ORIENTATION.LAND -> "land"
           ORIENTATION.SQUARE -> "square"
           else -> "orientation=$orientation"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -349,7 +350,8 @@ open class ResTableConfig(
           UI_MODE.TYPE_WATCH -> "watch"
           UI_MODE.TYPE_VR_HEADSET -> "vrheadset"
           else -> "uiModeType=$uiModeType"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -360,7 +362,8 @@ open class ResTableConfig(
           UI_MODE.NIGHT_YES -> "night"
           UI_MODE.NIGHT_NO -> "notnight"
           else -> "uiModeNight=$nightMode"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -377,7 +380,8 @@ open class ResTableConfig(
           DENSITY.NONE -> "nodpi"
           DENSITY.ANY -> "anydpi"
           else -> "${density}dpi"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -388,18 +392,20 @@ open class ResTableConfig(
           TOUCHSCREEN.FINGER -> "finger"
           TOUCHSCREEN.STYLUS -> "stylus"
           else -> "touchscreen=$touchscreen"
-        })
+        }
+      )
       result.append("-")
     }
 
     val keysHidden = (inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK).toByte()
     if (keysHidden.isTruthy()) {
-      val keysString = when (keysHidden) {
-        INPUT_FLAGS.KEYSHIDDEN_NO -> "keysexposed"
-        INPUT_FLAGS.KEYSHIDDEN_YES -> "keyshidden"
-        INPUT_FLAGS.KEYSHIDDEN_SOFT -> "keyssoft"
-        else -> ""
-      }
+      val keysString =
+        when (keysHidden) {
+          INPUT_FLAGS.KEYSHIDDEN_NO -> "keysexposed"
+          INPUT_FLAGS.KEYSHIDDEN_YES -> "keyshidden"
+          INPUT_FLAGS.KEYSHIDDEN_SOFT -> "keyssoft"
+          else -> ""
+        }
 
       if (keysString.isNotEmpty()) {
         result.append("$keysString-")
@@ -407,16 +413,16 @@ open class ResTableConfig(
     }
 
     if (keyboard != KEYBOARD.ANY) {
-      result.append (
+      result.append(
         when (keyboard) {
           KEYBOARD.NOKEYS -> "nokeys"
           KEYBOARD.QWERTY -> "qwerty"
           KEYBOARD.TWELVEKEY -> "12key"
           else -> "keyboard=$keyboard"
-        })
+        }
+      )
       result.append("-")
     }
-
 
     val navhidden = (inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK).toByte()
     if (navhidden.isTruthy()) {
@@ -425,7 +431,8 @@ open class ResTableConfig(
           INPUT_FLAGS.NAVHIDDEN_NO -> "navexposed"
           INPUT_FLAGS.NAVHIDDEN_YES -> "navhidden"
           else -> "inputFlagsNavHidden=$navhidden"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -437,7 +444,8 @@ open class ResTableConfig(
           NAVIGATION.TRACKBALL -> "trackball"
           NAVIGATION.WHEEL -> "wheel"
           else -> "navigation=$navigation"
-        })
+        }
+      )
       result.append("-")
     }
 
@@ -447,7 +455,7 @@ open class ResTableConfig(
 
     if (getVersion().isTruthy()) {
       result.append("v$sdkVersion")
-      if (minorVersion.isTruthy()){
+      if (minorVersion.isTruthy()) {
         result.append(".$minorVersion")
       }
       result.append("-")
@@ -489,21 +497,23 @@ open class ResTableConfig(
 
     if (localeVariant[0].isTruthy()) {
       val variantTerminator = localeVariant.indexOf(0)
-      val variantString = if (variantTerminator == -1) {
-        String(localeVariant)
-      } else {
-        String(localeVariant, 0, variantTerminator)
-      }
+      val variantString =
+        if (variantTerminator == -1) {
+          String(localeVariant)
+        } else {
+          String(localeVariant, 0, variantTerminator)
+        }
       result.append("+$variantString")
     }
 
     if (localeNumberSystem[0].isTruthy()) {
       val numberSystemTerminator = localeNumberSystem.indexOf(0)
-      val numberSystemString = if (numberSystemTerminator == -1) {
-        String(localeNumberSystem)
-      } else {
-        String(localeNumberSystem, 0, numberSystemTerminator)
-      }
+      val numberSystemString =
+        if (numberSystemTerminator == -1) {
+          String(localeNumberSystem)
+        } else {
+          String(localeNumberSystem, 0, numberSystemTerminator)
+        }
       result.append("+u+nu+$numberSystemString")
     }
 
@@ -522,9 +532,7 @@ open class ResTableConfig(
     packLanguageOrRegion(value, '0'.code.toByte()).copyInto(country, 0, 0, 2)
   }
 
-  /**
-   * Compare two configuration, returning CONFIG_* flags set for each value that is different.
-   */
+  /** Compare two configuration, returning CONFIG_* flags set for each value that is different. */
   fun diff(other: ResTableConfig): Int {
     var result = 0
     if (mcc != other.mcc) {
@@ -542,8 +550,10 @@ open class ResTableConfig(
     if (touchscreen != other.touchscreen) {
       result = result or CONFIG_TOUCHSCREEN
     }
-    if (inputFlags.toInt() and (INPUT_FLAGS.KEYSHIDDEN_MASK or INPUT_FLAGS.NAVHIDDEN_MASK) !=
-      other.inputFlags.toInt() and (INPUT_FLAGS.KEYSHIDDEN_MASK or INPUT_FLAGS.NAVHIDDEN_MASK)) {
+    if (
+      inputFlags.toInt() and (INPUT_FLAGS.KEYSHIDDEN_MASK or INPUT_FLAGS.NAVHIDDEN_MASK) !=
+        other.inputFlags.toInt() and (INPUT_FLAGS.KEYSHIDDEN_MASK or INPUT_FLAGS.NAVHIDDEN_MASK)
+    ) {
       result = result or CONFIG_KEYBOARD_HIDDEN
     }
     if (keyboard != other.keyboard) {
@@ -558,20 +568,19 @@ open class ResTableConfig(
     if (getVersion() != other.getVersion()) {
       result = result or CONFIG_VERSION
     }
-    if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK !=
-      other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK) {
+    if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK != other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK) {
       result = result or CONFIG_LAYOUTDIR
     }
-    if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK.inv() !=
-      other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK.inv()) {
+    if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK.inv() != other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK.inv()) {
       result = result or CONFIG_SCREEN_LAYOUT
     }
-    if (screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK !=
-      other.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK) {
+    if (screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK != other.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK) {
       result = result or CONFIG_SCREEN_ROUND
     }
-    if (colorMode.toInt() and (COLOR_MODE.WIDE_GAMUT_MASK or COLOR_MODE.HDR_MASK) !=
-      other.colorMode.toInt() and (COLOR_MODE.WIDE_GAMUT_MASK or COLOR_MODE.HDR_MASK)) {
+    if (
+      colorMode.toInt() and (COLOR_MODE.WIDE_GAMUT_MASK or COLOR_MODE.HDR_MASK) !=
+        other.colorMode.toInt() and (COLOR_MODE.WIDE_GAMUT_MASK or COLOR_MODE.HDR_MASK)
+    ) {
       result = result or CONFIG_COLOR_MODE
     }
     if (uiMode != other.uiMode) {
@@ -703,9 +712,7 @@ open class ResTableConfig(
     return compareArrays(localeNumberSystem, other.localeNumberSystem)
   }
 
-  /**
-   * Return true if 'this' is more specific than, i.e. has more specified values than 'o'.
-   */
+  /** Return true if 'this' is more specific than, i.e. has more specified values than 'o'. */
   fun isMoreSpecificThan(other: ResTableConfig): Boolean {
     // The order of the following tests defines the importance of one
     // configuration parameter over another.  Those tests first are more
@@ -728,8 +735,7 @@ open class ResTableConfig(
     }
 
     if (screenLayout.isTruthy() || other.screenLayout.isTruthy()) {
-      if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK !=
-        other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK) {
+      if (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK != other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK) {
         return (screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK).isTruthy()
       }
     }
@@ -750,31 +756,26 @@ open class ResTableConfig(
     }
 
     if (screenLayout.isTruthy() || other.screenLayout.isTruthy()) {
-      if (screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK !=
-        other.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK) {
+      if (screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK != other.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK) {
         return (screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK).isTruthy()
       }
 
-      if (screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK !=
-        other.screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK) {
+      if (screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK != other.screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK) {
         return (screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK).isTruthy()
       }
     }
 
     if (screenLayout2.isTruthy() || other.screenLayout2.isTruthy()) {
-      if (screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK !=
-        other.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK) {
+      if (screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK != other.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK) {
         return (screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK).isTruthy()
       }
     }
 
     if (colorMode.isTruthy() || other.colorMode.isTruthy()) {
-      if (colorMode.toInt() and COLOR_MODE.HDR_MASK !=
-        other.colorMode.toInt() and COLOR_MODE.HDR_MASK) {
+      if (colorMode.toInt() and COLOR_MODE.HDR_MASK != other.colorMode.toInt() and COLOR_MODE.HDR_MASK) {
         return (colorMode.toInt() and COLOR_MODE.HDR_MASK).isTruthy()
       }
-      if (colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK !=
-        other.colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK) {
+      if (colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK != other.colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK) {
         return (colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK).isTruthy()
       }
     }
@@ -784,12 +785,10 @@ open class ResTableConfig(
     }
 
     if (uiMode.isTruthy() || other.uiMode.isTruthy()) {
-      if (uiMode.toInt() and UI_MODE.TYPE_MASK !=
-        other.uiMode.toInt() and UI_MODE.TYPE_MASK) {
+      if (uiMode.toInt() and UI_MODE.TYPE_MASK != other.uiMode.toInt() and UI_MODE.TYPE_MASK) {
         return (uiMode.toInt() and UI_MODE.TYPE_MASK).isTruthy()
       }
-      if (uiMode.toInt() and UI_MODE.NIGHT_MASK !=
-        other.uiMode.toInt() and UI_MODE.NIGHT_MASK) {
+      if (uiMode.toInt() and UI_MODE.NIGHT_MASK != other.uiMode.toInt() and UI_MODE.NIGHT_MASK) {
         return (uiMode.toInt() and UI_MODE.NIGHT_MASK).isTruthy()
       }
     }
@@ -802,13 +801,11 @@ open class ResTableConfig(
     }
 
     if (getInput().isTruthy() || other.getInput().isTruthy()) {
-      if (inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK !=
-        other.inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK) {
+      if (inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK != other.inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK) {
         return (inputFlags.toInt() and INPUT_FLAGS.KEYSHIDDEN_MASK).isTruthy()
       }
 
-      if (inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK !=
-        other.inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK) {
+      if (inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK != other.inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK) {
         return (inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK).isTruthy()
       }
 
@@ -845,20 +842,22 @@ open class ResTableConfig(
   }
 
   /**
-   * Returns a positive integer if this config is more specific than |o| with respect to their
-   * locales, a negative integer if |o| is more specific and 0 if they're equally specific.
+   * Returns a positive integer if this config is more specific than |o| with respect to their locales, a negative integer if |o| is more
+   * specific and 0 if they're equally specific.
    */
   fun isLocaleMoreSpecificThan(other: ResTableConfig): Int {
     if (getLocale().isTruthy() || other.getLocale().isTruthy()) {
       when {
-        language[0] != other.language[0] -> when {
-          !language[0].isTruthy() -> return -1
-          !other.language[0].isTruthy()-> return 1
-        }
-        country[0] != other.country[0] -> when {
-          !country[0].isTruthy() -> return -1
-          !other.country[0].isTruthy()-> return 1
-        }
+        language[0] != other.language[0] ->
+          when {
+            !language[0].isTruthy() -> return -1
+            !other.language[0].isTruthy() -> return 1
+          }
+        country[0] != other.country[0] ->
+          when {
+            !country[0].isTruthy() -> return -1
+            !other.country[0].isTruthy() -> return 1
+          }
       }
     }
     return getImportanceScoreOfLocale() - other.getImportanceScoreOfLocale()
@@ -881,17 +880,14 @@ open class ResTableConfig(
       if (localeNumberSystem[0] != 0.toByte()) 1 else 0
 
   /**
-   * Return true if 'this' is a better match than 'other' for the 'requested'
-   * configuration.
-   * <p> This assumes that match() has already been used to
-   * remove any configurations that don't match the requested configuration
-   * at all; if they are not first filtered, non-matching results can be
-   * considered better than matching ones.
-   * <p> The general rule per attribute: if the request cares about an attribute
-   * (it normally does), if the two ('this' and 'other') are equal it's a tie.  If
-   * they are not equal then one must be generic because only generic and
-   * '==requested' will pass the match() call.  So if this is not generic,
-   * it wins.  If this IS generic, 'other' wins (return false).
+   * Return true if 'this' is a better match than 'other' for the 'requested' configuration.
+   *
+   * <p> This assumes that match() has already been used to remove any configurations that don't match the requested configuration at all;
+   * if they are not first filtered, non-matching results can be considered better than matching ones.
+   *
+   * <p> The general rule per attribute: if the request cares about an attribute (it normally does), if the two ('this' and 'other') are
+   * equal it's a tie. If they are not equal then one must be generic because only generic and '==requested' will pass the match() call. So
+   * if this is not generic, it wins. If this IS generic, 'other' wins (return false).
    */
   fun isBetterThan(other: ResTableConfig, requested: ResTableConfig?): Boolean {
     requested ?: return isMoreSpecificThan(other)
@@ -916,8 +912,7 @@ open class ResTableConfig(
     if (screenLayout.isTruthy() || other.screenLayout.isTruthy()) {
       val myLayoutDir = screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK
       val otherLayoutDir = other.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK
-      if (myLayoutDir != otherLayoutDir &&
-        (requested.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK).isTruthy()) {
+      if (myLayoutDir != otherLayoutDir && (requested.screenLayout.toInt() and SCREEN_LAYOUT.DIR_MASK).isTruthy()) {
         return myLayoutDir > otherLayoutDir
       }
     }
@@ -954,12 +949,10 @@ open class ResTableConfig(
     if (screenLayout.isTruthy() || other.screenLayout.isTruthy()) {
       val mySL = screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK
       val otherSL = other.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK
-      if (mySL != otherSL &&
-        (requested.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK).isTruthy()) {
+      if (mySL != otherSL && (requested.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK).isTruthy()) {
         val fixedMySL: Int
         val fixedOtherSL: Int
-        if ((requested.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK) >
-          SCREEN_LAYOUT.SIZE_NORMAL) {
+        if ((requested.screenLayout.toInt() and SCREEN_LAYOUT.SIZE_MASK) > SCREEN_LAYOUT.SIZE_NORMAL) {
 
           fixedMySL = if (mySL == 0) SCREEN_LAYOUT.SIZE_NORMAL.toInt() else mySL
           fixedOtherSL = if (otherSL == 0) SCREEN_LAYOUT.SIZE_NORMAL.toInt() else otherSL
@@ -981,8 +974,7 @@ open class ResTableConfig(
 
       val myLong = screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK
       val otherLong = other.screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK
-      if (myLong != otherLong &&
-        (requested.screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK).isTruthy()) {
+      if (myLong != otherLong && (requested.screenLayout.toInt() and SCREEN_LAYOUT.SCREENLONG_MASK).isTruthy()) {
         return myLong.isTruthy()
       }
     }
@@ -990,8 +982,7 @@ open class ResTableConfig(
     if (screenLayout2.isTruthy() || other.screenLayout2.isTruthy()) {
       val myRound = screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK
       val otherRound = other.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK
-      if (myRound != otherRound &&
-        (requested.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK).isTruthy()) {
+      if (myRound != otherRound && (requested.screenLayout2.toInt() and SCREEN_LAYOUT2.SCREENROUND_MASK).isTruthy()) {
         return myRound.isTruthy()
       }
     }
@@ -999,8 +990,7 @@ open class ResTableConfig(
     if (colorMode.isTruthy() || other.colorMode.isTruthy()) {
       val myGamut = colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK
       val oGamut = other.colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK
-      if (myGamut != oGamut &&
-        (requested.colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK).isTruthy()) {
+      if (myGamut != oGamut && (requested.colorMode.toInt() and COLOR_MODE.WIDE_GAMUT_MASK).isTruthy()) {
         return myGamut.isTruthy()
       }
 
@@ -1041,11 +1031,12 @@ open class ResTableConfig(
           otherDensity == DENSITY.ANY -> return false
         }
 
-        val requestedDensity = when(requested.density) {
-          0,
-          DENSITY.ANY -> DENSITY.MEDIUM
-          else -> requested.density
-        }
+        val requestedDensity =
+          when (requested.density) {
+            0,
+            DENSITY.ANY -> DENSITY.MEDIUM
+            else -> requested.density
+          }
 
         // DENSITY_ANY is now dealt with. We should look to pick a density bucket and potentially
         // scale it. Any density is potentially useful because the system will scale it.  Scaling
@@ -1060,10 +1051,8 @@ open class ResTableConfig(
           // requested value lower than both low and high, give low
           requestedDensity <= low -> !iAmBigger
           // saying that scaling down is 2x better than scaling up
-          (2*low - requestedDensity) * high > requestedDensity * requestedDensity ->
-            !iAmBigger
-          else ->
-            iAmBigger
+          (2 * low - requestedDensity) * high > requestedDensity * requestedDensity -> !iAmBigger
+          else -> iAmBigger
         }
       }
 
@@ -1091,8 +1080,7 @@ open class ResTableConfig(
 
       val navHidden = inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK
       val otherNavHidden = other.inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK
-      if (navHidden != otherNavHidden &&
-        (requested.inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK).isTruthy()) {
+      if (navHidden != otherNavHidden && (requested.inputFlags.toInt() and INPUT_FLAGS.NAVHIDDEN_MASK).isTruthy()) {
 
         return navHidden.isTruthy()
       }
@@ -1141,9 +1129,8 @@ open class ResTableConfig(
   }
 
   /**
-   * Return true if 'this' is a better locale match than 'o' for the 'requested' configuration.
-   * Similar to isBetterThan(), this assumes that match() has already been used to remove any
-   * configurations that don't match the requested configuration at all.
+   * Return true if 'this' is a better locale match than 'o' for the 'requested' configuration. Similar to isBetterThan(), this assumes that
+   * match() has already been used to remove any configurations that don't match the requested configuration at all.
    */
   fun isLocaleBetterThan(other: ResTableConfig, requested: ResTableConfig): Boolean {
     if (requested.getLocale() == 0) {
@@ -1202,8 +1189,8 @@ open class ResTableConfig(
     // need to check the region and variant.
 
     // See if any of the regions is better than the other.
-    val regionComparision = localeDataCompareRegions(
-      country, other.country, requested.language, String(requested.localeScript), requested.country)
+    val regionComparision =
+      localeDataCompareRegions(country, other.country, requested.language, String(requested.localeScript), requested.country)
     if (regionComparision != 0) {
       return regionComparision > 0
     }
@@ -1224,17 +1211,14 @@ open class ResTableConfig(
 
     // Finally, the languages, although equivalent, may still be different (like for Tagalog and
     // Filipino). Identical is better than just equivalent.
-    return language contentEquals requested.language &&
-      !(other.language contentEquals requested.language)
+    return language contentEquals requested.language && !(other.language contentEquals requested.language)
   }
-
 
   /**
    * Return true if 'this' can be considered a match for the parameters in 'settings'.
    *
-   * @note This is asymetric.  A default piece of data will match every request but a request for
-   * the default should not match odd specifics (ie, request with no mcc should not match a
-   * particular mcc's data) settings is the requested settings
+   * @note This is asymetric. A default piece of data will match every request but a request for the default should not match odd specifics
+   *   (ie, request with no mcc should not match a particular mcc's data) settings is the requested settings
    */
   fun match(settings: ResTableConfig): Boolean {
     if (mcc.isTruthy() && mcc != settings.mcc) {
@@ -1326,8 +1310,7 @@ open class ResTableConfig(
         return false
       }
 
-      if (smallestScreenWidthDp.isTruthy() &&
-        smallestScreenWidthDp > settings.smallestScreenWidthDp) {
+      if (smallestScreenWidthDp.isTruthy() && smallestScreenWidthDp > settings.smallestScreenWidthDp) {
         return false
       }
     }
@@ -1377,8 +1360,7 @@ open class ResTableConfig(
       if (keysHidden.isTruthy() && keysHidden != setKeysHidden) {
         // For compatibility, we count a request for KEYSHIDDEN_NO as also matching the more recent
         // KEYSHIDDEN_SOFT.  Basically KEYSHIDDEN_NO means there is some kind of keyboard available.
-        if (keysHidden != INPUT_FLAGS.KEYSHIDDEN_NO.toInt() ||
-          setKeysHidden != INPUT_FLAGS.KEYSHIDDEN_SOFT.toInt()) {
+        if (keysHidden != INPUT_FLAGS.KEYSHIDDEN_NO.toInt() || setKeysHidden != INPUT_FLAGS.KEYSHIDDEN_SOFT.toInt()) {
           return false
         }
       }
@@ -1569,8 +1551,7 @@ open class ResTableConfig(
           val firstChar = ((input[1].toInt() and 0x1f) + base).toByte()
           // The last three bits of the second char and the first two bits
           // of the first char are the second alphabet.
-          val secondChar = (((input[1].toInt() and 0xe0) shr 5) +
-            ((input[0].toInt() and 0x03) shl 3) + base).toByte()
+          val secondChar = (((input[1].toInt() and 0xe0) shr 5) + ((input[0].toInt() and 0x03) shl 3) + base).toByte()
           // Bits 3 to 7 (inclusive) of the first char are the third alphabet.
           val thirdChar = (((input[0].toInt() and 0x7c) shr 2) + base).toByte()
 
@@ -1633,7 +1614,8 @@ open class ResTableConfig(
         localeScript,
         localeVariant,
         screenConfig2,
-        numberSystem)
+        numberSystem,
+      )
     }
 
     // block methods here
@@ -1653,8 +1635,7 @@ open class ResTableConfig(
 
     internal fun orientationFromScreenType(screenType: Int) = screenType.deviceToHost().toByte()
 
-    internal fun touchscreenFromScreenType(screenType: Int) =
-      (screenType.deviceToHost() ushr 8).toByte()
+    internal fun touchscreenFromScreenType(screenType: Int) = (screenType.deviceToHost() ushr 8).toByte()
 
     internal fun densityFromScreenType(screenType: Int) = screenType.deviceToHost() ushr 16
 
@@ -1672,26 +1653,19 @@ open class ResTableConfig(
 
     internal fun minorVersionFromVersion(version: Int) = (version.deviceToHost() ushr 16).toShort()
 
-    internal fun screenLayoutFromScreenConfig(screenConfig: Int) =
-      screenConfig.deviceToHost().toByte()
+    internal fun screenLayoutFromScreenConfig(screenConfig: Int) = screenConfig.deviceToHost().toByte()
 
-    internal fun uiModeFromScreenConfig(screenConfig: Int) =
-      (screenConfig.deviceToHost() ushr 8).toByte()
+    internal fun uiModeFromScreenConfig(screenConfig: Int) = (screenConfig.deviceToHost() ushr 8).toByte()
 
-    internal fun smallestScreenWidthDpFromScreenConfig(screenConfig: Int) =
-      screenConfig.deviceToHost() ushr 16
+    internal fun smallestScreenWidthDpFromScreenConfig(screenConfig: Int) = screenConfig.deviceToHost() ushr 16
 
-    internal fun screenWidthDpFromScreenSizeDp(screenSizeDp: Int) =
-      screenSizeDp.deviceToHost() and 0xffff
+    internal fun screenWidthDpFromScreenSizeDp(screenSizeDp: Int) = screenSizeDp.deviceToHost() and 0xffff
 
-    internal fun screenHeightDpFromScreenSizeDp(screenSizeDp: Int) =
-      (screenSizeDp.deviceToHost() ushr 16) and 0xffff
+    internal fun screenHeightDpFromScreenSizeDp(screenSizeDp: Int) = (screenSizeDp.deviceToHost() ushr 16) and 0xffff
 
-    internal fun screenLayout2FromScreenConfig2(screenConfig2: Int) =
-      screenConfig2.deviceToHost().toByte()
+    internal fun screenLayout2FromScreenConfig2(screenConfig2: Int) = screenConfig2.deviceToHost().toByte()
 
-    internal fun colorModeFromScreenConfig2(screenConfig2: Int) =
-      (screenConfig2.deviceToHost() ushr 8).toByte()
+    internal fun colorModeFromScreenConfig2(screenConfig2: Int) = (screenConfig2.deviceToHost() ushr 8).toByte()
   }
 
   // ScreenType values
@@ -1750,12 +1724,9 @@ open class ResTableConfig(
 
     const val NAVHIDDEN_MASK = 0X0c
     const val NAVHIDDEN_SHIFT = 2
-    const val NAVHIDDEN_ANY =
-      (AConfiguration.ACONFIGURATION_NAVHIDDEN_ANY.toInt() shl NAVHIDDEN_SHIFT).toByte()
-    const val NAVHIDDEN_NO =
-      (AConfiguration.ACONFIGURATION_NAVHIDDEN_NO.toInt() shl NAVHIDDEN_SHIFT).toByte()
-    const val NAVHIDDEN_YES =
-      (AConfiguration.ACONFIGURATION_NAVHIDDEN_YES.toInt() shl NAVHIDDEN_SHIFT).toByte()
+    const val NAVHIDDEN_ANY = (AConfiguration.ACONFIGURATION_NAVHIDDEN_ANY.toInt() shl NAVHIDDEN_SHIFT).toByte()
+    const val NAVHIDDEN_NO = (AConfiguration.ACONFIGURATION_NAVHIDDEN_NO.toInt() shl NAVHIDDEN_SHIFT).toByte()
+    const val NAVHIDDEN_YES = (AConfiguration.ACONFIGURATION_NAVHIDDEN_YES.toInt() shl NAVHIDDEN_SHIFT).toByte()
   }
 
   object GRAMMATICAL_GENDER {
@@ -1787,12 +1758,9 @@ open class ResTableConfig(
 
     const val SCREENLONG_MASK = 0x30
     const val SCREENLONG_SHIFT = 4
-    const val SCREENLONG_ANY =
-      (AConfiguration.ACONFIGURATION_SCREENLONG_ANY.toInt() shl SCREENLONG_SHIFT).toByte()
-    const val SCREENLONG_NO =
-      (AConfiguration.ACONFIGURATION_SCREENLONG_NO.toInt() shl SCREENLONG_SHIFT).toByte()
-    const val SCREENLONG_YES =
-      (AConfiguration.ACONFIGURATION_SCREENLONG_YES.toInt() shl SCREENLONG_SHIFT).toByte()
+    const val SCREENLONG_ANY = (AConfiguration.ACONFIGURATION_SCREENLONG_ANY.toInt() shl SCREENLONG_SHIFT).toByte()
+    const val SCREENLONG_NO = (AConfiguration.ACONFIGURATION_SCREENLONG_NO.toInt() shl SCREENLONG_SHIFT).toByte()
+    const val SCREENLONG_YES = (AConfiguration.ACONFIGURATION_SCREENLONG_YES.toInt() shl SCREENLONG_SHIFT).toByte()
 
     const val SIZE_MASK = 0x0f
     // const val SIZE_SHIFT = 0
@@ -1817,12 +1785,9 @@ open class ResTableConfig(
 
     const val NIGHT_MASK = 0x30
     const val NIGHT_SHIFT = 4
-    const val NIGHT_ANY =
-      (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_ANY.toInt() shl NIGHT_SHIFT).toByte()
-    const val NIGHT_NO =
-      (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_NO.toInt() shl NIGHT_SHIFT).toByte()
-    const val NIGHT_YES =
-      (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_YES.toInt() shl NIGHT_SHIFT).toByte()
+    const val NIGHT_ANY = (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_ANY.toInt() shl NIGHT_SHIFT).toByte()
+    const val NIGHT_NO = (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_NO.toInt() shl NIGHT_SHIFT).toByte()
+    const val NIGHT_YES = (AConfiguration.ACONFIGURATION_UI_MODE_NIGHT_YES.toInt() shl NIGHT_SHIFT).toByte()
   }
 
   // ScreenConfig2 values

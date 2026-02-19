@@ -20,52 +20,47 @@ import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.KeepRules
 import com.android.build.api.dsl.Optimization
 import com.android.build.gradle.internal.services.DslServices
+import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.SetProperty
-import javax.inject.Inject
 
-abstract class OptimizationImpl@Inject constructor(
-    dslService: DslServices,
-    internal val objectFactory: ObjectFactory
-) : Optimization {
+abstract class OptimizationImpl @Inject constructor(dslService: DslServices, internal val objectFactory: ObjectFactory) : Optimization {
 
-    abstract val keepRules: KeepRules
-    abstract val baselineProfile: BaselineProfile
+  abstract val keepRules: KeepRules
+  abstract val baselineProfile: BaselineProfile
 
-    abstract override var enable: Boolean
-    override val packageScope: SetProperty<String> =
-        objectFactory.setProperty(String::class.java).convention(listOf("**"))
+  abstract override var enable: Boolean
+  override val packageScope: SetProperty<String> = objectFactory.setProperty(String::class.java).convention(listOf("**"))
 
-    override fun keepRules(action: KeepRules.() -> Unit) {
-        action.invoke(keepRules)
-    }
+  override fun keepRules(action: KeepRules.() -> Unit) {
+    action.invoke(keepRules)
+  }
 
-    override fun baselineProfile(action: BaselineProfile.() -> Unit) {
-        action.invoke(baselineProfile)
-    }
+  override fun baselineProfile(action: BaselineProfile.() -> Unit) {
+    action.invoke(baselineProfile)
+  }
 
-    fun initWith(that: OptimizationImpl) {
-        (keepRules as KeepRulesImpl).ignoreFromAllExternalDependencies =
-                (that.keepRules as KeepRulesImpl).ignoreFromAllExternalDependencies
+  fun initWith(that: OptimizationImpl) {
+    (keepRules as KeepRulesImpl).ignoreFromAllExternalDependencies = (that.keepRules as KeepRulesImpl).ignoreFromAllExternalDependencies
 
-        (keepRules as KeepRulesImpl).ignoreFrom.clear()
-        (keepRules as KeepRulesImpl).ignoreFrom.addAll(
-                (that.keepRules as KeepRulesImpl).ignoreFrom)
+    (keepRules as KeepRulesImpl).ignoreFrom.clear()
+    (keepRules as KeepRulesImpl).ignoreFrom.addAll((that.keepRules as KeepRulesImpl).ignoreFrom)
 
-        (baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies =
-                (that.baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies
+    // when merging includeDefault, prefer opt-out since it's an explicit choice
+    keepRules.includeDefault = keepRules.includeDefault && that.keepRules.includeDefault
 
-        (baselineProfile as BaselineProfileImpl).ignoreFrom.clear()
-        (baselineProfile as BaselineProfileImpl).ignoreFrom.addAll(
-                (that.baselineProfile as BaselineProfileImpl).ignoreFrom)
+    (baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies =
+      (that.baselineProfile as BaselineProfileImpl).ignoreFromAllExternalDependencies
 
-        enable = that.enable
+    (baselineProfile as BaselineProfileImpl).ignoreFrom.clear()
+    (baselineProfile as BaselineProfileImpl).ignoreFrom.addAll((that.baselineProfile as BaselineProfileImpl).ignoreFrom)
 
-        packageScope.empty()
-        packageScope.addAll(that.packageScope)
+    enable = that.enable
 
-        keepRules.files.empty()
-        keepRules.files.addAll(that.keepRules.files)
+    packageScope.empty()
+    packageScope.addAll(that.packageScope)
 
-    }
+    keepRules.files.empty()
+    keepRules.files.addAll(that.keepRules.files)
+  }
 }

@@ -27,54 +27,46 @@ import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.SetProperty
 
-class InstrumentationImpl(
-    services: TaskCreationServices,
-    variantServices: VariantServices,
-    private val isLibraryVariant: Boolean
-) : Instrumentation {
+class InstrumentationImpl(services: TaskCreationServices, variantServices: VariantServices, private val isLibraryVariant: Boolean) :
+  Instrumentation {
 
-    private val asmClassVisitorsRegistry = AsmClassVisitorsFactoryRegistry(services.issueReporter)
+  private val asmClassVisitorsRegistry = AsmClassVisitorsFactoryRegistry(services.issueReporter)
 
-    override fun <ParamT : InstrumentationParameters> transformClassesWith(
-        classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
-        scope: InstrumentationScope,
-        instrumentationParamsConfig: (ParamT) -> Unit
-    ) {
-        if (isLibraryVariant && scope == InstrumentationScope.ALL) {
-            throw RuntimeException(
-                "Can't register ${classVisitorFactoryImplClass.name} to " +
-                        "instrument library dependencies.\n" +
-                        "Instrumenting library dependencies will have no effect on library " +
-                        "consumers, move the dependencies instrumentation to be done in the " +
-                        "consuming app or test component."
-            )
-        }
-        asmClassVisitorsRegistry.register(
-            classVisitorFactoryImplClass,
-            scope,
-            instrumentationParamsConfig
-        )
+  override fun <ParamT : InstrumentationParameters> transformClassesWith(
+    classVisitorFactoryImplClass: Class<out AsmClassVisitorFactory<ParamT>>,
+    scope: InstrumentationScope,
+    instrumentationParamsConfig: (ParamT) -> Unit,
+  ) {
+    if (isLibraryVariant && scope == InstrumentationScope.ALL) {
+      throw RuntimeException(
+        "Can't register ${classVisitorFactoryImplClass.name} to " +
+          "instrument library dependencies.\n" +
+          "Instrumenting library dependencies will have no effect on library " +
+          "consumers, move the dependencies instrumentation to be done in the " +
+          "consuming app or test component."
+      )
     }
+    asmClassVisitorsRegistry.register(classVisitorFactoryImplClass, scope, instrumentationParamsConfig)
+  }
 
-    override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
-        asmClassVisitorsRegistry.setAsmFramesComputationMode(mode)
-    }
+  override fun setAsmFramesComputationMode(mode: FramesComputationMode) {
+    asmClassVisitorsRegistry.setAsmFramesComputationMode(mode)
+  }
 
-    override val excludes: SetProperty<String> =
-        variantServices.setPropertyOf(String::class.java, mutableListOf())
+  override val excludes: SetProperty<String> = variantServices.setPropertyOf(String::class.java, mutableListOf())
 
-    // private APIs
+  // private APIs
 
-    val registeredProjectClassesVisitors: List<AsmClassVisitorFactory<*>>
-        get() = asmClassVisitorsRegistry.projectClassesVisitors.map { it.visitorFactory }
+  val registeredProjectClassesVisitors: List<AsmClassVisitorFactory<*>>
+    get() = asmClassVisitorsRegistry.projectClassesVisitors.map { it.visitorFactory }
 
-    val registeredDependenciesClassesVisitors: List<AsmClassVisitorFactory<*>>
-        get() = asmClassVisitorsRegistry.dependenciesClassesVisitors.map { it.visitorFactory }
+  val registeredDependenciesClassesVisitors: List<AsmClassVisitorFactory<*>>
+    get() = asmClassVisitorsRegistry.dependenciesClassesVisitors.map { it.visitorFactory }
 
-    val finalAsmFramesComputationMode: FramesComputationMode
-        get() = asmClassVisitorsRegistry.framesComputationMode
+  val finalAsmFramesComputationMode: FramesComputationMode
+    get() = asmClassVisitorsRegistry.framesComputationMode
 
-    fun configureAndLockAsmClassesVisitors(objectFactory: ObjectFactory, asmApiVersion: Int) {
-        asmClassVisitorsRegistry.configureAndLock(objectFactory, asmApiVersion)
-    }
+  fun configureAndLockAsmClassesVisitors(objectFactory: ObjectFactory, asmApiVersion: Int) {
+    asmClassVisitorsRegistry.configureAndLock(objectFactory, asmApiVersion)
+  }
 }

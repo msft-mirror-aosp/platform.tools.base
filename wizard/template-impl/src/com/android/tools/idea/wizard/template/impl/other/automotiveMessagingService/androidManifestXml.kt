@@ -16,12 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMessagingService
 
-fun androidManifestXml(
-  packageName: String,
-  readReceiverName: String,
-  replyReceiverName: String,
-  serviceName: String
-) = """
+fun androidManifestXml(packageName: String, readReceiverName: String, replyReceiverName: String, serviceName: String) =
+  """
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application android:appCategory="audio">

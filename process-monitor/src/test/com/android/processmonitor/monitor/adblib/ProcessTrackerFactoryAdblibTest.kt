@@ -21,17 +21,19 @@ import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceInfo
 import com.android.adblib.DeviceState.ONLINE
 import com.android.adblib.testing.FakeAdbLoggerFactory
+import com.android.processmonitor.agenttracker.AgentProcessTrackerConfig
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.deviceprovisioner.DeviceProperties
 import com.android.sdklib.deviceprovisioner.DeviceState
 import com.android.sdklib.deviceprovisioner.EmptyIcon
 import com.android.sdklib.devices.Abi
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.whenever
 import com.google.common.truth.Truth.assertThat
+import java.nio.file.Path
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 /** Tests for [com.android.processmonitor.monitor.adblib.ProcessTrackerFactoryAdblib] */
 class ProcessTrackerFactoryAdblibTest {
@@ -42,7 +44,7 @@ class ProcessTrackerFactoryAdblibTest {
   @Test
   fun providesData(): Unit = runBlocking {
     val device = DeviceState.Connected(deviceProperties(25, Abi.X86), mockDevice("device1"))
-    val factory = ProcessTrackerFactoryAdblib(adbSession, null, logger)
+    val factory = ProcessTrackerFactoryAdblib(adbSession, AgentProcessTrackerConfig(Path.of("agent"), 1) { false }, logger)
 
     assertThat(factory.getDeviceSerialNumber(device)).isEqualTo("device1")
     assertThat(factory.getDeviceApiLevel(device)).isEqualTo(25)
@@ -61,6 +63,4 @@ private fun deviceProperties(aplLevel: Int, abi: Abi) =
 
 @Suppress("SameParameterValue")
 private fun mockDevice(serialNumber: String): ConnectedDevice =
-  mock<ConnectedDevice>().apply {
-    whenever(deviceInfoFlow).thenReturn(MutableStateFlow(DeviceInfo(serialNumber, ONLINE)))
-  }
+  mock<ConnectedDevice>().apply { whenever(deviceInfoFlow).thenReturn(MutableStateFlow(DeviceInfo(serialNumber, ONLINE))) }

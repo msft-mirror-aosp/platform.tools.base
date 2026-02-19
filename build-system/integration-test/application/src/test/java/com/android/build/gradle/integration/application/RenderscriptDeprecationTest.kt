@@ -20,92 +20,87 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.Version
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /** Tests for RenderScript deprecation message. */
 class RenderscriptDeprecationTest {
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @Test
-    fun testDeprecation() {
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
-                android {
-                    defaultConfig {
-                        minSdkVersion 14
-                        targetSdkVersion 28
+  @Test
+  fun testDeprecation() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      android {
+          defaultConfig {
+              minSdkVersion 14
+              targetSdkVersion 28
 
-                        renderscriptTargetApi = 28
-                        renderscriptSupportModeEnabled = true
-                    }
+              renderscriptTargetApi = 28
+              renderscriptSupportModeEnabled = true
+          }
 
-                    buildFeatures {
-                        renderScript = true
-                    }
-                }
-            """.trimIndent()
-        )
+          buildFeatures {
+              renderScript = true
+          }
+      }
+      """
+        .trimIndent(),
+    )
 
-        // Add a renderscript source file
-        val renderscriptDir = FileUtils.mkdirs(project.file("src/main/rs"))
-        val renderscriptFile = File(renderscriptDir, "saturation.rs")
-        FileUtils.writeToFile(
-            renderscriptFile,
-            """
+    // Add a renderscript source file
+    val renderscriptDir = FileUtils.mkdirs(project.file("src/main/rs"))
+    val renderscriptFile = File(renderscriptDir, "saturation.rs")
+    FileUtils.writeToFile(
+      renderscriptFile,
+      """
 
-                #pragma version(1)
-                #pragma rs java_package_name(com.example.android.basicrenderscript)
-                #pragma rs_fp_relaxed
+      #pragma version(1)
+      #pragma rs java_package_name(com.example.android.basicrenderscript)
+      #pragma rs_fp_relaxed
 
-                const static float3 gMonoMult = {0.299f, 0.587f, 0.114f};
+      const static float3 gMonoMult = {0.299f, 0.587f, 0.114f};
 
-                float saturationValue = 0.f;
+      float saturationValue = 0.f;
 
-                /*
-                 * RenderScript kernel that performs saturation manipulation.
-                 */
-                uchar4 __attribute__((kernel)) saturation(uchar4 in)
-                {
-                    float4 f4 = rsUnpackColor8888(in);
-                    float3 result = dot(f4.rgb, gMonoMult);
-                    result = mix(result, f4.rgb, saturationValue);
+      /*
+       * RenderScript kernel that performs saturation manipulation.
+       */
+      uchar4 __attribute__((kernel)) saturation(uchar4 in)
+      {
+          float4 f4 = rsUnpackColor8888(in);
+          float3 result = dot(f4.rgb, gMonoMult);
+          result = mix(result, f4.rgb, saturationValue);
 
-                    return rsPackColorTo8888(result);
-                }
+          return rsPackColorTo8888(result);
+      }
 
-            """.trimIndent()
-        )
+      """
+        .trimIndent(),
+    )
 
-        val expectedWarning =
-            "RenderScript APIs are deprecated starting in Android 12. RenderScript support will " +
-                    "be removed in AGP 10.0. See the following link for a guide to migrate from " +
-                    "RenderScript: https://developer.android.com/guide/topics/renderscript/migrate"
+    val expectedWarning =
+      "RenderScript APIs are deprecated starting in Android 12. RenderScript support will " +
+        "be removed in AGP 10.0. See the following link for a guide to migrate from " +
+        "RenderScript: https://developer.android.com/guide/topics/renderscript/migrate"
 
-        // We expect a deprecation warning if renderscript is enabled and there is a renderscript
-        // source file.
-        var result  = project.executor().run("clean", "assembleDebug")
-        assertThat(result.stdout).contains(expectedWarning)
+    // We expect a deprecation warning if renderscript is enabled and there is a renderscript
+    // source file.
+    var result = project.executor().run("clean", "assembleDebug")
+    assertThat(result.stdout).contains(expectedWarning)
 
-        // We expect no warning if renderscript is disabled
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            "\nandroid.buildFeatures.renderScript = false\n"
-        )
-        result  = project.executor().run("clean", "assembleDebug")
-        assertThat(result.stdout).doesNotContain(expectedWarning)
+    // We expect no warning if renderscript is disabled
+    TestFileUtils.appendToFile(project.buildFile, "\nandroid.buildFeatures.renderScript = false\n")
+    result = project.executor().run("clean", "assembleDebug")
+    assertThat(result.stdout).doesNotContain(expectedWarning)
 
-        // We expect no warning if renderscript is enabled but there are no renderscript sources
-        TestFileUtils.searchAndReplace(project.buildFile, "renderScript = false", "renderScript = true")
-        FileUtils.deleteIfExists(renderscriptFile)
-        result  = project.executor().run("clean", "assembleDebug")
-        assertThat(result.stdout).doesNotContain(expectedWarning)
-    }
+    // We expect no warning if renderscript is enabled but there are no renderscript sources
+    TestFileUtils.searchAndReplace(project.buildFile, "renderScript = false", "renderScript = true")
+    FileUtils.deleteIfExists(renderscriptFile)
+    result = project.executor().run("clean", "assembleDebug")
+    assertThat(result.stdout).doesNotContain(expectedWarning)
+  }
 }

@@ -29,31 +29,34 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Test injected ABI with ndk.abiFilters in a library project.
- */
+/** Test injected ABI with ndk.abiFilters in a library project. */
 class InjectedAbiTest {
 
-    private val testapp = HelloWorldLibraryApp.create()
+  private val testapp = HelloWorldLibraryApp.create()
 
-    @Rule
-    @JvmField
-    val project = GradleTestProject.builder().fromTestApp(testapp)
+  @Rule
+  @JvmField
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(testapp)
       .setCmakeVersion(CMakeVersion.DEFAULT.sdkFolderName)
       .setSideBySideNdkVersion(DEFAULT_NDK_SIDE_BY_SIDE_VERSION)
       .setWithCmakeDirInLocalProp(true)
       .create()
 
-    init {
-        val lib = testapp.getSubproject(":lib") as GradleProject
-        lib.addFile(HelloWorldJniApp.cmakeLists(""))
-        lib.addFile(HelloWorldJniApp.cSource("src/main/cpp"))
-    }
+  init {
+    val lib = testapp.getSubproject(":lib") as GradleProject
+    lib.addFile(HelloWorldJniApp.cmakeLists(""))
+    lib.addFile(HelloWorldJniApp.cSource("src/main/cpp"))
+  }
 
-    @Before
-    fun setUp() {
-        project.getSubproject(":lib").buildFile.appendText(
-                """
+  @Before
+  fun setUp() {
+    project
+      .getSubproject(":lib")
+      .buildFile
+      .appendText(
+        """
 android {
     ndkPath = "${project.ndkPath}"
     defaultConfig {
@@ -68,25 +71,20 @@ android {
         }
     }
 }
-""")
-    }
+"""
+      )
+  }
 
-    @Test fun normalBuild() {
-        project.executor()
-                .with(StringOption.IDE_BUILD_TARGET_ABI, "x86")
-                .run(":app:assembleDebug")
-        assertThat(project.getSubproject(":app")
-                .getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates))
-                .containsFile("lib/x86/libhello-jni.so")
-    }
+  @Test
+  fun normalBuild() {
+    project.executor().with(StringOption.IDE_BUILD_TARGET_ABI, "x86").run(":app:assembleDebug")
+    assertThat(project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG, ApkLocation.Intermediates))
+      .containsFile("lib/x86/libhello-jni.so")
+  }
 
-    @Test
-    fun missingAbi() {
-        project.executor()
-                .with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a")
-                .run(":app:assembleDebug")
-        assertThat(project.getSubproject(":app")
-            .getApk(GradleTestProject.ApkType.DEBUG))
-            .doesNotContainFile("lib/armeabi-v7a/libhello-jni.so")
-    }
+  @Test
+  fun missingAbi() {
+    project.executor().with(StringOption.IDE_BUILD_TARGET_ABI, "armeabi-v7a").run(":app:assembleDebug")
+    assertThat(project.getSubproject(":app").getApk(GradleTestProject.ApkType.DEBUG)).doesNotContainFile("lib/armeabi-v7a/libhello-jni.so")
+  }
 }

@@ -29,39 +29,24 @@ import org.gradle.api.provider.Property
 
 abstract class Aapt2LinkRunnable : ProfileAwareWorkAction<Aapt2LinkRunnable.Params>() {
 
-    override fun run() {
-        runAapt2Link(
-                parameters.aapt2ServiceKey.get(),
-                parameters.request.get(),
-                parameters.errorFormatMode.get()
-        )
-    }
+  override fun run() {
+    runAapt2Link(parameters.aapt2ServiceKey.get(), parameters.request.get(), parameters.errorFormatMode.get())
+  }
 
-    abstract class Params : ProfileAwareWorkAction.Parameters() {
-        abstract val aapt2ServiceKey: Property<Aapt2DaemonServiceKey>
-        abstract val request: Property<AaptPackageConfig>
-        abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
-    }
+  abstract class Params : ProfileAwareWorkAction.Parameters() {
+    abstract val aapt2ServiceKey: Property<Aapt2DaemonServiceKey>
+    abstract val request: Property<AaptPackageConfig>
+    abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
+  }
 }
 
-fun runAapt2Link(
-        aapt2ServiceKey: Aapt2DaemonServiceKey,
-        request: AaptPackageConfig,
-        errorFormatMode: SyncOptions.ErrorFormatMode
-) {
-    val logger = Logging.getLogger(Aapt2LinkRunnable::class.java)
-    useAaptDaemon(aapt2ServiceKey) { daemon ->
-        try {
-            daemon.link(request, LoggerWrapper(logger))
-        } catch (exception: Aapt2Exception) {
-            throw rewriteLinkException(
-                    exception,
-                    errorFormatMode,
-                    null,
-                    null,
-                    emptyMap(),
-                    logger
-            )
-        }
+fun runAapt2Link(aapt2ServiceKey: Aapt2DaemonServiceKey, request: AaptPackageConfig, errorFormatMode: SyncOptions.ErrorFormatMode) {
+  val logger = Logging.getLogger(Aapt2LinkRunnable::class.java)
+  useAaptDaemon(aapt2ServiceKey) { daemon ->
+    try {
+      daemon.link(request, LoggerWrapper(logger))
+    } catch (exception: Aapt2Exception) {
+      throw rewriteLinkException(exception, errorFormatMode, null, null, emptyMap(), logger)
     }
+  }
 }

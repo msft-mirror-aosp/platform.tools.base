@@ -19,83 +19,71 @@ package com.android.build.gradle.integration.common.fixture.gradle_project
 import com.android.build.gradle.integration.BazelIntegrationTestsSuite
 import com.android.testutils.TestUtils
 import com.android.utils.FileUtils
-import org.gradle.util.GradleVersion
 import java.io.File
 import java.nio.file.Path
+import org.gradle.util.GradleVersion
 
-/**
- * The location for test-related files.
- */
+/** The location for test-related files. */
 class TestLocation(
-    /**
-     * The build directory of the target that that built the test.
-     *
-     * This is mostly used to compute a few things like gradle user home, jacoco, etc...
-     */
-    val buildDir: File,
+  /**
+   * The build directory of the target that that built the test.
+   *
+   * This is mostly used to compute a few things like gradle user home, jacoco, etc...
+   */
+  val buildDir: File,
 
-    /**
-     * the root project for all the tests files (for all tests)
-     */
-    val testsDir: File,
+  /** the root project for all the tests files (for all tests) */
+  val testsDir: File,
 
-    /**
-     * An SDK location directly under [buildDir]
-     *
-     * FIXME figure this out
-     */
-    val androidSdkHome: File,
+  /**
+   * An SDK location directly under [buildDir]
+   *
+   * FIXME figure this out
+   */
+  val androidSdkHome: File,
 
-    /**
-     * Gradle user home folder for this test
-     */
-    val gradleUserHome: Path,
+  /** Gradle user home folder for this test */
+  val gradleUserHome: Path,
 
-    /**
-     * the location of the Gradle cache directory
-     */
-    val gradleCacheDir: File
+  /** the location of the Gradle cache directory */
+  val gradleCacheDir: File,
 )
 
-fun initializeTestLocation() : TestLocation {
-    val buildDir = when {
-        System.getenv("TEST_TMPDIR") != null -> {
-            File(System.getenv("TEST_TMPDIR"))
-        }
-        else -> {
-            throw IllegalStateException("unable to determine location for BUILD_DIR")
-        }
+fun initializeTestLocation(): TestLocation {
+  val buildDir =
+    when {
+      System.getenv("TEST_TMPDIR") != null -> {
+        File(System.getenv("TEST_TMPDIR"))
+      }
+      else -> {
+        throw IllegalStateException("unable to determine location for BUILD_DIR")
+      }
     }
 
-    val outDir = File(buildDir, "tests")
+  val outDir = File(buildDir, "tests")
 
-    val gradleUserHome = getGradleUserHome(buildDir)
+  val gradleUserHome = getGradleUserHome(buildDir)
 
-    return TestLocation(
-        buildDir,
-        outDir,
-        File(buildDir, "ANDROID_SDK_HOME"),
-        gradleUserHome,
-        FileUtils.join(gradleUserHome.toFile(),
-            "caches",
-            GradleVersion.current().version,
-            "transforms"
-        )
-    )
+  return TestLocation(
+    buildDir,
+    outDir,
+    File(buildDir, "ANDROID_SDK_HOME"),
+    gradleUserHome,
+    FileUtils.join(gradleUserHome.toFile(), "caches", GradleVersion.current().version, "transforms"),
+  )
 }
 
 private fun getGradleUserHome(buildDir: File): Path {
-    if (TestUtils.runningFromBazel()) {
-        return BazelIntegrationTestsSuite.GRADLE_USER_HOME
-    }
-    // Use a temporary directory, so that shards don't share daemons. Gradle builds are not
-    // hermetic anyway and Gradle does not clean up test runfiles, so use the same home
-    // across invocations to save disk space.
-    var gradleUserHome = buildDir.toPath().resolve("GRADLE_USER_HOME")
-    val worker = System.getProperty("org.gradle.test.worker")
-    if (worker != null) {
-        gradleUserHome = gradleUserHome.resolve(worker)
-    }
-    return gradleUserHome
+  if (TestUtils.runningFromBazel()) {
+    return BazelIntegrationTestsSuite.GRADLE_USER_HOME
+  }
+  // Use a temporary directory, so that shards don't share daemons. Gradle builds are not
+  // hermetic anyway and Gradle does not clean up test runfiles, so use the same home
+  // across invocations to save disk space.
+  var gradleUserHome = buildDir.toPath().resolve("GRADLE_USER_HOME")
+  val worker = System.getProperty("org.gradle.test.worker")
+  if (worker != null) {
+    gradleUserHome = gradleUserHome.resolve(worker)
+  }
+  return gradleUserHome
 }
-

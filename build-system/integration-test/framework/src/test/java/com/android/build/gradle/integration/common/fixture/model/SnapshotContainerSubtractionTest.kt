@@ -22,463 +22,355 @@ import com.android.build.gradle.integration.common.fixture.model.SnapshotContain
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-
 internal class SnapshotContainerSubtractionTest {
 
-    @Test
-    fun `valueList diff with same content`() {
-        assertThat(
-            getValueListSubtraction(
-                main = listOf(ValueOnlyItem("A")),
-                reference = listOf(ValueOnlyItem("A"))
-            )
-        ).isNull()
-    }
+  @Test
+  fun `valueList diff with same content`() {
+    assertThat(getValueListSubtraction(main = listOf(ValueOnlyItem("A")), reference = listOf(ValueOnlyItem("A")))).isNull()
+  }
 
-    @Test
-    fun `valueList diff with new value`() {
-        val difference = getValueListSubtraction(
-            main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")),
-            reference = listOf(ValueOnlyItem("A"))
+  @Test
+  fun `valueList diff with new value`() {
+    val difference = getValueListSubtraction(main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")), reference = listOf(ValueOnlyItem("A")))
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("B{ADDED}"))
+  }
+
+  @Test
+  fun `valueList diff with removed value`() {
+    val difference = getValueListSubtraction(main = listOf(ValueOnlyItem("A")), reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")))
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("B{REMOVED}"))
+  }
+
+  @Test
+  fun `valueList diff with all values removed (empty list)`() {
+    val difference = getValueListSubtraction(main = listOf(), reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")))
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("A{REMOVED}"), ValueOnlyItem("B{REMOVED}"))
+  }
+
+  @Test
+  fun `valueList diff with all values removed (null)`() {
+    val difference = getValueListSubtraction(main = null, reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")))
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("A{REMOVED}"), ValueOnlyItem("B{REMOVED}"))
+  }
+
+  @Test
+  fun `valueList diff with all values added (empty list)`() {
+    val difference = getValueListSubtraction(main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")), reference = listOf())
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("A{ADDED}"), ValueOnlyItem("B{ADDED}"))
+  }
+
+  @Test
+  fun `valueList diff with all values added (null)`() {
+    val difference = getValueListSubtraction(main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")), reference = null)
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(ValueOnlyItem("A{ADDED}"), ValueOnlyItem("B{ADDED}"))
+  }
+
+  @Test
+  fun `object prop diff with same key-value items`() {
+    assertThat(
+        getObjectPropertiesSubtraction(
+          main = listOf(KeyValueItem(name = "foo", value = "A")),
+          reference = listOf(KeyValueItem(name = "foo", value = "A")),
         )
+      )
+      .isNull()
+  }
 
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(ValueOnlyItem("B{ADDED}"))
-    }
+  @Test
+  fun `object prop diff with different key-value`() {
+    val difference =
+      getObjectPropertiesSubtraction(
+        main = listOf(KeyValueItem(name = "foo", value = "A")),
+        reference = listOf(KeyValueItem(name = "foo", value = "B")),
+      )
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(KeyValueItem(name = "foo", value = "A"))
+  }
 
-    @Test
-    fun `valueList diff with removed value`() {
-        val difference = getValueListSubtraction(
-            main = listOf(ValueOnlyItem("A")),
-            reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B"))
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(ValueOnlyItem("B{REMOVED}"))
-    }
-
-    @Test
-    fun `valueList diff with all values removed (empty list)`() {
-        val difference = getValueListSubtraction(
-            main = listOf(),
-            reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B"))
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            ValueOnlyItem("A{REMOVED}"),
-            ValueOnlyItem("B{REMOVED}")
-        )
-    }
-
-    @Test
-    fun `valueList diff with all values removed (null)`() {
-        val difference = getValueListSubtraction(
-            main = null,
-            reference = listOf(ValueOnlyItem("A"), ValueOnlyItem("B"))
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            ValueOnlyItem("A{REMOVED}"),
-            ValueOnlyItem("B{REMOVED}")
-        )
-    }
-
-    @Test
-    fun `valueList diff with all values added (empty list)`() {
-        val difference = getValueListSubtraction(
-            main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")),
-            reference = listOf()
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            ValueOnlyItem("A{ADDED}"),
-            ValueOnlyItem("B{ADDED}")
-        )
-    }
-
-    @Test
-    fun `valueList diff with all values added (null)`() {
-        val difference = getValueListSubtraction(
-            main = listOf(ValueOnlyItem("A"), ValueOnlyItem("B")),
-            reference = null
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            ValueOnlyItem("A{ADDED}"),
-            ValueOnlyItem("B{ADDED}")
-        )
-    }
-
-    @Test
-    fun `object prop diff with same key-value items`() {
-        assertThat(
-            getObjectPropertiesSubtraction(
-                main = listOf(KeyValueItem(name = "foo", value = "A")),
-                reference = listOf(KeyValueItem(name = "foo", value = "A"))
-            )
-        ).isNull()
-    }
-
-    @Test
-    fun `object prop diff with different key-value`() {
-        val difference = getObjectPropertiesSubtraction(
-            main = listOf(KeyValueItem(name = "foo", value = "A")),
-            reference = listOf(KeyValueItem(name = "foo", value = "B"))
-        )
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            KeyValueItem(name = "foo", value = "A")
-        )
-    }
-
-    @Test
-    fun `object prop diff with same nested container key-value`() {
-        assertThat(
-            getObjectPropertiesSubtraction(
-                main = listOf(
-                    SnapshotContainerImpl(
-                        "foo",
-                        listOf(
-                            KeyValueItem(name = "bar", value = "A"),
-                            KeyValueItem(name = "bar2", value = "B")
-                        ),
-                        OBJECT_PROPERTIES
-                    )
-                ),
-                reference = listOf(
-                    SnapshotContainerImpl(
-                        "foo",
-                        listOf(
-                            KeyValueItem(name = "bar", value = "A"),
-                            KeyValueItem(name = "bar2", value = "B")
-                        ),
-                        OBJECT_PROPERTIES
-                    )
-                )
-            )
-        ).isNull()
-    }
-
-    @Test
-    fun `object prop diff with different nested container key-value`() {
-        val difference = getObjectPropertiesSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            ),
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "C")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl(
+  @Test
+  fun `object prop diff with same nested container key-value`() {
+    assertThat(
+        getObjectPropertiesSubtraction(
+          main =
+            listOf(
+              SnapshotContainerImpl(
                 "foo",
-                listOf(
-                    KeyValueItem(name = "bar2", value = "B")
-                ),
-                OBJECT_PROPERTIES
-            )
-        )
-    }
-
-    @Test
-    fun `objectList diff with same content`() {
-        assertThat(
-            getObjectListSubtraction(
-                main = listOf(
-                    SnapshotContainerImpl(
-                        "foo",
-                        listOf(
-                            KeyValueItem(name = "bar", value = "A"),
-                            KeyValueItem(name = "bar2", value = "B")
-                        ),
-                        OBJECT_PROPERTIES
-                    )
-                ),
-                reference = listOf(
-                    SnapshotContainerImpl(
-                        "foo",
-                        listOf(
-                            KeyValueItem(name = "bar", value = "A"),
-                            KeyValueItem(name = "bar2", value = "B")
-                        ),
-                        OBJECT_PROPERTIES
-                    )
-                )
-            )
-        ).isNull()
-    }
-
-    @Test
-    fun `objectList diff with new value`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                ),
-                SnapshotContainerImpl(
-                    "bar",
-                    listOf(
-                        KeyValueItem(name = "bar3", value = "A"),
-                    ),
-                    OBJECT_PROPERTIES
-                )
+                listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+                OBJECT_PROPERTIES,
+              )
             ),
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl(
-                "bar{ADDED}",
-                listOf(
-                    KeyValueItem(name = "bar3", value = "A"),
-                ),
-                OBJECT_PROPERTIES
-            )
-        )
-    }
-
-    @Test
-    fun `objectList diff with removed value`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            ),
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                ),
-                SnapshotContainerImpl(
-                    "bar",
-                    listOf(
-                        KeyValueItem(name = "bar3", value = "A"),
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl("bar{REMOVED}", null, OBJECT_PROPERTIES)
-        )
-    }
-
-    @Test
-    fun `objectList diff with same item but different value`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "C")
-                    ),
-                    OBJECT_PROPERTIES
-                ),
-            ),
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl(
+          reference =
+            listOf(
+              SnapshotContainerImpl(
                 "foo",
-                listOf(
-                    KeyValueItem(name = "bar2", value = "C")
-                ),
-                OBJECT_PROPERTIES
-            )
-        )
-    }
-
-    @Test
-    fun `objectList diff with all values removed (empty list)`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(),
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl("foo{REMOVED}", null, OBJECT_PROPERTIES)
-        )
-    }
-
-    @Test
-    fun `objectList diff with all values removed (null)`() {
-        val difference = getObjectListSubtraction(
-            main = null,
-            reference = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
-            )
-        )
-
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
-            SnapshotContainerImpl("foo{REMOVED}", null, OBJECT_PROPERTIES)
-        )
-    }
-
-    @Test
-    fun `objectList diff with all values added (empty list)`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
+                listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+                OBJECT_PROPERTIES,
+              )
             ),
-            reference = listOf()
         )
+      )
+      .isNull()
+  }
 
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
+  @Test
+  fun `object prop diff with different nested container key-value`() {
+    val difference =
+      getObjectPropertiesSubtraction(
+        main =
+          listOf(
             SnapshotContainerImpl(
-                "foo{ADDED}", listOf(
-                    KeyValueItem(name = "bar", value = "A"),
-                    KeyValueItem(name = "bar2", value = "B")
-                ), OBJECT_PROPERTIES
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
             )
-        )
-    }
+          ),
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "C")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+      )
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items)
+      .containsExactly(SnapshotContainerImpl("foo", listOf(KeyValueItem(name = "bar2", value = "B")), OBJECT_PROPERTIES))
+  }
 
-    @Test
-    fun `objectList diff with all values added (null)`() {
-        val difference = getObjectListSubtraction(
-            main = listOf(
-                SnapshotContainerImpl(
-                    "foo",
-                    listOf(
-                        KeyValueItem(name = "bar", value = "A"),
-                        KeyValueItem(name = "bar2", value = "B")
-                    ),
-                    OBJECT_PROPERTIES
-                )
+  @Test
+  fun `objectList diff with same content`() {
+    assertThat(
+        getObjectListSubtraction(
+          main =
+            listOf(
+              SnapshotContainerImpl(
+                "foo",
+                listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+                OBJECT_PROPERTIES,
+              )
             ),
-            reference = null
+          reference =
+            listOf(
+              SnapshotContainerImpl(
+                "foo",
+                listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+                OBJECT_PROPERTIES,
+              )
+            ),
         )
+      )
+      .isNull()
+  }
 
-        assertThat(difference).isNotNull()
-        difference!!
-        assertThat(difference.items).containsExactly(
+  @Test
+  fun `objectList diff with new value`() {
+    val difference =
+      getObjectListSubtraction(
+        main =
+          listOf(
             SnapshotContainerImpl(
-                "foo{ADDED}", listOf(
-                    KeyValueItem(name = "bar", value = "A"),
-                    KeyValueItem(name = "bar2", value = "B")
-                ), OBJECT_PROPERTIES
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            ),
+            SnapshotContainerImpl("bar", listOf(KeyValueItem(name = "bar3", value = "A")), OBJECT_PROPERTIES),
+          ),
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
             )
+          ),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items)
+      .containsExactly(SnapshotContainerImpl("bar{ADDED}", listOf(KeyValueItem(name = "bar3", value = "A")), OBJECT_PROPERTIES))
+  }
+
+  @Test
+  fun `objectList diff with removed value`() {
+    val difference =
+      getObjectListSubtraction(
+        main =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            ),
+            SnapshotContainerImpl("bar", listOf(KeyValueItem(name = "bar3", value = "A")), OBJECT_PROPERTIES),
+          ),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(SnapshotContainerImpl("bar{REMOVED}", null, OBJECT_PROPERTIES))
+  }
+
+  @Test
+  fun `objectList diff with same item but different value`() {
+    val difference =
+      getObjectListSubtraction(
+        main =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "C")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items)
+      .containsExactly(SnapshotContainerImpl("foo", listOf(KeyValueItem(name = "bar2", value = "C")), OBJECT_PROPERTIES))
+  }
+
+  @Test
+  fun `objectList diff with all values removed (empty list)`() {
+    val difference =
+      getObjectListSubtraction(
+        main = listOf(),
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(SnapshotContainerImpl("foo{REMOVED}", null, OBJECT_PROPERTIES))
+  }
+
+  @Test
+  fun `objectList diff with all values removed (null)`() {
+    val difference =
+      getObjectListSubtraction(
+        main = null,
+        reference =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items).containsExactly(SnapshotContainerImpl("foo{REMOVED}", null, OBJECT_PROPERTIES))
+  }
+
+  @Test
+  fun `objectList diff with all values added (empty list)`() {
+    val difference =
+      getObjectListSubtraction(
+        main =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+        reference = listOf(),
+      )
+
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items)
+      .containsExactly(
+        SnapshotContainerImpl(
+          "foo{ADDED}",
+          listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+          OBJECT_PROPERTIES,
         )
-    }
+      )
+  }
 
-    private fun getValueListSubtraction(
-        main: List<SnapshotItem>?,
-        reference: List<SnapshotItem>?
-    ): SnapshotContainer? = getSubtraction(main, reference, VALUE_LIST)
+  @Test
+  fun `objectList diff with all values added (null)`() {
+    val difference =
+      getObjectListSubtraction(
+        main =
+          listOf(
+            SnapshotContainerImpl(
+              "foo",
+              listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+              OBJECT_PROPERTIES,
+            )
+          ),
+        reference = null,
+      )
 
-    private fun getObjectPropertiesSubtraction(
-        main: List<SnapshotItem>?,
-        reference: List<SnapshotItem>?
-    ): SnapshotContainer? = getSubtraction(main, reference, OBJECT_PROPERTIES)
+    assertThat(difference).isNotNull()
+    difference!!
+    assertThat(difference.items)
+      .containsExactly(
+        SnapshotContainerImpl(
+          "foo{ADDED}",
+          listOf(KeyValueItem(name = "bar", value = "A"), KeyValueItem(name = "bar2", value = "B")),
+          OBJECT_PROPERTIES,
+        )
+      )
+  }
 
-    private fun getObjectListSubtraction(
-        main: List<SnapshotItem>?,
-        reference: List<SnapshotItem>?
-    ): SnapshotContainer? = getSubtraction(main, reference, OBJECT_LIST)
+  private fun getValueListSubtraction(main: List<SnapshotItem>?, reference: List<SnapshotItem>?): SnapshotContainer? =
+    getSubtraction(main, reference, VALUE_LIST)
 
-    private fun getSubtraction(
-        main: List<SnapshotItem>?,
-        reference: List<SnapshotItem>?,
-        type: SnapshotContainer.ContentType
-    ) = SnapshotContainerImpl("name", main, type)
-        .subtract(SnapshotContainerImpl("name", reference, type)
-    )
+  private fun getObjectPropertiesSubtraction(main: List<SnapshotItem>?, reference: List<SnapshotItem>?): SnapshotContainer? =
+    getSubtraction(main, reference, OBJECT_PROPERTIES)
+
+  private fun getObjectListSubtraction(main: List<SnapshotItem>?, reference: List<SnapshotItem>?): SnapshotContainer? =
+    getSubtraction(main, reference, OBJECT_LIST)
+
+  private fun getSubtraction(main: List<SnapshotItem>?, reference: List<SnapshotItem>?, type: SnapshotContainer.ContentType) =
+    SnapshotContainerImpl("name", main, type).subtract(SnapshotContainerImpl("name", reference, type))
 }

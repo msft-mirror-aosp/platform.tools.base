@@ -18,8 +18,6 @@ import org.junit.runners.Parameterized.Parameters
 
 abstract class MultipleDexVersionTestBase(protected val archive: DexArchiveBase) {
   companion object {
-    @JvmStatic
-    @Parameters(name = "dex archive {0}")
-    fun data() = listOf(MainDexArchive, MainDexContainerArchive)
+    @JvmStatic @Parameters(name = "dex archive {0}") fun data() = listOf(MainDexArchive, MainDexContainerArchive)
   }
 }

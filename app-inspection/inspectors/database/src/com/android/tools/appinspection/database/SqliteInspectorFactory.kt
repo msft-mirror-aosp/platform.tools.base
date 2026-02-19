@@ -24,6 +24,5 @@ private const val SQLITE_INSPECTOR_ID = "androidx.sqlite.inspection"
 /** Factory for SqliteInspector */
 internal class SqliteInspectorFactory : InspectorFactory<SqliteInspector>(SQLITE_INSPECTOR_ID) {
 
-  override fun createInspector(connection: Connection, environment: InspectorEnvironment) =
-    SqliteInspector(connection, environment)
+  override fun createInspector(connection: Connection, environment: InspectorEnvironment) = SqliteInspector(connection, environment)
 }

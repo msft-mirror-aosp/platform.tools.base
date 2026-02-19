@@ -16,36 +16,36 @@
 
 package com.android.tools.backup
 
-import com.android.tools.backup.sampleTests.ExampleRestoreTest
 import com.android.tools.backup.sampleTests.ExampleBackupRestoreTest
 import com.android.tools.backup.sampleTests.ExampleInstrumentedTest
+import com.android.tools.backup.sampleTests.ExampleRestoreTest
+import kotlin.test.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import kotlin.test.assertEquals
 
 class AndroidBackupRunnerBuilderTest {
-    @Test
-    fun runnerForRestoreTest() {
-        val runnerBuilder = AndroidBackupRunnerBuilder()
+  @Test
+  fun runnerForRestoreTest() {
+    val runnerBuilder = AndroidBackupRunnerBuilder()
 
-        val runner = runnerBuilder.runnerForClass(ExampleRestoreTest::class.java)
+    val runner = runnerBuilder.runnerForClass(ExampleRestoreTest::class.java)
 
-        assertEquals(runner!!.testCount(), 2)
-    }
+    assertEquals(runner!!.testCount(), 2)
+  }
 
-    @Test
-    fun runnerForBackupRestoreTest() {
-        val runnerBuilder = AndroidBackupRunnerBuilder()
-        val runner = runnerBuilder.runnerForClass(ExampleBackupRestoreTest::class.java)
+  @Test
+  fun runnerForBackupRestoreTest() {
+    val runnerBuilder = AndroidBackupRunnerBuilder()
+    val runner = runnerBuilder.runnerForClass(ExampleBackupRestoreTest::class.java)
 
-        assertEquals(runner!!.testCount(), 3)
-    }
+    assertEquals(runner!!.testCount(), 3)
+  }
 
-    @Test
-    fun runnerForNonBackupRestoreTest() {
-        val runnerBuilder = AndroidBackupRunnerBuilder()
-        val runner = runnerBuilder.runnerForClass(ExampleInstrumentedTest::class.java)
+  @Test
+  fun runnerForNonBackupRestoreTest() {
+    val runnerBuilder = AndroidBackupRunnerBuilder()
+    val runner = runnerBuilder.runnerForClass(ExampleInstrumentedTest::class.java)
 
-        assertNull(runner)
-    }
+    assertNull(runner)
+  }
 }

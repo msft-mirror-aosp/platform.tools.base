@@ -18,9 +18,8 @@ package com.android.tools.idea.wizard.template.impl.fragments.loginFragment.src.
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun loggedInUserViewKt(
-  packageName: String
-) = """
+fun loggedInUserViewKt(packageName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.ui.login
 
 /**

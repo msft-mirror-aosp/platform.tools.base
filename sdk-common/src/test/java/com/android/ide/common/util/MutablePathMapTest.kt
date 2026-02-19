@@ -19,34 +19,31 @@ package com.android.ide.common.util
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-/**
- * Tests that apply to all implementations of [MutablePathMap]
- */
+/** Tests that apply to all implementations of [MutablePathMap] */
 class MutablePathMapTest {
-    /**
-     * If we ever create a second implementation of [MutablePathMap], this test suite should become
-     * parameterized for the different implementations and this method can return the appropriate
-     * map type.
-     */
-    fun <T> createMap(): MutablePathMap<T> {
-        return pathTreeMapOf()
-    }
+  /**
+   * If we ever create a second implementation of [MutablePathMap], this test suite should become parameterized for the different
+   * implementations and this method can return the appropriate map type.
+   */
+  fun <T> createMap(): MutablePathMap<T> {
+    return pathTreeMapOf()
+  }
 
-    @Test
-    fun testPut() {
-        val map = createMap<String>()
+  @Test
+  fun testPut() {
+    val map = createMap<String>()
 
-        assertThat(map.values.toList().isEmpty()).isTrue()
+    assertThat(map.values.toList().isEmpty()).isTrue()
 
-        map.put(PathString("/foo/bar"), "bar")
+    map.put(PathString("/foo/bar"), "bar")
 
-        assertThat(map.values.toList().isEmpty()).isFalse()
+    assertThat(map.values.toList().isEmpty()).isFalse()
 
-        map.put(PathString("/foo/baz"), "baz")
-        map.put(PathString("/bing"), "bing")
+    map.put(PathString("/foo/baz"), "baz")
+    map.put(PathString("/bing"), "bing")
 
-        assertThat(map.values.toSet()).isEqualTo(setOf("bar", "baz", "bing"))
-        assertThat(map.findMostSpecific(PathString("/foo/bar/bozzel"))).isEqualTo("bar")
-        assertThat(map.findAllStartingWith(PathString("/foo")).toList().size).isEqualTo(2)
-    }
+    assertThat(map.values.toSet()).isEqualTo(setOf("bar", "baz", "bing"))
+    assertThat(map.findMostSpecific(PathString("/foo/bar/bozzel"))).isEqualTo("bar")
+    assertThat(map.findAllStartingWith(PathString("/foo")).toList().size).isEqualTo(2)
+  }
 }

@@ -17,7 +17,7 @@
 package com.android.build.gradle.tasks
 
 /**
- * Denotes a produced BuildableArtifact as the initial value. Should another task produce the
- * same artifact type and be configured before this injection point will generate an error.
+ * Denotes a produced BuildableArtifact as the initial value. Should another task produce the same artifact type and be configured before
+ * this injection point will generate an error.
  */
-annotation class Initial(val out: String= "out")
+annotation class Initial(val out: String = "out")

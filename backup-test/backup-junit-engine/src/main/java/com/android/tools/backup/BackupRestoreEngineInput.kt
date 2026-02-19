@@ -17,17 +17,17 @@
 package com.android.tools.backup
 
 object BackupRestoreEngineInput {
-    val appId: String = getSystemProperty("appId")
-    val resultDirPath: String = getSystemProperty("resultsDirPath")
+  val appId: String = getSystemProperty("appId")
+  val resultDirPath: String = getSystemProperty("resultsDirPath")
 
-    object ReportEntrySetting {
-        // Redirect ReportEntry to stdout when enabled.
-        // This is a short-term workaround until Gradle supports ReportEntry.
-        // https://github.com/gradle/gradle/issues/4605
-        val redirectToStdout: Boolean = getSystemProperty("ReportEntrySetting.redirectToStdout").toBoolean()
-    }
+  object ReportEntrySetting {
+    // Redirect ReportEntry to stdout when enabled.
+    // This is a short-term workaround until Gradle supports ReportEntry.
+    // https://github.com/gradle/gradle/issues/4605
+    val redirectToStdout: Boolean = getSystemProperty("ReportEntrySetting.redirectToStdout").toBoolean()
+  }
 }
 
 private fun getSystemProperty(propertyName: String): String {
-    return System.getProperty("BackupRestoreTestEngineInput.$propertyName", "")
+  return System.getProperty("BackupRestoreTestEngineInput.$propertyName", "")
 }

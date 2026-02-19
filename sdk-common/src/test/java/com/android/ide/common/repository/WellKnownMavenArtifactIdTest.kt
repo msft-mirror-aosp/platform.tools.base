@@ -19,65 +19,55 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class WellKnownMavenArtifactIdTest {
-    @Test
-    fun testFindKotlinArtifacts() {
-        assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-stdlib"))
-            .isEqualTo(WellKnownMavenArtifactId.KOTLIN_STDLIB)
-        assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-reflect"))
-            .isEqualTo(WellKnownMavenArtifactId.KOTLIN_REFLECT)
-    }
+  @Test
+  fun testFindKotlinArtifacts() {
+    assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-stdlib")).isEqualTo(WellKnownMavenArtifactId.KOTLIN_STDLIB)
+    assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-reflect")).isEqualTo(WellKnownMavenArtifactId.KOTLIN_REFLECT)
+  }
 
-    @Test
-    fun testDoesNotFindNonexistentKotlinArtifact() {
-        assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-nonexistent"))
-            .isNull()
-    }
+  @Test
+  fun testDoesNotFindNonexistentKotlinArtifact() {
+    assertThat(WellKnownMavenArtifactId.find("org.jetbrains.kotlin", "kotlin-nonexistent")).isNull()
+  }
 
-    @Test
-    fun testFindTfliteArtifacts() {
-        assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-gpu"))
-            .isEqualTo(WellKnownMavenArtifactId.TFLITE_GPU)
-        assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-metadata"))
-            .isEqualTo(WellKnownMavenArtifactId.TFLITE_METADATA)
-        assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-support"))
-            .isEqualTo(WellKnownMavenArtifactId.TFLITE_SUPPORT)
-    }
+  @Test
+  fun testFindTfliteArtifacts() {
+    assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-gpu")).isEqualTo(WellKnownMavenArtifactId.TFLITE_GPU)
+    assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-metadata"))
+      .isEqualTo(WellKnownMavenArtifactId.TFLITE_METADATA)
+    assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-support"))
+      .isEqualTo(WellKnownMavenArtifactId.TFLITE_SUPPORT)
+  }
 
-    @Test
-    fun testDoesNotFindNonexistentTfliteArtifact() {
-        assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-nonexistent"))
-            .isNull()
-    }
+  @Test
+  fun testDoesNotFindNonexistentTfliteArtifact() {
+    assertThat(WellKnownMavenArtifactId.find("org.tensorflow", "tensorflow-lite-nonexistent")).isNull()
+  }
 
-    @Test
-    fun testFindGuavaArtifacts() {
-        assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava"))
-            .isEqualTo((WellKnownMavenArtifactId.GUAVA_GUAVA))
-    }
+  @Test
+  fun testFindGuavaArtifacts() {
+    assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava")).isEqualTo((WellKnownMavenArtifactId.GUAVA_GUAVA))
+  }
 
-    @Test
-    fun testDoesNotFindNonexistentGuavaArtifact() {
-        assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava-nonexistent"))
-            .isNull()
-    }
+  @Test
+  fun testDoesNotFindNonexistentGuavaArtifact() {
+    assertThat(WellKnownMavenArtifactId.find("com.google.guava", "guava-nonexistent")).isNull()
+  }
 
-    @Test
-    fun testFindJunitArtifacts() {
-        assertThat(WellKnownMavenArtifactId.find("junit", "junit"))
-            .isEqualTo(WellKnownMavenArtifactId.JUNIT_JUNIT)
-    }
+  @Test
+  fun testFindJunitArtifacts() {
+    assertThat(WellKnownMavenArtifactId.find("junit", "junit")).isEqualTo(WellKnownMavenArtifactId.JUNIT_JUNIT)
+  }
 
-    @Test
-    fun testDoesNotFindNonexistentJunitArtifact() {
-        assertThat(WellKnownMavenArtifactId.find("junit", "junit-nonexistent"))
-            .isNull()
-    }
+  @Test
+  fun testDoesNotFindNonexistentJunitArtifact() {
+    assertThat(WellKnownMavenArtifactId.find("junit", "junit-nonexistent")).isNull()
+  }
 
-    @Test
-    fun testFindGMavenArtifacts() {
-        assertThat(WellKnownMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
-            .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
-        assertThat(WellKnownMavenArtifactId.find("androidx.core", "core-ktx"))
-            .isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
-    }
+  @Test
+  fun testFindGMavenArtifacts() {
+    assertThat(WellKnownMavenArtifactId.find("com.android.support", "animated-vector-drawable"))
+      .isEqualTo(GoogleMavenArtifactId.SUPPORT_ANIMATED_VECTOR_DRAWABLE)
+    assertThat(WellKnownMavenArtifactId.find("androidx.core", "core-ktx")).isEqualTo(GoogleMavenArtifactId.ANDROIDX_CORE_KTX)
+  }
 }

@@ -34,260 +34,293 @@ import javax.inject.Inject
  *
  * This now simply delegates to the given delegate lint block [LintImpl], and has no state.
  */
-abstract class LintOptions
-@Inject
-constructor(private val dslServices: DslServices, internal val delegate: LintImpl):
-    com.android.builder.model.LintOptions,
-    com.android.build.api.dsl.LintOptions {
+abstract class LintOptions @Inject constructor(private val dslServices: DslServices, internal val delegate: LintImpl) :
+  com.android.builder.model.LintOptions, com.android.build.api.dsl.LintOptions {
 
-    @set:NonNullableSetter
-    final override var lintConfig: File?
-        get() = delegate.lintConfig
-        set(value) {
-            delegate.lintConfig = value
-        }
-
-    final override var disable: MutableSet<String>
-        get() = delegate.disable
-        set(value) {
-            delegate.disable.addAll(value)
-        }
-
-    final override var enable: MutableSet<String>
-        get() = delegate.enable
-        set(value) {
-            delegate.enable.addAll(value)
-        }
-
-    override val checkOnly: MutableSet<String>
-        get() = delegate.checkOnly
-
-    @Deprecated(message = "", replaceWith = ReplaceWith("checkOnly"))
-    final override var check: MutableSet<String>
-        get() = checkOnly
-        set(value) {
-            checkOnly.addAll(value)
-        }
-
-    final override var isAbortOnError: Boolean
-        get() = delegate.abortOnError
-        set(value) { delegate.abortOnError = value }
-    final override var isAbsolutePaths: Boolean
-        get() = delegate.absolutePaths
-        set(value) { delegate.absolutePaths = value }
-    final override var isNoLines: Boolean
-        get() = delegate.noLines
-        set(value) { delegate.noLines = value }
-    final override var isQuiet: Boolean
-        get() = delegate.quiet
-        set(value) { delegate.quiet = value }
-    final override var isCheckAllWarnings: Boolean
-        get() = delegate.checkAllWarnings
-        set(value) { delegate.checkAllWarnings = value }
-
-    final override var isIgnoreWarnings: Boolean
-        get() = delegate.ignoreWarnings
-        set(value) { delegate.ignoreWarnings = value }
-
-    final override var isWarningsAsErrors: Boolean
-        get() = delegate.warningsAsErrors
-        set(value) { delegate.warningsAsErrors = value }
-
-    final override var isCheckGeneratedSources: Boolean
-        get() = delegate.checkGeneratedSources
-        set(value) { delegate.checkGeneratedSources = value }
-
-    final override var isExplainIssues: Boolean
-        get() = delegate.explainIssues
-        set(value) { delegate.explainIssues = value }
-
-    final override var isShowAll: Boolean
-        get() = delegate.showAll
-        set(value) { delegate.showAll = value }
-
-    final override var textReport: Boolean
-        get() = delegate.textReport
-        set(value) { delegate.textReport = value }
-
-    final override var htmlReport: Boolean
-        get() = delegate.htmlReport
-        set(value) { delegate.htmlReport = value }
-
-    final override var xmlReport: Boolean
-        get() = delegate.xmlReport
-        set(value) { delegate.xmlReport = value }
-
-    final override var sarifReport: Boolean
-        get() = delegate.sarifReport
-        set(value) { delegate.sarifReport = value }
-
-    final override var isCheckReleaseBuilds: Boolean
-        get() = delegate.checkReleaseBuilds
-        set(value) { delegate.checkReleaseBuilds = value }
-
-    final override var isCheckDependencies: Boolean
-        get() = delegate.checkDependencies
-        set(value) { delegate.checkDependencies = value }
-
-
-    final override var baselineFile: File?
-        get() = delegate.baseline
-        set(value) { delegate.baseline = value }
-
-    final override var isCheckTestSources: Boolean
-        get() = delegate.checkTestSources
-        set(value) { delegate.checkTestSources = value }
-
-    final override var isIgnoreTestSources: Boolean
-        get() = delegate.ignoreTestSources
-        set(value) { delegate.ignoreTestSources = value }
-
-    final override var textOutput: File?
-        get() = delegate.textOutput
-        set(value) { delegate.textOutput = value }
-    final override var htmlOutput: File?
-        get() = delegate.htmlOutput
-        set(value) { delegate.htmlOutput = value }
-    final override var xmlOutput: File?
-        get() = delegate.xmlOutput
-        set(value) { delegate.xmlOutput = value }
-    final override var sarifOutput: File?
-        get() = delegate.sarifOutput
-        set(value) { delegate.sarifOutput = value }
-
-    override val severityOverrides: Map<String, Int>?
-        get() = severityOverridesMap.mapValues { getToolingModelSeverity(it.value) }.ifEmpty { null }
-
-    internal val severityOverridesMap: Map<String, LintModelSeverity>
-        get() = delegate.severityOverridesMap
-
-    private fun getToolingModelSeverity(severity: LintModelSeverity): Int =
-        when (severity) {
-            LintModelSeverity.FATAL -> SEVERITY_FATAL
-            LintModelSeverity.ERROR -> SEVERITY_ERROR
-            LintModelSeverity.WARNING -> SEVERITY_WARNING
-            LintModelSeverity.INFORMATIONAL -> SEVERITY_INFORMATIONAL
-            LintModelSeverity.IGNORE -> SEVERITY_IGNORE
-            LintModelSeverity.DEFAULT_ENABLED -> SEVERITY_DEFAULT_ENABLED
-        }
-
-    // -- DSL Methods.
-    override fun baseline(baseline: String) {
-        delegate.baseline = dslServices.file(baseline)
+  @set:NonNullableSetter
+  final override var lintConfig: File?
+    get() = delegate.lintConfig
+    set(value) {
+      delegate.lintConfig = value
     }
 
-    override fun baseline(baselineFile: File) {
-        delegate.baseline = baselineFile
+  final override var disable: MutableSet<String>
+    get() = delegate.disable
+    set(value) {
+      delegate.disable.addAll(value)
     }
 
-    @Suppress("OverridingDeprecatedMember")
-    override fun check(id: String) {
-        emitCheckWarning()
-        checkOnly(id)
+  final override var enable: MutableSet<String>
+    get() = delegate.enable
+    set(value) {
+      delegate.enable.addAll(value)
     }
 
-    @Suppress("OverridingDeprecatedMember")
-    override fun check(vararg ids: String) {
-        emitCheckWarning()
-        checkOnly(*ids)
+  override val checkOnly: MutableSet<String>
+    get() = delegate.checkOnly
+
+  @Deprecated(message = "", replaceWith = ReplaceWith("checkOnly"))
+  final override var check: MutableSet<String>
+    get() = checkOnly
+    set(value) {
+      checkOnly.addAll(value)
     }
 
-    private fun emitCheckWarning() {
-        dslServices.deprecationReporter
-            .reportDeprecatedUsage(
-                "android.lintOptions.checkOnly",
-                "android.lintOptions.check",
-                DeprecationTarget.LINT_CHECK_ONLY)
+  final override var isAbortOnError: Boolean
+    get() = delegate.abortOnError
+    set(value) {
+      delegate.abortOnError = value
     }
 
-    override fun checkOnly(id: String) {
-        checkOnly.add(id)
+  final override var isAbsolutePaths: Boolean
+    get() = delegate.absolutePaths
+    set(value) {
+      delegate.absolutePaths = value
     }
 
-    override fun checkOnly(vararg ids: String) {
-        ids.forEach {
-            checkOnly(it)
-        }
+  final override var isNoLines: Boolean
+    get() = delegate.noLines
+    set(value) {
+      delegate.noLines = value
     }
 
-    override fun enable(id: String) {
-        enable.add(id)
+  final override var isQuiet: Boolean
+    get() = delegate.quiet
+    set(value) {
+      delegate.quiet = value
     }
 
-    override fun enable(vararg ids: String) {
-        ids.forEach {
-            enable(it)
-        }
+  final override var isCheckAllWarnings: Boolean
+    get() = delegate.checkAllWarnings
+    set(value) {
+      delegate.checkAllWarnings = value
     }
 
-    override fun disable(id: String) {
-        disable.add(id)
+  final override var isIgnoreWarnings: Boolean
+    get() = delegate.ignoreWarnings
+    set(value) {
+      delegate.ignoreWarnings = value
     }
 
-    override fun disable(vararg ids: String) {
-        ids.forEach {
-            disable(it)
-        }
+  final override var isWarningsAsErrors: Boolean
+    get() = delegate.warningsAsErrors
+    set(value) {
+      delegate.warningsAsErrors = value
     }
 
-    // For textOutput 'stdout' or 'stderr' (normally a file)
-    override fun textOutput(textOutput: String) {
-        this.textOutput = File(textOutput)
+  final override var isCheckGeneratedSources: Boolean
+    get() = delegate.checkGeneratedSources
+    set(value) {
+      delegate.checkGeneratedSources = value
     }
 
-    // For textOutput file()
-    override fun textOutput(textOutput: File) {
-        this.textOutput = textOutput
+  final override var isExplainIssues: Boolean
+    get() = delegate.explainIssues
+    set(value) {
+      delegate.explainIssues = value
     }
 
-    override fun informational(id: String) {
-        delegate.informational += id
+  final override var isShowAll: Boolean
+    get() = delegate.showAll
+    set(value) {
+      delegate.showAll = value
     }
 
-    override fun informational(vararg ids: String) {
-        ids.forEach {
-            informational(it)
-        }
+  final override var textReport: Boolean
+    get() = delegate.textReport
+    set(value) {
+      delegate.textReport = value
     }
 
-    override fun ignore(id: String) {
-        @Suppress("DEPRECATION")
-        delegate.ignore += id
+  final override var htmlReport: Boolean
+    get() = delegate.htmlReport
+    set(value) {
+      delegate.htmlReport = value
     }
 
-    override fun ignore(vararg ids: String) {
-        ids.forEach {
-            ignore(it)
-        }
+  final override var xmlReport: Boolean
+    get() = delegate.xmlReport
+    set(value) {
+      delegate.xmlReport = value
     }
 
-    override fun warning(id: String) {
-        delegate.warning += id
+  final override var sarifReport: Boolean
+    get() = delegate.sarifReport
+    set(value) {
+      delegate.sarifReport = value
     }
 
-    override fun warning(vararg ids: String) {
-        ids.forEach {
-            warning(it)
-        }
+  final override var isCheckReleaseBuilds: Boolean
+    get() = delegate.checkReleaseBuilds
+    set(value) {
+      delegate.checkReleaseBuilds = value
     }
 
-    override fun error(id: String) {
-        delegate.error += id
+  final override var isCheckDependencies: Boolean
+    get() = delegate.checkDependencies
+    set(value) {
+      delegate.checkDependencies = value
     }
 
-    override fun error(vararg ids: String) {
-        ids.forEach {
-            error(it)
-        }
+  final override var baselineFile: File?
+    get() = delegate.baseline
+    set(value) {
+      delegate.baseline = value
     }
 
-    override fun fatal(id: String) {
-        delegate.fatal += id
+  final override var isCheckTestSources: Boolean
+    get() = delegate.checkTestSources
+    set(value) {
+      delegate.checkTestSources = value
     }
 
-    override fun fatal(vararg ids: String) {
-        ids.forEach {
-            fatal(it)
-        }
+  final override var isIgnoreTestSources: Boolean
+    get() = delegate.ignoreTestSources
+    set(value) {
+      delegate.ignoreTestSources = value
     }
+
+  final override var textOutput: File?
+    get() = delegate.textOutput
+    set(value) {
+      delegate.textOutput = value
+    }
+
+  final override var htmlOutput: File?
+    get() = delegate.htmlOutput
+    set(value) {
+      delegate.htmlOutput = value
+    }
+
+  final override var xmlOutput: File?
+    get() = delegate.xmlOutput
+    set(value) {
+      delegate.xmlOutput = value
+    }
+
+  final override var sarifOutput: File?
+    get() = delegate.sarifOutput
+    set(value) {
+      delegate.sarifOutput = value
+    }
+
+  override val severityOverrides: Map<String, Int>?
+    get() = severityOverridesMap.mapValues { getToolingModelSeverity(it.value) }.ifEmpty { null }
+
+  internal val severityOverridesMap: Map<String, LintModelSeverity>
+    get() = delegate.severityOverridesMap
+
+  private fun getToolingModelSeverity(severity: LintModelSeverity): Int =
+    when (severity) {
+      LintModelSeverity.FATAL -> SEVERITY_FATAL
+      LintModelSeverity.ERROR -> SEVERITY_ERROR
+      LintModelSeverity.WARNING -> SEVERITY_WARNING
+      LintModelSeverity.INFORMATIONAL -> SEVERITY_INFORMATIONAL
+      LintModelSeverity.IGNORE -> SEVERITY_IGNORE
+      LintModelSeverity.DEFAULT_ENABLED -> SEVERITY_DEFAULT_ENABLED
+    }
+
+  // -- DSL Methods.
+  override fun baseline(baseline: String) {
+    delegate.baseline = dslServices.file(baseline)
+  }
+
+  override fun baseline(baselineFile: File) {
+    delegate.baseline = baselineFile
+  }
+
+  @Suppress("OverridingDeprecatedMember")
+  override fun check(id: String) {
+    emitCheckWarning()
+    checkOnly(id)
+  }
+
+  @Suppress("OverridingDeprecatedMember")
+  override fun check(vararg ids: String) {
+    emitCheckWarning()
+    checkOnly(*ids)
+  }
+
+  private fun emitCheckWarning() {
+    dslServices.deprecationReporter.reportDeprecatedUsage(
+      "android.lintOptions.checkOnly",
+      "android.lintOptions.check",
+      DeprecationTarget.LINT_CHECK_ONLY,
+    )
+  }
+
+  override fun checkOnly(id: String) {
+    checkOnly.add(id)
+  }
+
+  override fun checkOnly(vararg ids: String) {
+    ids.forEach { checkOnly(it) }
+  }
+
+  override fun enable(id: String) {
+    enable.add(id)
+  }
+
+  override fun enable(vararg ids: String) {
+    ids.forEach { enable(it) }
+  }
+
+  override fun disable(id: String) {
+    disable.add(id)
+  }
+
+  override fun disable(vararg ids: String) {
+    ids.forEach { disable(it) }
+  }
+
+  // For textOutput 'stdout' or 'stderr' (normally a file)
+  override fun textOutput(textOutput: String) {
+    this.textOutput = File(textOutput)
+  }
+
+  // For textOutput file()
+  override fun textOutput(textOutput: File) {
+    this.textOutput = textOutput
+  }
+
+  override fun informational(id: String) {
+    delegate.informational += id
+  }
+
+  override fun informational(vararg ids: String) {
+    ids.forEach { informational(it) }
+  }
+
+  override fun ignore(id: String) {
+    @Suppress("DEPRECATION")
+    delegate.ignore += id
+  }
+
+  override fun ignore(vararg ids: String) {
+    ids.forEach { ignore(it) }
+  }
+
+  override fun warning(id: String) {
+    delegate.warning += id
+  }
+
+  override fun warning(vararg ids: String) {
+    ids.forEach { warning(it) }
+  }
+
+  override fun error(id: String) {
+    delegate.error += id
+  }
+
+  override fun error(vararg ids: String) {
+    ids.forEach { error(it) }
+  }
+
+  override fun fatal(id: String) {
+    delegate.fatal += id
+  }
+
+  override fun fatal(vararg ids: String) {
+    ids.forEach { fatal(it) }
+  }
 }

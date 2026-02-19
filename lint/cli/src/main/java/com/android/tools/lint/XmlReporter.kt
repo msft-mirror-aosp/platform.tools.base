@@ -31,8 +31,8 @@ constructor(
   /** File to write report to. */
   output: File,
   /**
-   * The type of XML file to create; this is used to control details like whether locations are
-   * annotated with the surrounding source contents.
+   * The type of XML file to create; this is used to control details like whether locations are annotated with the surrounding source
+   * contents.
    */
   var type: XmlFileType,
 ) : Reporter(client, output) {
@@ -72,8 +72,7 @@ constructor(
     val xmlWriter = XmlWriter(client, type, writer, pathVariables)
 
     val clientAttributes: List<Pair<String, String?>> =
-      attributes?.asSequence()?.sortedBy { it.key }?.map { Pair(it.key, it.value) }?.toList()
-        ?: emptyList()
+      attributes?.asSequence()?.sortedBy { it.key }?.map { Pair(it.key, it.value) }?.toList() ?: emptyList()
     xmlWriter.writeIncidents(incidents, clientAttributes)
   }
 }

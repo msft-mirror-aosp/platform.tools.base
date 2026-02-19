@@ -18,12 +18,7 @@ package com.android.tools.idea.wizard.template.impl.activities.tabbedActivity.re
 
 import com.android.tools.idea.wizard.template.getMaterialComponentName
 
-fun appBarActivityXml(
-  activityClass: String,
-  packageName: String,
-  themeNameAppBarOverlay: String,
-  useAndroidX: Boolean) =
-
+fun appBarActivityXml(activityClass: String, packageName: String, themeNameAppBarOverlay: String, useAndroidX: Boolean) =
   """<?xml version="1.0" encoding="utf-8"?>
 <${getMaterialComponentName("android.support.design.widget.CoordinatorLayout", useAndroidX)}
     xmlns:android="http://schemas.android.com/apk/res/android"

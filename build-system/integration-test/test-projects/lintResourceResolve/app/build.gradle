@@ -16,7 +16,6 @@
 
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.example.android.lint.resolve"
@@ -40,9 +39,6 @@ android {
     }
     lint {
         checkOnly += 'SupportAnnotationUsage'
-    }
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11
     }
 }
 

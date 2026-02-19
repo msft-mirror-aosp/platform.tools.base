@@ -64,193 +64,168 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 
 class GlobalTaskCreationConfigImpl(
-    project: Project,
-    private val oldExtension: BaseExtension,
-    private val extension: CommonExtensionImpl<*, *, *>,
-    override val services: BaseServices,
-    private val versionedSdkLoaderService: VersionedSdkLoaderService,
-    bootClasspathConfig: BootClasspathConfigImpl,
-    override val lintPublish: Configuration,
-    override val lintChecks: Configuration,
-    override val fakeDependency: Configuration,
-    override val settingsOptions: SettingsOptions,
-    override val managedDeviceRegistry: ManagedDeviceRegistry,
+  project: Project,
+  private val oldExtension: BaseExtension,
+  private val extension: CommonExtensionImpl<*, *, *>,
+  override val services: BaseServices,
+  private val versionedSdkLoaderService: VersionedSdkLoaderService,
+  bootClasspathConfig: BootClasspathConfigImpl,
+  override val lintPublish: Configuration,
+  override val lintChecks: Configuration,
+  override val fakeDependency: Configuration,
+  override val settingsOptions: SettingsOptions,
+  override val managedDeviceRegistry: ManagedDeviceRegistry,
 ) : GlobalTaskCreationConfig, BootClasspathConfig by bootClasspathConfig {
 
-    companion object {
-        @JvmStatic
-        fun String.toExecutionEnum(): com.android.builder.model.TestOptions.Execution? {
-            val converter = HelpfulEnumConverter(
-                com.android.builder.model.TestOptions.Execution::class.java
-            )
-            return converter.convert(this)
-        }
+  companion object {
+    @JvmStatic
+    fun String.toExecutionEnum(): com.android.builder.model.TestOptions.Execution? {
+      val converter = HelpfulEnumConverter(com.android.builder.model.TestOptions.Execution::class.java)
+      return converter.convert(this)
+    }
+  }
+
+  // DSL elements
+
+  override val compileSdkHashString: String
+    get() = extension.compileSdkVersion ?: throw RuntimeException("compileSdk is not specified!")
+
+  override val buildToolsRevision: Revision by lazy { Revision.parseRevision(extension.buildToolsVersion, Revision.Precision.MICRO) }
+
+  override val ndkVersion: String
+    get() = extension.ndkVersion
+
+  override val ndkPath: String?
+    get() = extension.ndkPath
+
+  override val productFlavorCount: Int
+    get() = extension.productFlavors.size
+
+  override val productFlavorDimensionCount: Int
+    get() = extension.flavorDimensions.size
+
+  override val assetPacks: Set<String>
+    get() = (extension as? ApplicationExtension)?.assetPacks ?: setOf()
+
+  override val dynamicFeatures: Set<String>
+    get() = (extension as? ApplicationExtension)?.dynamicFeatures ?: setOf()
+
+  override val hasDynamicFeatures: Boolean
+    get() = dynamicFeatures.isNotEmpty()
+
+  override val aidlPackagedList: Collection<String>?
+    get() {
+      val libExt = (extension as? LibraryExtension) ?: throw RuntimeException("calling aidlPackagedList on non Library variant")
+
+      return libExt.aidlPackagedList
     }
 
-    // DSL elements
+  override val bundleOptions: Bundle
+    get() = (extension as? ApplicationExtension)?.bundle ?: throw RuntimeException("calling BundleOptions on non Application variant")
 
-    override val compileSdkHashString: String
-        get() = extension.compileSdkVersion ?: throw RuntimeException("compileSdk is not specified!")
+  override val compileOptions: CompileOptions
+    get() = extension.compileOptions
 
-    override val buildToolsRevision: Revision by lazy {
-        Revision.parseRevision(extension.buildToolsVersion, Revision.Precision.MICRO)
+  override val compileOptionsIncremental: Boolean?
+    get() = oldExtension.compileOptions.incremental
+
+  override val composeOptions: ComposeOptions
+    get() = extension.composeOptions
+
+  override val dataBinding: DataBinding
+    get() = extension.dataBinding
+
+  override val deviceProviders: List<DeviceProvider>
+    get() = oldExtension.deviceProviders
+
+  override val externalNativeBuild: ExternalNativeBuild
+    get() = extension.externalNativeBuild
+
+  override val installationOptions: Installation
+    get() = (extension as? ApplicationExtension)?.installation ?: extension.installation
+
+  override val libraryRequests: Collection<LibraryRequest>
+    get() = extension.libraryRequests
+
+  override val lintOptions: Lint
+    get() = extension.lint
+
+  override val resourcePrefix: String?
+    get() = extension.resourcePrefix
+
+  override val splits: Splits
+    get() = extension.splits
+
+  override val prefab: Set<Prefab>
+    get() = (extension as? LibraryExtension)?.prefab ?: throw RuntimeException("calling prefab on non Library variant")
+
+  override val testCoverage: TestCoverage
+    get() = extension.testCoverage
+
+  override val androidTestOptions: DeviceTestOptionsDslInfo
+    get() = DeviceTestOptionsDslInfoImpl(extension)
+
+  override val unitTestOptions: UnitTestOptionsDslInfo
+    get() = UnitTestOptionsDslInfoImpl(extension)
+
+  override val testServers: List<TestServer>
+    get() = oldExtension.testServers
+
+  override val testOptionExecutionEnum: com.android.builder.model.TestOptions.Execution? by lazy {
+    androidTestOptions.execution.toExecutionEnum()
+  }
+
+  override val prefabOrEmpty: Set<Prefab>
+    get() = (extension as? LibraryExtension)?.prefab ?: setOf()
+
+  override val hasNoBuildTypeMinified: Boolean
+    get() = extension.buildTypes.none { it.isMinifyEnabled }
+
+  override val publishConsumerProguardRules: Boolean
+    get() = true
+
+  // Internal Objects
+
+  override val globalArtifacts: ArtifactsImpl = ArtifactsImpl(project, "global")
+
+  override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+
+  override val asmApiVersion = ASM_API_VERSION
+
+  // Utility methods
+
+  override val platformAttrs: FileCollection by lazy {
+    val attributes = Action { container: AttributeContainer ->
+      container.attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.TYPE_PLATFORM_ATTR)
     }
 
-    override val ndkVersion: String
-        get() = extension.ndkVersion
+    bootClasspathConfig.androidJar.incoming.artifactView { config -> config.attributes(attributes) }.artifacts.artifactFiles
+  }
 
-    override val ndkPath: String?
-        get() = extension.ndkPath
+  override val localCustomLintChecks: FileCollection by lazy { getLocalCustomLintChecks(lintChecks) }
 
-    override val productFlavorCount: Int
-        get() = extension.productFlavors.size
+  override val versionedSdkLoader: Provider<SdkComponentsBuildService.VersionedSdkLoader>
+    get() = versionedSdkLoaderService.versionedSdkLoader
 
-    override val productFlavorDimensionCount: Int
-        get() = extension.flavorDimensions.size
+  override val versionedNdkHandler: SdkComponentsBuildService.VersionedNdkHandler by lazy {
+    getBuildService(services.buildServiceRegistry, SdkComponentsBuildService::class.java).get().versionedNdkHandler(ndkVersion, ndkPath)
+  }
 
-    override val assetPacks: Set<String>
-        get() = (extension as? ApplicationExtension)?.assetPacks ?: setOf()
-
-    override val dynamicFeatures: Set<String>
-        get() = (extension as? ApplicationExtension)?.dynamicFeatures ?: setOf()
-
-    override val hasDynamicFeatures: Boolean
-        get() = dynamicFeatures.isNotEmpty()
-
-    override val aidlPackagedList: Collection<String>?
-        get() {
-            val libExt = (extension as? LibraryExtension)
-                ?: throw RuntimeException("calling aidlPackagedList on non Library variant")
-
-            return libExt.aidlPackagedList
-        }
-
-    override val bundleOptions: Bundle
-        get() = (extension as? ApplicationExtension)?.bundle
-            ?: throw RuntimeException("calling BundleOptions on non Application variant")
-
-    override val compileOptions: CompileOptions
-        get() = extension.compileOptions
-
-    override val compileOptionsIncremental: Boolean?
-        get() = oldExtension.compileOptions.incremental
-
-    override val composeOptions: ComposeOptions
-        get() = extension.composeOptions
-
-    override val dataBinding: DataBinding
-        get() = extension.dataBinding
-
-    override val deviceProviders: List<DeviceProvider>
-        get() = oldExtension.deviceProviders
-
-    override val externalNativeBuild: ExternalNativeBuild
-        get() = extension.externalNativeBuild
-
-    override val installationOptions: Installation
-        get() = (extension as? ApplicationExtension)?.installation
-            ?: extension.installation
-
-    override val libraryRequests: Collection<LibraryRequest>
-        get() = extension.libraryRequests
-
-    override val lintOptions: Lint
-        get() = extension.lint
-
-    override val resourcePrefix: String?
-        get() = extension.resourcePrefix
-
-    override val splits: Splits
-        get() = extension.splits
-
-    override val prefab: Set<Prefab>
-        get() = (extension as? LibraryExtension)?.prefab
-            ?: throw RuntimeException("calling prefab on non Library variant")
-
-    override val testCoverage: TestCoverage
-        get() = extension.testCoverage
-
-    override val androidTestOptions: DeviceTestOptionsDslInfo
-        get() = DeviceTestOptionsDslInfoImpl(extension)
-
-    override val unitTestOptions: UnitTestOptionsDslInfo
-        get() = UnitTestOptionsDslInfoImpl(extension)
-
-
-    override val testServers: List<TestServer>
-        get() = oldExtension.testServers
-
-    override val testOptionExecutionEnum: com.android.builder.model.TestOptions.Execution? by lazy {
-        androidTestOptions.execution.toExecutionEnum()
+  override val buildAnalyzerIssueReporter: BuildAnalyzerIssueReporter? =
+    services.projectOptions.get(StringOption.IDE_ATTRIBUTION_FILE_LOCATION)?.let {
+      BuildAnalyzerIssueReporter(services.projectOptions, services.buildServiceRegistry)
     }
 
-    override val prefabOrEmpty: Set<Prefab>
-        get() = (extension as? LibraryExtension)?.prefab ?: setOf()
+  override val targetDeployApiFromIDE: Int? = services.projectOptions.get(IntegerOption.IDE_TARGET_DEVICE_API)
 
-    override val hasNoBuildTypeMinified: Boolean
-        get() = extension.buildTypes.none { it.isMinifyEnabled }
+  override val taskNames: GlobalTaskNames = GlobalTaskNamesImpl
 
-    override val publishConsumerProguardRules: Boolean
-        get() = true
+  override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
+    get() = getAarOrJarTypeToConsume(services.projectOptions)
 
-    // Internal Objects
-
-    override val globalArtifacts: ArtifactsImpl = ArtifactsImpl(project, "global")
-
-    override val createdBy: String = "Android Gradle ${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
-
-    override val asmApiVersion = ASM_API_VERSION
-
-    // Utility methods
-
-    override val platformAttrs: FileCollection by lazy {
-        val attributes =
-            Action { container: AttributeContainer ->
-                container.attribute(
-                    AndroidArtifacts.ARTIFACT_TYPE,
-                    AndroidArtifacts.TYPE_PLATFORM_ATTR
-                )
-            }
-
-        bootClasspathConfig.androidJar
-            .incoming
-            .artifactView { config -> config.attributes(attributes) }
-            .artifacts
-            .artifactFiles
-    }
-
-    override val localCustomLintChecks: FileCollection by lazy {
-        getLocalCustomLintChecks(lintChecks)
-    }
-
-    override val versionedSdkLoader: Provider<SdkComponentsBuildService.VersionedSdkLoader>
-        get() = versionedSdkLoaderService.versionedSdkLoader
-
-    override val versionedNdkHandler: SdkComponentsBuildService.VersionedNdkHandler by lazy {
-        getBuildService(services.buildServiceRegistry, SdkComponentsBuildService::class.java)
-            .get()
-            .versionedNdkHandler(ndkVersion, ndkPath)
-    }
-
-    override val buildAnalyzerIssueReporter: BuildAnalyzerIssueReporter? =
-        services.projectOptions.get(StringOption.IDE_ATTRIBUTION_FILE_LOCATION)?.let {
-            BuildAnalyzerIssueReporter(
-                services.projectOptions,
-                services.buildServiceRegistry
-            )
-        }
-
-    override val targetDeployApiFromIDE: Int? =
-        services.projectOptions.get(IntegerOption.IDE_TARGET_DEVICE_API)
-
-    override val taskNames: GlobalTaskNames = GlobalTaskNamesImpl
-
-    override val aarOrJarTypeToConsume: AarOrJarTypeToConsume
-        get() = getAarOrJarTypeToConsume(services.projectOptions)
-
-    override val avoidTaskRegistration: Boolean = services.projectOptions.run {
-        get(BooleanOption.IDE_AVOID_TASK_REGISTRATION) &&
-                (get(BooleanOption.IDE_BUILD_MODEL_ONLY) || get(BooleanOption.IDE_BUILD_MODEL_ONLY_V2)
-                        )
+  override val avoidTaskRegistration: Boolean =
+    services.projectOptions.run {
+      get(BooleanOption.IDE_AVOID_TASK_REGISTRATION) &&
+        (get(BooleanOption.IDE_BUILD_MODEL_ONLY) || get(BooleanOption.IDE_BUILD_MODEL_ONLY_V2))
     }
 }

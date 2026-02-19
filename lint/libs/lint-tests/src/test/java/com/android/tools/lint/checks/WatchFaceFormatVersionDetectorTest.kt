@@ -27,11 +27,11 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:5: Error: The Watch Face Format version property must be set [WatchFaceFormatMissingVersion]
-              <application
-               ~~~~~~~~~~~
-          1 error
-      """
+        AndroidManifest.xml:5: Error: The Watch Face Format version property must be set [WatchFaceFormatMissingVersion]
+            <application
+             ~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
   }
@@ -47,10 +47,7 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
   }
 
   fun `test the WFF version property is set`() {
-    lint()
-      .files(manifestWith(watchFaceFormatVersionProperty(value = "1")), declarativeWatchFaceFile())
-      .run()
-      .expectClean()
+    lint().files(manifestWith(watchFaceFormatVersionProperty(value = "1")), declarativeWatchFaceFile()).run().expectClean()
   }
 
   fun `test the WFF version property value is missing`() {
@@ -71,12 +68,12 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       )
       .expectFixDiffs(
         """
-          Fix for AndroidManifest.xml line 9: Set value="1":
-          @@ -13 +13
-          -         <property android:name="com.google.wear.watchface.format.version" />
-          +         <property
-          +             android:name="com.google.wear.watchface.format.version"
-          +             android:value="1" />
+        Fix for AndroidManifest.xml line 9: Set value="1":
+        @@ -13 +13
+        -         <property android:name="com.google.wear.watchface.format.version" />
+        +         <property
+        +             android:name="com.google.wear.watchface.format.version"
+        +             android:value="1" />
         """
           .trimIndent()
       )
@@ -91,11 +88,11 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
-                  <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
-                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~
-          1 error
-      """
+        AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
+                <property android:name="com.google.wear.watchface.format.version" android:value="invalid" />
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
   }
@@ -147,21 +144,18 @@ class WatchFaceFormatVersionDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          src/main/AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
-                  <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
-                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-          1 error
-      """
+        src/main/AndroidManifest.xml:9: Error: The Watch Face Format version is invalid [WatchFaceFormatInvalidVersion]
+                <property android:name="com.google.wear.watchface.format.version" android:value="＄{wff_version}" />
+                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
           .trimIndent()
       )
   }
 
   // Regression test for b/423518025
   fun `test no error is reported when the placeholder does not resolve`() {
-    lint()
-      .files(manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}")))
-      .run()
-      .expectClean()
+    lint().files(manifestWith(watchFaceFormatVersionProperty(value = "\${wff_version}"))).run().expectClean()
   }
 
   private fun declarativeWatchFaceFile() =

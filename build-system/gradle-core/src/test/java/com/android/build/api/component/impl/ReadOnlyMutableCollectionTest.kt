@@ -20,28 +20,25 @@ import org.junit.Test
 
 class ReadOnlyMutableCollectionTest {
 
-    private val target= ReadOnlyMutableCollection(
-            mutableListOf("1", "2", "3"),
-            "addErrorMessage",
-    )
+  private val target = ReadOnlyMutableCollection(mutableListOf("1", "2", "3"), "addErrorMessage")
 
-    @Test(expected = UnsupportedOperationException::class)
-    operator fun iterator() {
-        target.iterator().remove()
-    }
+  @Test(expected = UnsupportedOperationException::class)
+  operator fun iterator() {
+    target.iterator().remove()
+  }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun add() {
-        target.add("Foo")
-    }
+  @Test(expected = UnsupportedOperationException::class)
+  fun add() {
+    target.add("Foo")
+  }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun addAll() {
-        target.addAll(listOf("Foo", "Bar"))
-    }
+  @Test(expected = UnsupportedOperationException::class)
+  fun addAll() {
+    target.addAll(listOf("Foo", "Bar"))
+  }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun remove() {
-        target.remove("1")
-    }
+  @Test(expected = UnsupportedOperationException::class)
+  fun remove() {
+    target.remove("1")
+  }
 }

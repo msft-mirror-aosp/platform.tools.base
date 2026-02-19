@@ -21,72 +21,63 @@ import com.google.common.collect.ImmutableMap
 /** Contains mappings between obfuscated classes and methods to original ones. */
 class ObfuscatedClasses private constructor(builder: Builder) {
 
-    companion object {
-        @JvmField
-        val NO_OBFUSCATION = Builder().build()
+  companion object {
+    @JvmField val NO_OBFUSCATION = Builder().build()
+  }
+
+  private val obfuscatedClasses = ImmutableMap.copyOf(builder.obfuscatedClasses)
+  private val obfuscatedMethods = ImmutableMap.copyOf(builder.obfuscatedMethods)
+
+  fun resolveOriginalMethod(obfuscatedMethod: ClassAndMethod): ClassAndMethod {
+    return obfuscatedMethods.getOrElse(obfuscatedMethod) {
+      val realClassName = obfuscatedClasses[obfuscatedMethod.className] ?: obfuscatedMethod.className
+      ClassAndMethod(realClassName, obfuscatedMethod.methodName)
     }
+  }
 
-    private val obfuscatedClasses = ImmutableMap.copyOf(builder.obfuscatedClasses)
-    private val obfuscatedMethods = ImmutableMap.copyOf(builder.obfuscatedMethods)
+  fun resolveOriginalClass(obfuscatedClass: String): String {
+    return obfuscatedClasses[obfuscatedClass] ?: obfuscatedClass
+  }
 
-    fun resolveOriginalMethod(obfuscatedMethod: ClassAndMethod): ClassAndMethod {
-        return obfuscatedMethods.getOrElse(obfuscatedMethod) {
-            val realClassName = obfuscatedClasses[obfuscatedMethod.className] ?: obfuscatedMethod.className
-            ClassAndMethod(realClassName, obfuscatedMethod.methodName)
-        }
-    }
+  /**
+   * Builder that allows to build obfuscated mappings in a way when next method mapping is added to previous class mapping. Example: builder
+   * .addClassMapping(Pair(classA, obfuscatedClassA)) .addMethodMapping(Pair(classAMethod1, obfuscatedClassAMethod1))
+   * .addMethodMapping(Pair(classAMethod2, obfuscatedClassAMethod2)) .addClassMapping(Pair(classB, obfuscatedClassB))
+   * .addMethodMapping(Pair(classBMethod1, obfuscatedClassBMethod1))
+   */
+  class Builder {
 
-    fun resolveOriginalClass(obfuscatedClass: String): String {
-        return obfuscatedClasses[obfuscatedClass] ?: obfuscatedClass
+    val obfuscatedClasses: MutableMap<String, String> = mutableMapOf()
+    val obfuscatedMethods: MutableMap<ClassAndMethod, ClassAndMethod> = mutableMapOf()
+
+    var currentClassMapping: Pair<String, String>? = null
+
+    /**
+     * Adds class mapping: original class name -> obfuscated class name.
+     *
+     * @param mapping Pair(originalClassName, obfuscatedClassName)
+     */
+    fun addClassMapping(mapping: Pair<String, String>): Builder {
+      currentClassMapping = mapping
+      obfuscatedClasses += Pair(mapping.second, mapping.first)
+      return this
     }
 
     /**
-     * Builder that allows to build obfuscated mappings in a way when next method mapping is added
-     * to previous class mapping. Example:
-     * builder
-     *   .addClassMapping(Pair(classA, obfuscatedClassA))
-     *   .addMethodMapping(Pair(classAMethod1, obfuscatedClassAMethod1))
-     *   .addMethodMapping(Pair(classAMethod2, obfuscatedClassAMethod2))
-     *   .addClassMapping(Pair(classB, obfuscatedClassB))
-     *   .addMethodMapping(Pair(classBMethod1, obfuscatedClassBMethod1))
+     * Adds method mapping: original method name -> obfuscated method name to the latest added class mapping.
+     *
+     * @param mapping Pair(originalMethodName, obfuscatedMethodName)
      */
-    class Builder {
-
-        val obfuscatedClasses: MutableMap<String, String> = mutableMapOf()
-        val obfuscatedMethods: MutableMap<ClassAndMethod, ClassAndMethod> = mutableMapOf()
-
-        var currentClassMapping: Pair<String, String>? = null
-
-        /**
-         * Adds class mapping: original class name -> obfuscated class name.
-         *
-         * @param mapping Pair(originalClassName, obfuscatedClassName)
-         */
-        fun addClassMapping(mapping: Pair<String, String>): Builder {
-            currentClassMapping = mapping
-            obfuscatedClasses += Pair(mapping.second, mapping.first)
-            return this
-        }
-
-        /**
-         * Adds method mapping: original method name -> obfuscated method name to the latest added
-         * class mapping.
-         *
-         * @param mapping Pair(originalMethodName, obfuscatedMethodName)
-         */
-        fun addMethodMapping(mapping: Pair<String, String>): Builder {
-            if (currentClassMapping != null) {
-                obfuscatedMethods += Pair(
-                    ClassAndMethod(currentClassMapping!!.second, mapping.second),
-                    ClassAndMethod(currentClassMapping!!.first, mapping.first)
-                )
-            }
-            return this
-        }
-
-        fun build(): ObfuscatedClasses =
-            ObfuscatedClasses(this)
+    fun addMethodMapping(mapping: Pair<String, String>): Builder {
+      if (currentClassMapping != null) {
+        obfuscatedMethods +=
+          Pair(ClassAndMethod(currentClassMapping!!.second, mapping.second), ClassAndMethod(currentClassMapping!!.first, mapping.first))
+      }
+      return this
     }
+
+    fun build(): ObfuscatedClasses = ObfuscatedClasses(this)
+  }
 }
 
 data class ClassAndMethod(val className: String, val methodName: String)

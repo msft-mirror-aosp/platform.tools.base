@@ -42,17 +42,11 @@ private typealias JobInfoProto = BackgroundTaskInspectorProtocol.JobInfo
 private typealias JobInfoProtoBuilder = BackgroundTaskInspectorProtocol.JobInfo.Builder
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 class JobHandlerTest {
   private val inspectorRule = BackgroundTaskInspectorRule()
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(inspectorRule).around(LogPrinterRule())
 
   private val fakeParameters =
     JobParametersWrapper(

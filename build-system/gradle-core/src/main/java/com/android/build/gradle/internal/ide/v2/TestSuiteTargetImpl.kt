@@ -20,12 +20,11 @@ import com.android.builder.model.v2.ide.TestSuiteTarget
 import java.io.Serializable
 
 data class TestSuiteTargetImpl(
-    override val name: String,
-    override val testTaskName: String,
-    override val targetedDevices: Collection<String>
-): TestSuiteTarget, Serializable {
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 2L
-    }
+  override val name: String,
+  override val testTaskName: String,
+  override val targetedDevices: Collection<String>,
+) : TestSuiteTarget, Serializable {
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 2L
+  }
 }

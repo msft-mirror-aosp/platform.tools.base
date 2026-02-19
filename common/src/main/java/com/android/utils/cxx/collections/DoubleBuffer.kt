@@ -16,39 +16,28 @@
 
 package com.android.utils.cxx.collections
 
-
-/**
- * Contains two StringBuilders that can be exchanged by calling flip().
- */
+/** Contains two StringBuilders that can be exchanged by calling flip(). */
 class DoubleStringBuilder : DoubleBuffer<StringBuilder>(StringBuilder(), StringBuilder())
 
-/**
- * Contains instances of two buffer classes that can be exchanged by calling flip().
- */
-open class DoubleBuffer<TBuffer>(
-    initialFront : TBuffer,
-    initialBack : TBuffer) {
+/** Contains instances of two buffer classes that can be exchanged by calling flip(). */
+open class DoubleBuffer<TBuffer>(initialFront: TBuffer, initialBack: TBuffer) {
 
-    // Storage
-    private var currentFront : TBuffer = initialFront
-    private var currentBack : TBuffer = initialBack
+  // Storage
+  private var currentFront: TBuffer = initialFront
+  private var currentBack: TBuffer = initialBack
 
-    /**
-     * The front instance.
-     */
-    val front get() = currentFront
+  /** The front instance. */
+  val front
+    get() = currentFront
 
-    /**
-     * The back instance.
-     */
-    val back get() = currentBack
+  /** The back instance. */
+  val back
+    get() = currentBack
 
-    /**
-     * Exchange the front and back instances.
-     */
-    fun flip() {
-        val temp = currentBack
-        currentBack = currentFront
-        currentFront = temp
-    }
+  /** Exchange the front and back instances. */
+  fun flip() {
+    val temp = currentBack
+    currentBack = currentFront
+    currentFront = temp
+  }
 }

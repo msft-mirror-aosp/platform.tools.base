@@ -50,13 +50,12 @@ import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
 /**
- * Flags activity launches via broadcast receivers and services, which will be forbidden from
- * Android S (and is already a bad idea for performance, which is why we're going to block it.)
+ * Flags activity launches via broadcast receivers and services, which will be forbidden from Android S (and is already a bad idea for
+ * performance, which is why we're going to block it.)
  */
 class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(NotificationTrampolineDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(NotificationTrampolineDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Launching activities indirectly from activities. */
     @JvmField
@@ -102,15 +101,12 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
           androidSpecific = true,
           implementation = IMPLEMENTATION,
         )
-        .addMoreInfo(
-          "https://developer.android.com/guide/topics/ui/notifiers/notifications?hl=en#Actions"
-        )
+        .addMoreInfo("https://developer.android.com/guide/topics/ui/notifiers/notifications?hl=en#Actions")
         .addMoreInfo("https://d.android.com/r/studio-ui/designer/material/notifications-behavior")
         .addMoreInfo("https://developer.android.com/guide/topics/ui/notifiers/notifications?hl=en")
   }
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf("setContentIntent", "setFullScreenIntent", "addAction")
+  override fun getApplicableMethodNames(): List<String> = listOf("setContentIntent", "setFullScreenIntent", "addAction")
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     // Algorithm:
@@ -133,9 +129,8 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * The notification is associated with a broadcast receiver; look at the given receiver and see if
-   * it launches any activities (if so, report the notification construction with an error), and
-   * either way, return true if we found the receiver class.
+   * The notification is associated with a broadcast receiver; look at the given receiver and see if it launches any activities (if so,
+   * report the notification construction with an error), and either way, return true if we found the receiver class.
    */
   private fun checkNonActivityIntent(
     context: JavaContext,
@@ -159,16 +154,13 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
       .findMethodsByName(trampolineType.handlerMethodName, false)
       // can have written its own overloads so search for the right one
       .find { evaluator.parametersMatch(it, *trampolineType.handlerMethodArgTypes) }
-      ?.let {
-        checkReceiverOrService(context, it, node, nonActivityClass, trampolineType.className)
-      } ?: true
+      ?.let { checkReceiverOrService(context, it, node, nonActivityClass, trampolineType.className) } ?: true
   }
 
   private fun findPendingIntentConstruction(node: UCallExpression): UCallExpression? {
     val methodName = getMethodName(node)
     val pendingIntentArgument =
-      if (methodName == "addAction")
-        node.getArgumentForParameter(2)?.skipParenthesizedExprDown() ?: return null
+      if (methodName == "addAction") node.getArgumentForParameter(2)?.skipParenthesizedExprDown() ?: return null
       else node.getArgumentForParameter(0)?.skipParenthesizedExprDown() ?: return null
 
     return findPendingIntentConstruction(pendingIntentArgument, node, mutableSetOf())
@@ -215,8 +207,7 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
           object : AbstractUastVisitor() {
             override fun visitReturnExpression(node: UReturnExpression): Boolean {
               node.returnExpression?.let {
-                val construction =
-                  findPendingIntentConstruction(it.skipParenthesizedExprDown(), node, seen)
+                val construction = findPendingIntentConstruction(it.skipParenthesizedExprDown(), node, seen)
                 if (construction != null && getTrampolineType(construction) != null) {
                   ref.set(construction)
                 }
@@ -238,12 +229,9 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
     if (getBroadcastMethod.parameterList.parametersCount != 4) {
       return null
     }
-    val intentArg =
-      pendingConstruction.getArgumentForParameter(2)?.skipParenthesizedExprDown() ?: return null
+    val intentArg = pendingConstruction.getArgumentForParameter(2)?.skipParenthesizedExprDown() ?: return null
     val intentDeclaration = intentArg.tryResolve() as? PsiVariable ?: return null
-    val intentAssignment =
-      findLastAssignment(intentDeclaration, pendingConstruction)?.skipParenthesizedExprDown()
-        ?: return null
+    val intentAssignment = findLastAssignment(intentDeclaration, pendingConstruction)?.skipParenthesizedExprDown() ?: return null
     return intentAssignment.findSelector() as? UCallExpression
   }
 
@@ -268,22 +256,17 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
   }
 
   /**
-   * Given a Foo.class or Foo::class.java class literal in Java or Kotlin, return the resolved Foo
-   * class, unless it's a binary class (bytecode)
+   * Given a Foo.class or Foo::class.java class literal in Java or Kotlin, return the resolved Foo class, unless it's a binary class
+   * (bytecode)
    */
   private fun findClassFromLiteral(argument: UElement): PsiClass? {
     val type =
       if (argument is UClassLiteralExpression) {
         argument.type
-      } else if (
-        argument is UQualifiedReferenceExpression && argument.resolvedName == "getJavaClass"
-      ) {
+      } else if (argument is UQualifiedReferenceExpression && argument.resolvedName == "getJavaClass") {
         // Kotlin syntax: Foo::class.java
         (argument.receiver as UClassLiteralExpression).type
-      } else if (
-        argument is USimpleNameReferenceExpression &&
-          argument.uastParent is UQualifiedReferenceExpression
-      ) {
+      } else if (argument is USimpleNameReferenceExpression && argument.uastParent is UQualifiedReferenceExpression) {
         val receiver = (argument.uastParent as UQualifiedReferenceExpression).receiver
         (receiver as? UClassLiteralExpression)?.type ?: return null
       } else {
@@ -324,10 +307,8 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
     broadcastClass: PsiClass,
     description: String,
   ) {
-    val primaryLocation =
-      context.getCallLocation(setPendingIntent, includeReceiver = false, includeArguments = true)
-    val secondaryLocation =
-      context.getCallLocation(startActivity, includeReceiver = true, includeArguments = true)
+    val primaryLocation = context.getCallLocation(setPendingIntent, includeReceiver = false, includeArguments = true)
+    val secondaryLocation = context.getCallLocation(startActivity, includeReceiver = true, includeArguments = true)
     primaryLocation.secondary = secondaryLocation
 
     val message =
@@ -349,25 +330,17 @@ class NotificationTrampolineDetector : Detector(), SourceCodeScanner {
     // instead warn users that they should only be launching activities from
     // notifications, **unless** it's a notification action!
     val className = trampolineType.className
-    val message =
-      "Notifications should only launch a `$className` from " + "notification actions (`addAction`)"
+    val message = "Notifications should only launch a `$className` from " + "notification actions (`addAction`)"
 
-    val location =
-      context.getCallLocation(setPendingIntent, includeReceiver = false, includeArguments = true)
-    val secondary =
-      context.getCallLocation(pendingConstruction, includeReceiver = true, includeArguments = true)
-    secondary.message =
-      "This `$className` intent is launched from a " +
-        "notification; this is discouraged except as notification actions"
+    val location = context.getCallLocation(setPendingIntent, includeReceiver = false, includeArguments = true)
+    val secondary = context.getCallLocation(pendingConstruction, includeReceiver = true, includeArguments = true)
+    secondary.message = "This `$className` intent is launched from a " + "notification; this is discouraged except as notification actions"
 
     location.secondary = secondary
     context.report(ACTIVITY, setPendingIntent, location, message)
   }
 
-  private enum class TrampolineType(
-    val handlerMethodName: String,
-    vararg val handlerMethodArgTypes: String,
-  ) {
+  private enum class TrampolineType(val handlerMethodName: String, vararg val handlerMethodArgTypes: String) {
     BroadcastReceiver("onReceive", CLASS_CONTEXT, CLASS_INTENT),
     Service("onStartCommand", CLASS_INTENT, TYPE_INT, TYPE_INT);
 

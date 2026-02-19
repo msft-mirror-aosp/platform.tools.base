@@ -82,8 +82,7 @@ class MotionLayoutIdDetector : LayoutDetector() {
         category = Category.CORRECTNESS,
         priority = 8,
         severity = Severity.ERROR,
-        implementation =
-          Implementation(MotionLayoutIdDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(MotionLayoutIdDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
         androidSpecific = true,
       )
   }

@@ -32,10 +32,9 @@ package com.android.build.gradle.integration.application
  * limitations under the License.
  */
 
-import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.utils.FileUtils
@@ -46,67 +45,56 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Test full splits are properly supported by unit testing packaging.
- */
+/** Test full splits are properly supported by unit testing packaging. */
 class FullSplitsHandlingTest {
 
-    @Test
-    @Throws(Exception::class)
-    fun checkNoSplits() {
-        Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
-            "android {\n"
-                    + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources = true\n" +
-                    "    }"
-                    + "}")
+  @Test
+  @Throws(Exception::class)
+  fun checkNoSplits() {
+    Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND)
+      .write("android {\n" + "    testOptions {\n" + "        unitTests.includeAndroidResources = true\n" + "    }" + "}")
 
-        runAndCheckBuild()
-    }
+    runAndCheckBuild()
+  }
 
-    @Test
-    @Throws(Exception::class)
-    fun checkAbiOnlySplits() {
-        Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND).write(
-            "android {\n"
-                    + "    splits {\n"
-                    + "        abi {\n"
-                    + "            enable = true\n"
-                    + "            reset()\n"
-                    + "            include 'x86', 'armeabi-v7a'\n"
-                    + "            universalApk = false\n"
-                    + "        }\n"
-                    + "    }\n"
-                    + "    testOptions {\n" +
-                    "        unitTests.includeAndroidResources = true\n" +
-                    "    }"
-                    + "}")
+  @Test
+  @Throws(Exception::class)
+  fun checkAbiOnlySplits() {
+    Files.asCharSink(sProject.buildFile, Charsets.UTF_8, FileWriteMode.APPEND)
+      .write(
+        "android {\n" +
+          "    splits {\n" +
+          "        abi {\n" +
+          "            enable = true\n" +
+          "            reset()\n" +
+          "            include 'x86', 'armeabi-v7a'\n" +
+          "            universalApk = false\n" +
+          "        }\n" +
+          "    }\n" +
+          "    testOptions {\n" +
+          "        unitTests.includeAndroidResources = true\n" +
+          "    }" +
+          "}"
+      )
 
-        runAndCheckBuild()
+    runAndCheckBuild()
+  }
 
-    }
+  private fun runAndCheckBuild() {
+    sProject.execute("clean", "packageDebugUnitTestForUnitTest")
 
-    private fun runAndCheckBuild() {
-        sProject.execute("clean", "packageDebugUnitTestForUnitTest")
+    val resourcesForLocalTest = FileUtils.join(InternalArtifactType.APK_FOR_LOCAL_TEST.getOutputDir(sProject.buildDir), "debugUnitTest")
 
-        val resourcesForLocalTest =
-            FileUtils.join(
-                InternalArtifactType.APK_FOR_LOCAL_TEST.getOutputDir(sProject.buildDir),
-                "debugUnitTest")
+    assertThat(resourcesForLocalTest.isDirectory).isTrue()
+    assertThat(resourcesForLocalTest.listFiles()).hasLength(1)
+  }
 
-        assertThat(resourcesForLocalTest.isDirectory).isTrue()
-        assertThat(resourcesForLocalTest.listFiles()).hasLength(1)
-    }
+  @get:Rule val sProject = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
-    @get:Rule
-    val sProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .create()
-
-    @Before
-    @Throws(Exception::class)
-    fun setUp() {
-        FileUtils.createFile(sProject.file("src/main/jniLibs/x86/libprebuilt.so"), "")
-        FileUtils.createFile(sProject.file("src/main/jniLibs/armeabi-v7a/libprebuilt.so"), "")
-    }
+  @Before
+  @Throws(Exception::class)
+  fun setUp() {
+    FileUtils.createFile(sProject.file("src/main/jniLibs/x86/libprebuilt.so"), "")
+    FileUtils.createFile(sProject.file("src/main/jniLibs/armeabi-v7a/libprebuilt.so"), "")
+  }
 }

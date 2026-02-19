@@ -31,8 +31,7 @@ import org.jetbrains.uast.UCallExpression
 class ImplicitExecutorDetector : Detector(), SourceCodeScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(ImplicitExecutorDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(ImplicitExecutorDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -65,10 +64,7 @@ class ImplicitExecutorDetector : Detector(), SourceCodeScanner {
       MultiMap<String, String>().apply {
         // These got removed in later versions of Guava, see
         // https://github.com/google/guava/commit/87d87f5cac5a540d46a6382683722ead7b72d1b3#diff-3fe13f15fa4a5af9b4a55b21d7db2541
-        put(
-          "com.google.common.util.concurrent.Futures",
-          listOf("addCallback", "catching", "catchingAsync", "transform", "transformAsync"),
-        )
+        put("com.google.common.util.concurrent.Futures", listOf("addCallback", "catching", "catchingAsync", "transform", "transformAsync"))
 
         // These got removed in later versions of Guava, see
         // https://github.com/google/guava/commit/87d87f5cac5a540d46a6382683722ead7b72d1b3#diff-3fe13f15fa4a5af9b4a55b21d7db2541
@@ -76,12 +72,7 @@ class ImplicitExecutorDetector : Detector(), SourceCodeScanner {
 
         put(
           COMPLETABLE_FUTURE,
-          Class.forName(COMPLETABLE_FUTURE)
-            .methods
-            .asSequence()
-            .map { it.name }
-            .filter { it.endsWith("Async") }
-            .toSet(),
+          Class.forName(COMPLETABLE_FUTURE).methods.asSequence().map { it.name }.filter { it.endsWith("Async") }.toSet(),
         )
       }
   }
@@ -103,15 +94,9 @@ class ImplicitExecutorDetector : Detector(), SourceCodeScanner {
     }
 
     val parametersWithExecutor =
-      method.parameterList.parameters
-        .asSequence()
-        .map { it.type.canonicalText }
-        .plus(EXECUTOR)
-        .toList()
-        .toTypedArray()
+      method.parameterList.parameters.asSequence().map { it.type.canonicalText }.plus(EXECUTOR).toList().toTypedArray()
 
-    val overloadWithExecutor =
-      overloads.firstOrNull { evaluator.parametersMatch(it, *parametersWithExecutor) }
+    val overloadWithExecutor = overloads.firstOrNull { evaluator.parametersMatch(it, *parametersWithExecutor) }
 
     if (overloadWithExecutor != null) {
       context.report(

@@ -20,20 +20,19 @@ import com.android.adblib.AdbInputChannel
 /**
  * Handles collecting memory allocations for a [JdwpProcess].
  *
- * While [isEnabled] is `true`, a [SharedJdwpSession] is opened and the Android VM collects
- * allocation tracking info.
+ * While [isEnabled] is `true`, a [SharedJdwpSession] is opened and the Android VM collects allocation tracking info.
  *
- * [fetchAllocationDetails] should only be called when [isEnabled] is `true` and provides
- * a summary of the memory allocations since the last call to [enable].
+ * [fetchAllocationDetails] should only be called when [isEnabled] is `true` and provides a summary of the memory allocations since the last
+ * call to [enable].
  */
 interface JdwpProcessAllocationTracker {
 
-    suspend fun isEnabled(progress: JdwpCommandProgress? = null): Boolean
+  suspend fun isEnabled(progress: JdwpCommandProgress? = null): Boolean
 
-    suspend fun enable(enabled: Boolean, progress: JdwpCommandProgress? = null)
+  suspend fun enable(enabled: Boolean, progress: JdwpCommandProgress? = null)
 
-    suspend fun <R> fetchAllocationDetails(
-        progress: JdwpCommandProgress? = null,
-        replyHandler: suspend (data: AdbInputChannel, length: Int) -> R
-    ): R
+  suspend fun <R> fetchAllocationDetails(
+    progress: JdwpCommandProgress? = null,
+    replyHandler: suspend (data: AdbInputChannel, length: Int) -> R,
+  ): R
 }

@@ -26,18 +26,14 @@ import org.gradle.api.Action
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.model.ObjectFactory
 
-abstract class TestLabGradlePluginExtensionImpl
-@Inject
-constructor(objectFactory: ObjectFactory, devicesBlock: ManagedDevices) :
+abstract class TestLabGradlePluginExtensionImpl @Inject constructor(objectFactory: ObjectFactory, devicesBlock: ManagedDevices) :
   TestLabGradlePluginExtension {
 
   override val managedDevices: NamedDomainObjectContainer<ManagedDevice> =
-    objectFactory
-      .domainObjectContainer(ManagedDevice::class.java, ManagedDeviceFactory(objectFactory))
-      .apply {
-        whenObjectAdded { device: ManagedDevice -> devicesBlock.allDevices.add(device) }
-        whenObjectRemoved { device: ManagedDevice -> devicesBlock.allDevices.remove(device) }
-      }
+    objectFactory.domainObjectContainer(ManagedDevice::class.java, ManagedDeviceFactory(objectFactory)).apply {
+      whenObjectAdded { device: ManagedDevice -> devicesBlock.allDevices.add(device) }
+      whenObjectRemoved { device: ManagedDevice -> devicesBlock.allDevices.remove(device) }
+    }
 
   init {
     devicesBlock.allDevices.apply {

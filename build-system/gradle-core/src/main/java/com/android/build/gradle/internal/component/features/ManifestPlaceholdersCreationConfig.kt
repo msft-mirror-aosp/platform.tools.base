@@ -18,9 +18,7 @@ package com.android.build.gradle.internal.component.features
 
 import org.gradle.api.provider.MapProperty
 
-/**
- * Creation config for components that support manifest placeholders.
- */
+/** Creation config for components that support manifest placeholders. */
 interface ManifestPlaceholdersCreationConfig {
-    val placeholders: MapProperty<String, String>
+  val placeholders: MapProperty<String, String>
 }

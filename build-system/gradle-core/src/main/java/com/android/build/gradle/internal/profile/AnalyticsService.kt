@@ -28,6 +28,10 @@ import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleTransformExecution
+import java.io.File
+import java.util.Base64
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedQueue
 import org.gradle.api.Project
 import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
@@ -37,171 +41,144 @@ import org.gradle.api.services.BuildServiceParameters
 import org.gradle.build.event.BuildEventsListenerRegistry
 import org.gradle.tooling.events.FinishEvent
 import org.gradle.tooling.events.OperationCompletionListener
-import java.io.File
-import java.util.Base64
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
- * [AnalyticsService] records execution spans of tasks and workers. At the end of the build,
- * it combines data from execution and configuration, and writes build proto to disk.
+ * [AnalyticsService] records execution spans of tasks and workers. At the end of the build, it combines data from execution and
+ * configuration, and writes build proto to disk.
  *
- * The [Params] is configured with analytics collected at configuration, which can be serialized
- * in non-configuration cached run, and de-serialized in configuration cached run to instantiate
- * [AnalyticsService].
+ * The [Params] is configured with analytics collected at configuration, which can be serialized in non-configuration cached run, and
+ * de-serialized in configuration cached run to instantiate [AnalyticsService].
  *
- * In a single non-composite build, there can be only one instance of [AnalyticsService] per class
- * loader. In the context of composite build, for each build, there can be only one instance of
- * [AnalyticsService] per class loader.
+ * In a single non-composite build, there can be only one instance of [AnalyticsService] per class loader. In the context of composite
+ * build, for each build, there can be only one instance of [AnalyticsService] per class loader.
  */
-abstract class AnalyticsService :
-    AnalyticsServiceApi, BuildService<Params>, AutoCloseable, OperationCompletionListener
-{
-    interface Params : BuildServiceParameters {
-        val profile: Property<String>
-        val anonymizer: Property<String>
-        val projects: MapProperty<String, ProjectData>
-        val enableProfileJson: Property<Boolean>
-        val profileDir: Property<File>
-        val taskMetadata: MapProperty<String, TaskMetadata>
-        val rootProjectPath: Property<String>
-        val applicationId: SetProperty<String>
+abstract class AnalyticsService : AnalyticsServiceApi, BuildService<Params>, AutoCloseable, OperationCompletionListener {
+  interface Params : BuildServiceParameters {
+    val profile: Property<String>
+    val anonymizer: Property<String>
+    val projects: MapProperty<String, ProjectData>
+    val enableProfileJson: Property<Boolean>
+    val profileDir: Property<File>
+    val taskMetadata: MapProperty<String, TaskMetadata>
+    val rootProjectPath: Property<String>
+    val applicationId: SetProperty<String>
+  }
+
+  private val resourceManager: AnalyticsResourceManager = initializeResourceManager()
+
+  init {
+    initializeUsageTracker()
+  }
+
+  protected open fun initializeResourceManager(): AnalyticsResourceManager {
+    return AnalyticsResourceManager(
+      reconstructProfileBuilder(),
+      ConcurrentHashMap(parameters.projects.get()),
+      parameters.enableProfileJson.get(),
+      parameters.profileDir.orNull,
+      ConcurrentHashMap(parameters.taskMetadata.get()),
+      parameters.rootProjectPath.get(),
+      parameters.applicationId,
+      NameAnonymizerSerializer().fromJson(parameters.anonymizer.get()),
+    )
+  }
+
+  protected open fun initializeUsageTracker() {
+    // Initialize UsageTracker because some tasks(e.g. lint) need to record analytics with
+    // UsageTracker.
+    AnalyticsProfileWriter().initializeUsageTracker()
+  }
+
+  override fun close() {
+    resourceManager.writeAndFinish()
+  }
+
+  override fun onFinish(finishEvent: FinishEvent?) {
+    resourceManager.recordTaskExecutionSpan(finishEvent)
+  }
+
+  override fun workerAdded(taskPath: String, workerKey: String) {
+    getTaskRecord(taskPath)?.addWorker(workerKey)
+  }
+
+  override fun workerStarted(taskPath: String, workerKey: String) {
+    val workerRecord = getWorkerRecord(taskPath, workerKey)
+    workerRecord?.executionStarted()
+  }
+
+  override fun workerFinished(taskPath: String, workerKey: String) {
+    val workerRecord = getWorkerRecord(taskPath, workerKey)
+    if (workerRecord != null) {
+      workerRecord.executionFinished()
+      getTaskRecord(taskPath)?.workerFinished(workerRecord)
     }
+  }
 
-    private val resourceManager: AnalyticsResourceManager = initializeResourceManager()
+  override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {
+    val taskRecord = getTaskRecord(taskPath)
+    taskRecord?.addSpan(builder)
+  }
 
-    init {
-        initializeUsageTracker()
+  @Synchronized
+  override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder? {
+    return resourceManager.getProjectBuilder(projectPath)
+  }
+
+  @Synchronized
+  override fun getVariantBuilder(projectPath: String, variantName: String): GradleBuildVariant.Builder? {
+    return resourceManager.getVariantBuilder(projectPath, variantName)
+  }
+
+  @Synchronized
+  fun mergeToVariantBuilder(projectPath: String, variantName: String, variant: GradleBuildVariant) {
+    getVariantBuilder(projectPath, variantName)?.mergeFrom(variant)
+  }
+
+  @Synchronized
+  override fun getTaskRecord(taskPath: String): TaskProfilingRecord? {
+    return resourceManager.getTaskRecord(taskPath)
+  }
+
+  override fun recordBlock(
+    executionType: GradleBuildProfileSpan.ExecutionType,
+    transform: GradleTransformExecution?,
+    projectPath: String,
+    variantName: String,
+    block: Recorder.VoidBlock,
+  ) {
+    resourceManager.recordBlockAtExecution(executionType, transform, projectPath, variantName, block)
+  }
+
+  override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {
+    resourceManager.configurationSpans.addAll(spans)
+  }
+
+  override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {
+    resourceManager.initialMemorySample = sample
+  }
+
+  override fun recordEvent(event: AndroidStudioEvent.Builder) {
+    resourceManager.recordEvent(event)
+  }
+
+  class RegistrationAction(
+    project: Project,
+    private val configuratorService: AnalyticsConfiguratorService,
+    @Suppress("UnstableApiUsage") val listenerRegistry: BuildEventsListenerRegistry,
+    private val configurationCacheActive: Boolean,
+    private val projectIsolationActive: Boolean,
+  ) : ServiceRegistrationAction<AnalyticsService, Params>(project, AnalyticsService::class.java) {
+
+    override fun configure(parameters: Params) {
+      configuratorService.createAnalyticsService(project, listenerRegistry, parameters, configurationCacheActive, projectIsolationActive)
     }
+  }
 
-    protected open fun initializeResourceManager(): AnalyticsResourceManager {
-        return AnalyticsResourceManager(
-            reconstructProfileBuilder(),
-            ConcurrentHashMap(parameters.projects.get()),
-            parameters.enableProfileJson.get(),
-            parameters.profileDir.orNull,
-            ConcurrentHashMap(parameters.taskMetadata.get()),
-            parameters.rootProjectPath.get(),
-            parameters.applicationId,
-            NameAnonymizerSerializer().fromJson(parameters.anonymizer.get())
-        )
-    }
+  private fun getWorkerRecord(taskPath: String, worker: String): WorkerProfilingRecord? {
+    return getTaskRecord(taskPath)?.get(worker)
+  }
 
-    protected open fun initializeUsageTracker() {
-        // Initialize UsageTracker because some tasks(e.g. lint) need to record analytics with
-        // UsageTracker.
-        AnalyticsProfileWriter().initializeUsageTracker()
-    }
-
-    override fun close() {
-        resourceManager.writeAndFinish()
-    }
-
-    override fun onFinish(finishEvent: FinishEvent?) {
-        resourceManager.recordTaskExecutionSpan(finishEvent)
-    }
-
-    override fun workerAdded(taskPath: String, workerKey: String) {
-        getTaskRecord(taskPath)?.addWorker(workerKey)
-    }
-
-    override fun workerStarted(taskPath: String, workerKey: String) {
-        val workerRecord = getWorkerRecord(taskPath, workerKey)
-        workerRecord?.executionStarted()
-    }
-
-    override fun workerFinished(taskPath: String, workerKey: String) {
-        val workerRecord = getWorkerRecord(taskPath, workerKey)
-        if (workerRecord != null) {
-            workerRecord.executionFinished()
-            getTaskRecord(taskPath)?.workerFinished(workerRecord)
-        }
-    }
-
-    override fun registerSpan(taskPath: String, builder: GradleBuildProfileSpan.Builder) {
-        val taskRecord = getTaskRecord(taskPath)
-        taskRecord?.addSpan(builder)
-    }
-
-    @Synchronized
-    override fun getProjectBuillder(projectPath: String): GradleBuildProject.Builder? {
-        return resourceManager.getProjectBuilder(projectPath)
-    }
-
-    @Synchronized
-    override fun getVariantBuilder(
-        projectPath: String,
-        variantName: String
-    ) : GradleBuildVariant.Builder? {
-        return resourceManager.getVariantBuilder(projectPath, variantName)
-    }
-
-    @Synchronized fun mergeToVariantBuilder(projectPath: String, variantName: String, variant: GradleBuildVariant) {
-        getVariantBuilder(projectPath, variantName)?.mergeFrom(variant)
-    }
-
-    @Synchronized
-    override fun getTaskRecord(taskPath: String): TaskProfilingRecord? {
-        return resourceManager.getTaskRecord(taskPath)
-    }
-
-    override fun recordBlock(
-        executionType: GradleBuildProfileSpan.ExecutionType,
-        transform: GradleTransformExecution?,
-        projectPath: String,
-        variantName: String,
-        block: Recorder.VoidBlock
-    ) {
-        resourceManager.recordBlockAtExecution(
-            executionType,
-            transform,
-            projectPath,
-            variantName,
-            block
-        )
-    }
-
-    override fun setConfigurationSpans(spans: ConcurrentLinkedQueue<GradleBuildProfileSpan>) {
-        resourceManager.configurationSpans.addAll(spans)
-    }
-
-    override fun setInitialMemorySampleForConfiguration(sample: GradleBuildMemorySample) {
-        resourceManager.initialMemorySample = sample
-    }
-
-    override fun recordEvent(event: AndroidStudioEvent.Builder) {
-        resourceManager.recordEvent(event)
-    }
-
-    class RegistrationAction(
-        project: Project,
-        private val configuratorService: AnalyticsConfiguratorService,
-        @Suppress("UnstableApiUsage") val listenerRegistry: BuildEventsListenerRegistry,
-        private val configurationCacheActive: Boolean,
-        private val projectIsolationActive: Boolean,
-    ) : ServiceRegistrationAction<AnalyticsService, Params>(
-        project,
-        AnalyticsService::class.java
-    ) {
-
-        override fun configure(parameters: Params) {
-            configuratorService.createAnalyticsService(
-                project,
-                listenerRegistry,
-                parameters,
-                configurationCacheActive,
-                projectIsolationActive,
-            )
-        }
-    }
-
-    private fun getWorkerRecord(taskPath: String, worker: String): WorkerProfilingRecord? {
-        return getTaskRecord(taskPath)?.get(worker)
-    }
-
-    private fun reconstructProfileBuilder() : GradleBuildProfile.Builder {
-        return GradleBuildProfile
-            .parseFrom(Base64.getDecoder().decode(parameters.profile.get()))
-            .toBuilder()
-    }
+  private fun reconstructProfileBuilder(): GradleBuildProfile.Builder {
+    return GradleBuildProfile.parseFrom(Base64.getDecoder().decode(parameters.profile.get())).toBuilder()
+  }
 }

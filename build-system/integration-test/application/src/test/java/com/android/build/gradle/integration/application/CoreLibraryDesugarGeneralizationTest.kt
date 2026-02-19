@@ -23,41 +23,39 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.apk.AndroidArchive
 import com.android.testutils.apk.Dex
 import com.android.testutils.truth.DexSubject
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
 import java.io.BufferedOutputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.test.fail
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
 
 class CoreLibraryDesugarGeneralizationTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPluginWithMinSdkVersion("com.android.application",21))
-        .create()
+  @get:Rule
+  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPluginWithMinSdkVersion("com.android.application", 21)).create()
 
-    @Before
-    fun setUp() {
-        val desugarLib = project.projectDir.toPath().resolve(DESUGAR_LIB_JAR)
-        TestInputsGenerator.jarWithEmptyClasses(desugarLib, listOf("test/A"))
+  @Before
+  fun setUp() {
+    val desugarLib = project.projectDir.toPath().resolve(DESUGAR_LIB_JAR)
+    TestInputsGenerator.jarWithEmptyClasses(desugarLib, listOf("test/A"))
 
-        val desugarConfig = project.projectDir.toPath().resolve(DESUGAR_CONFIG_JAR)
-        BufferedOutputStream(Files.newOutputStream(desugarConfig)).use { outputStream ->
-            ZipOutputStream(outputStream).use { zipOutputStream ->
-                val entry = ZipEntry("META-INF/desugar/d8/desugar.json")
-                zipOutputStream.putNextEntry(entry)
-                zipOutputStream.write(DESUGAR_CONFIG_CONTENT.toByteArray(StandardCharsets.UTF_8))
-                zipOutputStream.closeEntry()
-            }
-        }
+    val desugarConfig = project.projectDir.toPath().resolve(DESUGAR_CONFIG_JAR)
+    BufferedOutputStream(Files.newOutputStream(desugarConfig)).use { outputStream ->
+      ZipOutputStream(outputStream).use { zipOutputStream ->
+        val entry = ZipEntry("META-INF/desugar/d8/desugar.json")
+        zipOutputStream.putNextEntry(entry)
+        zipOutputStream.write(DESUGAR_CONFIG_CONTENT.toByteArray(StandardCharsets.UTF_8))
+        zipOutputStream.closeEntry()
+      }
+    }
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            """
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 android {
                     compileOptions {
                         sourceCompatibility JavaVersion.VERSION_1_8
@@ -70,31 +68,33 @@ class CoreLibraryDesugarGeneralizationTest {
                     coreLibraryDesugaring files('$DESUGAR_LIB_JAR')
                     coreLibraryDesugaring files('$DESUGAR_CONFIG_JAR')
                 }
-            """.trimIndent())
+            """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun testNonMinifyDebugBuild() {
+    project.executor().run("assembleDebug")
+    val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
+    val desugarDex = getDexWithSpecificClass(desugarClass, apk.allDexes) ?: fail("Failed to find the dex with class name $desugarClass")
+    DexSubject.assertThat(desugarDex).doesNotContainClasses(programClass)
+  }
+
+  private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>): Dex? =
+    dexes.find {
+      AndroidArchive.checkValidClassName(className)
+      it.classes.keys.contains(className)
     }
 
-    @Test
-    fun testNonMinifyDebugBuild() {
-        project.executor().run("assembleDebug")
-        val apk = project.getApk(GradleTestProject.ApkType.DEBUG)
-        val desugarDex = getDexWithSpecificClass(desugarClass, apk.allDexes)
-            ?: fail("Failed to find the dex with class name $desugarClass")
-        DexSubject.assertThat(desugarDex).doesNotContainClasses(programClass)
-    }
+  private val desugarClass = "Lfoo$/A;"
+  private val programClass = "Lcom/example/helloworld/HelloWorld;"
 
-    private fun getDexWithSpecificClass(className: String, dexes: Collection<Dex>) : Dex? =
-        dexes.find {
-            AndroidArchive.checkValidClassName(className)
-            it.classes.keys.contains(className)
-        }
-
-    private val desugarClass = "Lfoo$/A;"
-    private val programClass = "Lcom/example/helloworld/HelloWorld;"
-
-    companion object {
-        private const val DESUGAR_LIB_JAR = "desugar-lib.jar"
-        private const val DESUGAR_CONFIG_JAR = "desugar-config.jar"
-        private const val DESUGAR_CONFIG_CONTENT = """
+  companion object {
+    private const val DESUGAR_LIB_JAR = "desugar-lib.jar"
+    private const val DESUGAR_CONFIG_JAR = "desugar-config.jar"
+    private const val DESUGAR_CONFIG_CONTENT =
+      """
             {
                "artifact_id": "test",
                "configuration_format_version": 4,
@@ -114,5 +114,5 @@ class CoreLibraryDesugarGeneralizationTest {
                 "version": "1.1.5"
             }
         """
-    }
+  }
 }

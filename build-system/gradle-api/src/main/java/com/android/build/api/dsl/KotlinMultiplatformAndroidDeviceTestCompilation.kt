@@ -16,6 +16,4 @@
 
 package com.android.build.api.dsl
 
-interface KotlinMultiplatformAndroidDeviceTestCompilation:
-    KotlinMultiplatformAndroidDeviceTest,
-    KotlinMultiplatformAndroidCompilation
+interface KotlinMultiplatformAndroidDeviceTestCompilation : KotlinMultiplatformAndroidDeviceTest, KotlinMultiplatformAndroidCompilation

@@ -20,16 +20,12 @@ import com.android.build.api.variant.HostTest
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.testing.Test
 
-interface HostTestCreationConfig: TestComponentCreationConfig, HostTest {
+interface HostTestCreationConfig : TestComponentCreationConfig, HostTest {
 
-    /**
-     * Defines the host test name used as a key to the [HasHostTestsBuilder.hostTests] and
-     * [HasHostTests.hostTests] maps.
-     */
-    val hostTestName: String
+  /** Defines the host test name used as a key to the [HasHostTestsBuilder.hostTests] and [HasHostTests.hostTests] maps. */
+  val hostTestName: String
 
-    fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>)
+  fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>)
 
-    override val codeCoverageEnabled: Boolean
+  override val codeCoverageEnabled: Boolean
 }
-

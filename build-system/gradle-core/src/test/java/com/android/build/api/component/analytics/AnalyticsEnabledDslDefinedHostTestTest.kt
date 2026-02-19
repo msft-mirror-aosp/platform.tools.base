@@ -19,60 +19,53 @@ import com.android.build.api.variant.HostTest
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import java.util.concurrent.atomic.AtomicBoolean
 import org.gradle.api.model.ObjectFactory
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.junit.MockitoJUnit
+import org.mockito.junit.MockitoRule
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import org.mockito.junit.MockitoJUnit
-import org.mockito.junit.MockitoRule
 import org.mockito.quality.Strictness
-import java.util.concurrent.atomic.AtomicBoolean
 
 class AnalyticsEnabledDslDefinedHostTestTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    private val delegate: HostTest = mock()
+  private val delegate: HostTest = mock()
 
-    private val objectFactory: ObjectFactory = mock()
+  private val objectFactory: ObjectFactory = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private val proxy: AnalyticsEnabledHostTest by lazy {
-        AnalyticsEnabledHostTest(delegate, stats, objectFactory)
-    }
+  private val stats = GradleBuildVariant.newBuilder()
+  private val proxy: AnalyticsEnabledHostTest by lazy { AnalyticsEnabledHostTest(delegate, stats, objectFactory) }
 
-    @Test
-    fun configureTestTask() {
-        val lambdaCalled = AtomicBoolean(false)
-        val function: (org.gradle.api.tasks.testing.Test) -> Unit = { }
-        doAnswer { lambdaCalled.set(true) }.whenever(delegate).configureTestTask(function)
+  @Test
+  fun configureTestTask() {
+    val lambdaCalled = AtomicBoolean(false)
+    val function: (org.gradle.api.tasks.testing.Test) -> Unit = {}
+    doAnswer { lambdaCalled.set(true) }.whenever(delegate).configureTestTask(function)
 
-        proxy.configureTestTask(function)
-        Truth.assertThat(lambdaCalled.get()).isTrue()
+    proxy.configureTestTask(function)
+    Truth.assertThat(lambdaCalled.get()).isTrue()
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
-        verify(delegate, times(1))
-            .configureTestTask(function)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.CONFIGURE_TEST_TASK_VALUE)
+    verify(delegate, times(1)).configureTestTask(function)
+  }
 
-    @Test
-    fun codeCoverageEnabled() {
-        whenever(delegate.codeCoverageEnabled).thenReturn(true)
-        Truth.assertThat(proxy.codeCoverageEnabled).isEqualTo(true)
+  @Test
+  fun codeCoverageEnabled() {
+    whenever(delegate.codeCoverageEnabled).thenReturn(true)
+    Truth.assertThat(proxy.codeCoverageEnabled).isEqualTo(true)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE)
-        verify(delegate, times(1))
-            .codeCoverageEnabled
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.HOST_TEST_CODE_COVERAGE_ENABLED_VALUE)
+    verify(delegate, times(1)).codeCoverageEnabled
+  }
 }

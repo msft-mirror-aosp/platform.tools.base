@@ -22,77 +22,70 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.ProfileCapturer
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.app.KotlinHelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.testutils.TestUtils
 import com.google.common.collect.Iterables
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import com.google.wireless.android.sdk.stats.GradleBuildProject.GradlePlugin.COM_ANDROID_BUILD_GRADLE_APPPLUGIN
-import com.google.wireless.android.sdk.stats.GradleBuildProject.GradlePlugin.ORG_JETBRAINS_KOTLIN_GRADLE_PLUGIN_KOTLINANDROIDPLUGINWRAPPER
+import java.util.regex.Pattern
 import org.junit.Rule
 import org.junit.Test
-import java.util.regex.Pattern
 
 /**
- * This test exists to make sure that the profiles we get back from the Android Gradle Plugin meet
- * the expectations we have for them in our benchmarking infrastructure.
+ * This test exists to make sure that the profiles we get back from the Android Gradle Plugin meet the expectations we have for them in our
+ * benchmarking infrastructure.
  */
 class ProfileContentTest {
-    @get:Rule
-    var project = GradleTestProject.builder()
-            .fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application"))
-            .enableProfileOutput()
-            .create()
+  @get:Rule
+  var project =
+    GradleTestProject.builder().fromTestApp(KotlinHelloWorldApp.forPlugin("com.android.application")).enableProfileOutput().create()
 
-    @Test
-    fun testProfileProtoContentMakesSense() {
-        val capturer = ProfileCapturer(project)
+  @Test
+  fun testProfileProtoContentMakesSense() {
+    val capturer = ProfileCapturer(project)
 
-        val getModel = Iterables.getOnlyElement(
-            capturer.capture { project.modelV2().fetchModels() })
+    val getModel = Iterables.getOnlyElement(capturer.capture { project.modelV2().fetchModels() })
 
-        val cleanBuild = Iterables.getOnlyElement(
-            capturer.capture { project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("assembleRelease") })
+    val cleanBuild =
+      Iterables.getOnlyElement(
+        capturer.capture { project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("assembleRelease") }
+      )
 
-        val noOpBuild = Iterables.getOnlyElement(
-            capturer.capture { project.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-                .run("assembleRelease") })
+    val noOpBuild =
+      Iterables.getOnlyElement(
+        capturer.capture { project.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON).run("assembleRelease") }
+      )
 
-        for (profile in listOf(getModel, cleanBuild, noOpBuild)) {
-            assertThat(profile.spanCount).isGreaterThan(0)
+    for (profile in listOf(getModel, cleanBuild, noOpBuild)) {
+      assertThat(profile.spanCount).isGreaterThan(0)
 
-            assertThat(profile.projectCount).isGreaterThan(0)
-            assertThat(profile.osName).containsMatch(Pattern.compile("Linux|Mac|Windows"))
-            assertThat(profile.osVersion).isNotEmpty()
-            assertThat(profile.javaVersion).isNotEmpty()
-            assertThat(profile.javaVmVersion).isNotEmpty()
-            assertThat(profile.parallelTaskExecution).isFalse()
-            assertThat(profile.maxMemory).isGreaterThan(0)
-            assertThat(profile.gradleVersion).isNotEmpty()
-            val gbp = profile.getProject(0)
-            assertThat(gbp.compileSdk).isEqualTo(GradleTestProject.compileSdkHash)
-            assertThat<GradleBuildProject.GradlePlugin,
-                    Iterable<GradleBuildProject.GradlePlugin>>(gbp.pluginList)
-                .contains(
-                        COM_ANDROID_BUILD_GRADLE_APPPLUGIN
-                )
-            assertThat(gbp.variantCount).isGreaterThan(0)
-            val gbv = gbp.getVariant(0)
-            assertThat(gbv.minSdkVersion.apiLevel).isEqualTo(SUPPORT_LIB_MIN_SDK)
-            assertThat(gbv.hasTargetSdkVersion()).named("has target sdk version").isTrue()
-            assertThat(gbv.targetSdkVersion.apiLevel).named("target sdk version").isEqualTo(SUPPORT_LIB_MIN_SDK)
-            assertThat(gbv.hasMaxSdkVersion()).named("has max sdk version").isFalse()
-            assertThat(gbp.appliedPluginsList.any {
-                it.className == "com.android.build.gradle.AppPlugin" &&
-                        it.jarName == "gradle-api-${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
-            }).isTrue()
-        }
-        for (profile in listOf(cleanBuild, noOpBuild)) {
-            assertThat(HashSet(profile.rawProjectIdList))
-                .containsExactly("com.example.helloworld")
-        }
+      assertThat(profile.projectCount).isGreaterThan(0)
+      assertThat(profile.osName).containsMatch(Pattern.compile("Linux|Mac|Windows"))
+      assertThat(profile.osVersion).isNotEmpty()
+      assertThat(profile.javaVersion).isNotEmpty()
+      assertThat(profile.javaVmVersion).isNotEmpty()
+      assertThat(profile.parallelTaskExecution).isFalse()
+      assertThat(profile.maxMemory).isGreaterThan(0)
+      assertThat(profile.gradleVersion).isNotEmpty()
+      val gbp = profile.getProject(0)
+      assertThat(gbp.compileSdk).isEqualTo(GradleTestProject.compileSdkHash)
+      assertThat<GradleBuildProject.GradlePlugin, Iterable<GradleBuildProject.GradlePlugin>>(gbp.pluginList)
+        .contains(COM_ANDROID_BUILD_GRADLE_APPPLUGIN)
+      assertThat(gbp.variantCount).isGreaterThan(0)
+      val gbv = gbp.getVariant(0)
+      assertThat(gbv.minSdkVersion.apiLevel).isEqualTo(SUPPORT_LIB_MIN_SDK)
+      assertThat(gbv.hasTargetSdkVersion()).named("has target sdk version").isTrue()
+      assertThat(gbv.targetSdkVersion.apiLevel).named("target sdk version").isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION)
+      assertThat(gbv.hasMaxSdkVersion()).named("has max sdk version").isFalse()
+      assertThat(
+          gbp.appliedPluginsList.any {
+            it.className == "com.android.build.gradle.AppPlugin" && it.jarName == "gradle-api-${Version.ANDROID_GRADLE_PLUGIN_VERSION}"
+          }
+        )
+        .isTrue()
     }
+    for (profile in listOf(cleanBuild, noOpBuild)) {
+      assertThat(HashSet(profile.rawProjectIdList)).containsExactly("com.example.helloworld")
+    }
+  }
 }
-

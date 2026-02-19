@@ -26,8 +26,8 @@ import com.android.tools.idea.wizard.template.impl.activities.common.generateMan
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.layout.activitySimpleXml
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.menu.mainXml
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.values.dimensXml
-import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.values_w820dp.dimensXml as dimensXmlW820dp
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.values.stringsXml
+import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.res.values_w820dp.dimensXml as dimensXmlW820dp
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.src.app_package.simpleActivityJava
 import com.android.tools.idea.wizard.template.impl.activities.googleAdMobAdsActivity.src.app_package.simpleActivityKt
 import com.android.tools.idea.wizard.template.impl.fragments.googleAdMobAdsFragment.AdFormat
@@ -39,7 +39,7 @@ fun RecipeExecutor.googleAdMobAdsActivityRecipe(
   menuName: String,
   adFormat: AdFormat,
   isLauncher: Boolean,
-  packageName: String
+  packageName: String,
 ) {
   val (projectData, srcOut, resOut, manifestOut) = moduleData
   val useAndroidX = moduleData.projectTemplateData.androidXSupport
@@ -51,8 +51,10 @@ fun RecipeExecutor.googleAdMobAdsActivityRecipe(
   addDependency("com.android.support:appcompat-v7:${moduleData.apis.appCompatVersion}.+")
   addDependency("com.google.android.gms:play-services-ads:+", toBase = moduleData.isDynamic)
 
-  mergeXml(androidManifestXml(activityClass, isLauncher, moduleData.isLibrary, moduleData.isNewModule, packageName),
-           manifestOut.resolve("AndroidManifest.xml"))
+  mergeXml(
+    androidManifestXml(activityClass, isLauncher, moduleData.isLibrary, moduleData.isNewModule, packageName),
+    manifestOut.resolve("AndroidManifest.xml"),
+  )
 
   save(mainXml(activityClass, packageName), resOut.resolve("menu/${menuName}.xml"))
 
@@ -60,37 +62,35 @@ fun RecipeExecutor.googleAdMobAdsActivityRecipe(
   mergeXml(dimensXml(), resOut.resolve("values/dimens.xml"))
   mergeXml(dimensXmlW820dp(), resOut.resolve("values-w820dp/dimens.xml"))
 
-  save(
-      activitySimpleXml(activityClass, adFormat, packageName),
-      resOut.resolve("layout/${layoutName}.xml")
-  )
+  save(activitySimpleXml(activityClass, adFormat, packageName), resOut.resolve("layout/${layoutName}.xml"))
 
   val superClassFqcn = getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()
-  val simpleActivity = when (projectData.language) {
-    Language.Java ->
-      simpleActivityJava(
-        activityClass = activityClass,
-        adFormat = adFormat,
-        applicationPackage = projectData.applicationPackage,
-        layoutName = layoutName,
-        menuName = menuName,
-        packageName = packageName,
-        superClassFqcn = superClassFqcn,
-        isViewBindingSupported = isViewBindingSupported
-      )
-    Language.Kotlin ->
-      simpleActivityKt(
-        activityClass = activityClass,
-        adFormat = adFormat,
-        applicationPackage = projectData.applicationPackage,
-        layoutName = layoutName,
-        menuName = menuName,
-        packageName = packageName,
-        superClassFqcn = superClassFqcn,
-        isViewBindingSupported = isViewBindingSupported
-      )
-  }
+  val simpleActivity =
+    when (projectData.language) {
+      Language.Java ->
+        simpleActivityJava(
+          activityClass = activityClass,
+          adFormat = adFormat,
+          applicationPackage = projectData.applicationPackage,
+          layoutName = layoutName,
+          menuName = menuName,
+          packageName = packageName,
+          superClassFqcn = superClassFqcn,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+      Language.Kotlin ->
+        simpleActivityKt(
+          activityClass = activityClass,
+          adFormat = adFormat,
+          applicationPackage = projectData.applicationPackage,
+          layoutName = layoutName,
+          menuName = menuName,
+          packageName = packageName,
+          superClassFqcn = superClassFqcn,
+          isViewBindingSupported = isViewBindingSupported,
+        )
+    }
   save(simpleActivity, srcOut.resolve("${activityClass}.${ktOrJavaExt}"))
 
   open(srcOut.resolve("${activityClass}.${ktOrJavaExt}"))

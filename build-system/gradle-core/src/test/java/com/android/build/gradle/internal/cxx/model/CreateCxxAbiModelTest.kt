@@ -22,65 +22,45 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class CreateCxxAbiModelTest {
-    // Check some specific issues I had to debug
-    @Test
-    fun `repeated cmake bug`() {
-        BasicCmakeMock().let {
-            val module = createCxxModuleModel(
-                it.sdkComponents,
-                it.configurationParameters,
+  // Check some specific issues I had to debug
+  @Test
+  fun `repeated cmake bug`() {
+    BasicCmakeMock().let {
+      val module = createCxxModuleModel(it.sdkComponents, it.configurationParameters)
+      val variant = createCxxVariantModel(it.configurationParameters, module)
+      val abi = createCxxAbiModel(it.sdkComponents, it.configurationParameters, variant, "x86")
+      assertThat(abi.cxxBuildFolder.path.replace("\\", "/")).endsWith(".cxx/cmake/debug/x86")
+    }
+  }
+
+  @Test
+  fun `unknown ABI name`() {
+    BasicCmakeMock().let {
+      val module = createCxxModuleModel(it.sdkComponents, it.configurationParameters)
+      val variant = createCxxVariantModel(it.configurationParameters, module)
+
+      PassThroughRecordingLoggingEnvironment().use { logger ->
+        try {
+          createCxxAbiModel(it.sdkComponents, it.configurationParameters, variant, "unknown-abi-name")
+        } catch (e: Exception) {
+          assertThat(logger.errors[0])
+            .isEqualTo(
+              "[CXX1201] ABI unknown-abi-name was not recognized. " + "Valid ABIs are: arm64-v8a, armeabi-v7a, riscv64, x86, x86_64."
             )
-            val variant = createCxxVariantModel(
-                it.configurationParameters,
-                module)
-            val abi = createCxxAbiModel(
-                it.sdkComponents,
-                it.configurationParameters,
-                variant, "x86")
-            assertThat(abi.cxxBuildFolder.path
-                    .replace("\\", "/"))
-                .endsWith(".cxx/cmake/debug/x86")
+          return
         }
+        error("Expected exception from createCxxAbiModel")
+      }
     }
+  }
 
-    @Test
-    fun `unknown ABI name`() {
-        BasicCmakeMock().let {
-            val module = createCxxModuleModel(
-                it.sdkComponents,
-                it.configurationParameters,
-            )
-            val variant = createCxxVariantModel(
-                it.configurationParameters,
-                module)
-
-            PassThroughRecordingLoggingEnvironment().use { logger ->
-                try {
-                    createCxxAbiModel(
-                        it.sdkComponents,
-                        it.configurationParameters,
-                        variant, "unknown-abi-name"
-                    )
-                } catch (e: Exception) {
-                    assertThat(logger.errors[0])
-                        .isEqualTo("[CXX1201] ABI unknown-abi-name was not recognized. " +
-                                "Valid ABIs are: arm64-v8a, armeabi-v7a, riscv64, x86, x86_64.")
-                    return
-                }
-                error("Expected exception from createCxxAbiModel")
-            }
-        }
+  @Test
+  fun `round trip random instance`() {
+    RandomInstanceGenerator().synthetics(CxxAbiModel::class.java).forEach { abi ->
+      val abiString = abi.toJsonString()
+      val recoveredAbi = createCxxAbiModelFromJson(abiString)
+      val recoveredAbiString = recoveredAbi.toJsonString()
+      assertThat(abiString).isEqualTo(recoveredAbiString)
     }
-
-    @Test
-    fun `round trip random instance`() {
-        RandomInstanceGenerator()
-            .synthetics(CxxAbiModel::class.java)
-            .forEach { abi ->
-                val abiString = abi.toJsonString()
-                val recoveredAbi = createCxxAbiModelFromJson(abiString)
-                val recoveredAbiString = recoveredAbi.toJsonString()
-                assertThat(abiString).isEqualTo(recoveredAbiString)
-            }
-    }
+  }
 }

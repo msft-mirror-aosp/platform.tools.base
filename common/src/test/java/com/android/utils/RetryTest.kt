@@ -127,10 +127,7 @@ class RetryTest {
 
     thrown =
       assertFailsWith<CloneNotSupportedException> {
-        executeWithRetries<CloneNotSupportedException, Nothing>(
-          duration,
-          timeSource = testTimeSource,
-        ) {
+        executeWithRetries<CloneNotSupportedException, Nothing>(duration, timeSource = testTimeSource) {
           testTimeSource += 6.seconds
           throw CloneNotSupportedException(msg)
         }
@@ -272,8 +269,7 @@ class RetryTest {
 
     // Should not sleep the last time, so even though the block executes 5 times, we should
     // only sleep 4 times.
-    assertThat(testThreadSleeper.sleepDurations)
-      .containsExactly(2.seconds, 2.seconds, 2.seconds, 2.seconds)
+    assertThat(testThreadSleeper.sleepDurations).containsExactly(2.seconds, 2.seconds, 2.seconds, 2.seconds)
 
     testThreadSleeper.reset()
     startTime = testTimeSource.markNow()
@@ -291,8 +287,7 @@ class RetryTest {
 
     // Should not sleep the last time, so even though the block executes 5 times, we should
     // only sleep 4 times.
-    assertThat(testThreadSleeper.sleepDurations)
-      .containsExactly(2.seconds, 2.seconds, 2.seconds, 2.seconds)
+    assertThat(testThreadSleeper.sleepDurations).containsExactly(2.seconds, 2.seconds, 2.seconds, 2.seconds)
   }
 
   @Test

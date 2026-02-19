@@ -16,198 +16,180 @@
 package com.android.adblib
 
 import com.android.adblib.testingutils.CloseablesRule
+import java.time.Duration
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.time.Duration
 
 class AdbSessionHostTest {
 
-    @JvmField
-    @Rule
-    val closeables = CloseablesRule()
+  @JvmField @Rule val closeables = CloseablesRule()
 
-    private fun <T : AutoCloseable> registerCloseable(item: T): T {
-        return closeables.register(item)
-    }
+  private fun <T : AutoCloseable> registerCloseable(item: T): T {
+    return closeables.register(item)
+  }
 
-    @Test
-    fun propertyToStringWorks() {
-        // Act
-        val property = AdbSessionHost.StringProperty("foo", "bar")
+  @Test
+  fun propertyToStringWorks() {
+    // Act
+    val property = AdbSessionHost.StringProperty("foo", "bar")
 
-        // Assert
-        assertEquals(
-            "Property(name=\"foo\", type=String, defaultValue=\"bar\")",
-            property.toString()
-        )
-    }
+    // Assert
+    assertEquals("Property(name=\"foo\", type=String, defaultValue=\"bar\")", property.toString())
+  }
 
-    @Test
-    fun hostReturnsSystemProperties() {
-        // Prepare
-        val host = registerCloseable(AdbSessionHost())
-        val systemProperties = System.getProperties()
-            .mapNotNull { entry ->
-                val key = entry.key
-                val value = entry.value
-                if (key is String && value is String) {
-                    AdbSessionHost.StringProperty(key, "")
-                } else {
-                    null
-                }
-            }
-
-        // Act
-        val properties = systemProperties.associateBy({ it.name }) {
-            host.getPropertyValue(it)
+  @Test
+  fun hostReturnsSystemProperties() {
+    // Prepare
+    val host = registerCloseable(AdbSessionHost())
+    val systemProperties =
+      System.getProperties().mapNotNull { entry ->
+        val key = entry.key
+        val value = entry.value
+        if (key is String && value is String) {
+          AdbSessionHost.StringProperty(key, "")
+        } else {
+          null
         }
+      }
 
-        // Assert
-        assertTrue(
-            "This test assumes there is at least one system property set",
-            systemProperties.isNotEmpty()
-        )
-        assertEquals(systemProperties.size, properties.size)
-        systemProperties.forEach { systemProperty ->
-            assertEquals(System.getProperty(systemProperty.name), properties[systemProperty.name])
-        }
+    // Act
+    val properties = systemProperties.associateBy({ it.name }) { host.getPropertyValue(it) }
+
+    // Assert
+    assertTrue("This test assumes there is at least one system property set", systemProperties.isNotEmpty())
+    assertEquals(systemProperties.size, properties.size)
+    systemProperties.forEach { systemProperty -> assertEquals(System.getProperty(systemProperty.name), properties[systemProperty.name]) }
+  }
+
+  @Test
+  fun hostPropertyReturnsOverriddenValue() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    host.setSystemProperty("foo", "200")
+    val prop = AdbSessionHost.IntProperty("foo", 10)
+
+    // Act
+    val value = host.getPropertyValue(prop)
+
+    // Assert
+    assertEquals(200, value)
+  }
+
+  @Test
+  fun hostPropertyReturnsDefaultValueIfNotOverridden() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    val prop = AdbSessionHost.IntProperty("foo", 10)
+
+    // Act
+    val value = host.getPropertyValue(prop)
+
+    // Assert
+    assertEquals(10, value)
+  }
+
+  @Test
+  fun hostPropertyHandlesIncorrectValueFormat() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    host.setSystemProperty("foo", "adbc")
+    val prop = AdbSessionHost.IntProperty("foo", 10)
+
+    // Act
+    val value = host.getPropertyValue(prop)
+
+    // Assert
+    assertEquals(10, value)
+  }
+
+  @Test
+  fun hostPropertyWorksWithStringProperty() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    host.setSystemProperty("foo", "abc")
+    val prop = AdbSessionHost.StringProperty("foo", "def")
+
+    // Act
+    val value = host.getPropertyValue(prop)
+
+    // Assert
+    assertEquals("abc", value)
+  }
+
+  @Test
+  fun hostPropertyWorksWithDurationProperty() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    host.setSystemProperty("foo", Duration.ofMillis(100).toString())
+    val prop = AdbSessionHost.DurationProperty("foo", Duration.ofMillis(200))
+
+    // Act
+    val value = host.getPropertyValue(prop)
+
+    // Assert
+    assertEquals(Duration.ofMillis(100), value)
+  }
+
+  @Test
+  fun hostPropertyValueFormatErrorsAreLoggedOnlyOnce() {
+    // Prepare
+    val host = registerCloseable(TestAdbSessionHost())
+    host.setSystemProperty("foo", "abc")
+    val prop = AdbSessionHost.IntProperty("foo", 100)
+
+    // Act
+    repeat(10) { host.getPropertyValue(prop) }
+
+    // Assert
+    assertEquals(1, host.loggerFactory.logger.messages.size)
+    assertEquals(
+      "Invalid or unsupported value 'abc' for property 'foo', " + "using default value '100' instead",
+      host.loggerFactory.logger.messages[0],
+    )
+  }
+
+  private class TestAdbSessionHost : AdbSessionHost() {
+
+    val systemProperties = mutableMapOf<String, String>()
+
+    override val loggerFactory: TestingAdbLoggerFactory = TestingAdbLoggerFactory()
+
+    fun setSystemProperty(name: String, value: String) {
+      systemProperties[name] = value
     }
 
-    @Test
-    fun hostPropertyReturnsOverriddenValue() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        host.setSystemProperty("foo", "200")
-        val prop = AdbSessionHost.IntProperty("foo", 10)
+    override fun getSystemProperty(name: String): String? {
+      return systemProperties[name]
+    }
+  }
 
-        // Act
-        val value = host.getPropertyValue(prop)
+  private class TestingAdbLoggerFactory : AdbLoggerFactory {
 
-        // Assert
-        assertEquals(200, value)
+    override val logger: TestingAdbLogger = TestingAdbLogger()
+
+    override fun createLogger(cls: Class<*>): AdbLogger {
+      return logger
     }
 
-    @Test
-    fun hostPropertyReturnsDefaultValueIfNotOverridden() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        val prop = AdbSessionHost.IntProperty("foo", 10)
+    override fun createLogger(category: String): AdbLogger {
+      return logger
+    }
+  }
 
-        // Act
-        val value = host.getPropertyValue(prop)
+  private class TestingAdbLogger : AdbLogger() {
 
-        // Assert
-        assertEquals(10, value)
+    val messages = mutableListOf<String>()
+
+    override var minLevel: Level = Level.VERBOSE
+
+    override fun log(level: Level, message: String) {
+      log(level, null, message)
     }
 
-    @Test
-    fun hostPropertyHandlesIncorrectValueFormat() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        host.setSystemProperty("foo", "adbc")
-        val prop = AdbSessionHost.IntProperty("foo", 10)
-
-        // Act
-        val value = host.getPropertyValue(prop)
-
-        // Assert
-        assertEquals(10, value)
+    override fun log(level: Level, exception: Throwable?, message: String) {
+      synchronized(messages) { messages.add(message) }
     }
-
-    @Test
-    fun hostPropertyWorksWithStringProperty() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        host.setSystemProperty("foo", "abc")
-        val prop = AdbSessionHost.StringProperty("foo", "def")
-
-        // Act
-        val value = host.getPropertyValue(prop)
-
-        // Assert
-        assertEquals("abc", value)
-    }
-
-    @Test
-    fun hostPropertyWorksWithDurationProperty() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        host.setSystemProperty("foo", Duration.ofMillis(100).toString())
-        val prop = AdbSessionHost.DurationProperty("foo", Duration.ofMillis(200))
-
-        // Act
-        val value = host.getPropertyValue(prop)
-
-        // Assert
-        assertEquals(Duration.ofMillis(100), value)
-    }
-
-    @Test
-    fun hostPropertyValueFormatErrorsAreLoggedOnlyOnce() {
-        // Prepare
-        val host = registerCloseable(TestAdbSessionHost())
-        host.setSystemProperty("foo", "abc")
-        val prop = AdbSessionHost.IntProperty("foo", 100)
-
-        // Act
-        repeat(10) {
-            host.getPropertyValue(prop)
-        }
-
-        // Assert
-        assertEquals(1, host.loggerFactory.logger.messages.size)
-        assertEquals(
-            "Invalid or unsupported value 'abc' for property 'foo', " +
-                    "using default value '100' instead",
-            host.loggerFactory.logger.messages[0]
-        )
-    }
-
-    private class TestAdbSessionHost : AdbSessionHost() {
-
-        val systemProperties = mutableMapOf<String, String>()
-
-        override val loggerFactory: TestingAdbLoggerFactory = TestingAdbLoggerFactory()
-
-        fun setSystemProperty(name: String, value: String) {
-            systemProperties[name] = value
-        }
-
-        override fun getSystemProperty(name: String): String? {
-            return systemProperties[name]
-        }
-    }
-
-    private class TestingAdbLoggerFactory : AdbLoggerFactory {
-
-        override val logger: TestingAdbLogger = TestingAdbLogger()
-
-        override fun createLogger(cls: Class<*>): AdbLogger {
-            return logger
-        }
-
-        override fun createLogger(category: String): AdbLogger {
-            return logger
-        }
-    }
-
-    private class TestingAdbLogger : AdbLogger() {
-
-        val messages = mutableListOf<String>()
-
-        override var minLevel: Level = Level.VERBOSE
-
-        override fun log(level: Level, message: String) {
-            log(level, null, message)
-        }
-
-        override fun log(level: Level, exception: Throwable?, message: String) {
-            synchronized(messages) {
-                messages.add(message)
-            }
-        }
-    }
+  }
 }
-

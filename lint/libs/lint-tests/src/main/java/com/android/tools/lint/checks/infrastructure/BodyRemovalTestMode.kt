@@ -36,15 +36,10 @@ import org.jetbrains.uast.skipParenthesizedExprUp
 import org.jetbrains.uast.textRange
 
 /**
- * Test mode which converts method bodies to expression bodies if possible (and also inserts { }
- * into if statements or removes them if they're already there).
+ * Test mode which converts method bodies to expression bodies if possible (and also inserts { } into if statements or removes them if
+ * they're already there).
  */
-class BodyRemovalTestMode :
-  UastSourceTransformationTestMode(
-    description = "Body Removal",
-    "TestMode.BODY_REMOVAL",
-    "body-removal",
-  ) {
+class BodyRemovalTestMode : UastSourceTransformationTestMode(description = "Body Removal", "TestMode.BODY_REMOVAL", "body-removal") {
   override val diffExplanation: String =
     // first line shorter: expecting to prefix that line with
     // "org.junit.ComparisonFailure: "
@@ -66,12 +61,7 @@ class BodyRemovalTestMode :
         """
       .trimIndent()
 
-  override fun transform(
-    source: String,
-    context: JavaContext,
-    root: UFile,
-    clientData: MutableMap<String, Any>,
-  ): MutableList<Edit> {
+  override fun transform(source: String, context: JavaContext, root: UFile, clientData: MutableMap<String, Any>): MutableList<Edit> {
     val edits = mutableListOf<Edit>()
     val seen = mutableSetOf<PsiElement>()
     root.acceptSourceFile(
@@ -156,9 +146,7 @@ class BodyRemovalTestMode :
                 val returnStart = source.lastIndexOf("return", expressionStart)
                 val closeBrace = source.indexOf('}', expressionEnd)
                 if (
-                  openBrace in blockStart until expressionStart &&
-                    returnStart >= openBrace &&
-                    closeBrace in expressionEnd until blockEnd
+                  openBrace in blockStart until expressionStart && returnStart >= openBrace && closeBrace in expressionEnd until blockEnd
                 ) {
                   var returnEnd = returnStart + "return".length
                   if (source[returnEnd] == ' ') returnEnd++

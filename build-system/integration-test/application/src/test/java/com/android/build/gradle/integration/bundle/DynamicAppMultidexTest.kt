@@ -25,47 +25,45 @@ import org.junit.Test
 
 class DynamicAppMultidexTest {
 
-    @get:Rule
-    val project: GradleTestProject = GradleTestProject.builder()
-        .fromTestProject("dynamicApp")
-        .create()
+  @get:Rule val project: GradleTestProject = GradleTestProject.builder().fromTestProject("dynamicApp").create()
 
-    @Test
-    fun testSyncWarning() {
-        project.getSubproject("feature1").buildFile.appendText(
-            "android.buildTypes.debug.multiDexEnabled = true"
-        )
+  @Test
+  fun testSyncWarning() {
+    project.getSubproject("feature1").buildFile.appendText("android.buildTypes.debug.multiDexEnabled = true")
 
-        val container = project.modelV2().ignoreSyncIssues().fetchModels().container
-        val syncIssues = container.getProject(":feature1").issues?.syncIssues!!
+    val container = project.modelV2().ignoreSyncIssues().fetchModels().container
+    val syncIssues = container.getProject(":feature1").issues?.syncIssues!!
 
-        Truth.assertThat(syncIssues.size).isEqualTo(1)
-        Truth.assertThat(syncIssues.first().severity)
-            .isEqualTo(IssueReporter.Severity.WARNING.severity)
-        Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_GENERIC)
-        Truth.assertThat(syncIssues.first().data).isNull()
-        Truth.assertThat(syncIssues.first().message).isEqualTo(
-            "Native multidex is always used for dynamic features. Please remove " +
-                    "'multiDexEnabled true|false' from your build.gradle file."
-        )
-    }
+    Truth.assertThat(syncIssues.size).isEqualTo(1)
+    Truth.assertThat(syncIssues.first().severity).isEqualTo(IssueReporter.Severity.WARNING.severity)
+    Truth.assertThat(syncIssues.first().type).isEqualTo(SyncIssue.TYPE_GENERIC)
+    Truth.assertThat(syncIssues.first().data).isNull()
+    Truth.assertThat(syncIssues.first().message)
+      .isEqualTo(
+        "Native multidex is always used for dynamic features. Please remove " + "'multiDexEnabled true|false' from your build.gradle file."
+      )
+  }
 
-    @Test
-    fun testSettingMultiDexThroughVariantAPI() {
-        project.getSubproject("feature1").buildFile.appendText(
-                """
-                androidComponents {
-                    beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
-                        debugVariantBuilder.enableMultiDex = true
-                    })
-                    onVariants(selector().withBuildType("debug"), { debugVariant ->
-                        if (!debugVariant.dexing.isMultiDexEnabled) {
-                            throw new RuntimeException("Dexing is not enabled as expected !")
-                        }
-                    })
+  @Test
+  fun testSettingMultiDexThroughVariantAPI() {
+    project
+      .getSubproject("feature1")
+      .buildFile
+      .appendText(
+        """
+        androidComponents {
+            beforeVariants(selector().withBuildType("debug"), { debugVariantBuilder ->
+                debugVariantBuilder.enableMultiDex = true
+            })
+            onVariants(selector().withBuildType("debug"), { debugVariant ->
+                if (!debugVariant.dexing.isMultiDexEnabled) {
+                    throw new RuntimeException("Dexing is not enabled as expected !")
                 }
-                """.trimIndent()
-        )
-        project.execute("assembleDebug")
-    }
+            })
+        }
+        """
+          .trimIndent()
+      )
+    project.execute("assembleDebug")
+  }
 }

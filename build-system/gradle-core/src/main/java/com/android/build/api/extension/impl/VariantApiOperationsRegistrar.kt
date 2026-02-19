@@ -20,29 +20,24 @@ import com.android.build.api.variant.Variant
 import com.android.build.api.variant.VariantBuilder
 import java.util.function.Function
 
-/**
- * Holder of various [OperationsRegistrar] for all the variant API related operations to a plugin.
- */
-class VariantApiOperationsRegistrar<DslExtensionT, VariantBuilderT: VariantBuilder, VariantT: Variant>(
-        extension: DslExtensionT,
-) : DslLifecycleComponentsOperationsRegistrar<DslExtensionT>(extension) {
+/** Holder of various [OperationsRegistrar] for all the variant API related operations to a plugin. */
+class VariantApiOperationsRegistrar<DslExtensionT, VariantBuilderT : VariantBuilder, VariantT : Variant>(extension: DslExtensionT) :
+  DslLifecycleComponentsOperationsRegistrar<DslExtensionT>(extension) {
 
-    internal val variantBuilderOperations = OperationsRegistrar<VariantBuilderT>()
-    internal val variantOperations = OperationsRegistrar<VariantT>()
-    internal val dslExtensions = mutableListOf<AndroidComponentsExtensionImpl.RegisteredApiExtension<VariantT>>()
-    internal val sourceSetExtensions = mutableListOf<String>()
+  internal val variantBuilderOperations = OperationsRegistrar<VariantBuilderT>()
+  internal val variantOperations = OperationsRegistrar<VariantT>()
+  internal val dslExtensions = mutableListOf<AndroidComponentsExtensionImpl.RegisteredApiExtension<VariantT>>()
+  internal val sourceSetExtensions = mutableListOf<String>()
 
-    /**
-     * A map of source set configuration affixes to the corresponding function to map the component
-     * name to the resolvable configuration name.
-     *
-     * For example, if AndroidComponentsExtension.addSourceSetConfigurations("foo") is called, this
-     * map would contain the key "foo" mapped to the function
-     * { componentName -> "${componentName}Foo_resolved" }
-     */
-    internal val sourceSetConfigurationsMap = mutableMapOf<String, Function<String, String>>()
+  /**
+   * A map of source set configuration affixes to the corresponding function to map the component name to the resolvable configuration name.
+   *
+   * For example, if AndroidComponentsExtension.addSourceSetConfigurations("foo") is called, this map would contain the key "foo" mapped to
+   * the function { componentName -> "${componentName}Foo_resolved" }
+   */
+  internal val sourceSetConfigurationsMap = mutableMapOf<String, Function<String, String>>()
 
-    fun onEachSourceSetExtensions(action: (name: String) -> Unit) {
-        sourceSetExtensions.forEach(action)
-    }
+  fun onEachSourceSetExtensions(action: (name: String) -> Unit) {
+    sourceSetExtensions.forEach(action)
+  }
 }

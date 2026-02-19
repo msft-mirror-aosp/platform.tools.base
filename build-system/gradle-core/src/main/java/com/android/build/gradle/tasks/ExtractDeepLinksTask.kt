@@ -48,144 +48,108 @@ import org.gradle.api.tasks.TaskProvider
 private val DOT_XML_EXT = Regex("\\.xml$")
 
 /**
- * A task that parses the navigation xml files and produces a single navigation.json file with the
- * deep link data needed for any downstream app manifest merging.
+ * A task that parses the navigation xml files and produces a single navigation.json file with the deep link data needed for any downstream
+ * app manifest merging.
  */
 @CacheableTask
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.ANDROID_RESOURCES)
-abstract class ExtractDeepLinksTask: NonIncrementalTask() {
+abstract class ExtractDeepLinksTask : NonIncrementalTask() {
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val navFilesFolders: ListProperty<Directory>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val navFilesFolders: ListProperty<Directory>
 
-    @get:Optional
-    @get:Input
-    abstract val manifestPlaceholders: MapProperty<String, String>
+  @get:Optional @get:Input abstract val manifestPlaceholders: MapProperty<String, String>
 
-    /**
-     * If [forAar] is true, (1) use [SourceFilePosition.UNKNOWN] to avoid leaking source file
-     * locations into the AAR, and (2) don't write an output navigation.json when there are no
-     * navigation xml inputs because we don't want to package an empty navigation.json in the AAR.
-     */
-    @get:Input
-    abstract val forAar: Property<Boolean>
+  /**
+   * If [forAar] is true, (1) use [SourceFilePosition.UNKNOWN] to avoid leaking source file locations into the AAR, and (2) don't write an
+   * output navigation.json when there are no navigation xml inputs because we don't want to package an empty navigation.json in the AAR.
+   */
+  @get:Input abstract val forAar: Property<Boolean>
 
-    @get:OutputFile
-    abstract val navigationJson: RegularFileProperty
+  @get:OutputFile abstract val navigationJson: RegularFileProperty
 
-    @get:Input
-    abstract val finalNavigationTransformation: Property<Boolean>
+  @get:Input abstract val finalNavigationTransformation: Property<Boolean>
 
-    @get:Optional
-    @get:Input
-    abstract val applicationId: Property<String>
+  @get:Optional @get:Input abstract val applicationId: Property<String>
 
-    override fun doTaskAction() {
-        val navigationIds = mutableSetOf<String>()
-        val navDatas = mutableListOf<NavigationXmlDocumentData>()
-        val updatedPlaceholders = manifestPlaceholders.get().toMap().let {
-            if (finalNavigationTransformation.get())
-                it.plus("applicationId" to applicationId.get())
-            else
-                it
-        }
-        navFilesFolders.get().forEach { directory ->
-            val folder = directory.asFile
-            if (folder.exists()) {
-                folder.listFiles().map { navigationFile ->
-                    if (navigationFile.extension == "xml") {
-                        val navigationId = navigationFile.name.replace(DOT_XML_EXT, "")
-                        if (navigationIds.add(navigationId)) {
-                            navigationFile.inputStream().use { inputStream ->
-                                navDatas.add(
-                                    NavigationXmlLoader
-                                        .load(navigationId, navigationFile, inputStream)
-                                        .convertToData(updatedPlaceholders, forAar.get())
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        if (!forAar.get() || navDatas.isNotEmpty()) {
-            FileUtils.writeToFile(
-                navigationJson.asFile.get(),
-                GsonBuilder().setPrettyPrinting().create().toJson(navDatas)
-            )
-        }
-    }
-
-    // This also works for libraries as local modules of applications
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : BaseCreationAction(creationConfig) {
-        override val forAar = false
-        override val internalArtifactType = InternalArtifactType.NAVIGATION_JSON
-        override val name: String
-            get() = computeTaskName("extractDeepLinks")
-    }
-
-    class AarCreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : BaseCreationAction(creationConfig) {
-        override val forAar = true
-        override val internalArtifactType = InternalArtifactType.NAVIGATION_JSON_FOR_AAR
-        override val name: String
-            get() = computeTaskName("extractDeepLinksForAar")
-    }
-
-    abstract class BaseCreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<ExtractDeepLinksTask, ComponentCreationConfig>(
-        creationConfig
-    ) {
-
-        abstract val forAar: Boolean
-        abstract val internalArtifactType: InternalArtifactType<RegularFile>
-
-        override val type: Class<ExtractDeepLinksTask>
-            get() = ExtractDeepLinksTask::class.java
-
-        override fun handleProvider(
-            taskProvider: TaskProvider<ExtractDeepLinksTask>
-        ) {
-            super.handleProvider(taskProvider)
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ExtractDeepLinksTask::navigationJson
-            ).withName(FN_NAVIGATION_JSON).on(internalArtifactType)
-        }
-
-        override fun configure(
-            task: ExtractDeepLinksTask
-        ) {
-            super.configure(task)
-            creationConfig.sources.res { resSources ->
-                task.navFilesFolders.set(
-                    resSources.all.map {
-                        it.flatten()
-                    }.map { directories ->
-                        directories.map { directory ->
-                            directory.dir(FD_RES_NAVIGATION)
-                        }
-                    }
+  override fun doTaskAction() {
+    val navigationIds = mutableSetOf<String>()
+    val navDatas = mutableListOf<NavigationXmlDocumentData>()
+    val updatedPlaceholders =
+      manifestPlaceholders.get().toMap().let {
+        if (finalNavigationTransformation.get()) it.plus("applicationId" to applicationId.get()) else it
+      }
+    navFilesFolders.get().forEach { directory ->
+      val folder = directory.asFile
+      if (folder.exists()) {
+        folder.listFiles().map { navigationFile ->
+          if (navigationFile.extension == "xml") {
+            val navigationId = navigationFile.name.replace(DOT_XML_EXT, "")
+            if (navigationIds.add(navigationId)) {
+              navigationFile.inputStream().use { inputStream ->
+                navDatas.add(
+                  NavigationXmlLoader.load(navigationId, navigationFile, inputStream).convertToData(updatedPlaceholders, forAar.get())
                 )
+              }
             }
-            task.navFilesFolders.disallowChanges()
-            task.manifestPlaceholders.setDisallowChanges(
-                creationConfig.manifestPlaceholdersCreationConfig?.placeholders,
-                handleNullable = {
-                    empty()
-                }
-            )
-            task.forAar.set(forAar)
-
-            val apk = creationConfig.componentType.isApk
-            task.finalNavigationTransformation.setDisallowChanges(apk)
-            if (apk) task.applicationId.set(creationConfig.applicationId)
-            task.applicationId.disallowChanges()
+          }
         }
+      }
     }
+    if (!forAar.get() || navDatas.isNotEmpty()) {
+      FileUtils.writeToFile(navigationJson.asFile.get(), GsonBuilder().setPrettyPrinting().create().toJson(navDatas))
+    }
+  }
+
+  // This also works for libraries as local modules of applications
+  class CreationAction(creationConfig: ComponentCreationConfig) : BaseCreationAction(creationConfig) {
+    override val forAar = false
+    override val internalArtifactType = InternalArtifactType.NAVIGATION_JSON
+    override val name: String
+      get() = computeTaskName("extractDeepLinks")
+  }
+
+  class AarCreationAction(creationConfig: ComponentCreationConfig) : BaseCreationAction(creationConfig) {
+    override val forAar = true
+    override val internalArtifactType = InternalArtifactType.NAVIGATION_JSON_FOR_AAR
+    override val name: String
+      get() = computeTaskName("extractDeepLinksForAar")
+  }
+
+  abstract class BaseCreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<ExtractDeepLinksTask, ComponentCreationConfig>(creationConfig) {
+
+    abstract val forAar: Boolean
+    abstract val internalArtifactType: InternalArtifactType<RegularFile>
+
+    override val type: Class<ExtractDeepLinksTask>
+      get() = ExtractDeepLinksTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<ExtractDeepLinksTask>) {
+      super.handleProvider(taskProvider)
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ExtractDeepLinksTask::navigationJson)
+        .withName(FN_NAVIGATION_JSON)
+        .on(internalArtifactType)
+    }
+
+    override fun configure(task: ExtractDeepLinksTask) {
+      super.configure(task)
+      creationConfig.sources.res { resSources ->
+        task.navFilesFolders.set(
+          resSources.all.map { it.flatten() }.map { directories -> directories.map { directory -> directory.dir(FD_RES_NAVIGATION) } }
+        )
+      }
+      task.navFilesFolders.disallowChanges()
+      task.manifestPlaceholders.setDisallowChanges(
+        creationConfig.manifestPlaceholdersCreationConfig?.placeholders,
+        handleNullable = { empty() },
+      )
+      task.forAar.set(forAar)
+
+      val apk = creationConfig.componentType.isApk
+      task.finalNavigationTransformation.setDisallowChanges(apk)
+      if (apk) task.applicationId.set(creationConfig.applicationId)
+      task.applicationId.disallowChanges()
+    }
+  }
 }

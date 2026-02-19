@@ -18,4 +18,4 @@ package com.android.build.api.variant
 
 import com.android.build.api.dsl.Lint
 
-interface LintLifecycleExtension: DslLifecycle<Lint>
+interface LintLifecycleExtension : DslLifecycle<Lint>

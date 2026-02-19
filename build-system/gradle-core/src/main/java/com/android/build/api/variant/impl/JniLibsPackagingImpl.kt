@@ -21,26 +21,17 @@ import com.android.build.api.variant.JniLibsPackaging
 import com.android.build.gradle.internal.packaging.defaultExcludes
 import com.android.build.gradle.internal.services.VariantServices
 
-open class JniLibsPackagingImpl(
-    dslPackaging: Packaging,
-    variantServices: VariantServices
-) : JniLibsPackaging {
+open class JniLibsPackagingImpl(dslPackaging: Packaging, variantServices: VariantServices) : JniLibsPackaging {
 
-    override val excludes =
-        variantServices.setPropertyOf(String::class.java) {
-            // subtract defaultExcludes because its patterns are specific to java resources.
-            dslPackaging.excludes
-                .minus(defaultExcludes)
-                .union(dslPackaging.jniLibs.excludes)
-        }
+  override val excludes =
+    variantServices.setPropertyOf(String::class.java) {
+      // subtract defaultExcludes because its patterns are specific to java resources.
+      dslPackaging.excludes.minus(defaultExcludes).union(dslPackaging.jniLibs.excludes)
+    }
 
-    override val pickFirsts =
-        variantServices.setPropertyOf(String::class.java) {
-            dslPackaging.pickFirsts.union(dslPackaging.jniLibs.pickFirsts)
-        }
+  override val pickFirsts =
+    variantServices.setPropertyOf(String::class.java) { dslPackaging.pickFirsts.union(dslPackaging.jniLibs.pickFirsts) }
 
-    override val keepDebugSymbols =
-        variantServices.setPropertyOf(String::class.java) {
-            dslPackaging.doNotStrip.union(dslPackaging.jniLibs.keepDebugSymbols)
-        }
+  override val keepDebugSymbols =
+    variantServices.setPropertyOf(String::class.java) { dslPackaging.doNotStrip.union(dslPackaging.jniLibs.keepDebugSymbols) }
 }

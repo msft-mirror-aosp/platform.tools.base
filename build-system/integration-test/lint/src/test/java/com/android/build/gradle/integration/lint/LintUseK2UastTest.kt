@@ -21,66 +21,60 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalBoolean
 import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 /** Integration test for running lint with --XuseK2Uast flag. */
 class LintUseK2UastTest {
 
-    @get:Rule
-    val project: GradleTestProject = createGradleTestProject("project")
+  @get:Rule val project: GradleTestProject = createGradleTestProject("project")
 
-    private val slash = File.separator
+  private val slash = File.separator
 
-    /**
-     * Test enabling K2 UAST for all modules
-     */
-    @Test
-    fun testUseK2Uast() {
-        project.executor()
-            .with(OptionalBooleanOption.LINT_USE_K2_UAST, true)
-            .run(":app:clean", ":app:lintDebug")
-        checkLintReport()
-    }
+  /** Test enabling K2 UAST for all modules */
+  @Test
+  fun testUseK2Uast() {
+    project.executor().with(OptionalBooleanOption.LINT_USE_K2_UAST, true).run(":app:clean", ":app:lintDebug")
+    checkLintReport()
+  }
 
-    /**
-     * Test enabling K2 UAST for a single module (the app module)
-     */
-    @Test
-    fun testUseK2UastPerModule() {
-        TestFileUtils.appendToFile(
-            project.getSubproject(":app").buildFile,
-            """
+  /** Test enabling K2 UAST for a single module (the app module) */
+  @Test
+  fun testUseK2UastPerModule() {
+    TestFileUtils.appendToFile(
+      project.getSubproject(":app").buildFile,
+      """
                 android {
                     experimentalProperties["${OptionalBoolean.LINT_USE_K2_UAST}"] = true
                 }
-            """.trimIndent()
-        )
-        project.executor().run(":app:clean", ":app:lintDebug")
-        checkLintReport()
-    }
+            """
+        .trimIndent(),
+    )
+    project.executor().run(":app:clean", ":app:lintDebug")
+    checkLintReport()
+  }
 
-    private fun checkLintReport() {
-        val lintReport = project.file("app/lint-report.txt")
+  private fun checkLintReport() {
+    val lintReport = project.file("app/lint-report.txt")
 
-        assertThat(lintReport).exists()
+    assertThat(lintReport).exists()
 
-        assertThat(lintReport).contains("app${slash}src${slash}main")
-        assertThat(lintReport).contains("app${slash}src${slash}test")
-        assertThat(lintReport).contains("app${slash}src${slash}androidTest")
-        assertThat(lintReport).contains("app${slash}src${slash}testFixtures")
+    assertThat(lintReport).contains("app${slash}src${slash}main")
+    assertThat(lintReport).contains("app${slash}src${slash}test")
+    assertThat(lintReport).contains("app${slash}src${slash}androidTest")
+    assertThat(lintReport).contains("app${slash}src${slash}testFixtures")
 
-        assertThat(lintReport).contains("feature${slash}src${slash}main")
-        assertThat(lintReport).contains("feature${slash}src${slash}test")
-        assertThat(lintReport).contains("feature${slash}src${slash}androidTest")
+    assertThat(lintReport).contains("feature${slash}src${slash}main")
+    assertThat(lintReport).contains("feature${slash}src${slash}test")
+    assertThat(lintReport).contains("feature${slash}src${slash}androidTest")
 
-        assertThat(lintReport).contains("${slash}lib${slash}src${slash}main")
-        assertThat(lintReport).contains("${slash}lib${slash}src${slash}test")
-        assertThat(lintReport).contains("${slash}lib${slash}src${slash}androidTest")
-        assertThat(lintReport).contains("${slash}lib${slash}src${slash}testFixtures")
+    assertThat(lintReport).contains("${slash}lib${slash}src${slash}main")
+    assertThat(lintReport).contains("${slash}lib${slash}src${slash}test")
+    assertThat(lintReport).contains("${slash}lib${slash}src${slash}androidTest")
+    assertThat(lintReport).contains("${slash}lib${slash}src${slash}testFixtures")
 
-        assertThat(lintReport).contains("java-lib${slash}src${slash}main")
-        assertThat(lintReport).contains("java-lib${slash}src${slash}test")
-    }
+    assertThat(lintReport).contains("java-lib${slash}src${slash}main")
+    assertThat(lintReport).contains("java-lib${slash}src${slash}test")
+  }
 }

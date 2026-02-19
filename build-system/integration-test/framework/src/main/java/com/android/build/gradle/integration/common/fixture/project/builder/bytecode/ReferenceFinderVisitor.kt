@@ -20,57 +20,43 @@ import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import org.objectweb.asm.ClassVisitor
 import org.objectweb.asm.MethodVisitor
 
-/**
- * Class visitor to gather references to other types.
- */
-class ReferenceFinderVisitor: ClassVisitor(ASM_API_VERSION) {
+/** Class visitor to gather references to other types. */
+class ReferenceFinderVisitor : ClassVisitor(ASM_API_VERSION) {
 
-    val methods = mutableListOf<ReferenceMethodVisitor>()
-    internal val references = mutableSetOf<String>()
+  val methods = mutableListOf<ReferenceMethodVisitor>()
+  internal val references = mutableSetOf<String>()
 
-    override fun visit(
-        version: Int,
-        access: Int,
-        name: String,
-        signature: String?,
-        superName: String,
-        interfaces: Array<out String>
-    ) {
-        references.addAll(interfaces)
-        references += superName
+  override fun visit(version: Int, access: Int, name: String, signature: String?, superName: String, interfaces: Array<out String>) {
+    references.addAll(interfaces)
+    references += superName
 
-        super.visit(version, access, name, signature, superName, interfaces)
+    super.visit(version, access, name, signature, superName, interfaces)
+  }
+
+  override fun visitMethod(
+    access: Int,
+    name: String?,
+    descriptor: String?,
+    signature: String?,
+    exceptions: Array<out String>?,
+  ): MethodVisitor {
+    super.visitMethod(access, name, descriptor, signature, exceptions)
+
+    descriptor?.fromSignatureToTypes()?.let { references += it }
+
+    return ReferenceMethodVisitor().also { methods.add(it) }
+  }
+
+  override fun visitEnd() {
+    // read the results from all the methods.
+    for (method in methods) {
+      references += method.references
     }
 
-    override fun visitMethod(
-        access: Int,
-        name: String?,
-        descriptor: String?,
-        signature: String?,
-        exceptions: Array<out String>?
-    ): MethodVisitor {
-        super.visitMethod(access, name, descriptor, signature, exceptions)
+    // then filter the stuff we need. It's easier to accept specifically types
+    // in  com.android.build.gradle.integration.* than rejecting other types.
+    references.removeIf { !it.startsWith("com/android/build/gradle/integration/") }
 
-        descriptor?.fromSignatureToTypes()?.let {
-            references += it
-        }
-
-        return ReferenceMethodVisitor().also { methods.add(it) }
-    }
-
-
-    override fun visitEnd() {
-        // read the results from all the methods.
-        for (method in methods) {
-            references += method.references
-        }
-
-        // then filter the stuff we need. It's easier to accept specifically types
-        // in  com.android.build.gradle.integration.* than rejecting other types.
-        references.removeIf {
-            !it.startsWith("com/android/build/gradle/integration/")
-        }
-
-        super.visitEnd()
-    }
+    super.visitEnd()
+  }
 }

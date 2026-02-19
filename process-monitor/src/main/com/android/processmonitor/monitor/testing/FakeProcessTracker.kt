@@ -17,23 +17,23 @@ package com.android.processmonitor.monitor.testing
 
 import com.android.processmonitor.common.ProcessEvent
 import com.android.processmonitor.common.ProcessTracker
+import java.io.Closeable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
-import java.io.Closeable
 
 /** A fake [ProcessTracker] for tests */
 class FakeProcessTracker : ProcessTracker, Closeable {
 
-    private val channel = Channel<ProcessEvent>(10)
+  private val channel = Channel<ProcessEvent>(10)
 
-    suspend fun send(vararg events: ProcessEvent) {
-        events.forEach { channel.send(it) }
-    }
+  suspend fun send(vararg events: ProcessEvent) {
+    events.forEach { channel.send(it) }
+  }
 
-    override fun trackProcesses(): Flow<ProcessEvent> = channel.consumeAsFlow()
+  override fun trackProcesses(): Flow<ProcessEvent> = channel.consumeAsFlow()
 
-    override fun close() {
-        channel.close()
-    }
+  override fun close() {
+    channel.close()
+  }
 }

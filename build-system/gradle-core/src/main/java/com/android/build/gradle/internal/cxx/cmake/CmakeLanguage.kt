@@ -18,44 +18,47 @@ package com.android.build.gradle.internal.cxx.cmake
 
 import java.util.Locale
 
-/**
- * This file holds functions for interpreting things as the CMake language interprets them.
- */
-
+/** This file holds functions for interpreting things as the CMake language interprets them. */
 
 /**
  * https://cmake.org/cmake/help/latest/command/if.html
  *
- * True if the constant is 1, ON, YES, TRUE, Y, or a non-zero number. False if the constant
- * is 0, OFF, NO, FALSE, N, IGNORE, NOTFOUND, the empty string, or ends in the suffix
- * -NOTFOUND. Named boolean constants are case-insensitive. If the argument is not one of
- * these specific constants, it is treated as a variable or string and the following signature
- * is used.
- *
+ * True if the constant is 1, ON, YES, TRUE, Y, or a non-zero number. False if the constant is 0, OFF, NO, FALSE, N, IGNORE, NOTFOUND, the
+ * empty string, or ends in the suffix -NOTFOUND. Named boolean constants are case-insensitive. If the argument is not one of these specific
+ * constants, it is treated as a variable or string and the following signature is used.
  */
-fun isCmakeConstantTruthy(value : String) : Boolean {
-    return when(val upper = value.uppercase(Locale.US)) {
-        "1", "ON", "YES", "TRUE", "Y" -> true
-        "0", "OFF", "NO", "FALSE", "N", "IGNORE", "NOTFOUND", "" -> false
-        else ->
-            when {
-                upper.endsWith("-NOTFOUND") -> false
-                else -> {
-                    val asInteger = try {
-                        Integer.parseInt(upper)
-                    } catch(e: NumberFormatException) {
-                        // Note that we don't support referencing another variable within the
-                        // value of the string (like -DX=${Y}). These are treated as false.
-                        0
-                    }
-                    return asInteger != 0
-                }
+fun isCmakeConstantTruthy(value: String): Boolean {
+  return when (val upper = value.uppercase(Locale.US)) {
+    "1",
+    "ON",
+    "YES",
+    "TRUE",
+    "Y" -> true
+    "0",
+    "OFF",
+    "NO",
+    "FALSE",
+    "N",
+    "IGNORE",
+    "NOTFOUND",
+    "" -> false
+    else ->
+      when {
+        upper.endsWith("-NOTFOUND") -> false
+        else -> {
+          val asInteger =
+            try {
+              Integer.parseInt(upper)
+            } catch (e: NumberFormatException) {
+              // Note that we don't support referencing another variable within the
+              // value of the string (like -DX=${Y}). These are treated as false.
+              0
             }
-    }
+          return asInteger != 0
+        }
+      }
+  }
 }
 
-
-/**
- * Convert boolean to "1" or "0" for CMake.
- */
-fun cmakeBoolean(bool : Boolean) = if (bool) "1" else "0"
+/** Convert boolean to "1" or "0" for CMake. */
+fun cmakeBoolean(bool: Boolean) = if (bool) "1" else "0"

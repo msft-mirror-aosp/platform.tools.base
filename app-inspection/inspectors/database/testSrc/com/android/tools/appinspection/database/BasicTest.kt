@@ -34,17 +34,11 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class BasicTest {
   private val testEnvironment = SqliteInspectorTestEnvironment()
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
   @Test
   fun test_basic_proto() {
@@ -67,10 +61,8 @@ class BasicTest {
   fun test_unset_command() = runBlocking {
     testEnvironment.sendCommand(Command.getDefaultInstance()).let { response ->
       assertThat(response.hasErrorOccurred()).isEqualTo(true)
-      assertThat(response.errorOccurred.content.message)
-        .contains("Unrecognised command type: ONEOF_NOT_SET")
-      assertThat(response.errorOccurred.content.errorCodeValue)
-        .isEqualTo(ERROR_UNRECOGNISED_COMMAND_VALUE)
+      assertThat(response.errorOccurred.content.message).contains("Unrecognised command type: ONEOF_NOT_SET")
+      assertThat(response.errorOccurred.content.errorCodeValue).isEqualTo(ERROR_UNRECOGNISED_COMMAND_VALUE)
     }
   }
 }

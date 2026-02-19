@@ -23,76 +23,74 @@ import com.android.testutils.TestInputsGenerator
 import com.android.testutils.TestUtils
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.api.services.BuildServiceParameters
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import java.io.File
 
 internal class JacocoInstrumentationServiceTest {
 
-    @get:Rule
-    val temporaryDirectory = TemporaryFolder()
+  @get:Rule val temporaryDirectory = TemporaryFolder()
 
-    private val mockJacocoInstrumentationService = MockJacocoInstrumentationService()
+  private val mockJacocoInstrumentationService = MockJacocoInstrumentationService()
 
-    @Test
-    fun didInstrumentUsingBuildService() {
-        val classesDir = temporaryDirectory.newFolder("classes")
-        TestInputsGenerator.pathWithClasses(classesDir.toPath(), listOf(SomeClass::class.java))
-        val someClassClassFile = classesDir.resolve(
-            SomeClass::class.java.canonicalName
-                .replace(".", File.separator) + ".class"
+  @Test
+  fun didInstrumentUsingBuildService() {
+    val classesDir = temporaryDirectory.newFolder("classes")
+    TestInputsGenerator.pathWithClasses(classesDir.toPath(), listOf(SomeClass::class.java))
+    val someClassClassFile = classesDir.resolve(SomeClass::class.java.canonicalName.replace(".", File.separator) + ".class")
+    val jacocoVersion = JacocoOptions.DEFAULT_VERSION
+    val asmVersion = SdkConstants.CURRENT_ASM_VERSION
+    val jacocoJars =
+      listOf(
+          "org/jacoco/org.jacoco.core/$jacocoVersion/org.jacoco.core-$jacocoVersion.jar",
+          "org/ow2/asm/asm/$asmVersion/asm-$asmVersion.jar",
+          "org/ow2/asm/asm-commons/$asmVersion/asm-commons-$asmVersion.jar",
+          "org/ow2/asm/asm-tree/$asmVersion/asm-tree-$asmVersion.jar",
         )
-        val jacocoVersion = JacocoOptions.DEFAULT_VERSION
-        val asmVersion = SdkConstants.CURRENT_ASM_VERSION
-        val jacocoJars = listOf(
-            "org/jacoco/org.jacoco.core/$jacocoVersion/org.jacoco.core-$jacocoVersion.jar",
-            "org/ow2/asm/asm/$asmVersion/asm-$asmVersion.jar",
-            "org/ow2/asm/asm-commons/$asmVersion/asm-commons-$asmVersion.jar",
-            "org/ow2/asm/asm-tree/$asmVersion/asm-tree-$asmVersion.jar"
-        ).map(this::getTestJar)
+        .map(this::getTestJar)
 
-        val instrumented = mockJacocoInstrumentationService.instrument(
-            someClassClassFile.inputStream(),
-            someClassClassFile.name,
-            jacocoJars,
-            JacocoOptions.DEFAULT_VERSION
-        )
+    val instrumented =
+      mockJacocoInstrumentationService.instrument(
+        someClassClassFile.inputStream(),
+        someClassClassFile.name,
+        jacocoJars,
+        JacocoOptions.DEFAULT_VERSION,
+      )
 
-        // Verify the instrumented class is larger than the original.
-        assertThat(instrumented.size).isGreaterThan(someClassClassFile.readBytes().size)
-        // Check caches are created
-        assertThat(mockJacocoInstrumentationService.instrumenterCache.size()).isEqualTo(1)
+    // Verify the instrumented class is larger than the original.
+    assertThat(instrumented.size).isGreaterThan(someClassClassFile.readBytes().size)
+    // Check caches are created
+    assertThat(mockJacocoInstrumentationService.instrumenterCache.size()).isEqualTo(1)
 
-        // Check caches are used; shouldn't fail when passing not passing jar dependencies, since
-        // the Jacoco version is only used to retrieve the Instrumenter from cache.
-        mockJacocoInstrumentationService.instrument(
-            someClassClassFile.inputStream(),
-            someClassClassFile.name,
-            emptyList(),
-            JacocoOptions.DEFAULT_VERSION
-        )
+    // Check caches are used; shouldn't fail when passing not passing jar dependencies, since
+    // the Jacoco version is only used to retrieve the Instrumenter from cache.
+    mockJacocoInstrumentationService.instrument(
+      someClassClassFile.inputStream(),
+      someClassClassFile.name,
+      emptyList(),
+      JacocoOptions.DEFAULT_VERSION,
+    )
+  }
+
+  @After
+  fun cacheShouldBeEmptyAfterClose() {
+    mockJacocoInstrumentationService.close()
+    assertThat(mockJacocoInstrumentationService.instrumenterCache.size()).isEqualTo(0)
+  }
+
+  private fun getTestJar(path: String): File {
+    return TestUtils.getLocalMavenRepoFile(path).toFile()
+  }
+
+  class MockJacocoInstrumentationService : JacocoInstrumentationService() {
+
+    @VisibleForTesting public override val instrumenterCache = super.instrumenterCache
+
+    override fun getParameters(): BuildServiceParameters.None {
+      throw UnsupportedOperationException()
     }
-
-    @After
-    fun cacheShouldBeEmptyAfterClose() {
-        mockJacocoInstrumentationService.close()
-        assertThat(mockJacocoInstrumentationService.instrumenterCache.size()).isEqualTo(0)
-    }
-
-    private fun getTestJar(path: String) : File {
-        return TestUtils.getLocalMavenRepoFile(path).toFile()
-    }
-
-    class MockJacocoInstrumentationService : JacocoInstrumentationService() {
-
-        @VisibleForTesting
-        public override val instrumenterCache = super.instrumenterCache
-
-        override fun getParameters(): BuildServiceParameters.None {
-            throw UnsupportedOperationException()
-        }
-    }
+  }
 }

@@ -27,30 +27,31 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
  * The actual Kotlin top level type is an abstract class so we cannot use it with
  * [com.android.build.gradle.integration.common.fixture.dsl.DslProxy], and it also fails with ByteBuddy
  *
- * Therefore, this is used as an entry point. This exposes only what we need. This is implemented
- * via the proxy so that we don't have to bother with the implementation and the writing into
- * build files.
+ * Therefore, this is used as an entry point. This exposes only what we need. This is implemented via the proxy so that we don't have to
+ * bother with the implementation and the writing into build files.
  *
  * The normal Kotlin extension is [org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension]
  */
 @GradleDefinitionDsl
 interface KotlinExtension {
 
-    val compilerOptions: KotlinJvmCompilerOptions /* compiled code */
-    fun compilerOptions(configure: KotlinJvmCompilerOptions.() -> Unit)
+  val compilerOptions: KotlinJvmCompilerOptions /* compiled code */
 
-    fun explicitApi()
+  fun compilerOptions(configure: KotlinJvmCompilerOptions.() -> Unit)
 
-    fun explicitApiWarning()
+  fun explicitApi()
 
-    fun jvmToolchain(jdkVersion: Int)
+  fun explicitApiWarning()
 
-    fun jvmToolchain(action: org.gradle.api.Action<org.gradle.jvm.toolchain.JavaToolchainSpec>)
+  fun jvmToolchain(jdkVersion: Int)
 
-    var coreLibrariesVersion: String
+  fun jvmToolchain(action: org.gradle.api.Action<org.gradle.jvm.toolchain.JavaToolchainSpec>)
 
-    var explicitApi: org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode?
+  var coreLibrariesVersion: String
 
-    val sourceSets: NamedDomainObjectContainer<KotlinSourceSet>
-    fun sourceSets(configure: NamedDomainObjectContainer<KotlinSourceSet>.() -> Unit)
+  var explicitApi: org.jetbrains.kotlin.gradle.dsl.ExplicitApiMode?
+
+  val sourceSets: NamedDomainObjectContainer<KotlinSourceSet>
+
+  fun sourceSets(configure: NamedDomainObjectContainer<KotlinSourceSet>.() -> Unit)
 }

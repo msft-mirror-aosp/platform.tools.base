@@ -18,33 +18,30 @@ package com.android.adblib.tools.debugging
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.CoroutineScopeCache
+import com.android.adblib.ListWithStateFlowStatus
 import com.android.adblib.ProcessIdList
+import com.android.adblib.StateFlowStatus
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.tools.debugging.impl.TrackJdwpImpl
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * A thread-safe wrapper for [AdbDeviceServices.trackJdwp] that exposes a [StateFlow] of
- * [JdwpProcessIdList] for a given [ConnectedDevice].
+ * A thread-safe wrapper for [AdbDeviceServices.trackJdwp] that exposes a [StateFlow] of [JdwpProcessIdList] for a given [ConnectedDevice].
  *
- * The implementation uses a single underlying [AdbDeviceServices.trackJdwp] invocation
- * that is shared by all collectors of the flow.
+ * The implementation uses a single underlying [AdbDeviceServices.trackJdwp] invocation that is shared by all collectors of the flow.
  *
  * Use the [ConnectedDevice.trackJdwp] extension to access this component.
  */
 interface TrackJdwp {
 
-    /**
-     * The [ConnectedDevice] that this [TrackApp] is dedicated to
-     */
-    val device: ConnectedDevice
+  /** The [ConnectedDevice] that this [TrackApp] is dedicated to */
+  val device: ConnectedDevice
 
-    /**
-     * The [StateFlow] of [JdwpProcessIdList], which contains both the list JDWP process IDs,
-     * entries and a [JdwpProcessIdList.flowStatus] describing the current state of the
-     * connection (see [StateFlowStatus])
-     */
-    val stateFlow: StateFlow<JdwpProcessIdList>
+  /**
+   * The [StateFlow] of [JdwpProcessIdList], which contains both the list JDWP process IDs, entries and a [JdwpProcessIdList.flowStatus]
+   * describing the current state of the connection (see [StateFlowStatus])
+   */
+  val stateFlow: StateFlow<JdwpProcessIdList>
 }
 
 /**
@@ -52,17 +49,10 @@ interface TrackJdwp {
  *
  * Use [status] property to get more information about the state of the connection.
  */
-class JdwpProcessIdList(
-    list: ProcessIdList,
-    flowStatus: StateFlowStatus
-) : ListWithStateFlowStatus<Int>(list, flowStatus)
+class JdwpProcessIdList(list: ProcessIdList, flowStatus: StateFlowStatus) : ListWithStateFlowStatus<Int>(list, flowStatus)
 
-/**
- * The [TrackJdwp] instance dedicated to this [ConnectedDevice]
- */
+/** The [TrackJdwp] instance dedicated to this [ConnectedDevice] */
 val ConnectedDevice.trackJdwp: TrackJdwp
-    get() = cache.getOrPutSynchronized(trackJdwpKey) {
-        TrackJdwpImpl(this)
-    }
+  get() = cache.getOrPutSynchronized(trackJdwpKey) { TrackJdwpImpl(this) }
 
 private val trackJdwpKey = CoroutineScopeCache.Key<TrackJdwp>("TrackJdwp")

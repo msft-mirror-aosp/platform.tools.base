@@ -20,32 +20,19 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class DefaultBuildTypeAppModelTest: ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {  }
-    },
-    deltaConfig = {
-        androidApplication {
-            android {
-                buildTypes {
-                    named("debug") {
-                        it.isDefault = true
-                    }
-                }
-            }
-        }
-    },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    }
-) {
-    @Test
-    fun `test AndroidProject model`() {
-        ensureAndroidProjectDeltaIsEmpty()
-    }
+class DefaultBuildTypeAppModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
+    deltaConfig = { androidApplication { android { buildTypes { named("debug") { it.isDefault = true } } } } },
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+  ) {
+  @Test
+  fun `test AndroidProject model`() {
+    ensureAndroidProjectDeltaIsEmpty()
+  }
 
-    @Test
-    fun `test AndroidDsl model`() {
-        compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
-    }
+  @Test
+  fun `test AndroidDsl model`() {
+    compareAndroidDslWith(goldenFileSuffix = "AndroidDsl")
+  }
 }

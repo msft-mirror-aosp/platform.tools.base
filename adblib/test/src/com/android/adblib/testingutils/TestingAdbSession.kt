@@ -26,33 +26,31 @@ import kotlinx.coroutines.CoroutineScope
 
 class TestingAdbSession : AdbSession {
 
-    override val parentSession: AdbSession?
-        get() = null
+  override val parentSession: AdbSession?
+    get() = null
 
-    override val host: AdbSessionHost = TestingAdbSessionHost()
+  override val host: AdbSessionHost = TestingAdbSessionHost()
 
-    override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
+  override val channelFactory: AdbChannelFactory = AdbChannelFactoryImpl(this)
 
-    override val hostServices: AdbHostServices
-        get() = todo()
+  override val hostServices: AdbHostServices
+    get() = todo()
 
-    override val deviceServices: AdbDeviceServices
-        get() = todo()
+  override val deviceServices: AdbDeviceServices
+    get() = todo()
 
-    override val scope: CoroutineScope = CoroutineScope(host.parentContext + host.ioDispatcher)
+  override val scope: CoroutineScope = CoroutineScope(host.parentContext + host.ioDispatcher)
 
-    override val cache: CoroutineScopeCache
-        get() = todo()
+  override val cache: CoroutineScopeCache
+    get() = todo()
 
-    override fun throwIfClosed() {
-        todo()
-    }
+  override fun throwIfClosed() {
+    todo()
+  }
 
-    override fun close() {
-    }
+  override fun close() {}
 
-    private fun todo(): Nothing {
-        TODO("This test class is for wrapping AdbSessionHost only.  " +
-                     "Use FakeAdbSession instead for additional functionality.")
-    }
+  private fun todo(): Nothing {
+    TODO("This test class is for wrapping AdbSessionHost only.  " + "Use FakeAdbSession instead for additional functionality.")
+  }
 }

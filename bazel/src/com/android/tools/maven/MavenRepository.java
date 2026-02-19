@@ -280,7 +280,7 @@ public class MavenRepository {
         return s;
     }
 
-    private final Set<String> processedModules = new ConcurrentHashMap<>().newKeySet();
+    private final Set<String> processedModules = ConcurrentHashMap.newKeySet();
 
     private void getVariantJars(File moduleFile, Artifact artifact) {
         try {
@@ -294,7 +294,6 @@ public class MavenRepository {
             if (!processedModules.add(moduleKey)) {
                 return;
             }
-
 
             // get the jars for all the variants specified in the gradle module file
             if (moduleFile != null) {
@@ -326,13 +325,26 @@ public class MavenRepository {
                         // For now, we assume that classifier is not overridden.
                         classifier = "";
                     } else {
-                        // Handle simple URLs that are just filenames. We can use current artifact
-                        // version. E.g.,
-                        // "kotlin-stdlib-2.0.21-all.jar -> "kotlin-stdlib-2.0.21-all.jar"
-                        String prefix = artifact.getArtifactId() + "-" + artifact.getVersion();
+                        // Handle simple URLs that are just filenames.
+                        if (filename.contains("-SNAPSHOT")) {
+                            // b/469032512: The file name in the module contains "SNAPSHOT" in it,
+                            // which means we cannot use the artifact version. As a workaround, we
+                            // strip the prefix until the end of "-SNAPSHOT".
+                            // E.g., "collection-1.6.0-SNAPSHOT-sources.jar" -> "-sources.jar"
+                            gradleVariant =
+                                    filename.substring(
+                                            filename.indexOf("-SNAPSHOT") + "-SNAPSHOT".length());
+                        } else {
+                            // We can use current artifact version.
+                            // E.g., "kotlin-stdlib-2.0.21-all.jar" -> "-all.jar"
+                            // E.g., "foo-1.2.3-sources.jar" -> "-sources.jar"
+                            String prefix = artifact.getArtifactId() + "-" + artifact.getVersion();
+                            gradleVariant = removePrefix(filename, prefix);
+                        }
+                        // E.g., "-all.jar" -> "-all", "-sources.jar" -> "-sources"
+                        // or, for the default module: ".jar" -> ""
                         String suffix = "." + fileExtension;
-
-                        gradleVariant = removeSuffix(removePrefix(filename, prefix), suffix);
+                        gradleVariant = removeSuffix(gradleVariant, suffix);
 
                         // if it's the main variant or javadoc variant, skip it
                         if (gradleVariant.length() == 0 || gradleVariant.contains("javadoc")) {

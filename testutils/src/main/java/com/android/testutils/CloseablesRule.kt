@@ -17,26 +17,23 @@ package com.android.testutils
 
 import org.junit.rules.ExternalResource
 
-/**
- * [ExternalResource] test rule that allows registering [AutoCloseable] instances for closing
- * when a test is done.
- */
+/** [ExternalResource] test rule that allows registering [AutoCloseable] instances for closing when a test is done. */
 class CloseablesRule : ExternalResource() {
 
-    private val list = ArrayList<AutoCloseable>()
+  private val list = ArrayList<AutoCloseable>()
 
-    override fun after() {
-        try {
-            // Close list in reverse order of registration to match intuitive behavior that
-            // items registered first are closed last.
-            list.asReversed().forEach { it.close() }
-        } finally {
-            super.after()
-        }
+  override fun after() {
+    try {
+      // Close list in reverse order of registration to match intuitive behavior that
+      // items registered first are closed last.
+      list.asReversed().forEach { it.close() }
+    } finally {
+      super.after()
     }
+  }
 
-    fun <T : AutoCloseable> register(item: T): T {
-        list.add(item)
-        return item
-    }
+  fun <T : AutoCloseable> register(item: T): T {
+    list.add(item)
+    return item
+  }
 }

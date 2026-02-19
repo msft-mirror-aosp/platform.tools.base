@@ -20,31 +20,25 @@ import com.android.build.api.variant.AnnotationProcessor
 import com.android.build.api.variant.JavaCompilation
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.model.ObjectFactory
-import javax.inject.Inject
 
-open class AnalyticsEnabledJavaCompilation @Inject constructor(
-    open val delegate: JavaCompilation,
-    val stats: GradleBuildVariant.Builder,
-    val objectFactory: ObjectFactory
-) : JavaCompilation {
+open class AnalyticsEnabledJavaCompilation
+@Inject
+constructor(open val delegate: JavaCompilation, val stats: GradleBuildVariant.Builder, val objectFactory: ObjectFactory) : JavaCompilation {
 
-    override val annotationProcessor: AnnotationProcessor by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.ANNOTATION_PROCESSOR_VALUE
+  override val annotationProcessor: AnnotationProcessor by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.ANNOTATION_PROCESSOR_VALUE
 
-        objectFactory.newInstance(
-            AnalyticsEnabledAnnotationProcessor::class.java,
-            delegate.annotationProcessor,
-            stats,
-        )
+      objectFactory.newInstance(AnalyticsEnabledAnnotationProcessor::class.java, delegate.annotationProcessor, stats)
     }
 
-    override val annotationProcessorConfiguration: Configuration
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CONFIGURATION_VALUE
-            return delegate.annotationProcessorConfiguration
-        }
+  override val annotationProcessorConfiguration: Configuration
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
+        VariantPropertiesMethodType.ANNOTATION_PROCESSOR_CONFIGURATION_VALUE
+      return delegate.annotationProcessorConfiguration
+    }
 }

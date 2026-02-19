@@ -23,40 +23,37 @@ import com.android.build.gradle.options.BooleanOption
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests various APIs on the Variant API interface.
- */
+/** Tests various APIs on the Variant API interface. */
 class VariantApiCompatTest {
 
-    @get:Rule
-    var project: GradleTestProject = GradleTestProject.builder()
-        .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-        .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-        .create()
+  @get:Rule
+  var project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
+      .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
+      .create()
 
-    @Test
-    @Throws(Exception::class)
-    fun testMappingFile() {
-        val build = ("android {\n"
-                + "    buildTypes {\n"
-                + "        release {\n"
-                + "            minifyEnabled true\n"
-                + "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n"
-                + "        }\n"
-                + "    }\n"
-                + "    applicationVariants.all { variant ->\n"
-                + "        if (variant.buildType.name == \"release\") {\n"
-                + "            assert variant.mappingFile != null \n"
-                + "        }"
-                + "    }"
-                + "}")
+  @Test
+  @Throws(Exception::class)
+  fun testMappingFile() {
+    val build =
+      ("android {\n" +
+        "    buildTypes {\n" +
+        "        release {\n" +
+        "            minifyEnabled true\n" +
+        "            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'\n" +
+        "        }\n" +
+        "    }\n" +
+        "    applicationVariants.all { variant ->\n" +
+        "        if (variant.buildType.name == \"release\") {\n" +
+        "            assert variant.mappingFile != null \n" +
+        "        }" +
+        "    }" +
+        "}")
 
-        TestFileUtils.appendToFile(
-            project.buildFile,
-            build
-        )
+    TestFileUtils.appendToFile(project.buildFile, build)
 
-        // this test only requires configuration.
-        project.execute("tasks")
-    }
+    // this test only requires configuration.
+    project.execute("tasks")
+  }
 }

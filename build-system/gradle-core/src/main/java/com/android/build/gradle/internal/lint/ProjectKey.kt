@@ -18,77 +18,71 @@ package com.android.build.gradle.internal.lint
 
 import com.android.build.gradle.internal.ide.dependencies.getVariantName
 import com.android.build.gradle.internal.ide.dependencies.hasProjectTestFixturesCapability
+import java.io.File
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.ResolvedArtifactResult
-import java.io.File
 
-internal data class ProjectKey(
-    val buildId: String,
-    val projectPath: String,
-    val variantName: String?
-) {
+internal data class ProjectKey(val buildId: String, val projectPath: String, val variantName: String?) {
 
-    override fun toString(): String {
-        return StringBuilder().apply {
-            append(buildId)
-            append(" ")
-            append(projectPath)
-            if (variantName != null) {
-                append(" (").append(variantName).append(")")
-            }
-        }.toString()
-    }
+  override fun toString(): String {
+    return StringBuilder()
+      .apply {
+        append(buildId)
+        append(" ")
+        append(projectPath)
+        if (variantName != null) {
+          append(" (").append(variantName).append(")")
+        }
+      }
+      .toString()
+  }
 }
 
 internal fun asProjectKey(artifact: ResolvedArtifactResult): ProjectKey {
-    val id = artifact.id.componentIdentifier as ProjectComponentIdentifier
-    return ProjectKey(id.build.buildPath, id.projectPath, artifact.getVariantName())
+  val id = artifact.id.componentIdentifier as ProjectComponentIdentifier
+  return ProjectKey(id.build.buildPath, id.projectPath, artifact.getVariantName())
 }
 
 internal fun ArtifactCollection.asProjectKeyedMap(): Map<ProjectKey, File> {
-    return artifacts.asSequence().map { artifact -> asProjectKey(artifact) to artifact.file}.toMap()
+  return artifacts.asSequence().map { artifact -> asProjectKey(artifact) to artifact.file }.toMap()
 }
 
 /**
- * This is used to differentiate between main and testFixtures artifacts in
- * [ExternalLintModelArtifactHandler] where the artifacts are cached based on the project key
- * and so the project key needs to be different in that case.
+ * This is used to differentiate between main and testFixtures artifacts in [ExternalLintModelArtifactHandler] where the artifacts are
+ * cached based on the project key and so the project key needs to be different in that case.
+ *
  * TODO: Remove when the non checkDependencies code path is removed.
  */
 internal data class ProjectSourceSetKey(
-    val buildId: String,
-    val projectPath: String,
-    val variantName: String?,
-    val isTestFixtures: Boolean = false
+  val buildId: String,
+  val projectPath: String,
+  val variantName: String?,
+  val isTestFixtures: Boolean = false,
 ) {
 
-    override fun toString(): String {
-        return StringBuilder().apply {
-            append(buildId)
-            append(" ")
-            append(projectPath)
-            if (isTestFixtures) {
-                append(" (testFixtures)")
-            }
-            if (variantName != null) {
-                append(" (").append(variantName).append(")")
-            }
-        }.toString()
-    }
+  override fun toString(): String {
+    return StringBuilder()
+      .apply {
+        append(buildId)
+        append(" ")
+        append(projectPath)
+        if (isTestFixtures) {
+          append(" (testFixtures)")
+        }
+        if (variantName != null) {
+          append(" (").append(variantName).append(")")
+        }
+      }
+      .toString()
+  }
 }
 
 internal fun asProjectSourceSetKey(artifact: ResolvedArtifactResult): ProjectSourceSetKey {
-    val id = artifact.id.componentIdentifier as ProjectComponentIdentifier
-    return ProjectSourceSetKey(
-        id.build.buildPath,
-        id.projectPath,
-        artifact.getVariantName(),
-        artifact.hasProjectTestFixturesCapability()
-    )
+  val id = artifact.id.componentIdentifier as ProjectComponentIdentifier
+  return ProjectSourceSetKey(id.build.buildPath, id.projectPath, artifact.getVariantName(), artifact.hasProjectTestFixturesCapability())
 }
 
 internal fun ArtifactCollection.asProjectSourceSetKeyedMap(): Map<ProjectSourceSetKey, File> {
-    return artifacts.asSequence().map { artifact -> asProjectSourceSetKey(artifact) to artifact.file}.toMap()
+  return artifacts.asSequence().map { artifact -> asProjectSourceSetKey(artifact) to artifact.file }.toMap()
 }
-

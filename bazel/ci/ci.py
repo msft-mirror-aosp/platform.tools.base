@@ -18,6 +18,7 @@ from tools.base.bazel.ci import studio_linux
 from tools.base.bazel.ci import studio_mac
 from tools.base.bazel.ci import studio_nightly
 from tools.base.bazel.ci import studio_win
+from tools.base.bazel.ci import uitools_evals
 
 _ARCH_ALIAS = {
     'amd64': 'x86_64',
@@ -153,8 +154,6 @@ def main():
       ci.run(studio_linux.studio_linux_large)
     case 'studio-linux_very_flaky':
       ci.run(studio_linux.studio_linux_very_flaky)
-    case 'studio-linux-k2':
-      ci.run(studio_linux.studio_linux_k2)
     case 'studio-win':
       ci.run(studio_win.studio_win)
     case 'studio-mac':
@@ -163,6 +162,10 @@ def main():
       ci.run(studio_mac.studio_mac_arm)
     case 'studio-nightly':
       ci.run(studio_nightly.studio_nightly)
+    case 'studio-autobot':
+      pass  # No-op. To be filled in later.
+    case 'uitools_evals':
+      ci.run(uitools_evals.uitools_evals)
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')
 

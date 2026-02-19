@@ -24,8 +24,13 @@ import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.areAllPropertiesInitialized
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
+import com.android.adblib.waitUntilState
 import com.android.fakeadbserver.DeviceState
 import com.android.sdklib.AndroidApiLevel
+import java.io.EOFException
+import java.io.IOException
+import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapNotNull
@@ -34,265 +39,290 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.util.concurrent.CopyOnWriteArrayList
 
 class JdwpProcessChangeFlowTest {
 
-    @JvmField
-    @Rule
-    val fakeAdbRule = FakeAdbServerProviderRule()
+  @JvmField @Rule val fakeAdbRule = FakeAdbServerProviderRule()
 
-    private val fakeAdb get() = fakeAdbRule.fakeAdb
-    private val hostServices get() = fakeAdbRule.adbSession.hostServices
+  private val fakeAdb
+    get() = fakeAdbRule.fakeAdb
 
-    @Test
-    fun testConnectedDeviceDebuggableProcesses_tracksExistingProcess(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val (connectedDevice, fakeDevice) = connectOnlineDevice()
-            val pid10 = 10
-            fakeDevice.startClient(pid10, 0, "a.b.c", true)
-            val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
-            assertEquals(1, processes.size)
-            // Wait for all process properties to get populated
-            yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
+  private val hostServices
+    get() = fakeAdbRule.adbSession.hostServices
 
-            // Act / Assert
-            val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
-            launch {
-                yieldUntil { processUpdatesList.size >= 1 }
-                with(processUpdatesList[0]) {
-                    assertEquals(this::class, JdwpProcessChange.Added::class)
-                    val processAdded = this as JdwpProcessChange.Added
-                    assertTrue(processAdded.processInfo.properties.pid == pid10)
-                }
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_tracksExistingProcess(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val (connectedDevice, fakeDevice) = connectOnlineDevice()
+      val pid10 = 10
+      fakeDevice.startClient(pid10, 0, "a.b.c", true)
+      val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
+      assertEquals(1, processes.size)
+      // Wait for all process properties to get populated
+      yieldUntil { processes[0].jdwpProcess!!.properties.areAllPropertiesInitialized() }
 
-                // Wait a little and assert that the `jdwpProcessChangeFlow` didn't
-                // collect some unexpected update
-                delay(200)
-                assertEquals(1, processUpdatesList.size)
-
-                fakeAdb.disconnectDevice(fakeDevice.deviceId)
-            }
-
-            connectedDevice.scope.launch {
-                connectedDevice.jdwpProcessChangeFlow.collect {
-                    processUpdatesList.add(it)
-                }
-            }.join()
+      // Act / Assert
+      val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
+      launch {
+        yieldUntil { processUpdatesList.size >= 1 }
+        with(processUpdatesList[0]) {
+          assertEquals(this::class, JdwpProcessChange.Added::class)
+          val processAdded = this as JdwpProcessChange.Added
+          assertTrue(processAdded.processInfo.properties.pid == pid10)
         }
 
-    @Test
-    fun testConnectedDeviceDebuggableProcesses_tracksNewProcess(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val deviceID = "1234"
-            val fakeDevice = fakeAdb.connectDevice(
-                deviceID,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                DeviceState.HostConnectionType.USB
-            )
-            fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-            val connectedDevice =
-                hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
-            val pid10 = 10
+        // Wait a little and assert that the `jdwpProcessChangeFlow` didn't
+        // collect some unexpected update
+        delay(200)
+        assertEquals(1, processUpdatesList.size)
 
-            // Act / Assert
-            val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
-            launch {
-                // Start a client
-                // It triggers one `addedProcesses` update, followed by several `updatedPropertiesProcesses`
-                // updates as a result of properties being updated from HELO, FEAT, and other DDMS packages
-                fakeDevice.startClient(pid10, 0, "a.b.c.e", false)
-                yieldUntil { processUpdatesList.size >= 2 }
-                with(processUpdatesList[0]) {
-                    assertEquals(this::class, JdwpProcessChange.Added::class)
-                    val processAdded = this as JdwpProcessChange.Added
-                    assertTrue(processAdded.processInfo.properties.pid == pid10)
-                }
-                // remaining items in the processUpdatesList should be about property updates
-                yieldUntil {
-                    (processUpdatesList.drop(1).last() as? JdwpProcessChange.Updated)?.processInfo
-                        ?.properties?.packageName?.getOrNull() != null
-                }
-                val lastUpdate = processUpdatesList.last() as JdwpProcessChange.Updated
-                assertTrue(lastUpdate.processInfo.properties.pid == pid10)
-                assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName.getOrNull())
-                fakeAdb.disconnectDevice(fakeDevice.deviceId)
-            }
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
 
-            connectedDevice.scope.launch {
-                connectedDevice.jdwpProcessChangeFlow.collect {
-                    processUpdatesList.add(it)
-                }
-            }.join()
-        }
-
-    @Test
-    fun testConnectedDeviceDebuggableProcesses_tracksRemovedProcess(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val (connectedDevice, fakeDevice) = connectOnlineDevice()
-            val pid10 = 10
-            fakeDevice.startClient(pid10, 0, "a.b.c", true)
-            val processes = connectedDevice.appProcessFlow.first { it.isNotEmpty() }
-            assertEquals(1, processes.size)
-            // Wait for all process properties to get populated, so that we get a single
-            // `JdwpProcessChange.Added` change later on. Failing to do so may result in
-            // getting a `JdwpProcessChange.Added` followed by a `JdwpProcessChange.Updated`
-            // event.
-            yieldUntil {
-                processes[0].jdwpProcess!!.let {
-                    it.properties.areAllPropertiesInitialized()
-                            && it.jdwpProxySocketServer.proxyStatus.socketAddress.hasValue
-                }
-            }
-
-            // Act / Assert
-            val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
-            launch {
-                // We should receive a single update about the previously started process
-                yieldUntil { processUpdatesList.size == 1 }
-                with(processUpdatesList[0]) {
-                    assertEquals(this::class, JdwpProcessChange.Added::class)
-                    val processAdded = this as JdwpProcessChange.Added
-                    assertTrue(processAdded.processInfo.properties.pid == pid10)
-                }
-
-                // Wait a little to make sure we don't receive any additional updates.
-                delay(200)
-                assertEquals(1, processUpdatesList.size)
-
-                // Remove process
-                fakeDevice.stopClient(pid10)
-                yieldUntil { processUpdatesList.size == 2 }
-                with(processUpdatesList[1]) {
-                    assertEquals(this::class, JdwpProcessChange.Removed::class)
-                    val processRemoved = this as JdwpProcessChange.Removed
-                    assertTrue(processRemoved.processInfo.properties.pid == pid10)
-                }
-
-                fakeAdb.disconnectDevice(fakeDevice.deviceId)
-            }
-
-            connectedDevice.scope.launch {
-                connectedDevice.jdwpProcessChangeFlow.collect {
-                    processUpdatesList.add(it)
-                }
-            }.join()
-        }
-
-    @Test
-    fun testConnectedDeviceDebuggableProcesses_waitsForDeviceOnlineBeforeEmittingUpdates(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val deviceID = "1234"
-            val pid10 = 10
-            val fakeDevice = fakeAdb.connectDevice(
-                deviceID,
-                "test1",
-                "test2",
-                "model",
-                AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-                DeviceState.HostConnectionType.USB
-            )
-            val connectedDevice = hostServices.session.connectedDevicesTracker.connectedDevices
-                .mapNotNull { connectedDevices ->
-                    connectedDevices.firstOrNull { device -> device.serialNumber == deviceID }
-                }.first()
-
-            // Act / Assert
-            val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
-            launch {
-                delay(200)
-                assertTrue(processUpdatesList.isEmpty())
-
-                // Make the device go online and observe that we can receive updates after that
-                fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-                fakeDevice.startClient(pid10, 0, "a.b.c", true)
-                yieldUntil { processUpdatesList.size >= 1 }
-                with(processUpdatesList[0]) {
-                    assertEquals(this::class, JdwpProcessChange.Added::class)
-                    val processAdded = this as JdwpProcessChange.Added
-                    assertTrue(processAdded.processInfo.properties.pid == pid10)
-                }
-
-                fakeAdb.disconnectDevice(fakeDevice.deviceId)
-            }
-
-            connectedDevice.scope.launch {
-                connectedDevice.jdwpProcessChangeFlow.collect {
-                    processUpdatesList.add(it)
-                }
-            }.join()
-        }
-
-    @Test
-    fun testConnectedDeviceDebuggableProcesses_synchronized(): Unit =
-        CoroutineTestUtils.runBlockingWithTimeout {
-            // Prepare
-            val (connectedDevice, fakeDevice) = connectOnlineDevice()
-
-            // Act / Assert
-            val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
-            launch {
-                // This test produces a bunch of info logs like this:
-                // `AdbDeviceFailResponseException: 'No client exists for pid: 64' error on device
-                // serial #1234 executing service 'jdwp:64'`
-                // This happens since process update may arrive after the process has been stopped.
-                for (i in 10..100) {
-                    fakeDevice.startClient(i, 0, "a.b.c", true)
-                    delay(5)
-                    fakeDevice.stopClient(i)
-                    delay(5)
-                }
-                delay(100)
-
-                // Ensure that for every pid the first change is `added`, the last change
-                // is `removed` with optional `updated` changes in between.
-                processUpdatesList.map { processChange ->
-                    when (processChange) {
-                        is JdwpProcessChange.Added -> processChange.processInfo.properties.pid to "Added"
-                        is JdwpProcessChange.Updated -> processChange.processInfo.properties.pid to "Updated"
-                        is JdwpProcessChange.Removed -> processChange.processInfo.properties.pid to "Removed"
-                        else -> throw IllegalStateException("Unexpected JdwpProcessChange type")
-                    }
-                }.groupBy { it.first }.forEach {
-                    // This is a list of updates per process id
-                    val processChanges = it.value.map { pidToStatus -> pidToStatus.second }
-                    assertEquals("Added", processChanges.first())
-                    assertEquals("Removed", processChanges.last())
-                    processChanges.drop(1)
-                        .dropLast(1)
-                        .forEach { changeType -> assertEquals("Updated", changeType) }
-                }
-
-                fakeAdb.disconnectDevice(fakeDevice.deviceId)
-            }
-
-            connectedDevice.scope.launch {
-                connectedDevice.jdwpProcessChangeFlow.collect {
-                    processUpdatesList.add(it)
-                }
-            }.join()
-        }
-
-    private suspend fun connectOnlineDevice(): Pair<ConnectedDevice, DeviceState> {
-        val deviceID = "1234"
-        val fakeDevice = fakeAdb.connectDevice(
-            deviceID,
-            "test1",
-            "test2",
-            "model",
-            AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
-            DeviceState.HostConnectionType.USB
-        )
-        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
-        return Pair(
-          hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId), fakeDevice
-        )
+      connectedDevice.scope.launch { connectedDevice.jdwpProcessChangeFlow.collect { processUpdatesList.add(it) } }.join()
     }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_tracksNewProcess(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceID = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceID,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+      val connectedDevice = hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+      val pid10 = 10
+
+      // Act / Assert
+      val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
+      launch {
+        // Start a client
+        // It triggers one `addedProcesses` update, followed by several
+        // `updatedPropertiesProcesses`
+        // updates as a result of properties being updated from HELO, FEAT, and other DDMS
+        // packages
+        fakeDevice.startClient(pid10, 0, "a.b.c.e", false)
+        yieldUntil { processUpdatesList.size >= 2 }
+        with(processUpdatesList[0]) {
+          assertEquals(this::class, JdwpProcessChange.Added::class)
+          val processAdded = this as JdwpProcessChange.Added
+          assertTrue(processAdded.processInfo.properties.pid == pid10)
+        }
+        // remaining items in the processUpdatesList should be about property updates
+        yieldUntil {
+          (processUpdatesList.drop(1).last() as? JdwpProcessChange.Updated)?.processInfo?.properties?.packageName?.getOrNull() != null
+        }
+        val lastUpdate = processUpdatesList.last() as JdwpProcessChange.Updated
+        assertTrue(lastUpdate.processInfo.properties.pid == pid10)
+        assertEquals("a.b.c.e", lastUpdate.processInfo.properties.packageName.getOrNull())
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
+
+      connectedDevice.scope.launch { connectedDevice.jdwpProcessChangeFlow.collect { processUpdatesList.add(it) } }.join()
+    }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_tracksRemovedProcess(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val (connectedDevice, fakeDevice) = connectOnlineDevice()
+      val pid10 = 10
+      fakeDevice.startClient(pid10, 0, "a.b.c", true)
+      val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
+      assertEquals(1, processes.size)
+      // Wait for all process properties to get populated, so that we get a single
+      // `JdwpProcessChange.Added` change later on. Failing to do so may result in
+      // getting a `JdwpProcessChange.Added` followed by a `JdwpProcessChange.Updated`
+      // event.
+      yieldUntil {
+        processes[0].jdwpProcess!!.let {
+          it.properties.areAllPropertiesInitialized() && it.jdwpProxySocketServer.proxyStatus.socketAddress.hasValue
+        }
+      }
+
+      // Act / Assert
+      val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
+      launch {
+        // We should receive a single update about the previously started process
+        yieldUntil { processUpdatesList.size == 1 }
+        with(processUpdatesList[0]) {
+          assertEquals(this::class, JdwpProcessChange.Added::class)
+          val processAdded = this as JdwpProcessChange.Added
+          assertTrue(processAdded.processInfo.properties.pid == pid10)
+        }
+
+        // Wait a little to make sure we don't receive any additional updates.
+        delay(200)
+        assertEquals(1, processUpdatesList.size)
+
+        // Remove process
+        fakeDevice.stopClient(pid10)
+        yieldUntil { processUpdatesList.size == 2 }
+        with(processUpdatesList[1]) {
+          assertEquals(this::class, JdwpProcessChange.Removed::class)
+          val processRemoved = this as JdwpProcessChange.Removed
+          assertTrue(processRemoved.processInfo.properties.pid == pid10)
+        }
+
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
+
+      connectedDevice.scope.launch { connectedDevice.jdwpProcessChangeFlow.collect { processUpdatesList.add(it) } }.join()
+    }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_waitsForDeviceOnlineBeforeEmittingUpdates(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceID = "1234"
+      val pid10 = 10
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceID,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == deviceID } }
+          .first()
+
+      // Act / Assert
+      val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
+      launch {
+        delay(200)
+        assertTrue(processUpdatesList.isEmpty())
+
+        // Make the device go online and observe that we can receive updates after that
+        fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+        fakeDevice.startClient(pid10, 0, "a.b.c", true)
+        yieldUntil { processUpdatesList.size >= 1 }
+        with(processUpdatesList[0]) {
+          assertEquals(this::class, JdwpProcessChange.Added::class)
+          val processAdded = this as JdwpProcessChange.Added
+          assertTrue(processAdded.processInfo.properties.pid == pid10)
+        }
+
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
+
+      connectedDevice.scope.launch { connectedDevice.jdwpProcessChangeFlow.collect { processUpdatesList.add(it) } }.join()
+    }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_synchronized(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val (connectedDevice, fakeDevice) = connectOnlineDevice()
+
+      // Act / Assert
+      val processUpdatesList = CopyOnWriteArrayList<JdwpProcessChange>()
+      launch {
+        // This test produces a bunch of info logs like this:
+        // `AdbDeviceFailResponseException: 'No client exists for pid: 64' error on device
+        // serial #1234 executing service 'jdwp:64'`
+        // This happens since process update may arrive after the process has been stopped.
+        for (i in 10..100) {
+          fakeDevice.startClient(i, 0, "a.b.c", true)
+          delay(5)
+          fakeDevice.stopClient(i)
+          delay(5)
+        }
+        delay(100)
+
+        // Ensure that for every pid the first change is `added`, the last change
+        // is `removed` with optional `updated` changes in between.
+        processUpdatesList
+          .map { processChange ->
+            when (processChange) {
+              is JdwpProcessChange.Added -> processChange.processInfo.properties.pid to "Added"
+              is JdwpProcessChange.Updated -> processChange.processInfo.properties.pid to "Updated"
+              is JdwpProcessChange.Removed -> processChange.processInfo.properties.pid to "Removed"
+              else -> throw IllegalStateException("Unexpected JdwpProcessChange type")
+            }
+          }
+          .groupBy { it.first }
+          .forEach {
+            // This is a list of updates per process id
+            val processChanges = it.value.map { pidToStatus -> pidToStatus.second }
+            assertEquals("Added", processChanges.first())
+            assertEquals("Removed", processChanges.last())
+            processChanges.drop(1).dropLast(1).forEach { changeType -> assertEquals("Updated", changeType) }
+          }
+
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
+
+      connectedDevice.scope.launch { connectedDevice.jdwpProcessChangeFlow.collect { processUpdatesList.add(it) } }.join()
+    }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_throwsOnAlreadyDisconnectedDevice(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val deviceID = "1234"
+      val fakeDevice =
+        fakeAdb.connectDevice(
+          deviceID,
+          "test1",
+          "test2",
+          "model",
+          AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+          DeviceState.HostConnectionType.USB,
+        )
+      val connectedDevice =
+        hostServices.session.connectedDevicesTracker.connectedDevices
+          .mapNotNull { connectedDevices -> connectedDevices.firstOrNull { device -> device.serialNumber == deviceID } }
+          .first()
+      fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      connectedDevice.waitUntilState(com.android.adblib.DeviceState.DISCONNECTED)
+
+      // Act / Assert
+      assertFailsWith<IOException> { connectedDevice.jdwpProcessChangeFlow.collect {} }
+    }
+
+  @Test
+  fun testConnectedDeviceDebuggableProcesses_throwsWhenDeviceDisconnects(): Unit =
+    CoroutineTestUtils.runBlockingWithTimeout {
+      // Prepare
+      val (connectedDevice, fakeDevice) = connectOnlineDevice()
+      val pid10 = 10
+      fakeDevice.startClient(pid10, 0, "a.b.c", true)
+      val processes = connectedDevice.appProcessTracker.appProcessFlow.first { it.isNotEmpty() }
+      assertEquals(1, processes.size)
+
+      // Act / Assert
+      launch {
+        delay(50)
+        fakeAdb.disconnectDevice(fakeDevice.deviceId)
+      }
+
+      assertFailsWith<EOFException> { connectedDevice.jdwpProcessChangeFlow.collect {} }
+    }
+
+  private suspend fun connectOnlineDevice(): Pair<ConnectedDevice, DeviceState> {
+    val deviceID = "1234"
+    val fakeDevice =
+      fakeAdb.connectDevice(
+        deviceID,
+        "test1",
+        "test2",
+        "model",
+        AndroidApiLevel(31), // SDK >= 31 is required for track_app feature.
+        DeviceState.HostConnectionType.USB,
+      )
+    fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
+    return Pair(hostServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId), fakeDevice)
+  }
 }

@@ -20,26 +20,18 @@ import com.android.build.gradle.integration.common.fixture.model.ReferenceModelC
 import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Test
 
-class AppWithLocalJarModelTest : ReferenceModelComparator(
-    referenceConfig = {
-        androidApplication {
-        }
-    },
+class AppWithLocalJarModelTest :
+  ReferenceModelComparator(
+    referenceConfig = { androidApplication {} },
     deltaConfig = {
-        androidApplication {
-            dependencies {
-                implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") })
-            }
-        }
+      androidApplication { dependencies { implementation(localJar("foo.jar") { addEmptyClasses("com/example/MainClass") }) } }
     },
-    syncOptions = {
-        ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-    },
-    variantName = "debug"
-) {
+    syncOptions = { ignoreSyncIssues(SyncIssue.SEVERITY_WARNING) },
+    variantName = "debug",
+  ) {
 
-    @Test
-    fun `test VariantDependencies model`() {
-        compareVariantDependenciesWith(goldenFileSuffix = "")
-    }
+  @Test
+  fun `test VariantDependencies model`() {
+    compareVariantDependenciesWith(goldenFileSuffix = "")
+  }
 }

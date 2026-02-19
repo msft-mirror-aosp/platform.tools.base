@@ -16,8 +16,4 @@
 
 package com.android.manifmerger
 
-data class NavigationXmlDocumentData(
-    val name: String,
-    val navigationXmlIds: List<String>,
-    val deepLinks: List<DeepLink>
-)
+data class NavigationXmlDocumentData(val name: String, val navigationXmlIds: List<String>, val deepLinks: List<DeepLink>)

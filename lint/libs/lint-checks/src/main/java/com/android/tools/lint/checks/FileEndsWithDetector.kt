@@ -38,14 +38,10 @@ import org.jetbrains.uast.USimpleNameReferenceExpression
 import org.jetbrains.uast.UastBinaryOperator.Companion.EQUALS
 import org.jetbrains.uast.UastBinaryOperator.Companion.NOT_EQUALS
 
-/**
- * Looks for uses of the File#endsWith extension from Kotlin which may be trying to look for file
- * extensions
- */
+/** Looks for uses of the File#endsWith extension from Kotlin which may be trying to look for file extensions */
 class FileEndsWithDetector : Detector(), SourceCodeScanner {
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(FileEndsWithDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(FileEndsWithDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Accidentally using File#endsWith to compare just extensions */
     @JvmField
@@ -70,16 +66,10 @@ class FileEndsWithDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableReferenceNames(): List<String> = listOf("extension")
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (isFileExtension(context, referenced)) {
       val parent = reference.uastParent ?: return
-      if (
-        parent is UBinaryExpression && (parent.operator == EQUALS || parent.operator != NOT_EQUALS)
-      ) {
+      if (parent is UBinaryExpression && (parent.operator == EQUALS || parent.operator != NOT_EQUALS)) {
         checkExtension(context, parent.rightOperand)
       } else if (parent is UQualifiedReferenceExpression) {
         var curr: UQualifiedReferenceExpression = parent
@@ -88,11 +78,7 @@ class FileEndsWithDetector : Detector(), SourceCodeScanner {
           curr = p
         }
         val selector = curr.selector
-        if (
-          selector is UCallExpression &&
-            selector.methodName == "startsWith" &&
-            selector.valueArgumentCount > 0
-        ) {
+        if (selector is UCallExpression && selector.methodName == "startsWith" && selector.valueArgumentCount > 0) {
           checkExtension(context, selector.valueArguments.last())
         }
       }
@@ -105,9 +91,7 @@ class FileEndsWithDetector : Detector(), SourceCodeScanner {
       Incident(context)
         .issue(ISSUE)
         .at(node)
-        .message(
-          "`File.extension` does not include the leading dot; did you mean \"${string.substring(1)}\" ?"
-        )
+        .message("`File.extension` does not include the leading dot; did you mean \"${string.substring(1)}\" ?")
         .report()
     }
   }
@@ -115,16 +99,13 @@ class FileEndsWithDetector : Detector(), SourceCodeScanner {
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     val evaluator = context.evaluator
     if (isFileExtension(context, method) && evaluator.getParameterCount(method) == 2) {
-      val string =
-        ConstantEvaluator.evaluateString(context, node.valueArguments.last(), false) ?: return
+      val string = ConstantEvaluator.evaluateString(context, node.valueArguments.last(), false) ?: return
       if (isExtension(string)) {
         val file = (node.receiver as? USimpleNameReferenceExpression)?.identifier ?: "file"
         Incident(context)
           .issue(ISSUE)
           .at(node)
-          .message(
-            "`File.endsWith` compares whole filenames, not just file extensions; did you mean `$file.path.endsWith(\"$string\")` ?"
-          )
+          .message("`File.endsWith` compares whole filenames, not just file extensions; did you mean `$file.path.endsWith(\"$string\")` ?")
           .report()
       }
     }
@@ -136,10 +117,6 @@ class FileEndsWithDetector : Detector(), SourceCodeScanner {
     }
 
   private fun isExtension(s: String?): Boolean {
-    return s != null &&
-      s.startsWith(".") &&
-      s.length <= 10 &&
-      !s.startsWith("..") &&
-      !s.contains(' ')
+    return s != null && s.startsWith(".") && s.length <= 10 && !s.startsWith("..") && !s.contains(' ')
   }
 }

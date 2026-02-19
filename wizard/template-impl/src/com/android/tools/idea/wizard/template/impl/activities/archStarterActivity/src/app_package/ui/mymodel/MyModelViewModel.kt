@@ -18,7 +18,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.viewModel() = """
+fun ArchStarterActivityTemplateVariables.viewModel() =
+  """
 package $modelPackage
 
 import androidx.lifecycle.ViewModel

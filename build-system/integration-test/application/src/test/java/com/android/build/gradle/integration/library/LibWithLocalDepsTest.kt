@@ -30,97 +30,88 @@ import org.junit.rules.ExpectedException
 /** Test for library module with local file dependencies. */
 class LibWithLocalDepsTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestProject("multiproject").create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("multiproject").create()
 
-    @get:Rule
-    val expectedException: ExpectedException = ExpectedException.none()
+  @get:Rule val expectedException: ExpectedException = ExpectedException.none()
 
-    @Before
-    fun setup() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("baseLibrary").buildFile,
-            """
+  @Before
+  fun setup() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("baseLibrary").buildFile,
+      """
                 dependencies {
                     api files("libs/localJavaLib.jar")
                 }
-                """
-        )
-    }
+                """,
+    )
+  }
 
-    @Test
-    fun testLocalJarPackagedWithAar() {
-        executor().run("clean", ":baseLibrary:assembleDebug")
-        project.getSubproject("baseLibrary").assertAar(AarSelector.DEBUG) {
-            classes().containsExactly(
-                "com/example/local/Foo",
-                "com/sample/android/multiproject/library/PersonView"
-            )
-            javaResources().resourceAsText("com/example/local/javaRes.txt").isEqualTo("local java res")
-        }
+  @Test
+  fun testLocalJarPackagedWithAar() {
+    executor().run("clean", ":baseLibrary:assembleDebug")
+    project.getSubproject("baseLibrary").assertAar(AarSelector.DEBUG) {
+      classes().containsExactly("com/example/local/Foo", "com/sample/android/multiproject/library/PersonView")
+      javaResources().resourceAsText("com/example/local/javaRes.txt").isEqualTo("local java res")
     }
+  }
 
-    @Test
-    fun testTransitiveLocalJarNotPackagedWithAar() {
-        executor().run("clean", ":library:assembleDebug")
-        // library depends on baseLibrary, so library has localJavaLib.jar as a transitive
-        // dependency.
-        project.getSubproject("library").assertAar(AarSelector.DEBUG) {
-            classes().containsExactly("com/example/android/multiproject/library/ShowPeopleActivity")
-            // we want to validate that com/example/local/javaRes.txt is not present.
-            javaResources().isEmpty()
-        }
+  @Test
+  fun testTransitiveLocalJarNotPackagedWithAar() {
+    executor().run("clean", ":library:assembleDebug")
+    // library depends on baseLibrary, so library has localJavaLib.jar as a transitive
+    // dependency.
+    project.getSubproject("library").assertAar(AarSelector.DEBUG) {
+      classes().containsExactly("com/example/android/multiproject/library/ShowPeopleActivity")
+      // we want to validate that com/example/local/javaRes.txt is not present.
+      javaResources().isEmpty()
     }
+  }
 
-    @Test
-    fun testFailureWhenBuildingAarWithDirectLocalAarDep() {
-        expectedException.expect(BuildException::class.java)
-        TestFileUtils.appendToFile(
-            project.getSubproject("baseLibrary").buildFile,
-            """
+  @Test
+  fun testFailureWhenBuildingAarWithDirectLocalAarDep() {
+    expectedException.expect(BuildException::class.java)
+    TestFileUtils.appendToFile(
+      project.getSubproject("baseLibrary").buildFile,
+      """
                 dependencies {
                     api files("libs/local.aar")
                 }
-                """
-        )
-        val result = executor().run("clean", ":baseLibrary:assembleDebug")
-        result.stderr.use {
-            ScannerSubject.assertThat(it).contains(
-                "Direct local .aar file dependencies are not supported when building an AAR."
-            )
-        }
+                """,
+    )
+    val result = executor().run("clean", ":baseLibrary:assembleDebug")
+    result.stderr.use {
+      ScannerSubject.assertThat(it).contains("Direct local .aar file dependencies are not supported when building an AAR.")
     }
+  }
 
-    @Test
-    fun testSuccessWhenBuildingAarWithTransitiveLocalAarDep() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("baseLibrary").buildFile,
-            """
+  @Test
+  fun testSuccessWhenBuildingAarWithTransitiveLocalAarDep() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("baseLibrary").buildFile,
+      """
                 dependencies {
                     api files("libs/local.aar")
                 }
-                """
-        )
-        executor().run("clean", ":library:assembleDebug")
-    }
+                """,
+    )
+    executor().run("clean", ":library:assembleDebug")
+  }
 
-    private fun executor(): GradleTaskExecutor {
-        return project.executor()
-    }
+  private fun executor(): GradleTaskExecutor {
+    return project.executor()
+  }
 
-    /**
-     * Regression test for b/322437895
-     */
-    @Test
-    fun testSuccessWhenRunningLintOnLibraryWithDirectLocalAarDep() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("baseLibrary").buildFile,
-            """
+  /** Regression test for b/322437895 */
+  @Test
+  fun testSuccessWhenRunningLintOnLibraryWithDirectLocalAarDep() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("baseLibrary").buildFile,
+      """
                 dependencies {
                     implementation files("libs/local.aar")
                 }
-                """
-        )
-        executor().run("clean", ":library:lintDebug")
-    }
+                """,
+    )
+    executor().run("clean", ":library:lintDebug")
+  }
 }

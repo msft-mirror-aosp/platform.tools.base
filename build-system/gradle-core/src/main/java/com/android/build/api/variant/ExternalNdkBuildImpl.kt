@@ -21,43 +21,41 @@ import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.SetProperty
 
-class ExternalNdkBuildImpl(
-    mergedExternalNativeNdkBuildOptions: CoreExternalNativeNdkBuildOptions,
-    variantServices: VariantServices
-): ExternalNativeBuild {
+class ExternalNdkBuildImpl(mergedExternalNativeNdkBuildOptions: CoreExternalNativeNdkBuildOptions, variantServices: VariantServices) :
+  ExternalNativeBuild {
 
-    override val abiFilters: SetProperty<String> =
-            variantServices.setPropertyOf(
-                type = String::class.java,
-                value = mergedExternalNativeNdkBuildOptions.abiFilters,
-                disallowUnsafeRead = false, // see b/193722661
-            )
+  override val abiFilters: SetProperty<String> =
+    variantServices.setPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNdkBuildOptions.abiFilters,
+      disallowUnsafeRead = false, // see b/193722661
+    )
 
-    override val arguments: ListProperty<String> =
-            variantServices.listPropertyOf(
-                type = String::class.java,
-                value = mergedExternalNativeNdkBuildOptions.arguments,
-                disallowUnsafeRead = false, // see b/193722661
-            )
+  override val arguments: ListProperty<String> =
+    variantServices.listPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNdkBuildOptions.arguments,
+      disallowUnsafeRead = false, // see b/193722661
+    )
 
-    override val cFlags: ListProperty<String> =
-            variantServices.listPropertyOf(
-                type = String::class.java,
-                value = mergedExternalNativeNdkBuildOptions.getcFlags(),
-                disallowUnsafeRead = false, // see b/193722661
-            )
+  override val cFlags: ListProperty<String> =
+    variantServices.listPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNdkBuildOptions.getcFlags(),
+      disallowUnsafeRead = false, // see b/193722661
+    )
 
-    override val cppFlags: ListProperty<String> =
-            variantServices.listPropertyOf(
-                type = String::class.java,
-                value = mergedExternalNativeNdkBuildOptions.cppFlags,
-                disallowUnsafeRead = false, // see b/193722661
-            )
+  override val cppFlags: ListProperty<String> =
+    variantServices.listPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNdkBuildOptions.cppFlags,
+      disallowUnsafeRead = false, // see b/193722661
+    )
 
-    override val targets: SetProperty<String> =
-            variantServices.setPropertyOf(
-                type = String::class.java,
-                value = mergedExternalNativeNdkBuildOptions.targets,
-                disallowUnsafeRead = false, // see b/193722661
-            )
+  override val targets: SetProperty<String> =
+    variantServices.setPropertyOf(
+      type = String::class.java,
+      value = mergedExternalNativeNdkBuildOptions.targets,
+      disallowUnsafeRead = false, // see b/193722661
+    )
 }

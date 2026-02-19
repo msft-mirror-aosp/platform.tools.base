@@ -1,0 +1,12 @@
+diff --git a/MODULE.bazel b/MODULE.bazel
+index 3c3f051ad..6ab3ad337 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -150,6 +150,7 @@ maven.install(
+         "https://repo1.maven.org/maven2",
+         "https://repo.maven.apache.org/maven2",
+     ],
++    lock_file = "//:maven_install.json",
+ )
+
+ use_repo(maven, "protobuf_maven")

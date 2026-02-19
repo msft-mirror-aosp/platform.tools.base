@@ -19,121 +19,116 @@ package com.android.build.gradle.internal.tasks
 import com.android.bundle.DeviceGroup
 import com.android.bundle.DeviceGroupConfig
 import com.android.bundle.DeviceId
-import com.android.bundle.DeviceSelector
 import com.android.bundle.DeviceRam
+import com.android.bundle.DeviceSelector
 import com.android.bundle.SystemFeature
 import com.android.bundle.SystemOnChip
 import com.android.utils.forEach
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.xml.sax.SAXParseException
 import javax.xml.XMLConstants
 import javax.xml.transform.dom.DOMSource
 import javax.xml.validation.SchemaFactory
+import org.w3c.dom.Document
+import org.w3c.dom.Element
+import org.xml.sax.SAXParseException
 
 class DeviceTargetingConfigParser(private val config: Document) {
 
-    class InvalidDeviceTargetingConfigException(message: String, t: Throwable) : Exception(message, t)
+  class InvalidDeviceTargetingConfigException(message: String, t: Throwable) : Exception(message, t)
 
-    fun parseConfig(): DeviceGroupConfig {
-        try {
-            validate(config)
-        } catch (e: SAXParseException) {
-            throw InvalidDeviceTargetingConfigException("The DeviceTargetingConfig xml provided is invalid.", e)
+  fun parseConfig(): DeviceGroupConfig {
+    try {
+      validate(config)
+    } catch (e: SAXParseException) {
+      throw InvalidDeviceTargetingConfigException("The DeviceTargetingConfig xml provided is invalid.", e)
+    }
+    val builder = DeviceGroupConfig.newBuilder()
+    config.documentElement.getElementsByTagNameNS(CONFIG_NS, "device-group").forEach {
+      if (it is Element) {
+        builder.addDeviceGroups(parseDeviceGroup(it))
+      }
+    }
+    return builder.build()
+  }
+
+  companion object {
+
+    private val CONFIG_NS = "http://schemas.android.com/apk/config"
+
+    private fun parseDeviceGroup(group: Element): DeviceGroup.Builder {
+      val builder = DeviceGroup.newBuilder().setName(group.getAttribute("name"))
+      group.getElementsByTagNameNS(CONFIG_NS, "device-selector").forEach {
+        if (it is Element) {
+          builder.addDeviceSelectors(parseDeviceSelector(it))
         }
-        val builder = DeviceGroupConfig.newBuilder()
-        config.documentElement.getElementsByTagNameNS(CONFIG_NS, "device-group").forEach {
-            if (it is Element) {
-                builder.addDeviceGroups(parseDeviceGroup(it))
-            }
-        }
-        return builder.build()
+      }
+      return builder
     }
 
-    companion object {
+    private fun parseDeviceSelector(selector: Element): DeviceSelector.Builder {
+      val builder = DeviceSelector.newBuilder()
 
-        private val CONFIG_NS = "http://schemas.android.com/apk/config"
-
-        private fun parseDeviceGroup(group: Element): DeviceGroup.Builder {
-            val builder = DeviceGroup.newBuilder().setName(group.getAttribute("name"))
-            group.getElementsByTagNameNS(CONFIG_NS, "device-selector").forEach {
-                if (it is Element) {
-                    builder.addDeviceSelectors(parseDeviceSelector(it))
-                }
-            }
-            return builder
+      parseDeviceRam(selector)?.let { builder.setDeviceRam(it) }
+      selector.getElementsByTagNameNS(CONFIG_NS, "included-device-id").forEach {
+        if (it is Element) {
+          builder.addIncludedDeviceIds(parseDeviceId(it))
         }
-
-        private fun parseDeviceSelector(selector: Element): DeviceSelector.Builder {
-            val builder = DeviceSelector.newBuilder()
-
-            parseDeviceRam(selector)?.let {
-                builder.setDeviceRam(it)
-            }
-            selector.getElementsByTagNameNS(CONFIG_NS, "included-device-id").forEach {
-                if (it is Element) {
-                    builder.addIncludedDeviceIds(parseDeviceId(it))
-                }
-            }
-            selector.getElementsByTagNameNS(CONFIG_NS, "excluded-device-id").forEach {
-                if (it is Element) {
-                    builder.addExcludedDeviceIds(parseDeviceId(it))
-                }
-            }
-            selector.getElementsByTagNameNS(CONFIG_NS, "required-system-feature").forEach {
-                if (it is Element) {
-                    builder.addRequiredSystemFeatures(parseSystemFeature(it))
-                }
-            }
-            selector.getElementsByTagNameNS(CONFIG_NS, "forbidden-system-feature").forEach {
-                if (it is Element) {
-                    builder.addForbiddenSystemFeatures(parseSystemFeature(it))
-                }
-            }
-            selector.getElementsByTagNameNS(CONFIG_NS, "system-on-chip").forEach {
-                if (it is Element) {
-                    builder.addSystemOnChips(parseSystemOnChip(it))
-                }
-            }
-            return builder
+      }
+      selector.getElementsByTagNameNS(CONFIG_NS, "excluded-device-id").forEach {
+        if (it is Element) {
+          builder.addExcludedDeviceIds(parseDeviceId(it))
         }
-
-        private fun parseDeviceRam(element: Element): DeviceRam.Builder? {
-            val ramMinBytes = element.getAttribute("ram-min-bytes")
-            val ramMaxBytes = element.getAttribute("ram-max-bytes")
-            if (ramMinBytes == null && ramMaxBytes == null) {
-                return null
-            }
-            val builder = DeviceRam.newBuilder().setMinBytes(ramMinBytes?.toLongOrNull() ?: 0)
-            if (ramMaxBytes != null) {
-                builder.setMaxBytes(ramMaxBytes!!.toLongOrNull() ?: 0)
-            }
-            return builder
+      }
+      selector.getElementsByTagNameNS(CONFIG_NS, "required-system-feature").forEach {
+        if (it is Element) {
+          builder.addRequiredSystemFeatures(parseSystemFeature(it))
         }
-
-        private fun parseDeviceId(element: Element): DeviceId.Builder {
-            val builder = DeviceId.newBuilder().setBuildBrand(element.getAttribute("brand"))
-            if (element.hasAttribute("device")) {
-                builder.setBuildDevice(element.getAttribute("device"))
-            }
-            return builder
+      }
+      selector.getElementsByTagNameNS(CONFIG_NS, "forbidden-system-feature").forEach {
+        if (it is Element) {
+          builder.addForbiddenSystemFeatures(parseSystemFeature(it))
         }
-
-        private fun parseSystemFeature(element: Element): SystemFeature.Builder {
-            return SystemFeature.newBuilder().setName(element.getAttribute("name"))
+      }
+      selector.getElementsByTagNameNS(CONFIG_NS, "system-on-chip").forEach {
+        if (it is Element) {
+          builder.addSystemOnChips(parseSystemOnChip(it))
         }
-
-        private fun parseSystemOnChip(element: Element): SystemOnChip.Builder {
-            return SystemOnChip.newBuilder()
-                .setManufacturer(element.getAttribute("manufacturer"))
-                .setModel(element.getAttribute("model"))
-        }
-
-        private fun validate(document: Document) {
-            val schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
-            val schema =
-                schemaFactory.newSchema(DeviceTargetingConfigParser::class.java.getResource("device_targeting_config_schema.xsd"))
-            schema.newValidator().validate(DOMSource(document))
-        }
+      }
+      return builder
     }
+
+    private fun parseDeviceRam(element: Element): DeviceRam.Builder? {
+      val ramMinBytes = element.getAttribute("ram-min-bytes")
+      val ramMaxBytes = element.getAttribute("ram-max-bytes")
+      if (ramMinBytes == null && ramMaxBytes == null) {
+        return null
+      }
+      val builder = DeviceRam.newBuilder().setMinBytes(ramMinBytes?.toLongOrNull() ?: 0)
+      if (ramMaxBytes != null) {
+        builder.setMaxBytes(ramMaxBytes!!.toLongOrNull() ?: 0)
+      }
+      return builder
+    }
+
+    private fun parseDeviceId(element: Element): DeviceId.Builder {
+      val builder = DeviceId.newBuilder().setBuildBrand(element.getAttribute("brand"))
+      if (element.hasAttribute("device")) {
+        builder.setBuildDevice(element.getAttribute("device"))
+      }
+      return builder
+    }
+
+    private fun parseSystemFeature(element: Element): SystemFeature.Builder {
+      return SystemFeature.newBuilder().setName(element.getAttribute("name"))
+    }
+
+    private fun parseSystemOnChip(element: Element): SystemOnChip.Builder {
+      return SystemOnChip.newBuilder().setManufacturer(element.getAttribute("manufacturer")).setModel(element.getAttribute("model"))
+    }
+
+    private fun validate(document: Document) {
+      val schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)
+      val schema = schemaFactory.newSchema(DeviceTargetingConfigParser::class.java.getResource("device_targeting_config_schema.xsd"))
+      schema.newValidator().validate(DOMSource(document))
+    }
+  }
 }

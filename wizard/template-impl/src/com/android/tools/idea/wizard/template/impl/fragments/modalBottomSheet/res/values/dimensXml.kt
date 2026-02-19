@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.fragments.modalBottomSheet.res.values
 
-fun dimensXml() = """
+fun dimensXml() =
+  """
 <?xml version="1.0"?>
 <resources>
     <dimen name="list_item_spacing">16dp</dimen>

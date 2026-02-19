@@ -38,14 +38,11 @@ class ResourceTableBuilder {
     return this
   }
 
-  fun addSimple(name: String, id: Int, config: ConfigDescription = ConfigDescription()) =
-    addValue(name, Id(), id, config)
+  fun addSimple(name: String, id: Int, config: ConfigDescription = ConfigDescription()) = addValue(name, Id(), id, config)
 
-  fun addReference(name: String, ref: String, id: Int = 0) =
-    addValue(name, Reference(parseNameOrFail(ref)), id)
+  fun addReference(name: String, ref: String, id: Int = 0) = addValue(name, Reference(parseNameOrFail(ref)), id)
 
-  fun addString(
-    name: String, value: String, id: Int = 0, config: ConfigDescription = ConfigDescription()) =
+  fun addString(name: String, value: String, id: Int = 0, config: ConfigDescription = ConfigDescription()) =
     addValue(name, BasicString(table.stringPool.makeRef(value)), id, config)
 
   fun addFileReference(
@@ -53,56 +50,33 @@ class ResourceTableBuilder {
     path: String,
     id: Int = 0,
     config: ConfigDescription = ConfigDescription(),
-    file: File? = null): ResourceTableBuilder {
+    file: File? = null,
+  ): ResourceTableBuilder {
 
     val fileRef = FileReference(table.stringPool.makeRef(path))
     fileRef.file = file
     return addValue(name, fileRef, id, config)
   }
 
-  fun addValue(
-    name: String,
-    value: Value,
-    id: Int = 0,
-    config: ConfigDescription = ConfigDescription()): ResourceTableBuilder {
+  fun addValue(name: String, value: Value, id: Int = 0, config: ConfigDescription = ConfigDescription()): ResourceTableBuilder {
 
-    Truth.assertThat(
-      table.addResourceWithIdMangled(
-        parseNameOrFail(name),
-        id,
-        config,
-        "",
-        value)).isTrue()
+    Truth.assertThat(table.addResourceWithIdMangled(parseNameOrFail(name), id, config, "", value)).isTrue()
     return this
   }
 
-  fun setSymbolState(
-    name: String,
-    level: ResourceVisibility,
-    id: Int,
-    allowNew: Boolean): ResourceTableBuilder {
+  fun setSymbolState(name: String, level: ResourceVisibility, id: Int, allowNew: Boolean): ResourceTableBuilder {
 
     val resName = parseNameOrFail(name)
     val visibility = Visibility(level = level)
-    Truth.assertThat(
-      table.setVisibilityWithIdMangled(
-        resName,
-        visibility,
-        id)).isTrue()
+    Truth.assertThat(table.setVisibilityWithIdMangled(resName, visibility, id)).isTrue()
     if (allowNew) {
-      Truth.assertThat(
-        table.setAllowNewMangled(
-          resName,
-          AllowNew(Source(""), ""))).isTrue()
+      Truth.assertThat(table.setAllowNewMangled(resName, AllowNew(Source(""), ""))).isTrue()
     }
     return this
   }
 
   fun setOverlayable(name: String, overlayable: OverlayableItem): ResourceTableBuilder {
-    Truth.assertThat(
-      table.setOverlayable(
-        parseNameOrFail(name),
-        overlayable)).isTrue()
+    Truth.assertThat(table.setOverlayable(parseNameOrFail(name), overlayable)).isTrue()
     return this
   }
 }

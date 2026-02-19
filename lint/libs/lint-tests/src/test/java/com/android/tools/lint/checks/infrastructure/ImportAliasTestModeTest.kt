@@ -52,49 +52,49 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package test.pkg
-            import java.io.File
+      package test.pkg
+      import java.io.File
 
-            abstract class MyTest : Number(), Comparable<Number>, MutableCollection<Number> {
-                var list: List<String>? = null
-                var file: File? = null
-                fun test(vararg strings: String?) {
-                    println(file)
-                    val s = File.separator
-                    val o: Any? = null
-                    if (o is File) {
-                        val f = o
-                    }
-                }
+      abstract class MyTest : Number(), Comparable<Number>, MutableCollection<Number> {
+          var list: List<String>? = null
+          var file: File? = null
+          fun test(vararg strings: String?) {
+              println(file)
+              val s = File.separator
+              val o: Any? = null
+              if (o is File) {
+                  val f = o
+              }
+          }
 
-                var files: Array<File> = emptyArray()
-            }
-        """
+          var files: Array<File> = emptyArray()
+      }
+      """
         .trimIndent()
         .trim()
 
     @Language("kotlin")
     val expected =
       """
-            package test.pkg
-            import java.io.File
-            import java.io.File as IMPORT_ALIAS_1_FILE
+      package test.pkg
+      import java.io.File
+      import java.io.File as IMPORT_ALIAS_1_FILE
 
-            abstract class MyTest : Number(), Comparable<Number>, MutableCollection<Number> {
-                var list: List<String>? = null
-                var file: IMPORT_ALIAS_1_FILE? = null
-                fun test(vararg strings: String?) {
-                    println(file)
-                    val s = IMPORT_ALIAS_1_FILE.separator
-                    val o: Any? = null
-                    if (o is IMPORT_ALIAS_1_FILE) {
-                        val f = o
-                    }
-                }
+      abstract class MyTest : Number(), Comparable<Number>, MutableCollection<Number> {
+          var list: List<String>? = null
+          var file: IMPORT_ALIAS_1_FILE? = null
+          fun test(vararg strings: String?) {
+              println(file)
+              val s = IMPORT_ALIAS_1_FILE.separator
+              val o: Any? = null
+              if (o is IMPORT_ALIAS_1_FILE) {
+                  val f = o
+              }
+          }
 
-                var files: Array<IMPORT_ALIAS_1_FILE> = emptyArray()
-            }
-        """
+          var files: Array<IMPORT_ALIAS_1_FILE> = emptyArray()
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -107,29 +107,29 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package test.pkg
-            import android.widget.RemoteViews
+      package test.pkg
+      import android.widget.RemoteViews
 
-            fun test(packageName: String, other: Any) {
-                val rv = RemoteViews(packageName, R.layout.test)
-                val ov = other as RemoteViews
-            }
-        """
+      fun test(packageName: String, other: Any) {
+          val rv = RemoteViews(packageName, R.layout.test)
+          val ov = other as RemoteViews
+      }
+      """
         .trimIndent()
         .trim()
 
     @Language("kotlin")
     val expected =
       """
-            package test.pkg
-            import android.widget.RemoteViews
-            import android.widget.RemoteViews as IMPORT_ALIAS_1_REMOTEVIEWS
+      package test.pkg
+      import android.widget.RemoteViews
+      import android.widget.RemoteViews as IMPORT_ALIAS_1_REMOTEVIEWS
 
-            fun test(packageName: String, other: Any) {
-                val rv = IMPORT_ALIAS_1_REMOTEVIEWS(packageName, R.layout.test)
-                val ov = other as IMPORT_ALIAS_1_REMOTEVIEWS
-            }
-        """
+      fun test(packageName: String, other: Any) {
+          val rv = IMPORT_ALIAS_1_REMOTEVIEWS(packageName, R.layout.test)
+          val ov = other as IMPORT_ALIAS_1_REMOTEVIEWS
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -142,44 +142,44 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package test.pkg
+      package test.pkg
 
-            import java.util.concurrent.LinkedBlockingQueue
-            import java.util.concurrent.TimeUnit
+      import java.util.concurrent.LinkedBlockingQueue
+      import java.util.concurrent.TimeUnit
 
-            class Foo(val requestQueue: LinkedBlockingQueue<String>) {
-                fun takeRequest(timeout: Long, unit: TimeUnit) = requestQueue.poll(timeout, unit)
-                fun something(): List<String> = listOf<String>("foo", "bar")
-                fun takeRequestOk(timeout: Long, unit: TimeUnit): String = requestQueue.poll(timeout, unit)
-                fun takeRequestOkTransitive(timeout: Long, unit: TimeUnit) = takeRequestOk(timeout, unit)
-                val type = Integer.TYPE
-                val typeClz: Class<Int> = Integer.TYPE
-                val typeClz2 = typeClz
-            }
-        """
+      class Foo(val requestQueue: LinkedBlockingQueue<String>) {
+          fun takeRequest(timeout: Long, unit: TimeUnit) = requestQueue.poll(timeout, unit)
+          fun something(): List<String> = listOf<String>("foo", "bar")
+          fun takeRequestOk(timeout: Long, unit: TimeUnit): String = requestQueue.poll(timeout, unit)
+          fun takeRequestOkTransitive(timeout: Long, unit: TimeUnit) = takeRequestOk(timeout, unit)
+          val type = Integer.TYPE
+          val typeClz: Class<Int> = Integer.TYPE
+          val typeClz2 = typeClz
+      }
+      """
         .trimIndent()
         .trim()
 
     @Language("kotlin")
     val expected =
       """
-            package test.pkg
+      package test.pkg
 
-            import java.util.concurrent.LinkedBlockingQueue
-            import java.util.concurrent.TimeUnit
-            import java.util.concurrent.LinkedBlockingQueue as IMPORT_ALIAS_1_LINKEDBLOCKINGQUEUE
-            import java.util.concurrent.TimeUnit as IMPORT_ALIAS_2_TIMEUNIT
+      import java.util.concurrent.LinkedBlockingQueue
+      import java.util.concurrent.TimeUnit
+      import java.util.concurrent.LinkedBlockingQueue as IMPORT_ALIAS_1_LINKEDBLOCKINGQUEUE
+      import java.util.concurrent.TimeUnit as IMPORT_ALIAS_2_TIMEUNIT
 
-            class Foo(val requestQueue: IMPORT_ALIAS_1_LINKEDBLOCKINGQUEUE<String>) {
-                fun takeRequest(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT) = requestQueue.poll(timeout, unit)
-                fun something(): List<String> = listOf<String>("foo", "bar")
-                fun takeRequestOk(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT): String = requestQueue.poll(timeout, unit)
-                fun takeRequestOkTransitive(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT) = takeRequestOk(timeout, unit)
-                val type = Integer.TYPE
-                val typeClz: Class<Int> = Integer.TYPE
-                val typeClz2 = typeClz
-            }
-        """
+      class Foo(val requestQueue: IMPORT_ALIAS_1_LINKEDBLOCKINGQUEUE<String>) {
+          fun takeRequest(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT) = requestQueue.poll(timeout, unit)
+          fun something(): List<String> = listOf<String>("foo", "bar")
+          fun takeRequestOk(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT): String = requestQueue.poll(timeout, unit)
+          fun takeRequestOkTransitive(timeout: Long, unit: IMPORT_ALIAS_2_TIMEUNIT) = takeRequestOk(timeout, unit)
+          val type = Integer.TYPE
+          val typeClz: Class<Int> = Integer.TYPE
+          val typeClz2 = typeClz
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -192,50 +192,50 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package com.google.android.play.core.splitinstall
+      package com.google.android.play.core.splitinstall
 
-            import android.content.res.Configuration as IMPORT_ALIAS_1
-            import java.util.Locale as IMPORT_ALIAS_2
-            import com.google.android.play.core.splitinstall.SplitInstallRequest as IMPORT_ALIAS_3
+      import android.content.res.Configuration as IMPORT_ALIAS_1
+      import java.util.Locale as IMPORT_ALIAS_2
+      import com.google.android.play.core.splitinstall.SplitInstallRequest as IMPORT_ALIAS_3
 
-            fun example(configuration: IMPORT_ALIAS_1, locale: IMPORT_ALIAS_2) {
-                configuration.setLocale(locale)
-                IMPORT_ALIAS_3.Builder().addLanguage(locale).build()
-            }
+      fun example(configuration: IMPORT_ALIAS_1, locale: IMPORT_ALIAS_2) {
+          configuration.setLocale(locale)
+          IMPORT_ALIAS_3.Builder().addLanguage(locale).build()
+      }
 
-            class SplitInstallRequest {
-                class Builder {
-                    fun addLanguage(locale: IMPORT_ALIAS_2): Builder {
-                        return this
-                    }
-                }
-            }
-        """
+      class SplitInstallRequest {
+          class Builder {
+              fun addLanguage(locale: IMPORT_ALIAS_2): Builder {
+                  return this
+              }
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
     @Language("kotlin")
     val expected =
       """
-            package com.google.android.play.core.splitinstall
+      package com.google.android.play.core.splitinstall
 
-            import android.content.res.Configuration as IMPORT_ALIAS_1
-            import java.util.Locale as IMPORT_ALIAS_2
-            import com.google.android.play.core.splitinstall.SplitInstallRequest as IMPORT_ALIAS_3
+      import android.content.res.Configuration as IMPORT_ALIAS_1
+      import java.util.Locale as IMPORT_ALIAS_2
+      import com.google.android.play.core.splitinstall.SplitInstallRequest as IMPORT_ALIAS_3
 
-            fun example(configuration: IMPORT_ALIAS_1, locale: IMPORT_ALIAS_2) {
-                configuration.setLocale(locale)
-                IMPORT_ALIAS_3.Builder().addLanguage(locale).build()
-            }
+      fun example(configuration: IMPORT_ALIAS_1, locale: IMPORT_ALIAS_2) {
+          configuration.setLocale(locale)
+          IMPORT_ALIAS_3.Builder().addLanguage(locale).build()
+      }
 
-            class SplitInstallRequest {
-                class Builder {
-                    fun addLanguage(locale: IMPORT_ALIAS_2): Builder {
-                        return this
-                    }
-                }
-            }
-        """
+      class SplitInstallRequest {
+          class Builder {
+              fun addLanguage(locale: IMPORT_ALIAS_2): Builder {
+                  return this
+              }
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -248,33 +248,33 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package test.pkg.application
-            import android.content.res.AssetManager
+      package test.pkg.application
+      import android.content.res.AssetManager
 
-            class ReflectionTestKotlin {
-                private fun addAssetPath(assetManager: AssetManager) {
-                    val m1 = AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
-                    val m3 = assetManager.javaClass.getDeclaredMethod("invalidateCachesLocked", AssetManager::class.java)
-                }
-            }
-        """
+      class ReflectionTestKotlin {
+          private fun addAssetPath(assetManager: AssetManager) {
+              val m1 = AssetManager::class.java.getDeclaredMethod("addAssetPath", String::class.java)
+              val m3 = assetManager.javaClass.getDeclaredMethod("invalidateCachesLocked", AssetManager::class.java)
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
     @Language("kotlin")
     val expected =
       """
-            package test.pkg.application
-            import android.content.res.AssetManager
-            import android.content.res.AssetManager as IMPORT_ALIAS_1_ASSETMANAGER
+      package test.pkg.application
+      import android.content.res.AssetManager
+      import android.content.res.AssetManager as IMPORT_ALIAS_1_ASSETMANAGER
 
-            class ReflectionTestKotlin {
-                private fun addAssetPath(assetManager: IMPORT_ALIAS_1_ASSETMANAGER) {
-                    val m1 = IMPORT_ALIAS_1_ASSETMANAGER::class.java.getDeclaredMethod("addAssetPath", String::class.java)
-                    val m3 = assetManager.javaClass.getDeclaredMethod("invalidateCachesLocked", IMPORT_ALIAS_1_ASSETMANAGER::class.java)
-                }
-            }
-        """
+      class ReflectionTestKotlin {
+          private fun addAssetPath(assetManager: IMPORT_ALIAS_1_ASSETMANAGER) {
+              val m1 = IMPORT_ALIAS_1_ASSETMANAGER::class.java.getDeclaredMethod("addAssetPath", String::class.java)
+              val m3 = assetManager.javaClass.getDeclaredMethod("invalidateCachesLocked", IMPORT_ALIAS_1_ASSETMANAGER::class.java)
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -328,43 +328,40 @@ class ImportAliasTestModeTest {
       assertNotNull(name)
       map[name!!] = s
     }
-    assertEquals(
-      "[test.pkg.Test1, test.pkg.Test2, test.pkg.sub.Test3]",
-      map.keys.sorted().toString(),
-    )
+    assertEquals("[test.pkg.Test1, test.pkg.Test2, test.pkg.sub.Test3]", map.keys.sorted().toString())
     assertEquals(
       """
-            package test.pkg
-            import java.io.File
-            import java.io.File as IMPORT_ALIAS_1_FILE
-            class Test1(val activity: android.app.Activity) {
-                var file: IMPORT_ALIAS_1_FILE? = null
-            }
-            """
+      package test.pkg
+      import java.io.File
+      import java.io.File as IMPORT_ALIAS_1_FILE
+      class Test1(val activity: android.app.Activity) {
+          var file: IMPORT_ALIAS_1_FILE? = null
+      }
+      """
         .trimIndent()
         .trim(),
       map["test.pkg.Test1"]!!.trim(),
     )
     assertEquals(
       """
-            package test.pkg
-            import java.io.File
-            import java.io.File as IMPORT_ALIAS_1_FILE
-            class Test2(val file1: IMPORT_ALIAS_1_FILE, val file2: IMPORT_ALIAS_1_FILE)
-            """
+      package test.pkg
+      import java.io.File
+      import java.io.File as IMPORT_ALIAS_1_FILE
+      class Test2(val file1: IMPORT_ALIAS_1_FILE, val file2: IMPORT_ALIAS_1_FILE)
+      """
         .trimIndent()
         .trim(),
       map["test.pkg.Test2"]!!.trim(),
     )
     assertEquals(
       """
-            package test.pkg.sub
-            import java.io.File
-            import java.io.File as IMPORT_ALIAS_1_FILE
-            class Test3 {
-                var file: IMPORT_ALIAS_1_FILE? = null
-            }
-            """
+      package test.pkg.sub
+      import java.io.File
+      import java.io.File as IMPORT_ALIAS_1_FILE
+      class Test3 {
+          var file: IMPORT_ALIAS_1_FILE? = null
+      }
+      """
         .trimIndent()
         .trim(),
       map["test.pkg.sub.Test3"]!!.trim(),
@@ -376,37 +373,37 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            package test.pkg
+      package test.pkg
 
-            import android.app.Activity
-            import android.app.AlertDialog
+      import android.app.Activity
+      import android.app.AlertDialog
 
-            class AlertDialogTestKotlin {
-                fun test(activity: Activity) {
-                    AlertDialog.Builder(activity)
-                    val theme = AlertDialog.THEME_TRADITIONAL
-                }
-            }
-        """
+      class AlertDialogTestKotlin {
+          fun test(activity: Activity) {
+              AlertDialog.Builder(activity)
+              val theme = AlertDialog.THEME_TRADITIONAL
+          }
+      }
+      """
         .trimIndent()
 
     @Language("kotlin")
     val expected =
       """
-            package test.pkg
+      package test.pkg
 
-            import android.app.Activity
-            import android.app.AlertDialog
-            import android.app.Activity as IMPORT_ALIAS_1_ACTIVITY
-            import android.app.AlertDialog as IMPORT_ALIAS_2_ALERTDIALOG
+      import android.app.Activity
+      import android.app.AlertDialog
+      import android.app.Activity as IMPORT_ALIAS_1_ACTIVITY
+      import android.app.AlertDialog as IMPORT_ALIAS_2_ALERTDIALOG
 
-            class AlertDialogTestKotlin {
-                fun test(activity: IMPORT_ALIAS_1_ACTIVITY) {
-                    IMPORT_ALIAS_2_ALERTDIALOG.Builder(activity)
-                    val theme = IMPORT_ALIAS_2_ALERTDIALOG.THEME_TRADITIONAL
-                }
-            }
-        """
+      class AlertDialogTestKotlin {
+          fun test(activity: IMPORT_ALIAS_1_ACTIVITY) {
+              IMPORT_ALIAS_2_ALERTDIALOG.Builder(activity)
+              val theme = IMPORT_ALIAS_2_ALERTDIALOG.THEME_TRADITIONAL
+          }
+      }
+      """
         .trimIndent()
         .trim()
 
@@ -419,10 +416,10 @@ class ImportAliasTestModeTest {
     @Language("kotlin")
     val kotlin =
       """
-            import android.animation.Animator.AnimatorPauseListener
+      import android.animation.Animator.AnimatorPauseListener
 
-            fun addListeners(vararg listeners: AnimatorPauseListener) {}
-        """
+      fun addListeners(vararg listeners: AnimatorPauseListener) {}
+      """
         .trimIndent()
 
     val aliased = alias(kotlin)

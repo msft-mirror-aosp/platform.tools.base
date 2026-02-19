@@ -17,55 +17,54 @@
 package com.android.build.gradle.internal.instrumentation
 
 import com.android.testutils.TestUtils
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.util.TraceClassVisitor
 import java.io.PrintWriter
 import java.io.StringWriter
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.util.TraceClassVisitor
 
 fun dumpClassContent(classByteCode: ByteArray?): Array<String> {
-    val classReader = ClassReader(classByteCode)
-    val out = StringWriter()
-    val traceClassVisitor = TraceClassVisitor(PrintWriter(out))
-    classReader.accept(traceClassVisitor, 0)
-    return out.toString().split("\n").toTypedArray()
+  val classReader = ClassReader(classByteCode)
+  val out = StringWriter()
+  val traceClassVisitor = TraceClassVisitor(PrintWriter(out))
+  classReader.accept(traceClassVisitor, 0)
+  return out.toString().split("\n").toTypedArray()
 }
 
 fun getClassContentDiff(before: ByteArray?, after: ByteArray?): String {
-    return TestUtils.getDiff(dumpClassContent(before), dumpClassContent(after))
+  return TestUtils.getDiff(dumpClassContent(before), dumpClassContent(after))
 }
 
 // test data
 
-@Target(AnnotationTarget.CLASS)
-annotation class Instrument
+@Target(AnnotationTarget.CLASS) annotation class Instrument
 
 interface I {
-    fun f1()
+  fun f1()
 }
 
 @Instrument
 interface InterfaceExtendsI : I {
-    fun f2()
+  fun f2()
 }
 
 @Instrument
 class ClassImplementsI : I {
-    override fun f1() {}
-    fun f2() {}
+  override fun f1() {}
+
+  fun f2() {}
 }
 
 open class ClassWithNoInterfacesOrSuperclasses {
-    fun f1() {}
+  fun f1() {}
 }
 
-open class ClassExtendsOneClassAndImplementsTwoInterfaces : InterfaceExtendsI,
-    ClassWithNoInterfacesOrSuperclasses() {
-    override fun f2() {}
-    fun f3() {}
+open class ClassExtendsOneClassAndImplementsTwoInterfaces : InterfaceExtendsI, ClassWithNoInterfacesOrSuperclasses() {
+  override fun f2() {}
+
+  fun f3() {}
 }
 
 @Instrument
-class ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces :
-    ClassExtendsOneClassAndImplementsTwoInterfaces() {
-    fun f4() {}
+class ClassExtendsAClassThatExtendsAnotherClassAndImplementsTwoInterfaces : ClassExtendsOneClassAndImplementsTwoInterfaces() {
+  fun f4() {}
 }

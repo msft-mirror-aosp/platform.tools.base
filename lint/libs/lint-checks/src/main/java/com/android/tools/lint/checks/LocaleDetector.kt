@@ -45,14 +45,7 @@ import org.jetbrains.uast.getParentOfType
 class LocaleDetector : Detector(), SourceCodeScanner {
 
   override fun getApplicableMethodNames(): List<String> {
-    return listOf(
-      TO_LOWER_CASE,
-      TO_UPPER_CASE,
-      FORMAT_METHOD,
-      GET_DEFAULT,
-      CAPITALIZE,
-      DECAPITALIZE,
-    )
+    return listOf(TO_LOWER_CASE, TO_UPPER_CASE, FORMAT_METHOD, GET_DEFAULT, CAPITALIZE, DECAPITALIZE)
   }
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -70,8 +63,7 @@ class LocaleDetector : Detector(), SourceCodeScanner {
       }
     } else if (containingClass == KOTLIN_STRINGS_JVM_KT || containingClass == KOTLIN_STRINGS_KT) {
       when (methodName) {
-        FORMAT_METHOD ->
-          checkFormat(context, method, node, 1) // 1: extension function, 0 arg is this
+        FORMAT_METHOD -> checkFormat(context, method, node, 1) // 1: extension function, 0 arg is this
         CAPITALIZE,
         DECAPITALIZE -> checkStringsKt(context, method, node)
         TO_LOWER_CASE,
@@ -80,11 +72,7 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun checkJavaToUpperLowerCase(
-    context: JavaContext,
-    method: PsiMethod,
-    node: UCallExpression,
-  ) {
+  private fun checkJavaToUpperLowerCase(context: JavaContext, method: PsiMethod, node: UCallExpression) {
     // In the IDE, don't flag java toUpperCase/toLowerCase; these
     // are already flagged by built-in IDE inspections, so we don't
     // want duplicate warnings.
@@ -136,17 +124,9 @@ class LocaleDetector : Detector(), SourceCodeScanner {
     context.report(STRING_LOCALE, node, location, message, quickfixData)
   }
 
-  private fun checkFormat(
-    context: JavaContext,
-    method: PsiMethod,
-    call: UCallExpression,
-    stringIndex: Int,
-  ) {
+  private fun checkFormat(context: JavaContext, method: PsiMethod, call: UCallExpression, stringIndex: Int) {
     // Only check the non-locale version of String.format
-    if (
-      method.parameterList.parametersCount <= stringIndex ||
-        !context.evaluator.parameterHasType(method, stringIndex, TYPE_STRING)
-    ) {
+    if (method.parameterList.parametersCount <= stringIndex || !context.evaluator.parameterHasType(method, stringIndex, TYPE_STRING)) {
       return
     }
 
@@ -176,25 +156,13 @@ class LocaleDetector : Detector(), SourceCodeScanner {
         } else {
           context.getCallLocation(call, false, true)
         }
-      val message =
-        "Implicitly using the default locale is a common source of bugs: " +
-          "Use `String.format(Locale, ...)` instead"
+      val message = "Implicitly using the default locale is a common source of bugs: " + "Use `String.format(Locale, ...)` instead"
       context.report(STRING_LOCALE, call, location, message)
     }
   }
 
-  private fun checkLocaleGetDefault(
-    context: JavaContext,
-    @Suppress("UNUSED_PARAMETER") method: PsiMethod,
-    node: UCallExpression,
-  ) {
-    val field =
-      node.getParentOfType<UField>(
-        UField::class.java,
-        true,
-        UMethod::class.java,
-        ULambdaExpression::class.java,
-      ) ?: return
+  private fun checkLocaleGetDefault(context: JavaContext, @Suppress("UNUSED_PARAMETER") method: PsiMethod, node: UCallExpression) {
+    val field = node.getParentOfType<UField>(UField::class.java, true, UMethod::class.java, ULambdaExpression::class.java) ?: return
 
     val evaluator = context.evaluator
     if (evaluator.isStatic(field) && evaluator.isFinal(field)) {

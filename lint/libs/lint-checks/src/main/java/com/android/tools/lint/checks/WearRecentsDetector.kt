@@ -88,11 +88,7 @@ class WearRecentsDetector : WearDetector(), XmlScanner, SourceCodeScanner {
         "Set `taskAffinity` for Wear activities to make them appear correctly in recents",
         fix()
           .alternatives(
-            fix()
-              .name("Set `taskAffinity`")
-              .set(ANDROID_URI, ATTR_TASK_AFFINITY, "")
-              .autoFix()
-              .build(),
+            fix().name("Set `taskAffinity`").set(ANDROID_URI, ATTR_TASK_AFFINITY, "").autoFix().build(),
             fix()
               .name("Exclude from recents")
               .composite(
@@ -105,21 +101,12 @@ class WearRecentsDetector : WearDetector(), XmlScanner, SourceCodeScanner {
     }
   }
 
-  override fun getApplicableReferenceNames() =
-    listOf(REF_FLAG_ACTIVITY_NEW_TASK, REF_FLAG_ACTIVITY_CLEAR_TOP)
+  override fun getApplicableReferenceNames() = listOf(REF_FLAG_ACTIVITY_NEW_TASK, REF_FLAG_ACTIVITY_CLEAR_TOP)
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (!isWearProject) {
       return
     }
-    context.report(
-      ISSUE,
-      context.getLocation(reference),
-      "Avoid using `FLAG_ACTIVITY_NEW_TASK` and `FLAG_ACTIVITY_CLEAR_TOP`",
-    )
+    context.report(ISSUE, context.getLocation(reference), "Avoid using `FLAG_ACTIVITY_NEW_TASK` and `FLAG_ACTIVITY_CLEAR_TOP`")
   }
 }

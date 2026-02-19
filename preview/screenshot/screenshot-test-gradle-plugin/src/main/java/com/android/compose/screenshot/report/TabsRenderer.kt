@@ -16,48 +16,43 @@
 
 package com.android.compose.screenshot.report
 
-import org.gradle.reporting.ReportRenderer
 import java.io.IOException
+import org.gradle.reporting.ReportRenderer
 
 class TabsRenderer<T> : ReportRenderer<T, SimpleHtmlWriter>() {
 
-    private val tabs: MutableList<TabDefinition> = ArrayList()
-    fun add(title: String, contentRenderer: ReportRenderer<T, SimpleHtmlWriter>) {
-        tabs.add(TabDefinition(title, contentRenderer))
-    }
+  private val tabs: MutableList<TabDefinition> = ArrayList()
 
-    fun clear() {
-        tabs.clear()
-    }
+  fun add(title: String, contentRenderer: ReportRenderer<T, SimpleHtmlWriter>) {
+    tabs.add(TabDefinition(title, contentRenderer))
+  }
 
-    @Throws(IOException::class)
-    override fun render(model: T, htmlWriterWriter: SimpleHtmlWriter) {
-        htmlWriterWriter.startElement("div").attribute("id", "tabs")
-        htmlWriterWriter.startElement("ul").attribute("class", "tabLinks")
-        for (i in tabs.indices) {
-            val tab: TabDefinition = tabs[i]
-            val tabId = String.format("tab%s", i)
-            htmlWriterWriter.startElement("li")
-            htmlWriterWriter.startElement("a")
-                .attribute("href", "#$tabId")
-                .characters(tab.title)
-                .endElement()
-            htmlWriterWriter.endElement()
-        }
-        htmlWriterWriter.endElement()
-        for (i in tabs.indices) {
-            val tab: TabDefinition = tabs[i]
-            val tabId = String.format("tab%s", i)
-            htmlWriterWriter.startElement("div").attribute("id", tabId).attribute("class", "tab")
-            htmlWriterWriter.startElement("h2").characters(tab.title).endElement()
-            tab.renderer.render(model, htmlWriterWriter)
-            htmlWriterWriter.endElement()
-        }
-        htmlWriterWriter.endElement()
-    }
+  fun clear() {
+    tabs.clear()
+  }
 
-    private inner class TabDefinition (
-        val title: String,
-        val renderer: ReportRenderer<T, SimpleHtmlWriter>
-    )
+  @Throws(IOException::class)
+  override fun render(model: T, htmlWriterWriter: SimpleHtmlWriter) {
+    htmlWriterWriter.startElement("div").attribute("id", "tabs")
+    htmlWriterWriter.startElement("ul").attribute("class", "tabLinks")
+    for (i in tabs.indices) {
+      val tab: TabDefinition = tabs[i]
+      val tabId = String.format("tab%s", i)
+      htmlWriterWriter.startElement("li")
+      htmlWriterWriter.startElement("a").attribute("href", "#$tabId").characters(tab.title).endElement()
+      htmlWriterWriter.endElement()
+    }
+    htmlWriterWriter.endElement()
+    for (i in tabs.indices) {
+      val tab: TabDefinition = tabs[i]
+      val tabId = String.format("tab%s", i)
+      htmlWriterWriter.startElement("div").attribute("id", tabId).attribute("class", "tab")
+      htmlWriterWriter.startElement("h2").characters(tab.title).endElement()
+      tab.renderer.render(model, htmlWriterWriter)
+      htmlWriterWriter.endElement()
+    }
+    htmlWriterWriter.endElement()
+  }
+
+  private inner class TabDefinition(val title: String, val renderer: ReportRenderer<T, SimpleHtmlWriter>)
 }

@@ -1426,15 +1426,5 @@ class SliceDetectorTest : AbstractCheckTest() {
       .indented()
 
   private val stubs =
-    arrayOf(
-      listBuilder,
-      gridRowBuilder,
-      sliceAction,
-      sliceHints,
-      sliceProvider,
-      defaultSliceProvider,
-      consumer,
-      slice,
-      iconCompat,
-    )
+    arrayOf(listBuilder, gridRowBuilder, sliceAction, sliceHints, sliceProvider, defaultSliceProvider, consumer, slice, iconCompat)
 }

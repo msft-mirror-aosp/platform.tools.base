@@ -19,8 +19,7 @@ package com.android.build.api.dsl
 /**
  * Maven publishing DSL object for configuring options related to publishing AAR.
  *
- * To publish just one variant, use [singleVariant]. The following sets up publishing of only the
- * fullRelease variant of an android library.
+ * To publish just one variant, use [singleVariant]. The following sets up publishing of only the fullRelease variant of an android library.
  *
  * ```
  * android {
@@ -50,8 +49,8 @@ package com.android.build.api.dsl
  * }
  * ```
  *
- * To publish multiple variants, use [multipleVariants]. The following sets up publishing of both
- * fullDebug and fullRelease variants of an android library.
+ * To publish multiple variants, use [multipleVariants]. The following sets up publishing of both fullDebug and fullRelease variants of an
+ * android library.
  *
  * ```
  * android {
@@ -79,9 +78,8 @@ package com.android.build.api.dsl
  * }
  * ```
  *
- * To publish all the build variants, you can use [MultipleVariants.allVariants] as a shortcut
- * instead of filtering variants with [MultipleVariants.includeBuildTypeValues]
- * and [MultipleVariants.includeFlavorDimensionAndValues].
+ * To publish all the build variants, you can use [MultipleVariants.allVariants] as a shortcut instead of filtering variants with
+ * [MultipleVariants.includeBuildTypeValues] and [MultipleVariants.includeFlavorDimensionAndValues].
  *
  * ```
  * android {
@@ -105,8 +103,8 @@ package com.android.build.api.dsl
  * }
  * ```
  *
- * This following code example shows how to create two publications one for demoRelease build
- * variant, one for fullDebug & fullRelease build variants.
+ * This following code example shows how to create two publications one for demoRelease build variant, one for fullDebug & fullRelease build
+ * variants.
  *
  * ```
  * android {
@@ -142,8 +140,9 @@ package com.android.build.api.dsl
  *     }
  * }
  * ```
- * The testFixtures component is published by default with its main variant. To disable publishing
- * the testFixtures component, see the following example.
+ *
+ * The testFixtures component is published by default with its main variant. To disable publishing the testFixtures component, see the
+ * following example.
  *
  * ```
  * afterEvaluate {
@@ -157,13 +156,9 @@ package com.android.build.api.dsl
  */
 interface LibraryPublishing : Publishing<LibrarySingleVariant> {
 
-    /**
-     * Publish multiple variants to a component.
-     */
-    fun multipleVariants(componentName: String, action: MultipleVariants.() -> Unit)
+  /** Publish multiple variants to a component. */
+  fun multipleVariants(componentName: String, action: MultipleVariants.() -> Unit)
 
-    /**
-     * Publish multiple variants to the default component.
-     */
-    fun multipleVariants(action: MultipleVariants.() -> Unit)
+  /** Publish multiple variants to the default component. */
+  fun multipleVariants(action: MultipleVariants.() -> Unit)
 }

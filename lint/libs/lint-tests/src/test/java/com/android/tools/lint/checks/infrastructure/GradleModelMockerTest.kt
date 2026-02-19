@@ -36,17 +36,11 @@ import org.junit.rules.TemporaryFolder
 class GradleModelMockerTest {
   @get:Rule var tempFolder = TemporaryFolder()
 
-  private fun createMocker(
-    @Language("Groovy") gradle: String,
-    @Language("TOML") versionCatalog: String? = null,
-  ): GradleModelMocker {
+  private fun createMocker(@Language("Groovy") gradle: String, @Language("TOML") versionCatalog: String? = null): GradleModelMocker {
     return createMocker(gradle, tempFolder, versionCatalog)
   }
 
-  private fun createMockerKts(
-    @Language("kts") gradle: String,
-    @Language("TOML") versionCatalog: String? = null,
-  ): GradleModelMocker {
+  private fun createMockerKts(@Language("kts") gradle: String, @Language("TOML") versionCatalog: String? = null): GradleModelMocker {
     //noinspection LanguageMismatch
     return createMocker(gradle, tempFolder, versionCatalog)
   }
@@ -69,9 +63,7 @@ dependencies {
     val libraries = variant.mainArtifact.dependencies.compileDependencies.roots
     Truth.assertThat(libraries).hasSize(1)
     val library = libraries.first()
-    Truth.assertThat(
-        (library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString()
-      )
+    Truth.assertThat((library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
       .isEqualTo("my.group.id:mylib:25.0.0-SNAPSHOT")
   }
 
@@ -87,8 +79,7 @@ dependencies {
       )
     val module = mocker.getLintModule()
 
-    Truth.assertThat(module.mavenName?.toString())
-      .isEqualTo("test.pkg.library:test_project-build:1.1")
+    Truth.assertThat(module.mavenName?.toString()).isEqualTo("test.pkg.library:test_project-build:1.1")
   }
 
   @Test
@@ -111,17 +102,13 @@ dependencies {
     val testLibraries = variant.testArtifact!!.dependencies.compileDependencies.roots
     Truth.assertThat(testLibraries).hasSize(1)
     val testLibrary = testLibraries.first()
-    Truth.assertThat(
-        (testLibrary.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString()
-      )
+    Truth.assertThat((testLibrary.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
       .isEqualTo("my.group.id:mylib1:1.2.3-rc4")
 
     val androidTestLibraries = variant.androidTestArtifact!!.dependencies.compileDependencies.roots
     Truth.assertThat(androidTestLibraries).hasSize(1)
     val library = androidTestLibraries.first()
-    Truth.assertThat(
-        (library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString()
-      )
+    Truth.assertThat((library.findLibrary() as LintModelExternalLibrary).resolvedCoordinates.toString())
       .isEqualTo("my.group.id:mylib2:4.5.6-SNAPSHOT")
   }
 
@@ -142,10 +129,9 @@ dependencies {
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val javaLibraries =
-      variant.mainArtifact.dependencies.compileDependencies
-        .getAllLibraries()
-        .filterIsInstance<LintModelJavaLibrary>()
-        .map { it.resolvedCoordinates.toString() }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     Truth.assertThat(javaLibraries)
       .containsAllOf(
         "org.jetbrains.kotlin:kotlin-stdlib-jdk7:\$kotlin_version",
@@ -175,10 +161,9 @@ dependencies {
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val libraries =
-      variant.mainArtifact.dependencies.compileDependencies
-        .getAllLibraries()
-        .filterIsInstance<LintModelJavaLibrary>()
-        .map { it.resolvedCoordinates.toString() }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     Truth.assertThat(libraries).hasSize(4)
     Truth.assertThat(libraries)
       .containsExactly(
@@ -353,18 +338,13 @@ android {
     Truth.assertThat(module.findVariant("freeBetaRelease")!!.debuggable).isFalse()
 
     // ResConfigs
-    Truth.assertThat(module.findVariant("freeNormalDebug")!!.resourceConfigurations)
-      .containsExactly("mdpi")
-    Truth.assertThat(module.findVariant("paidNormalRelease")!!.resourceConfigurations)
-      .containsExactly("mdpi")
-    Truth.assertThat(module.findVariant("freeBetaDebug")!!.resourceConfigurations)
-      .containsExactly("mdpi", "en", "nodpi", "hdpi")
-    Truth.assertThat(module.findVariant("paidBetaRelease")!!.resourceConfigurations)
-      .containsExactly("mdpi", "en", "nodpi", "hdpi")
+    Truth.assertThat(module.findVariant("freeNormalDebug")!!.resourceConfigurations).containsExactly("mdpi")
+    Truth.assertThat(module.findVariant("paidNormalRelease")!!.resourceConfigurations).containsExactly("mdpi")
+    Truth.assertThat(module.findVariant("freeBetaDebug")!!.resourceConfigurations).containsExactly("mdpi", "en", "nodpi", "hdpi")
+    Truth.assertThat(module.findVariant("paidBetaRelease")!!.resourceConfigurations).containsExactly("mdpi", "en", "nodpi", "hdpi")
 
     // Suffix handling
-    Truth.assertThat(module.findVariant("freeBetaDebug")!!.mainArtifact.applicationId)
-      .isEqualTo("test.pkg")
+    Truth.assertThat(module.findVariant("freeBetaDebug")!!.mainArtifact.applicationId).isEqualTo("test.pkg")
     Truth.assertThat(module.findVariant("paidBetaRelease")!!.`package`).isNull()
   }
 
@@ -438,16 +418,11 @@ dependencies {
     Truth.assertThat(module.type).isEqualTo(LintModelModuleType.APP)
 
     val libraries =
-      variant.mainArtifact.dependencies.compileDependencies
-        .getAllLibraries()
-        .filterIsInstance<LintModelJavaLibrary>()
-        .map { it.resolvedCoordinates.toString() }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
 
-    Truth.assertThat(libraries)
-      .containsExactly(
-        "com.android.support:support-v4:19.0",
-        "com.android.support:support-annotations:19.0",
-      )
+    Truth.assertThat(libraries).containsExactly("com.android.support:support-v4:19.0", "com.android.support:support-annotations:19.0")
   }
 
   @Test
@@ -518,30 +493,29 @@ dependencies {
 
     val module = mocker.getLintModule()
 
-    fun LintModelVariant.testValue() =
-      this.resValues.values.joinToString("\n") { "${it.name}/${it.type}/${it.value}" }
+    fun LintModelVariant.testValue() = this.resValues.values.joinToString("\n") { "${it.name}/${it.type}/${it.value}" }
 
     Truth.assertThat(module.findVariant("flavor1Debug")!!.testValue())
       .isEqualTo(
         """
-    defaultConfigName/string/Some DefaultConfig Data
-    VALUE_DEBUG/string/10
-    VALUE_FLAVOR/string/10
-    VALUE_VARIANT/string/10
-    debugName/string/Some Debug Data
-                """
+        defaultConfigName/string/Some DefaultConfig Data
+        VALUE_DEBUG/string/10
+        VALUE_FLAVOR/string/10
+        VALUE_VARIANT/string/10
+        debugName/string/Some Debug Data
+        """
           .trimIndent()
       )
     Truth.assertThat(module.findVariant("flavor2Release")!!.testValue())
       .isEqualTo(
         """
-    defaultConfigName/string/Some DefaultConfig Data
-    VALUE_DEBUG/string/20
-    VALUE_FLAVOR/string/20
-    VALUE_VARIANT/string/20
-    releaseName1/string/Some Release Data 1
-    releaseName2/string/Some Release Data 2
-                """
+        defaultConfigName/string/Some DefaultConfig Data
+        VALUE_DEBUG/string/20
+        VALUE_FLAVOR/string/20
+        VALUE_VARIANT/string/20
+        releaseName1/string/Some Release Data 1
+        releaseName2/string/Some Release Data 2
+        """
           .trimIndent()
       )
   }
@@ -607,32 +581,31 @@ dependencies {
       )
     val module = mocker.getLintModule()
 
-    fun LintModelVariant.testValue() =
-      this.manifestPlaceholders.entries.joinToString("\n") { "${it.key}/${it.value}" }
+    fun LintModelVariant.testValue() = this.manifestPlaceholders.entries.joinToString("\n") { "${it.key}/${it.value}" }
 
     Truth.assertThat(module.findVariant("flavorDebug")!!.testValue())
       .isEqualTo(
         """
-    localApplicationId/com.example.manifest_merger_example.flavor
-                """
+        localApplicationId/com.example.manifest_merger_example.flavor
+        """
           .trimIndent()
       )
 
     Truth.assertThat(module.findVariant("freeRelease")!!.testValue())
       .isEqualTo(
         """
-    localApplicationId/com.example.manifest_merger_example
-    holder/free
-                """
+        localApplicationId/com.example.manifest_merger_example
+        holder/free
+        """
           .trimIndent()
       )
 
     Truth.assertThat(module.findVariant("betaDebug")!!.testValue())
       .isEqualTo(
         """
-    localApplicationId/com.example.manifest_merger_example
-    holder/beta
-                """
+        localApplicationId/com.example.manifest_merger_example
+        holder/beta
+        """
           .trimIndent()
       )
   }
@@ -714,8 +687,7 @@ dependencies {
     mocker.setVariantName("flavorDebug")
     val variant = mocker.getLintVariant()!!
 
-    Truth.assertThat(variant.mainArtifact.applicationId)
-      .isEqualTo("com.example.manifest_merger_example.flavor")
+    Truth.assertThat(variant.mainArtifact.applicationId).isEqualTo("com.example.manifest_merger_example.flavor")
     Truth.assertThat(variant.minSdkVersion!!.apiLevel).isEqualTo(16)
     Truth.assertThat(variant.targetSdkVersion!!.apiLevel).isEqualTo(22)
     //        Truth.assertThat(flavor.versionCode).isEqualTo(2)
@@ -888,15 +860,13 @@ dependencies {
     var variant = mocker.getLintVariant()!!
 
     val javaLibraries =
-      variant.mainArtifact.dependencies.compileDependencies
-        .getAllLibraries()
-        .filterIsInstance<LintModelJavaLibrary>()
-        .map { it.resolvedCoordinates.toString() }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelJavaLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
     val androidLibraries =
-      variant.mainArtifact.dependencies.compileDependencies
-        .getAllLibraries()
-        .filterIsInstance<LintModelAndroidLibrary>()
-        .map { it.resolvedCoordinates.toString() }
+      variant.mainArtifact.dependencies.compileDependencies.getAllLibraries().filterIsInstance<LintModelAndroidLibrary>().map {
+        it.resolvedCoordinates.toString()
+      }
 
     Truth.assertThat(javaLibraries)
       .containsExactly(

@@ -23,87 +23,72 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Tests enabling build features that are normally off by default. Similar to
- * [DisabledSrcResGenTest].
- */
+/** Tests enabling build features that are normally off by default. Similar to [DisabledSrcResGenTest]. */
 class EnabledSrcResGenTest {
-    @get:Rule
-    val rootProject = GradleTestProject.builder().fromTestProject("applibtest").create()
+  @get:Rule val rootProject = GradleTestProject.builder().fromTestProject("applibtest").create()
 
-    private lateinit var appProject: GradleTestProject
-    private lateinit var libProject: GradleTestProject
+  private lateinit var appProject: GradleTestProject
+  private lateinit var libProject: GradleTestProject
 
-    @Before
-    fun setUp() {
-        appProject = rootProject.getSubproject(":app")
-        libProject = rootProject.getSubproject(":lib")
-    }
+  @Before
+  fun setUp() {
+    appProject = rootProject.getSubproject(":app")
+    libProject = rootProject.getSubproject(":lib")
+  }
 
-    @Test
-    fun `test enabling Renderscript via build-gradle`() {
-        checkViaBuildFile("renderScript", "compileDebugRenderscript")
-    }
+  @Test
+  fun `test enabling Renderscript via build-gradle`() {
+    checkViaBuildFile("renderScript", "compileDebugRenderscript")
+  }
 
-    @Test
-    fun `test enabling AIDL via build-gradle`() {
-        checkViaBuildFile("aidl", "compileDebugAidl")
-    }
+  @Test
+  fun `test enabling AIDL via build-gradle`() {
+    checkViaBuildFile("aidl", "compileDebugAidl")
+  }
 
-    @Test
-    fun `test enabling shaders via gradle-properties`() {
-        checkViaGradleProperties(BooleanOption.BUILD_FEATURE_SHADERS, "compileDebugShaders")
-    }
+  @Test
+  fun `test enabling shaders via gradle-properties`() {
+    checkViaGradleProperties(BooleanOption.BUILD_FEATURE_SHADERS, "compileDebugShaders")
+  }
 
-    @Test
-    fun `test enabling shaders via build-gradle`() {
-        checkViaBuildFile("shaders", "compileDebugShaders")
-    }
+  @Test
+  fun `test enabling shaders via build-gradle`() {
+    checkViaBuildFile("shaders", "compileDebugShaders")
+  }
 
-    private fun checkViaGradleProperties(
-        booleanOption: BooleanOption,
-        taskName: String
-    ) {
-        // first do a build without enabling the feature to check the tasks do not exist in this
-        // case (build both the APK and AAR).
-        var result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
-            .run("assembleDebug")
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
+  private fun checkViaGradleProperties(booleanOption: BooleanOption, taskName: String) {
+    // first do a build without enabling the feature to check the tasks do not exist in this
+    // case (build both the APK and AAR).
+    var result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
 
-        // then change the project and run again
-        rootProject.gradlePropertiesFile
-            .appendText(
-                """
+    // then change the project and run again
+    rootProject.gradlePropertiesFile.appendText(
+      """
     ${booleanOption.propertyName}=true"""
-            )
+    )
 
-        result = rootProject.executor()
-            .with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
-            .run("assembleDebug")
+    result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
 
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
-    }
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
+  }
 
-    private fun checkViaBuildFile(
-        propertyName: String,
-        taskName: String
-    ) {
-        // first do a build without enabling the feature to check the tasks do not exist in this
-        // case (build both the APK and AAR).
-        var result = rootProject.executor().run("assembleDebug")
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
+  private fun checkViaBuildFile(propertyName: String, taskName: String) {
+    // first do a build without enabling the feature to check the tasks do not exist in this
+    // case (build both the APK and AAR).
+    var result = rootProject.executor().run("assembleDebug")
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNull()
 
-        // then change the project and run again
-        appProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
-        libProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
+    // then change the project and run again
+    appProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
+    libProject.buildFile.appendText("android.buildFeatures.$propertyName = true")
 
-        result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false)
-            .run("assembleDebug")
+    result = rootProject.executor().with(BooleanOption.CUSTOM_SHADER_PATH_REQUIRED, false).run("assembleDebug")
 
-        Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
-        Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
-    }
+    Truth.assertThat(result.findTask(":app:$taskName")).named(":app:$taskName").isNotNull()
+    Truth.assertThat(result.findTask(":lib:$taskName")).named(":lib:$taskName").isNotNull()
+  }
 }

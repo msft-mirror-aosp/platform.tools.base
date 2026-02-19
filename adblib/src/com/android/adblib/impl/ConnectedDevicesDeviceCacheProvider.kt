@@ -24,7 +24,7 @@ import com.android.adblib.device
 
 internal class ConnectedDevicesDeviceCacheProvider(val adbSession: AdbSession) : DeviceCacheProvider {
 
-    override suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache? {
-        return adbSession.connectedDevicesTracker.device(device)?.cache
-    }
+  override suspend fun getCacheOrNull(device: DeviceSelector): CoroutineScopeCache? {
+    return adbSession.connectedDevicesTracker.device(device)?.cache
+  }
 }

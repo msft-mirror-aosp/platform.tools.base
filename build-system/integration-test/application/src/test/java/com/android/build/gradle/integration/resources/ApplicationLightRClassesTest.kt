@@ -21,54 +21,59 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.TEST_SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import org.junit.Rule
 import org.junit.Test
 
 class ApplicationLightRClassesTest {
 
-    private val lib = MinimalSubProject.lib("com.example.lib")
-        .appendToBuild(
-            """
+  private val lib =
+    MinimalSubProject.lib("com.example.lib")
+      .appendToBuild(
+        """
                 dependencies {
                     api 'androidx.appcompat:appcompat:$ANDROIDX_APPCOMPAT_APPCOMPAT_VERSION'
                 }
                 """
-        )
-        .withFile(
-            "src/main/res/values/strings.xml",
-            """<resources>
+      )
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """<resources>
                         <string name="lib_string">lib string</string>
-                    </resources>""")
-        .withFile(
-            "src/main/java/com/example/lib/Example.java",
-            """package com.example.lib;
+                    </resources>""",
+      )
+      .withFile(
+        "src/main/java/com/example/lib/Example.java",
+        """package com.example.lib;
                     public class Example {
                         public static int LOCAL_RES = R.string.lib_string;
                         public static int DEP_RES = androidx.appcompat.R.attr.actionBarDivider;
                     }
-                    """)
+                    """,
+      )
 
-    private val app = MinimalSubProject.app("com.example.app")
-        .withFile(
-            "src/main/res/values/strings.xml",
-            """<resources>
+  private val app =
+    MinimalSubProject.app("com.example.app")
+      .withFile(
+        "src/main/res/values/strings.xml",
+        """<resources>
                         <attr name="my_attr" format="string"/>
                         <declare-styleable name="my_styleable">
                             <attr name="my_attr"/>
                             <attr name="android:keyHeight"/>
                         </declare-styleable>
                         <string name="app_string">app string</string>
-                    </resources>""")
-        .withFile(
-            "src/androidTest/res/values/strings.xml",
-            """<resources>
+                    </resources>""",
+      )
+      .withFile(
+        "src/androidTest/res/values/strings.xml",
+        """<resources>
                         <string name="test_app_string">test app string</string>
-                    </resources>""")
-        .withFile(
-            "src/main/java/com/example/app/Example.java",
-            """package com.example.app;
+                    </resources>""",
+      )
+      .withFile(
+        "src/main/java/com/example/app/Example.java",
+        """package com.example.app;
                     public class Example {
                         public static int LOCAL_RES = R.string.app_string;
                         public static int LIB_RES = com.example.lib.R.string.lib_string;
@@ -88,10 +93,11 @@ class ApplicationLightRClassesTest {
                             }
                         }
                     }
-                    """)
-        .withFile(
-            "src/androidTest/java/com/example/app/ExampleTest.java",
-            """package com.example.app;
+                    """,
+      )
+      .withFile(
+        "src/androidTest/java/com/example/app/ExampleTest.java",
+        """package com.example.app;
 
                     import android.support.test.runner.AndroidJUnit4;
 
@@ -109,110 +115,61 @@ class ApplicationLightRClassesTest {
                             int DEP_RES = androidx.appcompat.R.attr.actionBarDivider;
                         }
                     }
-                    """)
-        .appendToBuild(
-            """
+                    """,
+      )
+      .appendToBuild(
+        """
                 dependencies {
                     testImplementation 'junit:junit:4.12'
                     androidTestImplementation 'com.android.support.test:runner:$TEST_SUPPORT_LIB_VERSION'
                 }
-                """)
+                """
+      )
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":lib", lib)
-            .subproject(":app", app)
-            .dependency(app, lib)
-            .build()
+  private val testApp = MultiModuleTestProject.builder().subproject(":lib", lib).subproject(":app", app).dependency(app, lib).build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp)
-        .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    @Test
-    fun testResourcesCompiled() {
-        project.executor()
-                .run(":app:assembleDebug")
+  @Test
+  fun testResourcesCompiled() {
+    project.executor().run(":app:assembleDebug")
 
-        // Check library resources
-        val libFiles = project.getSubproject("lib")
-        assertThat(
-            libFiles.getIntermediateFile(
-                    "compile_r_class_jar",
-                    "debug",
-                    "generateDebugRFile",
-                    "R.jar")).exists()
+    // Check library resources
+    val libFiles = project.getSubproject("lib")
+    assertThat(libFiles.getIntermediateFile("compile_r_class_jar", "debug", "generateDebugRFile", "R.jar")).exists()
 
-        assertThat(
-            libFiles.getIntermediateFile(
-                    "local_only_symbol_list",
-                    "debug",
-                    "parseDebugLocalResources",
-                    "R-def.txt")).exists()
+    assertThat(libFiles.getIntermediateFile("local_only_symbol_list", "debug", "parseDebugLocalResources", "R-def.txt")).exists()
 
-        assertThat(
-            libFiles.getIntermediateFile(
-                    "local_only_symbol_list",
-                    "debug",
-                    "parseDebugLocalResources",
-                    "R-def.txt")).contains("lib_string")
+    assertThat(libFiles.getIntermediateFile("local_only_symbol_list", "debug", "parseDebugLocalResources", "R-def.txt"))
+      .contains("lib_string")
 
-        assertThat(
-            libFiles.getIntermediateFile(
-                    "symbol_list_with_package_name",
-                    "debug",
-                    "generateDebugRFile",
-                    "package-aware-r.txt")).exists()
+    assertThat(libFiles.getIntermediateFile("symbol_list_with_package_name", "debug", "generateDebugRFile", "package-aware-r.txt")).exists()
 
-        assertThat(
-            libFiles.getIntermediateFile(
-                    "symbol_list_with_package_name",
-                    "debug",
-                    "generateDebugRFile",
-                    "package-aware-r.txt")).contains("lib_string")
+    assertThat(libFiles.getIntermediateFile("symbol_list_with_package_name", "debug", "generateDebugRFile", "package-aware-r.txt"))
+      .contains("lib_string")
 
-        // Application resources
-        val appFiles = project.getSubproject("app")
+    // Application resources
+    val appFiles = project.getSubproject("app")
 
-        assertThat(
-            appFiles.getIntermediateFile(
-                "runtime_symbol_list",
-                "debug",
-                "processDebugResources",
-                "R.txt")).exists()
+    assertThat(appFiles.getIntermediateFile("runtime_symbol_list", "debug", "processDebugResources", "R.txt")).exists()
 
-        assertThat(
-            appFiles.getIntermediateFile(
-                    "runtime_symbol_list",
-                    "debug",
-                    "processDebugResources",
-                    "R.txt")).containsAllOf("lib_string", "app_string")
+    assertThat(appFiles.getIntermediateFile("runtime_symbol_list", "debug", "processDebugResources", "R.txt"))
+      .containsAllOf("lib_string", "app_string")
 
-        val rJarFile = appFiles.getIntermediateFile(
-            "compile_and_runtime_r_class_jar",
-            "debug",
-            "processDebugResources",
-            "R.jar"
-        )
-        assertThat(rJarFile).exists()
-    }
+    val rJarFile = appFiles.getIntermediateFile("compile_and_runtime_r_class_jar", "debug", "processDebugResources", "R.jar")
+    assertThat(rJarFile).exists()
+  }
 
-    @Test
-    fun testAndroidTestResourcesCompiled() {
-        project.executor()
-                .run(":app:assembleDebugAndroidTest")
+  @Test
+  fun testAndroidTestResourcesCompiled() {
+    project.executor().run(":app:assembleDebugAndroidTest")
 
-        // Application resources
-        val appFiles = project.getSubproject("app")
+    // Application resources
+    val appFiles = project.getSubproject("app")
 
-        // app androidTest resources java
-        val rJarFile = appFiles.getIntermediateFile(
-            "compile_and_runtime_r_class_jar",
-            "debugAndroidTest",
-            "processDebugAndroidTestResources",
-            "R.jar"
-        )
-        assertThat(rJarFile).exists()
-    }
+    // app androidTest resources java
+    val rJarFile =
+      appFiles.getIntermediateFile("compile_and_runtime_r_class_jar", "debugAndroidTest", "processDebugAndroidTestResources", "R.jar")
+    assertThat(rJarFile).exists()
+  }
 }

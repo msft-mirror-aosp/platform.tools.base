@@ -23,63 +23,70 @@ import org.junit.Rule
 import org.junit.Test
 
 class PublishLegacyMultidexLibTest {
-    @JvmField
-    @Rule
-    val project = GradleTestProject.builder().fromTestApp(
+  @JvmField
+  @Rule
+  val project =
+    GradleTestProject.builder()
+      .fromTestApp(
         MinimalSubProject.lib("com.android.test")
-            .withFile(
-                "src/main/java/test/Test.java", """
-                package test;
+          .withFile(
+            "src/main/java/test/Test.java",
+            """
+            package test;
 
-                public class Test {}
-            """.trimIndent()
-            )
-            .appendToBuild(
-                """
-        apply plugin: 'maven-publish'
+            public class Test {}
+            """
+              .trimIndent(),
+          )
+          .appendToBuild(
+            """
+            apply plugin: 'maven-publish'
 
-        publishing {
-            repositories {
-                maven { url = 'testrepo' }
-            }
-        }
-
-        android {
-            buildTypes {
-                debug {
-                    multiDexEnabled = true
+            publishing {
+                repositories {
+                    maven { url = 'testrepo' }
                 }
             }
-            defaultConfig {
-                minSdkVersion 19
+
+            android {
+                buildTypes {
+                    debug {
+                        multiDexEnabled = true
+                    }
+                }
+                defaultConfig {
+                    minSdkVersion 19
+                }
+
+                publishing {
+                    singleVariant("debug")
+                }
             }
 
-            publishing {
-                singleVariant("debug")
-            }
-        }
+            afterEvaluate {
+                publishing {
+                    publications {
+                        debug(MavenPublication) {
+                            groupId = 'com.android.test'
+                            artifactId = 'lib'
+                            version = '0.1'
 
-        afterEvaluate {
-            publishing {
-                publications {
-                    debug(MavenPublication) {
-                        groupId = 'com.android.test'
-                        artifactId = 'lib'
-                        version = '0.1'
-
-                        from components.debug
+                            from components.debug
+                        }
                     }
                 }
             }
-        }
-    """.trimIndent())).create()
+            """
+              .trimIndent()
+          )
+      )
+      .create()
 
-    @Test
-    fun testMultidexSupportNotAddedToPom() {
-        project.executor().run("publish")
+  @Test
+  fun testMultidexSupportNotAddedToPom() {
+    project.executor().run("publish")
 
-        // Check that Multidex support dependency is not added.
-        assertThat(project.file("testrepo/com/android/test/lib/0.1/lib-0.1.pom"))
-            .doesNotContain("<artifactId>multidex</artifactId>")
-    }
+    // Check that Multidex support dependency is not added.
+    assertThat(project.file("testrepo/com/android/test/lib/0.1/lib-0.1.pom")).doesNotContain("<artifactId>multidex</artifactId>")
+  }
 }

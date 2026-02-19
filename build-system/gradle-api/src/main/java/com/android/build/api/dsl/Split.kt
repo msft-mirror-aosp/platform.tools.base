@@ -16,24 +16,22 @@
 
 package com.android.build.api.dsl
 
-/**
- *  Base data representing how an APK should be split for a given dimension (density, abi).
- */
+/** Base data representing how an APK should be split for a given dimension (density, abi). */
 interface Split {
-    /** Whether to split in this dimension. */
-    var isEnable: Boolean
+  /** Whether to split in this dimension. */
+  var isEnable: Boolean
 
-    /** Includes some values */
-    fun include(vararg includes: String)
+  /** Includes some values */
+  fun include(vararg includes: String)
 
-    /** Excludes some values */
-    fun exclude(vararg excludes: String)
+  /** Excludes some values */
+  fun exclude(vararg excludes: String)
 
-    /**
-     * Resets the list of included split configuration.
-     *
-     * Use this before calling include, in order to manually configure the list of configuration
-     * to split on, rather than excluding from the default list.
-     */
-    fun reset()
+  /**
+   * Resets the list of included split configuration.
+   *
+   * Use this before calling include, in order to manually configure the list of configuration to split on, rather than excluding from the
+   * default list.
+   */
+  fun reset()
 }

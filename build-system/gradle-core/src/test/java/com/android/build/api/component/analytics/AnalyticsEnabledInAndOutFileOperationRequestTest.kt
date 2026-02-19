@@ -16,40 +16,36 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.InAndOutFileOperationRequest
+import com.android.build.api.artifact.SingleArtifact
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.junit.Before
-
 import org.junit.Test
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledInAndOutFileOperationRequestTest {
 
-    private val delegate: InAndOutFileOperationRequest = mock()
+  private val delegate: InAndOutFileOperationRequest = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledInAndOutFileOperationRequest
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledInAndOutFileOperationRequest
 
-    @Before
-    fun setup() {
-        proxy = AnalyticsEnabledInAndOutFileOperationRequest(delegate, stats)
-    }
+  @Before
+  fun setup() {
+    proxy = AnalyticsEnabledInAndOutFileOperationRequest(delegate, stats)
+  }
 
-    @Test
-    fun toTransform() {
-        proxy.toTransform(SingleArtifact.MERGED_MANIFEST)
+  @Test
+  fun toTransform() {
+    proxy.toTransform(SingleArtifact.MERGED_MANIFEST)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_FILE_VALUE)
-        verify(delegate, times(1))
-            .toTransform(SingleArtifact.MERGED_MANIFEST)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.TO_TRANSFORM_FILE_VALUE)
+    verify(delegate, times(1)).toTransform(SingleArtifact.MERGED_MANIFEST)
+  }
 }

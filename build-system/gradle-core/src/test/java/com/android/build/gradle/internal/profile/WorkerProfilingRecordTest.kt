@@ -19,74 +19,68 @@ package com.android.build.gradle.internal.profile
 import com.google.common.truth.Truth
 import com.google.wireless.android.sdk.stats.GradleBuildProfile
 import com.google.wireless.android.sdk.stats.GradleBuildProfileSpan
-import org.junit.Test
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.util.concurrent.ConcurrentHashMap
+import org.junit.Test
 
 class WorkerProfilingRecordTest {
 
-    private val testTaskRecord =
-        object: TaskProfilingRecord(
-            AnalyticsResourceManager(
-                GradleBuildProfile.newBuilder(),
-                ConcurrentHashMap(),
-                false,
-                null,
-                ConcurrentHashMap(),
-                null,
-                null,
-            ),
-            GradleBuildProfileSpan.newBuilder(),
-            "dummy",
-            ":dummy",
-            "variant") {}
+  private val testTaskRecord =
+    object :
+      TaskProfilingRecord(
+        AnalyticsResourceManager(GradleBuildProfile.newBuilder(), ConcurrentHashMap(), false, null, ConcurrentHashMap(), null, null),
+        GradleBuildProfileSpan.newBuilder(),
+        "dummy",
+        ":dummy",
+        "variant",
+      ) {}
 
-    @Test
-    fun testNormalDuration() {
-        TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(100), ZoneId.systemDefault())
-        testTaskRecord.addWorker("first")
-        val workerRecord = testTaskRecord.get("first")
-        Truth.assertThat(workerRecord?.isStarted()).isFalse()
-        TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(123), ZoneId.systemDefault())
-        workerRecord?.executionStarted()
-        Truth.assertThat(workerRecord?.waitTime()?.toMillis()).isEqualTo(23)
-        TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(156), ZoneId.systemDefault())
-        workerRecord?.executionFinished()
-        Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ofMillis(33))
-    }
+  @Test
+  fun testNormalDuration() {
+    TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(100), ZoneId.systemDefault())
+    testTaskRecord.addWorker("first")
+    val workerRecord = testTaskRecord.get("first")
+    Truth.assertThat(workerRecord?.isStarted()).isFalse()
+    TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(123), ZoneId.systemDefault())
+    workerRecord?.executionStarted()
+    Truth.assertThat(workerRecord?.waitTime()?.toMillis()).isEqualTo(23)
+    TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(156), ZoneId.systemDefault())
+    workerRecord?.executionFinished()
+    Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ofMillis(33))
+  }
 
-    @Test
-    fun testUnStartedWorker() {
-        testTaskRecord.addWorker("first")
-        val workerRecord = testTaskRecord.get("first")
-        Truth.assertThat(workerRecord?.isStarted()).isFalse()
-        Truth.assertThat(workerRecord?.isFinished()).isFalse()
-        Truth.assertThat(workerRecord?.waitTime()).isEqualTo(Duration.ZERO)
-        Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
-    }
+  @Test
+  fun testUnStartedWorker() {
+    testTaskRecord.addWorker("first")
+    val workerRecord = testTaskRecord.get("first")
+    Truth.assertThat(workerRecord?.isStarted()).isFalse()
+    Truth.assertThat(workerRecord?.isFinished()).isFalse()
+    Truth.assertThat(workerRecord?.waitTime()).isEqualTo(Duration.ZERO)
+    Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
+  }
 
-    @Test
-    fun testUnFinishedWorker() {
-        TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(100), ZoneId.systemDefault())
-        testTaskRecord.addWorker("first")
-        val workerRecord = testTaskRecord.get("first")
-        Truth.assertThat(workerRecord?.isStarted()).isFalse()
-        TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(134), ZoneId.systemDefault())
-        workerRecord?.executionStarted()
-        Truth.assertThat(workerRecord?.isStarted()).isTrue()
-        Truth.assertThat(workerRecord?.isFinished()).isFalse()
-        Truth.assertThat(workerRecord?.waitTime()).isEqualTo(Duration.ofMillis(34))
-        Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
-    }
+  @Test
+  fun testUnFinishedWorker() {
+    TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(100), ZoneId.systemDefault())
+    testTaskRecord.addWorker("first")
+    val workerRecord = testTaskRecord.get("first")
+    Truth.assertThat(workerRecord?.isStarted()).isFalse()
+    TaskProfilingRecord.clock = Clock.fixed(Instant.ofEpochMilli(134), ZoneId.systemDefault())
+    workerRecord?.executionStarted()
+    Truth.assertThat(workerRecord?.isStarted()).isTrue()
+    Truth.assertThat(workerRecord?.isFinished()).isFalse()
+    Truth.assertThat(workerRecord?.waitTime()).isEqualTo(Duration.ofMillis(34))
+    Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
+  }
 
-    @Test
-    fun testFinishedWithoutStarting() {
-        testTaskRecord.addWorker("first")
-        val workerRecord = testTaskRecord.get("first")
-        workerRecord?.executionFinished()
-        Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
-    }
+  @Test
+  fun testFinishedWithoutStarting() {
+    testTaskRecord.addWorker("first")
+    val workerRecord = testTaskRecord.get("first")
+    workerRecord?.executionFinished()
+    Truth.assertThat(workerRecord?.duration()).isEqualTo(Duration.ZERO)
+  }
 }

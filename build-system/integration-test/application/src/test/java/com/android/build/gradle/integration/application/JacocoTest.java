@@ -26,6 +26,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp;
 import com.android.build.gradle.integration.common.truth.ScannerSubject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
 import com.android.build.gradle.internal.coverage.JacocoConfigurations;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.testutils.TestInputsGenerator;
 import com.android.testutils.apk.Apk;
 import com.android.testutils.apk.Dex;
@@ -100,7 +101,7 @@ public class JacocoTest {
     }
 
     @Test
-    public void testJarIsProceedByJacoco() throws Exception {
+    public void testJarIsProcessedByJacoco() throws Exception {
         TestInputsGenerator.jarWithEmptyClasses(
                 new File(project.getProjectDir(), "generated-classes.jar").toPath(),
                 Collections.singleton("test/A"));
@@ -113,7 +114,7 @@ public class JacocoTest {
                         + "}\n"
                         + "android.buildTypes.debug.enableAndroidTestCoverage = true\n");
 
-        project.executor().run("assembleDebug");
+        project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug");
 
         Apk apk = project.getApk(GradleTestProject.ApkType.DEBUG);
         Truth8.assertThat(apk.getMainDexFile()).isPresent();
@@ -241,27 +242,26 @@ public class JacocoTest {
 
     @Test
     public void checkJacocoAntConfiguration() throws IOException, InterruptedException {
-        // Verify jacoco ant configuration is not set when android test coverage disabled.
+        // jacoco ant configuration exists by default due to the usage from
+        // CodeCoverageCollectionTask for the aggregated test reporting feature
+        GradleBuildResult result = project.executor().run(":dep");
+        try (Scanner scanner = result.getStdout()) {
+            ScannerSubject.assertThat(scanner)
+                    .contains(JacocoConfigurations.ANT_CONFIGURATION_NAME);
+        }
+        // jacoco ant configuration is not set when android test coverage disabled and
+        // aggregated test reporting is disabled
         TestFileUtils.searchAndReplace(
                 project.getBuildFile(),
                 "android.buildTypes.debug.enableAndroidTestCoverage = true",
                 "android.buildTypes.debug.enableAndroidTestCoverage = false");
-        GradleBuildResult result = project.executor().run(":dep");
+        result =
+                project.executor()
+                        .with(BooleanOption.REPORT_AGGREGATION_SUPPORT, false)
+                        .run(":dep");
         try (Scanner scanner = result.getStdout()) {
             ScannerSubject.assertThat(scanner)
                     .doesNotContain(JacocoConfigurations.ANT_CONFIGURATION_NAME);
-        }
-
-        // Once enableAndroidTestCoverage is enabled in a variant, we expect the configuration to be
-        // present.
-        TestFileUtils.searchAndReplace(
-                project.getBuildFile(),
-                "android.buildTypes.debug.enableAndroidTestCoverage = false",
-                "android.buildTypes.debug.enableAndroidTestCoverage = true");
-        result = project.executor().run(":dep");
-        try (Scanner scanner = result.getStdout()) {
-            ScannerSubject.assertThat(scanner)
-                    .contains(JacocoConfigurations.ANT_CONFIGURATION_NAME);
         }
     }
 }

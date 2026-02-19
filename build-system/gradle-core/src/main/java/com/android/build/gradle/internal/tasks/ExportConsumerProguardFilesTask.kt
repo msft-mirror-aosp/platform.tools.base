@@ -34,6 +34,8 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.EvalIssueException
 import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.FileUtils
+import java.io.File
+import java.util.function.Consumer
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
@@ -48,213 +50,191 @@ import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.work.DisableCachingByDefault
-import java.io.File
-import java.util.function.Consumer
 
 /**
  * Consolidates Proguard files into a single location for use in dependent modules
  *
- * Caching disabled by default for this task because the task does very little work.
- * Some verification logic is executed and some files are copied to new locations.
- * Calculating cache hit/miss and fetching results is likely more expensive than
- * simply executing the task.
+ * Caching disabled by default for this task because the task does very little work. Some verification logic is executed and some files are
+ * copied to new locations. Calculating cache hit/miss and fetching results is likely more expensive than simply executing the task.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
 abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
 
-    @get:Input
-    var isBaseModule: Boolean = false
-        private set
+  @get:Input
+  var isBaseModule: Boolean = false
+    private set
 
-    @get:Input
-    var isDynamicFeature: Boolean = false
-        private set
+  @get:Input
+  var isDynamicFeature: Boolean = false
+    private set
 
-    @get:Input
-    var disallowGlobalOptions: Boolean = false
-        private set
+  @get:Input
+  var disallowGlobalOptions: Boolean = false
+    private set
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val consumerProguardFiles: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val consumerProguardFiles: ConfigurableFileCollection
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val inputFiles: ConfigurableFileCollection
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val inputFiles: ConfigurableFileCollection
 
-    @get:Input
-    @get:Optional
-    abstract val ignoreFromInKeepRules: SetProperty<String>
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesDirectories: ConfigurableFileCollection
 
-    @get:Input
-    @get:Optional
-    abstract val ignoreFromAllExternalDependenciesInKeepRules: Property<Boolean>
+  @get:Input @get:Optional abstract val ignoreFromInKeepRules: SetProperty<String>
 
-    @get:Internal
-    lateinit var libraryKeepRules: ArtifactCollection
-        private set
+  @get:Input @get:Optional abstract val ignoreFromAllExternalDependenciesInKeepRules: Property<Boolean>
 
-    @get:Internal("only for task execution")
-    abstract val buildDirectory: DirectoryProperty
+  @get:Internal
+  lateinit var libraryKeepRules: ArtifactCollection
+    private set
 
-    @get:OutputDirectory
-    abstract val outputDir: DirectoryProperty
+  @get:Internal("only for task execution") abstract val buildDirectory: DirectoryProperty
 
-    public override fun doTaskAction() {
-        // We check consumer files for default files or global options unless it's a base feature,
-        // which can include both of those
-        if (!isBaseModule) {
-            checkConsumerProguardFiles(
-                buildDirectory,
-                isDynamicFeature,
-                consumerProguardFiles.files,
-                disallowGlobalOptions
-            ) { exception -> throw EvalIssueException(exception) }
-        }
+  @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
-        val filteredProguardFiles = if (isDynamicFeature) {
-            getFilteredFiles(
-                ignoreFromInKeepRules.get(),
-                ignoreFromAllExternalDependenciesInKeepRules.get(),
-                libraryKeepRules,
-                inputFiles,
-                LoggerWrapper.getLogger(ExportConsumerProguardFilesTask::class.java),
-                LibraryArtifactType.KEEP_RULES
-            )
-        } else {
-            inputFiles
-        }
-
-        workerExecutor.noIsolation().submit(ExportConsumerProguardRunnable::class.java) {
-            it.initializeFromBaseTask(this)
-            it.input.from(filteredProguardFiles)
-            it.outputDir.set(outputDir)
-        }
+  public override fun doTaskAction() {
+    // We check consumer files for default files or global options unless it's a base feature,
+    // which can include both of those
+    if (!isBaseModule) {
+      checkConsumerProguardFiles(buildDirectory, isDynamicFeature, consumerProguardFiles.files, disallowGlobalOptions) { exception ->
+        throw EvalIssueException(exception)
+      }
     }
 
-    class CreationAction(creationConfig: VariantCreationConfig) :
-        VariantTaskCreationAction<ExportConsumerProguardFilesTask, VariantCreationConfig>(
-            creationConfig
-        ), OptimizationTaskCreationAction by OptimizationTaskCreationActionImpl(
-            creationConfig
-        ) {
+    val input = inputFiles + keepRulesDirectories.filter(File::isFile)
 
-        override val name: String
-            get() = computeTaskName("export", "ConsumerProguardFiles")
+    val filteredProguardFiles =
+      if (isDynamicFeature) {
+        getFilteredFiles(
+          ignoreFromInKeepRules.get(),
+          ignoreFromAllExternalDependenciesInKeepRules.get(),
+          libraryKeepRules,
+          input,
+          LoggerWrapper.getLogger(ExportConsumerProguardFilesTask::class.java),
+          LibraryArtifactType.KEEP_RULES,
+        )
+      } else {
+        input
+      }
 
-        override val type: Class<ExportConsumerProguardFilesTask>
-            get() = ExportConsumerProguardFilesTask::class.java
+    workerExecutor.noIsolation().submit(ExportConsumerProguardRunnable::class.java) {
+      it.initializeFromBaseTask(this)
+      it.input.from(filteredProguardFiles)
+      it.outputDir.set(outputDir)
+    }
+  }
 
-        override fun handleProvider(
-            taskProvider: TaskProvider<ExportConsumerProguardFilesTask>
-        ) {
-            super.handleProvider(taskProvider)
+  class CreationAction(creationConfig: VariantCreationConfig) :
+    VariantTaskCreationAction<ExportConsumerProguardFilesTask, VariantCreationConfig>(creationConfig),
+    OptimizationTaskCreationAction by OptimizationTaskCreationActionImpl(creationConfig) {
 
-            creationConfig.artifacts.setInitialProvider(
-                taskProvider,
-                ExportConsumerProguardFilesTask::outputDir
-            ).on(InternalArtifactType.CONSUMER_PROGUARD_DIR)
-        }
+    override val name: String
+      get() = computeTaskName("export", "ConsumerProguardFiles")
 
-        override fun configure(
-            task: ExportConsumerProguardFilesTask
-        ) {
-            super.configure(task)
+    override val type: Class<ExportConsumerProguardFilesTask>
+      get() = ExportConsumerProguardFilesTask::class.java
 
-            task.consumerProguardFiles.from(optimizationCreationConfig.consumerProguardFiles)
-            task.isBaseModule = creationConfig.componentType.isBaseModule
-            task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
-            task.disallowGlobalOptions = creationConfig.services.projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
+    override fun handleProvider(taskProvider: TaskProvider<ExportConsumerProguardFilesTask>) {
+      super.handleProvider(taskProvider)
 
-            task.inputFiles.from(
-                task.consumerProguardFiles,
-                creationConfig
-                    .artifacts
-                    .get(InternalArtifactType.GENERATED_PROGUARD_FILE)
-            )
-            if (creationConfig.componentType.isDynamicFeature) {
-                task.libraryKeepRules = creationConfig.variantDependencies.getArtifactCollection(
-                        AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
-                        AndroidArtifacts.ArtifactScope.ALL,
-                        AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES
-                )
-                task.inputFiles.from(task.libraryKeepRules.artifactFiles)
-
-                task.ignoreFromInKeepRules.setDisallowChanges(
-                    optimizationCreationConfig.ignoreFromInKeepRules
-                )
-                task.ignoreFromAllExternalDependenciesInKeepRules.setDisallowChanges(
-                    optimizationCreationConfig.ignoreFromAllExternalDependenciesInKeepRules
-                )
-            }
-            task.buildDirectory.setDisallowChanges(task.project.layout.buildDirectory)
-        }
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, ExportConsumerProguardFilesTask::outputDir)
+        .on(InternalArtifactType.CONSUMER_PROGUARD_DIR)
     }
 
-    companion object {
-        /**
-         * Validate that consumer proguard file list doesn't contain default proguard files, or
-         * global options which are banned in consumer rules.
-         */
-        @JvmStatic
-        fun checkConsumerProguardFiles(
-            buildDirectory: DirectoryProperty,
-            isDynamicFeature: Boolean,
-            consumerProguardFiles: Collection<File>,
-            disallowGlobalOptions: Boolean,
-            exceptionHandler: Consumer<String>,
-        ) {
-            val defaultProguardFiles: Map<File, String> = ProguardFiles.KNOWN_FILE_NAMES.associateBy {
-                ProguardFiles.getDefaultProguardFile(it, buildDirectory)
-            }
+    override fun configure(task: ExportConsumerProguardFilesTask) {
+      super.configure(task)
 
-            consumerProguardFiles.forEach {
-                defaultProguardFiles[it]?.let { fileName ->
-                    val errorMessage = if (isDynamicFeature) {
-                        "Default file $fileName should not be specified in this module. It can be specified in the base module instead."
-                    } else {
-                        "Default file $fileName should not be used as a consumer configuration file."
-                    }
-                    exceptionHandler.accept(errorMessage)
-                }
+      task.consumerProguardFiles.from(optimizationCreationConfig.consumerProguardFiles)
+      task.isBaseModule = creationConfig.componentType.isBaseModule
+      task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
+      task.disallowGlobalOptions = creationConfig.services.projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
 
-                if (disallowGlobalOptions) {
-                    ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(
-                        it,
-                        isDynamicFeature
-                    ) {
-                        exceptionHandler.accept(it.errorMessage)
-                    }
-                }
-            }
-        }
+      task.inputFiles.apply {
+        from(task.consumerProguardFiles)
+        from(creationConfig.artifacts.get(InternalArtifactType.GENERATED_PROGUARD_FILE))
+      }
+      creationConfig.sources.keepRules { task.keepRulesDirectories.from(it.getAsFileTrees()) }
+      task.keepRulesDirectories.disallowChanges()
+
+      if (creationConfig.componentType.isDynamicFeature) {
+        task.libraryKeepRules =
+          creationConfig.variantDependencies.getArtifactCollection(
+            AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
+            AndroidArtifacts.ArtifactScope.ALL,
+            AndroidArtifacts.ArtifactType.UNFILTERED_PROGUARD_RULES,
+          )
+        task.inputFiles.from(task.libraryKeepRules.artifactFiles)
+
+        task.ignoreFromInKeepRules.setDisallowChanges(optimizationCreationConfig.ignoreFromInKeepRules)
+        task.ignoreFromAllExternalDependenciesInKeepRules.setDisallowChanges(
+          optimizationCreationConfig.ignoreFromAllExternalDependenciesInKeepRules
+        )
+      }
+      task.inputFiles.disallowChanges()
+      task.buildDirectory.setDisallowChanges(task.project.layout.buildDirectory)
     }
+  }
+
+  companion object {
+    /**
+     * Validate that consumer proguard file list doesn't contain default proguard files, or global options which are banned in consumer
+     * rules.
+     */
+    @JvmStatic
+    fun checkConsumerProguardFiles(
+      buildDirectory: DirectoryProperty,
+      isDynamicFeature: Boolean,
+      consumerProguardFiles: Collection<File>,
+      disallowGlobalOptions: Boolean,
+      exceptionHandler: Consumer<String>,
+    ) {
+      val defaultProguardFiles: Map<File, String> =
+        ProguardFiles.KNOWN_FILE_NAMES.associateBy { ProguardFiles.getDefaultProguardFile(it, buildDirectory) }
+
+      consumerProguardFiles.forEach {
+        defaultProguardFiles[it]?.let { fileName ->
+          val errorMessage =
+            if (isDynamicFeature) {
+              "Default file $fileName should not be specified in this module. It can be specified in the base module instead."
+            } else {
+              "Default file $fileName should not be used as a consumer configuration file."
+            }
+          exceptionHandler.accept(errorMessage)
+        }
+
+        if (disallowGlobalOptions) {
+          ConsumerRuleGlobalGuardian.validateConsumerRulesHasNoBannedGlobals(it, isDynamicFeature) {
+            exceptionHandler.accept(it.errorMessage)
+          }
+        }
+      }
+    }
+  }
 }
 
-abstract class ExportConsumerProguardRunnable :
-    ProfileAwareWorkAction<ExportConsumerProguardRunnable.Params>() {
-    override fun run() {
-        FileUtils.deleteRecursivelyIfExists(parameters.outputDir.asFile.get())
-        var counter = 0
-        parameters.input.forEach { input ->
-            if (input.isFile) {
-                val libSubDir = getLibSubDir(counter++)
-                input.copyTo(File(libSubDir, SdkConstants.FN_PROGUARD_TXT))
-            } else if (input.isDirectory) {
-                input.listFiles { it -> it.isDirectory }?.forEach {
-                    val libSubDir = getLibSubDir(counter++)
-                    it.copyRecursively(libSubDir)
-                }
-            }
-        }
+abstract class ExportConsumerProguardRunnable : ProfileAwareWorkAction<ExportConsumerProguardRunnable.Params>() {
+  override fun run() {
+    FileUtils.deleteRecursivelyIfExists(parameters.outputDir.asFile.get())
+    var counter = 0
+    parameters.input.forEach { input ->
+      if (input.isFile) {
+        val libSubDir = getLibSubDir(counter++)
+        input.copyTo(File(libSubDir, SdkConstants.FN_PROGUARD_TXT))
+      } else if (input.isDirectory) {
+        input
+          .listFiles { it -> it.isDirectory }
+          ?.forEach {
+            val libSubDir = getLibSubDir(counter++)
+            it.copyRecursively(libSubDir)
+          }
+      }
     }
+  }
 
-    private fun getLibSubDir(count: Int) =
-        File(parameters.outputDir.asFile.get(), "lib$count").also { it.mkdirs() }
+  private fun getLibSubDir(count: Int) = File(parameters.outputDir.asFile.get(), "lib$count").also { it.mkdirs() }
 
-    abstract class Params : ProfileAwareWorkAction.Parameters() {
-        abstract val input: ConfigurableFileCollection
-        abstract val outputDir: DirectoryProperty
-    }
+  abstract class Params : ProfileAwareWorkAction.Parameters() {
+    abstract val input: ConfigurableFileCollection
+    abstract val outputDir: DirectoryProperty
+  }
 }

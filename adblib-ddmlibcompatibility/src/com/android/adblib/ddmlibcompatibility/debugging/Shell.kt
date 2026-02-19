@@ -34,6 +34,11 @@ import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IShellOutputReceiver
 import com.android.ddmlib.TimeoutException
+import java.io.IOException
+import java.io.InputStream
+import java.nio.ByteBuffer
+import java.time.Duration
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -47,213 +52,182 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.launch
-import java.io.IOException
-import java.io.InputStream
-import java.nio.ByteBuffer
-import java.time.Duration
-import java.util.concurrent.TimeUnit
 
-/**
- * Migration function for calls to [IDevice.executeShellCommand]
- */
+/** Migration function for calls to [IDevice.executeShellCommand] */
 @WorkerThread
-@Throws(IOException::class,
-        AdbFailResponseException::class,
-        TimeoutException::class
-)
+@Throws(IOException::class, AdbFailResponseException::class, TimeoutException::class)
 internal suspend fun executeShellCommand(
-    adbService: AdbHelper.AdbService,
-    connectedDevice: ConnectedDevice,
-    command: String,
-    receiver: IShellOutputReceiver,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit,
-    inputStream: InputStream?,
-    shutdownOutput: Boolean
+  adbService: AdbHelper.AdbService,
+  connectedDevice: ConnectedDevice,
+  command: String,
+  receiver: IShellOutputReceiver,
+  maxTimeout: Long,
+  maxTimeToOutputResponse: Long,
+  maxTimeUnits: TimeUnit,
+  inputStream: InputStream?,
+  shutdownOutput: Boolean,
 ) {
-    val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
-    val shellCommand = connectedDevice.session.deviceServices.shellCommand(deviceSelector, command)
-    setShellProtocol(shellCommand, adbService)
-    shellCommand.shutdownOutputForLegacyShell(shutdownOutput)
-    if (maxTimeToOutputResponse > 0) {
-        shellCommand.withCommandOutputTimeout(
-            Duration.ofMillis(
-                maxTimeUnits.toMillis(
-                    maxTimeToOutputResponse
-                )
-            )
-        )
-    }
-    if (maxTimeout > 0) {
-        shellCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
-    }
+  val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
+  val shellCommand = connectedDevice.session.deviceServices.shellCommand(deviceSelector, command)
+  setShellProtocol(shellCommand, adbService)
+  shellCommand.shutdownOutputForLegacyShell(shutdownOutput)
+  if (maxTimeToOutputResponse > 0) {
+    shellCommand.withCommandOutputTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeToOutputResponse)))
+  }
+  if (maxTimeout > 0) {
+    shellCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
+  }
 
-    val synchronizedReceiver = SynchronizedIShellOutputReceiver(receiver)
-    val stdoutCollector = ShellCollectorToIShellOutputReceiver(synchronizedReceiver)
-    if (inputStream != null) {
-      shellCommand.withStdin(connectedDevice.session.channelFactory.wrapInputStream(inputStream))
-    }
+  val synchronizedReceiver = SynchronizedIShellOutputReceiver(receiver)
+  val stdoutCollector = ShellCollectorToIShellOutputReceiver(synchronizedReceiver)
+  if (inputStream != null) {
+    shellCommand.withStdin(connectedDevice.session.channelFactory.wrapInputStream(inputStream))
+  }
 
-    shellCommand.withLegacyCollector(stdoutCollector)
-    // Note: We know there is only one item in the flow (Unit), because our
-    //       ShellCollector implementation forwards buffers directly to
-    //       the IShellOutputReceiver
-    shellCommand.execute().singleCancellableByReceiver(synchronizedReceiver)
+  shellCommand.withLegacyCollector(stdoutCollector)
+  // Note: We know there is only one item in the flow (Unit), because our
+  //       ShellCollector implementation forwards buffers directly to
+  //       the IShellOutputReceiver
+  shellCommand.execute().singleCancellableByReceiver(synchronizedReceiver)
 }
 
 private fun setShellProtocol(shellCommand: ShellCommand<*>, adbService: AdbHelper.AdbService) {
-    when (adbService) {
-        // We are forcing a shell-v1 protocol here to match the behavior of the `DeviceImpl`
-        AdbHelper.AdbService.SHELL -> shellCommand.forceLegacyShell()
-        AdbHelper.AdbService.EXEC -> shellCommand.forceLegacyExec()
-        AdbHelper.AdbService.ABB_EXEC -> throw IllegalArgumentException("ABB_EXEC is not supported by ShellCommand")
-    }
+  when (adbService) {
+    // We are forcing a shell-v1 protocol here to match the behavior of the `DeviceImpl`
+    AdbHelper.AdbService.SHELL -> shellCommand.forceLegacyShell()
+    AdbHelper.AdbService.EXEC -> shellCommand.forceLegacyExec()
+    AdbHelper.AdbService.ABB_EXEC -> throw IllegalArgumentException("ABB_EXEC is not supported by ShellCommand")
+  }
 }
 
 @WorkerThread
-@Throws(IOException::class,
-        AdbFailResponseException::class,
-        TimeoutException::class
-)
+@Throws(IOException::class, AdbFailResponseException::class, TimeoutException::class)
 internal suspend fun executeAbbCommand(
-    adbService: AdbHelper.AdbService,
-    connectedDevice: ConnectedDevice,
-    command: String,
-    receiver: IShellOutputReceiver,
-    maxTimeout: Long,
-    maxTimeToOutputResponse: Long,
-    maxTimeUnits: TimeUnit,
-    inputStream: InputStream?,
-    shutdownOutput: Boolean
+  adbService: AdbHelper.AdbService,
+  connectedDevice: ConnectedDevice,
+  command: String,
+  receiver: IShellOutputReceiver,
+  maxTimeout: Long,
+  maxTimeToOutputResponse: Long,
+  maxTimeUnits: TimeUnit,
+  inputStream: InputStream?,
+  shutdownOutput: Boolean,
 ) {
-    val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
-    val abbCommand = connectedDevice.session.deviceServices.abbCommand(deviceSelector, command.split(" "))
-    setAbbProtocol(abbCommand, adbService)
+  val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
+  val abbCommand = connectedDevice.session.deviceServices.abbCommand(deviceSelector, command.split(" "))
+  setAbbProtocol(abbCommand, adbService)
 
-    // TODO(b/298475728): Revisit this when we are closer to having a working implementation of `IDevice`
-    // If `shutdownOutput` is true then we get a "java.lang.SecurityException: Files still open" exception
-    // when executing a "package install-commit" command after the "package install-write" command
-    // since the package manager doesn't handle shutdown correctly.
-    abbCommand.shutdownOutputForExecProtocol(shutdownOutput)
-    if (maxTimeout > 0) {
-        abbCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
-    }
-    if (maxTimeToOutputResponse > 0) {
-        abbCommand.withCommandOutputTimeout(
-            Duration.ofMillis(
-                maxTimeUnits.toMillis(
-                    maxTimeToOutputResponse
-                )
-            )
-        )
-    }
-    if (maxTimeout > 0) {
-        abbCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
-    }
-    if (inputStream != null) {
-        abbCommand.withStdin(connectedDevice.session.channelFactory.wrapInputStream(inputStream))
-    }
+  // TODO(b/298475728): Revisit this when we are closer to having a working implementation of
+  // `IDevice`
+  // If `shutdownOutput` is true then we get a "java.lang.SecurityException: Files still open"
+  // exception
+  // when executing a "package install-commit" command after the "package install-write" command
+  // since the package manager doesn't handle shutdown correctly.
+  abbCommand.shutdownOutputForExecProtocol(shutdownOutput)
+  if (maxTimeout > 0) {
+    abbCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
+  }
+  if (maxTimeToOutputResponse > 0) {
+    abbCommand.withCommandOutputTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeToOutputResponse)))
+  }
+  if (maxTimeout > 0) {
+    abbCommand.withCommandTimeout(Duration.ofMillis(maxTimeUnits.toMillis(maxTimeout)))
+  }
+  if (inputStream != null) {
+    abbCommand.withStdin(connectedDevice.session.channelFactory.wrapInputStream(inputStream))
+  }
 
-    val synchronizedReceiver = SynchronizedIShellOutputReceiver(receiver)
-    val stdoutCollector = ShellCollectorToIShellOutputReceiver(synchronizedReceiver)
-    abbCommand.withLegacyCollector(stdoutCollector)
-    // Note: We know there is only one item in the flow (Unit), because our
-    //       ShellCollector implementation forwards buffers directly to
-    //       the IShellOutputReceiver
-    abbCommand.execute().singleCancellableByReceiver(synchronizedReceiver)
+  val synchronizedReceiver = SynchronizedIShellOutputReceiver(receiver)
+  val stdoutCollector = ShellCollectorToIShellOutputReceiver(synchronizedReceiver)
+  abbCommand.withLegacyCollector(stdoutCollector)
+  // Note: We know there is only one item in the flow (Unit), because our
+  //       ShellCollector implementation forwards buffers directly to
+  //       the IShellOutputReceiver
+  abbCommand.execute().singleCancellableByReceiver(synchronizedReceiver)
 }
 
 private fun setAbbProtocol(abbCommand: AbbCommand<*>, adbService: AdbHelper.AdbService) {
-    when (adbService) {
-        // We are forcing a abb_exec protocol here to match the behavior of the `DeviceImpl`
-        AdbHelper.AdbService.SHELL -> throw IllegalArgumentException("SHELL is not supported by AbbCommand")
-        AdbHelper.AdbService.EXEC -> throw IllegalArgumentException("EXEC is not supported by AbbCommand")
-        AdbHelper.AdbService.ABB_EXEC -> abbCommand.forceExecProtocol()
-    }
+  when (adbService) {
+    // We are forcing a abb_exec protocol here to match the behavior of the `DeviceImpl`
+    AdbHelper.AdbService.SHELL -> throw IllegalArgumentException("SHELL is not supported by AbbCommand")
+    AdbHelper.AdbService.EXEC -> throw IllegalArgumentException("EXEC is not supported by AbbCommand")
+    AdbHelper.AdbService.ABB_EXEC -> abbCommand.forceExecProtocol()
+  }
 }
 
-/**
- * This class is needed to ensure that `isCancelled` check inside `singleCancellableByReceiver` call
- * is thread safe.
- */
-private class SynchronizedIShellOutputReceiver(private val wrappedReceiver: IShellOutputReceiver) :
-    IShellOutputReceiver {
+/** This class is needed to ensure that `isCancelled` check inside `singleCancellableByReceiver` call is thread safe. */
+private class SynchronizedIShellOutputReceiver(private val wrappedReceiver: IShellOutputReceiver) : IShellOutputReceiver {
 
-    @Synchronized
-    override fun addOutput(data: ByteArray, offset: Int, length: Int) {
-        wrappedReceiver.addOutput(data, offset, length)
-    }
+  @Synchronized
+  override fun addOutput(data: ByteArray, offset: Int, length: Int) {
+    wrappedReceiver.addOutput(data, offset, length)
+  }
 
-    @Synchronized
-    override fun flush() {
-        wrappedReceiver.flush()
-    }
+  @Synchronized
+  override fun flush() {
+    wrappedReceiver.flush()
+  }
 
-    @Synchronized
-    override fun isCancelled(): Boolean {
-        return wrappedReceiver.isCancelled()
-    }
+  @Synchronized
+  override fun isCancelled(): Boolean {
+    return wrappedReceiver.isCancelled()
+  }
 }
 
-/**
- * Returns `Flow<T>.single()`, but cancels its execution if
- * `IShellOutputReceiver.isCancelled` returns `true` in the meantime.
- */
+/** Returns `Flow<T>.single()`, but cancels its execution if `IShellOutputReceiver.isCancelled` returns `true` in the meantime. */
 private suspend fun <T> Flow<T>.singleCancellableByReceiver(receiver: SynchronizedIShellOutputReceiver) {
-    coroutineScope {
-        val shellExecuteJob = async {
-            single()
-        }
+  coroutineScope {
+    val shellExecuteJob = async { single() }
 
-        val monitorJob = launch {
-            while(true) {
-                if (receiver.isCancelled) {
-                    shellExecuteJob.cancel()
-                    break
-                }
-                delay(50)
-            }
+    val monitorJob = launch {
+      while (true) {
+        if (receiver.isCancelled) {
+          shellExecuteJob.cancel()
+          break
         }
-
-        try {
-            shellExecuteJob.await()
-        } catch (e: CancellationException) {
-            if (receiver.isCancelled) {
-                // Do not propagate cancellation requested by the `receiver`
-            } else {
-                throw e
-            }
-        } finally {
-            monitorJob.cancel()
-        }
+        delay(50)
+      }
     }
+
+    try {
+      shellExecuteJob.await()
+    } catch (e: CancellationException) {
+      if (receiver.isCancelled) {
+        // Do not propagate cancellation requested by the `receiver`
+      } else {
+        throw e
+      }
+    } finally {
+      monitorJob.cancel()
+    }
+  }
 }
 
 /**
- * Coroutine-based wrapper around DDMLib's [IDevice.executeShellCommand], returning a Flow of shell output,
- * like that produced by [AdbDeviceServices.shell].
+ * Coroutine-based wrapper around DDMLib's [IDevice.executeShellCommand], returning a Flow of shell output, like that produced by
+ * [AdbDeviceServices.shell].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-fun <T> executeShellCommand(adbSession: AdbSession, device: IDevice, command: String, shellCollector: ShellCollector<T>): Flow<T> =
-  flow {
-    shellCollector.start(this)
-    callbackFlow<ByteBuffer> {
-      device.executeShellCommand(command, object : IShellOutputReceiver {
-        override fun addOutput(data: ByteArray?, offset: Int, length: Int) {
-          trySendBlocking(ByteBuffer.wrap(data, offset, length))
-        }
+fun <T> executeShellCommand(adbSession: AdbSession, device: IDevice, command: String, shellCollector: ShellCollector<T>): Flow<T> = flow {
+  shellCollector.start(this)
+  callbackFlow<ByteBuffer> {
+      device.executeShellCommand(
+        command,
+        object : IShellOutputReceiver {
+          override fun addOutput(data: ByteArray?, offset: Int, length: Int) {
+            trySendBlocking(ByteBuffer.wrap(data, offset, length))
+          }
 
-        override fun flush() {
-          close()
-        }
+          override fun flush() {
+            close()
+          }
 
-        override fun isCancelled(): Boolean =
-          channel.isClosedForSend
-      })
+          override fun isCancelled(): Boolean = channel.isClosedForSend
+        },
+      )
       awaitClose()
-    }.flowOn(adbSession.host.ioDispatcher).collect { value ->
-      shellCollector.collect(this, value)
     }
-    shellCollector.end(this)
-  }
+    .flowOn(adbSession.host.ioDispatcher)
+    .collect { value -> shellCollector.collect(this, value) }
+  shellCollector.end(this)
+}

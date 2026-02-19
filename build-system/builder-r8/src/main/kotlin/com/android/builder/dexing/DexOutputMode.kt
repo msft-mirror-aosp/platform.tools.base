@@ -22,58 +22,51 @@ import java.io.File
 
 /** Output mode for dexing. */
 interface DexOutputMode {
-    val outputMode: OutputMode
+  val outputMode: OutputMode
 }
 
 /**
- * Given a class file, [OutputMode.DexFilePerClassFile] will produce 1 dex file + 1 additional
- * global synthetic file if necessary.
+ * Given a class file, [OutputMode.DexFilePerClassFile] will produce 1 dex file + 1 additional global synthetic file if necessary.
  *
  * For example, given `com/example/InterfaceWithDefaultMethod.class`, it will produce
- *   - `com/example/InterfaceWithDefaultMethod.dex` (this
- *   dex file contains the `com/example/InterfaceWithDefaultMethod` class and possibly the synthetic
- *   `com/example/InterfaceWithDefaultMethod$-CC` class if desugaring requires it)
- *   - 1 additional global synthetic file if necessary
+ * - `com/example/InterfaceWithDefaultMethod.dex` (this dex file contains the `com/example/InterfaceWithDefaultMethod` class and possibly
+ *   the synthetic `com/example/InterfaceWithDefaultMethod$-CC` class if desugaring requires it)
+ * - 1 additional global synthetic file if necessary
  *
- * Note that for incremental dexing purposes, [OutputMode.DexFilePerClassFile] is better than
- * [OutputMode.DexFilePerClass] because in the above example the latter may produce 2 separate dex
- * files `com/example/InterfaceWithDefaultMethod.dex` and
+ * Note that for incremental dexing purposes, [OutputMode.DexFilePerClassFile] is better than [OutputMode.DexFilePerClass] because in the
+ * above example the latter may produce 2 separate dex files `com/example/InterfaceWithDefaultMethod.dex` and
  * `com/example/InterfaceWithDefaultMethod$-CC.dex` given 1 class file.
  */
 object DexFilePerClassFile : DexOutputMode {
 
-    override val outputMode
-        get() = OutputMode.DexFilePerClassFile
+  override val outputMode
+    get() = OutputMode.DexFilePerClassFile
 
-    /**
-     * Returns the Unix-style relative path of the *dex* output file under the output directory or
-     * jar after D8 processes the class file with the given relative path.
-     *
-     * (If the given relative path is not in Unix style, it will be converted to that first.)
-     */
-    fun getDexOutputRelativePath(classFileRelativePath: String): String {
-        check(classFileRelativePath.endsWith(SdkConstants.DOT_CLASS)) {
-            "Expected .class file but found: $classFileRelativePath"
-        }
-        return File(classFileRelativePath).invariantSeparatorsPath.removeSuffix(SdkConstants.DOT_CLASS) + SdkConstants.DOT_DEX
-    }
+  /**
+   * Returns the Unix-style relative path of the *dex* output file under the output directory or jar after D8 processes the class file with
+   * the given relative path.
+   *
+   * (If the given relative path is not in Unix style, it will be converted to that first.)
+   */
+  fun getDexOutputRelativePath(classFileRelativePath: String): String {
+    check(classFileRelativePath.endsWith(SdkConstants.DOT_CLASS)) { "Expected .class file but found: $classFileRelativePath" }
+    return File(classFileRelativePath).invariantSeparatorsPath.removeSuffix(SdkConstants.DOT_CLASS) + SdkConstants.DOT_DEX
+  }
 
-    /**
-     * Returns the Unix-style relative path of the *global synthetic* output file under the output
-     * directory or jar after D8 processes the class file with the given relative path.
-     *
-     * (If the given relative path is not in Unix style, it will be converted to that first.)
-     */
-    fun getGlobalSyntheticOutputRelativePath(classFileRelativePath: String): String {
-        check(classFileRelativePath.endsWith(SdkConstants.DOT_CLASS)) {
-            "Expected .class file but found: $classFileRelativePath"
-        }
-        return File(classFileRelativePath).invariantSeparatorsPath.removeSuffix(SdkConstants.DOT_CLASS) + globalSyntheticsFileExtension
-    }
+  /**
+   * Returns the Unix-style relative path of the *global synthetic* output file under the output directory or jar after D8 processes the
+   * class file with the given relative path.
+   *
+   * (If the given relative path is not in Unix style, it will be converted to that first.)
+   */
+  fun getGlobalSyntheticOutputRelativePath(classFileRelativePath: String): String {
+    check(classFileRelativePath.endsWith(SdkConstants.DOT_CLASS)) { "Expected .class file but found: $classFileRelativePath" }
+    return File(classFileRelativePath).invariantSeparatorsPath.removeSuffix(SdkConstants.DOT_CLASS) + globalSyntheticsFileExtension
+  }
 }
 
 object DexIndexed : DexOutputMode {
 
-    override val outputMode
-        get() = OutputMode.DexIndexed
+  override val outputMode
+    get() = OutputMode.DexIndexed
 }

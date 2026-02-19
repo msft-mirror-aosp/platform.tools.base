@@ -16,91 +16,90 @@
 package com.android.processmonitor.monitor
 
 import com.android.adblib.AdbLogger
+import com.android.adblib.utils.logIOCompletionErrors
 import com.android.processmonitor.common.ProcessEvent.ProcessAdded
 import com.android.processmonitor.common.ProcessEvent.ProcessRemoved
 import com.android.processmonitor.common.ProcessTracker
 import com.android.processmonitor.utils.RetainingMap
 import com.google.common.annotations.VisibleForTesting
+import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import java.io.Closeable
 
 /**
  * Monitors process names on a devices.
  *
- * If the added processes have conflicting data, it will prefer data that has a non-null
- * applicationId over a null applicationId.
+ * If the added processes have conflicting data, it will prefer data that has a non-null applicationId over a null applicationId.
  */
 internal class PerDeviceMonitor(
-    parentScope: CoroutineScope,
-    private val logger: AdbLogger,
-    maxProcessRetention: Int,
-    val processTracker: ProcessTracker,
+  parentScope: CoroutineScope,
+  private val logger: AdbLogger,
+  maxProcessRetention: Int,
+  val processTracker: ProcessTracker,
 ) : Closeable {
 
-    @VisibleForTesting
-    val scope: CoroutineScope =
-        CoroutineScope(parentScope.coroutineContext + SupervisorJob())
+  @VisibleForTesting val scope: CoroutineScope = CoroutineScope(parentScope.coroutineContext + SupervisorJob())
 
-    private val processes = RetainingMap<Int, ProcessNames>(maxProcessRetention)
+  private val processes = RetainingMap<Int, ProcessNames>(maxProcessRetention)
 
-    fun start() {
-        scope.launch {
-            processTracker.trackProcesses().collect {
-                when (it) {
-                    is ProcessRemoved -> handleProcessRemoved(it)
-                    is ProcessAdded -> handleProcessAdded(it)
-                }
+  fun start() {
+    scope.launch {
+      runCatching {
+          processTracker.trackProcesses().collect {
+            when (it) {
+              is ProcessRemoved -> handleProcessRemoved(it)
+              is ProcessAdded -> handleProcessAdded(it)
             }
+          }
         }
+        .onFailure { throwable -> logger.logIOCompletionErrors(throwable) }
     }
+  }
 
-    private fun handleProcessRemoved(it: ProcessRemoved) {
-        logger.debug { "Removing ${it.pid}" }
-        processes.remove(it.pid)
+  private fun handleProcessRemoved(it: ProcessRemoved) {
+    logger.debug { "Removing ${it.pid}" }
+    processes.remove(it.pid)
+  }
+
+  private fun handleProcessAdded(e: ProcessAdded) {
+    val pid = e.pid
+    val names = e.toProcessNames()
+    val processNames = processes[pid]
+
+    val newNames =
+      when {
+        processNames?.processName == e.processName && e.applicationId == null -> processNames
+        else -> names
+      }
+    if (logger.minLevel <= AdbLogger.Level.VERBOSE) {
+      // This is just for debugging purposes, so we can understand when things go wrong
+      when {
+        // Trivial case, not preexisting match for pid.
+        processNames == null -> logger.verbose { "New process added" }
+
+        // Preexisting match but, it's a different process with the same pid
+        e.processName != processNames.processName -> logger.verbose { "New process with same pid" }
+
+        // Preexisting match is the same process but current result is doesn't have an
+        // app id, so we ignore it.
+        e.applicationId == null -> logger.verbose { "Existing process without applicationId" }
+
+        // Preexisting match is the same process and the current result does have an
+        // app id, so we ignore replace the existing result with the new one
+        else -> logger.verbose { "Existing process with an applicationId" }
+      }
     }
+    logger.debug { "Adding $newNames" }
+    // We always update the map with something, just in case the process dies and happened to
+    // respawn with the same pid (highly unlikely)
+    processes[pid] = newNames
+  }
 
-    private fun handleProcessAdded(e: ProcessAdded) {
-        val pid = e.pid
-        val names = e.toProcessNames()
-        val processNames = processes[pid]
+  fun getProcessNames(pid: Int): ProcessNames? = processes[pid]
 
-        val newNames = when {
-            processNames?.processName == e.processName && e.applicationId == null -> processNames
-            else -> names
-        }
-        if (logger.minLevel <= AdbLogger.Level.VERBOSE) {
-            // This is just for debugging purposes, so we can understand when things go wrong
-            when {
-                // Trivial case, not preexisting match for pid.
-                processNames == null -> logger.verbose { "New process added" }
-
-                // Preexisting match but, it's a different process with the same pid
-                e.processName != processNames.processName ->
-                    logger.verbose { "New process with same pid" }
-
-                // Preexisting match is the same process but current result is doesn't have an
-                // app id, so we ignore it.
-                e.applicationId == null ->
-                    logger.verbose { "Existing process without applicationId" }
-
-                // Preexisting match is the same process and the current result does have an
-                // app id, so we ignore replace the existing result with the new one
-                else -> logger.verbose { "Existing process with an applicationId" }
-            }
-        }
-        logger.debug { "Adding $newNames" }
-        // We always update the map with something, just in case the process dies and happened to
-        // respawn with the same pid (highly unlikely)
-        processes[pid] = newNames
-    }
-
-    fun getProcessNames(pid: Int): ProcessNames? = processes[pid]
-
-    override fun close() {
-        scope.cancel()
-    }
-
+  override fun close() {
+    scope.cancel()
+  }
 }

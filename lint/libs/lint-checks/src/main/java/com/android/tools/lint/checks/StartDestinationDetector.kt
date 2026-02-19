@@ -59,13 +59,11 @@ class StartDestinationDetector : ResourceXmlDetector() {
         category = Category.CORRECTNESS,
         priority = 3,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(StartDestinationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(StartDestinationDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 
-  override fun appliesTo(folderType: ResourceFolderType): Boolean =
-    folderType == ResourceFolderType.NAVIGATION
+  override fun appliesTo(folderType: ResourceFolderType): Boolean = folderType == ResourceFolderType.NAVIGATION
 
   override fun getApplicableElements() = listOf(TAG_NAVIGATION)
 
@@ -78,22 +76,12 @@ class StartDestinationDetector : ResourceXmlDetector() {
     val destinationAttrValue = destinationAttr?.value
     // smart cast to non-null doesn't seem to work with isNullOrBlank
     if (destinationAttrValue == null || destinationAttrValue.isBlank()) {
-      context.report(
-        ISSUE,
-        element,
-        context.getNameLocation(element),
-        "No start destination specified",
-      )
+      context.report(ISSUE, element, context.getNameLocation(element), "No start destination specified")
     } else {
       // TODO(namespaces): Support namespaces in ids
       val url = ResourceUrl.parse(destinationAttrValue)
       if (url == null || url.type != ResourceType.ID) {
-        context.report(
-          ISSUE,
-          element,
-          context.getNameLocation(element),
-          "`startDestination` must be an id",
-        )
+        context.report(ISSUE, element, context.getNameLocation(element), "`startDestination` must be an id")
         return
       }
       for (i in 0 until children.length) {
@@ -103,11 +91,9 @@ class StartDestinationDetector : ResourceXmlDetector() {
           val includedUrl = ResourceUrl.parse(includedGraph) ?: continue
           val client = context.client
           val repository =
-            if (context.isGlobalAnalysis())
-              client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
+            if (context.isGlobalAnalysis()) client.getResources(context.mainProject, LOCAL_DEPENDENCIES)
             else client.getResources(context.project, ResourceRepositoryScope.PROJECT_ONLY)
-          val items =
-            repository.getResources(ResourceNamespace.TODO(), includedUrl.type, includedUrl.name)
+          val items = repository.getResources(ResourceNamespace.TODO(), includedUrl.type, includedUrl.name)
           if (items.isEmpty() && !context.isGlobalAnalysis()) {
             // The included layout is in another module; in that case, we can't check it.
             return
@@ -133,20 +119,14 @@ class StartDestinationDetector : ResourceXmlDetector() {
           }
         }
       }
-      context.report(
-        ISSUE,
-        element,
-        context.getValueLocation(destinationAttr),
-        "Invalid start destination $destinationAttrValue",
-      )
+      context.report(ISSUE, element, context.getValueLocation(destinationAttr), "Invalid start destination $destinationAttrValue")
     }
   }
 
   private fun checkId(parser: XmlPullParser, target: String): Boolean {
     while (true) {
       when (parser.next()) {
-        XmlPullParser.START_TAG ->
-          return stripIdPrefix(parser.getAttributeValue(ANDROID_URI, ATTR_ID)) == target
+        XmlPullParser.START_TAG -> return stripIdPrefix(parser.getAttributeValue(ANDROID_URI, ATTR_ID)) == target
         XmlPullParser.END_TAG,
         XmlPullParser.END_DOCUMENT -> return false
       }

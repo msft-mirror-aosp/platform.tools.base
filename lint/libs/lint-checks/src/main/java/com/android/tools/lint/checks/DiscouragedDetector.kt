@@ -70,12 +70,7 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
       type == XML_REFERENCE
   }
 
-  override fun visitAnnotationUsage(
-    context: XmlContext,
-    reference: Node,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  override fun visitAnnotationUsage(context: XmlContext, reference: Node, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     usageInfo.referenced ?: return
     val location =
       if (reference is Attr) {
@@ -125,12 +120,7 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
         // The methods are non-Kotlin (standard Java methods) so we don't have to worry about named
         // arguments. Do not set robot to true because the replacement has slightly different
         // behavior.
-        return fix()
-          .replace()
-          .independent(true)
-          .text(SCHEDULE_AT_FIXED_RATE)
-          .with(replacement)
-          .build()
+        return fix().replace().independent(true).text(SCHEDULE_AT_FIXED_RATE).with(replacement).build()
       }
 
       val (fix, replacementFuncName) =
@@ -142,7 +132,8 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
             if (method.parameterList.getParameter(1)?.type == PsiTypes.longType()) {
               scheduleAtFixedRateFix(SCHEDULE) to SCHEDULE
             } else {
-              // No quick-fix because there is no Timer.schedule(..., Date firstTime, ...) function.
+              // No quick-fix because there is no Timer.schedule(..., Date firstTime, ...)
+              // function.
               null to SCHEDULE
             }
           }
@@ -169,12 +160,7 @@ class DiscouragedDetector : AbstractAnnotationDetector(), XmlScanner, SourceCode
   }
 
   override fun getApplicableAttributes(): Collection<String> =
-    setOf(
-      ATTR_MIN_ASPECT_RATIO,
-      ATTR_MAX_ASPECT_RATIO,
-      ATTR_SCREEN_ORIENTATION,
-      ATTR_RESIZEABLE_ACTIVITY,
-    )
+    setOf(ATTR_MIN_ASPECT_RATIO, ATTR_MAX_ASPECT_RATIO, ATTR_SCREEN_ORIENTATION, ATTR_RESIZEABLE_ACTIVITY)
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
     if (SdkConstants.ANDROID_URI != attribute.namespaceURI) {

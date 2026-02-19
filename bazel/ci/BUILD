@@ -133,6 +133,16 @@ py_library(
 )
 
 py_library(
+    name = "uitools_evals",
+    srcs = ["uitools_evals.py"],
+    deps = [
+        ":bazel",
+        ":studio",
+        "//tools/base/bazel/ci/presubmit:impacted_targets",
+    ],
+)
+
+py_library(
     name = "ci_lib",
     srcs = ["ci.py"],
     deps = [
@@ -144,6 +154,7 @@ py_library(
         ":studio_mac",
         ":studio_nightly",
         ":studio_win",
+        ":uitools_evals",
     ],
 )
 

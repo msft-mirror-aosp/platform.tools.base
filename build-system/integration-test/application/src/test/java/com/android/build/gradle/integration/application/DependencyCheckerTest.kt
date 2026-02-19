@@ -27,48 +27,35 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
 
-/** Integration test for the dependency checker.  */
+/** Integration test for the dependency checker. */
 class DependencyCheckerTest {
 
-    private val testProject: TestProject =
-        MinimalSubProject.app("com.example.app").apply {
-            appendToBuild("afterEvaluate { configurations.debugRuntimeClasspath." +
-                    "incoming.getArtifacts().getArtifactFiles().getFiles() }")
-        }
-
-    @get:Rule
-    val app = GradleTestProject.builder()
-        .fromTestApp(testProject)
-        .create()
-
-    @Test
-    fun checkFailureAndWarning() {
-        // since the test is to verify that early dependency resolution detection works correctly,
-        // we must turn off configuration caching since it resolves all configurations at
-        // configuration time.
-        val failure =
-            app.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
-                .expectFailure().run("tasks")
-        val rootCause = Throwables.getRootCause(failure.exception!!)
-        assertThat(rootCause).hasMessageThat()
-            .contains("Configuration 'debugRuntimeClasspath' was resolved")
-
-        val warning =
-            app.executor()
-                .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
-                .with(BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION, false)
-                .run("tasks")
-        warning.stdout.use {
-            ScannerSubject.assertThat(it)
-                .contains("Configuration 'debugRuntimeClasspath' was resolved")
-        }
-        warning.stdout.use {
-            ScannerSubject.assertThat(it)
-                .contains(app.buildFile.absolutePath.toString() + ":")
-        }
-
-        // Assert no exceptions while fetching the models
-        val models = app.modelV2().fetchModels()
+  private val testProject: TestProject =
+    MinimalSubProject.app("com.example.app").apply {
+      appendToBuild("afterEvaluate { configurations.debugRuntimeClasspath." + "incoming.getArtifacts().getArtifactFiles().getFiles() }")
     }
+
+  @get:Rule val app = GradleTestProject.builder().fromTestApp(testProject).create()
+
+  @Test
+  fun checkFailureAndWarning() {
+    // since the test is to verify that early dependency resolution detection works correctly,
+    // we must turn off configuration caching since it resolves all configurations at
+    // configuration time.
+    val failure = app.executor().withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF).expectFailure().run("tasks")
+    val rootCause = Throwables.getRootCause(failure.exception!!)
+    assertThat(rootCause).hasMessageThat().contains("Configuration 'debugRuntimeClasspath' was resolved")
+
+    val warning =
+      app
+        .executor()
+        .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.OFF)
+        .with(BooleanOption.DISALLOW_DEPENDENCY_RESOLUTION_AT_CONFIGURATION, false)
+        .run("tasks")
+    warning.stdout.use { ScannerSubject.assertThat(it).contains("Configuration 'debugRuntimeClasspath' was resolved") }
+    warning.stdout.use { ScannerSubject.assertThat(it).contains(app.buildFile.absolutePath.toString() + ":") }
+
+    // Assert no exceptions while fetching the models
+    val models = app.modelV2().fetchModels()
+  }
 }

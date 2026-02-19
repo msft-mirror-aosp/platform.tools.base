@@ -23,78 +23,63 @@ import com.android.build.api.variant.Aidl
 import com.android.build.gradle.internal.res.Aapt2FromMaven
 import com.android.build.gradle.internal.services.DslServices
 import com.android.repository.Revision
+import java.io.File
+import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
-import java.io.File
-import javax.inject.Inject
 
-open class SdkComponentsImpl @Inject constructor(
-    dslServices: DslServices,
-    compileSdkVersion: Provider<String>,
-    buildToolsRevision: Provider<Revision>,
-    val ndkVersion: Provider<String>,
-    val ndkPath: Provider<String>,
-    val bootclasspathProvider: Provider<Provider<List<RegularFile>>>,
-    providerFactory: ProviderFactory,
-    project: Project
+open class SdkComponentsImpl
+@Inject
+constructor(
+  dslServices: DslServices,
+  compileSdkVersion: Provider<String>,
+  buildToolsRevision: Provider<Revision>,
+  val ndkVersion: Provider<String>,
+  val ndkPath: Provider<String>,
+  val bootclasspathProvider: Provider<Provider<List<RegularFile>>>,
+  providerFactory: ProviderFactory,
+  project: Project,
 ) : SdkComponents {
 
-    override val sdkDirectory: Provider<Directory> =
-        dslServices.sdkComponents.flatMap {
-            it.sdkLoader(compileSdkVersion, buildToolsRevision).sdkDirectoryProvider }
+  override val sdkDirectory: Provider<Directory> =
+    dslServices.sdkComponents.flatMap { it.sdkLoader(compileSdkVersion, buildToolsRevision).sdkDirectoryProvider }
 
-    override val ndkDirectory: Provider<Directory> by lazy {
-        dslServices.sdkComponents.flatMap {
-            it.versionedNdkHandler(
-                ndkVersion = ndkVersion.get(),
-                ndkPathFromDsl = if (ndkPath.isPresent) ndkPath.get() else null
-            ).ndkDirectoryProvider
-        }
+  override val ndkDirectory: Provider<Directory> by lazy {
+    dslServices.sdkComponents.flatMap {
+      it
+        .versionedNdkHandler(ndkVersion = ndkVersion.get(), ndkPathFromDsl = if (ndkPath.isPresent) ndkPath.get() else null)
+        .ndkDirectoryProvider
     }
-    override val adb: Provider<RegularFile> =
-        dslServices.sdkComponents.flatMap {
-            it.sdkLoader(compileSdkVersion, buildToolsRevision)
-                .adbExecutableProvider
-        }
-    override val bootClasspath: Provider<List<RegularFile>>
-        get() = bootclasspathProvider.get()
+  }
+  override val adb: Provider<RegularFile> =
+    dslServices.sdkComponents.flatMap { it.sdkLoader(compileSdkVersion, buildToolsRevision).adbExecutableProvider }
+  override val bootClasspath: Provider<List<RegularFile>>
+    get() = bootclasspathProvider.get()
 
-    override val aidl: Provider<Aidl> by lazy(LazyThreadSafetyMode.NONE) {
-        val aidlExecutable = dslServices.sdkComponents.flatMap {
-            it.sdkLoader(compileSdkVersion, buildToolsRevision).aidlExecutableProvider
-        }
+  override val aidl: Provider<Aidl> by
+    lazy(LazyThreadSafetyMode.NONE) {
+      val aidlExecutable = dslServices.sdkComponents.flatMap { it.sdkLoader(compileSdkVersion, buildToolsRevision).aidlExecutableProvider }
 
-        val aidlFramework = dslServices.sdkComponents.flatMap {
-            it.sdkLoader(compileSdkVersion, buildToolsRevision).aidlFrameworkProvider
-        }
+      val aidlFramework = dslServices.sdkComponents.flatMap { it.sdkLoader(compileSdkVersion, buildToolsRevision).aidlFrameworkProvider }
 
-        dslServices.provider(
-            Aidl::class.java,
-            DefaultAidl(
-                aidlExecutable,
-                aidlFramework,
-                buildToolsRevision.map { it.toString() }
-            )
-        )
+      dslServices.provider(Aidl::class.java, DefaultAidl(aidlExecutable, aidlFramework, buildToolsRevision.map { it.toString() }))
     }
 
-    override val aapt2: Provider<Aapt2> by lazy(LazyThreadSafetyMode.NONE) {
-        providerFactory.provider {
-            Aapt2FromMaven.create(project) { System.getenv(it.propertyName) }
-        }.map { aapt2FromMaven ->
-            DefaultAapt(
-                executable = project.objects.fileProperty().fileProvider(
-                    providerFactory.provider {
-                        File(aapt2FromMaven.aapt2Directory.singleFile, FN_AAPT2)
-                    }
-                ),
-                version = providerFactory.provider {
-                    aapt2FromMaven.version
-                }
-            )
+  override val aapt2: Provider<Aapt2> by
+    lazy(LazyThreadSafetyMode.NONE) {
+      providerFactory
+        .provider { Aapt2FromMaven.create(project) { System.getenv(it.propertyName) } }
+        .map { aapt2FromMaven ->
+          DefaultAapt(
+            executable =
+              project.objects
+                .fileProperty()
+                .fileProvider(providerFactory.provider { File(aapt2FromMaven.aapt2Directory.singleFile, FN_AAPT2) }),
+            version = providerFactory.provider { aapt2FromMaven.version },
+          )
         }
     }
 }

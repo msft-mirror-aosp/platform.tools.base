@@ -22,11 +22,11 @@ import org.junit.Test
 
 /** Test to ensure that the test versions don't fall too far behind other versions */
 class TestVersionsTest {
-    @Test
-    fun checkCompileSdkVersion() {
-        assertWithMessage("The compile sdk version used for tests should be recent")
-            .that(DEFAULT_COMPILE_SDK_VERSION)
-            .named("TestVersions DEFAULT_COMPILE_SDK_VERSION")
-            .isAtLeast(SdkVersionInfo.HIGHEST_KNOWN_STABLE_API - 1)
-    }
+  @Test
+  fun checkCompileSdkVersion() {
+    assertWithMessage("The compile sdk version used for tests should be recent")
+      .that(DEFAULT_COMPILE_SDK_VERSION)
+      .named("TestVersions DEFAULT_COMPILE_SDK_VERSION")
+      .isAtLeast(SdkVersionInfo.HIGHEST_KNOWN_STABLE_API - 1)
+  }
 }

@@ -18,14 +18,7 @@ package com.android.build.gradle.internal.ndk
 
 import java.io.File
 
-/**
- * NdkInfo for r18.
- */
+/** NdkInfo for r18. */
 open class NdkR18Info(root: File) : NdkR17Info(root) {
-    override val supportedStls = listOf(
-        Stl.LIBCXX_SHARED,
-        Stl.LIBCXX_STATIC,
-        Stl.NONE,
-        Stl.SYSTEM
-    )
+  override val supportedStls = listOf(Stl.LIBCXX_SHARED, Stl.LIBCXX_STATIC, Stl.NONE, Stl.SYSTEM)
 }

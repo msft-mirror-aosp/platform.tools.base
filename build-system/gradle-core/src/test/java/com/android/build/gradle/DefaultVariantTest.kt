@@ -26,8 +26,8 @@ import com.android.build.gradle.internal.scope.BuildFeatureValuesImpl
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.AbstractVariantInputModelTest
-import com.android.build.gradle.internal.variant.TestVariantInputModel
 import com.android.build.gradle.internal.variant.DimensionCombinator
+import com.android.build.gradle.internal.variant.TestVariantInputModel
 import com.android.build.gradle.internal.variant.VariantModelImpl
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.BuildType
@@ -35,544 +35,457 @@ import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SyncIssue
 import com.android.builder.model.v2.ide.ProjectType
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import org.junit.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
-import kotlin.test.assertFailsWith
 
 /** Tests for the default variant DSL settings */
-class DefaultVariantTest: AbstractVariantInputModelTest<String>() {
+class DefaultVariantTest : AbstractVariantInputModelTest<String>() {
 
-    @Test
-    fun `test defaults to debug`() {
-        useDefaultBuildTypes()
+  @Test
+  fun `test defaults to debug`() {
+    useDefaultBuildTypes()
 
-        given {
-            android {
-                buildTypes {
-                    create("a")
-                    create("z")
-                }
-            }
+    given {
+      android {
+        buildTypes {
+          create("a")
+          create("z")
         }
-
-        expect { "debug" }
+      }
     }
 
-    @Test
-    fun `test removed all variants returns null`() {
-        useDefaultBuildTypes()
+    expect { "debug" }
+  }
 
-        given {
-            android {
-            }
+  @Test
+  fun `test removed all variants returns null`() {
+    useDefaultBuildTypes()
+
+    given { android {} }
+
+    withVariantFilter { variant -> variant.ignore = true }
+
+    expect { null }
+  }
+
+  @Test
+  fun `test debug removed defaults to first alphabetically`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        buildTypes {
+          create("a")
+          create("z")
         }
-
-        withVariantFilter { variant ->
-            variant.ignore = true
-        }
-
-        expect { null }
+      }
     }
 
-    @Test
-    fun `test debug removed defaults to first alphabetically`() {
-        useDefaultBuildTypes()
-
-        given {
-            android {
-                buildTypes {
-                    create("a")
-                    create("z")
-                }
-            }
-        }
-
-        withVariantFilter { variant ->
-            if (variant.buildType.name == "debug") {
-                variant.ignore = true
-            }
-        }
-
-        expect { "a" }
+    withVariantFilter { variant ->
+      if (variant.buildType.name == "debug") {
+        variant.ignore = true
+      }
     }
 
-    @Test
-    fun `test default variant build type explicit`() {
-        useDefaultBuildTypes()
+    expect { "a" }
+  }
 
-        given {
-            android {
-                buildTypes {
-                    create("dev") {
-                        isDefault = true
-                    }
-                }
-            }
+  @Test
+  fun `test default variant build type explicit`() {
+    useDefaultBuildTypes()
+
+    given { android { buildTypes { create("dev") { isDefault = true } } } }
+
+    expect { "dev" }
+  }
+
+  @Test
+  fun `test alphabetical flavor choice`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "dim" }
+          create("f2") { dimension = "dim" }
+          create("f3") { dimension = "dim" }
         }
-
-        expect { "dev" }
+      }
     }
 
-    @Test
-    fun `test alphabetical flavor choice`() {
-        useDefaultBuildTypes()
+    expect { "f1Debug" }
+  }
 
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "dim"
-                    }
-                    create("f2") {
-                        dimension = "dim"
-                    }
-                    create("f3") {
-                        dimension = "dim"
-                    }
-                }
-            }
+  @Test
+  fun `test explicit default flavor with single dimensions`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        buildTypes {
+          create("a")
+          create("z") { isDefault = true }
         }
 
-        expect { "f1Debug" }
+        productFlavors {
+          create("f1") { dimension = "dim" }
+          create("f2") {
+            dimension = "dim"
+            isDefault = true
+          }
+          create("f3") { dimension = "dim" }
+        }
+      }
     }
 
-    @Test
-    fun `test explicit default flavor with single dimensions`() {
-        useDefaultBuildTypes()
+    expect { "f2Z" }
+  }
 
-        given {
-            android {
-                buildTypes {
-                    create("a")
-                    create("z") {
-                        isDefault = true
-                    }
-                }
+  @Test
+  fun `test alphabetical default flavor with multiple dimensions`() {
+    useDefaultBuildTypes()
 
-                productFlavors {
-                    create("f1") {
-                        dimension = "dim"
-                    }
-                    create("f2") {
-                        dimension = "dim"
-                        isDefault = true
-                    }
-                    create("f3") {
-                        dimension = "dim"
-                    }
-                }
-            }
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "1" }
+          create("f2") { dimension = "1" }
+          create("f3") { dimension = "2" }
+          create("f4") { dimension = "2" }
         }
-
-        expect { "f2Z" }
+      }
     }
 
-    @Test
-    fun `test alphabetical default flavor with multiple dimensions`() {
-        useDefaultBuildTypes()
+    expect { "f1F3Debug" }
+  }
 
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "1"
-                    }
-                    create("f2") {
-                        dimension = "1"
-                    }
-                    create("f3") {
-                        dimension = "2"
-                    }
-                    create("f4") {
-                        dimension = "2"
-                    }
-                }
-            }
+  @Test
+  fun `test explicit default flavor with multiple dimensions`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "1" }
+          create("f2") {
+            dimension = "1"
+            isDefault = true
+          }
+          create("f3") { dimension = "2" }
+          create("f4") { dimension = "2" }
         }
-
-        expect { "f1F3Debug" }
+      }
     }
 
-    @Test
-    fun `test explicit default flavor with multiple dimensions`() {
-        useDefaultBuildTypes()
+    expect { "f2F3Debug" }
+  }
 
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "1"
-                    }
-                    create("f2") {
-                        dimension = "1"
-                        isDefault = true
-                    }
-                    create("f3") {
-                        dimension = "2"
-                    }
-                    create("f4") {
-                        dimension = "2"
-                    }
-                }
-            }
+  @Test
+  fun `test removal default flavor with multiple dimensions`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "number" }
+          create("f2") { dimension = "number" }
+          create("fa") { dimension = "letter" }
+          create("fb") { dimension = "letter" }
         }
-
-        expect { "f2F3Debug" }
+      }
     }
 
-    @Test
-    fun `test removal default flavor with multiple dimensions`() {
-        useDefaultBuildTypes()
-
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "number"
-                    }
-                    create("f2") {
-                        dimension = "number"
-                    }
-                    create("fa") {
-                        dimension = "letter"
-                    }
-                    create("fb") {
-                        dimension = "letter"
-                    }
-                }
-            }
-        }
-
-        withVariantFilter { variant ->
-            if (variant.name == "f1FaDebug") {
-                variant.ignore = true
-            }
-        }
-
-        expect { "f1FbDebug" }
+    withVariantFilter { variant ->
+      if (variant.name == "f1FaDebug") {
+        variant.ignore = true
+      }
     }
 
-    @Test
-    fun `test removal default flavor with multiple dimensions and explicit choice`() {
-        useDefaultBuildTypes()
+    expect { "f1FbDebug" }
+  }
 
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "number"
-                    }
-                    create("f2") {
-                        dimension = "number"
-                        isDefault = true
-                    }
-                    create("fa") {
-                        dimension = "letter"
-                    }
-                    create("fb") {
-                        dimension = "letter"
-                    }
-                }
-            }
+  @Test
+  fun `test removal default flavor with multiple dimensions and explicit choice`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "number" }
+          create("f2") {
+            dimension = "number"
+            isDefault = true
+          }
+          create("fa") { dimension = "letter" }
+          create("fb") { dimension = "letter" }
         }
-
-        withVariantFilter { variant ->
-            if (variant.name == "f2FaDebug") {
-                variant.ignore = true
-            }
-        }
-
-        expect { "f2FbDebug" }
+      }
     }
 
-    @Test
-    fun `test matching heuristic with filtering picks variant with most matching`() {
-        useDefaultBuildTypes()
-
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "number"
-                    }
-                    create("f2") {
-                        dimension = "number"
-                        isDefault = true
-                    }
-                    create("fa") {
-                        dimension = "letter"
-                    }
-                    create("fb") {
-                        dimension = "letter"
-                        isDefault = true
-                    }
-                    create("fx") {
-                        dimension = "something"
-                    }
-                    create("fy") {
-                        dimension = "something"
-                        isDefault = true
-                    }
-                }
-            }
-        }
-
-        withVariantFilter { variant ->
-            variant.ignore =
-                (variant.name == "f2FbFxDebug") ||
-                        (variant.name == "f2FbFyDebug") ||
-                        (variant.name == "f2FaFyDebug") ||
-                        (variant.buildType.name == "release")
-        }
-
-        // Left to right comparison this would be f2FaFxDebug, (as f1 is first)
-        // but f1FbFyDebug matches two of the user's settings, so the heuristic should prefer that.
-        expect { "f1FbFyDebug" }
+    withVariantFilter { variant ->
+      if (variant.name == "f2FaDebug") {
+        variant.ignore = true
+      }
     }
 
-    @Test
-    fun `test ambiguous build type`() {
-        useDefaultBuildTypes()
+    expect { "f2FbDebug" }
+  }
 
-        given {
-            android {
-                buildTypes {
-                    create("a") {
-                        isDefault = true
-                    }
-                    create("z") {
-                        isDefault = true
-                    }
-                }
-            }
+  @Test
+  fun `test matching heuristic with filtering picks variant with most matching`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        productFlavors {
+          create("f1") { dimension = "number" }
+          create("f2") {
+            dimension = "number"
+            isDefault = true
+          }
+          create("fa") { dimension = "letter" }
+          create("fb") {
+            dimension = "letter"
+            isDefault = true
+          }
+          create("fx") { dimension = "something" }
+          create("fy") {
+            dimension = "something"
+            isDefault = true
+          }
         }
+      }
+    }
 
-        withIssueChecker {
-                issues ->
-            assertThat(issues).hasSize(1)
-            assertThat(issues.first().type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_BUILD_TYPE_DEFAULT)
-            assertThat(issues.first().severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-            assertThat(issues.first().message).isEqualTo(
-                "Ambiguous default build type: 'a', 'z'.\n" +
-                        "Please only set `isDefault = true` " +
-                        "for one build type."
-            )
+    withVariantFilter { variant ->
+      variant.ignore =
+        (variant.name == "f2FbFxDebug") ||
+          (variant.name == "f2FbFyDebug") ||
+          (variant.name == "f2FaFyDebug") ||
+          (variant.buildType.name == "release")
+    }
+
+    // Left to right comparison this would be f2FaFxDebug, (as f1 is first)
+    // but f1FbFyDebug matches two of the user's settings, so the heuristic should prefer that.
+    expect { "f1FbFyDebug" }
+  }
+
+  @Test
+  fun `test ambiguous build type`() {
+    useDefaultBuildTypes()
+
+    given {
+      android {
+        buildTypes {
+          create("a") { isDefault = true }
+          create("z") { isDefault = true }
         }
-
-        expect { "a" }
+      }
     }
 
-    @Test
-    fun `test ambiguous product flavor`() {
-        useDefaultBuildTypes()
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "1"
-                        isDefault = true
-                    }
-                    create("f2") {
-                        dimension = "1"
-                        isDefault = true
-                    }
-                    create("f3") {
-                        dimension = "1"
-                    }
-                }
-            }
+    withIssueChecker { issues ->
+      assertThat(issues).hasSize(1)
+      assertThat(issues.first().type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_BUILD_TYPE_DEFAULT)
+      assertThat(issues.first().severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
+      assertThat(issues.first().message)
+        .isEqualTo("Ambiguous default build type: 'a', 'z'.\n" + "Please only set `isDefault = true` " + "for one build type.")
+    }
+
+    expect { "a" }
+  }
+
+  @Test
+  fun `test ambiguous product flavor`() {
+    useDefaultBuildTypes()
+    given {
+      android {
+        productFlavors {
+          create("f1") {
+            dimension = "1"
+            isDefault = true
+          }
+          create("f2") {
+            dimension = "1"
+            isDefault = true
+          }
+          create("f3") { dimension = "1" }
         }
-
-        withIssueChecker { issues ->
-            assertThat(issues).hasSize(1)
-            assertThat(issues.first().type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT)
-            assertThat(issues.first().severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-            assertThat(issues.first().message).isEqualTo(
-                "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
-                        "Please only set `isDefault = true` " +
-                        "for one product flavor in each flavor dimension."
-            )
-        }
-
-        expect { "f1Debug" }
+      }
     }
 
-    @Test
-    fun `test multi dimension ambiguous product flavor`() {
-        useDefaultBuildTypes()
-        given {
-            android {
-                productFlavors {
-                    create("f1") {
-                        dimension = "1"
-                        isDefault = true
-                    }
-                    create("f2") {
-                        dimension = "1"
-                        isDefault = true
-                    }
-                    create("f3") {
-                        dimension = "1"
-                    }
-                    create("f4") {
-                        dimension = "2"
-                        isDefault = true
-                    }
-                    create("f5") {
-                        dimension = "2"
-                        isDefault = true
-                    }
-                }
-            }
-        }
-
-        withIssueChecker { issues ->
-            assertThat(issues).hasSize(2)
-            for (syncIssue in issues) {
-                assertThat(syncIssue.type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT)
-                assertThat(syncIssue.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
-            }
-            assertThat(issues.map { it.data }).containsExactly("1", "2")
-            assertThat(issues.map { it.message }).containsExactly(
-                "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
-                        "Please only set `isDefault = true` " +
-                        "for one product flavor in each flavor dimension.",
-                "Ambiguous default product flavors for flavor dimension '2': 'f4', 'f5'.\n" +
-                        "Please only set `isDefault = true` " +
-                        "for one product flavor in each flavor dimension."
-            )
-        }
-
-        expect { "f1F4Debug" }
-    }
-
-    @Test
-    fun `default respects tested build type`() {
-        useDefaultBuildTypes()
-
-        given {
-            android {
-                buildTypes {
-                    create("a")
-                }
-            }
-        }
-
-        withTestBuildType { "a" }
-
-        expect { "a" }
-    }
-
-    @Test
-    fun `check task name generation`(){
-        val component = mock<VariantImpl<*>>()
-        whenever(component.name).thenReturn("debug")
-        whenever(component.computeTaskName(any(), any())).thenCallRealMethod()
-
-        assertThat(component.computeTaskName("produce", "ManifestReport")).isEqualTo("produceDebugManifestReport")
-        assertThat(component.computeTaskName("Produce", "manifestReport")).isEqualTo("produceDebugManifestReport")
-
-        assertThat(assertFailsWith<IllegalArgumentException> { component.computeTaskName("", "ManifestReport") })
-            .hasMessageThat().isEqualTo("Action parameter must not be empty or blank")
-
-        assertThat(assertFailsWith<IllegalArgumentException> { component.computeTaskName("produce", "") })
-            .hasMessageThat().isEqualTo("Subject parameter must not be empty or blank")
-    }
-
-    private var variantFilter: ((VariantFilter) -> Unit)? = null
-    private var testBuildType: String? = "debug"
-
-    private fun withVariantFilter(action : ((VariantFilter) -> Unit)?) {
-        checkState(TestState.GIVEN)
-        variantFilter = action
-    }
-
-    private fun withTestBuildType(action: () -> String?) {
-        checkState(TestState.GIVEN)
-        testBuildType = action()
-    }
-
-    override fun compareResult(expected: String?, actual: String?) {
-        assertThat(actual).named("Name of the default Variant").isEqualTo(expected)
-    }
-
-    override fun defaultWhen(given: TestVariantInputModel): String? {
-        val componentType = ComponentTypeImpl.BASE_APK
-
-        // gather the variant lists from the input model.
-        val variantComputer = DimensionCombinator(
-            given, dslServices.issueReporter, given.implicitFlavorDimensions
+    withIssueChecker { issues ->
+      assertThat(issues).hasSize(1)
+      assertThat(issues.first().type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT)
+      assertThat(issues.first().severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
+      assertThat(issues.first().message)
+        .isEqualTo(
+          "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
+            "Please only set `isDefault = true` " +
+            "for one product flavor in each flavor dimension."
         )
+    }
 
-        val components = mutableListOf<VariantCreationConfig>()
+    expect { "f1Debug" }
+  }
 
-        val globalTaskCreationConfig = mock<GlobalTaskCreationConfig>()
-        whenever(globalTaskCreationConfig.services).thenReturn(dslServices)
-
-        for (variant in variantComputer.computeVariants()) {
-            val name = computeName(variant, componentType)
-
-            val flavors = variant.productFlavors.map {
-                (given.productFlavors[it.second] ?: error("Cant find flavor ${it.second}")).productFlavor
-            }
-
-            // run the filter
-            var ignore = false
-            if (variantFilter != null) {
-                val variantInfo = VariantFilterImpl(
-                    name,
-                    given.defaultConfigData.defaultConfig,
-                    given.buildTypes[variant.buildType]!!.buildType,
-                    flavors
-                )
-
-                variantFilter?.invoke(variantInfo)
-
-                ignore = variantInfo.ignore
-            }
-
-            // FIXME this should be simpler when we remove VariantData|Scope to use newer objects only.
-            if (!ignore) {
-                val component = mock<VariantImpl<*>>()
-                components.add(component)
-
-                whenever(component.name).thenReturn(name)
-                whenever(component.componentType).thenReturn(componentType)
-                whenever(component.buildType).thenReturn(variant.buildType)
-                whenever(component.productFlavors).thenReturn(variant.productFlavors)
-                whenever(component.productFlavorList).thenReturn(flavors.map {
-                    com.android.build.gradle.internal.core.ProductFlavor(it)
-                })
-            }
+  @Test
+  fun `test multi dimension ambiguous product flavor`() {
+    useDefaultBuildTypes()
+    given {
+      android {
+        productFlavors {
+          create("f1") {
+            dimension = "1"
+            isDefault = true
+          }
+          create("f2") {
+            dimension = "1"
+            isDefault = true
+          }
+          create("f3") { dimension = "1" }
+          create("f4") {
+            dimension = "2"
+            isDefault = true
+          }
+          create("f5") {
+            dimension = "2"
+            isDefault = true
+          }
         }
-
-        // finally get the computed default variant
-        return VariantModelImpl(
-            given,
-            { testBuildType!! },
-            { components },
-            { listOf() },
-            { listOf() },
-            {
-                BuildFeatureValuesImpl(
-                    dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java),
-                    mock<ProjectServices>()
-                )
-            },
-            AndroidProjectTypes.PROJECT_TYPE_APP,
-            ProjectType.APPLICATION,
-            globalTaskCreationConfig
-        ).defaultVariant
+      }
     }
 
-    private class VariantFilterImpl(
-        override val name: String,
-        override val defaultConfig: ProductFlavor,
-        override val buildType: BuildType,
-        override val flavors: List<ProductFlavor>
-    ) : VariantFilter {
-        override var ignore: Boolean = false
+    withIssueChecker { issues ->
+      assertThat(issues).hasSize(2)
+      for (syncIssue in issues) {
+        assertThat(syncIssue.type).isEqualTo(SyncIssue.TYPE_AMBIGUOUS_PRODUCT_FLAVOR_DEFAULT)
+        assertThat(syncIssue.severity).isEqualTo(SyncIssue.SEVERITY_WARNING)
+      }
+      assertThat(issues.map { it.data }).containsExactly("1", "2")
+      assertThat(issues.map { it.message })
+        .containsExactly(
+          "Ambiguous default product flavors for flavor dimension '1': 'f1', 'f2'.\n" +
+            "Please only set `isDefault = true` " +
+            "for one product flavor in each flavor dimension.",
+          "Ambiguous default product flavors for flavor dimension '2': 'f4', 'f5'.\n" +
+            "Please only set `isDefault = true` " +
+            "for one product flavor in each flavor dimension.",
+        )
     }
+
+    expect { "f1F4Debug" }
+  }
+
+  @Test
+  fun `default respects tested build type`() {
+    useDefaultBuildTypes()
+
+    given { android { buildTypes { create("a") } } }
+
+    withTestBuildType { "a" }
+
+    expect { "a" }
+  }
+
+  @Test
+  fun `check task name generation`() {
+    val component = mock<VariantImpl<*>>()
+    whenever(component.name).thenReturn("debug")
+    whenever(component.computeTaskName(any(), any())).thenCallRealMethod()
+
+    assertThat(component.computeTaskName("produce", "ManifestReport")).isEqualTo("produceDebugManifestReport")
+    assertThat(component.computeTaskName("Produce", "manifestReport")).isEqualTo("produceDebugManifestReport")
+
+    assertThat(assertFailsWith<IllegalArgumentException> { component.computeTaskName("", "ManifestReport") })
+      .hasMessageThat()
+      .isEqualTo("Action parameter must not be empty or blank")
+
+    assertThat(assertFailsWith<IllegalArgumentException> { component.computeTaskName("produce", "") })
+      .hasMessageThat()
+      .isEqualTo("Subject parameter must not be empty or blank")
+  }
+
+  private var variantFilter: ((VariantFilter) -> Unit)? = null
+  private var testBuildType: String? = "debug"
+
+  private fun withVariantFilter(action: ((VariantFilter) -> Unit)?) {
+    checkState(TestState.GIVEN)
+    variantFilter = action
+  }
+
+  private fun withTestBuildType(action: () -> String?) {
+    checkState(TestState.GIVEN)
+    testBuildType = action()
+  }
+
+  override fun compareResult(expected: String?, actual: String?) {
+    assertThat(actual).named("Name of the default Variant").isEqualTo(expected)
+  }
+
+  override fun defaultWhen(given: TestVariantInputModel): String? {
+    val componentType = ComponentTypeImpl.BASE_APK
+
+    // gather the variant lists from the input model.
+    val variantComputer = DimensionCombinator(given, dslServices.issueReporter, given.implicitFlavorDimensions)
+
+    val components = mutableListOf<VariantCreationConfig>()
+
+    val globalTaskCreationConfig = mock<GlobalTaskCreationConfig>()
+    whenever(globalTaskCreationConfig.services).thenReturn(dslServices)
+
+    for (variant in variantComputer.computeVariants()) {
+      val name = computeName(variant, componentType)
+
+      val flavors = variant.productFlavors.map { (given.productFlavors[it.second] ?: error("Cant find flavor ${it.second}")).productFlavor }
+
+      // run the filter
+      var ignore = false
+      if (variantFilter != null) {
+        val variantInfo =
+          VariantFilterImpl(name, given.defaultConfigData.defaultConfig, given.buildTypes[variant.buildType]!!.buildType, flavors)
+
+        variantFilter?.invoke(variantInfo)
+
+        ignore = variantInfo.ignore
+      }
+
+      // FIXME this should be simpler when we remove VariantData|Scope to use newer objects only.
+      if (!ignore) {
+        val component = mock<VariantImpl<*>>()
+        components.add(component)
+
+        whenever(component.name).thenReturn(name)
+        whenever(component.componentType).thenReturn(componentType)
+        whenever(component.buildType).thenReturn(variant.buildType)
+        whenever(component.productFlavors).thenReturn(variant.productFlavors)
+        whenever(component.productFlavorList).thenReturn(flavors.map { com.android.build.gradle.internal.core.ProductFlavor(it) })
+      }
+    }
+
+    // finally get the computed default variant
+    return VariantModelImpl(
+        given,
+        { testBuildType!! },
+        { components },
+        { listOf() },
+        { listOf() },
+        { BuildFeatureValuesImpl(dslServices.newInstance(ApplicationBuildFeaturesImpl::class.java), mock<ProjectServices>()) },
+        AndroidProjectTypes.PROJECT_TYPE_APP,
+        ProjectType.APPLICATION,
+        globalTaskCreationConfig,
+      )
+      .defaultVariant
+  }
+
+  private class VariantFilterImpl(
+    override val name: String,
+    override val defaultConfig: ProductFlavor,
+    override val buildType: BuildType,
+    override val flavors: List<ProductFlavor>,
+  ) : VariantFilter {
+    override var ignore: Boolean = false
+  }
 }

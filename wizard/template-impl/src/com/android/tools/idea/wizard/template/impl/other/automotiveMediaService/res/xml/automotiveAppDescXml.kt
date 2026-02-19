@@ -16,7 +16,8 @@
 
 package com.android.tools.idea.wizard.template.impl.other.automotiveMediaService.res.xml
 
-fun automotiveAppDescXml() = """
+fun automotiveAppDescXml() =
+  """
 <?xml version="1.0" encoding="utf-8"?>
 <automotiveApp>
     <uses name="media"/>

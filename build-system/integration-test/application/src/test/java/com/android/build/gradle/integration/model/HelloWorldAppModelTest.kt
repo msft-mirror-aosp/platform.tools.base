@@ -22,27 +22,26 @@ import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
-class HelloWorldAppModelTest: ModelComparator() {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidApplication {
-            android {
-                defaultConfig.minSdk = 14
-                enableKotlin = false
-            }
+class HelloWorldAppModelTest : ModelComparator() {
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          defaultConfig.minSdk = 14
+          enableKotlin = false
         }
+      }
     }
 
-    @Test
-    fun `test models`() {
-        val result = rule.build.modelBuilder
-            .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-            .fetchModels(variantName = "debug")
+  @Test
+  fun `test models`() {
+    val result = rule.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVersions(goldenFile = "Versions")
-        with(result).compareBasicAndroidProject(goldenFile = "BasicAndroidProject")
-        with(result).compareAndroidProject(goldenFile = "AndroidProject")
-        with(result).compareAndroidDsl(goldenFile = "AndroidDsl")
-        with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
-    }
+    with(result).compareVersions(goldenFile = "Versions")
+    with(result).compareBasicAndroidProject(goldenFile = "BasicAndroidProject")
+    with(result).compareAndroidProject(goldenFile = "AndroidProject")
+    with(result).compareAndroidDsl(goldenFile = "AndroidDsl")
+    with(result).compareVariantDependencies(goldenFile = "VariantDependencies")
+  }
 }

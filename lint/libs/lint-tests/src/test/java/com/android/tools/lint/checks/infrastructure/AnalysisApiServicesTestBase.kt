@@ -63,9 +63,7 @@ abstract class AnalysisApiServicesTestBase {
         context.uastFile!!.accept(
           object : AbstractUastVisitor() {
             override fun visitMethod(node: UMethod): Boolean {
-              val returnTypeReference =
-                node.returnTypeReference?.sourcePsi as? KtTypeReference
-                  ?: return super.visitMethod(node)
+              val returnTypeReference = node.returnTypeReference?.sourcePsi as? KtTypeReference ?: return super.visitMethod(node)
 
               analyze(returnTypeReference) {
                 val ktType = returnTypeReference.type
@@ -158,8 +156,7 @@ abstract class AnalysisApiServicesTestBase {
         context.uastFile!!.accept(
           object : AbstractUastVisitor() {
             override fun visitLambdaExpression(node: ULambdaExpression): Boolean {
-              val ktLambdaExpression =
-                node.sourcePsi as? KtLambdaExpression ?: return super.visitLambdaExpression(node)
+              val ktLambdaExpression = node.sourcePsi as? KtLambdaExpression ?: return super.visitLambdaExpression(node)
 
               analyze(ktLambdaExpression) {
                 val lambdaType = ktLambdaExpression.expressionType
@@ -232,8 +229,7 @@ abstract class AnalysisApiServicesTestBase {
               val ktElement = node.sourcePsi as? KtElement ?: return super.visitCallExpression(node)
               analyze(ktElement) {
                 val ktFunctionSymbol =
-                  ktElement.resolveToCall()?.singleFunctionCallOrNull()?.symbol
-                    ?: return super.visitCallExpression(node)
+                  ktElement.resolveToCall()?.singleFunctionCallOrNull()?.symbol ?: return super.visitCallExpression(node)
                 val ktParamSymbol = ktFunctionSymbol.valueParameters.single()
                 if (ktFunctionSymbol.callableId?.callableName?.identifier == "myLet") {
                   assertTrue(ktParamSymbol.isNoinline)
@@ -316,9 +312,7 @@ abstract class AnalysisApiServicesTestBase {
   private fun checkJavaSymbol(context: JavaContext, isK2: Boolean) {
     context.uastFile!!.accept(
       object : AbstractUastVisitor() {
-        override fun visitSimpleNameReferenceExpression(
-          node: USimpleNameReferenceExpression
-        ): Boolean {
+        override fun visitSimpleNameReferenceExpression(node: USimpleNameReferenceExpression): Boolean {
           val c = node.resolve()
           assertNotNull(c)
 
@@ -334,8 +328,7 @@ abstract class AnalysisApiServicesTestBase {
             return super.visitSimpleNameReferenceExpression(node)
           }
 
-          val projectStructureProvider =
-            c.project.getService(KotlinProjectStructureProvider::class.java)
+          val projectStructureProvider = c.project.getService(KotlinProjectStructureProvider::class.java)
           val module = projectStructureProvider.getModule(c, null)
           analyze(module) {
             val symbolFromPsiElement = c.callableSymbol

@@ -24,21 +24,21 @@ import com.google.wireless.android.sdk.stats.GradleBuildProject
 import org.gradle.api.NamedDomainObjectContainer
 
 /**
- * AppExtension is used directly by build.gradle.kts when configuring project so adding generics
- * declaration is not possible.
+ * An intermediate implementation class of the previous `android` extension for application and dynamic feature plugins.
+ *
+ * Replaced by [com.android.build.api.dsl.ApplicationExtension] and [com.android.build.api.dsl.DynamicFeatureExtension] in the application
+ * and dynamic-feature plugins respectively.
  */
-abstract class AppExtension(
-    dslServices: DslServices,
-    bootClasspathConfig: BootClasspathConfig,
-    buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
-    sourceSetManager: SourceSetManager,
-    isBaseModule: Boolean,
-    stats: GradleBuildProject.Builder?
-) : AbstractAppExtension(
-    dslServices,
-    bootClasspathConfig,
-    buildOutputs,
-    sourceSetManager,
-    isBaseModule,
-    stats
+@Deprecated(
+  message =
+    "Replaced by com.android.build.api.dsl.ApplicationExtension and com.android.build.api.dsl.DynamicFeatureExtension.\n" +
+      "This class is not used for the public extensions in AGP when android.newDsl=true, which is the default in AGP 9.0, and will be removed in AGP 10.0."
 )
+abstract class AppExtension(
+  dslServices: DslServices,
+  bootClasspathConfig: BootClasspathConfig,
+  buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,
+  sourceSetManager: SourceSetManager,
+  isBaseModule: Boolean,
+  stats: GradleBuildProject.Builder?,
+) : AbstractAppExtension(dslServices, bootClasspathConfig, buildOutputs, sourceSetManager, isBaseModule, stats)

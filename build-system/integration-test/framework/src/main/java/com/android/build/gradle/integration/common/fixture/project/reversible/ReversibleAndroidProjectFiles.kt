@@ -22,16 +22,14 @@ import java.nio.file.Path
 /**
  * Implementation of [AndroidProjectFiles] that is reversible.
  *
- * It's meant to work with [FileChangeController], and should be instantiated via
- * [FileChangeController.newAndroidProjectFiles]
+ * It's meant to work with [FileChangeController], and should be instantiated via [FileChangeController.newAndroidProjectFiles]
  */
-internal class ReversibleAndroidProjectFiles(
-    private val parent: AndroidProjectFiles,
-    location: Path
-): AndroidProjectFiles, ReversibleGradleProjectFiles(location) {
+internal class ReversibleAndroidProjectFiles(private val parent: AndroidProjectFiles, location: Path) :
+  AndroidProjectFiles, ReversibleGradleProjectFiles(location) {
 
-    override val namespace: String
-        get() = parent.namespace
-    override val namespaceAsPath: String
-        get() = parent.namespaceAsPath
+  override val namespace: String
+    get() = parent.namespace
+
+  override val namespaceAsPath: String
+    get() = parent.namespaceAsPath
 }

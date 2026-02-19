@@ -15,32 +15,26 @@
  */
 package com.android.fakeadbserver.shellcommandhandlers
 
-import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
-import com.android.fakeadbserver.services.readStdinByte
-import java.nio.file.attribute.PosixFilePermission
-import kotlin.text.Charsets.UTF_8
 
-class ExitCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(
-    shellProtocolType, "exit"
-) {
+class ExitCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellHandler(shellProtocolType, "exit") {
 
-    override fun execute(
-        fakeAdbServer: FakeAdbServer,
-        statusWriter: StatusWriter,
-        shellCommandOutput: ShellCommandOutput,
-        device: DeviceState,
-        shellCommand: String,
-        shellCommandArgs: String?
-    ) {
-        statusWriter.writeOk()
+  override fun execute(
+    fakeAdbServer: FakeAdbServer,
+    statusWriter: StatusWriter,
+    shellCommandOutput: ShellCommandOutput,
+    device: DeviceState,
+    shellCommand: String,
+    shellCommandArgs: String?,
+  ) {
+    statusWriter.writeOk()
 
-        val parameters = shellCommandArgs?.split(" ") ?: emptyList()
-        val exitCode = parameters.firstOrNull()?.toIntOrNull() ?: 0
-        shellCommandOutput.writeExitCode(exitCode)
-    }
+    val parameters = shellCommandArgs?.split(" ") ?: emptyList()
+    val exitCode = parameters.firstOrNull()?.toIntOrNull() ?: 0
+    shellCommandOutput.writeExitCode(exitCode)
+  }
 }

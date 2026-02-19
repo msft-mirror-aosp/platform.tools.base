@@ -41,8 +41,7 @@ import org.jetbrains.uast.tryResolve
 /** Some lint checks around WorkManager usage. */
 class WorkManagerDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(WorkManagerDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WorkManagerDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Problems with enqueueing work manager continuations. */
     @JvmField
@@ -80,11 +79,7 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
 
   private fun isEnqueueCall(call: UCallExpression): Boolean {
     val methodName = getMethodName(call)
-    if (
-      methodName == METHOD_ENQUEUE ||
-        methodName == METHOD_ENQUEUE_SYNC ||
-        methodName == METHOD_ENQUEUE_UNIQUE
-    ) {
+    if (methodName == METHOD_ENQUEUE || methodName == METHOD_ENQUEUE_SYNC || methodName == METHOD_ENQUEUE_UNIQUE) {
       // TODO: check that it's called on the WorkContinuation?
       return true
     } else if (methodName == METHOD_THEN || methodName == METHOD_COMBINE) {
@@ -97,8 +92,7 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (
-      !context.evaluator.isMemberInClass(method, CLASS_WORK_MANAGER) &&
-        !context.evaluator.isMemberInClass(method, CLASS_WORK_CONTINUATION)
+      !context.evaluator.isMemberInClass(method, CLASS_WORK_MANAGER) && !context.evaluator.isMemberInClass(method, CLASS_WORK_CONTINUATION)
     ) {
       return
     }
@@ -155,10 +149,7 @@ class WorkManagerDetector : Detector(), SourceCodeScanner {
     surrounding.accept(visitor)
 
     if (!enqueued && !(visitor.failedResolve && surrounding.anyCall(::isEnqueueCall))) {
-      val name =
-        (skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent)
-            as? ULocalVariable)
-          ?.nameFromSource
+      val name = (skipParenthesizedExprUp(skipParenthesizedExprUp(node.uastParent)?.uastParent) as? ULocalVariable)?.nameFromSource
       val nameString = if (name != null) "`$name` " else ""
       context.report(
         ISSUE,

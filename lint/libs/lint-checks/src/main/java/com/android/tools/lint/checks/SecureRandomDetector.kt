@@ -48,8 +48,7 @@ class SecureRandomDetector : Detector(), SourceCodeScanner {
     val evaluator = context.evaluator
     if (
       evaluator.isMemberInClass(method, JAVA_SECURITY_SECURE_RANDOM) ||
-        evaluator.isMemberInSubClassOf(method, JAVA_UTIL_RANDOM, false) &&
-          isSecureRandomReceiver(node)
+        evaluator.isMemberInSubClassOf(method, JAVA_UTIL_RANDOM, false) && isSecureRandomReceiver(node)
     ) {
       // Called with a fixed seed?
       val seed = ConstantEvaluator.evaluate(context, seedArgument)
@@ -58,8 +57,7 @@ class SecureRandomDetector : Detector(), SourceCodeScanner {
           ISSUE,
           node,
           context.getLocation(node),
-          "Do not call `setSeed()` on a `SecureRandom` with a fixed seed: " +
-            "it is not secure. Use `getSeed()`.",
+          "Do not call `setSeed()` on a `SecureRandom` with a fixed seed: " + "it is not secure. Use `getSeed()`.",
         )
       } else {
         // Called with a simple System.currentTimeMillis() seed or something like that?

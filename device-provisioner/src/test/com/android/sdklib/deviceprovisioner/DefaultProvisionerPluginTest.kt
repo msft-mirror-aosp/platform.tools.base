@@ -29,12 +29,7 @@ import org.junit.Test
 
 class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
 
-  private val provisioner =
-    create(
-      fakeSession.scope,
-      fakeSession,
-      listOf(DefaultProvisionerPlugin(fakeSession.scope, deviceIcons)),
-    )
+  private val provisioner = create(fakeSession.scope, fakeSession, listOf(DefaultProvisionerPlugin(fakeSession.scope, deviceIcons)))
 
   @Test
   fun defaultUsbWiFiProperties() {
@@ -61,8 +56,7 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
       handle1.state.properties.apply {
         assertThat(wearPairingId).isEqualTo(SerialNumbers.PHYSICAL1_USB)
         assertThat(disambiguator).isEqualTo(SerialNumbers.PHYSICAL1_USB)
-        assertThat(deviceInfoProto.mdnsConnectionType)
-          .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
+        assertThat(deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_NONE)
         checkPhysicalDeviceProperties()
       }
       handle1.id.apply {
@@ -72,13 +66,11 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
       }
 
       val wifiHandle = checkNotNull(handlesByType[ConnectionType.WIFI])
-      assertThat(wifiHandle.state.connectedDevice?.serialNumber)
-        .isEqualTo(SerialNumbers.PHYSICAL2_WIFI)
+      assertThat(wifiHandle.state.connectedDevice?.serialNumber).isEqualTo(SerialNumbers.PHYSICAL2_WIFI)
       wifiHandle.state.properties.apply {
         assertThat(wearPairingId).isEqualTo(SerialNumbers.PHYSICAL2_USB)
         assertThat(disambiguator).isEqualTo(SerialNumbers.PHYSICAL2_USB)
-        assertThat(deviceInfoProto.mdnsConnectionType)
-          .isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
+        assertThat(deviceInfoProto.mdnsConnectionType).isEqualTo(DeviceInfo.MdnsConnectionType.MDNS_AUTO_CONNECT_TLS)
         checkPhysicalDeviceProperties()
       }
       wifiHandle.id.apply {
@@ -112,9 +104,7 @@ class DefaultProvisionerPluginTest : DeviceProvisionerTestFixture() {
       }
 
       // Now we also want to update whenever the state changes
-      fakeSession.scope.launch {
-        originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) }
-      }
+      fakeSession.scope.launch { originalHandle.stateFlow.collect { channel.send(provisioner.devices.value) } }
 
       setDevices()
 

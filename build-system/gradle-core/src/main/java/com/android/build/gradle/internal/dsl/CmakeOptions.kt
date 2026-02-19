@@ -21,26 +21,21 @@ import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
 /** See {@link com.android.build.api.dsl.Cmake} */
-abstract class CmakeOptions @Inject constructor(private val dslServices: DslServices)
-    : CoreCmakeOptions, com.android.build.api.dsl.Cmake {
+abstract class CmakeOptions @Inject constructor(private val dslServices: DslServices) : CoreCmakeOptions, com.android.build.api.dsl.Cmake {
 
-    override fun path(path: Any?) {
-        this.path = path?.let {
-            dslServices.file(path)
-        }
-    }
+  override fun path(path: Any?) {
+    this.path = path?.let { dslServices.file(path) }
+  }
 
-    fun setPath(path: Any?) {
-        path(path)
-    }
+  fun setPath(path: Any?) {
+    path(path)
+  }
 
-    override fun buildStagingDirectory(buildStagingDirectory: Any?) {
-        this.buildStagingDirectory = buildStagingDirectory?.let {
-            dslServices.file(buildStagingDirectory)
-        }
-    }
+  override fun buildStagingDirectory(buildStagingDirectory: Any?) {
+    this.buildStagingDirectory = buildStagingDirectory?.let { dslServices.file(buildStagingDirectory) }
+  }
 
-    fun setBuildStagingDirectory(buildStagingDirectory: Any?) {
-        buildStagingDirectory(buildStagingDirectory)
-    }
+  fun setBuildStagingDirectory(buildStagingDirectory: Any?) {
+    buildStagingDirectory(buildStagingDirectory)
+  }
 }

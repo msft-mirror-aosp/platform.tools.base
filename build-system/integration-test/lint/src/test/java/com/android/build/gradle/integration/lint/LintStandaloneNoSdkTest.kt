@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.lint;
+package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.testutils.truth.PathSubject.assertThat
@@ -25,22 +25,20 @@ import org.junit.Test
 /** Test ability to use lint plugin without android settings or available sdk */
 class LintStandaloneNoSdkTest {
 
-    @get:Rule
-    val project =
-        GradleTestProject.builder().fromTestProject("lintStandalone").withSdk(false).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("lintStandalone").withSdk(false).create()
 
-    @Test
-    fun emptyJavaProjectRunLint() {
-        project.executor().run(":lint").apply {
-            Truth.assertThat(failedTasks).isEmpty()
-            assertTask(":lintJvm").didWork();
-            assertTask(":lintAnalyzeJvmMain").didWork();
-        }
-
-        val file = project.file("lint-results.txt");
-        assertThat(file).exists();
-        assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead");
-        assertThat(file).contains("build.gradle:4: Warning: no Java language level directives");
-        assertThat(file).contains("0 errors, 3 warnings");
+  @Test
+  fun emptyJavaProjectRunLint() {
+    project.executor().run(":lint").apply {
+      Truth.assertThat(failedTasks).isEmpty()
+      assertTask(":lintJvm").didWork()
+      assertTask(":lintAnalyzeJvmMain").didWork()
     }
+
+    val file = project.file("lint-results.txt")
+    assertThat(file).exists()
+    assertThat(file).contains("MyClass.java:5: Warning: Use Boolean.valueOf(true) instead")
+    assertThat(file).contains("build.gradle:4: Warning: no Java language level directives")
+    assertThat(file).contains("0 errors, 3 warnings")
+  }
 }

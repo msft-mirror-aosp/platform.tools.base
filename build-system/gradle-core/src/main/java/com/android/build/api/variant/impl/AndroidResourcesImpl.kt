@@ -22,32 +22,24 @@ import com.android.build.gradle.internal.services.VariantServices
 import org.gradle.api.provider.ListProperty
 
 open class AndroidResourcesImpl(
-    override val ignoreAssetsPatterns: ListProperty<String>,
-    override val aaptAdditionalParameters: ListProperty<String>,
-    override val noCompress: ListProperty<String>,
-    override val viewBinding: Boolean,
-    override val dataBinding: Boolean
+  override val ignoreAssetsPatterns: ListProperty<String>,
+  override val aaptAdditionalParameters: ListProperty<String>,
+  override val noCompress: ListProperty<String>,
+  override val viewBinding: Boolean,
+  override val dataBinding: Boolean,
 ) : AndroidResources
 
 internal fun initializeAaptOptionsFromDsl(
-    dslAndroidResources: com.android.build.api.dsl.AndroidResources,
-    buildFeatureValues: BuildFeatureValues,
-    variantServices: VariantServices
-) : AndroidResourcesImpl {
-    return AndroidResourcesImpl(
-        ignoreAssetsPatterns = variantServices.listPropertyOf(
-            String::class.java,
-            dslAndroidResources.ignoreAssetsPattern?.split(':') ?: listOf()
-        ),
-        aaptAdditionalParameters = variantServices.listPropertyOf(
-            String::class.java,
-            dslAndroidResources.additionalParameters
-        ),
-        noCompress = variantServices.listPropertyOf(
-            String::class.java,
-            dslAndroidResources.noCompress
-        ),
-        viewBinding = buildFeatureValues.viewBinding,
-        dataBinding = buildFeatureValues.dataBinding
-    )
+  dslAndroidResources: com.android.build.api.dsl.AndroidResources,
+  buildFeatureValues: BuildFeatureValues,
+  variantServices: VariantServices,
+): AndroidResourcesImpl {
+  return AndroidResourcesImpl(
+    ignoreAssetsPatterns =
+      variantServices.listPropertyOf(String::class.java, dslAndroidResources.ignoreAssetsPattern?.split(':') ?: listOf()),
+    aaptAdditionalParameters = variantServices.listPropertyOf(String::class.java, dslAndroidResources.additionalParameters),
+    noCompress = variantServices.listPropertyOf(String::class.java, dslAndroidResources.noCompress),
+    viewBinding = buildFeatureValues.viewBinding,
+    dataBinding = buildFeatureValues.dataBinding,
+  )
 }

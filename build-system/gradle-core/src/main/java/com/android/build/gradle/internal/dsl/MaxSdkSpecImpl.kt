@@ -23,9 +23,9 @@ import javax.inject.Inject
 
 abstract class MaxSdkSpecImpl @Inject constructor(dslService: DslServices) : MaxSdkSpec {
 
-    override fun release(version: Int): MaxSdkVersion {
-        return MaxSdkVersionImpl(apiLevel = version)
-    }
+  override fun release(version: Int): MaxSdkVersion {
+    return MaxSdkVersionImpl(apiLevel = version)
+  }
 }
 
-internal data class MaxSdkVersionImpl(override val apiLevel: Int): MaxSdkVersion
+internal data class MaxSdkVersionImpl(override val apiLevel: Int) : MaxSdkVersion

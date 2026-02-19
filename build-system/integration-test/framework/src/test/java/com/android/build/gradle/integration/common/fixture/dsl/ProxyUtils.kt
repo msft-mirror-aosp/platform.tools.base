@@ -16,21 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.dsl
 
-/**
- * Utility method for test that always want to use DslProxy to run blocks
- */
-fun <T> DslRecorder.runNestedBlock(
-    name: String,
-    parameters: List<Any>,
-    theInterface: Class<T>,
-    action: T.() -> Unit,
-) {
-    runNestedBlock(
-        name = name,
-        parameters = parameters,
-        instanceProvider = {
-            DslProxy.createProxy(theInterface, it)
-        },
-        action = action,
-    )
+/** Utility method for test that always want to use DslProxy to run blocks */
+fun <T> DslRecorder.runNestedBlock(name: String, parameters: List<Any>, theInterface: Class<T>, action: T.() -> Unit) {
+  runNestedBlock(name = name, parameters = parameters, instanceProvider = { DslProxy.createProxy(theInterface, it) }, action = action)
 }

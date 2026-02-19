@@ -26,106 +26,136 @@ import org.junit.Rule
 import org.junit.Test
 
 class LibraryConstraintsSyncIssueTest {
-    @get:Rule
-    val rule = GradleRule.from {
-            androidApplication(":app") {}
-            androidLibrary(":lib") {}
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication(":app") {}
+      androidLibrary(":lib") {}
+    }
+
+  @Test
+  fun testWithWarningEnabledAndAllConstraintsApplied() {
+    val models =
+      rule
+        .build {
+          gradleProperties {
+            add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
+            add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, false)
+            add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
+          }
         }
+        .modelBuilder
+        .ignoreSyncIssues()
+        .fetchModels()
+        .container
 
-    @Test
-    fun testWithWarningEnabledAndAllConstraintsApplied() {
-        val models = rule.build {
-            gradleProperties {
-                add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
-                add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, false)
-                add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
-            }
-        }.modelBuilder.ignoreSyncIssues().fetchModels().container
+    models.getProject(":app").assertIssues(PERFORMANCE_WARNING)
+    models.getProject(":lib").assertIssues(PERFORMANCE_WARNING)
+  }
 
-        models.getProject(":app").assertIssues(PERFORMANCE_WARNING)
-        models.getProject(":lib").assertIssues(PERFORMANCE_WARNING)
-    }
+  @Test
+  fun testWithWarningEnabledAndNoConstraintsApplied() {
+    val models =
+      rule
+        .build {
+          gradleProperties {
+            add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
+            // EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS doesn't matter in this case
+            add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, false)
+          }
+        }
+        .modelBuilder
+        .ignoreSyncIssues()
+        .fetchModels()
+        .container
 
-    @Test
-    fun testWithWarningEnabledAndNoConstraintsApplied() {
-        val models = rule.build {
-            gradleProperties {
-                add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
-                // EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS doesn't matter in this case
-                add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, false)
-            }
-        }.modelBuilder.ignoreSyncIssues().fetchModels().container
+    models.getProject(":app").assertIssueDoesNotExist()
+    models.getProject(":lib").assertIssueDoesNotExist()
+  }
 
-        models.getProject(":app").assertIssueDoesNotExist()
-        models.getProject(":lib").assertIssueDoesNotExist()
-    }
+  @Test
+  fun testWithWarningEnabledAndAllConstraintsAppliedWithLibrariesExcluded() {
+    val models =
+      rule
+        .build {
+          gradleProperties {
+            add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
+            add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, true)
+            add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
+          }
+        }
+        .modelBuilder
+        .ignoreSyncIssues()
+        .fetchModels()
+        .container
 
-    @Test
-    fun testWithWarningEnabledAndAllConstraintsAppliedWithLibrariesExcluded() {
-        val models = rule.build {
-            gradleProperties {
-                add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, true)
-                add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, true)
-                add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
-            }
-        }.modelBuilder.ignoreSyncIssues().fetchModels().container
+    models.getProject(":app").assertIssues(EXPERIMENTAL_USAGE_WARNING)
+    // Experimental usage warnings are only issued once
+    models.getProject(":lib").assertIssueDoesNotExist()
+  }
 
-        models.getProject(":app").assertIssues(EXPERIMENTAL_USAGE_WARNING)
-        // Experimental usage warnings are only issued once
-        models.getProject(":lib").assertIssueDoesNotExist()
-    }
+  @Test
+  fun testWithWarningDisabledAndAllConstraintsApplied() {
+    val models =
+      rule
+        .build {
+          gradleProperties {
+            add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, false)
+            add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, false)
+            add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
+          }
+        }
+        .modelBuilder
+        .ignoreSyncIssues()
+        .fetchModels()
+        .container
 
-    @Test
-    fun testWithWarningDisabledAndAllConstraintsApplied() {
-        val models = rule.build {
-            gradleProperties {
-                add(BooleanOption.GENERATE_SYNC_ISSUE_WHEN_LIBRARY_CONSTRAINTS_ARE_ENABLED, false)
-                add(BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS, false)
-                add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, true)
-            }
-        }.modelBuilder.ignoreSyncIssues().fetchModels().container
-
-        models.getProject(":app").assertIssueDoesNotExist()
-        // Experimental usage warning only gets issued once
-        models.getProject(":lib").assertIssueDoesNotExist()
-    }
+    models.getProject(":app").assertIssueDoesNotExist()
+    // Experimental usage warning only gets issued once
+    models.getProject(":lib").assertIssueDoesNotExist()
+  }
 }
 
 private fun ModelContainerV2.ModelInfo.assertIssues(vararg expected: SyncIssueImpl) {
-    val issues = issues?.syncIssues
-    Truth.assertThat(issues).isNotNull()
-    // Comparing string representations.
-    Truth.assertThat(issues!!.map {it.toString()} ).containsExactlyElementsIn(expected.map { it.toString() })
+  val issues = issues?.syncIssues
+  Truth.assertThat(issues).isNotNull()
+  // Comparing string representations.
+  Truth.assertThat(issues!!.map { it.toString() }).containsExactlyElementsIn(expected.map { it.toString() })
 }
 
-private val PERFORMANCE_WARNING = SyncIssueImpl(
+private val PERFORMANCE_WARNING =
+  SyncIssueImpl(
     severity = SyncIssue.SEVERITY_WARNING,
     type = SyncIssue.TYPE_LIBRARY_CONSTRAINTS_SHOULD_BE_DISABLED,
     data = null,
-    message = """
-    The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
-    To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
-    """.trimIndent(),
-    multiLineMessage = null
-)
+    message =
+      """
+      The property android.dependency.excludeLibraryComponentsFromConstraints improves project import performance for very large projects. It should be enabled to improve performance.
+      To suppress this warning, add android.generateSyncIssueWhenLibraryConstraintsAreEnabled=false to gradle.properties
+      """
+        .trimIndent(),
+    multiLineMessage = null,
+  )
 
-
-private val EXPERIMENTAL_USAGE_WARNING = SyncIssueImpl(
+private val EXPERIMENTAL_USAGE_WARNING =
+  SyncIssueImpl(
     severity = SyncIssue.SEVERITY_WARNING,
     type = SyncIssue.TYPE_UNSUPPORTED_PROJECT_OPTION_USE,
     data = BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName,
-    message = """
+    message =
+      """
     The option setting '${BooleanOption.EXCLUDE_LIBRARY_COMPONENTS_FROM_CONSTRAINTS.propertyName}=true' is deprecated.
     The current default is 'false'.
     It will be removed in version 10.0 of the Android Gradle plugin.
     Following can be set instead to achieve a similar behaviour.
         android.dependency.useConstraints=false
-    """.trimIndent(),
-    multiLineMessage = null
-)
+    """
+        .trimIndent(),
+    multiLineMessage = null,
+  )
 
 private fun ModelContainerV2.ModelInfo.assertIssueDoesNotExist() {
-    val issues = issues?.syncIssues
-    Truth.assertThat(issues).isNotNull()
-    Truth.assertThat(issues!!).isEmpty()
+  val issues = issues?.syncIssues
+  Truth.assertThat(issues).isNotNull()
+  Truth.assertThat(issues!!).isEmpty()
 }

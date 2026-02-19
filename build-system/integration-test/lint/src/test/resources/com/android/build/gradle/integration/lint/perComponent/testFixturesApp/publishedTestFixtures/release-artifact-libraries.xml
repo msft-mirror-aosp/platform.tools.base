@@ -7,6 +7,11 @@
       jars="${mavenRepo}/com/google/truth/truth/0.44/truth-0.44.jar"
       resolved="com.google.truth:truth:0.44"/>
   <library
+      name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+      provided="true"/>
+  <library
       name="com.google.guava:guava:27.0.1-android@jar"
       jars="${mavenRepo}/com/google/guava/guava/27.0.1-android/guava-27.0.1-android.jar"
       resolved="com.google.guava:guava:27.0.1-android"/>
@@ -30,6 +35,11 @@
       name="com.google.errorprone:error_prone_annotations:2.3.1@jar"
       jars="${mavenRepo}/com/google/errorprone/error_prone_annotations/2.3.1/error_prone_annotations-2.3.1.jar"
       resolved="com.google.errorprone:error_prone_annotations:2.3.1"/>
+  <library
+      name="org.jetbrains:annotations:13.0@jar"
+      jars="${mavenRepo}/org/jetbrains/annotations/13.0/annotations-13.0.jar"
+      resolved="org.jetbrains:annotations:13.0"
+      provided="true"/>
   <library
       name="com.google.guava:failureaccess:1.0.1@jar"
       jars="${mavenRepo}/com/google/guava/failureaccess/1.0.1/failureaccess-1.0.1.jar"

@@ -18,34 +18,26 @@ package com.android.adblib
 import kotlinx.coroutines.flow.StateFlow
 
 data class ConnectionStatus(
-    /**
-     * `true` if a connection to the ADB server is established.
-     */
-    val isConnected: Boolean,
+  /** `true` if a connection to the ADB server is established. */
+  val isConnected: Boolean,
 
-    /**
-     * A value that changes each time the connection status changes.
-     * This is useful for distinguishing a new connection from a previous
-     * one after, for example, a disconnection and reconnection.
-     */
-    val connectionId: Int
+  /**
+   * A value that changes each time the connection status changes. This is useful for distinguishing a new connection from a previous one
+   * after, for example, a disconnection and reconnection.
+   */
+  val connectionId: Int,
 )
 
-/**
- * Tracks changes to the status of the connection to the ADB server.
- */
+/** Tracks changes to the status of the connection to the ADB server. */
 @IsThreadSafe
 interface ConnectionStatusTracker {
 
-    /**
-     * The [session][AdbSession] this [ConnectionStatusTracker] belongs to
-     */
-    val session: AdbSession
+  /** The [session][AdbSession] this [ConnectionStatusTracker] belongs to */
+  val session: AdbSession
 
-    /**
-     * The [StateFlow] of current connection status. The flow remains
-     * active as long as the [session] is active. Once the session is closed, the flow value
-     * changes to a disconnected status and never changes again.
-     */
-    val connectionStatus: StateFlow<ConnectionStatus>
+  /**
+   * The [StateFlow] of current connection status. The flow remains active as long as the [session] is active. Once the session is closed,
+   * the flow value changes to a disconnected status and never changes again.
+   */
+  val connectionStatus: StateFlow<ConnectionStatus>
 }

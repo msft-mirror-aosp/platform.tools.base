@@ -25,109 +25,98 @@ import com.google.common.truth.Subject.Factory
 import com.google.common.truth.Truth
 import java.io.IOException
 
-/** Truth support for aab files.  */
-class AabSubject(failureMetadata: FailureMetadata, subject: Aab) : AbstractZipSubject<AabSubject, Aab>(
-    failureMetadata,
-    subject) {
+/** Truth support for aab files. */
+class AabSubject(failureMetadata: FailureMetadata, subject: Aab) : AbstractZipSubject<AabSubject, Aab>(failureMetadata, subject) {
 
-    companion object {
-        fun aabs(): Factory<AabSubject, Aab> {
-            return Factory<AabSubject, Aab> { failureMetadata, actualT ->
-                AabSubject(failureMetadata, actualT)
-            }
-        }
-
-        fun assertThat(aab: Aab): AabSubject {
-            return Truth.assertAbout<AabSubject, Aab>(aabs()).that(aab)
-        }
+  companion object {
+    fun aabs(): Factory<AabSubject, Aab> {
+      return Factory<AabSubject, Aab> { failureMetadata, actualT -> AabSubject(failureMetadata, actualT) }
     }
 
-    @Throws(IOException::class)
-    override fun contains(path: String) {
-        exists()
-        actual().getEntry(path)
-            ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
+    fun assertThat(aab: Aab): AabSubject {
+      return Truth.assertAbout<AabSubject, Aab>(aabs()).that(aab)
     }
+  }
 
-    override fun contains(vararg paths: String) {
-        exists()
-        for (path in paths) {
-            actual().getEntry(path)
-                ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
-        }
+  @Throws(IOException::class)
+  override fun contains(path: String) {
+    exists()
+    actual().getEntry(path) ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
+  }
+
+  override fun contains(vararg paths: String) {
+    exists()
+    for (path in paths) {
+      actual().getEntry(path) ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
     }
+  }
 
-    override fun contains(paths: MutableCollection<String>) {
-        exists()
-        for (path in paths) {
-            actual().getEntry(path)
-                ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
-        }
+  override fun contains(paths: MutableCollection<String>) {
+    exists()
+    for (path in paths) {
+      actual().getEntry(path) ?: failWithoutActual(Fact.simpleFact("${actual().file} does not contain $path"))
     }
+  }
 
-    @Throws(IOException::class)
-    override fun doesNotContain(path: String) {
-        exists()
-        actual().getEntry(path)?.let {
-            failWithoutActual(Fact.simpleFact("${actual().file} contains $path"))
-        }
+  @Throws(IOException::class)
+  override fun doesNotContain(path: String) {
+    exists()
+    actual().getEntry(path)?.let { failWithoutActual(Fact.simpleFact("${actual().file} contains $path")) }
+  }
+
+  fun containsMainClass(featureNameOrBase: String, className: String) {
+    exists()
+    AndroidArchive.checkValidClassName(className)
+    val dexPath = "$featureNameOrBase/dex/classes.dex"
+    contains(dexPath)
+
+    val foundClass = findClasses(featureNameOrBase, className, maxDexIndex = 1)
+    if (!foundClass) {
+      failWithoutActual(Fact.simpleFact("Class $className not found in primary dex for $featureNameOrBase"))
     }
+  }
 
-    fun containsMainClass(featureNameOrBase: String, className: String) {
-        exists()
-        AndroidArchive.checkValidClassName(className)
-        val dexPath = "$featureNameOrBase/dex/classes.dex"
-        contains(dexPath)
-
-        val foundClass = findClasses(featureNameOrBase, className, maxDexIndex = 1)
-        if (!foundClass) {
-            failWithoutActual(Fact.simpleFact("Class $className not found in primary dex for $featureNameOrBase"))
-        }
+  fun containsSecondaryClass(featureNameOrBase: String, className: String) {
+    exists()
+    AndroidArchive.checkValidClassName(className)
+    val foundClass = findClasses(featureNameOrBase, className, minDexIndex = 2)
+    if (!foundClass) {
+      failWithoutActual(Fact.simpleFact("Class $className not found in secondary dex for $featureNameOrBase"))
     }
+  }
 
-    fun containsSecondaryClass(featureNameOrBase: String, className: String) {
-        exists()
-        AndroidArchive.checkValidClassName(className)
-        val foundClass = findClasses(featureNameOrBase, className, minDexIndex = 2)
-        if (!foundClass) {
-            failWithoutActual(Fact.simpleFact("Class $className not found in secondary dex for $featureNameOrBase"))
-        }
+  fun containsClass(featureNameOrBase: String, className: String) {
+    exists()
+    AndroidArchive.checkValidClassName(className)
+
+    val foundClass = findClasses(featureNameOrBase, className)
+    if (!foundClass) {
+      failWithoutActual(Fact.simpleFact("$className not found in $featureNameOrBase"))
     }
+  }
 
-    fun containsClass(featureNameOrBase: String, className: String) {
-        exists()
-        AndroidArchive.checkValidClassName(className)
+  fun doesNotContainClass(featureNameOrBase: String, className: String) {
+    exists()
+    AndroidArchive.checkValidClassName(className)
 
-        val foundClass = findClasses(featureNameOrBase, className)
-        if (!foundClass) {
-            failWithoutActual(Fact.simpleFact("$className not found in $featureNameOrBase"))
-        }
+    val foundClass = findClasses(featureNameOrBase, className)
+    if (foundClass) {
+      failWithoutActual(Fact.simpleFact("$className exists in $featureNameOrBase"))
     }
+  }
 
-    fun doesNotContainClass(featureNameOrBase: String, className: String) {
-        exists()
-        AndroidArchive.checkValidClassName(className)
-
-        val foundClass = findClasses(featureNameOrBase, className)
-        if (foundClass) {
-            failWithoutActual(Fact.simpleFact("$className exists in $featureNameOrBase"))
-        }
+  private fun findClasses(featureNameOrBase: String, className: String, minDexIndex: Int = 1, maxDexIndex: Int = Int.MAX_VALUE): Boolean {
+    var index = minDexIndex
+    var foundClass = false
+    while (index <= maxDexIndex) {
+      val suffix = if (index == 1) "" else index.toString()
+      val dex = actual().getEntry("$featureNameOrBase/dex/classes$suffix.dex")?.let { Dex(it) } ?: break
+      if (className in dex.classes) {
+        foundClass = true
+        break
+      }
+      index++
     }
-
-    private fun findClasses(featureNameOrBase: String, className: String, minDexIndex: Int = 1, maxDexIndex: Int = Int.MAX_VALUE): Boolean {
-        var index = minDexIndex
-        var foundClass = false
-        while (index <= maxDexIndex) {
-            val suffix = if (index == 1) "" else index.toString()
-            val dex =
-                actual().getEntry("$featureNameOrBase/dex/classes$suffix.dex")?.let { Dex(it) }
-                    ?: break
-            if (className in dex.classes) {
-                foundClass = true
-                break
-            }
-            index++
-        }
-        return foundClass
-    }
+    return foundClass
+  }
 }

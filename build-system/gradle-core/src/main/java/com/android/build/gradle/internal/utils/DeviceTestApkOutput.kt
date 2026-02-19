@@ -27,24 +27,22 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.tasks.ClasspathNormalizer
 import org.gradle.api.tasks.TaskInputs
 
-class DeviceTestApkOutput(targetVariant: VariantCreationConfig, testVariant: DeviceTestCreationConfig, deviceSpec: DeviceSpec): ApkOutput {
-    private val testingApk = testVariant.artifacts.get(SingleArtifact.APK)
-    private val mainVariantApkOutput = DefaultApkOutput(targetVariant, deviceSpec)
+class DeviceTestApkOutput(targetVariant: VariantCreationConfig, testVariant: DeviceTestCreationConfig, deviceSpec: DeviceSpec) : ApkOutput {
+  private val testingApk = testVariant.artifacts.get(SingleArtifact.APK)
+  private val mainVariantApkOutput = DefaultApkOutput(targetVariant, deviceSpec)
 
-    override val apkInstallGroups: List<ApkInstallGroup>
+  override val apkInstallGroups: List<ApkInstallGroup>
     get() {
-        return mainVariantApkOutput.apkInstallGroups + fetchTestingApkOutput()
+      return mainVariantApkOutput.apkInstallGroups + fetchTestingApkOutput()
     }
 
-    fun setInputs(inputs: TaskInputs) {
-        mainVariantApkOutput.setInputs(inputs)
-        inputs.files(testingApk)
-            .withNormalizer(ClasspathNormalizer::class.java)
-    }
+  fun setInputs(inputs: TaskInputs) {
+    mainVariantApkOutput.setInputs(inputs)
+    inputs.files(testingApk).withNormalizer(ClasspathNormalizer::class.java)
+  }
 
-    private fun fetchTestingApkOutput(): List<ApkInstallGroup> {
-        val testingApks = listOf(RegularFile { TestData.getTestingApk(testingApk.get()) })
-        return listOf(DefaultDeviceApkOutput.DefaultApkInstallGroup(
-            testingApks, "Testing Apk"))
-    }
+  private fun fetchTestingApkOutput(): List<ApkInstallGroup> {
+    val testingApks = listOf(RegularFile { TestData.getTestingApk(testingApk.get()) })
+    return listOf(DefaultDeviceApkOutput.DefaultApkInstallGroup(testingApks, "Testing Apk"))
+  }
 }

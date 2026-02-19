@@ -18,40 +18,28 @@ package com.android.build.gradle.integration.common.fixture.project.prebuilts
 
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 
-/**
- * Utility methods to create basic Android build structure.
- */
+/** Utility methods to create basic Android build structure. */
 class BasicProjectStructures {
-    companion object {
-        /**
-         * Basic Android Application module
-         */
-        fun appWithLibrary(
-            gradleBuild: GradleBuildDefinition,
-            appPath: String = ":app",
-            libPath: String = ":library"
-        ) {
-            gradleBuild.apply {
-                androidLibrary(libPath) { }
-                androidApplication(appPath) {
-                    dependencies {
-                        implementation(project(libPath))
-                    }
-                }
-            }
-        }
-
-        fun appWithTwoLibraries(gradleBuild: GradleBuildDefinition) {
-            gradleBuild.apply {
-                androidLibrary(":library1") { }
-                androidLibrary(":library2") { }
-                androidApplication {
-                    dependencies {
-                        implementation(project(":library1"))
-                        implementation(project(":library2"))
-                    }
-                }
-            }
-        }
+  companion object {
+    /** Basic Android Application module */
+    fun appWithLibrary(gradleBuild: GradleBuildDefinition, appPath: String = ":app", libPath: String = ":library") {
+      gradleBuild.apply {
+        androidLibrary(libPath) {}
+        androidApplication(appPath) { dependencies { implementation(project(libPath)) } }
+      }
     }
+
+    fun appWithTwoLibraries(gradleBuild: GradleBuildDefinition) {
+      gradleBuild.apply {
+        androidLibrary(":library1") {}
+        androidLibrary(":library2") {}
+        androidApplication {
+          dependencies {
+            implementation(project(":library1"))
+            implementation(project(":library2"))
+          }
+        }
+      }
+    }
+  }
 }

@@ -8,6 +8,7 @@ maven_proto_library(
     coordinates = "com.android.tools.utp:android-test-plugin-host-coverage-proto",
     description = "A protobuf messages used in a UTP plugin to export test coverage data",
     notice = "NOTICE",
+    proto_java_runtime_library = ["//tools/base/utp:utp.protobuf-java"],
     protoc_version = UTP_PROTO_VERSION,
     resource_strip_prefix = "tools/base/utp/android-test-plugin-host-coverage-proto/src/main/proto",
     resources = glob(["src/main/proto/*.proto"]),

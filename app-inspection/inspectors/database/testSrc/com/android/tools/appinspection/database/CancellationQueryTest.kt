@@ -43,32 +43,20 @@ import org.robolectric.annotation.SQLiteMode
 import org.robolectric.junit.rules.CloseGuardRule
 
 @RunWith(RobolectricTestRunner::class)
-@Config(
-  manifest = Config.NONE,
-  minSdk = Build.VERSION_CODES.O,
-  maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE,
-)
+@Config(manifest = Config.NONE, minSdk = Build.VERSION_CODES.O, maxSdk = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SQLiteMode(SQLiteMode.Mode.NATIVE)
 class CancellationQueryTest {
   private val countingExecutorService = CountingDelegatingExecutorService(newCachedThreadPool())
-  private val testEnvironment =
-    SqliteInspectorTestEnvironment(countingExecutorService, EmptyCoroutineContext)
+  private val testEnvironment = SqliteInspectorTestEnvironment(countingExecutorService, EmptyCoroutineContext)
 
-  @get:Rule
-  val rule: RuleChain =
-    RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
+  @get:Rule val rule: RuleChain = RuleChain.outerRule(CloseGuardRule()).around(testEnvironment).around(LogPrinterRule())
 
   @Test
   fun test_query_cancellations() = runBlocking {
-    val db =
-      testEnvironment.openDatabase(
-        DatabaseModel("db", emptyList()),
-        writeAheadLoggingEnabled = true,
-      )
+    val db = testEnvironment.openDatabase(DatabaseModel("db", emptyList()), writeAheadLoggingEnabled = true)
     val databaseId = testEnvironment.inspectDatabase(db)
     // very long-running query
-    val job =
-      launch(Dispatchers.IO) { testEnvironment.issueQuery(databaseId, mandelbrotQuery(10000000)) }
+    val job = launch(Dispatchers.IO) { testEnvironment.issueQuery(databaseId, mandelbrotQuery(10000000)) }
     // check that task with the query is actually started, but there is still no hard guarantee
     // that next query still won't win the race and execute query first.
     assertThat(countingExecutorService.events.receive()).isEqualTo(STARTED)
@@ -85,8 +73,7 @@ class CancellationQueryTest {
   }
 }
 
-class CountingDelegatingExecutorService(private val executor: ExecutorService) :
-  ExecutorService by executor {
+class CountingDelegatingExecutorService(private val executor: ExecutorService) : ExecutorService by executor {
   enum class Event {
     STARTED,
     FINISHED,

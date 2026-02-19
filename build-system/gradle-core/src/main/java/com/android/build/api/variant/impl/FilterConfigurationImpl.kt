@@ -17,16 +17,13 @@
 package com.android.build.api.variant.impl
 
 import com.android.build.api.variant.FilterConfiguration
-import org.gradle.api.tasks.Input
 import java.io.Serializable
+import org.gradle.api.tasks.Input
 
 data class FilterConfigurationImpl(
-        @get:Input
-        override val filterType: FilterConfiguration.FilterType,
-        @get:Input
-        override val identifier: String,
+  @get:Input override val filterType: FilterConfiguration.FilterType,
+  @get:Input override val identifier: String,
 ) : FilterConfiguration, Serializable {
 
-    override fun toString(): String =
-            "FilterConfiguration(filterType=$filterType, identifier=$identifier)"
+  override fun toString(): String = "FilterConfiguration(filterType=$filterType, identifier=$identifier)"
 }

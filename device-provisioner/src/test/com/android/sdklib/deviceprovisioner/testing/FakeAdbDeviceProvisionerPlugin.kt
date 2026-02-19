@@ -40,10 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * A [DeviceProvisionerPlugin] that allows creating [FakeDeviceHandle]s that can be activated and
- * deactivated.
- */
+/** A [DeviceProvisionerPlugin] that allows creating [FakeDeviceHandle]s that can be activated and deactivated. */
 class FakeAdbDeviceProvisionerPlugin(
   val scope: CoroutineScope,
   private val fakeDeviceCreator: FakeDeviceCreator,
@@ -78,25 +75,19 @@ class FakeAdbDeviceProvisionerPlugin(
   /**
    * Creates a FakeDeviceHandle in the Disconnected state.
    *
-   * Note that, in order to allow simulating devices becoming known and unknown to the plugin, the
-   * returned device will not be initially known to the plugin. That is, it will not be reported in
-   * [devices] and it will not be claimed if it is activated.
+   * Note that, in order to allow simulating devices becoming known and unknown to the plugin, the returned device will not be initially
+   * known to the plugin. That is, it will not be reported in [devices] and it will not be claimed if it is activated.
    *
-   * To get the device in the [Connected] state, it needs to be made known to the plugin using
-   * [addDevice], and activated using its [ActivationAction], which adds it to FakeAdb.
+   * To get the device in the [Connected] state, it needs to be made known to the plugin using [addDevice], and activated using its
+   * [ActivationAction], which adds it to FakeAdb.
    */
-  fun newDevice(
-    serialNumber: String = nextSerial(),
-    properties: DeviceProperties = DEFAULT_PROPERTIES,
-  ): FakeDeviceHandle {
+  fun newDevice(serialNumber: String = nextSerial(), properties: DeviceProperties = DEFAULT_PROPERTIES): FakeDeviceHandle {
     return FakeDeviceHandle(scope.createChildScope(true), Disconnected(properties), serialNumber)
   }
 
   /** Creates a FakeDeviceHandle in the Disconnected state that is already known to the plugin. */
-  fun addNewDevice(
-    serialNumber: String = nextSerial(),
-    properties: DeviceProperties = DEFAULT_PROPERTIES,
-  ): FakeDeviceHandle = newDevice(serialNumber, properties).also { addDevice(it) }
+  fun addNewDevice(serialNumber: String = nextSerial(), properties: DeviceProperties = DEFAULT_PROPERTIES): FakeDeviceHandle =
+    newDevice(serialNumber, properties).also { addDevice(it) }
 
   /** Makes the device known to the plugin, in its current state. */
   fun addDevice(device: FakeDeviceHandle) {
@@ -134,11 +125,7 @@ class FakeAdbDeviceProvisionerPlugin(
       }
   }
 
-  inner class FakeDeviceHandle(
-    override val scope: CoroutineScope,
-    initialState: DeviceState,
-    val serialNumber: String,
-  ) : DeviceHandle {
+  inner class FakeDeviceHandle(override val scope: CoroutineScope, initialState: DeviceState, val serialNumber: String) : DeviceHandle {
 
     override val id = DeviceId(PLUGIN_ID, false, "serial=$serialNumber")
 
@@ -158,8 +145,7 @@ class FakeAdbDeviceProvisionerPlugin(
 
     override val activationAction =
       object : ActivationAction {
-        override val presentation =
-          MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())
+        override val presentation = MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())
 
         override suspend fun activate() {
           val properties = state.properties
@@ -179,8 +165,7 @@ class FakeAdbDeviceProvisionerPlugin(
 
     override val deactivationAction: DeactivationAction =
       object : DeactivationAction {
-        override val presentation =
-          MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())
+        override val presentation = MutableStateFlow(TestDefaultDeviceActionPresentation.fromContext())
 
         override suspend fun deactivate() {
           fakeDeviceCreator.disconnectDevice(serialNumber)

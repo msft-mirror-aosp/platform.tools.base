@@ -20,12 +20,8 @@ import com.android.build.api.dsl.Packaging
 import com.android.build.api.variant.JniLibsTestedComponentPackaging
 import com.android.build.gradle.internal.services.VariantServices
 
-class JniLibsTestedComponentPackagingImpl(
-    dslPackaging: Packaging,
-    variantServices: VariantServices
-) : JniLibsPackagingImpl(dslPackaging, variantServices),
-    JniLibsTestedComponentPackaging {
+class JniLibsTestedComponentPackagingImpl(dslPackaging: Packaging, variantServices: VariantServices) :
+  JniLibsPackagingImpl(dslPackaging, variantServices), JniLibsTestedComponentPackaging {
 
-    override val testOnly =
-        variantServices.setPropertyOf(String::class.java) { dslPackaging.jniLibs.testOnly }
+  override val testOnly = variantServices.setPropertyOf(String::class.java) { dslPackaging.jniLibs.testOnly }
 }

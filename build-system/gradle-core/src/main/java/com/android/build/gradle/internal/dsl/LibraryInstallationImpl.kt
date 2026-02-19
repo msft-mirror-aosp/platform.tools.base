@@ -20,5 +20,4 @@ import com.android.build.api.dsl.LibraryInstallation
 import com.android.build.gradle.internal.services.DslServices
 import javax.inject.Inject
 
-abstract class LibraryInstallationImpl @Inject constructor(dslServices: DslServices) :
-    LibraryInstallation, AdbOptions(dslServices)
+abstract class LibraryInstallationImpl @Inject constructor(dslServices: DslServices) : LibraryInstallation, AdbOptions(dslServices)

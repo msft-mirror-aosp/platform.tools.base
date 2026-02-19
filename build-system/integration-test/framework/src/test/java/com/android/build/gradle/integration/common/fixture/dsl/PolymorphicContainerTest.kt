@@ -25,84 +25,95 @@ import org.junit.Test
 
 class PolymorphicContainerTest {
 
-    private val dslRecorder = DefaultDslRecorder()
+  private val dslRecorder = DefaultDslRecorder()
 
-    @Test
-    fun create() {
-        dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
-            allDevices.create("foo", ManagedVirtualDevice::class.java) {
-                it.sdkVersion = 35
-            }
-        }
-
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            managedDevices {
-              allDevices.create('foo', com.android.build.api.dsl.ManagedVirtualDevice) {
-                sdkVersion = 35
-              }
-            }
-
-        """.trimIndent())
+  @Test
+  fun create() {
+    dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
+      allDevices.create("foo", ManagedVirtualDevice::class.java) { it.sdkVersion = 35 }
     }
 
-    @Test
-    fun createKts() {
-        dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
-            allDevices.create("foo", ManagedVirtualDevice::class.java) {
-                it.sdkVersion = 35
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        managedDevices {
+          allDevices.create('foo', com.android.build.api.dsl.ManagedVirtualDevice) {
+            sdkVersion = 35
+          }
         }
 
-        val kts = KtsBuildWriter()
-        dslRecorder.writeContent(kts)
-        Truth.assertThat(kts.toString()).isEqualTo("""
-            managedDevices {
-              allDevices.create("foo", com.android.build.api.dsl.ManagedVirtualDevice::class.java) {
-                sdkVersion = 35
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun createKts() {
+    dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
+      allDevices.create("foo", ManagedVirtualDevice::class.java) { it.sdkVersion = 35 }
     }
 
-    @Test
-    fun named() {
-        dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
-            allDevices.named("foo") {
-                // nothing in call in Device as it's all read-only
-            }
+    val kts = KtsBuildWriter()
+    dslRecorder.writeContent(kts)
+    Truth.assertThat(kts.toString())
+      .isEqualTo(
+        """
+        managedDevices {
+          allDevices.create("foo", com.android.build.api.dsl.ManagedVirtualDevice::class.java) {
+            sdkVersion = 35
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            managedDevices {
-              allDevices.named('foo') {
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun named() {
+    dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
+      allDevices.named("foo") {
+        // nothing in call in Device as it's all read-only
+      }
     }
 
-
-    @Test
-    fun allAction() {
-        dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
-            allDevices.all {
-                // nothing in call in Device as it's all read-only
-            }
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        managedDevices {
+          allDevices.named('foo') {
+          }
         }
 
-        val groovy = GroovyBuildWriter()
-        dslRecorder.writeContent(groovy)
-        Truth.assertThat(groovy.toString()).isEqualTo("""
-            managedDevices {
-              allDevices.all {
-              }
-            }
+        """
+          .trimIndent()
+      )
+  }
 
-        """.trimIndent())
+  @Test
+  fun allAction() {
+    dslRecorder.runNestedBlock("managedDevices", listOf(), ManagedDevices::class.java) {
+      allDevices.all {
+        // nothing in call in Device as it's all read-only
+      }
     }
+
+    val groovy = GroovyBuildWriter()
+    dslRecorder.writeContent(groovy)
+    Truth.assertThat(groovy.toString())
+      .isEqualTo(
+        """
+        managedDevices {
+          allDevices.all {
+          }
+        }
+
+        """
+          .trimIndent()
+      )
+  }
 }

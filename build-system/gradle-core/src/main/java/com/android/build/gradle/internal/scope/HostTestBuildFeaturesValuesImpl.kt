@@ -20,20 +20,15 @@ import com.android.build.api.dsl.BuildFeatures
 import com.android.build.gradle.internal.services.ProjectServices
 
 class HostTestBuildFeaturesValuesImpl(
-    buildFeatures: BuildFeatures,
-    projectServices: ProjectServices,
-    dataBindingOverride: Boolean? = null,
-    mlModelBindingOverride: Boolean? = null,
-    includeAndroidResources: Boolean
-) : BuildFeatureValuesImpl(
-    buildFeatures,
-    projectServices,
-    dataBindingOverride,
-    mlModelBindingOverride
-) {
+  buildFeatures: BuildFeatures,
+  projectServices: ProjectServices,
+  dataBindingOverride: Boolean? = null,
+  mlModelBindingOverride: Boolean? = null,
+  includeAndroidResources: Boolean,
+) : BuildFeatureValuesImpl(buildFeatures, projectServices, dataBindingOverride, mlModelBindingOverride) {
 
-    // We only create android resources tasks for unit test components when the tested component is
-    // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
-    // resources and assets are just copied as the unit test resources and assets output.
-    override val androidResources: Boolean = includeAndroidResources
+  // We only create android resources tasks for unit test components when the tested component is
+  // a library variant and the user specifies to includeAndroidResources. Otherwise, the tested
+  // resources and assets are just copied as the unit test resources and assets output.
+  override val androidResources: Boolean = includeAndroidResources
 }

@@ -24,68 +24,78 @@ import org.junit.Test
 /** Test that build type and product flavor also init with any extension types. */
 class InitWithExtensionTest {
 
-    private val dslServices = createDslServices()
+  private val dslServices = createDslServices()
 
-    /** An Example extension from a third-party plugin */
-    interface MyExtension : HasInitWith<MyExtension> {
-        var enableFoo: Boolean
+  /** An Example extension from a third-party plugin */
+  interface MyExtension : HasInitWith<MyExtension> {
+    var enableFoo: Boolean
+  }
+
+  abstract class MyExtensionImpl : MyExtension {
+    override fun initWith(that: MyExtension) {
+      enableFoo = that.enableFoo
     }
+  }
 
-    abstract class MyExtensionImpl : MyExtension {
-        override fun initWith(that: MyExtension) {
-            enableFoo = that.enableFoo
-        }
+  val ProductFlavor.my: MyExtension
+    get() = extensions.getByType(MyExtension::class.java)
+
+  @Test
+  fun testInitWithExtension() {
+    val orangeFlavor = dslServices.newDecoratedInstance(ProductFlavor::class.java, "orange", dslServices)
+    val lemonFlavor = dslServices.newDecoratedInstance(ProductFlavor::class.java, "lemon", dslServices)
+    for (buildType in listOf(orangeFlavor, lemonFlavor)) {
+      buildType.extensions.create(MyExtension::class.java, "my", MyExtensionImpl::class.java)
     }
+    orangeFlavor.my.enableFoo = true
+    assertWithMessage("Orange flavor custom extension is configured by the build author")
+      .that(orangeFlavor.my.enableFoo)
+      .named("orangeFlavor.my.enableBar")
+      .isTrue()
+    assertWithMessage("Lemon flavor custom extension should be the default")
+      .that(lemonFlavor.my.enableFoo)
+      .named("lemonFlavor.my.enableBar")
+      .isFalse()
 
-    val ProductFlavor.my: MyExtension get() = extensions.getByType(MyExtension::class.java)
+    lemonFlavor.initWith(orangeFlavor)
+    assertWithMessage("Orange flavor custom extension is configured by the build author")
+      .that(orangeFlavor.my.enableFoo)
+      .named("orangeFlavor.my.enableBar")
+      .isTrue()
+    assertWithMessage("Lemon flavor custom extension should be initialized by initWith")
+      .that(lemonFlavor.my.enableFoo)
+      .named("lemonFlavor.my.enableBar")
+      .isTrue()
+  }
 
-    @Test
-    fun testInitWithExtension() {
-        val orangeFlavor =
-            dslServices.newDecoratedInstance(ProductFlavor::class.java, "orange", dslServices)
-        val lemonFlavor =
-            dslServices.newDecoratedInstance(ProductFlavor::class.java, "lemon", dslServices)
-        for (buildType in listOf(orangeFlavor, lemonFlavor)) {
-            buildType.extensions.create(MyExtension::class.java, "my", MyExtensionImpl::class.java)
-        }
-        orangeFlavor.my.enableFoo = true
-        assertWithMessage("Orange flavor custom extension is configured by the build author")
-            .that(orangeFlavor.my.enableFoo).named("orangeFlavor.my.enableBar").isTrue()
-        assertWithMessage("Lemon flavor custom extension should be the default")
-            .that(lemonFlavor.my.enableFoo).named("lemonFlavor.my.enableBar").isFalse()
+  val BuildType.my: MyExtension
+    get() = extensions.getByType(MyExtension::class.java)
 
-        lemonFlavor.initWith(orangeFlavor)
-        assertWithMessage("Orange flavor custom extension is configured by the build author")
-            .that(orangeFlavor.my.enableFoo).named("orangeFlavor.my.enableBar").isTrue()
-        assertWithMessage("Lemon flavor custom extension should be initialized by initWith")
-            .that(lemonFlavor.my.enableFoo).named("lemonFlavor.my.enableBar").isTrue()
+  @Test
+  fun testBuildTypeInitWithExtension() {
+    val debugBuildType = dslServices.newDecoratedInstance(BuildType::class.java, "debug", dslServices, ComponentTypeImpl.BASE_APK)
+    val qaBuildType = dslServices.newDecoratedInstance(BuildType::class.java, "qa", dslServices, ComponentTypeImpl.BASE_APK)
+    for (buildType in listOf(debugBuildType, qaBuildType)) {
+      buildType.extensions.create(MyExtension::class.java, "my", MyExtensionImpl::class.java)
     }
+    debugBuildType.my.enableFoo = true
+    assertWithMessage("debug build type custom extension is configured by the build author")
+      .that(debugBuildType.my.enableFoo)
+      .named("buildTypes.debug.my.enableFoo")
+      .isTrue()
+    assertWithMessage("qa build type custom extension should be the default")
+      .that(qaBuildType.my.enableFoo)
+      .named("buildTypes.qa.my.enableFoo")
+      .isFalse()
 
-    val BuildType.my: MyExtension get() = extensions.getByType(MyExtension::class.java)
-
-    @Test
-    fun testBuildTypeInitWithExtension() {
-        val debugBuildType = dslServices.newDecoratedInstance(BuildType::class.java,
-            "debug",
-            dslServices,
-            ComponentTypeImpl.BASE_APK)
-        val qaBuildType = dslServices.newDecoratedInstance(BuildType::class.java,
-            "qa",
-            dslServices,
-            ComponentTypeImpl.BASE_APK)
-        for (buildType in listOf(debugBuildType, qaBuildType)) {
-            buildType.extensions.create(MyExtension::class.java, "my", MyExtensionImpl::class.java)
-        }
-        debugBuildType.my.enableFoo = true
-        assertWithMessage("debug build type custom extension is configured by the build author")
-            .that(debugBuildType.my.enableFoo).named("buildTypes.debug.my.enableFoo").isTrue()
-        assertWithMessage("qa build type custom extension should be the default")
-            .that(qaBuildType.my.enableFoo).named("buildTypes.qa.my.enableFoo").isFalse()
-
-        qaBuildType.initWith(debugBuildType)
-        assertWithMessage("debug build type custom extension is configured by the build author")
-            .that(debugBuildType.my.enableFoo).named("buildTypes.debug.my.enableFoo").isTrue()
-        assertWithMessage("qa build type custom extension should be initialized by initWith")
-            .that(qaBuildType.my.enableFoo).named("buildTypes.qa.my.enableFoo").isTrue()
-    }
+    qaBuildType.initWith(debugBuildType)
+    assertWithMessage("debug build type custom extension is configured by the build author")
+      .that(debugBuildType.my.enableFoo)
+      .named("buildTypes.debug.my.enableFoo")
+      .isTrue()
+    assertWithMessage("qa build type custom extension should be initialized by initWith")
+      .that(qaBuildType.my.enableFoo)
+      .named("buildTypes.qa.my.enableFoo")
+      .isTrue()
+  }
 }

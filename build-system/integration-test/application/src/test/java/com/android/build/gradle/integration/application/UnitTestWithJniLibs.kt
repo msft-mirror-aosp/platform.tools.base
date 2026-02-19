@@ -18,92 +18,89 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class UnitTestWithJniLibs {
-    @get:Rule
-    val testProject = GradleTestProjectBuilder()
-        .fromTestProject("unitTesting")
-        .create()
+  @get:Rule val testProject = GradleTestProjectBuilder().fromTestProject("unitTesting").create()
+
+  @Test
+  fun testJniLibsAccess() {
+    testProject.buildFile.appendText(
+      """
+      abstract class JniProducerTask extends DefaultTask {
+
+          @OutputDirectory
+          abstract DirectoryProperty getOutputDir()
+
+          @TaskAction
+          void taskAction() {
+              new File(
+                  getOutputDir().get().getAsFile(),
+                  System.mapLibraryName("someLib")
+              ).write("some native library file")
+          }
+      }
 
 
-    @Test
-    fun testJniLibsAccess() {
-       testProject.buildFile.appendText(
-           """
-            abstract class JniProducerTask extends DefaultTask {
+      androidComponents {
+          onVariants(selector().withBuildType("debug")) { variant ->
 
-                @OutputDirectory
-                abstract DirectoryProperty getOutputDir()
+              TaskProvider jniLibProducer = tasks.register(variant.name + "JniLibProducerTask", JniProducerTask.class) { task ->
+                  File outputDir = new File(getBuildDir(), task.name)
+                  task.getOutputDir().set(outputDir)
+              }
+              variant.unitTest.sources.jniLibs.addGeneratedSourceDirectory(
+                  jniLibProducer,
+                  JniProducerTask::getOutputDir
+              )
+          }
+      }
 
-                @TaskAction
-                void taskAction() {
-                    new File(
-                        getOutputDir().get().getAsFile(),
-                        System.mapLibraryName("someLib")
-                    ).write("some native library file")
-                }
-            }
+      """
+        .trimIndent()
+    )
 
+    val testSourceDir = FileUtils.join(File(testProject.mainTestDir, "java"), "com", "android", "tests")
 
-            androidComponents {
-                onVariants(selector().withBuildType("debug")) { variant ->
+    File(testSourceDir, "TestWithJniLibs.kt")
+      .writeText(
+        """
+        package com.android.tests
 
-                    TaskProvider jniLibProducer = tasks.register(variant.name + "JniLibProducerTask", JniProducerTask.class) { task ->
-                        File outputDir = new File(getBuildDir(), task.name)
-                        task.getOutputDir().set(outputDir)
-                    }
-                    variant.unitTest.sources.jniLibs.addGeneratedSourceDirectory(
-                        jniLibProducer,
-                        JniProducerTask::getOutputDir
+        import java.io.File
+        import org.junit.Test
+        import org.junit.Assert.*
+
+        class TestWithJniLibs {
+            @Test
+            fun canFindSoFiles() {
+                println(System.getProperty("java.library.path"))
+                val libraryPath = System.getProperty("java.library.path")
+                if (!libraryPath.contains(
+                    "build/debugJniLibProducerTask".replace('/', File.separatorChar)
                     )
+                ) {
+                    fail("Cannot find generated so file in java.library.path system property")
+                }
+                if (!libraryPath.contains(
+                    "src/testDebug/jniLibs".replace('/', File.separatorChar)
+                    )
+                ) {
+                    fail("src/testDebug/jniLibs is not in the java.library.path")
+                }
+                if (!libraryPath.contains(
+                    "src/test/jniLibs".replace('/', File.separatorChar)
+                    )
+                ) {
+                    fail("src/test/jniLibs is not in the java.library.path")
                 }
             }
-
-           """.trimIndent()
-       )
-
-       val testSourceDir = FileUtils.join(
-            File(testProject.mainTestDir, "java"),
-            "com", "android", "tests")
-
-        File(testSourceDir, "TestWithJniLibs.kt").writeText(
-            """
-            package com.android.tests
-
-            import java.io.File
-            import org.junit.Test
-            import org.junit.Assert.*
-
-            class TestWithJniLibs {
-                @Test
-                fun canFindSoFiles() {
-                    println(System.getProperty("java.library.path"))
-                    val libraryPath = System.getProperty("java.library.path")
-                    if (!libraryPath.contains(
-                        "build/debugJniLibProducerTask".replace('/', File.separatorChar)
-                        )
-                    ) {
-                        fail("Cannot find generated so file in java.library.path system property")
-                    }
-                    if (!libraryPath.contains(
-                        "src/testDebug/jniLibs".replace('/', File.separatorChar)
-                        )
-                    ) {
-                        fail("src/testDebug/jniLibs is not in the java.library.path")
-                    }
-                    if (!libraryPath.contains(
-                        "src/test/jniLibs".replace('/', File.separatorChar)
-                        )
-                    ) {
-                        fail("src/test/jniLibs is not in the java.library.path")
-                    }
-                }
-            }
-            """.trimIndent()
-        )
-        testProject.execute("testDebugUnitTest")
-    }
+        }
+        """
+          .trimIndent()
+      )
+    testProject.execute("testDebugUnitTest")
+  }
 }

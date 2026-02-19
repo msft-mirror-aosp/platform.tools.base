@@ -18,8 +18,7 @@ package com.android.sdklib
 import java.io.Serializable
 
 /**
- * If the apiLevel is at least MIN_MAJOR_WITH_EXPLICIT_MINOR, the version string will always include
- * the minor version, even if it is zero.
+ * If the apiLevel is at least MIN_MAJOR_WITH_EXPLICIT_MINOR, the version string will always include the minor version, even if it is zero.
  *
  * <p>In other words, the expected sequence of versions currently encoded is:
  * <ul>
@@ -32,9 +31,7 @@ import java.io.Serializable
  */
 private const val MIN_API_FOR_EXPLICIT_MINOR: Int = 36
 
-data class AndroidApiLevel
-@JvmOverloads
-constructor(val majorVersion: Int, val minorVersion: Int = 0) :
+data class AndroidApiLevel @JvmOverloads constructor(val majorVersion: Int, val minorVersion: Int = 0) :
   Comparable<AndroidApiLevel>, Serializable {
 
   override fun compareTo(other: AndroidApiLevel): Int {
@@ -43,9 +40,7 @@ constructor(val majorVersion: Int, val minorVersion: Int = 0) :
   }
 
   override fun toString(): String {
-    return if (majorVersion >= MIN_API_FOR_EXPLICIT_MINOR || minorVersion > 0)
-      "$majorVersion.$minorVersion"
-    else majorVersion.toString()
+    return if (majorVersion >= MIN_API_FOR_EXPLICIT_MINOR || minorVersion > 0) "$majorVersion.$minorVersion" else majorVersion.toString()
   }
 
   /** Returns a text representation of the API level without the minor version if it is zero. */
@@ -56,9 +51,7 @@ constructor(val majorVersion: Int, val minorVersion: Int = 0) :
   companion object {
     @JvmStatic
     fun fromString(s: String): AndroidApiLevel? =
-      API_LEVEL_REGEX.matchEntire(s)?.let {
-        AndroidApiLevel(it.groupValues[1].toInt(), it.groups[3]?.value?.toInt() ?: 0)
-      }
+      API_LEVEL_REGEX.matchEntire(s)?.let { AndroidApiLevel(it.groupValues[1].toInt(), it.groups[3]?.value?.toInt() ?: 0) }
 
     private val API_LEVEL_REGEX = Regex("(\\d+)(\\.(\\d+))?")
   }

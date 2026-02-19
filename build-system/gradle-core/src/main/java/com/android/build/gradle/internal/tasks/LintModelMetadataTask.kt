@@ -40,100 +40,82 @@ import org.gradle.work.DisableCachingByDefault
 /**
  * A task that writes the lint model metadata
  *
- * Caching disabled by default for this task because the task does very little work.
- * Input values are written to a minimal Properties file and no computation is required.
- * Calculating cache hit/miss and fetching results is likely more expensive than
- * simply executing the task.
+ * Caching disabled by default for this task because the task does very little work. Input values are written to a minimal Properties file
+ * and no computation is required. Calculating cache hit/miss and fetching results is likely more expensive than simply executing the task.
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.LINT, secondaryTaskCategories = [TaskCategory.METADATA])
 abstract class LintModelMetadataTask : NonIncrementalTask() {
 
-    @get:OutputFile
-    abstract val outputFile: RegularFileProperty
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
-    @get:Input
-    abstract val mavenGroupId: Property<String>
+  @get:Input abstract val mavenGroupId: Property<String>
 
-    @get:Input
-    abstract val mavenArtifactId: Property<String>
+  @get:Input abstract val mavenArtifactId: Property<String>
 
-    @get:Input
-    abstract val mavenVersion: Property<String>
+  @get:Input abstract val mavenVersion: Property<String>
 
-    override fun doTaskAction() {
-        val lintModelMetadataFile = outputFile.get().asFile
-        FileUtils.deleteIfExists(lintModelMetadataFile)
-        Files.createParentDirs(lintModelMetadataFile)
-        writeLintModelMetadataFile(
-            lintModelMetadataFile,
-            mavenGroupId.get(),
-            mavenArtifactId.get(),
-            mavenVersion.get()
-        )
+  override fun doTaskAction() {
+    val lintModelMetadataFile = outputFile.get().asFile
+    FileUtils.deleteIfExists(lintModelMetadataFile)
+    Files.createParentDirs(lintModelMetadataFile)
+    writeLintModelMetadataFile(lintModelMetadataFile, mavenGroupId.get(), mavenArtifactId.get(), mavenVersion.get())
+  }
+
+  class CreationAction(creationConfig: ComponentCreationConfig) :
+    VariantTaskCreationAction<LintModelMetadataTask, ComponentCreationConfig>(creationConfig) {
+
+    override val name: String
+      get() = computeTaskName("write", "LintModelMetadata")
+
+    override val type: Class<LintModelMetadataTask>
+      get() = LintModelMetadataTask::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<LintModelMetadataTask>) {
+      super.handleProvider(taskProvider)
+      registerOutputArtifacts(taskProvider, creationConfig.artifacts)
     }
 
-    class CreationAction(
-        creationConfig: ComponentCreationConfig
-    ) : VariantTaskCreationAction<LintModelMetadataTask, ComponentCreationConfig>(creationConfig) {
+    override fun configure(task: LintModelMetadataTask) {
+      super.configure(task)
 
-        override val name: String
-            get() = computeTaskName("write", "LintModelMetadata")
-
-        override val type: Class<LintModelMetadataTask>
-            get() = LintModelMetadataTask::class.java
-
-        override fun handleProvider(taskProvider: TaskProvider<LintModelMetadataTask>) {
-            super.handleProvider(taskProvider)
-            registerOutputArtifacts(taskProvider, creationConfig.artifacts)
-        }
-
-        override fun configure(task: LintModelMetadataTask) {
-            super.configure(task)
-
-            val projectInfo = creationConfig.services.projectInfo
-            task.mavenGroupId.setDisallowChanges(projectInfo.group)
-            task.mavenArtifactId.setDisallowChanges(projectInfo.name)
-            task.mavenVersion.setDisallowChanges(projectInfo.version)
-        }
+      val projectInfo = creationConfig.services.projectInfo
+      task.mavenGroupId.setDisallowChanges(projectInfo.group)
+      task.mavenArtifactId.setDisallowChanges(projectInfo.name)
+      task.mavenVersion.setDisallowChanges(projectInfo.version)
     }
+  }
 
-    internal fun configureForStandalone(project: Project) {
-        this.group = JavaBasePlugin.VERIFICATION_GROUP
-        this.variantName = ""
-        this.analyticsService.setDisallowChanges(getBuildService(project.gradle.sharedServices))
-        this.mavenGroupId.setDisallowChanges(project.group.toString())
-        this.mavenArtifactId.setDisallowChanges(project.name)
-        this.mavenVersion.setDisallowChanges(project.version.toString())
-    }
+  internal fun configureForStandalone(project: Project) {
+    this.group = JavaBasePlugin.VERIFICATION_GROUP
+    this.variantName = ""
+    this.analyticsService.setDisallowChanges(getBuildService(project.gradle.sharedServices))
+    this.mavenGroupId.setDisallowChanges(project.group.toString())
+    this.mavenArtifactId.setDisallowChanges(project.name)
+    this.mavenVersion.setDisallowChanges(project.version.toString())
+  }
 
-    companion object {
-        fun registerOutputArtifacts(
-            taskProvider: TaskProvider<LintModelMetadataTask>,
-            artifacts: ArtifactsImpl
-        ) {
-            artifacts.setInitialProvider(taskProvider, LintModelMetadataTask::outputFile)
-                .withName("lint-model-metadata.properties")
-                .on(InternalArtifactType.LINT_MODEL_METADATA)
-        }
+  companion object {
+    fun registerOutputArtifacts(taskProvider: TaskProvider<LintModelMetadataTask>, artifacts: ArtifactsImpl) {
+      artifacts
+        .setInitialProvider(taskProvider, LintModelMetadataTask::outputFile)
+        .withName("lint-model-metadata.properties")
+        .on(InternalArtifactType.LINT_MODEL_METADATA)
     }
+  }
 }
 
 /** Writes a lint model metadata file with the given parameters */
-fun writeLintModelMetadataFile(
-    file: File,
-    groupId: String,
-    artifactId: String,
-    version: String
-) {
-    // We write the file manually instead of using the java.util.Properties API because (1) that API
-    // doesn't guarantee the order of properties in the file and (2) that API writes an unnecessary
-    // timestamp in the file.
-    file.writeText(
-        """
+fun writeLintModelMetadataFile(file: File, groupId: String, artifactId: String, version: String) {
+  // We write the file manually instead of using the java.util.Properties API because (1) that API
+  // doesn't guarantee the order of properties in the file and (2) that API writes an unnecessary
+  // timestamp in the file.
+  file.writeText(
+    """
             $MAVEN_ARTIFACT_ID_PROPERTY=$artifactId
             $MAVEN_GROUP_ID_PROPERTY=$groupId
             $MAVEN_VERSION_PROPERTY=$version
-        """.trimIndent()
-    )
+        """
+      .trimIndent()
+  )
 }

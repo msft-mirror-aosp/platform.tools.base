@@ -97,10 +97,7 @@ class LintTestTaskTest {
       .multi()
       // Perform multiple setups but a single verify task; this is used
       // when the output is supposed to be the same
-      .run(
-        { configureOptions { flags -> flags.setUseK2Uast(false) } },
-        { configureOptions { flags -> flags.setUseK2Uast(true) } },
-      ) {
+      .run({ configureOptions { flags -> flags.setUseK2Uast(false) } }, { configureOptions { flags -> flags.setUseK2Uast(true) } }) {
         expect(
           // Can also use index-> here
           """
@@ -168,8 +165,7 @@ class LintTestTaskTest {
     }
 
     override fun afterCheckFile(context: Context) {
-      assertThat(methodImplNames)
-        .containsAnyIn(listOf("KtUltraLightMethodForSourceDeclaration", "SymbolLightSimpleMethod"))
+      assertThat(methodImplNames).containsAnyIn(listOf("KtUltraLightMethodForSourceDeclaration", "SymbolLightSimpleMethod"))
       super.afterCheckFile(context)
     }
 

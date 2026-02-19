@@ -53,8 +53,6 @@ fun main() {
   LintClient.clientName = "ComposeDesktopIssueRegistry"
   val maxIdLen = ComposeDesktopIssueRegistry().issues.map { it.id.length }.max()
   ComposeDesktopIssueRegistry().issues.forEach {
-    println(
-      "${it.id.padEnd(maxIdLen)} AndroidSpecific=${it.isAndroidSpecific()} EnabledByDefault=${it.isEnabledByDefault()}"
-    )
+    println("${it.id.padEnd(maxIdLen)} AndroidSpecific=${it.isAndroidSpecific()} EnabledByDefault=${it.isEnabledByDefault()}")
   }
 }

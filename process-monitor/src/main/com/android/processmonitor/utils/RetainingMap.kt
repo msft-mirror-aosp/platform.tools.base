@@ -23,8 +23,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * This map will retain entries even after they are deleted.
  *
- * Threading assumptions:
- * The following assumptions are made regarding thread safety:
+ * Threading assumptions: The following assumptions are made regarding thread safety:
  * 1. Writes may come from different threads but are guaranteed to are serialized.
  * 2. Reads may come from any thread.
  *
@@ -32,36 +31,34 @@ import java.util.concurrent.ConcurrentHashMap
  */
 internal class RetainingMap<K, V>(private val maxRetention: Int) {
 
-    @VisibleForTesting
-    val map: MutableMap<K, V> = ConcurrentHashMap()
-    @VisibleForTesting
-    val retentionList: LinkedHashSet<K> = LinkedHashSet()
+  @VisibleForTesting val map: MutableMap<K, V> = ConcurrentHashMap()
+  @VisibleForTesting val retentionList: LinkedHashSet<K> = LinkedHashSet()
 
-    operator fun set(key: K, value: V) {
-        map[key] = value
-        retentionList.remove(key) // Don't evict if a key was re-added.
-    }
+  operator fun set(key: K, value: V) {
+    map[key] = value
+    retentionList.remove(key) // Don't evict if a key was re-added.
+  }
 
-    operator fun get(key: K): V? = map[key]
+  operator fun get(key: K): V? = map[key]
 
-    fun remove(key: K) {
-        if (maxRetention <= 0) {
-            map.remove(key)
-        } else {
-            if (map.containsKey(key)) {
-                if (retentionList.size >= maxRetention) {
-                    val evictedKey = retentionList.first()
-                    retentionList.remove(evictedKey)
-                    map.remove(evictedKey)
-                }
-                retentionList.add(key)
-            }
+  fun remove(key: K) {
+    if (maxRetention <= 0) {
+      map.remove(key)
+    } else {
+      if (map.containsKey(key)) {
+        if (retentionList.size >= maxRetention) {
+          val evictedKey = retentionList.first()
+          retentionList.remove(evictedKey)
+          map.remove(evictedKey)
         }
+        retentionList.add(key)
+      }
     }
+  }
 
-    fun removeAll(keys: Collection<K>) {
-        keys.forEach { remove(it) }
-    }
+  fun removeAll(keys: Collection<K>) {
+    keys.forEach { remove(it) }
+  }
 
-    fun asMap() : Map<K, V> = map
+  fun asMap(): Map<K, V> = map
 }

@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.output.ApkSubject
 import com.android.build.gradle.integration.common.output.SimpleZip
 import com.android.build.gradle.integration.common.truth.AabSubject
 import com.android.testutils.apk.Aab
-import com.android.testutils.apk.Apk
 import com.android.tools.build.bundletool.model.AppBundle
 import java.nio.file.Path
 import java.util.zip.ZipFile
@@ -33,227 +32,174 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.name
 
 /**
- * a subproject part of a [GradleBuild], specifically for projects with Android plugins that have
- * namespace, the android extension, and the androidComponent extension
+ * a subproject part of a [GradleBuild], specifically for projects with Android plugins that have namespace, the android extension, and the
+ * androidComponent extension
  */
-interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition>
-    : BaseAndroidProject<ProjectDefinitionT> {
+interface AndroidProject<ProjectDefinitionT : GradleProjectDefinition> : BaseAndroidProject<ProjectDefinitionT> {
 
-    /**
-     * The namespace of the project.
-     */
-    val namespace: String
+  /** The namespace of the project. */
+  val namespace: String
 
-    /** the object that allows to add/update/remove files from the project */
-    override val files: AndroidProjectFiles
+  /** the object that allows to add/update/remove files from the project */
+  override val files: AndroidProjectFiles
 }
 
-/**
- * a [GradleProject] that generates apk
- */
+/** a [GradleProject] that generates apk */
 interface GeneratesApk {
-    /**
-     * Runs the action with a provided [ApkSubject]
-     */
-    fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit)
+  /** Runs the action with a provided [ApkSubject] */
+  fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit)
 
-    /**
-     * Returns a path to the APK, so that the file can be copied in other location.
-     *
-     * This should not be used to validate the content of the file. Instead, use [assertAar].
-     */
-    fun getApkLocationForCopy(apkSelector: ApkSelector): Path
+  /**
+   * Returns a path to the APK, so that the file can be copied in other location.
+   *
+   * This should not be used to validate the content of the file. Instead, use [assertAar].
+   */
+  fun getApkLocationForCopy(apkSelector: ApkSelector): Path
 }
 
-/**
- * a [GradleProject] that generates aar
- */
+/** a [GradleProject] that generates aar */
 interface GeneratesAar {
-    /**
-     * Runs the action with a provided [AarSubject]
-     */
-    fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
+  /** Runs the action with a provided [AarSubject] */
+  fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit)
 
-    /**
-     * Returns a path to the AAR, so that the file can be copied in other location.
-     *
-     * This should not be used to validate the content of the file. Instead, use [assertAar].
-     */
-    fun getAarLocationForCopy(aarSelector: AarSelector): Path
+  /**
+   * Returns a path to the AAR, so that the file can be copied in other location.
+   *
+   * This should not be used to validate the content of the file. Instead, use [assertAar].
+   */
+  fun getAarLocationForCopy(aarSelector: AarSelector): Path
 }
 
-/**
- * a [GradleProject] that generates app bundle (aab)
- */
+/** a [GradleProject] that generates app bundle (aab) */
 interface GeneratesAab {
-    /**
-     * Runs the action with a provided instance of [Aab].
-     *
-     * It is possible to return a value from the action, but it should not be [Aab] as this
-     * may not be safe. [Aab] is a [AutoCloseable] and should be treated as such.
-     */
-    fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R
+  /**
+   * Runs the action with a provided instance of [Aab].
+   *
+   * It is possible to return a value from the action, but it should not be [Aab] as this may not be safe. [Aab] is a [AutoCloseable] and
+   * should be treated as such.
+   */
+  fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R
 
-    /**
-     * Runs the action with a provided [ZipSubject]
-     */
-    fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit)
+  /** Runs the action with a provided [ZipSubject] */
+  fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit)
 
-    /**
-     * Runs the action with the a provided instance of [AppBundle].
-     *
-     * This gives more access to the content than [Aab].
-     */
-    fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R
+  /**
+   * Runs the action with the a provided instance of [AppBundle].
+   *
+   * This gives more access to the content than [Aab].
+   */
+  fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R
 }
 
-/**
- * Default implementation of [AndroidProject]
- */
+/** Default implementation of [AndroidProject] */
 internal abstract class AndroidProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
-    location: Path,
-    projectDefinition: ProjectDefinitionT,
-    final override val namespace: String,
-) : BaseAndroidProjectImpl<ProjectDefinitionT>(
-    location,
-    projectDefinition,
-), AndroidProject<ProjectDefinitionT> {
+  location: Path,
+  projectDefinition: ProjectDefinitionT,
+  final override val namespace: String,
+) : BaseAndroidProjectImpl<ProjectDefinitionT>(location, projectDefinition), AndroidProject<ProjectDefinitionT> {
 
-    final override val files: AndroidProjectFiles = DirectAndroidProjectFiles(location, namespace)
+  final override val files: AndroidProjectFiles = DirectAndroidProjectFiles(location, namespace)
 }
 
-/**
- * Base class to handle project output.
- */
+/** Base class to handle project output. */
 open class BaseGenerateDelegate(protected val location: Path) {
-    protected val intermediatesDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
+  protected val intermediatesDir: Path
+    get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
 
-    protected val outputsDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
+  protected val outputsDir: Path
+    get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 
-    protected fun computeOutputPath(outputSelector: OutputSelector): Path {
-        val root = if (outputSelector.fromIntermediates) {
-            intermediatesDir
-        } else {
-            outputsDir
-        }
+  protected fun computeOutputPath(outputSelector: OutputSelector): Path {
+    val root =
+      if (outputSelector.fromIntermediates) {
+        intermediatesDir
+      } else {
+        outputsDir
+      }
 
-        val name = outputSelector.name ?: location.name
-        return root.resolve(outputSelector.getPath() + outputSelector.getFileName(name))
-    }
+    val name = outputSelector.name ?: location.name
+    return root.resolve(outputSelector.getPath() + outputSelector.getFileName(name))
+  }
 }
 
-/**
- * Delegate implementation for [GeneratesApk]
- */
-class GeneratesApkDelegate(
-    val gradlePath: String,
-    location: Path
-): BaseGenerateDelegate(location), GeneratesApk {
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        val path = computeOutputPath(apkSelector)
+/** Delegate implementation for [GeneratesApk] */
+class GeneratesApkDelegate(val gradlePath: String, location: Path) : BaseGenerateDelegate(location), GeneratesApk {
+  override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
+    val path = computeOutputPath(apkSelector)
 
-        val name = apkSelector.name ?: location.name
-        SimpleZip(path, "$gradlePath(${apkSelector.getFileName(name)})").use {
-            ApkSubject.assertThat(it, action)
-        }
-    }
+    val name = apkSelector.name ?: location.name
+    SimpleZip(path, "$gradlePath(${apkSelector.getFileName(name)})").use { ApkSubject.assertThat(it, action) }
+  }
 
-    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
-        return computeOutputPath(apkSelector)
-    }
+  override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
+    return computeOutputPath(apkSelector)
+  }
 }
 
-/**
- * Implementation of [GeneratesApk] that just delegates to another instance
- */
-class GeneratesApkFromParentDelegate(private val parent: GeneratesApk): GeneratesApk {
+/** Implementation of [GeneratesApk] that just delegates to another instance */
+class GeneratesApkFromParentDelegate(private val parent: GeneratesApk) : GeneratesApk {
 
-    override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
-        parent.assertApk(apkSelector, action)
-    }
+  override fun assertApk(apkSelector: ApkSelector, action: ApkSubject.() -> Unit) {
+    parent.assertApk(apkSelector, action)
+  }
 
-    override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
-        return parent.getApkLocationForCopy(apkSelector)
-    }
+  override fun getApkLocationForCopy(apkSelector: ApkSelector): Path {
+    return parent.getApkLocationForCopy(apkSelector)
+  }
 }
 
-/**
- * Delegate implementation for [GeneratesAar]
- */
-class GeneratesAarDelegate(
-    val gradlePath: String,
-    location: Path
-): BaseGenerateDelegate(location), GeneratesAar {
+/** Delegate implementation for [GeneratesAar] */
+class GeneratesAarDelegate(val gradlePath: String, location: Path) : BaseGenerateDelegate(location), GeneratesAar {
 
-    override fun getAarLocationForCopy(aarSelector: AarSelector): Path = computeOutputPath(aarSelector)
+  override fun getAarLocationForCopy(aarSelector: AarSelector): Path = computeOutputPath(aarSelector)
 
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        val path = computeOutputPath(aarSelector)
+  override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
+    val path = computeOutputPath(aarSelector)
 
-        val name = aarSelector.name ?: location.name
-        SimpleZip(path, "$gradlePath(${aarSelector.getFileName(name)})").use {
-            AarSubject.assertThat(it, action)
-        }
-    }
+    val name = aarSelector.name ?: location.name
+    SimpleZip(path, "$gradlePath(${aarSelector.getFileName(name)})").use { AarSubject.assertThat(it, action) }
+  }
 }
 
-/**
- * Implementation of [GeneratesAar] that just delegates to another instance
- */
-class GeneratesAarFromParentDelegate(private val parent: GeneratesAar): GeneratesAar {
+/** Implementation of [GeneratesAar] that just delegates to another instance */
+class GeneratesAarFromParentDelegate(private val parent: GeneratesAar) : GeneratesAar {
 
-    override fun getAarLocationForCopy(aarSelector: AarSelector): Path = parent.getAarLocationForCopy(aarSelector)
+  override fun getAarLocationForCopy(aarSelector: AarSelector): Path = parent.getAarLocationForCopy(aarSelector)
 
-    override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
-        parent.assertAar(aarSelector, action)
-    }
+  override fun assertAar(aarSelector: AarSelector, action: AarSubject.() -> Unit) {
+    parent.assertAar(aarSelector, action)
+  }
 }
 
-/**
- * Delegate implementation for [GeneratesAab]
- */
-class GeneratesAabDelegate(location: Path): BaseGenerateDelegate(location), GeneratesAab {
+/** Delegate implementation for [GeneratesAab] */
+class GeneratesAabDelegate(location: Path) : BaseGenerateDelegate(location), GeneratesAab {
 
-    override fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R {
-        val path = computeOutputPath(aabSelector)
-        if (!path.isRegularFile()) error("Bundle file does not exist: $path")
+  override fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R {
+    val path = computeOutputPath(aabSelector)
+    if (!path.isRegularFile()) error("Bundle file does not exist: $path")
 
-        return Aab(path.toFile()).use {
-            action(it)
-        }
-    }
+    return Aab(path.toFile()).use { action(it) }
+  }
 
-    override fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit) {
-        withAab(aabSelector) {
-            AabSubject.assertThat(this).use {
-                action(it)
-            }
-        }
-    }
+  override fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit) {
+    withAab(aabSelector) { AabSubject.assertThat(this).use { action(it) } }
+  }
 
-    override fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R {
-        val path = computeOutputPath(aabSelector)
-        if (!path.isRegularFile()) error("Bundle file does not exist: $path")
+  override fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R {
+    val path = computeOutputPath(aabSelector)
+    if (!path.isRegularFile()) error("Bundle file does not exist: $path")
 
-        return ZipFile(path.toFile()).use { zip ->
-            action(AppBundle.buildFromZip(zip))
-        }
-    }
+    return ZipFile(path.toFile()).use { zip -> action(AppBundle.buildFromZip(zip)) }
+  }
 }
 
-/**
- * Implementation of [GeneratesAab] that just delegates to another instance
- */
-class GeneratesAabFromParentDelegate(private val parent: GeneratesAab): GeneratesAab {
-    override fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R =
-        parent.withAab(aabSelector, action)
+/** Implementation of [GeneratesAab] that just delegates to another instance */
+class GeneratesAabFromParentDelegate(private val parent: GeneratesAab) : GeneratesAab {
+  override fun <R> withAab(aabSelector: AabSelector, action: Aab.() -> R): R = parent.withAab(aabSelector, action)
 
-    override fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit) {
-        parent.assertAab(aabSelector, action)
-    }
+  override fun assertAab(aabSelector: AabSelector, action: AabSubject.() -> Unit) {
+    parent.assertAab(aabSelector, action)
+  }
 
-    override fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R =
-        parent.withAppBundle(aabSelector, action)
+  override fun <R> withAppBundle(aabSelector: AabSelector, action: AppBundle.() -> R): R = parent.withAppBundle(aabSelector, action)
 }

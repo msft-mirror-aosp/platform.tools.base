@@ -24,9 +24,10 @@ import org.junit.Test
 
 class DefaultProguardFilesTest {
 
-    private val baseModule = MinimalSubProjectUsingKTS.app("com.example.baseModule")
-        .appendToBuild(
-            """
+  private val baseModule =
+    MinimalSubProjectUsingKTS.app("com.example.baseModule")
+      .appendToBuild(
+        """
                     android {
                         buildTypes {
                             getByName("release") {
@@ -39,49 +40,48 @@ class DefaultProguardFilesTest {
                         }
                         dynamicFeatures += setOf(":feature")
                     }
-                    """)
-        .withFile("src/main/res/raw/base_file.txt", "base file")
+                    """
+      )
+      .withFile("src/main/res/raw/base_file.txt", "base file")
 
-
-    private val feature = MinimalSubProjectUsingKTS.dynamicFeature("com.example.feature")
-        .appendToBuild(
-            """
-            android {
-                buildTypes {
-                    getByName("release") {
-                        isMinifyEnabled = false
-                        proguardFiles(
-                            getDefaultProguardFile("proguard-android-optimize.txt"),
-                            "proguard-rules.pro"
-                        )
-                    }
+  private val feature =
+    MinimalSubProjectUsingKTS.dynamicFeature("com.example.feature")
+      .appendToBuild(
+        """
+        android {
+            buildTypes {
+                getByName("release") {
+                    isMinifyEnabled = false
+                    proguardFiles(
+                        getDefaultProguardFile("proguard-android-optimize.txt"),
+                        "proguard-rules.pro"
+                    )
                 }
             }
-            dependencies {
-                implementation(project(":baseModule"))
-            }
-            """.trimIndent()
-        )
-        .withFile("src/main/res/raw/main_feature_file.txt", "feature file")
-        .withFile("src/androidTest/res/raw/android_test_feature_file.txt", "hello")
+        }
+        dependencies {
+            implementation(project(":baseModule"))
+        }
+        """
+          .trimIndent()
+      )
+      .withFile("src/main/res/raw/main_feature_file.txt", "feature file")
+      .withFile("src/androidTest/res/raw/android_test_feature_file.txt", "hello")
 
-    private val testApp =
-        MultiModuleTestProject.builder()
-            .subproject(":baseModule", baseModule)
-            .subproject(":feature", feature)
-            .build()
+  private val testApp = MultiModuleTestProject.builder().subproject(":baseModule", baseModule).subproject(":feature", feature).build()
 
-    @get:Rule
-    val project = GradleTestProject.builder().fromTestApp(testApp).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
-    /** Regression test for b/295666695. */
-    @Test
-    fun testDefaultProguardFilesHaveTaskDependencies() {
-        val result = project.executor().expectFailure().run("assembleRelease")
+  /** Regression test for b/295666695. */
+  @Test
+  fun testDefaultProguardFilesHaveTaskDependencies() {
+    val result = project.executor().expectFailure().run("assembleRelease")
 
-        // If default Proguard files didn't have task dependencies, the build would fail with an
-        // error different from the error below (see b/295666695), so by checking the error below,
-        // we're ensuring that default Proguard files have task dependencies.
-        result.assertErrorContains("Default file proguard-android-optimize.txt should not be specified in this module. It can be specified in the base module instead.")
-    }
+    // If default Proguard files didn't have task dependencies, the build would fail with an
+    // error different from the error below (see b/295666695), so by checking the error below,
+    // we're ensuring that default Proguard files have task dependencies.
+    result.assertErrorContains(
+      "Default file proguard-android-optimize.txt should not be specified in this module. It can be specified in the base module instead."
+    )
+  }
 }

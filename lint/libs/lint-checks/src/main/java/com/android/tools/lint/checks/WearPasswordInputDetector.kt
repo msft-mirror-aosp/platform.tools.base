@@ -45,12 +45,7 @@ import org.w3c.dom.Attr
 class WearPasswordInputDetector : WearDetector(), XmlScanner, SourceCodeScanner {
   companion object Issues {
     private val IMPLEMENTATION =
-      Implementation(
-        WearPasswordInputDetector::class.java,
-        Scope.JAVA_AND_RESOURCE_FILES,
-        Scope.RESOURCE_FILE_SCOPE,
-        Scope.JAVA_FILE_SCOPE,
-      )
+      Implementation(WearPasswordInputDetector::class.java, Scope.JAVA_AND_RESOURCE_FILES, Scope.RESOURCE_FILE_SCOPE, Scope.JAVA_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -71,12 +66,7 @@ class WearPasswordInputDetector : WearDetector(), XmlScanner, SourceCodeScanner 
     private const val MESSAGE = "Don't ask Wear OS users for a password"
 
     private val VALUE_PASSWORD_INPUT_TYPES =
-      setOf(
-        VALUE_NUMBER_PASSWORD,
-        VALUE_TEXT_PASSWORD,
-        VALUE_TEXT_VISIBLE_PASSWORD,
-        VALUE_TEXT_WEB_PASSWORD,
-      )
+      setOf(VALUE_NUMBER_PASSWORD, VALUE_TEXT_PASSWORD, VALUE_TEXT_VISIBLE_PASSWORD, VALUE_TEXT_WEB_PASSWORD)
 
     private val TYPE_PASSWORD_INPUT_TYPES =
       listOf(
@@ -93,24 +83,14 @@ class WearPasswordInputDetector : WearDetector(), XmlScanner, SourceCodeScanner 
 
   override fun getApplicableReferenceNames() = TYPE_PASSWORD_INPUT_TYPES
 
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
-    if (
-      isWearProject && context.evaluator.isMemberInClass(referenced as? PsiField, FQCN_INPUT_TYPE)
-    ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
+    if (isWearProject && context.evaluator.isMemberInClass(referenced as? PsiField, FQCN_INPUT_TYPE)) {
       context.report(Incident(ISSUE, context.getLocation(reference), MESSAGE))
     }
   }
 
   override fun visitAttribute(context: XmlContext, attribute: Attr) {
-    if (
-      isWearProject &&
-        attribute.ownerElement.tagName == EDIT_TEXT &&
-        attribute.value.findAnyOf(VALUE_PASSWORD_INPUT_TYPES) != null
-    ) {
+    if (isWearProject && attribute.ownerElement.tagName == EDIT_TEXT && attribute.value.findAnyOf(VALUE_PASSWORD_INPUT_TYPES) != null) {
       context.report(Incident(ISSUE, context.getLocation(attribute), MESSAGE))
     }
   }

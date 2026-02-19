@@ -17,43 +17,42 @@ package com.android.builder.merge
 
 import com.android.builder.utils.agpReferenceDocsUrl
 
-/**
- * Exception by [StreamMergeAlgorithms.acceptOnlyOne] if more than one file needs to be
- * merged.
- */
+/** Exception by [StreamMergeAlgorithms.acceptOnlyOne] if more than one file needs to be merged. */
 class DuplicateRelativeFileException(
-    private val path: String,
-    private val size: Int,
-    private val inputs: List<String>,
-    cause : DuplicateRelativeFileException?
+  private val path: String,
+  private val size: Int,
+  private val inputs: List<String>,
+  cause: DuplicateRelativeFileException?,
 ) : RuntimeException(cause) {
 
-    override val message: String
-        get() {
-            return StringBuilder().apply {
-                append(size).append(" files found with path '").append(path).append("'")
-                if (inputs.isEmpty()) {
-                    append(".\n")
-                } else {
-                    append(" from inputs:\n")
-                    for (input in inputs) {
-                        append(" - ").append(input).append("\n")
-                    }
-                }
-                if (path.endsWith(".so")) {
-                    append(
-                        "If you are using jniLibs and CMake IMPORTED targets, see\n" +
-                                "https://developer.android.com/r/tools/jniLibs-vs-imported-targets"
-                    )
-                } else {
-                    append(
-                        "Adding a packaging block may help, please refer to\n" +
-                                "${agpReferenceDocsUrl("com/android/build/api/dsl/Packaging")}\n" +
-                                "for more information"
-                    )
-                }
-            }.toString()
+  override val message: String
+    get() {
+      return StringBuilder()
+        .apply {
+          append(size).append(" files found with path '").append(path).append("'")
+          if (inputs.isEmpty()) {
+            append(".\n")
+          } else {
+            append(" from inputs:\n")
+            for (input in inputs) {
+              append(" - ").append(input).append("\n")
+            }
+          }
+          if (path.endsWith(".so")) {
+            append(
+              "If you are using jniLibs and CMake IMPORTED targets, see\n" +
+                "https://developer.android.com/r/tools/jniLibs-vs-imported-targets"
+            )
+          } else {
+            append(
+              "Adding a packaging block may help, please refer to\n" +
+                "${agpReferenceDocsUrl("com/android/build/api/dsl/Packaging")}\n" +
+                "for more information"
+            )
+          }
         }
+        .toString()
+    }
 
-    constructor(path: String, inputs: List<String>) : this(path, inputs.size, inputs, null)
+  constructor(path: String, inputs: List<String>) : this(path, inputs.size, inputs, null)
 }

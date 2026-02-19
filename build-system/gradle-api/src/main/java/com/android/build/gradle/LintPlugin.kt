@@ -17,14 +17,11 @@ package com.android.build.gradle
 
 import org.gradle.api.Project
 
-/**
- * Plugin for running lint **without** the Android Gradle plugin, such as in a pure Kotlin
- * project.
- */
+/** Plugin for running lint **without** the Android Gradle plugin, such as in a pure Kotlin project. */
 abstract class LintPlugin : BasePlugin() {
 
-    override fun apply(project: Project) {
-        super.apply(project)
-        project.apply { it.plugin("com.android.internal.lint") }
-    }
+  override fun apply(project: Project) {
+    super.apply(project)
+    project.apply { it.plugin("com.android.internal.lint") }
+  }
 }

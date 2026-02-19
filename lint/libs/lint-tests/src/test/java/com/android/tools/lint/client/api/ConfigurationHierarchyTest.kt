@@ -676,12 +676,7 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     )
   }
 
-  private fun checkDriver(
-    expectedOutput: String,
-    expectedError: String,
-    expectedExitCode: Int,
-    args: Array<String>,
-  ) {
+  private fun checkDriver(expectedOutput: String, expectedError: String, expectedExitCode: Int, args: Array<String>) {
     checkDriver(expectedOutput, expectedError, expectedExitCode, args, this::cleanup, null)
   }
 
@@ -808,9 +803,7 @@ src/main/AndroidManifest.xml:10: Error: There should only be a single <uses-sdk>
     // don't flag that issue as unknown from projects which do not have the third party check
     // configured.
     // Regression test for https://issuetracker.google.com/218829887
-    val lib =
-      project(kotlin("fun testLib() { }"), gradle("apply plugin: 'com.android.library'"))
-        .name("lib")
+    val lib = project(kotlin("fun testLib() { }"), gradle("apply plugin: 'com.android.library'")).name("lib")
 
     val main =
       project(

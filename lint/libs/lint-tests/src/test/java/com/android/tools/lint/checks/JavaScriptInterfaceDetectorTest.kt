@@ -22,14 +22,7 @@ class JavaScriptInterfaceDetectorTest : AbstractCheckTest() {
 
   fun testOlderSdk() {
     lint()
-      .files(
-        classpath(),
-        manifest().minSdk(10),
-        annotatedObject,
-        inheritsFromAnnotated,
-        nonAnnotatedObject,
-        javaScriptTest,
-      )
+      .files(classpath(), manifest().minSdk(10), annotatedObject, inheritsFromAnnotated, nonAnnotatedObject, javaScriptTest)
       .run()
       .expectClean()
   }

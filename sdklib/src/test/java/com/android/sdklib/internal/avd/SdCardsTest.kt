@@ -26,20 +26,14 @@ class SdCardsTest {
     assertThat(parseSdCard("300M")).isEqualTo(InternalSdCard(300 * 1024 * 1024))
     assertThat(parseSdCard("1000000K")).isEqualTo(InternalSdCard(1000000 * 1024))
     assertThat(parseSdCard("4")).isEqualTo(ExternalSdCard("4"))
-    assertThat(runCatching { parseSdCard("1K") }.exceptionOrNull())
-      .isInstanceOf(IllegalArgumentException::class.java)
+    assertThat(runCatching { parseSdCard("1K") }.exceptionOrNull()).isInstanceOf(IllegalArgumentException::class.java)
   }
 
   @Test
   fun testSdCardFromConfig() {
-    assertThat(
-        sdCardFromConfig(
-          mapOf(ConfigKey.SDCARD_PATH to "/tmp/sdcard", ConfigKey.SDCARD_SIZE to "300M")
-        )
-      )
+    assertThat(sdCardFromConfig(mapOf(ConfigKey.SDCARD_PATH to "/tmp/sdcard", ConfigKey.SDCARD_SIZE to "300M")))
       .isEqualTo(ExternalSdCard("/tmp/sdcard"))
 
-    assertThat(sdCardFromConfig(mapOf(ConfigKey.SDCARD_SIZE to "300M")))
-      .isEqualTo(InternalSdCard(Storage(300, Storage.Unit.MiB).size))
+    assertThat(sdCardFromConfig(mapOf(ConfigKey.SDCARD_SIZE to "300M"))).isEqualTo(InternalSdCard(Storage(300, Storage.Unit.MiB).size))
   }
 }

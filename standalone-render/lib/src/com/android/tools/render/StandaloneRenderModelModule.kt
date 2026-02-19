@@ -20,77 +20,72 @@ import com.android.tools.module.AndroidModuleInfo
 import com.android.tools.module.ModuleDependencies
 import com.android.tools.module.ModuleKey
 import com.android.tools.render.environment.StandaloneEnvironmentContext
-import com.android.tools.rendering.RenderTask
 import com.android.tools.rendering.api.RenderModelManifest
 import com.android.tools.rendering.api.RenderModelModule
 import com.android.tools.rendering.classloading.ClassTransform
-import com.android.tools.rendering.classloading.ModuleClassLoaderManager
 import com.android.tools.res.AssetFileOpener
 import com.android.tools.res.AssetRepositoryBase
 import com.android.tools.res.ResourceRepositoryManager
 import com.android.tools.res.ids.ResourceIdManager
 import com.android.tools.sdk.AndroidPlatform
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
 import java.io.FileInputStream
 import java.io.InputStream
-import java.lang.ref.WeakReference
 
 /** [RenderModelModule] for standalone rendering. */
 class StandaloneRenderModelModule(
-    override val resourceRepositoryManager: ResourceRepositoryManager,
-    override val info: AndroidModuleInfo?,
-    override val androidPlatform: AndroidPlatform,
-    override val moduleKey: ModuleKey,
-    override val dependencies: ModuleDependencies,
-    override val project: Project,
-    override val resourcePackage: String,
-    override val environment: StandaloneEnvironmentContext,
-    override val resourceIdManager: ResourceIdManager,
+  override val resourceRepositoryManager: ResourceRepositoryManager,
+  override val info: AndroidModuleInfo?,
+  override val androidPlatform: AndroidPlatform,
+  override val moduleKey: ModuleKey,
+  override val dependencies: ModuleDependencies,
+  override val project: Project,
+  override val resourcePackage: String,
+  override val environment: StandaloneEnvironmentContext,
+  override val resourceIdManager: ResourceIdManager,
 ) : RenderModelModule {
-    override val assetRepository = AssetRepositoryBase(object : AssetFileOpener {
+  override val assetRepository =
+    AssetRepositoryBase(
+      object : AssetFileOpener {
         private fun getInputStream(path: String): InputStream {
-            return FileInputStream(path)
+          return FileInputStream(path)
         }
 
         override fun openAssetFile(path: String): InputStream = getInputStream(path)
 
         override fun openNonAssetFile(path: String): InputStream = getInputStream(path)
-    })
-    override val manifest: RenderModelManifest? = null
+      }
+    )
+  override val manifest: RenderModelManifest? = null
 
-    override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
-    override val isDisposed: Boolean
-        get() = parentDisposable.isDisposed
+  override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
+  override val isDisposed: Boolean
+    get() = parentDisposable.isDisposed
 
-    override fun getClassLoaderProvider(
-        privateClassLoader: Boolean,
-    ): RenderModelModule.ClassLoaderProvider {
-        return RenderModelModule.ClassLoaderProvider {
-                parent: ClassLoader?,
-                additionalProjectTransform: ClassTransform,
-                additionalNonProjectTransform: ClassTransform,
-                onNewModuleClassLoader: Runnable,
-            ->
-            if (privateClassLoader) {
-                environment.moduleClassLoaderManager.getPrivate(parent)
-                    .also { onNewModuleClassLoader.run() }
-            } else {
-                environment.moduleClassLoaderManager.getShared(parent)
-            }
-        }
+  override fun getClassLoaderProvider(privateClassLoader: Boolean): RenderModelModule.ClassLoaderProvider {
+    return RenderModelModule.ClassLoaderProvider {
+      parent: ClassLoader?,
+      additionalProjectTransform: ClassTransform,
+      additionalNonProjectTransform: ClassTransform,
+      onNewModuleClassLoader: Runnable ->
+      if (privateClassLoader) {
+        environment.moduleClassLoaderManager.getPrivate(parent).also { onNewModuleClassLoader.run() }
+      } else {
+        environment.moduleClassLoaderManager.getShared(parent)
+      }
     }
+  }
 
-    override val name: String = "Fake Module"
+  override val name: String = "Fake Module"
 
-    override fun getIdeaModule(): Module {
-        throw UnsupportedOperationException("Should not be called in standalone rendering")
-    }
+  override fun getIdeaModule(): Module {
+    throw UnsupportedOperationException("Should not be called in standalone rendering")
+  }
 
-    override fun dispose() {
-        Disposer.dispose(parentDisposable)
-    }
+  override fun dispose() {
+    Disposer.dispose(parentDisposable)
+  }
 }

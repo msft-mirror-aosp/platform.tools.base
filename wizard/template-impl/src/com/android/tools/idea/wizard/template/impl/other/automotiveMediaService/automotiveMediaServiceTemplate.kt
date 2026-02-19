@@ -73,13 +73,18 @@ val automotiveMediaServiceTemplate
       PackageNameWidget(packageName),
       CheckBoxWidget(useCustomTheme),
       TextFieldWidget(customThemeName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("automotive-media-service").resolve("automotive-media-service.png") }
 
     recipe = { data: TemplateData ->
-      automotiveMediaServiceRecipe(data as ModuleTemplateData, mediaBrowserServiceName.value, packageName.value, useCustomTheme.value,
-                                   customThemeName.value)
+      automotiveMediaServiceRecipe(
+        data as ModuleTemplateData,
+        mediaBrowserServiceName.value,
+        packageName.value,
+        useCustomTheme.value,
+        customThemeName.value,
+      )
     }
   }

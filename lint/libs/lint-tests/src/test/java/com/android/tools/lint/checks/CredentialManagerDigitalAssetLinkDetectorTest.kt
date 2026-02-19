@@ -30,7 +30,8 @@ class CredentialManagerDigitalAssetLinkDetectorTest : AbstractCheckTest() {
           .name("app")
           .dependsOn(STUB_CREDENTIAL_MANAGER_LIB_PROJECT)
           .files(
-            // We need there to be an <application> element, as this is where we report the missing
+            // We need there to be an <application> element, as this is where we report the
+            // missing
             // meta-data element.
             manifest(
                 """

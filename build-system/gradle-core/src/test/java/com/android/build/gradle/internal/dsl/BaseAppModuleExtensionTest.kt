@@ -38,65 +38,64 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.kotlin.mock
 
-/**
- * Tests for [BaseAppModuleExtension]
- */
+/** Tests for [BaseAppModuleExtension] */
 class BaseAppModuleExtensionTest {
-    private lateinit var appExtension: BaseAppModuleExtension
-    private lateinit var statsBuilder: GradleBuildProject.Builder
-    @Suppress("UNCHECKED_CAST")
-    @Before
-    fun setUp() {
-        val sdkComponents = mock<SdkComponentsBuildService>()
-        val dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponents))
-        AndroidLocationsBuildService.RegistrationAction(ProjectFactory.project).execute()
-        val variantInputModel = LegacyVariantInputManager(
-            dslServices,
-            ComponentTypeImpl.BASE_APK,
-            SourceSetManager(
-                ProjectFactory.project,
-                false,
-                dslServices,
-                DelayedActionsExecutor()
-            )
-        )
+  private lateinit var appExtension: BaseAppModuleExtension
+  private lateinit var statsBuilder: GradleBuildProject.Builder
 
-        val extension = androidPluginDslDecorator.decorate(ApplicationExtensionImpl::class)
-            .getDeclaredConstructor(DslServices::class.java, DslContainerProvider::class.java)
-            .newInstance(dslServices, variantInputModel)
-        statsBuilder = GradleBuildProject.newBuilder()
-        appExtension = object : BaseAppModuleExtension(
-            dslServices,
-            mock<BootClasspathConfig>(),
-            mock<NamedDomainObjectContainer<BaseVariantOutput>>(),
-            variantInputModel.sourceSetManager,
-            extension,
-            statsBuilder
+  @Suppress("UNCHECKED_CAST")
+  @Before
+  fun setUp() {
+    val sdkComponents = mock<SdkComponentsBuildService>()
+    val dslServices = createDslServices(sdkComponents = FakeGradleProvider(sdkComponents))
+    AndroidLocationsBuildService.RegistrationAction(ProjectFactory.project).execute()
+    val variantInputModel =
+      LegacyVariantInputManager(
+        dslServices,
+        ComponentTypeImpl.BASE_APK,
+        SourceSetManager(ProjectFactory.project, false, dslServices, DelayedActionsExecutor()),
+      )
+
+    val extension =
+      androidPluginDslDecorator
+        .decorate(ApplicationExtensionImpl::class)
+        .getDeclaredConstructor(DslServices::class.java, DslContainerProvider::class.java)
+        .newInstance(dslServices, variantInputModel)
+    statsBuilder = GradleBuildProject.newBuilder()
+    appExtension =
+      object :
+        BaseAppModuleExtension(
+          dslServices,
+          mock<BootClasspathConfig>(),
+          mock<NamedDomainObjectContainer<BaseVariantOutput>>(),
+          variantInputModel.sourceSetManager,
+          extension,
+          statsBuilder,
         ) {
-            override fun getExtensions(): ExtensionContainer = error("stub")
-        }
-    }
+        override fun getExtensions(): ExtensionContainer = error("stub")
+      }
+  }
 
-    @Test
-    fun `check dynamic features`() {
-        appExtension.dynamicFeatures += ":df1"
-        assertThat(appExtension.dynamicFeatures).containsExactly(":df1")
-        Eval.me("android", appExtension, "android.dynamicFeatures = [':other']")
-        assertThat(appExtension.dynamicFeatures).containsExactly(":other")
-    }
+  @Test
+  fun `check dynamic features`() {
+    appExtension.dynamicFeatures += ":df1"
+    assertThat(appExtension.dynamicFeatures).containsExactly(":df1")
+    Eval.me("android", appExtension, "android.dynamicFeatures = [':other']")
+    assertThat(appExtension.dynamicFeatures).containsExactly(":other")
+  }
 
-    @Test
-    fun `check asset packs`() {
-        appExtension.assetPacks += ":ap"
-        assertThat(appExtension.assetPacks).containsExactly(":ap")
-        Eval.me("android", appExtension, "android.assetPacks = [':other']")
-        assertThat(appExtension.assetPacks).containsExactly(":other")
-    }
+  @Test
+  fun `check asset packs`() {
+    appExtension.assetPacks += ":ap"
+    assertThat(appExtension.assetPacks).containsExactly(":ap")
+    Eval.me("android", appExtension, "android.assetPacks = [':other']")
+    assertThat(appExtension.assetPacks).containsExactly(":other")
+  }
 
-    @Test
-    fun `check old variant api tracking`() {
-        assertThat(statsBuilder.hasOldVariantApiInUse()).isFalse()
-        Eval.me("android", appExtension, "android.applicationVariants.all { }")
-        assertThat(statsBuilder.oldVariantApiInUse).isTrue()
-    }
+  @Test
+  fun `check old variant api tracking`() {
+    assertThat(statsBuilder.hasOldVariantApiInUse()).isFalse()
+    Eval.me("android", appExtension, "android.applicationVariants.all { }")
+    assertThat(statsBuilder.oldVariantApiInUse).isTrue()
+  }
 }

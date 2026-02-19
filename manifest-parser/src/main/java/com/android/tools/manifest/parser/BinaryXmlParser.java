@@ -16,8 +16,8 @@
 package com.android.tools.manifest.parser;
 
 import com.android.annotations.NonNull;
-import com.google.devrel.gmscore.tools.apk.arsc.BinaryResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.Chunk;
+import com.google.devrel.gmscore.tools.apk.arsc.ResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlEndElementChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
@@ -32,7 +32,7 @@ public class BinaryXmlParser {
     @NonNull
     public static XmlNode parse(@NonNull InputStream inputStream) throws IOException {
 
-        BinaryResourceFile file = BinaryResourceFile.fromInputStream(inputStream);
+        ResourceFile file = ResourceFile.fromInputStream(inputStream);
         List<Chunk> chunks = file.getChunks();
         Stack<XmlNode> nodes = new Stack<>();
 

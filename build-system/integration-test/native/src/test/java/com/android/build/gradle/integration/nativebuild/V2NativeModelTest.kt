@@ -35,24 +35,24 @@ import com.android.build.gradle.integration.common.fixture.model.dumpCompileComm
 import com.android.build.gradle.integration.common.fixture.model.recoverExistingCxxAbiModels
 import com.android.build.gradle.integration.common.fixture.model.withCxxFileNormalizer
 import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
 import com.android.build.gradle.internal.cxx.model.ndkMinPlatform
 import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
+import java.io.File
+import java.nio.charset.StandardCharsets
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
-import java.io.File
-import java.nio.charset.StandardCharsets
 
 @RunWith(Parameterized::class)
 class V2NativeModelTest(private val cmakeVersion: String) : ModelComparator() {
 
-    @get:Rule
-    var project = builder()
+  @get:Rule
+  var project =
+    builder()
       .fromTestApp(HelloWorldJniApp.builder().withNativeDir("cxx").build())
       .addFile(HelloWorldJniApp.cmakeListsWithExecutables(".", "blah.h", "blah.txt"))
       .addFile(TestSourceFile(".", "blah.h", "int i = 3;"))
@@ -63,16 +63,15 @@ class V2NativeModelTest(private val cmakeVersion: String) : ModelComparator() {
       .setWithCmakeDirInLocalProp(true)
       .create()
 
-    companion object {
-        @Parameterized.Parameters(name = "version={0}")
-        @JvmStatic
-        fun data() = CMakeVersion.FOR_TESTING.map { it.sdkFolderName }
-    }
+  companion object {
+    @Parameterized.Parameters(name = "version={0}") @JvmStatic fun data() = CMakeVersion.FOR_TESTING.map { it.sdkFolderName }
+  }
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-          project.buildFile, """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
                 apply plugin: 'com.android.application'
                 android {
                     namespace = "com.example.hellojni"
@@ -88,78 +87,74 @@ class V2NativeModelTest(private val cmakeVersion: String) : ModelComparator() {
                       }
                     }
                 }
-            """.trimIndent()
-        )
-    }
-
-    @Test
-    fun `test basic model information`() {
-        val result = project.modelV2()
-          .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-          .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
-          .withCxxFileNormalizer()
-        val nativeModule = result.container.singleNativeModule
-        val normalizer = result.normalizer
-        for (variant in nativeModule.variants) {
-            for (abi in variant.abis) {
-                assertFileDoesNotExist(abi.buildFileIndexFile, normalizer)
-                assertFileDoesNotExist(abi.symbolFolderIndexFile, normalizer)
-                assertFileDoesNotExist(abi.sourceFlagsFile, normalizer)
-                assertFileDoesNotExist(abi.additionalProjectFilesIndexFile, normalizer)
-            }
-        }
-
-        with(result).compareNativeModule(goldenFile = "nativeModule")
-    }
-
-    @Test
-    fun `test generate build information`() {
-        val modelBuilder: ModelBuilderV2 = project.modelV2()
-          .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-        val result = modelBuilder
-          .fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86")))
-        val nativeModule = result.container.singleNativeModule
-        for (variant in nativeModule.variants) {
-            for (abi in variant.abis) {
-                if (variant.name == "debug" && abi.name == "x86") continue
-                assertFileDoesNotExist(abi.buildFileIndexFile, result.normalizer)
-                assertFileDoesNotExist(abi.symbolFolderIndexFile, result.normalizer)
-                assertFileDoesNotExist(abi.sourceFlagsFile, result.normalizer)
-                assertFileDoesNotExist(abi.additionalProjectFilesIndexFile, result.normalizer)
-            }
-        }
-        val syncedAbi =
-          nativeModule.variants.first { it.name == "debug" }.abis.first { it.name == "x86" }
-
-        Truth.assertThat(syncedAbi.buildFileIndexFile.readLines(StandardCharsets.UTF_8)
-          .map { result.normalizer.normalize(File(it)) }
-        ).containsExactly("{PROJECT}/CMakeLists.txt{F}")
-
-        val abi = project.recoverExistingCxxAbiModels().single()
-        Truth.assertThat(syncedAbi.symbolFolderIndexFile.readLines(StandardCharsets.UTF_8)
-        ).containsExactly(abi.soFolder.toString())
-
-        Truth.assertThat(syncedAbi.additionalProjectFilesIndexFile.readLines(StandardCharsets.UTF_8)
-          .map { result.normalizer.normalize(File(it)) }
-        ).containsExactly("{PROJECT}/blah.h{F}", "{PROJECT}/blah.txt{F}")
-
-        val translate = result.cxxFileVariantSegmentTranslator()
-        val translated = translate(syncedAbi.sourceFlagsFile.dumpCompileCommandsJsonBin(
-            result.normalizer
-        ))
-        val deplatformed = when (CURRENT_PLATFORM) {
-            PLATFORM_DARWIN -> translated.replace("darwin-x86_64", "{HOST_PLATFORM}")
-            PLATFORM_WINDOWS -> translated
-                .replace("windows-x86_64", "{HOST_PLATFORM}")
-                .replace("clang++.exe", "clang++")
-                .replace("clang.exe", "clang")
-            PLATFORM_LINUX -> translated.replace("linux-x86_64", "{HOST_PLATFORM}")
-            else -> error(CURRENT_PLATFORM)
-        }
-        .replace("-O0, ", "") // -O0 was removed some time after r21
-        val minPlatform = abi.variant.module.ndkMinPlatform
-        assertEqualsMultiline(deplatformed,
             """
+        .trimIndent(),
+    )
+  }
+
+  @Test
+  fun `test basic model information`() {
+    val result =
+      project
+        .modelV2()
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchNativeModules(NativeModuleParams(emptyList(), emptyList()))
+        .withCxxFileNormalizer()
+    val nativeModule = result.container.singleNativeModule
+    val normalizer = result.normalizer
+    for (variant in nativeModule.variants) {
+      for (abi in variant.abis) {
+        assertFileDoesNotExist(abi.buildFileIndexFile, normalizer)
+        assertFileDoesNotExist(abi.symbolFolderIndexFile, normalizer)
+        assertFileDoesNotExist(abi.sourceFlagsFile, normalizer)
+        assertFileDoesNotExist(abi.additionalProjectFilesIndexFile, normalizer)
+      }
+    }
+
+    with(result).compareNativeModule(goldenFile = "nativeModule")
+  }
+
+  @Test
+  fun `test generate build information`() {
+    val modelBuilder: ModelBuilderV2 = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+    val result = modelBuilder.fetchNativeModules(NativeModuleParams(listOf("debug"), listOf("x86")))
+    val nativeModule = result.container.singleNativeModule
+    for (variant in nativeModule.variants) {
+      for (abi in variant.abis) {
+        if (variant.name == "debug" && abi.name == "x86") continue
+        assertFileDoesNotExist(abi.buildFileIndexFile, result.normalizer)
+        assertFileDoesNotExist(abi.symbolFolderIndexFile, result.normalizer)
+        assertFileDoesNotExist(abi.sourceFlagsFile, result.normalizer)
+        assertFileDoesNotExist(abi.additionalProjectFilesIndexFile, result.normalizer)
+      }
+    }
+    val syncedAbi = nativeModule.variants.first { it.name == "debug" }.abis.first { it.name == "x86" }
+
+    Truth.assertThat(syncedAbi.buildFileIndexFile.readLines(StandardCharsets.UTF_8).map { result.normalizer.normalize(File(it)) })
+      .containsExactly("{PROJECT}/CMakeLists.txt{F}")
+
+    val abi = project.recoverExistingCxxAbiModels().single()
+    Truth.assertThat(syncedAbi.symbolFolderIndexFile.readLines(StandardCharsets.UTF_8)).containsExactly(abi.soFolder.toString())
+
+    Truth.assertThat(
+        syncedAbi.additionalProjectFilesIndexFile.readLines(StandardCharsets.UTF_8).map { result.normalizer.normalize(File(it)) }
+      )
+      .containsExactly("{PROJECT}/blah.h{F}", "{PROJECT}/blah.txt{F}")
+
+    val translate = result.cxxFileVariantSegmentTranslator()
+    val translated = translate(syncedAbi.sourceFlagsFile.dumpCompileCommandsJsonBin(result.normalizer))
+    val deplatformed =
+      when (CURRENT_PLATFORM) {
+        PLATFORM_DARWIN -> translated.replace("darwin-x86_64", "{HOST_PLATFORM}")
+        PLATFORM_WINDOWS ->
+          translated.replace("windows-x86_64", "{HOST_PLATFORM}").replace("clang++.exe", "clang++").replace("clang.exe", "clang")
+        PLATFORM_LINUX -> translated.replace("linux-x86_64", "{HOST_PLATFORM}")
+        else -> error(CURRENT_PLATFORM)
+      }.replace("-O0, ", "") // -O0 was removed some time after r21
+    val minPlatform = abi.variant.module.ndkMinPlatform
+    assertEqualsMultiline(
+      deplatformed,
+      """
                 sourceFile: {PROJECT}/src/main/cxx/executable/main.cpp{F}
                 compiler:   {ANDROID_NDK}/toolchains/llvm/prebuilt/{HOST_PLATFORM}/bin/clang++{F}
                 workingDir: {PROJECT}/.cxx/{DEBUG}/x86{D}
@@ -174,13 +169,12 @@ class V2NativeModelTest(private val cmakeVersion: String) : ModelComparator() {
                 compiler:   {ANDROID_NDK}/toolchains/llvm/prebuilt/{HOST_PLATFORM}/bin/clang{F}
                 workingDir: {PROJECT}/.cxx/{DEBUG}/x86{D}
                 flags:      [--target=i686-none-linux-android${minPlatform}]
-                """.trimIndent()
-        )
-    }
+                """
+        .trimIndent(),
+    )
+  }
 
-    private fun assertFileDoesNotExist(buildFileIndexFile: File, normalizer: FileNormalizer) {
-        Truth.assertThat(buildFileIndexFile.exists())
-          .named("existence of " + normalizer.normalize(buildFileIndexFile))
-          .isFalse()
-    }
+  private fun assertFileDoesNotExist(buildFileIndexFile: File, normalizer: FileNormalizer) {
+    Truth.assertThat(buildFileIndexFile.exists()).named("existence of " + normalizer.normalize(buildFileIndexFile)).isFalse()
+  }
 }

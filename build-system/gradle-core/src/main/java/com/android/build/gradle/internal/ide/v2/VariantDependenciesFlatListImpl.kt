@@ -22,16 +22,15 @@ import com.android.builder.model.v2.models.VariantDependenciesFlatList
 import java.io.Serializable
 
 data class VariantDependenciesFlatListImpl(
-    override val name: String,
-    override val mainArtifact: ArtifactDependenciesFlatList,
-    override val deviceTestArtifacts: Map<String, ArtifactDependenciesFlatList>,
-    override val hostTestArtifacts: Map<String, ArtifactDependenciesFlatList>,
-    override val testFixturesArtifact: ArtifactDependenciesFlatList?,
-    override val libraries: Map<String, Library>
+  override val name: String,
+  override val mainArtifact: ArtifactDependenciesFlatList,
+  override val deviceTestArtifacts: Map<String, ArtifactDependenciesFlatList>,
+  override val hostTestArtifacts: Map<String, ArtifactDependenciesFlatList>,
+  override val testFixturesArtifact: ArtifactDependenciesFlatList?,
+  override val libraries: Map<String, Library>,
 ) : VariantDependenciesFlatList, Serializable {
 
-    companion object {
-        @JvmStatic
-        private val serialVersionUID: Long = 1L
-    }
+  companion object {
+    @JvmStatic private val serialVersionUID: Long = 1L
+  }
 }

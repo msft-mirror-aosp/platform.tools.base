@@ -18,14 +18,12 @@ package com.android.tools.idea.wizard.template.impl.activities.composeWearActivi
 
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
 
-fun themeKt(
-  packageName: String,
-  themeName: String
-) = """
+fun themeKt(packageName: String, themeName: String) =
+  """
 package ${escapeKotlinIdentifier(packageName)}.presentation.theme
 
 import androidx.compose.runtime.Composable
-import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material3.MaterialTheme
 
 @Composable
 fun ${themeName}(

@@ -78,7 +78,7 @@ val viewModelFragmentTemplate
       TextFieldWidget(layoutName),
       TextFieldWidget(viewModelName),
       PackageNameWidget(packageName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("viewmodel-fragment").resolve("template_blank_fragment.png") }

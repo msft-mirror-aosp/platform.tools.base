@@ -21,57 +21,44 @@ import com.android.build.gradle.integration.common.fixture.project.builder.Gradl
 import com.android.build.gradle.integration.common.fixture.project.reversible.FileChangeController
 import java.nio.file.Path
 
-/**
- * a subproject part of a [GradleBuild], specifically for projects with Android plugins.
- */
-interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition>
-    : GradleProject<ProjectDefinitionT> {
+/** a subproject part of a [GradleBuild], specifically for projects with Android plugins. */
+interface BaseAndroidProject<ProjectDefinitionT : GradleProjectDefinition> : GradleProject<ProjectDefinitionT> {
 
-    /** Return the intermediates directory from Android plugins.  */
-    val intermediatesDir: Path
-    /** Return the generated directory from Android plugins.  */
-    val generatedDir: Path
-    /** Return the output directory from Android plugins.  */
-    val outputsDir: Path
+  /** Return the intermediates directory from Android plugins. */
+  val intermediatesDir: Path
+  /** Return the generated directory from Android plugins. */
+  val generatedDir: Path
+  /** Return the output directory from Android plugins. */
+  val outputsDir: Path
 }
 
 internal abstract class BaseAndroidProjectImpl<ProjectDefinitionT : GradleProjectDefinition>(
-    location: Path,
-    projectDefinition: ProjectDefinitionT,
-) : GradleProjectImpl<ProjectDefinitionT>(
-    location,
-    projectDefinition,
-), BaseAndroidProject<ProjectDefinitionT> {
+  location: Path,
+  projectDefinition: ProjectDefinitionT,
+) : GradleProjectImpl<ProjectDefinitionT>(location, projectDefinition), BaseAndroidProject<ProjectDefinitionT> {
 
-    override val intermediatesDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
+  override val intermediatesDir: Path
+    get() = location.resolve("build/${SdkConstants.FD_INTERMEDIATES}")
 
-    override val generatedDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_GENERATED}")
+  override val generatedDir: Path
+    get() = location.resolve("build/${SdkConstants.FD_GENERATED}")
 
-    override val outputsDir: Path
-        get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
+  override val outputsDir: Path
+    get() = location.resolve("build/${SdkConstants.FD_OUTPUTS}")
 }
 
 internal abstract class BaseReversibleAndroidProjectImpl<
-    ProjectT : BaseAndroidProject<ProjectDefinitionT>,
-    ProjectDefinitionT : GradleProjectDefinition
->(
-    parentProject: ProjectT,
-    fileChangeController: FileChangeController
-) : ReversibleGradleProject<ProjectT, ProjectDefinitionT>(
-    parentProject,
-    fileChangeController,
-), BaseAndroidProject<ProjectDefinitionT> {
+  ProjectT : BaseAndroidProject<ProjectDefinitionT>,
+  ProjectDefinitionT : GradleProjectDefinition,
+>(parentProject: ProjectT, fileChangeController: FileChangeController) :
+  ReversibleGradleProject<ProjectT, ProjectDefinitionT>(parentProject, fileChangeController), BaseAndroidProject<ProjectDefinitionT> {
 
-    override val intermediatesDir: Path
-        get() = parentProject.intermediatesDir
+  override val intermediatesDir: Path
+    get() = parentProject.intermediatesDir
 
-    override val generatedDir: Path
-        get() = parentProject.generatedDir
+  override val generatedDir: Path
+    get() = parentProject.generatedDir
 
-    override val outputsDir: Path
-        get() = parentProject.outputsDir
+  override val outputsDir: Path
+    get() = parentProject.outputsDir
 }
-
-

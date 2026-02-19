@@ -17,8 +17,6 @@ package com.android.sdklib.internal.avd;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.ISystemImage;
-import com.android.sdklib.devices.Abi;
 
 /**
  * Describes the GPU mode settings supported by the emulator.
@@ -26,8 +24,7 @@ import com.android.sdklib.devices.Abi;
 public enum GpuMode implements ConfigEnum {
     AUTO("auto"),
     HOST("host"),
-    SWIFT("software"),
-    OFF("off");
+    SOFTWARE("software");
 
     private final String mySetting;
 
@@ -35,31 +32,16 @@ public enum GpuMode implements ConfigEnum {
         mySetting = setting;
     }
 
-    @NonNull
-    public static GpuMode getSoftwareGpuMode(@NonNull ISystemImage image) {
-        return emulatorUsesSwiftFor(image) ? SWIFT : OFF;
-    }
-
-    private static boolean emulatorUsesSwiftFor(@NonNull ISystemImage image) {
-        Abi abi = Abi.getEnum(image.getPrimaryAbiType());
-
-        return image.getAndroidVersion().getFeatureLevel() > 22
-                && abi != null
-                && abi.supportsMultipleCpuCores()
-                && image.hasGoogleApis();
-    }
-
     @Override
     public String toString() {
         switch (this) {
-            case AUTO:
-                return "Automatic";
             case HOST:
                 return "Hardware";
-            case SWIFT:
-            case OFF:
-            default:
+            case SOFTWARE:
                 return "Software";
+            case AUTO:
+            default:
+                return "Automatic";
         }
     }
 
@@ -69,7 +51,7 @@ public enum GpuMode implements ConfigEnum {
                 return mode;
             }
         }
-        return OFF;
+        return AUTO;
     }
 
     public String getGpuSetting() {

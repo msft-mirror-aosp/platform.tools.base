@@ -19,30 +19,29 @@ package com.android.tools.instrumentation.threading.agent
 import com.android.annotations.concurrency.UiThread
 
 fun interface FunctionalInterface1 {
-    @UiThread
-    fun method1(x: Int) : Int
+  @UiThread fun method1(x: Int): Int
 }
 
 @Suppress("unused") // This class is loaded dynamically
 class SampleClassesKotlin {
-    @UiThread
-    fun method1() {
-        // Do nothing
-    }
+  @UiThread
+  fun method1() {
+    // Do nothing
+  }
 
-    fun callMethodAcceptingFunctionalInterface() {
-        functionalInterfaceConsumer @UiThread { it * 2 }
-    }
+  fun callMethodAcceptingFunctionalInterface() {
+    functionalInterfaceConsumer @UiThread { it * 2 }
+  }
 
-    private fun functionalInterfaceConsumer(interface1: FunctionalInterface1) {
-        interface1.method1(5)
-    }
+  private fun functionalInterfaceConsumer(interface1: FunctionalInterface1) {
+    interface1.method1(5)
+  }
 
-    fun callMethodAcceptingLambda() {
-        methodWithLambdaParam @UiThread { /* This lambda does nothing */ }
-    }
+  fun callMethodAcceptingLambda() {
+    methodWithLambdaParam @UiThread { /* This lambda does nothing */ }
+  }
 
-    private fun methodWithLambdaParam(@UiThread x: () -> Unit) {
-        x()
-    }
+  private fun methodWithLambdaParam(@UiThread x: () -> Unit) {
+    x()
+  }
 }

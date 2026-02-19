@@ -59,25 +59,25 @@ class AndroidxTestModeTest {
     @Language("java")
     val expected =
       """
-            package test.pkg;
+      package test.pkg;
 
-            import androidx.fragment.app.DialogFragment;
-            import androidx.fragment.app.Fragment;
-            import androidx.fragment.app.FragmentManager;
-            import androidx.fragment.app.FragmentTransaction;
+      import androidx.fragment.app.DialogFragment;
+      import androidx.fragment.app.Fragment;
+      import androidx.fragment.app.FragmentManager;
+      import androidx.fragment.app.FragmentTransaction;
 
-            public class CommitTest2 {
-                private void test() {
-                    FragmentTransaction transaction = getFragmentManager().beginTransaction();
-                    MyDialogFragment fragment = new MyDialogFragment();
-                    fragment.show(transaction, "MyTag");
-                }
+      public class CommitTest2 {
+          private void test() {
+              FragmentTransaction transaction = getFragmentManager().beginTransaction();
+              MyDialogFragment fragment = new MyDialogFragment();
+              fragment.show(transaction, "MyTag");
+          }
 
-                private FragmentManager getFragmentManager() {
-                    return null;
-                }
-            }
-        """
+          private FragmentManager getFragmentManager() {
+              return null;
+          }
+      }
+      """
         .trimIndent()
         .trim()
     val modified = migrate(java)

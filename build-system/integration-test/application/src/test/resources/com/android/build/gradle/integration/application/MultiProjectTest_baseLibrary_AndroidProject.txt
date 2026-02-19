@@ -35,7 +35,6 @@
             - testInfo                      = (null)
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
-            - privacySandboxSdkInfo         = (null)
          < mainArtifact
          > androidTestArtifact:
             - compileTaskName               = "compileDebugAndroidTestSources"
@@ -67,7 +66,6 @@
                - instrumentedTestTaskName = "connectedDebugAndroidTest"
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
-            - privacySandboxSdkInfo         = (null)
          < androidTestArtifact
          > unitTestArtifact:
             - compileTaskName       = "compileDebugUnitTestSources"
@@ -115,7 +113,6 @@
             - testInfo                      = (null)
             - bundleInfo                    = (null)
             - codeShrinker                  = (null)
-            - privacySandboxSdkInfo         = (null)
          < mainArtifact
          - androidTestArtifact    = (null)
          - unitTestArtifact       = (null)
@@ -134,6 +131,7 @@
    > flags:
       * "APPLICATION_R_CLASS_CONSTANT_IDS -> false"
       * "BUILD_FEATURE_ANDROID_RESOURCES -> true"
+      * "BUILT_IN_KOTLIN_DEFAULT_ENABLED -> false"
       * "DATA_BINDING_ENABLED -> false"
       * "ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT -> false"
       * "ENABLE_VCS_INFO -> false"
@@ -142,6 +140,7 @@
       * "JETPACK_COMPOSE -> false"
       * "ML_MODEL_BINDING -> false"
       * "OLD_VARIANT_API_IN_USE -> false"
+      * "R8_GRADUAL_API -> false"
       * "TEST_R_CLASS_CONSTANT_IDS -> false"
       * "TRANSITIVE_R_CLASS -> false"
       * "UNIFIED_TEST_PLATFORM -> true"

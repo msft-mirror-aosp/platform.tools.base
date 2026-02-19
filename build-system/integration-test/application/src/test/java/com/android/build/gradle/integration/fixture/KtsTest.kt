@@ -16,24 +16,23 @@
 
 package com.android.build.gradle.integration.fixture
 
-import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType.KTS
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType.KTS
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicBuilds
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * Currently, all tests use Groovy build file, so this test uses KTS as a basic smoke test
- */
+/** Currently, all tests use Groovy build file, so this test uses KTS as a basic smoke test */
 class KtsTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        apply(BasicBuilds.HELLO_WORLD_APP)
-        buildFileType = KTS
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      apply(BasicBuilds.HELLO_WORLD_APP)
+      buildFileType = KTS
     }
 
-    @Test
-    fun test() {
-        rule.build.executor.run(":app:assembleDebug")
-    }
+  @Test
+  fun test() {
+    rule.build.executor.run(":app:assembleDebug")
+  }
 }

@@ -22,47 +22,44 @@ import java.io.File
  * DSL object for configuring options related to signing for APKs and bundles.
  *
  * [ApkSigningConfig] extends this with options relating to just APKs
- *
  */
 interface SigningConfig {
 
-    /**
-     * Store file used when signing.
-     *
-     * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
-     */
-    var storeFile: File?
+  /**
+   * Store file used when signing.
+   *
+   * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
+   */
+  var storeFile: File?
 
-    /**
-     * Store password used when signing.
-     *
-     * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
-     */
-    var storePassword: String?
+  /**
+   * Store password used when signing.
+   *
+   * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
+   */
+  var storePassword: String?
 
-    /**
-     * Key alias used when signing.
-     *
-     * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
-     */
-    var keyAlias: String?
+  /**
+   * Key alias used when signing.
+   *
+   * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
+   */
+  var keyAlias: String?
 
-    /**
-     * Key password used when signing.
-     *
-     * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
-     */
-    var keyPassword: String?
+  /**
+   * Key password used when signing.
+   *
+   * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
+   */
+  var keyPassword: String?
 
-    /**
-     * Store type used when signing.
-     *
-     * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
-     */
-    var storeType: String?
+  /**
+   * Store type used when signing.
+   *
+   * See [Signing Your Applications](http://developer.android.com/tools/publishing/app-signing.html)
+   */
+  var storeType: String?
 
-    /**
-     * Copies all properties from the given signing config.
-     */
-    fun initWith(that: SigningConfig)
+  /** Copies all properties from the given signing config. */
+  fun initWith(that: SigningConfig)
 }

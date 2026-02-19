@@ -15,20 +15,18 @@
  */
 package com.android.adblib.tools.debugging.processinventory.server
 
-/**
- * Run-time configuration parameters of a [ProcessInventoryServer] instance.
- */
+/** Run-time configuration parameters of a [ProcessInventoryServer] instance. */
 interface ProcessInventoryServerConfiguration {
 
-    /**
-     * An arbitrary value attached to each request sent by the client to the
-     * [process inventory server][ProcessInventoryServer], used for diagnostics and logging.
-     */
-    val clientDescription: String
+  /**
+   * An arbitrary value attached to each request sent by the client to the [process inventory server][ProcessInventoryServer], used for
+   * diagnostics and logging.
+   */
+  val clientDescription: String
 
-    /**
-     * An arbitrary value attach to each response sent from the
-     * [process inventory server][ProcessInventoryServer], used for diagnostics and logging.
-     */
-    val serverDescription: String
+  /**
+   * An arbitrary value attach to each response sent from the [process inventory server][ProcessInventoryServer], used for diagnostics and
+   * logging.
+   */
+  val serverDescription: String
 }

@@ -31,8 +31,7 @@ private const val ATTR_SWIPE_TO_DISMISS = "android:windowSwipeToDismiss"
 class WearBackNavigationDetector : WearDetector(), XmlScanner {
 
   companion object Issues {
-    private val IMPLEMENTATION =
-      Implementation(WearBackNavigationDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(WearBackNavigationDetector::class.java, Scope.RESOURCE_FILE_SCOPE)
 
     @JvmField
     val ISSUE =
@@ -52,29 +51,17 @@ class WearBackNavigationDetector : WearDetector(), XmlScanner {
           enabledByDefault = true,
           androidSpecific = true,
         )
-        .addMoreInfo(
-          "https://developer.android.com/training/wearables/views/exit#disabling-swipe-to-dismiss"
-        )
+        .addMoreInfo("https://developer.android.com/training/wearables/views/exit#disabling-swipe-to-dismiss")
   }
 
-  override fun appliesTo(folderType: ResourceFolderType) =
-    isWearProject && ResourceFolderType.VALUES == folderType
+  override fun appliesTo(folderType: ResourceFolderType) = isWearProject && ResourceFolderType.VALUES == folderType
 
   override fun getApplicableElements(): Collection<String> = listOf(SdkConstants.TAG_ITEM)
 
   override fun visitElement(context: XmlContext, element: Element) {
     val nameAttribute = element.getAttribute(SdkConstants.ATTR_NAME)
-    if (
-      nameAttribute == ATTR_SWIPE_TO_DISMISS &&
-        element.textContent?.trim() == SdkConstants.VALUE_FALSE
-    ) {
-      val fix =
-        fix()
-          .name("Delete `android:windowSwipeToDismiss` from theme")
-          .replace()
-          .with("")
-          .autoFix()
-          .build()
+    if (nameAttribute == ATTR_SWIPE_TO_DISMISS && element.textContent?.trim() == SdkConstants.VALUE_FALSE) {
+      val fix = fix().name("Delete `android:windowSwipeToDismiss` from theme").replace().with("").autoFix().build()
 
       context.report(
         ISSUE,

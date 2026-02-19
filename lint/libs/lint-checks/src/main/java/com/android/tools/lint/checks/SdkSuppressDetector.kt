@@ -41,11 +41,7 @@ import org.jetbrains.uast.getContainingUClass
 /** Makes sure that in tests, `@SdkSuppress` is used instead of `@RequiresApi`. */
 class SdkSuppressDetector : Detector(), SourceCodeScanner {
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(
-        SdkSuppressDetector::class.java,
-        EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES),
-      )
+    private val IMPLEMENTATION = Implementation(SdkSuppressDetector::class.java, EnumSet.of(Scope.JAVA_FILE, Scope.TEST_SOURCES))
 
     /** Using `@RequiresApi` instead of `SdkSuppress` in tests. */
     @JvmField
@@ -111,18 +107,8 @@ class SdkSuppressDetector : Detector(), SourceCodeScanner {
     // Only warn on methods annotated @Test, classes with @Test methods, TestCase classes, and test
     // method of test case classes.
     // Test helper code should use @RequiresApi.
-    if (
-      annotated is UMethod &&
-        !annotated.hasAnnotation(TEST_ANNOTATION) &&
-        !annotated.isTestCaseClassTestMethod()
-    )
-      return
-    if (
-      annotated is UClass &&
-        !annotated.isTestCaseClass() &&
-        annotated.methods.none { it.hasAnnotation(TEST_ANNOTATION) }
-    )
-      return
+    if (annotated is UMethod && !annotated.hasAnnotation(TEST_ANNOTATION) && !annotated.isTestCaseClassTestMethod()) return
+    if (annotated is UClass && !annotated.isTestCaseClass() && annotated.methods.none { it.hasAnnotation(TEST_ANNOTATION) }) return
 
     val source = annotation.sourcePsi?.text
     val fix =

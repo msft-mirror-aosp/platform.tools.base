@@ -26,59 +26,60 @@ import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
 import org.junit.Rule
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-/**
- * An integration test for Gradle Managed Device.
- */
+/** An integration test for Gradle Managed Device. */
+@RunWith(Parameterized::class)
 class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
 
-    @get:Rule
-    val customAndroidSdkRule = CustomAndroidSdkRule()
+  @get:Rule val customAndroidSdkRule = CustomAndroidSdkRule()
 
-    init {
-        ruleBuilder.withCustomSdkDir(customAndroidSdkRule)
+  init {
+    ruleBuilder.withCustomSdkDir(customAndroidSdkRule)
+  }
+
+  companion object {
+    private const val DSL_DEVICE_NAME = "device1"
+
+    private const val OUTPUTS = "build/outputs"
+    private const val TEST_ADDITIONAL_OUTPUT = "$OUTPUTS/managed_device_android_test_additional_output/debug/$DSL_DEVICE_NAME"
+    private const val TEST_RESULTS = "$OUTPUTS/androidTest-results/managedDevice/debug"
+    private const val TEST_RESULT_XML = "$TEST_RESULTS/$DSL_DEVICE_NAME/TEST-$DSL_DEVICE_NAME-_"
+    private const val LOGCAT = "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
+    private const val LOGCAT_FOR_DYNAMIC_FEATURE =
+      "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
+    private const val TEST_RESULT_PB = "$TEST_RESULTS/$DSL_DEVICE_NAME/test-result.pb"
+
+    private const val REPORTS = "build/reports"
+    private const val TEST_REPORT = "$REPORTS/androidTests/managedDevice/debug/$DSL_DEVICE_NAME/com.example.android.kotlin.html"
+    private const val TEST_REPORT_FOR_DYNAMIC_FEATURE =
+      "$REPORTS/androidTests/managedDevice/debug/$DSL_DEVICE_NAME/com.example.android.kotlin.feature.html"
+    private const val TEST_COV_XML = "$REPORTS/coverage/androidTest/debug/managedDevice/report.xml"
+  }
+
+  override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
+    withCustomAndroidSdk(customAndroidSdkRule)
+    return this
+  }
+
+  override fun selectModule(moduleName: String) {
+    rule.build.subProject(":$moduleName").reconfigure {
+      this as AndroidProjectDefinition<out CommonExtension>
+      addManagedDevice(DSL_DEVICE_NAME)
     }
 
-    companion object {
-        private const val DSL_DEVICE_NAME = "device1"
-
-        private const val OUTPUTS = "build/outputs"
-        private const val TEST_ADDITIONAL_OUTPUT = "$OUTPUTS/managed_device_android_test_additional_output/debug/$DSL_DEVICE_NAME"
-        private const val TEST_RESULTS = "$OUTPUTS/androidTest-results/managedDevice/debug"
-        private const val TEST_RESULT_XML = "$TEST_RESULTS/$DSL_DEVICE_NAME/TEST-$DSL_DEVICE_NAME-_"
-        private const val LOGCAT = "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
-        private const val LOGCAT_FOR_DYNAMIC_FEATURE = "$TEST_RESULTS/$DSL_DEVICE_NAME/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
-        private const val TEST_RESULT_PB = "$TEST_RESULTS/$DSL_DEVICE_NAME/test-result.pb"
-
-        private const val REPORTS = "build/reports"
-        private const val TEST_REPORT = "$REPORTS/androidTests/managedDevice/debug/$DSL_DEVICE_NAME/com.example.android.kotlin.html"
-        private const val TEST_REPORT_FOR_DYNAMIC_FEATURE =
-                "$REPORTS/androidTests/managedDevice/debug/$DSL_DEVICE_NAME/com.example.android.kotlin.feature.html"
-        private const val TEST_COV_XML = "$REPORTS/coverage/androidTest/debug/managedDevice/report.xml"
+    testTaskName = ":${moduleName}:allDevicesCheck"
+    testResultXmlPath = "${moduleName}/$TEST_RESULT_XML$moduleName-.xml"
+    if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
+      testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
+      testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
+    } else {
+      testReportPath = "${moduleName}/$TEST_REPORT"
+      testLogcatPath = "${moduleName}/$LOGCAT"
     }
-
-    override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
-        withCustomAndroidSdk(customAndroidSdkRule)
-        return this
-    }
-
-    override fun selectModule(moduleName: String) {
-        rule.build.subProject(":$moduleName").reconfigure {
-            this as AndroidProjectDefinition<out CommonExtension>
-            addManagedDevice(DSL_DEVICE_NAME)
-        }
-
-        testTaskName = ":${moduleName}:allDevicesCheck"
-        testResultXmlPath = "${moduleName}/$TEST_RESULT_XML$moduleName-.xml"
-        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
-            testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
-            testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
-        } else {
-            testReportPath = "${moduleName}/$TEST_REPORT"
-            testLogcatPath = "${moduleName}/$LOGCAT"
-        }
-        testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
-        testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
-        testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
-    }
+    testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
+    testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
+    testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
+  }
 }

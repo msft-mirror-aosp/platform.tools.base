@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 
 private const val LIB1_BUILD_GRADLE =
-"""
+  """
 android {
     buildTypes {
         create("minified").initWith(buildTypes.debug)
@@ -32,69 +32,69 @@ android {
 """
 
 fun testLib(i: Int) =
-    MinimalSubProject.lib("com.example.lib$i")
-        .appendToBuild(LIB1_BUILD_GRADLE)
-        .withFile(
-            "src/main/java/com/example/lib$i/Lib${i}ClassToKeep.java",
-            """
+  MinimalSubProject.lib("com.example.lib$i")
+    .appendToBuild(LIB1_BUILD_GRADLE)
+    .withFile(
+      "src/main/java/com/example/lib$i/Lib${i}ClassToKeep.java",
+      """
 package com.example.lib$i;
 public class Lib${i}ClassToKeep {
 }
-""")
-        .withFile(
-            "src/main/java/com/example/lib$i/Lib${i}ClassToRemove.java",
-            """
+""",
+    )
+    .withFile(
+      "src/main/java/com/example/lib$i/Lib${i}ClassToRemove.java",
+      """
 package com.example.lib$i;
 public class Lib${i}ClassToRemove {
 }
-""")
-        .withFile(
-            "proguard-rules.pro",
-            "-keep public class com.example.lib$i.Lib${i}ClassToKeep")
+""",
+    )
+    .withFile("proguard-rules.pro", "-keep public class com.example.lib$i.Lib${i}ClassToKeep")
 
 fun testJavalib(i: Int) =
-    MinimalSubProject.javaLibrary()
-        .withFile(
-            "src/main/java/com/example/javalib$i/Javalib${i}ClassToKeep.java",
-            """
+  MinimalSubProject.javaLibrary()
+    .withFile(
+      "src/main/java/com/example/javalib$i/Javalib${i}ClassToKeep.java",
+      """
 package com.example.javalib$i;
 public class Javalib${i}ClassToKeep {
 }
-""")
-        .withFile(
-            "src/main/java/com/example/javalib$i/Javalib${i}ClassToRemove.java",
-            """
+""",
+    )
+    .withFile(
+      "src/main/java/com/example/javalib$i/Javalib${i}ClassToRemove.java",
+      """
 package com.example.javalib$i;
 public class Javalib${i}ClassToRemove {
 }
-""")
-        .withFile(
-            "src/main/resources/META-INF/proguard/rules.pro",
-            "-keep public class com.example.javalib$i.Javalib${i}ClassToKeep")
+""",
+    )
+    .withFile("src/main/resources/META-INF/proguard/rules.pro", "-keep public class com.example.javalib$i.Javalib${i}ClassToKeep")
 
 const val BASE_CLASS_KEEP =
-"""
+  """
 package com.example.baseModule;
 public class BaseClassToKeep {
 }
 """
 
 const val BASE_CLASS_REMOVE =
-"""
+  """
 package com.example.baseModule;
 public class BaseClassToRemove {
 }
 """
 
 const val FEATURE1_CLASS_KEEP =
-"""
+  """
 package com.example.feature1;
 public class Feature1ClassToKeep {
 }
 """
 
 const val FEATURE_CLASS_REMOVE =
-"""
+  """
 package com.example.feature1;
 public class Feature1ClassToRemove {
 }

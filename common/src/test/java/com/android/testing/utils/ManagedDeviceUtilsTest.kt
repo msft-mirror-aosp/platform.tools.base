@@ -16,20 +16,14 @@
 
 package com.android.testing.utils
 
-import org.junit.Test
 import kotlin.test.assertEquals
+import org.junit.Test
 
 class ManagedDeviceUtilsTest {
 
-    @Test
-    fun testIsGradleManagedDevice() {
-        assertEquals(
-            true,
-            isGradleManagedDevice("myAvdDeviceID_GradleManagedDevice")
-        )
-        assertEquals(
-            false,
-            isGradleManagedDevice("myAvdDeviceID")
-        )
-    }
+  @Test
+  fun testIsGradleManagedDevice() {
+    assertEquals(true, isGradleManagedDevice("myAvdDeviceID_GradleManagedDevice"))
+    assertEquals(false, isGradleManagedDevice("myAvdDeviceID"))
+  }
 }

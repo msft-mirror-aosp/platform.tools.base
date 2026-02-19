@@ -26,29 +26,26 @@ import org.junit.Test
 /** Make sure we are able to sync projects with source dependencies. */
 class SourceDependencyModelTest {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-            .fromTestProject("sourceDependency")
-            .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("sourceDependency").create()
 
-    @Before
-    fun setUp() {
-        // Move .git dirs to their location in order ot have Gradle source deps working correctly.
-        project.projectDir.resolve("simple-git-repo/gitdir")
-                .copyRecursively(project.projectDir.resolve("simple-git-repo/.git"))
-        project.projectDir.resolve("simple-git-repo-2/gitdir")
-                .copyRecursively(project.projectDir.resolve("simple-git-repo-2/.git"))
-    }
+  @Before
+  fun setUp() {
+    // Move .git dirs to their location in order ot have Gradle source deps working correctly.
+    project.projectDir.resolve("simple-git-repo/gitdir").copyRecursively(project.projectDir.resolve("simple-git-repo/.git"))
+    project.projectDir.resolve("simple-git-repo-2/gitdir").copyRecursively(project.projectDir.resolve("simple-git-repo-2/.git"))
+  }
 
-    @Test
-    fun checkModelBuildSuccessfully() {
-        val androidProject = project.modelV2()
-                .withoutOfflineFlag()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels()
-                .container
-                .getProject()
-                .androidProject
-        assertThat(androidProject).isNotNull()
-    }
+  @Test
+  fun checkModelBuildSuccessfully() {
+    val androidProject =
+      project
+        .modelV2()
+        .withoutOfflineFlag()
+        .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
+        .fetchModels()
+        .container
+        .getProject()
+        .androidProject
+    assertThat(androidProject).isNotNull()
+  }
 }

@@ -1,3 +1,5 @@
+// This proto is copied to google3/ using copybara to be used as a dependency
+// for App Quality Insights integration tests.
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";

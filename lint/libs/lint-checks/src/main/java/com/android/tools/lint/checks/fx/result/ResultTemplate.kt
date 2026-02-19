@@ -20,9 +20,9 @@ import kotlinx.collections.immutable.PersistentMap
 /**
  * Like [Result], but binding the free type parameters, and tracking the refined [domains].
  *
- * For example, function `id` declared as `fun<X> id(x:X): X = x` has a [Result] of `X @ AnyThread`,
- * and a [ResultTemplate] of `∀X.X → X @ AnyThread`. (We can't reuse the method's descriptor for the
- * [domains], because the descriptor only tracks runtime class tags, erasing type parameters).
+ * For example, function `id` declared as `fun<X> id(x:X): X = x` has a [Result] of `X @ AnyThread`, and a [ResultTemplate] of `∀X.X → X @
+ * AnyThread`. (We can't reuse the method's descriptor for the [domains], because the descriptor only tracks runtime class tags, erasing
+ * type parameters).
  */
 data class ResultTemplate<out FX>(
   val typeBounds: TypeBounds<Nothing>,
@@ -42,8 +42,7 @@ data class ResultTemplate<out FX>(
 /** An [AssumptionTable] is just a flat table of assumed analysis results */
 typealias AssumptionTable<FX> = PersistentMap<ClassId, PersistentMap<MethodId, ResultTemplate<FX>>>
 
-operator fun <FX> AssumptionTable<FX>.get(ref: Type.MethodRef): ResultTemplate<FX>? =
-  get(ref.klass)?.get(ref.method)
+operator fun <FX> AssumptionTable<FX>.get(ref: Type.MethodRef): ResultTemplate<FX>? = get(ref.klass)?.get(ref.method)
 
 /** A [ResultTable] contains results that are either assumed or lazily computed/loaded */
 interface ResultTable<FX> {

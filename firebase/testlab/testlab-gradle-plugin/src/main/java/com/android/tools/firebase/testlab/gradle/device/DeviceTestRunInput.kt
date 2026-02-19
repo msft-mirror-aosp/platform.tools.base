@@ -26,8 +26,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 
-abstract class DeviceTestRunInput :
-  com.android.build.api.instrumentation.manageddevice.DeviceTestRunInput {
+abstract class DeviceTestRunInput : com.android.build.api.instrumentation.manageddevice.DeviceTestRunInput {
 
   @get:Input abstract val device: Property<String>
 
@@ -41,7 +40,5 @@ abstract class DeviceTestRunInput :
 
   @get:Input abstract val numUniformShards: Property<Int>
 
-  @get:PathSensitive(PathSensitivity.NONE)
-  @get:InputFile
-  abstract val extraDeviceUrlsFile: RegularFileProperty
+  @get:PathSensitive(PathSensitivity.NONE) @get:InputFile abstract val extraDeviceUrlsFile: RegularFileProperty
 }

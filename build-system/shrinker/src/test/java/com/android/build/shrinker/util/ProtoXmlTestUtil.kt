@@ -21,135 +21,85 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 internal fun xmlElement(tag: String, namespaceUri: String = "") =
-    Resources.XmlElement.newBuilder()
-        .setName(tag)
-        .setNamespaceUri(namespaceUri)
+  Resources.XmlElement.newBuilder().setName(tag).setNamespaceUri(namespaceUri)
 
-internal fun Resources.XmlElement.Builder.setText(text: String) =
-    this.addChild(Resources.XmlNode.newBuilder().setText(text))
+internal fun Resources.XmlElement.Builder.setText(text: String) = this.addChild(Resources.XmlNode.newBuilder().setText(text))
 
 internal fun Resources.XmlElement.Builder.addChild(child: Resources.XmlElement.Builder) =
-    this.addChild(Resources.XmlNode.newBuilder().setElement(child))
+  this.addChild(Resources.XmlNode.newBuilder().setElement(child))
 
 internal fun Resources.XmlElement.Builder.addNamespace(prefix: String, uri: String) =
-    this.addNamespaceDeclaration(
-        Resources.XmlNamespace.newBuilder()
-            .setPrefix(prefix)
-            .setUri(uri)
-    )
+  this.addNamespaceDeclaration(Resources.XmlNamespace.newBuilder().setPrefix(prefix).setUri(uri))
 
 internal fun Resources.XmlElement.Builder.addAttribute(
-    name: String,
-    namespaceUri: String = "",
-    value: String = "",
-    refId: Long? = null
+  name: String,
+  namespaceUri: String = "",
+  value: String = "",
+  refId: Long? = null,
 ): Resources.XmlElement.Builder {
-    val attribute = Resources.XmlAttribute.newBuilder()
-        .setNamespaceUri(namespaceUri)
-        .setName(name)
-        .setValue(value)
-    refId?.let {
-        val name = value.trimStart('@', '+')
-        attribute.setCompiledItem(
-            Resources.Item.newBuilder()
-                .setRef(Resources.Reference.newBuilder().setName(name).setId(it.toInt()))
-        )
-    }
-    return this.addAttribute(attribute)
+  val attribute = Resources.XmlAttribute.newBuilder().setNamespaceUri(namespaceUri).setName(name).setValue(value)
+  refId?.let {
+    val name = value.trimStart('@', '+')
+    attribute.setCompiledItem(Resources.Item.newBuilder().setRef(Resources.Reference.newBuilder().setName(name).setId(it.toInt())))
+  }
+  return this.addAttribute(attribute)
 }
 
-internal fun Resources.XmlElement.Builder.addAttributeWithRefNameOnly(
-    name: String,
-    refName: String = ""
-) =
-    this.addAttribute(
-        Resources.XmlAttribute.newBuilder()
-            .setNamespaceUri(namespaceUri)
-            .setName(name)
-            .setValue(refName)
-            .setCompiledItem(
-                Resources.Item.newBuilder()
-                    .setRef(Resources.Reference.newBuilder().setName(refName))
-            )
-    )
+internal fun Resources.XmlElement.Builder.addAttributeWithRefNameOnly(name: String, refName: String = "") =
+  this.addAttribute(
+    Resources.XmlAttribute.newBuilder()
+      .setNamespaceUri(namespaceUri)
+      .setName(name)
+      .setValue(refName)
+      .setCompiledItem(Resources.Item.newBuilder().setRef(Resources.Reference.newBuilder().setName(refName)))
+  )
 
-internal fun Resources.XmlElement.Builder.buildNode() =
-    Resources.XmlNode.newBuilder().setElement(this).build()
+internal fun Resources.XmlElement.Builder.buildNode() = Resources.XmlNode.newBuilder().setElement(this).build()
 
 internal fun Resources.XmlElement.Builder.writeToFile(path: Path, createDirs: Boolean = true) {
-    Files.createDirectories(path.parent)
-    Files.write(path, buildNode().toByteArray())
+  Files.createDirectories(path.parent)
+  Files.write(path, buildNode().toByteArray())
 }
 
 internal fun Resources.XmlNode.toXmlString(): String {
-    val sb = StringBuilder("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
-    renderXml(
-        this,
-        mapOf("" to ""),
-        sb
-    )
-    return sb.toString()
+  val sb = StringBuilder("<?xml version=\"1.0\" encoding=\"utf-8\"?>")
+  renderXml(this, mapOf("" to ""), sb)
+  return sb.toString()
 }
 
 private fun renderXml(node: Resources.XmlNode, namespaces: Map<String, String>, sb: StringBuilder) {
-    when {
-        node.hasElement() -> renderXml(
-            node.element,
-            namespaces,
-            sb
-        )
-        else -> sb.append(node.text)
-    }
+  when {
+    node.hasElement() -> renderXml(node.element, namespaces, sb)
+    else -> sb.append(node.text)
+  }
 }
 
 private fun renderXml(element: Resources.XmlElement, previousNamespaces: Map<String, String>, sb: StringBuilder) {
-    val namespaces = previousNamespaces +
-            element.namespaceDeclarationList.map { Pair(it.uri, it.prefix) }
+  val namespaces = previousNamespaces + element.namespaceDeclarationList.map { Pair(it.uri, it.prefix) }
 
-    sb.append("<")
-    renderName(
-        element.namespaceUri,
-        element.name,
-        namespaces,
-        sb
-    )
-    sb.append(" ")
-    for (namespace in element.namespaceDeclarationList) {
-        sb.append("xmlns:").append(namespace.prefix).append("=\"").append(namespace.uri).append("\" ")
-    }
-    for (attribute in element.attributeList) {
-        renderName(
-            attribute.namespaceUri,
-            attribute.name,
-            namespaces,
-            sb
-        )
-        sb.append("=\"").append(attribute.value).append("\" ")
-    }
-    sb.append(">")
+  sb.append("<")
+  renderName(element.namespaceUri, element.name, namespaces, sb)
+  sb.append(" ")
+  for (namespace in element.namespaceDeclarationList) {
+    sb.append("xmlns:").append(namespace.prefix).append("=\"").append(namespace.uri).append("\" ")
+  }
+  for (attribute in element.attributeList) {
+    renderName(attribute.namespaceUri, attribute.name, namespaces, sb)
+    sb.append("=\"").append(attribute.value).append("\" ")
+  }
+  sb.append(">")
 
-    element.childList.forEach {
-        renderXml(
-            it,
-            namespaces,
-            sb
-        )
-    }
+  element.childList.forEach { renderXml(it, namespaces, sb) }
 
-    sb.append("</")
-    renderName(
-        element.namespaceUri,
-        element.name,
-        namespaces,
-        sb
-    )
-    sb.append(">")
+  sb.append("</")
+  renderName(element.namespaceUri, element.name, namespaces, sb)
+  sb.append(">")
 }
 
 private fun renderName(namespaceUri: String, name: String, namespaces: Map<String, String>, sb: StringBuilder) {
-    sb.append(namespaces[namespaceUri])
-    if (namespaceUri.isNotEmpty()) {
-        sb.append(":")
-    }
-    sb.append(name)
+  sb.append(namespaces[namespaceUri])
+  if (namespaceUri.isNotEmpty()) {
+    sb.append(":")
+  }
+  sb.append(name)
 }

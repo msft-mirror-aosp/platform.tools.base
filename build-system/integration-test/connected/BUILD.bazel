@@ -1,5 +1,6 @@
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_repository")
+load("//tools/base/build-system/integration-test:common-dependencies.bzl", "BUILT_IN_KOTLIN_VERSION")
 load("//tools/base/build-system/integration-test/connected:connected-test.bzl", "gradle_connected_test")
 
 kotlin_library(
@@ -90,6 +91,15 @@ gradle_connected_test(
 )
 
 gradle_connected_test(
+    name = "AndroidTestEngineConnectedTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    data = TEST_DATA,
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = TEST_DEPS,
+)
+
+gradle_connected_test(
     name = "AndroidTestResourcesConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     avd = "//tools/base/bazel/avd:avd_32",
@@ -160,6 +170,25 @@ gradle_connected_test(
     maven_repos = TEST_MAVEN_REPOS + [
         "//tools/base/build-system/integration-test:kotlin_gradle_plugin_for_compose_prebuilts",
     ],
+    deps = TEST_DEPS,
+)
+
+gradle_connected_test(
+    name = "CodeCoverageReportTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/reportAggregation"],
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
+    deps = TEST_DEPS,
+)
+
+gradle_connected_test(
+    name = "CodeCoverageCollectionTest",
+    srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
+    avd = "//tools/base/bazel/avd:avd_32",
+    data = TEST_DATA + ["//tools/base/build-system/integration-test:test-projects/reportAggregation"],
+    maven_repo_zips = MAVEN_REPO_ZIPS,
+    maven_repos = TEST_MAVEN_REPOS,
     deps = TEST_DEPS,
 )
 
@@ -660,9 +689,7 @@ gradle_connected_test(
     maven_repo_zips = MAVEN_REPO_ZIPS,
     maven_repos = TEST_MAVEN_REPOS,
     shard_count = 2,
-    deps = TEST_DEPS + [
-        "//tools/base/build-system/integration-test/utp",
-    ],
+    deps = ["//tools/base/build-system/integration-test/utp"] + TEST_DEPS,
 )
 
 gradle_connected_test(
@@ -805,6 +832,8 @@ maven_repository(
         "@maven//:com.squareup.kotlinpoet_2.1.0",
         "@maven//:org.codehaus.mojo.animal-sniffer-annotations_1.19",
         "@maven//:org.hamcrest.hamcrest-library_1.3",
+        "@maven//:org.jdeferred.jdeferred-android-aar_1.2.3",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_" + BUILT_IN_KOTLIN_VERSION,
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android_1.6.4",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core-common_1.3.6",
         "@maven//:org.tensorflow.tensorflow-lite-metadata_0.2.0",

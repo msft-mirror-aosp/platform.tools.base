@@ -25,36 +25,29 @@ import com.android.builder.model.ClassField
 import java.io.Serializable
 
 class BuildConfigDslInfoImpl(
-    private val defaultConfig: DefaultConfig,
-    private val buildTypeObj: BuildType,
-    private val productFlavorList: List<ProductFlavor>,
-): BuildConfigDslInfo {
-    override fun getBuildConfigFields(): Map<String, BuildConfigField<out Serializable>> {
-        val buildConfigFieldsMap =
-            mutableMapOf<String, BuildConfigField<out Serializable>>()
+  private val defaultConfig: DefaultConfig,
+  private val buildTypeObj: BuildType,
+  private val productFlavorList: List<ProductFlavor>,
+) : BuildConfigDslInfo {
+  override fun getBuildConfigFields(): Map<String, BuildConfigField<out Serializable>> {
+    val buildConfigFieldsMap = mutableMapOf<String, BuildConfigField<out Serializable>>()
 
-        fun addToListIfNotAlreadyPresent(classField: ClassField, comment: String) {
-            if (!buildConfigFieldsMap.containsKey(classField.name)) {
-                buildConfigFieldsMap[classField.name] =
-                    BuildConfigField(classField.type , classField.value, comment)
-            }
-        }
-
-        (buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).buildConfigFields.values.forEach { classField ->
-            addToListIfNotAlreadyPresent(classField, "Field from build type: ${buildTypeObj.name}")
-        }
-
-        for (flavor in productFlavorList) {
-            (flavor as com.android.build.gradle.internal.dsl.ProductFlavor).buildConfigFields.values.forEach { classField ->
-                addToListIfNotAlreadyPresent(
-                    classField,
-                    "Field from product flavor: ${flavor.name}"
-                )
-            }
-        }
-        defaultConfig.buildConfigFields.values.forEach { classField ->
-            addToListIfNotAlreadyPresent(classField, "Field from default config.")
-        }
-        return buildConfigFieldsMap
+    fun addToListIfNotAlreadyPresent(classField: ClassField, comment: String) {
+      if (!buildConfigFieldsMap.containsKey(classField.name)) {
+        buildConfigFieldsMap[classField.name] = BuildConfigField(classField.type, classField.value, comment)
+      }
     }
+
+    (buildTypeObj as com.android.build.gradle.internal.dsl.BuildType).buildConfigFields.values.forEach { classField ->
+      addToListIfNotAlreadyPresent(classField, "Field from build type: ${buildTypeObj.name}")
+    }
+
+    for (flavor in productFlavorList) {
+      (flavor as com.android.build.gradle.internal.dsl.ProductFlavor).buildConfigFields.values.forEach { classField ->
+        addToListIfNotAlreadyPresent(classField, "Field from product flavor: ${flavor.name}")
+      }
+    }
+    defaultConfig.buildConfigFields.values.forEach { classField -> addToListIfNotAlreadyPresent(classField, "Field from default config.") }
+    return buildConfigFieldsMap
+  }
 }

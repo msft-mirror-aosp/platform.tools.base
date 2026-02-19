@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.unit;
 
 import static com.android.SdkConstants.FN_R_CLASS_JAR;
+import static com.android.build.api.variant.impl.VariantApiExtensionsKt.capitalizeFirstChar;
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
@@ -49,12 +50,10 @@ public class UnitTestingModelTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("unitTestingComplexProject")
-                    .addGradleProperties(
-                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @Test
-    public void unitTestingArtifactsAreIncludedInTheModel() throws Exception {
+    public void unitTestingArtifactsAreIncludedInTheModel() {
         // Build the project, so we can verify paths in the model exist.
         project.executor().run("test");
 
@@ -83,8 +82,10 @@ public class UnitTestingModelTest {
                                     InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE,
                                     project.getSubproject("app").getBuildDir()),
                             variant.getName() + "/" + generateRFile + "/" + FN_R_CLASS_JAR));
-            expectedClassesFolders.add(project.file("app/build/tmp/kotlin-classes/"
-                    + variant.getName()));
+            expectedClassesFolders.add(project.file("app/build/intermediates/built_in_kotlinc/"
+                    + variant.getName()
+                    + "/compile" + capitalizeFirstChar(variant.getName()) + "Kotlin/classes"
+            ));
             if (variant.getName().equals("release")) {
                 expectedClassesFolders.add(
                         project.file("app/build/kotlinToolingMetadata"));
@@ -118,9 +119,12 @@ public class UnitTestingModelTest {
             assertThat(unitTestArtifact.getClassesFolders())
                     .containsExactly(
                             project.file(
-                                    "app/build/tmp/kotlin-classes/"
+                                    "app/build/intermediates/built_in_kotlinc/"
                                             + variant.getName()
-                                            + "UnitTest"),
+                                            + "UnitTest/"
+                                            + "compile" + capitalizeFirstChar(variant.getName())
+                                            + "UnitTestKotlin/classes"
+                                    ),
                             project.file(
                                     "app/build/intermediates/compile_and_runtime_r_class_jar/"
                                             + variant.getName()

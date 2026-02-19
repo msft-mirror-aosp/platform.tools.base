@@ -29,47 +29,41 @@ private const val JVM_PLATFORM_TYPE = "jvm"
 private const val COMMON_TYPE = "common"
 
 fun configureKotlinPlatformAttribute(configs: List<Configuration>, project: Project) {
-    val kotlinPlatformTypeAttribute =
-        Attribute.of("org.jetbrains.kotlin.platform.type", String::class.java)
+  val kotlinPlatformTypeAttribute = Attribute.of("org.jetbrains.kotlin.platform.type", String::class.java)
 
-    configs.forEach {
-        it.attributes.attribute(
-            kotlinPlatformTypeAttribute,
-            ANDROID_JVM_PLATFORM_TYPE
-        )
-    }
+  configs.forEach { it.attributes.attribute(kotlinPlatformTypeAttribute, ANDROID_JVM_PLATFORM_TYPE) }
 
-    project.dependencies.attributesSchema.attribute(kotlinPlatformTypeAttribute).also {
-        it.compatibilityRules.add(KotlinPlatformCompatibilityRule::class.java)
-        it.disambiguationRules.add(KotlinPlatformDisambiguationRule::class.java)
-    }
+  project.dependencies.attributesSchema.attribute(kotlinPlatformTypeAttribute).also {
+    it.compatibilityRules.add(KotlinPlatformCompatibilityRule::class.java)
+    it.disambiguationRules.add(KotlinPlatformDisambiguationRule::class.java)
+  }
 }
 
 class KotlinPlatformCompatibilityRule : AttributeCompatibilityRule<String> {
-    override fun execute(details: CompatibilityCheckDetails<String>) = with(details) {
-        if (producerValue == JVM_PLATFORM_TYPE && consumerValue == ANDROID_JVM_PLATFORM_TYPE)
-            compatible()
+  override fun execute(details: CompatibilityCheckDetails<String>) =
+    with(details) {
+      if (producerValue == JVM_PLATFORM_TYPE && consumerValue == ANDROID_JVM_PLATFORM_TYPE) compatible()
 
-        if (consumerValue == COMMON_TYPE)
-            compatible()
+      if (consumerValue == COMMON_TYPE) compatible()
     }
 }
 
 class KotlinPlatformDisambiguationRule : AttributeDisambiguationRule<String> {
-    override fun execute(details: MultipleCandidatesDetails<String>) = with(details) {
-        if (consumerValue in candidateValues) {
-            closestMatch(checkNotNull(consumerValue))
-            return@with
-        }
+  override fun execute(details: MultipleCandidatesDetails<String>) =
+    with(details) {
+      if (consumerValue in candidateValues) {
+        closestMatch(checkNotNull(consumerValue))
+        return@with
+      }
 
-        if (consumerValue == null && ANDROID_JVM_PLATFORM_TYPE in candidateValues && JVM_PLATFORM_TYPE in candidateValues) {
-            closestMatch(JVM_PLATFORM_TYPE)
-            return@with
-        }
+      if (consumerValue == null && ANDROID_JVM_PLATFORM_TYPE in candidateValues && JVM_PLATFORM_TYPE in candidateValues) {
+        closestMatch(JVM_PLATFORM_TYPE)
+        return@with
+      }
 
-        if (COMMON_TYPE in candidateValues && JVM_PLATFORM_TYPE !in candidateValues && ANDROID_JVM_PLATFORM_TYPE !in candidateValues) {
-            closestMatch(COMMON_TYPE)
-            return@with
-        }
+      if (COMMON_TYPE in candidateValues && JVM_PLATFORM_TYPE !in candidateValues && ANDROID_JVM_PLATFORM_TYPE !in candidateValues) {
+        closestMatch(COMMON_TYPE)
+        return@with
+      }
     }
 }

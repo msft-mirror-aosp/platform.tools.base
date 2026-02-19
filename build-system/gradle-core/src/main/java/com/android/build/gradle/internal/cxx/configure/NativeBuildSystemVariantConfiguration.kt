@@ -20,124 +20,105 @@ import com.android.build.api.variant.impl.VariantImpl
 import com.android.build.gradle.internal.component.features.NativeBuildCreationConfig
 
 /**
- * This class represents a single native build variant config that is abstract against the
- * underlying native build system. That is, it hides whether the build system is CMake or ndk-build.
+ * This class represents a single native build variant config that is abstract against the underlying native build system. That is, it hides
+ * whether the build system is CMake or ndk-build.
  */
 data class NativeBuildSystemVariantConfig(
-    val externalNativeBuildAbiFilters: Set<String>,
-    val ndkAbiFilters: Set<String>,
-    val arguments: List<String>,
-    val cFlags: List<String>,
-    val cppFlags: List<String>,
-    val targets: Set<String>)
+  val externalNativeBuildAbiFilters: Set<String>,
+  val ndkAbiFilters: Set<String>,
+  val arguments: List<String>,
+  val cFlags: List<String>,
+  val cppFlags: List<String>,
+  val targets: Set<String>,
+)
 
 // TODO(b/225137414): stop resolving variant properties
 fun createNativeBuildSystemVariantConfig(
-    variant: VariantImpl<*>,
-    nativeBuildCreationConfig: NativeBuildCreationConfig
+  variant: VariantImpl<*>,
+  nativeBuildCreationConfig: NativeBuildCreationConfig,
 ): NativeBuildSystemVariantConfig {
 
-    /**
-     * The set of abiFilters from the externalNativeBuild part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         externalNativeBuild {
-     *             cmake {
-     *                 abiFilters "x86", "x86_64"
-     *             }
-     *         }
-     *     }
-     * </pre>
-     */
-    val externalNativeBuildAbiFilters: Set<String> =
-            variant.externalNativeBuild?.abiFilters?.get() ?: setOf()
+  /**
+   * The set of abiFilters from the externalNativeBuild part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         externalNativeBuild {
+   *             cmake {
+   *                 abiFilters "x86", "x86_64"
+   *             }
+   *         }
+   *     }
+   * </pre>
+   */
+  val externalNativeBuildAbiFilters: Set<String> = variant.externalNativeBuild?.abiFilters?.get() ?: setOf()
 
+  /**
+   * Get the set of abiFilters from the ndk part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         ndk {
+   *             abiFilters "x86", "x86_64"
+   *         }
+   *     }
+   * </pre>
+   */
+  val ndkAbiFilters: Set<String> = nativeBuildCreationConfig.ndkConfig.abiFilters
 
-    /**
-     * Get the set of abiFilters from the ndk part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         ndk {
-     *             abiFilters "x86", "x86_64"
-     *         }
-     *     }
-     * </pre>
-     */
-    val ndkAbiFilters: Set<String> = nativeBuildCreationConfig.ndkConfig.abiFilters
+  /**
+   * The set of build system arguments from the externalNativeBuild part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         externalNativeBuild {
+   *             cmake {
+   *                 arguments "-DCMAKE_BUILD_FLAG=xyz"
+   *             }
+   *         }
+   *     }
+   * </pre>
+   */
+  val arguments: List<String> = variant.externalNativeBuild?.arguments?.get() ?: listOf()
 
+  /**
+   * The set of build system c flags from the externalNativeBuild part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         externalNativeBuild {
+   *             cmake {
+   *                 cFlags "-DMY_FLAG"
+   *             }
+   *         }
+   *     }
+   * </pre>
+   */
+  val cFlags: List<String> = variant.externalNativeBuild?.cFlags?.get() ?: listOf()
 
-    /**
-     * The set of build system arguments from the externalNativeBuild part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         externalNativeBuild {
-     *             cmake {
-     *                 arguments "-DCMAKE_BUILD_FLAG=xyz"
-     *             }
-     *         }
-     *     }
-     * </pre>
-     */
-    val arguments: List<String> =
-            variant.externalNativeBuild?.arguments?.get() ?: listOf()
+  /**
+   * The set of build system c++ flags from the externalNativeBuild part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         externalNativeBuild {
+   *             cmake {
+   *                 cppFlags "-DMY_FLAG"
+   *             }
+   *         }
+   *     }
+   * </pre>
+   */
+  val cppFlags: List<String> = variant.externalNativeBuild?.cppFlags?.get() ?: listOf()
 
-    /**
-     * The set of build system c flags from the externalNativeBuild part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         externalNativeBuild {
-     *             cmake {
-     *                 cFlags "-DMY_FLAG"
-     *             }
-     *         }
-     *     }
-     * </pre>
-     */
-    val cFlags: List<String> =
-            variant.externalNativeBuild?.cFlags?.get() ?: listOf()
+  /**
+   * The set of build system c++ targets from the externalNativeBuild part of the DSL. For example,
+   * <pre>
+   *     defaultConfig {
+   *         externalNativeBuild {
+   *             cmake {
+   *                 targets "my-target"
+   *             }
+   *         }
+   *     }
+   * </pre>
+   */
+  val targets: Set<String> = variant.externalNativeBuild?.targets?.get() ?: setOf()
 
-    /**
-     * The set of build system c++ flags from the externalNativeBuild part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         externalNativeBuild {
-     *             cmake {
-     *                 cppFlags "-DMY_FLAG"
-     *             }
-     *         }
-     *     }
-     * </pre>
-     */
-    val cppFlags: List<String> =
-            variant.externalNativeBuild?.cppFlags?.get() ?: listOf()
-
-    /**
-     * The set of build system c++ targets from the externalNativeBuild part of the DSL. For example,
-     *
-     * <pre>
-     *     defaultConfig {
-     *         externalNativeBuild {
-     *             cmake {
-     *                 targets "my-target"
-     *             }
-     *         }
-     *     }
-     * </pre>
-     */
-    val targets: Set<String> =
-            variant.externalNativeBuild?.targets?.get() ?: setOf()
-
-    return NativeBuildSystemVariantConfig(
-        externalNativeBuildAbiFilters,
-        ndkAbiFilters,
-        arguments,
-        cFlags,
-        cppFlags,
-        targets)
-
+  return NativeBuildSystemVariantConfig(externalNativeBuildAbiFilters, ndkAbiFilters, arguments, cFlags, cppFlags, targets)
 }

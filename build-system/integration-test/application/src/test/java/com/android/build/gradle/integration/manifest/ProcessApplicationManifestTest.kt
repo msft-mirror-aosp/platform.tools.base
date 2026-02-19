@@ -23,213 +23,250 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
+import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import kotlin.test.assertTrue
 
 class ProcessApplicationManifestTest {
 
-    private val app =
-        MinimalSubProject.app()
-            .appendToBuild(
-                """
-                    android {
-                        packaging {
-                            jniLibs {
-                                useLegacyPackaging = false
-                            }
-                        }
-                    }
-                """.trimIndent()
-            )
-    private val lib =
-        MinimalSubProject.lib()
-            .withFile(
-                "src/main/AndroidManifest.xml",
-                """
-                    <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-                        <application android:extractNativeLibs="true"/>
-                    </manifest>
-                """.trimIndent()
-            )
-
-    @get:Rule
-    val project: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestApp(
-                MultiModuleTestProject.builder()
-                    .subproject(":app", app)
-                    .subproject(":lib", lib)
-                    .dependency(app, lib)
-                    .build()
-            ).create()
-
-    @Test
-    fun testDependencyExtractNativeLibsIsNotMerged() {
-        val result1 = project.executor().run(":app:processDebugManifest")
-
-        val manifestFile =
-            project.getSubproject(":app")
-                .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:extractNativeLibs=\"false\"")
-
-        val expectedWarning =
-            "android:extractNativeLibs is set to true in a dependency's AndroidManifest.xml"
-        ScannerSubject.assertThat(result1.stdout).contains(expectedWarning)
-
-        // Check that no warning message if it's suppressed
-        val result2 =
-            project.executor()
-                .with(BooleanOption.SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS, true)
-                .run("clean", ":app:processDebugManifest")
-        ScannerSubject.assertThat(result2.stdout).doesNotContain(expectedWarning)
-    }
-
-    @Test
-    fun testAppManifestTargetSdkDefaultsToCompileSdk() {
-        project.getSubproject(":app").buildFile.appendText("""
-            android {
-                compileSdk = 36
-            }
-        """.trimIndent())
-        val manifestFile = project.getSubproject(":app")
-            .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
-
-        val result = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
-            .run("clean", ":app:processDebugManifest")
-        assertTrue { result.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
-
-        val resultWithLegacyTargetSdkDefault = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
-            .run(":app:processDebugManifest")
-        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
-    }
-
-    @Test
-    fun testAppManifestTargetSdkDefaultsToCompileSdkWithMinorRelease() {
-        project.getSubproject(":app").buildFile.appendText("""
-            android {
-                compileSdk {
-                    version = release(36) {
-                        minorApiLevel = 1
-                    }
+  private val app =
+    MinimalSubProject.app()
+      .appendToBuild(
+        """
+        android {
+            packaging {
+                jniLibs {
+                    useLegacyPackaging = false
                 }
             }
-        """.trimIndent())
-        val manifestFile = project.getSubproject(":app")
-            .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+        }
+        """
+          .trimIndent()
+      )
+  private val lib =
+    MinimalSubProject.lib()
+      .withFile(
+        "src/main/AndroidManifest.xml",
+        """
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application android:extractNativeLibs="true"/>
+        </manifest>
+        """
+          .trimIndent(),
+      )
 
-        val result = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
-            .run("clean", ":app:processDebugManifest")
-        assertTrue { result.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
+  @get:Rule
+  val project: GradleTestProject =
+    GradleTestProject.builder()
+      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
+      .create()
 
-        val resultWithLegacyTargetSdkDefault = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
-            .run(":app:processDebugManifest")
-        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
-    }
+  @Test
+  fun testDependencyExtractNativeLibsIsNotMerged() {
+    val result1 = project.executor().run(":app:processDebugManifest")
 
-    @Test
-    fun testAppManifestTargetSdkDefaultsToCompileSdkPreview() {
-        project.getSubproject(":app").buildFile.appendText("""
-            android {
-                compileSdkPreview = "Baklava"
-            }
-        """.trimIndent())
-        val manifestFile = project.getSubproject(":app")
-            .file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+    val manifestFile =
+      project.getSubproject(":app").file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:extractNativeLibs=\"false\"")
 
-        val result = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true)
-            .run("clean", ":app:processDebugManifest")
-        assertTrue { result.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"Baklava\"")
+    val expectedWarning = "android:extractNativeLibs is set to true in a dependency's AndroidManifest.xml"
+    ScannerSubject.assertThat(result1.stdout).contains(expectedWarning)
 
-        val resultWithLegacyTargetSdkDefault = project.executor()
-            .with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false)
-            .run(":app:processDebugManifest")
-        assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty()}
-        assertThat(manifestFile).exists()
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
-    }
+    // Check that no warning message if it's suppressed
+    val result2 =
+      project.executor().with(BooleanOption.SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS, true).run("clean", ":app:processDebugManifest")
+    ScannerSubject.assertThat(result2.stdout).doesNotContain(expectedWarning)
+  }
 
-    @Test
-    fun testLibraryManifestContainsTargetSdkVersionFromOptions() {
-        project.getSubproject(":lib").buildFile.appendText("""
-            android {
-                testBuildType = "release"
-                testOptions {
-                    targetSdk = 22
-                    unitTests {
-                        includeAndroidResources = true
-                    }
+  @Test
+  fun testAppManifestTargetSdkDefaultsToCompileSdk() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android {
+            compileSdk = 36
+        }
+        """
+          .trimIndent()
+      )
+    val manifestFile =
+      project.getSubproject(":app").file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+
+    val result =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true).run("clean", ":app:processDebugManifest")
+    assertTrue { result.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
+
+    val resultWithLegacyTargetSdkDefault =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false).run(":app:processDebugManifest")
+    assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+  }
+
+  @Test
+  fun testAppManifestTargetSdkDefaultsToCompileSdkWithMinorRelease() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android {
+            compileSdk {
+                version = release(36) {
+                    minorApiLevel = 1
                 }
             }
-        """.trimIndent())
-        val result = project.executor().run(":lib:processReleaseUnitTestManifest")
-        assertTrue { result.failedTasks.isEmpty() }
-        val manifestFile = project.getSubproject(":lib").file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
-        assertThat(manifestFile).contains("android:targetSdkVersion=\"22\"")
-    }
-
-    @Test
-    fun testApplicationDeviceTestManifestDoesNotContainDebuggableFlag() {
-        // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
-        project.getSubproject(":app").buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
-        project.executor().run("assembleReleaseAndroidTest")
-
-        project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
-            // should not contain android:debuggable
-            manifestAsNodes()
-                .node("manifest")
-                .node("application")
-                .containsExactlyAttributes(
-                    "http://schemas.android.com/apk/res/android:extractNativeLibs"
-                )
         }
-    }
+        """
+          .trimIndent()
+      )
+    val manifestFile =
+      project.getSubproject(":app").file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
 
-    @Test
-    fun testApplicationDeviceTestManifestDoesContainDebuggableFlagWhenRequested() {
-        // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
-        project.getSubproject(":app").buildFile.appendText("""
-            android {
-                testBuildType = "release"
-            }
-            androidComponents {
-                beforeVariants(selector().withBuildType("release"), { variantBuilder ->
-                    variantBuilder.deviceTests.get("AndroidTest").debuggable = true
-                })
+    val result =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true).run("clean", ":app:processDebugManifest")
+    assertTrue { result.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"36\"")
 
-                onVariants(selector().withBuildType("release"), { variant ->
-                    if (!variant.deviceTests.get("AndroidTest").debuggable) {
-                        throw new RuntimeException("DeviceTest.debuggable value not set to true")
-                    }
-                })
-            }
-        """.trimIndent())
-        project.executor().run("assembleReleaseAndroidTest")
+    val resultWithLegacyTargetSdkDefault =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false).run(":app:processDebugManifest")
+    assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+  }
 
-        project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
-            manifestAsNodes()
-                .node("manifest")
-                .node("application")
-                .containsAttributeAndValue(
-                    "http://schemas.android.com/apk/res/android:debuggable",
-                    "true"
-                )
+  @Test
+  fun testAppManifestTargetSdkDefaultsToCompileSdkPreview() {
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android {
+            compileSdkPreview = "Baklava"
         }
+        """
+          .trimIndent()
+      )
+    val manifestFile =
+      project.getSubproject(":app").file("build/intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml")
+
+    val result =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, true).run("clean", ":app:processDebugManifest")
+    assertTrue { result.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"Baklava\"")
+
+    val resultWithLegacyTargetSdkDefault =
+      project.executor().with(BooleanOption.DEFAULT_TARGET_SDK_TO_COMPILE_SDK_IF_UNSET, false).run(":app:processDebugManifest")
+    assertTrue { resultWithLegacyTargetSdkDefault.failedTasks.isEmpty() }
+    assertThat(manifestFile).exists()
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"14\"")
+  }
+
+  @Test
+  fun testLibraryManifestContainsTargetSdkVersionFromOptions() {
+    project
+      .getSubproject(":lib")
+      .buildFile
+      .appendText(
+        """
+        android {
+            testBuildType = "release"
+            testOptions {
+                targetSdk = 22
+                unitTests {
+                    includeAndroidResources = true
+                }
+            }
+        }
+        """
+          .trimIndent()
+      )
+    val result = project.executor().run(":lib:processReleaseUnitTestManifest")
+    assertTrue { result.failedTasks.isEmpty() }
+    val manifestFile =
+      project
+        .getSubproject(":lib")
+        .file("build/intermediates/packaged_manifests/releaseUnitTest/processReleaseUnitTestManifest/AndroidManifest.xml")
+    assertThat(manifestFile).contains("android:targetSdkVersion=\"22\"")
+  }
+
+  @Test
+  fun testApplicationDeviceTestManifestDoesNotContainDebuggableFlag() {
+    // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
+    project.getSubproject(":app").buildFile.appendText("\n\nandroid.testBuildType = \"release\"\n\n")
+    project.executor().run("assembleReleaseAndroidTest")
+
+    project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+      // should not contain android:debuggable
+      manifestAsNodes()
+        .node("manifest")
+        .node("application")
+        .containsExactlyAttributes("http://schemas.android.com/apk/res/android:extractNativeLibs")
     }
+  }
+
+  @Test
+  fun testApplicationDeviceTestManifestDoesContainDebuggableFlagWhenRequested() {
+    // The manifest shouldn't contain android:debuggable if we set the testBuildType to release.
+    project
+      .getSubproject(":app")
+      .buildFile
+      .appendText(
+        """
+        android {
+            testBuildType = "release"
+        }
+        androidComponents {
+            beforeVariants(selector().withBuildType("release"), { variantBuilder ->
+                variantBuilder.deviceTests.get("AndroidTest").debuggable = true
+            })
+
+            onVariants(selector().withBuildType("release"), { variant ->
+                if (!variant.deviceTests.get("AndroidTest").debuggable) {
+                    throw new RuntimeException("DeviceTest.debuggable value not set to true")
+                }
+            })
+        }
+        """
+          .trimIndent()
+      )
+    project.executor().run("assembleReleaseAndroidTest")
+
+    project.getSubproject(":app").assertApk(ApkSelector.RELEASE_SIGNED.forTestSuite("androidTest")) {
+      manifestAsNodes()
+        .node("manifest")
+        .node("application")
+        .containsAttributeAndValue("http://schemas.android.com/apk/res/android:debuggable", "true")
+    }
+  }
+
+  /** Verifies that [BooleanOption.MANIFEST_WARNINGS_AS_ERRORS] promotes warnings to failures. */
+  @Test
+  fun testManifestWarningBecomesErrorWithFlag() {
+    val failure =
+      project.executor().with(BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS, true).expectFailure().run(":app:processDebugManifest")
+
+    failure.assertErrorContains("treatManifestMergerWarningsAsErrors is enabled")
+
+    failure.assertErrorContains("android:extractNativeLibs is set to true in a dependency's AndroidManifest.xml")
+  }
+
+  /**
+   * Verifies that the build succeeds (logging the warning) when [BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS] is explicitly
+   * disabled.
+   */
+  @Test
+  fun testManifestWarningDoesNotFailWithoutFlag() {
+    val result = project.executor().with(BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS, false).run(":app:processDebugManifest")
+
+    result.stdout.use { ScannerSubject.assertThat(it).contains("android:extractNativeLibs is set to true") }
+  }
 }

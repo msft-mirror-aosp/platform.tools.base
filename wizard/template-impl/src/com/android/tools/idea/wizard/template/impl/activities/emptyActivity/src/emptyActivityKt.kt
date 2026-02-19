@@ -20,8 +20,14 @@ import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.renderIf
 
 fun emptyActivityKt(
-  packageName: String, namespace: String, activityClass: String, layoutName: String, generateLayout: Boolean, useAndroidX: Boolean
-) = """
+  packageName: String,
+  namespace: String,
+  activityClass: String,
+  layoutName: String,
+  generateLayout: Boolean,
+  useAndroidX: Boolean,
+) =
+  """
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle

@@ -19,9 +19,11 @@ package com.android.build.gradle.integration.lint;
 import static com.android.testutils.truth.PathSubject.assertThat;
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
-import java.io.File;
+
 import org.junit.Rule;
 import org.junit.Test;
+
+import java.io.File;
 
 /**
  * Test making sure that the SupportAnnotationUsage does not report errors referencing R.type.name
@@ -45,8 +47,11 @@ public class LintResourceResolveTest {
         assertThat(file).exists();
         assertThat(file).contentWithUnixLineSeparatorsIsExactly("No issues found.");
 
-        File sarifFile = new File(project.getSubproject("app").getBuildDir(), "reports/lint-results-debug.sarif");
+        File sarifFile =
+                new File(
+                        project.getSubproject("app").getBuildDir(),
+                        "reports/lint-results-debug.sarif");
         assertThat(sarifFile).exists();
-        assertThat(sarifFile).contains("\"$schema\" : \"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/");
+        assertThat(sarifFile).contains("\"$schema\" : \"https://docs.oasis-open.org/sarif/sarif/");
     }
 }

@@ -22,6 +22,7 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition.Companion.DEFAULT_COMPILE_SDK_VERSION
 import com.android.build.gradle.integration.common.fixture.project.plugins.AndroidKotlinMultiplatformLibraryComponentCallback
 import com.android.build.gradle.integration.common.output.AarSubject
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
@@ -29,53 +30,39 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class KotlinMultiplatformGeneratedJavaSourcesTest {
-    @get:Rule
-    val rule = GradleRule.from {
-        androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
-            android {
-                namespace = "com.mylibrary.foo"
-                compileSdk = DEFAULT_COMPILE_SDK_VERSION
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":kmpLib", createMinimumProject = false) {
+        android {
+          namespace = "com.mylibrary.foo"
+          compileSdk = DEFAULT_COMPILE_SDK_VERSION
 
-                withJava()
-            }
-
-            pluginCallbacks += Callback::class.java
+          withJava()
         }
+
+        pluginCallbacks += Callback::class.java
+      }
     }
 
-    class Callback: AndroidKotlinMultiplatformLibraryComponentCallback {
-        override fun handleExtension(
-            project: Project,
-            extension: KotlinMultiplatformAndroidComponentsExtension
-        ) {
-            extension.onVariants { variant ->
-                val javaCreationTask = project.tasks.register(
-                    "create${variant.name}JavaGenerator",
-                    AddJavaSources::class.java
-                ) {
-                    it.outputDirectory.set(
-                        File(
-                            project.layout.buildDirectory.asFile.get(),
-                            "java_generated_sources"
-                        )
-                    )
-                }
+  class Callback : AndroidKotlinMultiplatformLibraryComponentCallback {
+    override fun handleExtension(project: Project, extension: KotlinMultiplatformAndroidComponentsExtension) {
+      extension.onVariants { variant ->
+        val javaCreationTask =
+          project.tasks.register("create${variant.name}JavaGenerator", AddJavaSources::class.java) {
+            it.outputDirectory.set(File(project.layout.buildDirectory.asFile.get(), "java_generated_sources"))
+          }
 
-                // use addGeneratedSourceDirectory to add generated directories
-                variant.sources.java?.addGeneratedSourceDirectory(javaCreationTask) {
-                    it.outputDirectory
-                }
+        // use addGeneratedSourceDirectory to add generated directories
+        variant.sources.java?.addGeneratedSourceDirectory(javaCreationTask) { it.outputDirectory }
 
-                val staticJavaPath = "src/${variant.name}/staticJava"
-                val outputFile = File(
-                    File(project.projectDir, staticJavaPath),
-                    "com/mylibrary/foo/StaticBar.java"
-                )
-                outputFile.parentFile.mkdirs()
-                outputFile.writeText("""
+        val staticJavaPath = "src/${variant.name}/staticJava"
+        val outputFile = File(File(project.projectDir, staticJavaPath), "com/mylibrary/foo/StaticBar.java")
+        outputFile.parentFile.mkdirs()
+        outputFile.writeText(
+          """
                     package com.mylibrary.foo;
 
                     public class StaticBar {
@@ -83,44 +70,38 @@ class KotlinMultiplatformGeneratedJavaSourcesTest {
                             return "a StaticBar instance";
                         }
                     }
-                    """)
+                    """
+        )
 
-                // use addStaticSourceDirectory to add static directories
-                variant.sources.java?.addStaticSourceDirectory(staticJavaPath)
-            }
-        }
+        // use addStaticSourceDirectory to add static directories
+        variant.sources.java?.addStaticSourceDirectory(staticJavaPath)
+      }
     }
+  }
 
-    @Test
-    fun testGeneratedJavaSources() {
-        val build = rule.build
-        build.executor
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpLib:assembleAndroidMain")
+  @Test
+  fun testGeneratedJavaSources() {
+    val build = rule.build
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpLib:assembleAndroidMain")
 
-        val action: AarSubject.() -> Unit = {
-            mainJar {
-                classes().containsExactly(
-                    "com/mylibrary/foo/Bar",
-                    "com/mylibrary/foo/StaticBar",
-                )
-            }
-        }
+    val action: AarSubject.() -> Unit = { mainJar { classes().containsExactly("com/mylibrary/foo/Bar", "com/mylibrary/foo/StaticBar") } }
 
-        build.kotlinMultiplatformLibrary(":kmpLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
-    }
+    build.kotlinMultiplatformLibrary(":kmpLib").assertAar(AarSelector.NO_BUILD_TYPE, action)
+  }
 }
 
-abstract class AddJavaSources: DefaultTask() {
+abstract class AddJavaSources : DefaultTask() {
 
-    @get:OutputDirectory
-    abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-    @TaskAction
-    fun taskAction() {
-        val outputFile = File(outputDirectory.asFile.get(), "com/mylibrary/foo/Bar.java")
-        outputFile.parentFile.mkdirs()
-        outputFile.writeText("""
+  @TaskAction
+  fun taskAction() {
+    val outputFile = File(outputDirectory.asFile.get(), "com/mylibrary/foo/Bar.java")
+    outputFile.parentFile.mkdirs()
+    outputFile.writeText(
+      """
         package com.mylibrary.foo;
 
         public class Bar {
@@ -128,6 +109,7 @@ abstract class AddJavaSources: DefaultTask() {
                 return "a Bar instance";
             }
         }
-        """)
-    }
+        """
+    )
+  }
 }

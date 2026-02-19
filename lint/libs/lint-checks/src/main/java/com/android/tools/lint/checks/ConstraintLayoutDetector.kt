@@ -40,18 +40,10 @@ import com.android.tools.lint.detector.api.isLayoutMarkerTag
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
-/**
- * Check which looks for potential errors in declarations of ConstraintLayout, such as under
- * specifying constraints.
- */
+/** Check which looks for potential errors in declarations of ConstraintLayout, such as under specifying constraints. */
 class ConstraintLayoutDetector : LayoutDetector() {
   override fun getApplicableElements(): Collection<String> {
-    return setOf(
-      CONSTRAINT_LAYOUT.oldName(),
-      CONSTRAINT_LAYOUT.newName(),
-      MOTION_LAYOUT.oldName(),
-      MOTION_LAYOUT.newName(),
-    )
+    return setOf(CONSTRAINT_LAYOUT.oldName(), CONSTRAINT_LAYOUT.newName(), MOTION_LAYOUT.oldName(), MOTION_LAYOUT.newName())
   }
 
   override fun visitElement(context: XmlContext, element: Element) {
@@ -107,9 +99,7 @@ class ConstraintLayoutDetector : LayoutDetector() {
         child = child.getNextSibling()
         continue
       } else if (
-        elementTagName.isNotBlank() &&
-          CLASS_CONSTRAINT_LAYOUT_BARRIER.isEquals(elementTagName) &&
-          scanForBarrierConstraint(layout)
+        elementTagName.isNotBlank() && CLASS_CONSTRAINT_LAYOUT_BARRIER.isEquals(elementTagName) && scanForBarrierConstraint(layout)
       ) {
         // The Barrier has the necessary layout constraints.
         // This element is constrained correctly.
@@ -196,8 +186,7 @@ class ConstraintLayoutDetector : LayoutDetector() {
         category = Category.CORRECTNESS,
         priority = 6,
         severity = Severity.ERROR,
-        implementation =
-          Implementation(ConstraintLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(ConstraintLayoutDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
         androidSpecific = true,
       )
 

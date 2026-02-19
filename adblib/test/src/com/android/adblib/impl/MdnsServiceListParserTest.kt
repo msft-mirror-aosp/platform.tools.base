@@ -20,178 +20,169 @@ import org.junit.Test
 
 class MdnsServiceListParserTest {
 
-    @Test
-    fun parseEmptyOutputWorks() {
-        // Prepare
-        val parser = MdnsServiceListParser()
+  @Test
+  fun parseEmptyOutputWorks() {
+    // Prepare
+    val parser = MdnsServiceListParser()
 
-        // Act
-        val serviceList = parser.parse("")
+    // Act
+    val serviceList = parser.parse("")
 
-        // Assert
-        Assert.assertEquals(0, serviceList.size)
-        Assert.assertEquals(0, serviceList.errors.size)
+    // Assert
+    Assert.assertEquals(0, serviceList.size)
+    Assert.assertEquals(0, serviceList.errors.size)
+  }
+
+  @Test
+  fun parseEmptyLinesOutputWorks() {
+    // Prepare
+    val parser = MdnsServiceListParser()
+
+    // Act
+    val serviceList = parser.parse("\n\n\n")
+
+    // Assert
+    Assert.assertEquals(0, serviceList.size)
+    Assert.assertEquals(0, serviceList.errors.size)
+  }
+
+  @Test
+  fun parseWorks() {
+    // Prepare
+    val parser = MdnsServiceListParser()
+
+    // Act
+    val serviceList =
+      parser.parse(
+        "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
+          "adb-HT75B1A00212-AvY0LF\t_adb-tls-connect._tcp.\t192.168.1.90:42855\n" +
+          "\n" +
+          "\n" +
+          "\n" +
+          "some random text\n" +
+          "some-serial\tinvalid-ip\t192.aaa:42941\n" +
+          "adb-939AX05XBZ-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
+          "adb-939AX05XBZ-vWgJpq\t_adb-tls-pairing._tcp.\t192.168.1.174:40711\n"
+      )
+
+    // Assert
+    Assert.assertEquals(5, serviceList.size)
+    Assert.assertEquals(1, serviceList.errors.size)
+
+    serviceList[0].let { service ->
+      Assert.assertEquals("adb-8AAY0GYQW-jBMEIf", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
     }
 
-    @Test
-    fun parseEmptyLinesOutputWorks() {
-        // Prepare
-        val parser = MdnsServiceListParser()
-
-        // Act
-        val serviceList = parser.parse("\n\n\n")
-
-        // Assert
-        Assert.assertEquals(0, serviceList.size)
-        Assert.assertEquals(0, serviceList.errors.size)
+    serviceList[1].let { service ->
+      Assert.assertEquals("adb-HT75B1A00212-AvY0LF", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.90:42855", service.deviceAddress.address)
     }
 
-    @Test
-    fun parseWorks() {
-        // Prepare
-        val parser = MdnsServiceListParser()
-
-        // Act
-        val serviceList = parser.parse(
-            "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
-                    "adb-HT75B1A00212-AvY0LF\t_adb-tls-connect._tcp.\t192.168.1.90:42855\n" +
-                    "\n" +
-                    "\n" +
-                    "\n" +
-                    "some random text\n" +
-                    "some-serial\tinvalid-ip\t192.aaa:42941\n" +
-                    "adb-939AX05XBZ-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
-                    "adb-939AX05XBZ-vWgJpq\t_adb-tls-pairing._tcp.\t192.168.1.174:40711\n"
-        )
-
-        // Assert
-        Assert.assertEquals(5, serviceList.size)
-        Assert.assertEquals(1, serviceList.errors.size)
-
-        serviceList[0].let { service ->
-            Assert.assertEquals("adb-8AAY0GYQW-jBMEIf", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
-        }
-
-        serviceList[1].let { service ->
-            Assert.assertEquals("adb-HT75B1A00212-AvY0LF", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.90:42855", service.deviceAddress.address)
-        }
-
-        serviceList[2].let { service ->
-            Assert.assertEquals("some-serial", service.instanceName)
-            Assert.assertEquals("invalid-ip", service.serviceName)
-            Assert.assertEquals("192.aaa:42941", service.deviceAddress.address)
-        }
-
-        serviceList[3].let { service ->
-            Assert.assertEquals("adb-939AX05XBZ-vWgJpq", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
-        }
-
-        serviceList[4].let { service ->
-            Assert.assertEquals("adb-939AX05XBZ-vWgJpq", service.instanceName)
-            Assert.assertEquals("_adb-tls-pairing._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.174:40711", service.deviceAddress.address)
-        }
-
-        serviceList.errors[0].let { errorInfo ->
-            Assert.assertNotNull(errorInfo.message)
-            Assert.assertEquals(5, errorInfo.lineIndex)
-            Assert.assertEquals("some random text", errorInfo.rawLineText)
-        }
+    serviceList[2].let { service ->
+      Assert.assertEquals("some-serial", service.instanceName)
+      Assert.assertEquals("invalid-ip", service.serviceName)
+      Assert.assertEquals("192.aaa:42941", service.deviceAddress.address)
     }
 
-    @Test
-    fun parseDedupesMdnsServices() {
-        // Prepare
-        val parser = MdnsServiceListParser()
-
-        // Act
-        val serviceList = parser.parse(
-            "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
-            "adb-739AX05XBZ-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
-            "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
-            "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n"
-        )
-
-        // Assert
-        Assert.assertEquals(2, serviceList.size)
-        Assert.assertEquals(2, serviceList.errors.size)
-
-        serviceList[0].let { service ->
-            Assert.assertEquals("adb-8AAY0GYQW-jBMEIf", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
-        }
-        serviceList[1].let { service ->
-            Assert.assertEquals("adb-739AX05XBZ-vWgJpq", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
-        }
-        serviceList.errors[0].let { errorInfo ->
-            Assert.assertNotNull(errorInfo.message)
-            Assert.assertEquals(2, errorInfo.lineIndex)
-            Assert.assertEquals(
-                "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103",
-                errorInfo.rawLineText
-            )
-        }
-        serviceList.errors[1].let { errorInfo ->
-            Assert.assertNotNull(errorInfo.message)
-            Assert.assertEquals(3, errorInfo.lineIndex)
-            Assert.assertEquals(
-                "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103",
-                errorInfo.rawLineText
-            )
-        }
+    serviceList[3].let { service ->
+      Assert.assertEquals("adb-939AX05XBZ-vWgJpq", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
     }
 
-    @Test
-    fun parseIgnoresZerosIPs() {
-        // Prepare
-        val parser = MdnsServiceListParser()
-
-        // Act
-        val serviceList = parser.parse(
-            "adb-AAAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t0.0.0.0:38103\n" +
-            "adb-B39AX05XB-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
-            "adb-CAAY0GYQW-Hr6pUb\t_adb-tls-pairing._tcp.\t0.0.0.0:38103\n" +
-            "adb-DAAY0GYQW-dr7pUc\t_adb-tls-pairing._tcp.\t192.168.1.154:38103\n"
-        )
-
-        // Assert
-        Assert.assertEquals(2, serviceList.size)
-        Assert.assertEquals(2, serviceList.errors.size)
-
-        serviceList[0].let { service ->
-            Assert.assertEquals("adb-B39AX05XB-vWgJpq", service.instanceName)
-            Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
-        }
-        serviceList[1].let { service ->
-            Assert.assertEquals("adb-DAAY0GYQW-dr7pUc", service.instanceName)
-            Assert.assertEquals("_adb-tls-pairing._tcp.", service.serviceName)
-            Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
-        }
-        serviceList.errors[0].let { errorInfo ->
-            Assert.assertNotNull(errorInfo.message)
-            Assert.assertEquals(0, errorInfo.lineIndex)
-            Assert.assertEquals(
-                "adb-AAAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t0.0.0.0:38103",
-                errorInfo.rawLineText
-            )
-        }
-        serviceList.errors[1].let { errorInfo ->
-            Assert.assertNotNull(errorInfo.message)
-            Assert.assertEquals(2, errorInfo.lineIndex)
-            Assert.assertEquals(
-                "adb-CAAY0GYQW-Hr6pUb\t_adb-tls-pairing._tcp.\t0.0.0.0:38103",
-                errorInfo.rawLineText
-            )
-        }
+    serviceList[4].let { service ->
+      Assert.assertEquals("adb-939AX05XBZ-vWgJpq", service.instanceName)
+      Assert.assertEquals("_adb-tls-pairing._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.174:40711", service.deviceAddress.address)
     }
+
+    serviceList.errors[0].let { errorInfo ->
+      Assert.assertNotNull(errorInfo.message)
+      Assert.assertEquals(5, errorInfo.lineIndex)
+      Assert.assertEquals("some random text", errorInfo.rawLineText)
+    }
+  }
+
+  @Test
+  fun parseDedupesMdnsServices() {
+    // Prepare
+    val parser = MdnsServiceListParser()
+
+    // Act
+    val serviceList =
+      parser.parse(
+        "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
+          "adb-739AX05XBZ-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
+          "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n" +
+          "adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103\n"
+      )
+
+    // Assert
+    Assert.assertEquals(2, serviceList.size)
+    Assert.assertEquals(2, serviceList.errors.size)
+
+    serviceList[0].let { service ->
+      Assert.assertEquals("adb-8AAY0GYQW-jBMEIf", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
+    }
+    serviceList[1].let { service ->
+      Assert.assertEquals("adb-739AX05XBZ-vWgJpq", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
+    }
+    serviceList.errors[0].let { errorInfo ->
+      Assert.assertNotNull(errorInfo.message)
+      Assert.assertEquals(2, errorInfo.lineIndex)
+      Assert.assertEquals("adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103", errorInfo.rawLineText)
+    }
+    serviceList.errors[1].let { errorInfo ->
+      Assert.assertNotNull(errorInfo.message)
+      Assert.assertEquals(3, errorInfo.lineIndex)
+      Assert.assertEquals("adb-8AAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t192.168.1.154:38103", errorInfo.rawLineText)
+    }
+  }
+
+  @Test
+  fun parseIgnoresZerosIPs() {
+    // Prepare
+    val parser = MdnsServiceListParser()
+
+    // Act
+    val serviceList =
+      parser.parse(
+        "adb-AAAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t0.0.0.0:38103\n" +
+          "adb-B39AX05XB-vWgJpq\t_adb-tls-connect._tcp.\t192.168.1.174:42941\n" +
+          "adb-CAAY0GYQW-Hr6pUb\t_adb-tls-pairing._tcp.\t0.0.0.0:38103\n" +
+          "adb-DAAY0GYQW-dr7pUc\t_adb-tls-pairing._tcp.\t192.168.1.154:38103\n"
+      )
+
+    // Assert
+    Assert.assertEquals(2, serviceList.size)
+    Assert.assertEquals(2, serviceList.errors.size)
+
+    serviceList[0].let { service ->
+      Assert.assertEquals("adb-B39AX05XB-vWgJpq", service.instanceName)
+      Assert.assertEquals("_adb-tls-connect._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.174:42941", service.deviceAddress.address)
+    }
+    serviceList[1].let { service ->
+      Assert.assertEquals("adb-DAAY0GYQW-dr7pUc", service.instanceName)
+      Assert.assertEquals("_adb-tls-pairing._tcp.", service.serviceName)
+      Assert.assertEquals("192.168.1.154:38103", service.deviceAddress.address)
+    }
+    serviceList.errors[0].let { errorInfo ->
+      Assert.assertNotNull(errorInfo.message)
+      Assert.assertEquals(0, errorInfo.lineIndex)
+      Assert.assertEquals("adb-AAAY0GYQW-jBMEIf\t_adb-tls-connect._tcp.\t0.0.0.0:38103", errorInfo.rawLineText)
+    }
+    serviceList.errors[1].let { errorInfo ->
+      Assert.assertNotNull(errorInfo.message)
+      Assert.assertEquals(2, errorInfo.lineIndex)
+      Assert.assertEquals("adb-CAAY0GYQW-Hr6pUb\t_adb-tls-pairing._tcp.\t0.0.0.0:38103", errorInfo.rawLineText)
+    }
+  }
 }

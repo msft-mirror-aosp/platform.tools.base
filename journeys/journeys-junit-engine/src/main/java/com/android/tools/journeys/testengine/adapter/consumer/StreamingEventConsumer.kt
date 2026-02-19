@@ -19,17 +19,12 @@ package com.android.tools.journeys.testengine.adapter.consumer
 import com.android.tools.journeys.proto.JourneyRunEvent
 import java.util.Base64
 
-/**
- * An implementation of [JourneyRunEventConsumer] that serializes each event
- * and writes it to an output publisher.
- **/
-class StreamingEventConsumer(
-    private val outputPublisher: (key: String, value: String) -> Unit
-) : JourneyRunEventConsumer {
+/** An implementation of [JourneyRunEventConsumer] that serializes each event and writes it to an output publisher. */
+class StreamingEventConsumer(private val outputPublisher: (key: String, value: String) -> Unit) : JourneyRunEventConsumer {
 
-    override fun onEvent(event: JourneyRunEvent) {
-        val eventBytes = event.toByteArray()
-        val base64EncodedEvent = Base64.getEncoder().encodeToString(eventBytes)
-        outputPublisher(event.eventPayloadCase.name, base64EncodedEvent)
-    }
+  override fun onEvent(event: JourneyRunEvent) {
+    val eventBytes = event.toByteArray()
+    val base64EncodedEvent = Base64.getEncoder().encodeToString(eventBytes)
+    outputPublisher(event.eventPayloadCase.name, base64EncodedEvent)
+  }
 }

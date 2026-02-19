@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.builder.core;
+package com.android.builder.core
 
 fun apiVersionFromString(value: String?): DefaultApiVersion? {
-    return if (!value.isNullOrEmpty()) {
-        if (value[0].isDigit()) {
-            try {
-                val apiLevel = value.toInt()
-                DefaultApiVersion(apiLevel)
-            } catch (e: NumberFormatException) {
-                throw RuntimeException("'$value' is not a valid API level. ", e)
-            }
-        } else {
-            DefaultApiVersion(value)
-        }
+  return if (!value.isNullOrEmpty()) {
+    if (value[0].isDigit()) {
+      try {
+        val apiLevel = value.toInt()
+        DefaultApiVersion(apiLevel)
+      } catch (e: NumberFormatException) {
+        throw RuntimeException("'$value' is not a valid API level. ", e)
+      }
     } else {
-        null
+      DefaultApiVersion(value)
     }
+  } else {
+    null
+  }
 }

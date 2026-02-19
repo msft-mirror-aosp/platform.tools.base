@@ -16,7 +16,5 @@
 
 package com.android.build.api.dsl
 
-/**
- * Single variant publishing options for library projects.
- */
+/** Single variant publishing options for library projects. */
 interface LibrarySingleVariant : SingleVariant

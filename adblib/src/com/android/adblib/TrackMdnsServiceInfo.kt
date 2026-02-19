@@ -63,5 +63,5 @@ data class MdnsTrackServiceInfo(
   // Comes from device property "ro.serialno"
   val serial: String?,
   // Used by clients to manage changes to the MdnsService.
-  val mdnsServiceVersion: String?
+  val mdnsServiceVersion: String?,
 )

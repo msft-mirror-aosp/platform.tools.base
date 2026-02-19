@@ -43,7 +43,7 @@ enum class ColumnCount {
   `1 (List)`,
   `2 (Grid)`,
   `3`,
-  `4`
+  `4`,
 }
 
 val listFragmentTemplate
@@ -72,11 +72,12 @@ val listFragmentTemplate
       loggable = true
     }
 
-    val columnCount = enumParameter<ColumnCount> {
-      name = "Column Count"
-      default = ColumnCount.`1 (List)`
-      help = "The number of columns in the grid"
-    }
+    val columnCount =
+      enumParameter<ColumnCount> {
+        name = "Column Count"
+        default = ColumnCount.`1 (List)`
+        help = "The number of columns in the grid"
+      }
 
     val fragmentLayout = stringParameter {
       name = "Object content layout file name"
@@ -110,13 +111,20 @@ val listFragmentTemplate
       TextFieldWidget(fragmentLayout),
       TextFieldWidget(fragmentLayoutList),
       TextFieldWidget(adapterClassName),
-      LanguageWidget()
+      LanguageWidget(),
     )
 
     thumb { File("list-fragment").resolve("template_list_fragment.png") }
 
     recipe = { data: TemplateData ->
-      listFragmentRecipe(data as ModuleTemplateData, packageName.value, fragmentClass.value, columnCount.value,
-                         fragmentLayout.value, fragmentLayoutList.value, adapterClassName.value)
+      listFragmentRecipe(
+        data as ModuleTemplateData,
+        packageName.value,
+        fragmentClass.value,
+        columnCount.value,
+        fragmentLayout.value,
+        fragmentLayoutList.value,
+        adapterClassName.value,
+      )
     }
   }

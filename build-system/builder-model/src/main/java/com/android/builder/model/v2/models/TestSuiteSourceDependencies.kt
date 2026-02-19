@@ -23,10 +23,8 @@ import com.android.builder.model.v2.ide.ArtifactDependencies
  *
  * Each test suite can have multiple test suite sources, hence multiple distinct dependencies.
  */
-interface TestSuiteSourceDependencies: BaseTestSuiteSourceIdentity {
+interface TestSuiteSourceDependencies : BaseTestSuiteSourceIdentity {
 
-    /**
-     * [ArtifactDependencies] for this test suite source.
-     */
-    val artifactDependencies: ArtifactDependencies
+  /** [ArtifactDependencies] for this test suite source. */
+  val artifactDependencies: ArtifactDependencies
 }

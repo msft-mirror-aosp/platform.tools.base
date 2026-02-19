@@ -290,8 +290,7 @@ class LintResourceRepositoryTest {
 
   private fun checkArrays(repository: ResourceRepository, namespace: ResourceNamespace) {
     // Arrays
-    val arrays =
-      repository.getResources(ResourceReference(namespace, ResourceType.ARRAY, "typography"))
+    val arrays = repository.getResources(ResourceReference(namespace, ResourceType.ARRAY, "typography"))
     assertEquals(1, arrays.size)
     val array = arrays.first()
     val arrayValue = array.resourceValue as ArrayResourceValue
@@ -306,8 +305,7 @@ class LintResourceRepositoryTest {
 
   private fun checkPlurals(repository: ResourceRepository, namespace: ResourceNamespace) {
     // Plurals
-    val plurals =
-      repository.getResources(ResourceReference(namespace, ResourceType.PLURALS, "my_plural"))
+    val plurals = repository.getResources(ResourceReference(namespace, ResourceType.PLURALS, "my_plural"))
     assertEquals(1, plurals.size)
     val plural = plurals.first()
     val pluralValue = plural.resourceValue as PluralsResourceValue
@@ -320,10 +318,7 @@ class LintResourceRepositoryTest {
       pluralDescription.append(value)
       pluralDescription.append("\n")
     }
-    assertEquals(
-      "" + "one:@string/hello1\n" + "few:@string/hello2\n" + "other:@string/hello3\n",
-      pluralDescription.toString(),
-    )
+    assertEquals("" + "one:@string/hello1\n" + "few:@string/hello2\n" + "other:@string/hello3\n", pluralDescription.toString())
 
     // Lookup by quantity name
     assertEquals("@string/hello2", pluralValue.getValue("few"))
@@ -343,11 +338,7 @@ class LintResourceRepositoryTest {
       styleDescription.append("\n")
     }
     assertEquals(
-      "" +
-        "android:layout_margin\n" +
-        "android:layout_marginLeft\n" +
-        "android:layout_marginTop\n" +
-        "android:layout_marginBottom\n",
+      "" + "android:layout_margin\n" + "android:layout_marginLeft\n" + "android:layout_marginTop\n" + "android:layout_marginBottom\n",
       styleDescription.toString(),
     )
   }
@@ -388,10 +379,7 @@ class LintResourceRepositoryTest {
     for ((k, v) in value2.attributeValues.toSortedMap()) {
       desc2.append("  $k:$v\n")
     }
-    assertEquals(
-      "" + "windowSoftInputMode:[FLAGS]\n" + "  stateUnchanged:1\n" + "  stateUnspecified:0\n",
-      desc2.toString(),
-    )
+    assertEquals("" + "windowSoftInputMode:[FLAGS]\n" + "  stateUnchanged:1\n" + "  stateUnspecified:0\n", desc2.toString())
   }
 
   private fun checkStyleable(repository: ResourceRepository, namespace: ResourceNamespace) {
@@ -403,11 +391,7 @@ class LintResourceRepositoryTest {
     val styleDescription = StringBuilder()
     styleValue.allAttributes
       .sortedBy { it.name }
-      .forEach { a ->
-        styleDescription.append(
-          "${a.name}:${a.value}:${a.formats.toSortedSet()}:${a.attributeValues.toSortedMap()}\n"
-        )
-      }
+      .forEach { a -> styleDescription.append("${a.name}:${a.value}:${a.formats.toSortedSet()}:${a.attributeValues.toSortedMap()}\n") }
 
     assertEquals(
       "" +
@@ -419,20 +403,14 @@ class LintResourceRepositoryTest {
     )
   }
 
-  private fun checkDensity(
-    repository: ResourceRepository,
-    namespace: ResourceNamespace,
-    root: File,
-  ) {
+  private fun checkDensity(repository: ResourceRepository, namespace: ResourceNamespace, root: File) {
     val drawables = repository.getResources(namespace, ResourceType.DRAWABLE, "ic_launcher2")
     assertEquals(1, drawables.size)
     // String: copying since just substrings from total string
     val drawable = drawables.first()
     val densityValue = drawable.resourceValue as DensityBasedResourceValue
     val description = StringBuilder()
-    description.append(
-      "${drawable.type.displayName}/${drawable.name}: ${densityValue.resourceDensity}: ${densityValue.value}"
-    )
+    description.append("${drawable.type.displayName}/${drawable.name}: ${densityValue.resourceDensity}: ${densityValue.value}")
     assertEquals(
       "Drawable/ic_launcher2: X-High Density: /app/res/drawable-xhdpi-v4/ic_launcher2.png",
       description.toString().replace(root.path, "").dos2unix(),
@@ -443,8 +421,7 @@ class LintResourceRepositoryTest {
     assertTrue(File(drawable.resourceValue!!.value!!).exists())
 
     // For non-density file based resources, should not get a density based resource value
-    val nonDensityDrawables =
-      repository.getResources(namespace, ResourceType.DRAWABLE, "ic_launcher")
+    val nonDensityDrawables = repository.getResources(namespace, ResourceType.DRAWABLE, "ic_launcher")
     assertEquals(1, nonDensityDrawables.size)
     val nonDensityDrawable = nonDensityDrawables.first()
     assertTrue(nonDensityDrawable !is DensityBasedResourceValue)
@@ -466,29 +443,14 @@ class LintResourceRepositoryTest {
 
     val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
     val standardRepo =
-      if (includeAgpRepository)
-        TestLintClient.getResources(
-          ResourceNamespace.RES_AUTO,
-          null,
-          listOf(Pair("app", listOf(res))),
-          true,
-        )
+      if (includeAgpRepository) TestLintClient.getResources(ResourceNamespace.RES_AUTO, null, listOf(Pair("app", listOf(res))), true)
       else null
 
-    val lintRepo =
-      LintResourceRepository.createFromFolder(
-        client,
-        sequenceOf(res),
-        null,
-        null,
-        ResourceNamespace.TODO(),
-      )
+    val lintRepo = LintResourceRepository.createFromFolder(client, sequenceOf(res), null, null, ResourceNamespace.TODO())
 
     for (pair in
       sequenceOf(
-        if (standardRepo != null)
-          Pair("Backed by XML (using AGP resource repositories)", standardRepo)
-        else null,
+        if (standardRepo != null) Pair("Backed by XML (using AGP resource repositories)", standardRepo) else null,
         Pair("Backed by serialization", deserialize(serialize(lintRepo))),
         Pair("Backed by XML (using lint's folder processor)", lintRepo),
       )) {
@@ -537,8 +499,7 @@ class LintResourceRepositoryTest {
       includeAgpRepository = false,
     ) { _, repository, root ->
       assertEquals(
-        "namespace:apk/res-auto\n" +
-          "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
+        "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
         repository.prettyPrint(root).dos2unix(),
       )
     }
@@ -559,16 +520,14 @@ class LintResourceRepositoryTest {
       includeAgpRepository = false,
     ) { _, repository, root ->
       assertEquals(
-        "namespace:apk/res-auto\n" +
-          "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
+        "namespace:apk/res-auto\n" + "  @string/string1 (value) config=default source=/app/res/values/test.xml;  String 1\n",
         repository.prettyPrint(root).dos2unix(),
       )
 
       if (repository is LintResourceRepository) {
         val client = LintCliClient(LintClient.CLIENT_UNIT_TESTS)
         val parser = client.xmlParser
-        val item =
-          repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
+        val item = repository.getResources(ResourceNamespace.TODO(), ResourceType.STRING, "string1").single()
 
         val location = parser.getLocation(client, item)
         location!!
@@ -740,8 +699,7 @@ class LintResourceRepositoryTest {
       // Get the resource repository. This will NOT read the corrupt file because we are in
       // ANALYZE_ONLY mode, and the resource repository is an output file from this mode. Instead,
       // the resource repository will be created, and the file will be overwritten.
-      val repository: ResourceRepository =
-        client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
+      val repository: ResourceRepository = client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
 
       // Check that the resource repository has indeed been overwritten.
       assert(file.readText().length > 100) { "Expected a larger resource repository file" }
@@ -750,15 +708,15 @@ class LintResourceRepositoryTest {
       val resources = repository.prettyPrint(project.dir)
       assertEquals(
         """
-                namespace:apk/res-auto
-                  @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
-                  @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
-                  @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
-                  @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
-                  @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
-                  @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
+        namespace:apk/res-auto
+          @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
+          @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
+          @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
+          @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
+          @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
+          @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
 
-                """
+        """
           .trimIndent(),
         resources.dos2unix(),
       )
@@ -782,20 +740,19 @@ class LintResourceRepositoryTest {
       // verify from testCheckRecovery) and then recreate the resource repository (which we'll
       // verify by pretty printing the resource repository and checking its contents with
       // assertEquals below.)
-      val repository: ResourceRepository =
-        client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
+      val repository: ResourceRepository = client.getResources(project, ResourceRepositoryScope.PROJECT_ONLY)
       val resources = repository.prettyPrint(project.dir)
       assertEquals(
         """
-                namespace:apk/res-auto
-                  @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
-                  @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
-                  @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
-                  @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
-                  @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
-                  @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
+        namespace:apk/res-auto
+          @bool/enable_wearable_location_service (value) config=Watch,API 20 source=/res/values-watch/bools.xml;  false
+          @bool/enable_wearable_location_service (value) config=default source=/res/values/bools.xml;  true
+          @string/location_process (value) config=default source=/res/values/values.xml;  Location Process
+          @string/location_process (value) config=en,US source=/res/values-en-rUS/values.xml;  Location Process (English)
+          @xml/backup (file) config=default source=/res/xml/backup.xml;  /res/xml/backup.xml
+          @xml/backup (file) config=mcc source=/res/xml-mcc/backup.xml;  /res/xml-mcc/backup.xml
 
-                """
+        """
           .trimIndent(),
         resources.dos2unix(),
       )
@@ -807,13 +764,11 @@ class LintResourceRepositoryTest {
         Issue.create(
           id = "_ResourceRepositoryRecovery",
           briefDescription = "Lint check for testing out resource recovery",
-          explanation =
-            "Tests mangling the resource repository and making sure it's manually created",
+          explanation = "Tests mangling the resource repository and making sure it's manually created",
           category = Category.TESTING,
           priority = 10,
           severity = Severity.WARNING,
-          implementation =
-            Implementation(RepositoryRecoveryDetector::class.java, EnumSet.of(Scope.JAVA_FILE)),
+          implementation = Implementation(RepositoryRecoveryDetector::class.java, EnumSet.of(Scope.JAVA_FILE)),
         )
     }
   }
@@ -834,8 +789,7 @@ fun ResourceRepository.prettyPrint(sb: StringBuilder, root: File? = null): Strin
     if (items.isEmpty()) {
       continue
     }
-    for (item in
-      items.sortedWith(compareBy({ it.name }, { it.configuration.toShortDisplayString() }))) {
+    for (item in items.sortedWith(compareBy({ it.name }, { it.configuration.toShortDisplayString() }))) {
       if (!seenLibrary) {
         item.libraryName?.let { sb.append("  library: ").append(it).append("\n") }
         seenLibrary = true

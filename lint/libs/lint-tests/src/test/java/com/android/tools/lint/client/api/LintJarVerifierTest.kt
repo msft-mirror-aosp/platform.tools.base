@@ -366,11 +366,9 @@ class LintJarVerifierTest {
       }
     val repository: GoogleMavenRepository =
       object : GoogleMavenRepository(cacheDir.toPath()) {
-        public override fun readUrlData(url: String, timeout: Int, lastModified: Long) =
-          readUrlData(client, url, timeout, lastModified)
+        public override fun readUrlData(url: String, timeout: Int, lastModified: Long) = readUrlData(client, url, timeout, lastModified)
 
-        public override fun error(throwable: Throwable, message: String?) =
-          client.log(throwable, message)
+        public override fun error(throwable: Throwable, message: String?) = client.log(throwable, message)
       }
 
     var jarCount = 0
@@ -391,8 +389,7 @@ class LintJarVerifierTest {
         for (version in versions) {
           val key = "$group:$artifact:$version"
           val groupPath = group.replace('.', '/')
-          val url =
-            "https://dl.google.com/android/maven2/$groupPath/$artifact/$version/$artifact-$version.aar"
+          val url = "https://dl.google.com/android/maven2/$groupPath/$artifact/$version/$artifact-$version.aar"
           val aarTarget = File(cacheDir, "$key.aar")
           val lintTarget = File(cacheDir, "$key-lint.jar")
           if (lintTarget.isFile) {
@@ -423,9 +420,7 @@ class LintJarVerifierTest {
                 JarFile(aarTarget).use { jarFile ->
                   val lintJar = jarFile.getJarEntry("lint.jar")
                   if (lintJar != null) {
-                    jarFile.getInputStream(lintJar).use { stream ->
-                      lintJarBytes = ByteStreams.toByteArray(stream)
-                    }
+                    jarFile.getInputStream(lintJar).use { stream -> lintJarBytes = ByteStreams.toByteArray(stream) }
                   }
                 }
                 if (lintJarBytes == null) {

@@ -19,30 +19,20 @@ package com.android.builder.model.v2.models
 import com.android.builder.model.v2.AndroidModel
 import com.android.builder.model.v2.ide.TestSuiteVariantTarget
 
-/**
- * Information about a test suite attached to the project.
- */
-interface BasicTestSuite: AndroidModel {
+/** Information about a test suite attached to the project. */
+interface BasicTestSuite : AndroidModel {
 
-    val name: String
+  val name: String
 
-    /**
-     * [SourceType.ASSETS] source folder(s) for this test suite.
-     */
-    val assets: Collection<AssetsTestSuiteSource>
+  /** [SourceType.ASSETS] source folder(s) for this test suite. */
+  val assets: Collection<AssetsTestSuiteSource>
 
-    /**
-     * [SourceType.HOST_JAR] source folders for this test suite.
-     */
-    val hostJars: Collection<HostJarTestSuiteSource>
+  /** [SourceType.HOST_JAR] source folders for this test suite. */
+  val hostJars: Collection<HostJarTestSuiteSource>
 
-    /**
-     * [SourceType.TEST_APK] sources folder for this test suite.
-     */
-    val testApks: Collection<TestApkTestSuiteSource>
+  /** [SourceType.TEST_APK] sources folder for this test suite. */
+  val testApks: Collection<TestApkTestSuiteSource>
 
-    /**
-     * Variant specific target(s) for this test suite.
-     */
-    val targetsByVariant: Collection<TestSuiteVariantTarget>
+  /** Variant specific target(s) for this test suite. */
+  val targetsByVariant: Collection<TestSuiteVariantTarget>
 }

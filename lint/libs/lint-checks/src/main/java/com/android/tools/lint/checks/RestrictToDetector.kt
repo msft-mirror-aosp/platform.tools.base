@@ -72,9 +72,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   override fun isApplicableAnnotationUsage(type: AnnotationUsageType): Boolean {
-    return type != ASSIGNMENT_LHS &&
-      type != ASSIGNMENT_RHS &&
-      super.isApplicableAnnotationUsage(type)
+    return type != ASSIGNMENT_LHS && type != ASSIGNMENT_RHS && super.isApplicableAnnotationUsage(type)
   }
 
   override fun visitAnnotationUsage(
@@ -306,15 +304,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   ) {
     val scope = getRestrictionScope(annotation)
     if (scope != 0) {
-      checkRestrictTo(
-        context,
-        node,
-        method,
-        annotation,
-        usageInfo,
-        scope,
-        applyClassAnnotationsToMembers,
-      )
+      checkRestrictTo(context, node, method, annotation, usageInfo, scope, applyClassAnnotationsToMembers)
     }
   }
 
@@ -352,10 +342,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     if (
-      usageInfo.anyCloser {
-        it.qualifiedName == RESTRICT_TO_ANNOTATION.oldName() ||
-          it.qualifiedName == RESTRICT_TO_ANNOTATION.newName()
-      }
+      usageInfo.anyCloser { it.qualifiedName == RESTRICT_TO_ANNOTATION.oldName() || it.qualifiedName == RESTRICT_TO_ANNOTATION.newName() }
     ) {
       return
     }
@@ -377,8 +364,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       val methodGroup = methodCoordinates?.groupId
       if (thisGroup != methodGroup && methodGroup != null) {
         val thisGroupDisplayText = thisGroup ?: "<unknown>"
-        val where =
-          "from within the same library group (referenced groupId=`$methodGroup` from groupId=`$thisGroupDisplayText`)"
+        val where = "from within the same library group (referenced groupId=`$methodGroup` from groupId=`$thisGroupDisplayText`)"
         reportRestriction(where, containingClass, member, context, node, usageInfo)
       }
     } else if (scope and RESTRICT_TO_LIBRARY_GROUP_PREFIX != 0 && member != null) {
@@ -396,10 +382,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
           }
       val thisGroup = thisCoordinates?.groupId
       val methodGroup = methodCoordinates?.groupId
-      if (
-        methodGroup != null &&
-          (thisGroup == null || !sameLibraryGroupPrefix(thisGroup, methodGroup))
-      ) {
+      if (methodGroup != null && (thisGroup == null || !sameLibraryGroupPrefix(thisGroup, methodGroup))) {
         val expectedPrefix =
           methodGroup.lastIndexOf('.').let {
             if (it < 0) {
@@ -536,8 +519,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       if (where == "from within the same library (groupId=com.android.support)") {
         // If this error message changes, you need to also update
         // ResourceTypeInspection#guessLintIssue
-        message =
-          "This API is marked as internal to the support library and should not be accessed from apps"
+        message = "This API is marked as internal to the support library and should not be accessed from apps"
       }
     }
 
@@ -551,11 +533,9 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(RestrictToDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(RestrictToDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
-    private const val INTELLIJ_VISIBLE_FOR_TESTING_ANNOTATION =
-      "org.jetbrains.annotations.VisibleForTesting"
+    private const val INTELLIJ_VISIBLE_FOR_TESTING_ANNOTATION = "org.jetbrains.annotations.VisibleForTesting"
 
     private const val VISIBLE_FOR_TESTING_SUFFIX = ".VisibleForTesting"
     private const val ATTR_OTHERWISE = "otherwise"
@@ -563,8 +543,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     private const val ATTR_VISIBILITY = "visibility"
     private const val COMPOSABLE_ANNOTATION = "androidx.compose.runtime.Composable"
     private const val COMPOSE_PREVIEW = "androidx.compose.ui.tooling.preview.Preview"
-    private const val COMPOSE_DESKTOP_PREVIEW =
-      "androidx.compose.desktop.ui.tooling.preview.Preview"
+    private const val COMPOSE_DESKTOP_PREVIEW = "androidx.compose.desktop.ui.tooling.preview.Preview"
 
     // Must match constants in @VisibleForTesting:
     const val VISIBILITY_PRIVATE = 2
@@ -667,9 +646,7 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
             val psi = annotation.sourcePsi
             if (psi is ClsAnnotationImpl) {
               val otherwise =
-                psi.findAttribute(ATTR_OTHERWISE)
-                  ?: psi.findAttribute(ATTR_PRODUCTION_VISIBILITY)
-                  ?: psi.findAttribute(ATTR_VISIBILITY)
+                psi.findAttribute(ATTR_OTHERWISE) ?: psi.findAttribute(ATTR_PRODUCTION_VISIBILITY) ?: psi.findAttribute(ATTR_VISIBILITY)
               val v = otherwise?.attributeValue
               if (v is JvmAnnotationConstantValue) {
                 val constant = v.constantValue
@@ -752,8 +729,8 @@ class RestrictToDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     }
 
     /**
-     * Implements the group prefix equality that is described in the documentation for the
-     * RestrictTo.Scope.LIBRARY_GROUP_PREFIX enum constant.
+     * Implements the group prefix equality that is described in the documentation for the RestrictTo.Scope.LIBRARY_GROUP_PREFIX enum
+     * constant.
      */
     fun sameLibraryGroupPrefix(group1: String, group2: String): Boolean {
       // TODO: Allow group1.startsWith(group2) || group2.startsWith(group1) ?

@@ -18,10 +18,7 @@ package com.android.tools.lint.detector.api
 
 import com.android.resources.ResourceFolderType
 
-/**
- * Specialized interface for detectors that scan resource folders (the folder directory itself, not
- * the individual files within it.
- */
+/** Specialized interface for detectors that scan resource folders (the folder directory itself, not the individual files within it. */
 interface ResourceFolderScanner {
   /**
    * Called for each resource folder
@@ -32,9 +29,8 @@ interface ResourceFolderScanner {
   fun checkFolder(context: ResourceContext, folderName: String)
 
   /**
-   * Returns whether this detector applies to the given folder type. This allows the detectors to be
-   * pruned from iteration, so for example when we are analyzing a string value file we don't need
-   * to look up detectors related to layout.
+   * Returns whether this detector applies to the given folder type. This allows the detectors to be pruned from iteration, so for example
+   * when we are analyzing a string value file we don't need to look up detectors related to layout.
    *
    * @param folderType the folder type to be visited
    * @return true if this detector can apply to resources in folders of the given type

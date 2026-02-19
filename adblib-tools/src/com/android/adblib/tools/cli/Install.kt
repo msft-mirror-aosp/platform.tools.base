@@ -20,53 +20,51 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.adbLogger
 import com.android.adblib.tools.InstallException
 import com.android.adblib.tools.install
-import kotlinx.coroutines.runBlocking
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlinx.coroutines.runBlocking
 
-internal class Install : DeviceCommand("install")  {
+internal class Install : DeviceCommand("install") {
 
-    private fun printUsage() {
-        println("Usage: install [PM_FLAGS] APK,[APKs]")
+  private fun printUsage() {
+    println("Usage: install [PM_FLAGS] APK,[APKs]")
+  }
+
+  override fun run(session: AdbSession, device: DeviceSelector, args: Arguments): Boolean {
+    val logger = adbLogger(session.host)
+    val options = mutableListOf<String>()
+    val apks = mutableListOf<Path>()
+
+    if (!args.hasMore()) {
+      printUsage()
+      return false
     }
 
-    override fun run(session: AdbSession, device : DeviceSelector, args: Arguments) : Boolean {
-        val logger = adbLogger(session.host)
-        val options = mutableListOf<String>()
-        val apks = mutableListOf<Path>()
-
-        if (!args.hasMore()) {
-            printUsage()
-            return false
-        }
-
-        while(args.hasMore()) {
-            options.add(args.next())
-        }
-
-        // Search for apks from the end of the list.
-        while(options.isNotEmpty()) {
-            val path = Paths.get(options.last())
-            if (Files.exists(path)) {
-                apks.add(path)
-                options.remove(options.last())
-                continue
-            }
-            break
-        }
-
-        try {
-            runBlocking {
-                session.deviceServices.install(device, apks, options)
-            }
-        } catch (e : InstallException) {
-            logger.warn(e, e.errorMessage)
-            return false
-        } catch (e : Exception) {
-            logger.warn(e, e::class.qualifiedName + ": " + e.localizedMessage)
-            return false
-        }
-        return true
+    while (args.hasMore()) {
+      options.add(args.next())
     }
+
+    // Search for apks from the end of the list.
+    while (options.isNotEmpty()) {
+      val path = Paths.get(options.last())
+      if (Files.exists(path)) {
+        apks.add(path)
+        options.remove(options.last())
+        continue
+      }
+      break
+    }
+
+    try {
+      runBlocking { session.deviceServices.install(device, apks, options) }
+    } catch (e: InstallException) {
+      logger.warn(e, e.errorMessage)
+      return false
+    } catch (e: Exception) {
+      logger.warn(e, e::class.qualifiedName + ": " + e.localizedMessage)
+      return false
+    }
+    return true
+  }
 }

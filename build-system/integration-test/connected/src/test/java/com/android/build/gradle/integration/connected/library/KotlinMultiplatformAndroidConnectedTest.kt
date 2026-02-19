@@ -30,108 +30,100 @@ import org.junit.Test
 
 class KotlinMultiplatformAndroidConnectedTest {
 
-    companion object {
-        @JvmField
-        @ClassRule
-        val emulator = getEmulator()
-    }
+  companion object {
+    @JvmField @ClassRule val emulator = getEmulator()
+  }
 
-    @get:Rule
-    val project = GradleTestProjectBuilder()
-        .fromTestProject("kotlinMultiplatform")
-        .create()
+  @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
-    @Before
-    fun setUp() {
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
-               kotlin.androidLibrary.compilations.withType(
-                 com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java
-               ) {
-                  enableCoverage = true
-               }
-            """.trimIndent()
-        )
-        TestFileUtils.appendToFile(
-            project.getSubproject("kmpFirstLib").ktsBuildFile,
-            """
+  @Before
+  fun setUp() {
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
+      kotlin.androidLibrary.compilations.withType(
+        com.android.build.api.dsl.KotlinMultiplatformAndroidDeviceTestCompilation::class.java
+      ) {
+         enableCoverage = true
+      }
+      """
+        .trimIndent(),
+    )
+    TestFileUtils.appendToFile(
+      project.getSubproject("kmpFirstLib").ktsBuildFile,
+      """
                 kotlin.sourceSets.getByName("androidDeviceTest").dependencies {
                     implementation("androidx.core:core-ktx:1.1.0")
                     implementation("androidx.test.espresso:espresso-core:$ANDROIDX_TEST_ESPRESSO_ESPRESSO_CORE_VERSION", {
                         exclude(group="com.google.guava", module="listenablefuture")
                     })
                 }
-            """.trimIndent()
-        )
+            """
+        .trimIndent(),
+    )
 
-        // fail fast if no response
-        project.addAdbTimeout()
-        // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
-        // of each test and (2) check the adb connection before taking the time to build anything.
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withFailOnWarning(false) // b/455891987
-            .run("androidUninstallAll")
-    }
+    // fail fast if no response
+    project.addAdbTimeout()
+    // run the uninstall tasks in order to (1) make sure nothing is installed at the beginning
+    // of each test and (2) check the adb connection before taking the time to build anything.
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .withFailOnWarning(false) // b/455891987
+      .run("androidUninstallAll")
+  }
 
-    @Test
-    fun connectedKmpLibraryTests() {
-        project.executor()
-            .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
-            .withFailOnWarning(false) // b/455891987
-            .run(":kmpFirstLib:androidConnectedCheck")
+  @Test
+  fun connectedKmpLibraryTests() {
+    project
+      .executor()
+      .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
+      .withFailOnWarning(false) // b/455891987
+      .run(":kmpFirstLib:androidConnectedCheck")
 
-        val testResultFolder = FileUtils.join(
-            project.getSubproject("kmpFirstLib").buildDir,
-            "reports", "androidTests", "connected", "androidMain"
-        )
+    val testResultFolder =
+      FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "androidTests", "connected", "androidMain")
 
-        Truth.assertThat(testResultFolder.exists()).isTrue()
+    Truth.assertThat(testResultFolder.exists()).isTrue()
 
-        Truth.assertThat(testResultFolder.listFiles()!!.map { it.name }).containsAtLeast(
-            "com.example.kmpfirstlib.test.html",
-            "com.example.kmpfirstlib.test.KmpAndroidFirstLibActivityTest.html",
-        )
+    Truth.assertThat(testResultFolder.listFiles()!!.map { it.name })
+      .containsAtLeast("com.example.kmpfirstlib.test.html", "com.example.kmpfirstlib.test.KmpAndroidFirstLibActivityTest.html")
 
-        val coveragePackageFolder = FileUtils.join(
-            project.getSubproject("kmpFirstLib").buildDir,
-            "reports", "coverage", "androidTest", "connected", "com.example.kmpfirstlib"
-        )
+    val coveragePackageFolder =
+      FileUtils.join(
+        project.getSubproject("kmpFirstLib").buildDir,
+        "reports",
+        "coverage",
+        "androidTest",
+        "connected",
+        "com.example.kmpfirstlib",
+      )
 
-        Truth.assertThat(coveragePackageFolder.exists()).isTrue()
+    Truth.assertThat(coveragePackageFolder.exists()).isTrue()
 
-        Truth.assertThat(coveragePackageFolder.listFiles()!!.map { it.name }).containsExactly(
-            "index.html",
-            "index.source.html",
+    Truth.assertThat(coveragePackageFolder.listFiles()!!.map { it.name })
+      .containsExactly(
+        "index.html",
+        "index.source.html",
+        "KmpCommonFirstLibClass.html",
+        "KmpCommonFirstLibClass.kt.html",
+        "KmpAndroidActivity.html",
+        "KmpAndroidActivity.kt.html",
+        "KmpAndroidFirstLibClass.html",
+        "KmpAndroidFirstLibClass.kt.html",
+        "KmpAndroidFirstLibJavaClass.html",
+        "KmpAndroidFirstLibJavaClass.java.html",
+      )
 
-            "KmpCommonFirstLibClass.html",
-            "KmpCommonFirstLibClass.kt.html",
+    val packageCoverageReport = FileUtils.join(coveragePackageFolder, "index.html")
 
-            "KmpAndroidActivity.html",
-            "KmpAndroidActivity.kt.html",
+    val generatedCoverageReportHTML = packageCoverageReport.readLines().joinToString("\n")
 
-            "KmpAndroidFirstLibClass.html",
-            "KmpAndroidFirstLibClass.kt.html",
+    val totalCoverageMetricsContents = Regex("<tfoot>(.*?)</tfoot>").find(generatedCoverageReportHTML)
+    val totalCoverageInfo = Regex("<td class=\"ctr2\">(.*?)</td>").find(totalCoverageMetricsContents?.groups?.first()!!.value)
 
-            "KmpAndroidFirstLibJavaClass.html",
-            "KmpAndroidFirstLibJavaClass.java.html",
-        )
+    val packageCoveragePercentage = totalCoverageInfo!!.groups[1]!!.value
 
-        val packageCoverageReport = FileUtils.join(
-            coveragePackageFolder,
-            "index.html"
-        )
-
-        val generatedCoverageReportHTML = packageCoverageReport.readLines().joinToString("\n")
-
-        val totalCoverageMetricsContents = Regex("<tfoot>(.*?)</tfoot>")
-            .find(generatedCoverageReportHTML)
-        val totalCoverageInfo = Regex("<td class=\"ctr2\">(.*?)</td>")
-            .find(totalCoverageMetricsContents?.groups?.first()!!.value)
-
-        val packageCoveragePercentage = totalCoverageInfo!!.groups[1]!!.value
-
-        Truth.assertThat(packageCoveragePercentage.trimEnd('%').toInt() > 0).isTrue()
-    }
+    Truth.assertThat(packageCoveragePercentage.trimEnd('%').toInt() > 0).isTrue()
+  }
 }

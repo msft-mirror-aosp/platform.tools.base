@@ -27,47 +27,40 @@ import org.junit.Test
 
 class TestWithFlavorsWithCompileDirectJarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "jar")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                android {
-                    flavorDimensions 'foo'
-                    productFlavors {
-                      pro { }
-                      free { }
-                    }
-                }
-                dependencies {
-                    androidTestImplementation project(":jar")
-                }
-            """.trimIndent())
-    }
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "jar")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      android {
+          flavorDimensions 'foo'
+          productFlavors {
+            pro { }
+            free { }
+          }
+      }
+      dependencies {
+          androidTestImplementation project(":jar")
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "freeDebug")
+  @Test
+  fun `test VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "freeDebug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
+  }
 
-    @Test
-    fun `check compiled jar is packaged`() {
-        project.execute("clean", ":app:assembleFreeDebugAndroidTest")
-        val testApk = project.getSubproject(":app").getTestApk("free")
-        TruthHelper.assertThat(testApk).containsClass("Lcom/example/android/multiproject/person/People;")
-    }
+  @Test
+  fun `check compiled jar is packaged`() {
+    project.execute("clean", ":app:assembleFreeDebugAndroidTest")
+    val testApk = project.getSubproject(":app").getTestApk("free")
+    TruthHelper.assertThat(testApk).containsClass("Lcom/example/android/multiproject/person/People;")
+  }
 }

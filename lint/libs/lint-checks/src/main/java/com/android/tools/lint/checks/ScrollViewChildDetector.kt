@@ -34,10 +34,7 @@ import com.android.utils.childrenIterator
 import com.android.utils.iterator
 import org.w3c.dom.Element
 
-/**
- * Check which looks at the children of ScrollViews and ensures that they fill/match the parent
- * width instead of setting wrap_content.
- */
+/** Check which looks at the children of ScrollViews and ensures that they fill/match the parent width instead of setting wrap_content. */
 class ScrollViewChildDetector : LayoutDetector() {
   override fun getApplicableElements(): Collection<String> {
     return listOf(SCROLL_VIEW, HORIZONTAL_SCROLL_VIEW)
@@ -78,8 +75,7 @@ class ScrollViewChildDetector : LayoutDetector() {
         category = Category.CORRECTNESS,
         priority = 7,
         severity = Severity.WARNING,
-        implementation =
-          Implementation(ScrollViewChildDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
+        implementation = Implementation(ScrollViewChildDetector::class.java, Scope.RESOURCE_FILE_SCOPE),
       )
   }
 }

@@ -24,8 +24,7 @@ internal class DexClassImpl(private val classDef: ClassDef, private val dex: Dex
 
   override val name: String by lazy(LazyThreadSafetyMode.NONE) { retrieveName() }
   override val fields: Map<String, DexField> by lazy(LazyThreadSafetyMode.NONE) { retrieveFields() }
-  override val methods: Map<String, DexEncodedMethod> by
-    lazy(LazyThreadSafetyMode.NONE) { retrieveMethods() }
+  override val methods: Map<String, DexEncodedMethod> by lazy(LazyThreadSafetyMode.NONE) { retrieveMethods() }
 
   private fun retrieveName(): String {
     return dex.typeIds.get(classDef.classIndex)

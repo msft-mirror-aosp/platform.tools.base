@@ -26,82 +26,65 @@ import com.google.gson.GsonBuilder
 import com.google.protobuf.GeneratedMessageV3
 import java.io.File
 
-/**
- * Cap the number of log records to keep in order to limit memory consumption.
- */
+/** Cap the number of log records to keep in order to limit memory consumption. */
 private const val MAX_LOG_RECORDS_TO_KEEP = 200
 
 /**
- * [ThreadLoggingEnvironment] that will record messages and then forward to a parent
- * logger. A maximum of [MAX_LOG_RECORDS_TO_KEEP] messages are kept.
+ * [ThreadLoggingEnvironment] that will record messages and then forward to a parent logger. A maximum of [MAX_LOG_RECORDS_TO_KEEP] messages
+ * are kept.
  */
 open class PassThroughRecordingLoggingEnvironment : ThreadLoggingEnvironment() {
-    private val messages = ArrayDeque<LoggingMessage>(MAX_LOG_RECORDS_TO_KEEP + 1)
-    private val parent = parentLogger()
+  private val messages = ArrayDeque<LoggingMessage>(MAX_LOG_RECORDS_TO_KEEP + 1)
+  private val parent = parentLogger()
 
-    override fun log(message: LoggingMessage) {
-        parent.log(message)
-        messages.add(message)
-        if (messages.size > MAX_LOG_RECORDS_TO_KEEP) {
-            messages.removeFirst();
-        }
+  override fun log(message: LoggingMessage) {
+    parent.log(message)
+    messages.add(message)
+    if (messages.size > MAX_LOG_RECORDS_TO_KEEP) {
+      messages.removeFirst()
     }
+  }
 
-    override fun logStructured(message: (StringEncoder) -> GeneratedMessageV3) {
-        parent.logStructured(message)
-    }
+  override fun logStructured(message: (StringEncoder) -> GeneratedMessageV3) {
+    parent.logStructured(message)
+  }
 
-    /**
-     * true if there was at least one error.
-     */
-    fun hadErrors() = messages.any { it.level == ERROR }
+  /** true if there was at least one error. */
+  fun hadErrors() = messages.any { it.level == ERROR }
 
-    /**
-     * The error messages that been seen so far.
-     */
-    val errorMessages get() = messages.filter { it.level == ERROR }
+  /** The error messages that been seen so far. */
+  val errorMessages
+    get() = messages.filter { it.level == ERROR }
 
-    /**
-     * The text errors that have been seen so far.
-     */
-    val errors get() = errorMessages.map { it.text() }
+  /** The text errors that have been seen so far. */
+  val errors
+    get() = errorMessages.map { it.text() }
 
-    /**
-     * The warning messages that been seen so far.
-     */
-    val warningMessages get() = messages.filter { it.level == WARN }
+  /** The warning messages that been seen so far. */
+  val warningMessages
+    get() = messages.filter { it.level == WARN }
 
-    /**
-     * The warnings that have been seen so far.
-     */
-    val warnings get() = warningMessages.map { it.text() }
+  /** The warnings that have been seen so far. */
+  val warnings
+    get() = warningMessages.map { it.text() }
 
-    /**
-     * The lifecycle messages that have been seen so far.
-     */
-    val lifecycles get() = messages.filter { it.level == LIFECYCLE }.map { it.text() }
+  /** The lifecycle messages that have been seen so far. */
+  val lifecycles
+    get() = messages.filter { it.level == LIFECYCLE }.map { it.text() }
 
-    /**
-     * The infos that have been seen so far.
-     */
-    val infos get() = messages.filter { it.level == INFO }.map { it.text() }
+  /** The infos that have been seen so far. */
+  val infos
+    get() = messages.filter { it.level == INFO }.map { it.text() }
 
-    /**
-     * Total message count so far.
-     */
-    val messageCount get() = messages.size
+  /** Total message count so far. */
+  val messageCount
+    get() = messages.size
 
-    /**
-     * The logging record so far. Returns an immutable copy.
-     */
-    val record get() = messages.toList()
+  /** The logging record so far. Returns an immutable copy. */
+  val record
+    get() = messages.toList()
 }
 
-/**
- * Render a list of [LoggingMessage] as a JSON string.
- */
-fun List<LoggingMessage>.toJsonString() = GsonBuilder()
-    .registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor())
-    .setPrettyPrinting()
-    .create()
-    .toJson(this)!!
+/** Render a list of [LoggingMessage] as a JSON string. */
+fun List<LoggingMessage>.toJsonString() =
+  GsonBuilder().registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor()).setPrettyPrinting().create().toJson(this)!!

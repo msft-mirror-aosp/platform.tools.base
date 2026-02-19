@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 
-/** Attributes used in the variant aware dependency management of Gradle.  */
+/** Attributes used in the variant aware dependency management of Gradle. */
 package com.android.build.api.attributes

@@ -18,72 +18,56 @@ package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
-import java.io.File
 
 class AndroidLintAnalysisTaskTest {
 
-    @get:Rule
-    val lintKotlinProject: GradleTestProject =
-        GradleTestProject.builder()
-            .fromTestProject("lintKotlin")
-            .addGradleProperties("${BooleanOption.USE_ANDROID_X.propertyName}=true")
-            .disableBuiltInKotlin()
-            .create()
+  @get:Rule val lintKotlinProject: GradleTestProject = GradleTestProject.builder().fromTestProject("lintKotlin").create()
 
-    @Test
-    fun testApp() {
-        // Run twice to catch issues with configuration caching
-        lintKotlinProject.execute(":app:clean", ":app:lintAnalyzeDebug")
-        lintKotlinProject.execute(":app:clean", ":app:lintAnalyzeDebug")
-        lintKotlinProject.buildResult.assertConfigurationCacheHit()
-        val partialResultsDir =
-            FileUtils.join(
-                lintKotlinProject.getSubproject(":app")
-                    .getIntermediateFile(InternalArtifactType.LINT_PARTIAL_RESULTS.getFolderName()),
-                "debug",
-                "lintAnalyzeDebug",
-                "out"
-            )
-        assertThat(partialResultsDir.listFiles()?.asList())
-            .containsAtLeastElementsIn(
-                listOf(
-                    File(partialResultsDir, "lint-definite.xml"),
-                    File(partialResultsDir, "lint-issues.xml"),
-                    File(partialResultsDir, "lint-partial.xml")
-                )
-            )
-        assertThat(File(partialResultsDir, "lint-definite.xml"))
-            .contains("{:app*debug*MAIN*sourceProvider*0*javaDir*2}")
-    }
+  @Test
+  fun testApp() {
+    // Run twice to catch issues with configuration caching
+    lintKotlinProject.execute(":app:clean", ":app:lintAnalyzeDebug")
+    lintKotlinProject.execute(":app:clean", ":app:lintAnalyzeDebug")
+    lintKotlinProject.buildResult.assertConfigurationCacheHit()
+    val partialResultsDir =
+      FileUtils.join(
+        lintKotlinProject.getSubproject(":app").getIntermediateFile(InternalArtifactType.LINT_PARTIAL_RESULTS.getFolderName()),
+        "debug",
+        "lintAnalyzeDebug",
+        "out",
+      )
+    assertThat(partialResultsDir.listFiles()?.asList())
+      .containsAtLeastElementsIn(
+        listOf(
+          File(partialResultsDir, "lint-definite.xml"),
+          File(partialResultsDir, "lint-issues.xml"),
+          File(partialResultsDir, "lint-partial.xml"),
+        )
+      )
+    assertThat(File(partialResultsDir, "lint-definite.xml")).contains("{:app*debug*MAIN*sourceProvider*0*javaDir*2}")
+  }
 
-    @Test
-    fun testAndroidLibrary() {
-        // Run twice to catch issues with configuration caching
-        lintKotlinProject.execute(":library:clean", ":library:lintAnalyzeDebug")
-        lintKotlinProject.execute(":library:clean", ":library:lintAnalyzeDebug")
-        lintKotlinProject.buildResult.assertConfigurationCacheHit()
-        val partialResultsDir =
-            FileUtils.join(
-                lintKotlinProject.getSubproject(":library")
-                    .getIntermediateFile(InternalArtifactType.LINT_PARTIAL_RESULTS.getFolderName()),
-                "debug",
-                "lintAnalyzeDebug",
-                "out"
-            )
-        assertThat(partialResultsDir.listFiles()?.asList())
-            .containsAtLeastElementsIn(
-                listOf(
-                    File(partialResultsDir, "lint-definite.xml"),
-                    File(partialResultsDir, "lint-partial.xml")
-                )
-            )
-        assertThat(File(partialResultsDir, "lint-definite.xml"))
-            .contains("{:library*debug*MAIN*sourceProvider*0*resDir*0}")
-    }
+  @Test
+  fun testAndroidLibrary() {
+    // Run twice to catch issues with configuration caching
+    lintKotlinProject.execute(":library:clean", ":library:lintAnalyzeDebug")
+    lintKotlinProject.execute(":library:clean", ":library:lintAnalyzeDebug")
+    lintKotlinProject.buildResult.assertConfigurationCacheHit()
+    val partialResultsDir =
+      FileUtils.join(
+        lintKotlinProject.getSubproject(":library").getIntermediateFile(InternalArtifactType.LINT_PARTIAL_RESULTS.getFolderName()),
+        "debug",
+        "lintAnalyzeDebug",
+        "out",
+      )
+    assertThat(partialResultsDir.listFiles()?.asList())
+      .containsAtLeastElementsIn(listOf(File(partialResultsDir, "lint-definite.xml"), File(partialResultsDir, "lint-partial.xml")))
+    assertThat(File(partialResultsDir, "lint-definite.xml")).contains("{:library*debug*MAIN*sourceProvider*0*resDir*0}")
+  }
 }

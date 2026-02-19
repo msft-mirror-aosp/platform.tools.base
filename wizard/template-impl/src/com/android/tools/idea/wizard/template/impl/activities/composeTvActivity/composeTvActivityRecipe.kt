@@ -59,7 +59,7 @@ fun RecipeExecutor.composeTvActivityRecipe(
     activityThemeName = moduleData.themesData.main.name,
     packageName = packageName,
     isLauncher = isLauncher,
-    generateActivityTitle = true
+    generateActivityTitle = true,
   )
 
   mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
@@ -74,7 +74,7 @@ fun RecipeExecutor.composeTvActivityRecipe(
       packageName = packageName,
       themeName = themeName,
     ),
-    srcOut.resolve(mainActivity)
+    srcOut.resolve(mainActivity),
   )
 
   val uiThemeFolder = "ui/theme"
@@ -101,12 +101,13 @@ private fun RecipeExecutor.generateLeanbackEnabledManifest(
 ) {
   generateManifestStrings(activityClass, baseFeatureResOut, isNewModule, generateActivityTitle)
 
-  val manifest = androidManifestXml(
-    activityClass = activityClass,
-    packageName = packageName,
-    isLauncher = isLauncher,
-    activityThemeName = activityThemeName,
-    isNewModule = isNewModule,
-  )
+  val manifest =
+    androidManifestXml(
+      activityClass = activityClass,
+      packageName = packageName,
+      isLauncher = isLauncher,
+      activityThemeName = activityThemeName,
+      isNewModule = isNewModule,
+    )
   mergeXml(manifest, manifestOut.resolve("AndroidManifest.xml"))
 }

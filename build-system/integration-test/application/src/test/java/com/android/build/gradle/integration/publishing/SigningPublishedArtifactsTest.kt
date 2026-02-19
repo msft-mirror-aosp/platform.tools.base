@@ -17,8 +17,8 @@
 package com.android.build.gradle.integration.publishing
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
+import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.testutils.truth.PathSubject
 import com.google.common.io.Resources
 import org.gradle.api.Project
@@ -31,88 +31,76 @@ import org.junit.Test
 
 class SigningPublishedArtifactsTest {
 
-    @get:Rule
-    val rule = GradleRule.from {
-        androidLibrary {
-            applyPlugin(PluginType.MAVEN_PUBLISH)
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary {
+        applyPlugin(PluginType.MAVEN_PUBLISH)
 
-            android {
-                publishing {
-                    multipleVariants {
-                        allVariants()
-                        withSourcesJar()
-                        withJavadocJar()
-                    }
-                }
+        android {
+          publishing {
+            multipleVariants {
+              allVariants()
+              withSourcesJar()
+              withJavadocJar()
             }
+          }
+        }
 
-            pluginCallbacks += SigningCallback::class.java
-        }
-        settings {
-            addRepository("repo")
-        }
-        gradleProperties {
-            add("signing.keyId", "70E99D38")
-            add("signing.password", "Testing123")
-            add("signing.secretKeyRingFile", "secring.gpg")
-        }
+        pluginCallbacks += SigningCallback::class.java
+      }
+      settings { addRepository("repo") }
+      gradleProperties {
+        add("signing.keyId", "70E99D38")
+        add("signing.password", "Testing123")
+        add("signing.secretKeyRingFile", "secring.gpg")
+      }
     }
 
-    class SigningCallback: GenericCallback {
-        override fun handleProject(project: Project) {
-            project.plugins.apply("signing")
+  class SigningCallback : GenericCallback {
+    override fun handleProject(project: Project) {
+      project.plugins.apply("signing")
 
-            val publishing = project.extensions.findByType(PublishingExtension::class.java)
-                ?: throw RuntimeException("Could not find extension of type PublishingExtension")
+      val publishing =
+        project.extensions.findByType(PublishingExtension::class.java)
+          ?: throw RuntimeException("Could not find extension of type PublishingExtension")
 
-            publishing.apply {
-                publications.create("myPublication", MavenPublication::class.java) { publication ->
-                    publication.groupId = "com.android"
-                    publication.artifactId = "lib"
-                    publication.version = "1.0"
+      publishing.apply {
+        publications.create("myPublication", MavenPublication::class.java) { publication ->
+          publication.groupId = "com.android"
+          publication.artifactId = "lib"
+          publication.version = "1.0"
 
-                    project.afterEvaluate {
-                        publication.from(project.components.getByName("default"))
-                    }
-                }
-                repositories {
-                    it.maven {
-                        it.url = project.uri(project.projectDir.parentFile.resolve("repo"))
-                    }
-                }
-            }
-
-            val signing = project.extensions.findByType(SigningExtension::class.java)
-                ?: throw RuntimeException("Could not find extension of type SigningExtension")
-            signing.apply {
-                sign(publishing.publications)
-            }
+          project.afterEvaluate { publication.from(project.components.getByName("default")) }
         }
+        repositories { it.maven { it.url = project.uri(project.projectDir.parentFile.resolve("repo")) } }
+      }
+
+      val signing =
+        project.extensions.findByType(SigningExtension::class.java)
+          ?: throw RuntimeException("Could not find extension of type SigningExtension")
+      signing.apply { sign(publishing.publications) }
     }
+  }
 
-    @Before
-    fun setUp() {
-    }
+  @Before fun setUp() {}
 
-    @Test
-    fun testIntegrationWithGradleSigningPlugin() {
-        val build = rule.build
-        val lib = build.androidLibrary()
+  @Test
+  fun testIntegrationWithGradleSigningPlugin() {
+    val build = rule.build
+    val lib = build.androidLibrary()
 
-        val url = Resources.getResource(
-            SigningPublishedArtifactsTest::class.java,
-            "SigningPublishedArtifactsTest/secring.gpg"
-        )
-        lib.files.add("secring.gpg", Resources.toByteArray(url))
+    val url = Resources.getResource(SigningPublishedArtifactsTest::class.java, "SigningPublishedArtifactsTest/secring.gpg")
+    lib.files.add("secring.gpg", Resources.toByteArray(url))
 
-        build.executor.run("clean", "publish")
+    build.executor.run("clean", "publish")
 
-        val artifactsDir = lib.resolve("../repo/com/android/lib/1.0")
-        val javadocDebugAsc = artifactsDir.resolve("lib-1.0-debug-javadoc.jar.asc")
-        val sourcesDebugAsc = artifactsDir.resolve("lib-1.0-debug-sources.jar.asc")
-        val javadocReleaseAsc = artifactsDir.resolve("lib-1.0-release-javadoc.jar.asc")
-        PathSubject.assertThat(javadocDebugAsc).exists()
-        PathSubject.assertThat(sourcesDebugAsc).exists()
-        PathSubject.assertThat(javadocReleaseAsc).exists()
-    }
+    val artifactsDir = lib.resolve("../repo/com/android/lib/1.0")
+    val javadocDebugAsc = artifactsDir.resolve("lib-1.0-debug-javadoc.jar.asc")
+    val sourcesDebugAsc = artifactsDir.resolve("lib-1.0-debug-sources.jar.asc")
+    val javadocReleaseAsc = artifactsDir.resolve("lib-1.0-release-javadoc.jar.asc")
+    PathSubject.assertThat(javadocDebugAsc).exists()
+    PathSubject.assertThat(sourcesDebugAsc).exists()
+    PathSubject.assertThat(javadocReleaseAsc).exists()
+  }
 }

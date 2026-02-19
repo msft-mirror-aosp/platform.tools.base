@@ -17,52 +17,44 @@
 package com.android.build.api.variant
 
 /**
- * Interface for component builder that specifies whether to include SDK dependency information
- * in APKs and Bundles for the variant
+ * Interface for component builder that specifies whether to include SDK dependency information in APKs and Bundles for the variant
  *
- * Including dependency information in your APK or Bundle allows Google Play to ensure that
- * any third-party software your app uses complies with
- * [Google Play's Developer Program Policies](https://support.google.com/googleplay/android-developer/topic/9858052).
- * For more information, see the Play Console support page
+ * Including dependency information in your APK or Bundle allows Google Play to ensure that any third-party software your app uses complies
+ * with [Google Play's Developer Program Policies](https://support.google.com/googleplay/android-developer/topic/9858052). For more
+ * information, see the Play Console support page
  * [Using third-party SDKs in your app](https://support.google.com/googleplay/android-developer/answer/10358880).
  */
 interface DependenciesInfoBuilder {
-    @Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "This property is renamed to includeInApk",
-        replaceWith = ReplaceWith("includeInApk")
-    )
-    var includedInApk: Boolean
-    @Deprecated(
-        level = DeprecationLevel.HIDDEN,
-        message = "This property is renamed to includeInBundle",
-        replaceWith = ReplaceWith("includeInBundle")
-    )
-    var includedInBundle: Boolean
+  @Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message = "This property is renamed to includeInApk",
+    replaceWith = ReplaceWith("includeInApk"),
+  )
+  var includedInApk: Boolean
+  @Deprecated(
+    level = DeprecationLevel.HIDDEN,
+    message = "This property is renamed to includeInBundle",
+    replaceWith = ReplaceWith("includeInBundle"),
+  )
+  var includedInBundle: Boolean
 
-    /**
-     * Set to `true` if information about SDK dependencies of an APK should be added to its signature
-     * block, `false` otherwise.
-     *
-     * Default value will match [com.android.build.api.dsl.DependenciesInfo.includeInApk]
-     *
-     * It's not safe to read this value. Use [DependenciesInfo.includedInApk] instead (found on
-     * [ApplicationVariant]
-     */
-    var includeInApk: Boolean
+  /**
+   * Set to `true` if information about SDK dependencies of an APK should be added to its signature block, `false` otherwise.
+   *
+   * Default value will match [com.android.build.api.dsl.DependenciesInfo.includeInApk]
+   *
+   * It's not safe to read this value. Use [DependenciesInfo.includedInApk] instead (found on [ApplicationVariant]
+   */
+  var includeInApk: Boolean
 
-    /**
-     * Whether information about SDK dependencies of an App Bundle will be added to it.
-     */
+  /** Whether information about SDK dependencies of an App Bundle will be added to it. */
 
-    /**
-     * Set to `true` if information about SDK dependencies of an App Bundle should be added to it,
-     * `false` otherwise.
-     *
-     * Default value will match [com.android.build.api.dsl.DependenciesInfo.includeInBundle]
-     *
-     * It's not safe to read this value. Use [DependenciesInfo.includedInBundle] instead (found on
-     * [ApplicationVariant]
-     */
-    var includeInBundle: Boolean
+  /**
+   * Set to `true` if information about SDK dependencies of an App Bundle should be added to it, `false` otherwise.
+   *
+   * Default value will match [com.android.build.api.dsl.DependenciesInfo.includeInBundle]
+   *
+   * It's not safe to read this value. Use [DependenciesInfo.includedInBundle] instead (found on [ApplicationVariant]
+   */
+  var includeInBundle: Boolean
 }

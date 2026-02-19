@@ -16,8 +16,8 @@
 
 package com.android.build.api.component.analytics
 
-import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.Artifacts
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.TaskBasedOperation
 import com.android.build.api.variant.BuiltArtifactsLoader
 import com.android.build.api.variant.ScopedArtifacts
@@ -40,89 +40,71 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
 class AnalyticsEnabledArtifactsTest {
-    abstract class FileBasedTask : Task {
-        @get:InputFile
-        abstract val inputDir: RegularFileProperty
-        @get:OutputFiles
-        abstract val outputDir: RegularFileProperty
-    }
+  abstract class FileBasedTask : Task {
+    @get:InputFile abstract val inputDir: RegularFileProperty
+    @get:OutputFiles abstract val outputDir: RegularFileProperty
+  }
 
-    private val task: FileBasedTask = mock()
+  private val task: FileBasedTask = mock()
 
-    private val delegate: Artifacts = mock()
+  private val delegate: Artifacts = mock()
 
-    private val stats = GradleBuildVariant.newBuilder()
-    private lateinit var proxy: AnalyticsEnabledArtifacts
+  private val stats = GradleBuildVariant.newBuilder()
+  private lateinit var proxy: AnalyticsEnabledArtifacts
 
-    @Before
-    fun setup() {
-        proxy = AnalyticsEnabledArtifacts(delegate, stats, FakeObjectFactory.factory)
-    }
+  @Before
+  fun setup() {
+    proxy = AnalyticsEnabledArtifacts(delegate, stats, FakeObjectFactory.factory)
+  }
 
-    @Test
-    fun testGetBuiltArtifactsLoader() {
-        @Suppress("UNCHECKED_CAST")
-        val fakeLoader = mock<BuiltArtifactsLoader>()
+  @Test
+  fun testGetBuiltArtifactsLoader() {
+    @Suppress("UNCHECKED_CAST") val fakeLoader = mock<BuiltArtifactsLoader>()
 
-        whenever(delegate.getBuiltArtifactsLoader()).thenReturn(fakeLoader)
-        Truth.assertThat(proxy.getBuiltArtifactsLoader()).isEqualTo(fakeLoader)
+    whenever(delegate.getBuiltArtifactsLoader()).thenReturn(fakeLoader)
+    Truth.assertThat(proxy.getBuiltArtifactsLoader()).isEqualTo(fakeLoader)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.GET_BUILT_ARTIFACTS_LOADER_VALUE)
-        verify(delegate, times(1))
-            .getBuiltArtifactsLoader()
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.GET_BUILT_ARTIFACTS_LOADER_VALUE)
+    verify(delegate, times(1)).getBuiltArtifactsLoader()
+  }
 
-    @Test
-    fun testGet() {
-        @Suppress("UNCHECKED_CAST")
-        val fakeProvider = mock<Provider<Directory>>()
+  @Test
+  fun testGet() {
+    @Suppress("UNCHECKED_CAST") val fakeProvider = mock<Provider<Directory>>()
 
-        whenever(delegate.get(SingleArtifact.APK)).thenReturn(fakeProvider)
-        Truth.assertThat(proxy.get(SingleArtifact.APK)).isEqualTo(fakeProvider)
+    whenever(delegate.get(SingleArtifact.APK)).thenReturn(fakeProvider)
+    Truth.assertThat(proxy.get(SingleArtifact.APK)).isEqualTo(fakeProvider)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.GET_ARTIFACT_VALUE)
-        verify(delegate, times(1))
-            .get(SingleArtifact.APK)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.GET_ARTIFACT_VALUE)
+    verify(delegate, times(1)).get(SingleArtifact.APK)
+  }
 
-    @Test
-    fun testUse() {
-        val taskProvider = mock<TaskProvider<*>>()
-        val taskBasedOperation = mock<TaskBasedOperation<*>>()
+  @Test
+  fun testUse() {
+    val taskProvider = mock<TaskProvider<*>>()
+    val taskBasedOperation = mock<TaskBasedOperation<*>>()
 
-        whenever(delegate.use(taskProvider)).thenReturn(taskBasedOperation)
-        Truth.assertThat(proxy.use(taskProvider)).isInstanceOf(
-            TaskBasedOperation::class.java
-        )
+    whenever(delegate.use(taskProvider)).thenReturn(taskBasedOperation)
+    Truth.assertThat(proxy.use(taskProvider)).isInstanceOf(TaskBasedOperation::class.java)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.USE_TASK_VALUE)
-        verify(delegate, times(1))
-            .use(taskProvider)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.USE_TASK_VALUE)
+    verify(delegate, times(1)).use(taskProvider)
+  }
 
-    @Test
-    fun testForProjectScope() {
-        val scopedArtifacts = mock<ScopedArtifacts>()
+  @Test
+  fun testForProjectScope() {
+    val scopedArtifacts = mock<ScopedArtifacts>()
 
-        whenever(delegate.forScope(ScopedArtifacts.Scope.PROJECT)).thenReturn(scopedArtifacts)
-        Truth.assertThat(proxy.forScope(ScopedArtifacts.Scope.PROJECT)).isInstanceOf(
-            ScopedArtifacts::class.java
-        )
+    whenever(delegate.forScope(ScopedArtifacts.Scope.PROJECT)).thenReturn(scopedArtifacts)
+    Truth.assertThat(proxy.forScope(ScopedArtifacts.Scope.PROJECT)).isInstanceOf(ScopedArtifacts::class.java)
 
-        Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
-        Truth.assertThat(
-            stats.variantApiAccess.variantPropertiesAccessList.first().type
-        ).isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
-        verify(delegate, times(1))
-            .forScope(ScopedArtifacts.Scope.PROJECT)
-    }
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type).isEqualTo(VariantPropertiesMethodType.FOR_SCOPE_VALUE)
+    verify(delegate, times(1)).forScope(ScopedArtifacts.Scope.PROJECT)
+  }
 }

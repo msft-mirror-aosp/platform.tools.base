@@ -24,7 +24,7 @@ import org.gradle.api.initialization.Settings
 @Incubating
 class AndroidEcosystemPlugin : Plugin<Settings> {
 
-    override fun apply(target: Settings) {
-        target.plugins.apply(InternalAndroidEcosystemPlugin::class.java)
-    }
+  override fun apply(target: Settings) {
+    target.plugins.apply(InternalAndroidEcosystemPlugin::class.java)
+  }
 }

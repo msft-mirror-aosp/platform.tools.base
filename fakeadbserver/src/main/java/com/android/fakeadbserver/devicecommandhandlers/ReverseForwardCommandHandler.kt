@@ -18,193 +18,164 @@ package com.android.fakeadbserver.devicecommandhandlers
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.PortForwarder
-import kotlinx.coroutines.CoroutineScope
 import java.net.Socket
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.CoroutineScope
 
-/**
- * Creates a reverse socket connection from this device to the host.
- */
+/** Creates a reverse socket connection from this device to the host. */
 internal class ReverseForwardCommandHandler : DeviceCommandHandler("reverse") {
 
-    override fun invoke(
-        server: FakeAdbServer,
-        socketScope: CoroutineScope,
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        if (args == "list-forward") {
-            // "reverse:list-forward"
-            handleListForward(socket, device)
-        } else if (args == "killforward-all") {
-            // "reverse:killforward-all"
-            handleKillForwardAll(socket, device)
-        } else if (args.startsWith("killforward:")) {
-            // "reverse:killforward:[from]"
-            handleKillForward(socket, device, args)
-        } else if (args.startsWith("forward:")) {
-            // "reverse:forward:[from]:[to]
-            handleForward(socket, device, args)
-        } else {
-            writeFailResponse(
-                socket.getOutputStream(),
-                "Unsupported reverse connection command: $args"
-            )
-        }
+  override fun invoke(server: FakeAdbServer, socketScope: CoroutineScope, socket: Socket, device: DeviceState, args: String) {
+    if (args == "list-forward") {
+      // "reverse:list-forward"
+      handleListForward(socket, device)
+    } else if (args == "killforward-all") {
+      // "reverse:killforward-all"
+      handleKillForwardAll(socket, device)
+    } else if (args.startsWith("killforward:")) {
+      // "reverse:killforward:[from]"
+      handleKillForward(socket, device, args)
+    } else if (args.startsWith("forward:")) {
+      // "reverse:forward:[from]:[to]
+      handleForward(socket, device, args)
+    } else {
+      writeFailResponse(socket.getOutputStream(), "Unsupported reverse connection command: $args")
+    }
+  }
+
+  private fun handleForward(socket: Socket, device: DeviceState, args: String) {
+    val stream = socket.getOutputStream()
+    val newArgs = args.substringAfter("forward:")
+    val forwardArgs = ForwardArgs.parse(newArgs)
+
+    // The "from" is the device in case of reverse forward
+    when (val deviceTransport = forwardArgs.fromTransport) {
+      "tcp" -> {}
+      else -> {
+        writeFailResponse(stream, "Unsupported device socket specification: $deviceTransport")
+        return
+      }
+    }
+    var devicePort: Int
+    var devicePortToSendBack: Int? = null
+    try {
+      devicePort = forwardArgs.fromTransportArg.toInt()
+      if (devicePort == 0) {
+        // This is to emulate ADB Server behavior of picking an available port
+        // This is currently hard-coded as we don't actually create sockets
+        devicePort = 40200 + (Math.random() * 100).toInt()
+        devicePortToSendBack = devicePort
+      }
+    } catch (ignored: NumberFormatException) {
+      writeFailResponse(stream, "Invalid host port specified: " + forwardArgs.fromTransportArg)
+      return
     }
 
-    private fun handleForward(
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        val stream = socket.getOutputStream()
-        val newArgs = args.substringAfter("forward:")
-        val forwardArgs = ForwardArgs.parse(newArgs)
-
-        // The "from" is the device in case of reverse forward
-        when (val deviceTransport = forwardArgs.fromTransport) {
-            "tcp" -> {}
-            else -> {
-                writeFailResponse(
-                    stream,
-                    "Unsupported device socket specification: $deviceTransport"
-                )
-                return
-            }
-        }
-        var devicePort: Int
-        var devicePortToSendBack: Int? = null
-        try {
-            devicePort = forwardArgs.fromTransportArg.toInt()
-            if (devicePort == 0) {
-                // This is to emulate ADB Server behavior of picking an available port
-                // This is currently hard-coded as we don't actually create sockets
-                devicePort = 40200 + (Math.random() * 100).toInt()
-                devicePortToSendBack = devicePort
-            }
-        } catch (ignored: NumberFormatException) {
-            writeFailResponse(
-                stream,
-                "Invalid host port specified: " + forwardArgs.fromTransportArg
-            )
+    // The "to" is the local machine in case of reverse forward
+    val forwarder =
+      when (val hostTransport = forwardArgs.toTransport) {
+        "tcp" ->
+          try {
+            val hostPort = forwardArgs.toTransportArg.toInt()
+            PortForwarder.createPortForwarder(devicePort, hostPort)
+          } catch (ignored: NumberFormatException) {
+            writeFailResponse(stream, "Invalid port specified: " + forwardArgs.toTransportArg)
             return
+          }
+        "local" -> PortForwarder.createUnixForwarder(devicePort, forwardArgs.toTransportArg)
+        "jdwp" -> {
+          writeFailResponse(stream, "JDWP connections not yet supported in fake ADB Server.")
+          return
         }
+        else -> {
+          writeFailResponse(stream, "Unsupported transport specified: $hostTransport")
+          return
+        }
+      }
+    val bindOk = device.addReversePortForwarder(forwarder, forwardArgs.norebind)
+    if (bindOk) {
+      // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
+      // See
+      // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
+      writeOkay(stream)
+      if (devicePortToSendBack != null) {
+        writeOkayResponse(stream, devicePortToSendBack.toString())
+      } else {
+        writeOkay(stream)
+      }
+    } else {
+      writeFailResponse(stream, "Could not bind to the specified forwarding ports.")
+    }
+  }
 
-        // The "to" is the local machine in case of reverse forward
-        val forwarder = when (val hostTransport = forwardArgs.toTransport) {
-            "tcp" -> try {
-                val hostPort = forwardArgs.toTransportArg.toInt()
-                PortForwarder.createPortForwarder(devicePort, hostPort)
-            } catch (ignored: NumberFormatException) {
-                writeFailResponse(
-                    stream, "Invalid port specified: " + forwardArgs.toTransportArg
-                )
-                return
-            }
-            "local" -> PortForwarder.createUnixForwarder(devicePort, forwardArgs.toTransportArg)
-            "jdwp" -> {
-                writeFailResponse(stream, "JDWP connections not yet supported in fake ADB Server.")
-                return
-            }
-            else -> {
-                writeFailResponse(
-                    stream,
-                    "Unsupported transport specified: $hostTransport"
-                )
-                return
-            }
-        }
-        val bindOk = device.addReversePortForwarder(forwarder, forwardArgs.norebind)
-        if (bindOk) {
-            // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
-            // See
-            // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
-            writeOkay(stream)
-            if (devicePortToSendBack != null) {
-                writeOkayResponse(stream, devicePortToSendBack.toString())
-            } else {
-                writeOkay(stream)
-            }
-        } else {
-            writeFailResponse(stream, "Could not bind to the specified forwarding ports.")
-        }
+  private fun handleKillForward(socket: Socket, device: DeviceState, args: String) {
+    val stream = socket.outputStream
+    val newArgs = args.substringAfter("killforward:")
+    val hostAddress = newArgs.split(":".toRegex()).toTypedArray()
+    when (hostAddress[0]) {
+      "tcp" -> {}
+      "local" -> {
+        writeFailResponse(stream, "Host Unix domain sockets not supported in fake ADB Server.")
+        return
+      }
+      else -> {
+        writeFailResponse(stream, "Invalid host transport specified: " + hostAddress[0])
+        return
+      }
+    }
+    val hostPort: Int =
+      try {
+        hostAddress[1].toInt()
+      } catch (ignored: NumberFormatException) {
+        writeFailResponse(stream, "Invalid port specified: " + hostAddress[1])
+        return
+      }
+    if (!device.removeReversePortForwarder(hostPort)) {
+      writeFailResponse(stream, "Could not successfully remove forward.")
+      return
+    }
+    // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
+    // See
+    // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
+    writeOkay(stream)
+    writeOkay(stream)
+  }
+
+  private fun handleKillForwardAll(socket: Socket, device: DeviceState) {
+    val stream = socket.outputStream
+    device.removeAllReversePortForwarders()
+    // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
+    // See
+    // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
+    writeOkay(stream)
+    writeOkay(stream)
+  }
+
+  private fun handleListForward(socket: Socket, device: DeviceState) {
+    val stream = socket.outputStream
+    val deviceListString = formatDeviceReverseForwardList(device)
+    writeOkay(stream)
+    write4ByteHexIntString(stream, deviceListString.length)
+    stream.write(deviceListString.toByteArray(StandardCharsets.US_ASCII))
+  }
+
+  private fun formatDeviceReverseForwardList(device: DeviceState): String {
+    val builder = StringBuilder()
+    for (portForwarder in device.allReversePortForwarders.values) {
+      // The serial number of the transport is hard-coded:
+      // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/usb.cpp;l=759
+      builder.append("UsbFfs")
+      builder.append(" ")
+      builder.append("tcp:${portForwarder?.source?.port}")
+      builder.append(" ")
+      builder.append("tcp:${portForwarder?.destination?.port}")
+      builder.append("\n")
     }
 
-    private fun handleKillForward(
-        socket: Socket,
-        device: DeviceState,
-        args: String
-    ) {
-        val stream = socket.outputStream
-        val newArgs = args.substringAfter("killforward:")
-        val hostAddress = newArgs.split(":".toRegex()).toTypedArray()
-        when (hostAddress[0]) {
-            "tcp" -> {}
-            "local" -> {
-                writeFailResponse(
-                    stream, "Host Unix domain sockets not supported in fake ADB Server."
-                )
-                return
-            }
-            else -> {
-                writeFailResponse(stream, "Invalid host transport specified: " + hostAddress[0])
-                return
-            }
-        }
-        val hostPort: Int = try {
-            hostAddress[1].toInt()
-        } catch (ignored: NumberFormatException) {
-            writeFailResponse(stream, "Invalid port specified: " + hostAddress[1])
-            return
-        }
-        if (!device.removeReversePortForwarder(hostPort)) {
-            writeFailResponse(stream, "Could not successfully remove forward.")
-            return
-        }
-        // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
-        // See
-        // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
-        writeOkay(stream)
-        writeOkay(stream)
+    // Remove trailing '\n' to match adb server behavior
+    if (builder.isNotEmpty()) {
+      builder.deleteCharAt(builder.length - 1)
     }
-
-    private fun handleKillForwardAll(socket: Socket, device: DeviceState) {
-        val stream = socket.outputStream
-        device.removeAllReversePortForwarders()
-        // We send 2 OKAY answers: 1st OKAY is connect, 2nd OKAY is status.
-        // See
-        // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/adb.cpp;l=1058
-        writeOkay(stream)
-        writeOkay(stream)
-    }
-
-    private fun handleListForward(socket: Socket, device: DeviceState) {
-        val stream = socket.outputStream
-        val deviceListString = formatDeviceReverseForwardList(device)
-        writeOkay(stream)
-        write4ByteHexIntString(stream, deviceListString.length)
-        stream.write(deviceListString.toByteArray(StandardCharsets.US_ASCII))
-    }
-
-    private fun formatDeviceReverseForwardList(device: DeviceState): String {
-        val builder = StringBuilder()
-        for (portForwarder in device.allReversePortForwarders.values) {
-            // The serial number of the transport is hard-coded:
-            // https://cs.android.com/android/platform/superproject/+/3a52886262ae22477a7d8ffb12adba64daf6aafa:packages/modules/adb/daemon/usb.cpp;l=759
-            builder.append("UsbFfs")
-            builder.append(" ")
-            builder.append("tcp:${portForwarder?.source?.port}")
-            builder.append(" ")
-            builder.append("tcp:${portForwarder?.destination?.port}")
-            builder.append("\n")
-        }
-
-        // Remove trailing '\n' to match adb server behavior
-        if (builder.isNotEmpty()) {
-            builder.deleteCharAt(builder.length - 1)
-        }
-        return builder.toString()
-    }
+    return builder.toString()
+  }
 }

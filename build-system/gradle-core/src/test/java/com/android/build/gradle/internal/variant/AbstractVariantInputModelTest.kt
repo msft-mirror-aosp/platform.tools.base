@@ -23,43 +23,40 @@ import com.android.builder.model.SyncIssue
 import com.android.testutils.AbstractReturnGivenReturnExpectTest
 import com.google.common.truth.Truth
 
-abstract class AbstractVariantInputModelTest<ResultT>:
-    AbstractReturnGivenReturnExpectTest<TestVariantInputModel, ResultT>() {
+abstract class AbstractVariantInputModelTest<ResultT> : AbstractReturnGivenReturnExpectTest<TestVariantInputModel, ResultT>() {
 
-    protected val dslServices = createDslServices()
-    private var defaultBuildTypes = false
-    private var issueChecker: ((List<SyncIssue>) -> Unit)? = {
-        Truth.assertThat(it).named("SyncIssues").isEmpty()
+  protected val dslServices = createDslServices()
+  private var defaultBuildTypes = false
+  private var issueChecker: ((List<SyncIssue>) -> Unit)? = { Truth.assertThat(it).named("SyncIssues").isEmpty() }
+
+  /**
+   * Entry point for creating [VariantInputModel] instance during tests, backed by real build types and product flavors, instantiated and
+   * configured via Kotlin DSL
+   */
+  fun android(action: VariantInputModelDsl.() -> Unit): TestVariantInputModel {
+    val modelBuilder = VariantInputModelBuilder(ComponentTypeImpl.BASE_APK)
+    if (defaultBuildTypes) {
+      modelBuilder.createDefaults()
     }
+    action(modelBuilder)
 
-    /**
-     * Entry point for creating [VariantInputModel] instance during tests, backed by real build types
-     * and product flavors, instantiated and configured via Kotlin DSL
-     */
-    fun android(action: VariantInputModelDsl.() -> Unit): TestVariantInputModel {
-        val modelBuilder = VariantInputModelBuilder(ComponentTypeImpl.BASE_APK)
-        if (defaultBuildTypes) {
-            modelBuilder.createDefaults()
-        }
-        action(modelBuilder)
+    return modelBuilder.toModel()
+  }
 
-        return modelBuilder.toModel()
-    }
+  final override fun compareResult(expected: ResultT?, actual: ResultT?, given: TestVariantInputModel) {
+    compareResult(expected, actual)
+    issueChecker?.invoke((dslServices.issueReporter as FakeSyncIssueReporter).syncIssues)
+  }
 
-    final override fun compareResult(expected: ResultT?, actual: ResultT?, given: TestVariantInputModel) {
-        compareResult(expected, actual)
-        issueChecker?.invoke((dslServices.issueReporter as FakeSyncIssueReporter).syncIssues)
-    }
+  abstract fun compareResult(expected: ResultT?, actual: ResultT?)
 
-    abstract fun compareResult(expected: ResultT?, actual: ResultT?)
+  fun withIssueChecker(action: (List<SyncIssue>) -> Unit) {
+    checkState(TestState.GIVEN)
+    issueChecker = action
+  }
 
-    fun withIssueChecker(action: (List<SyncIssue>) -> Unit) {
-        checkState(TestState.GIVEN)
-        issueChecker = action
-    }
-
-    fun useDefaultBuildTypes() {
-        checkState(TestState.START)
-        defaultBuildTypes = true
-    }
+  fun useDefaultBuildTypes() {
+    checkState(TestState.START)
+    defaultBuildTypes = true
+  }
 }

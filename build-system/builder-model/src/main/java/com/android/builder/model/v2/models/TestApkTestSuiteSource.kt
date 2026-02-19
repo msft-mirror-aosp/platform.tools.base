@@ -20,11 +20,9 @@ import com.android.builder.model.v2.ide.SourceProvider
 
 interface TestApkTestSuiteSource : TestSuiteSource {
 
-    override val type: SourceType
-        get() = SourceType.TEST_APK
+  override val type: SourceType
+    get() = SourceType.TEST_APK
 
-    /**
-     * Returns the [SourceProvider] when dealing with an Android source-set
-     */
-    val sourceProvider: SourceProvider
+  /** Returns the [SourceProvider] when dealing with an Android source-set */
+  val sourceProvider: SourceProvider
 }

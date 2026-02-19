@@ -20,12 +20,10 @@ import com.android.processmonitor.common.ProcessTracker
 /**
  * Creates a [ProcessTracker] for a device.
  *
- * This makes it possible to test a monitor without having to simulate the underlying trackers it
- * uses.
+ * This makes it possible to test a monitor without having to simulate the underlying trackers it uses.
  *
- * We use a generic device type so that we can later reuse it when we introduce a monitor that uses
- * Adblib with a ConnectedDevice.
+ * We use a generic device type so that we can later reuse it when we introduce a monitor that uses Adblib with a ConnectedDevice.
  */
 internal fun interface ProcessTrackerFactory<T> {
-    suspend fun createProcessTracker(device: T) : ProcessTracker
+  suspend fun createProcessTracker(device: T): ProcessTracker
 }

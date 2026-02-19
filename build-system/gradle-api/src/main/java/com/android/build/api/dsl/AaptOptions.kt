@@ -16,5 +16,4 @@
 
 package com.android.build.api.dsl
 
-@Deprecated("Renamed to AndroidResources", replaceWith = ReplaceWith("AndroidResources"))
-interface AaptOptions : AndroidResources
+@Deprecated("Renamed to AndroidResources", replaceWith = ReplaceWith("AndroidResources")) interface AaptOptions : AndroidResources

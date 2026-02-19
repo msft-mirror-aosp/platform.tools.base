@@ -16,88 +16,79 @@
 
 package com.android.tools.screenshot.differ
 
+import com.google.common.truth.Truth.assertThat
 import javax.imageio.ImageIO
 import kotlin.test.assertIs
 import kotlin.test.assertNull
-import org.junit.Test
 import org.junit.Assert.assertEquals
-import com.google.common.truth.Truth.assertThat
+import org.junit.Test
 
 class ImageDifferTest {
-    @Test
-    fun mssimMatcherSimilar() {
-        val result = MSSIMMatcher().diff(loadTestImage("circle"), loadTestImage("circle"))
-        assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("[MSSIM] Required SSIM: 1.000, Actual SSIM: 1.000", result.description)
-        assertNull(result.highlights)
-    }
+  @Test
+  fun mssimMatcherSimilar() {
+    val result = MSSIMMatcher().diff(loadTestImage("circle"), loadTestImage("circle"))
+    assertIs<ImageDiffer.DiffResult.Similar>(result)
+    assertEquals("[MSSIM] Required SSIM: 1.000, Actual SSIM: 1.000", result.description)
+    assertNull(result.highlights)
+  }
 
-    @Test
-    fun mssimMatcherDifferentWithImageDifferenceThreshold() {
-        val differ = MSSIMMatcher(0.9f)
+  @Test
+  fun mssimMatcherDifferentWithImageDifferenceThreshold() {
+    val differ = MSSIMMatcher(0.9f)
 
-        val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
-        assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("[MSSIM] Required SSIM: 0.100, Actual SSIM: 0.338", result.description)
-        assertIs<ImageDiffer.DiffResult.Similar>(
-            PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff"))
-        )
-    }
+    val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
+    assertIs<ImageDiffer.DiffResult.Similar>(result)
+    assertEquals("[MSSIM] Required SSIM: 0.100, Actual SSIM: 0.338", result.description)
+    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff")))
+  }
 
-    @Test
-    fun mssimMatcherDifferent() {
-        val result = MSSIMMatcher().diff(loadTestImage("circle"), loadTestImage("star"))
-        assertIs<ImageDiffer.DiffResult.Different>(result)
-        assertEquals("[MSSIM] Required SSIM: 1.000, Actual SSIM: 0.338", result.description)
-        assertIs<ImageDiffer.DiffResult.Similar>(
-            PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff"))
-        )
-    }
+  @Test
+  fun mssimMatcherDifferent() {
+    val result = MSSIMMatcher().diff(loadTestImage("circle"), loadTestImage("star"))
+    assertIs<ImageDiffer.DiffResult.Different>(result)
+    assertEquals("[MSSIM] Required SSIM: 1.000, Actual SSIM: 0.338", result.description)
+    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff")))
+  }
 
-    @Test
-    fun mmsimName() {
-        assertEquals("MSSIMMatcher", MSSIMMatcher().name)
-    }
+  @Test
+  fun mmsimName() {
+    assertEquals("MSSIMMatcher", MSSIMMatcher().name)
+  }
 
-    @Test
-    fun pixelPerfectSimilar() {
-        val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("circle"))
-        assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("Pixel percentage difference: 0.00%. 0 of 65536 pixels are different", result.description)
-        assertNull(result.highlights)
-        assertThat(result.percentDiff).isEqualTo(0.0)
-    }
+  @Test
+  fun pixelPerfectSimilar() {
+    val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("circle"))
+    assertIs<ImageDiffer.DiffResult.Similar>(result)
+    assertEquals("Pixel percentage difference: 0.00%. 0 of 65536 pixels are different", result.description)
+    assertNull(result.highlights)
+    assertThat(result.percentDiff).isEqualTo(0.0)
+  }
 
-    @Test
-    fun pixelPerfectMatcherDifferentWithImageDifferenceThreshold() {
-        val differ = PixelPerfect(0.9f)
+  @Test
+  fun pixelPerfectMatcherDifferentWithImageDifferenceThreshold() {
+    val differ = PixelPerfect(0.9f)
 
-        val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
-        assertIs<ImageDiffer.DiffResult.Similar>(result)
-        assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
-        assertIs<ImageDiffer.DiffResult.Similar>(
-            PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff"))
-        )
-        assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
-    }
+    val result = differ.diff(loadTestImage("circle"), loadTestImage("star"))
+    assertIs<ImageDiffer.DiffResult.Similar>(result)
+    assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
+    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights!!, loadTestImage("PixelPerfect_diff")))
+    assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
+  }
 
-    @Test
-    fun pixelPerfectDifferent() {
-        val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("star"))
+  @Test
+  fun pixelPerfectDifferent() {
+    val result = PixelPerfect().diff(loadTestImage("circle"), loadTestImage("star"))
 
-        assertIs<ImageDiffer.DiffResult.Different>(result)
-        assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
-        assertIs<ImageDiffer.DiffResult.Similar>(
-            PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff"))
-        )
-        assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
-    }
+    assertIs<ImageDiffer.DiffResult.Different>(result)
+    assertEquals("Pixel percentage difference: 27.22%. 17837 of 65536 pixels are different", result.description)
+    assertIs<ImageDiffer.DiffResult.Similar>(PixelPerfect().diff(result.highlights, loadTestImage("PixelPerfect_diff")))
+    assertThat(result.percentDiff).isWithin(0.0001).of(0.2722) // Approximate double comparison
+  }
 
-    @Test
-    fun pixelPerfectName() {
-        assertEquals("PixelPerfect", PixelPerfect().name)
-    }
+  @Test
+  fun pixelPerfectName() {
+    assertEquals("PixelPerfect", PixelPerfect().name)
+  }
 
-    private fun loadTestImage(name: String) =
-        ImageIO.read(javaClass.getResourceAsStream("$name.png")!!)
+  private fun loadTestImage(name: String) = ImageIO.read(javaClass.getResourceAsStream("$name.png")!!)
 }

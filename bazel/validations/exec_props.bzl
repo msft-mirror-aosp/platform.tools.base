@@ -41,16 +41,25 @@ def _limit_exec_properties_impl(target, ctx):
     _check_docker_network(ctx.label, ctx.rule)
     return []
 
+def _is_eval(rule):
+    tags = rule.attr.tags
+    return "eval" in tags and "noci:studio-linux" in tags and "noci:studio-win" in tags
+
 def _check_machine_size(label, rule):
     exec_properties = rule.attr.exec_properties
     machine_size = exec_properties.get("label:machine-size")
-    if machine_size == "large" and label not in LARGE_MACHINE_ALLOWLIST:
+
+    # We do not want to run evals on presubmit
+    is_allowed = label in LARGE_MACHINE_ALLOWLIST or _is_eval(rule)
+    if machine_size == "large" and not is_allowed:
         fail(LARGE_MACHINE_FAILURE_MESSAGE.format(str(label)))
 
 def _check_docker_network(label, rule):
     exec_properties = rule.attr.exec_properties
+
     docker_network = exec_properties.get("dockerNetwork")
-    if docker_network == "standard" and label not in DOCKER_NETWORK_ALLOWLIST:
+    is_allowed = label in DOCKER_NETWORK_ALLOWLIST or _is_eval(rule)
+    if docker_network == "standard" and not is_allowed:
         fail(DOCKER_NETWORK_FAILURE_MESSAGE.format(str(label)))
 
 limit_exec_properties = aspect(

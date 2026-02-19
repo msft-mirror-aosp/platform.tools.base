@@ -45,9 +45,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
   override fun visitClass(context: JavaContext, declaration: UClass) {
     val evaluator = context.evaluator
     val drawMethods =
-      declaration.methods.filter {
-        it.name == ON_DRAW || it.name == DRAW && evaluator.parametersMatch(it.javaPsi, CLASS_CANVAS)
-      }
+      declaration.methods.filter { it.name == ON_DRAW || it.name == DRAW && evaluator.parametersMatch(it.javaPsi, CLASS_CANVAS) }
     for (method in drawMethods) {
       method.accept(
         object : AbstractUastVisitor() {
@@ -55,9 +53,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
             val name = getMethodName(node)
             if (name == GET_WIDTH || name == GET_HEIGHT) {
               val sizeMethod = node.resolve()
-              if (
-                sizeMethod != null && context.evaluator.isMemberInClass(sizeMethod, CLASS_CANVAS)
-              ) {
+              if (sizeMethod != null && context.evaluator.isMemberInClass(sizeMethod, CLASS_CANVAS)) {
                 reportWarning(context, node, name, declaration)
               }
             }
@@ -65,9 +61,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
             return super.visitCallExpression(node)
           }
 
-          override fun visitQualifiedReferenceExpression(
-            node: UQualifiedReferenceExpression
-          ): Boolean {
+          override fun visitQualifiedReferenceExpression(node: UQualifiedReferenceExpression): Boolean {
             // Look for Kotlin property-access of the canvas size methods
             val selector = node.selector
             if (selector is USimpleNameReferenceExpression) {
@@ -87,12 +81,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun reportWarning(
-    context: JavaContext,
-    node: UElement,
-    name: String,
-    containingClass: UClass,
-  ) {
+  private fun reportWarning(context: JavaContext, node: UElement, name: String, containingClass: UClass) {
     val drawable = context.evaluator.extendsClass(containingClass.javaPsi, CLASS_DRAWABLE, false)
     val calling = node is UCallExpression
     val verb = if (calling) "Calling" else "Referencing"
@@ -116,11 +105,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
     context.report(ISSUE, node, context.getLocation(node), message, fix)
   }
 
-  private fun computeQuickfixReplacementString(
-    kotlin: Boolean,
-    drawable: Boolean,
-    name: String,
-  ): String {
+  private fun computeQuickfixReplacementString(kotlin: Boolean, drawable: Boolean, name: String): String {
     return if (drawable) {
       with(StringBuilder()) {
           if (kotlin) {
@@ -137,12 +122,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
     }
   }
 
-  private fun computeErrorMessage(
-    verb: String,
-    name: String,
-    calling: Boolean,
-    replacement: String,
-  ): String {
+  private fun computeErrorMessage(verb: String, name: String, calling: Boolean, replacement: String): String {
     return with(StringBuilder()) {
         append(verb)
         append(" `Canvas.").append(name)
@@ -161,12 +141,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
       .toString()
   }
 
-  private fun computeQuickfixMessage(
-    kotlin: Boolean,
-    calling: Boolean,
-    drawable: Boolean,
-    name: String,
-  ): String {
+  private fun computeQuickfixMessage(kotlin: Boolean, calling: Boolean, drawable: Boolean, name: String): String {
     return with(StringBuilder()) {
         if (calling || drawable) {
           append("Call")
@@ -194,8 +169,7 @@ class CanvasSizeDetector : Detector(), SourceCodeScanner {
   }
 
   companion object {
-    private val IMPLEMENTATION =
-      Implementation(CanvasSizeDetector::class.java, Scope.JAVA_FILE_SCOPE)
+    private val IMPLEMENTATION = Implementation(CanvasSizeDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
     /** Wrong canvas size lookup. */
     @JvmField

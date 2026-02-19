@@ -31,14 +31,10 @@ import org.jetbrains.kotlin.config.toKotlinVersion
 
 internal interface AnalysisApiDiagnosticsTestBase {
 
-  fun checkDiagnostics_NullableFromJava_jspecify(
-    expectedMessage: String,
-    kotlinLanguageVersion: String? = null,
-  ) {
+  fun checkDiagnostics_NullableFromJava_jspecify(expectedMessage: String, kotlinLanguageVersion: String? = null) {
     lint()
       .apply {
-        val languageLevel =
-          LanguageVersion.fromVersionString(kotlinLanguageVersion) ?: LanguageVersion.LATEST_STABLE
+        val languageLevel = LanguageVersion.fromVersionString(kotlinLanguageVersion) ?: LanguageVersion.LATEST_STABLE
         val apiVersion = ApiVersion.createByLanguageVersion(languageLevel)
         kotlinLanguageLevel =
           LanguageVersionSettingsImpl(
@@ -48,10 +44,7 @@ internal interface AnalysisApiDiagnosticsTestBase {
             // -Xjspecify-annotations=strict
             mapOf(
               JvmAnalysisFlags.javaTypeEnhancementState to
-                JavaTypeEnhancementStateParser(
-                    MessageCollector.NONE,
-                    languageLevel.toKotlinVersion(),
-                  )
+                JavaTypeEnhancementStateParser(MessageCollector.NONE, languageLevel.toKotlinVersion())
                   .parse(
                     jsr305Args = null,
                     supportCompatqualCheckerFrameworkAnnotations = null,
@@ -61,10 +54,7 @@ internal interface AnalysisApiDiagnosticsTestBase {
             ),
             // TODO: need to pass/parse (compiler) CLI argument
             // -Xtype-enhancement-improvements-strict-mode
-            mapOf(
-              LanguageFeature.TypeEnhancementImprovementsInStrictMode to
-                LanguageFeature.State.ENABLED
-            ),
+            mapOf(LanguageFeature.TypeEnhancementImprovementsInStrictMode to LanguageFeature.State.ENABLED),
           )
       }
       .files(

@@ -23,21 +23,13 @@ import java.io.Serializable
  *
  * The field is generated as: <type> <name> = <value>;
  */
-class BuildConfigField<T: Serializable>(
-    /**
-     * Value to be written as BuildConfig field type.
-     */
-    val type: String,
+class BuildConfigField<T : Serializable>(
+  /** Value to be written as BuildConfig field type. */
+  val type: String,
 
-    /**
-     * Value of the generated field.
-     * If [type] is [String], then [value] should include quotes.
-     */
-    val value: T,
+  /** Value of the generated field. If [type] is [String], then [value] should include quotes. */
+  val value: T,
 
-    /**
-     * Optional field comment that will be added to the generated source file or null if no comment
-     * is necessary.
-     */
-    val comment: String?
+  /** Optional field comment that will be added to the generated source file or null if no comment is necessary. */
+  val comment: String?,
 ) : Serializable

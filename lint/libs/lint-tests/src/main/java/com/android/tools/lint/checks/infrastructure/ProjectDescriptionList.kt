@@ -25,22 +25,21 @@ import org.junit.Assert
 /** A list of project descriptors for a project to be created and analyzed with Lint. */
 internal class ProjectDescriptionList(
   /**
-   * Initial set of project descriptors; may have dependencies on projects not included in this
-   * list, or contain implicit projects inferred from relative test file paths.
+   * Initial set of project descriptors; may have dependencies on projects not included in this list, or contain implicit projects inferred
+   * from relative test file paths.
    */
   var projects: MutableList<ProjectDescription> = mutableListOf(),
 
   /**
-   * If not null, the project to consider the "base" to report from. E.g. if you have projects "app"
-   * and "lib" and you get warnings from both, by default (with [reportFrom] null) the errors in the
-   * report will show paths like `app/src/main` and `lib/src/main`. If [reportFrom] is set to the
-   * app, the paths will instead be `src/main/` and `../lib/src/main`.
+   * If not null, the project to consider the "base" to report from. E.g. if you have projects "app" and "lib" and you get warnings from
+   * both, by default (with [reportFrom] null) the errors in the report will show paths like `app/src/main` and `lib/src/main`. If
+   * [reportFrom] is set to the app, the paths will instead be `src/main/` and `../lib/src/main`.
    */
   var reportFrom: ProjectDescription? = null,
 ) : Iterable<ProjectDescription> {
   /**
-   * If the project set was constructed implicitly (via ../module/path) file names, this property
-   * will point to the implicit "main" (or app) project.
+   * If the project set was constructed implicitly (via ../module/path) file names, this property will point to the implicit "main" (or app)
+   * project.
    */
   var implicitReportFrom: ProjectDescription? = null
     private set
@@ -71,13 +70,11 @@ internal class ProjectDescriptionList(
   }
 
   /**
-   * The project list is allowed to just contain root projects (which depend on other projects), and
-   * even implicit projects: You can place relative paths (../library/...) in test files to easily
-   * configure multiple test modules. This method will use this to split up the test file list into
-   * multiple projects. The names will be used to infer relative dependencies. For example, if you
-   * point to "../app/" then the assumption is that the created project has app type and depends on
-   * the current module, whereas if you create ../library or ../lib-something then the assumption is
-   * that the created project is a library and is depended upon by the current project.
+   * The project list is allowed to just contain root projects (which depend on other projects), and even implicit projects: You can place
+   * relative paths (../library/...) in test files to easily configure multiple test modules. This method will use this to split up the test
+   * file list into multiple projects. The names will be used to infer relative dependencies. For example, if you point to "../app/" then
+   * the assumption is that the created project has app type and depends on the current module, whereas if you create ../library or
+   * ../lib-something then the assumption is that the created project is a library and is depended upon by the current project.
    */
   fun expandProjects(defaultType: ProjectDescription.Type) {
     val allProjects: MutableList<ProjectDescription> = ArrayList(projects)
@@ -161,8 +158,8 @@ internal class ProjectDescriptionList(
   }
 
   /**
-   * Returns all the project names. Note that this only includes the projects explicitly listed in
-   * the project list, so if not intended, call [expandProjects] first.
+   * Returns all the project names. Note that this only includes the projects explicitly listed in the project list, so if not intended,
+   * call [expandProjects] first.
    */
   private fun getProjectNames(): Set<String> {
     val names: MutableSet<String> = HashSet()
@@ -184,10 +181,9 @@ internal class ProjectDescriptionList(
   }
 
   /**
-   * Assigns unique names to the given project that have not been explicitly named. It's okay to
-   * call this repeatedly since the project set can change over time (as we add in provisional test
-   * projects etc); it will only touch unnamed projects, and will not clash with any existing
-   * project names.
+   * Assigns unique names to the given project that have not been explicitly named. It's okay to call this repeatedly since the project set
+   * can change over time (as we add in provisional test projects etc); it will only touch unnamed projects, and will not clash with any
+   * existing project names.
    */
   fun assignProjectNames() {
     val usedNames: MutableSet<String> = HashSet(getProjectNames())
@@ -200,10 +196,7 @@ internal class ProjectDescriptionList(
     }
   }
 
-  /**
-   * Finds a unique name for the given project, not conflicting with any of the existing names
-   * passed in.
-   */
+  /** Finds a unique name for the given project, not conflicting with any of the existing names passed in. */
   private fun pickUniqueName(usedNames: Set<String>, project: ProjectDescription): String {
     val root =
       when (project.type) {

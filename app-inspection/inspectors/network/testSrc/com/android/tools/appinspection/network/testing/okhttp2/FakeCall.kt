@@ -20,11 +20,8 @@ import com.squareup.okhttp.Call
 import com.squareup.okhttp.Request
 import com.squareup.okhttp.Response
 
-class FakeCall(
-  private val client: FakeOkHttp2Client,
-  private val request: Request,
-  private val response: Response,
-) : Call(client, request) {
+class FakeCall(private val client: FakeOkHttp2Client, private val request: Request, private val response: Response) :
+  Call(client, request) {
 
   override fun execute(): Response {
     return client.triggerInterceptor(request, response)

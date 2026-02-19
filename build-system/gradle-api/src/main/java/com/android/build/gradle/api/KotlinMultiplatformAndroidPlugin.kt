@@ -19,14 +19,12 @@ package com.android.build.gradle.api
 import com.android.build.gradle.BasePlugin
 import org.gradle.api.Project
 
-/**
- * The plugin applied with 'com.android.kotlin.multiplatform.library'
- */
-class KotlinMultiplatformAndroidPlugin: BasePlugin() {
-    override fun apply(project: Project) {
-        super.apply(project)
-        project.apply(INTERNAL_PLUGIN_ID)
-    }
+/** The plugin applied with 'com.android.kotlin.multiplatform.library' */
+class KotlinMultiplatformAndroidPlugin : BasePlugin() {
+  override fun apply(project: Project) {
+    super.apply(project)
+    project.apply(INTERNAL_PLUGIN_ID)
+  }
 }
 
 private val INTERNAL_PLUGIN_ID = mapOf("plugin" to "com.android.internal.kotlin.multiplatform.library")

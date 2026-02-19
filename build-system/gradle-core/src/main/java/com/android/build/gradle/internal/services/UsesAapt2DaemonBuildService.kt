@@ -24,13 +24,12 @@ import org.gradle.api.tasks.Internal
 /** Common interface for tasks/task inputs that use [Aapt2DaemonBuildService]. */
 interface UsesAapt2DaemonBuildService {
 
-    @get:Internal
-    val aapt2DaemonBuildService: Property<Aapt2DaemonBuildService>
+  @get:Internal val aapt2DaemonBuildService: Property<Aapt2DaemonBuildService>
 
-    fun initializeAapt2DaemonBuildService(task: Task) {
-        getBuildService<Aapt2DaemonBuildService, Aapt2DaemonBuildService.Parameters>(task.project.gradle.sharedServices).let {
-            aapt2DaemonBuildService.setDisallowChanges(it)
-            task.usesService(it)
-        }
+  fun initializeAapt2DaemonBuildService(task: Task) {
+    getBuildService<Aapt2DaemonBuildService, Aapt2DaemonBuildService.Parameters>(task.project.gradle.sharedServices).let {
+      aapt2DaemonBuildService.setDisallowChanges(it)
+      task.usesService(it)
     }
+  }
 }

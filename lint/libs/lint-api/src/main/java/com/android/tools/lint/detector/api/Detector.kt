@@ -48,13 +48,12 @@ import org.w3c.dom.Element
 import org.w3c.dom.Node
 
 /**
- * A detector is able to find a particular problem (or a set of related problems). Each problem type
- * is uniquely identified as an [Issue].
+ * A detector is able to find a particular problem (or a set of related problems). Each problem type is uniquely identified as an [Issue].
  *
  * Detectors will be called in a predefined order:
  * 1. Manifest file
- * 2. Resource files, in alphabetical order by resource type (therefore, "layout" is checked before
- *    "values", "values-de" is checked before "values-en" but after "values", and so on.
+ * 2. Resource files, in alphabetical order by resource type (therefore, "layout" is checked before "values", "values-de" is checked before
+ *    "values-en" but after "values", and so on.
  * 3. Java sources
  * 4. Java classes
  * 5. Gradle files
@@ -62,56 +61,34 @@ import org.w3c.dom.Node
  * 7. Proguard files
  * 8. Property files
  *
- * If a detector needs information when processing a file type that comes from a type of file later
- * in the order above, they can request a second phase; see [LintDriver.requestRepeat].
+ * If a detector needs information when processing a file type that comes from a type of file later in the order above, they can request a
+ * second phase; see [LintDriver.requestRepeat].
  */
 abstract class Detector {
-  /**
-   * See [com.android.tools.lint.detector.api.SourceCodeScanner]; this class is (temporarily) here
-   * for backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.SourceCodeScanner]; this class is (temporarily) here for backwards compatibility. */
   interface UastScanner : SourceCodeScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.ClassScanner]; this class is (temporarily) here for
-   * backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.ClassScanner]; this class is (temporarily) here for backwards compatibility. */
   interface ClassScanner : com.android.tools.lint.detector.api.ClassScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.BinaryResourceScanner]; this class is (temporarily)
-   * here for backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.BinaryResourceScanner]; this class is (temporarily) here for backwards compatibility. */
   interface BinaryResourceScanner : com.android.tools.lint.detector.api.BinaryResourceScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.ResourceFolderScanner]; this class is (temporarily)
-   * here for backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.ResourceFolderScanner]; this class is (temporarily) here for backwards compatibility. */
   interface ResourceFolderScanner : com.android.tools.lint.detector.api.ResourceFolderScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.XmlScanner]; this class is (temporarily) here for
-   * backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.XmlScanner]; this class is (temporarily) here for backwards compatibility. */
   interface XmlScanner : com.android.tools.lint.detector.api.XmlScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.GradleScanner]; this class is (temporarily) here for
-   * backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.GradleScanner]; this class is (temporarily) here for backwards compatibility. */
   interface GradleScanner : com.android.tools.lint.detector.api.GradleScanner
 
-  /**
-   * See [com.android.tools.lint.detector.api.OtherFileScanner]; this class is (temporarily) here
-   * for backwards compatibility.
-   */
+  /** See [com.android.tools.lint.detector.api.OtherFileScanner]; this class is (temporarily) here for backwards compatibility. */
   interface OtherFileScanner : com.android.tools.lint.detector.api.OtherFileScanner
 
   /**
-   * Runs the detector. This method will not be called for certain specialized detectors, such as
-   * [XmlScanner] and [SourceCodeScanner], where there are specialized analysis methods instead such
-   * as [XmlScanner.visitElement].
+   * Runs the detector. This method will not be called for certain specialized detectors, such as [XmlScanner] and [SourceCodeScanner],
+   * where there are specialized analysis methods instead such as [XmlScanner.visitElement].
    *
    * @param context the context describing the work to be done
    */
@@ -131,14 +108,12 @@ abstract class Detector {
   /**
    * Analysis is about to begin for the given root project; perform any setup steps.
    *
-   * A root project that is not being depended on by any other project. For example, in a Gradle
-   * tree that has two app modules, and five libraries, where each of the apps depend on one ore
-   * more libraries, all seven Gradle modules are lint projects, and the two app modules are lint
-   * root projects.
+   * A root project that is not being depended on by any other project. For example, in a Gradle tree that has two app modules, and five
+   * libraries, where each of the apps depend on one ore more libraries, all seven Gradle modules are lint projects, and the two app modules
+   * are lint root projects.
    *
-   * You typically place your analysis where you want to consult not just data from a given module,
-   * but data gathered during analysis of all the dependent library modules as well, in
-   * [afterCheckRootProject]. For analysis that is local to a given module, just place it in
+   * You typically place your analysis where you want to consult not just data from a given module, but data gathered during analysis of all
+   * the dependent library modules as well, in [afterCheckRootProject]. For analysis that is local to a given module, just place it in
    * [afterCheckEachProject].
    *
    * @param context the context for the check referencing the project, lint client, etc
@@ -149,8 +124,7 @@ abstract class Detector {
   }
 
   /**
-   * Analysis is about to begin for the given project (which may be a root project or a library
-   * project). Perform any setup steps.
+   * Analysis is about to begin for the given project (which may be a root project or a library project). Perform any setup steps.
    *
    * @param context the context for the check referencing the project, lint client, etc
    */
@@ -162,26 +136,22 @@ abstract class Detector {
   }
 
   /**
-   * Analysis has just been finished for the given root project; perform any cleanup or report
-   * issues that require project-wide analysis (including its dependencies).
+   * Analysis has just been finished for the given root project; perform any cleanup or report issues that require project-wide analysis
+   * (including its dependencies).
    *
-   * A root project that is not being depended on by any other project. For example, in a Gradle
-   * tree that has two app modules, and five libraries, where each of the apps depend on one ore
-   * more libraries, all seven Gradle modules are lint projects, and the two app modules are lint
-   * root projects.
+   * A root project that is not being depended on by any other project. For example, in a Gradle tree that has two app modules, and five
+   * libraries, where each of the apps depend on one ore more libraries, all seven Gradle modules are lint projects, and the two app modules
+   * are lint root projects.
    *
-   * You typically place your analysis where you want to consult not just data from a given module,
-   * but data gathered during analysis of all the dependent library modules as well, in
-   * [afterCheckRootProject]. For analysis that is local to a given module, just place it in
+   * You typically place your analysis where you want to consult not just data from a given module, but data gathered during analysis of all
+   * the dependent library modules as well, in [afterCheckRootProject]. For analysis that is local to a given module, just place it in
    * [afterCheckEachProject].
    *
    * Given an app module and several library module dependencies:
    * * In global analysis mode: this method will be called once on the app module.
-   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and
-   *   then the `--report-only` phase is run on just the app module): this method will be called in
-   *   the `--analyze-only` phase for every module.
-   * * In isolated ("on-the-fly") mode: this method will be called on the containing module, even if
-   *   it is not a root module.
+   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and then the `--report-only` phase is run on
+   *   just the app module): this method will be called in the `--analyze-only` phase for every module.
+   * * In isolated ("on-the-fly") mode: this method will be called on the containing module, even if it is not a root module.
    *
    * @param context the context for the check referencing the project, lint client, etc
    */
@@ -191,8 +161,8 @@ abstract class Detector {
   }
 
   /**
-   * Analysis has just been finished for the given project (which may be a root project or a library
-   * project); perform any cleanup or report issues that require library-project-wide analysis.
+   * Analysis has just been finished for the given project (which may be a root project or a library project); perform any cleanup or report
+   * issues that require library-project-wide analysis.
    *
    * @param context the context for the check referencing the project, lint client, etc
    */
@@ -207,12 +177,11 @@ abstract class Detector {
    * Analysis is about to begin, perform any setup steps.
    *
    * @param context the context for the check referencing the project, lint client, etc
-   * @deprecated This method is deprecated because the semantics of [beforeCheckLibraryProject] was
-   *   unfortunate (it included all libraries *except* the root project, and typically you want to
-   *   either act on each and every project, or just the root projects. Therefore, there is a new
-   *   method, [beforeCheckEachProject], which applies to each project and [beforeCheckRootProject]
-   *   which applies to just the root projects; [beforeCheckProject] has a name that sounds like
-   *   [beforeCheckEachProject] but just reusing that name would have been an incompatible change.
+   * @deprecated This method is deprecated because the semantics of [beforeCheckLibraryProject] was unfortunate (it included all libraries
+   *   *except* the root project, and typically you want to either act on each and every project, or just the root projects. Therefore,
+   *   there is a new method, [beforeCheckEachProject], which applies to each project and [beforeCheckRootProject] which applies to just the
+   *   root projects; [beforeCheckProject] has a name that sounds like [beforeCheckEachProject] but just reusing that name would have been
+   *   an incompatible change.
    */
   @Deprecated(
     "If you want to override the event that each root project is about " +
@@ -224,16 +193,14 @@ abstract class Detector {
   open fun beforeCheckProject(context: Context) {}
 
   /**
-   * Analysis has just been finished for the whole project, perform any cleanup or report issues
-   * that require project-wide analysis.
+   * Analysis has just been finished for the whole project, perform any cleanup or report issues that require project-wide analysis.
    *
    * @param context the context for the check referencing the project, lint client, etc
-   * @deprecated This method is deprecated because the semantics of [afterCheckLibraryProject] was
-   *   unfortunate (it included all libraries *except* the root project, and typically you want to
-   *   either act on each and every project, or just the root projects. Therefore, there is a new
-   *   method, [afterCheckEachProject], which applies to each project and [afterCheckRootProject]
-   *   which applies to just the root projects; [afterCheckProject] has a name that sounds like
-   *   [afterCheckEachProject] but just reusing that name would have been an incompatible change.
+   * @deprecated This method is deprecated because the semantics of [afterCheckLibraryProject] was unfortunate (it included all libraries
+   *   *except* the root project, and typically you want to either act on each and every project, or just the root projects. Therefore,
+   *   there is a new method, [afterCheckEachProject], which applies to each project and [afterCheckRootProject] which applies to just the
+   *   root projects; [afterCheckProject] has a name that sounds like [afterCheckEachProject] but just reusing that name would have been an
+   *   incompatible change.
    */
   @Deprecated(
     "If you want to override the event that each root project is about " +
@@ -248,12 +215,11 @@ abstract class Detector {
    * Analysis is about to begin for the given library project, perform any setup steps.
    *
    * @param context the context for the check referencing the project, lint client, etc
-   * @deprecated This method is deprecated because the semantics of [beforeCheckLibraryProject] was
-   *   unfortunate (it included all libraries *except* the root project, and typically you want to
-   *   either act on each and every project, or just the root projects. Therefore, there is a new
-   *   method, [beforeCheckEachProject], which applies to each project and [beforeCheckRootProject]
-   *   which applies to just the root projects; [beforeCheckProject] has a name that sounds like
-   *   [beforeCheckEachProject] but just reusing that name would have been an incompatible change.
+   * @deprecated This method is deprecated because the semantics of [beforeCheckLibraryProject] was unfortunate (it included all libraries
+   *   *except* the root project, and typically you want to either act on each and every project, or just the root projects. Therefore,
+   *   there is a new method, [beforeCheckEachProject], which applies to each project and [beforeCheckRootProject] which applies to just the
+   *   root projects; [beforeCheckProject] has a name that sounds like [beforeCheckEachProject] but just reusing that name would have been
+   *   an incompatible change.
    */
   @Deprecated(
     "Use beforeCheckEachProject instead (which now includes the root projects too)",
@@ -262,16 +228,15 @@ abstract class Detector {
   open fun beforeCheckLibraryProject(context: Context) {}
 
   /**
-   * Analysis has just been finished for the given library project, perform any cleanup or report
-   * issues that require library-project-wide analysis.
+   * Analysis has just been finished for the given library project, perform any cleanup or report issues that require library-project-wide
+   * analysis.
    *
    * @param context the context for the check referencing the project, lint client, etc
-   * @deprecated This method is deprecated because the semantics of [afterCheckLibraryProject] was
-   *   unfortunate (it included all libraries *except* the root project, and typically you want to
-   *   either act on each and every project, or just the root projects. Therefore, there is a new
-   *   method, [afterCheckEachProject], which applies to each project and [afterCheckRootProject]
-   *   which applies to just the root projects; [afterCheckProject] has a name that sounds like
-   *   [afterCheckEachProject] but just reusing that name would have been an incompatible change.
+   * @deprecated This method is deprecated because the semantics of [afterCheckLibraryProject] was unfortunate (it included all libraries
+   *   *except* the root project, and typically you want to either act on each and every project, or just the root projects. Therefore,
+   *   there is a new method, [afterCheckEachProject], which applies to each project and [afterCheckRootProject] which applies to just the
+   *   root projects; [afterCheckProject] has a name that sounds like [afterCheckEachProject] but just reusing that name would have been an
+   *   incompatible change.
    */
   @Deprecated(
     "Use afterCheckEachProject instead (which now includes the root projects too)",
@@ -282,9 +247,8 @@ abstract class Detector {
   /**
    * Analysis is about to be performed on a specific file, perform any setup steps.
    *
-   * Note: When this method is called at the beginning of checking an XML file, the context is
-   * guaranteed to be an instance of [XmlContext], and similarly for a Java source file, the context
-   * will be a [JavaContext] and so on.
+   * Note: When this method is called at the beginning of checking an XML file, the context is guaranteed to be an instance of [XmlContext],
+   * and similarly for a Java source file, the context will be a [JavaContext] and so on.
    *
    * @param context the context for the check referencing the file to be checked, the project, etc.
    */
@@ -293,19 +257,17 @@ abstract class Detector {
   /**
    * Analysis has just been finished for a specific file, perform any cleanup or report issues found
    *
-   * Note: When this method is called at the end of checking an XML file, the context is guaranteed
-   * to be an instance of [XmlContext], and similarly for a Java source file, the context will be a
-   * [JavaContext] and so on.
+   * Note: When this method is called at the end of checking an XML file, the context is guaranteed to be an instance of [XmlContext], and
+   * similarly for a Java source file, the context will be a [JavaContext] and so on.
    *
    * @param context the context for the check referencing the file to be checked, the project, etc.
    */
   open fun afterCheckFile(context: Context) {}
 
   /**
-   * Returns the expected speed of this detector. The issue parameter is made available for
-   * subclasses which analyze multiple issues and which need to distinguish implementation cost by
-   * issue. If the detector does not analyze multiple issues or does not vary in speed by issue
-   * type, just override [getSpeed] instead.
+   * Returns the expected speed of this detector. The issue parameter is made available for subclasses which analyze multiple issues and
+   * which need to distinguish implementation cost by issue. If the detector does not analyze multiple issues or does not vary in speed by
+   * issue type, just override [getSpeed] instead.
    *
    * @param issue the issue to look up the analysis speed for
    * @return the expected speed of this detector
@@ -336,26 +298,15 @@ abstract class Detector {
 
   open fun checkClass(context: ClassContext, classNode: ClassNode) {}
 
-  open fun checkCall(
-    context: ClassContext,
-    classNode: ClassNode,
-    method: MethodNode,
-    call: MethodInsnNode,
-  ) {}
+  open fun checkCall(context: ClassContext, classNode: ClassNode, method: MethodNode, call: MethodInsnNode) {}
 
-  open fun checkInstruction(
-    context: ClassContext,
-    classNode: ClassNode,
-    method: MethodNode,
-    instruction: AbstractInsnNode,
-  ) {}
+  open fun checkInstruction(context: ClassContext, classNode: ClassNode, method: MethodNode, instruction: AbstractInsnNode) {}
 
   // ---- Empty implementations to make implementing an GradleScanner easier: ----
 
   open val customVisitor: Boolean = false
 
-  @Deprecated("Override `visitBuildScript(GradleContext)` instead")
-  open fun visitBuildScript(context: Context) {}
+  @Deprecated("Override `visitBuildScript(GradleContext)` instead") open fun visitBuildScript(context: Context) {}
 
   open fun visitBuildScript(context: GradleContext) {
     // Backwards compatibility
@@ -383,15 +334,7 @@ abstract class Detector {
     statementCookie: Any,
   ) {
     // Backward compatibility
-    checkDslPropertyAssignment(
-      context,
-      property,
-      value,
-      parent,
-      parentParent,
-      valueCookie,
-      statementCookie,
-    )
+    checkDslPropertyAssignment(context, property, value, parent, parentParent, valueCookie, statementCookie)
   }
 
   open fun checkMethodCall(
@@ -434,20 +377,10 @@ abstract class Detector {
   // be used.
 
   @Deprecated("Use UAST instead of PSI")
-  open fun visitMethod(
-    context: JavaContext,
-    visitor: JavaElementVisitor?,
-    call: PsiMethodCallExpression,
-    method: PsiMethod,
-  ) {}
+  open fun visitMethod(context: JavaContext, visitor: JavaElementVisitor?, call: PsiMethodCallExpression, method: PsiMethod) {}
 
   @Deprecated("Use UAST instead of PSI")
-  open fun visitConstructor(
-    context: JavaContext,
-    visitor: JavaElementVisitor?,
-    node: PsiNewExpression,
-    constructor: PsiMethod,
-  ) {}
+  open fun visitConstructor(context: JavaContext, visitor: JavaElementVisitor?, node: PsiNewExpression, constructor: PsiMethod) {}
 
   @Deprecated("Use UAST instead of PSI")
   open fun visitResourceReference(
@@ -459,8 +392,7 @@ abstract class Detector {
     isFramework: Boolean,
   ) {}
 
-  @Deprecated("Use UAST instead of PSI")
-  open fun checkClass(context: JavaContext, declaration: PsiClass) {}
+  @Deprecated("Use UAST instead of PSI") open fun checkClass(context: JavaContext, declaration: PsiClass) {}
 
   @Deprecated("Use UAST instead of PSI", ReplaceWith("createUastHandler"))
   open fun createPsiVisitor(context: JavaContext): JavaElementVisitor? = null
@@ -479,11 +411,7 @@ abstract class Detector {
 
   open fun visitClass(context: JavaContext, lambda: ULambdaExpression) {}
 
-  open fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {}
+  open fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {}
 
   open fun visitConstructor(context: JavaContext, node: UCallExpression, constructor: PsiMethod) {}
 
@@ -497,17 +425,9 @@ abstract class Detector {
 
   open fun createUastHandler(context: JavaContext): UElementHandler? = null
 
-  open fun visitResourceReference(
-    context: JavaContext,
-    node: UElement,
-    type: ResourceType,
-    name: String,
-    isFramework: Boolean,
-  ) {}
+  open fun visitResourceReference(context: JavaContext, node: UElement, type: ResourceType, name: String, isFramework: Boolean) {}
 
-  @Deprecated(
-    "Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)"
-  )
+  @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
   open fun visitAnnotationUsage(
     context: JavaContext,
     usage: UElement,
@@ -521,9 +441,7 @@ abstract class Detector {
     allPackageAnnotations: List<UAnnotation>,
   ) {}
 
-  @Deprecated(
-    "Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)"
-  )
+  @Deprecated("Migrate to visitAnnotationUsage(JavaContext, UElement, AnnotationInfo, AnnotationUsageInfo)")
   open fun visitAnnotationUsage(
     context: JavaContext,
     usage: UElement,
@@ -553,19 +471,9 @@ abstract class Detector {
     )
   }
 
-  open fun visitAnnotationUsage(
-    context: XmlContext,
-    reference: Node,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
-  ) {}
+  open fun visitAnnotationUsage(context: XmlContext, reference: Node, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {}
 
-  open fun visitAnnotationUsage(
-    context: JavaContext,
-    element: UElement,
-    annotationInfo: AnnotationInfo,
-    usageInfo: AnnotationUsageInfo,
-  ) {
+  open fun visitAnnotationUsage(context: JavaContext, element: UElement, annotationInfo: AnnotationInfo, usageInfo: AnnotationUsageInfo) {
     // Temporary backwards compatibility. If you have overridden visitAnnotationUsage, do NOT
     // invoke this code since it will redundantly compute parameters and invoke the older
     // no-op visitAnnotationUsage method for backwards compatibility.
@@ -673,8 +581,7 @@ abstract class Detector {
   protected open fun fix(): LintFix.Builder = LintFix.create()
 
   /**
-   * Creates a [LintMap]. This is here for convenience to make the syntax for reporting incidents
-   * with maps concise, e.g.
+   * Creates a [LintMap]. This is here for convenience to make the syntax for reporting incidents with maps concise, e.g.
    *
    *     context.report(incident, map().put(KEY_REQ_QUERY_ALL, false))
    *
@@ -683,21 +590,17 @@ abstract class Detector {
   protected fun map(): LintMap = LintMap()
 
   /**
-   * Callback to detectors that add partial results (by adding entries to the map returned by
-   * [Context.getPartialResults]). This is where the data should be analyzed and merged and results
-   * reported (via [Context.report]) to lint.
+   * Callback to detectors that add partial results (by adding entries to the map returned by [Context.getPartialResults]). This is where
+   * the data should be analyzed and merged and results reported (via [Context.report]) to lint.
    *
    * Given an app module and several library module dependencies:
-   * * In global analysis mode: this method is not called by Lint, but your Detector may wish to
-   *   conditionally call this method from [checkMergedProject] when [Context.isGlobalAnalysis]
-   *   returns true so that your Detector works in both global and partial analysis modes, without
-   *   having to specialize the logic for each mode.
-   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and
-   *   then the `--report-only` phase is run on just the app module): this method will be called in
-   *   the `--report-only` phase on the app module (for each [Issue] with partial results), but only
-   *   if the Detector has added partial results for the [Issue].
-   * * In isolated ("on-the-fly") mode: this method is not called by Lint, but see global analysis
-   *   mode.
+   * * In global analysis mode: this method is not called by Lint, but your Detector may wish to conditionally call this method from
+   *   [checkMergedProject] when [Context.isGlobalAnalysis] returns true so that your Detector works in both global and partial analysis
+   *   modes, without having to specialize the logic for each mode.
+   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and then the `--report-only` phase is run on
+   *   just the app module): this method will be called in the `--report-only` phase on the app module (for each [Issue] with partial
+   *   results), but only if the Detector has added partial results for the [Issue].
+   * * In isolated ("on-the-fly") mode: this method is not called by Lint, but see global analysis mode.
    */
   open fun checkPartialResults(context: Context, partialResults: PartialResult) {
     // Don't call super.checkPartialResults! This is here to make sure you
@@ -713,37 +616,31 @@ abstract class Detector {
   }
 
   /**
-   * Lint is aggregating provisional data; perform any additional checks which are allowed now
-   * (looking at global data like [Project.getMergedManifest] etc. This serves a similar purpose to
-   * [afterCheckRootProject], but is a separate method because this method will **not** be invoked
-   * on the same instance of the detector, so you cannot accumulate state while looking at other
-   * files and then process it in this method; instead, any state storage has to go through
-   * [LintClient.getPartialResults], and then handle that data in [Detector.checkPartialResults].
+   * Lint is aggregating provisional data; perform any additional checks which are allowed now (looking at global data like
+   * [Project.getMergedManifest] etc. This serves a similar purpose to [afterCheckRootProject], but is a separate method because this method
+   * will **not** be invoked on the same instance of the detector, so you cannot accumulate state while looking at other files and then
+   * process it in this method; instead, any state storage has to go through [LintClient.getPartialResults], and then handle that data in
+   * [Detector.checkPartialResults].
    *
-   * However, there are cases where you don't actually depend on any earlier results; you simply
-   * want to look at state which is only available when the merged project is known, such as the
-   * merged manifest.
+   * However, there are cases where you don't actually depend on any earlier results; you simply want to look at state which is only
+   * available when the merged project is known, such as the merged manifest.
    *
-   * You could add some fake partial results to trigger a callback to
-   * [Detector.checkPartialResults], but that's not very clean. Therefore, you can instead override
-   * this method, which will be called for all detectors when merging in partial results, and where
-   * you can report any issues discovered in the merged project context.
+   * You could add some fake partial results to trigger a callback to [Detector.checkPartialResults], but that's not very clean. Therefore,
+   * you can instead override this method, which will be called for all detectors when merging in partial results, and where you can report
+   * any issues discovered in the merged project context.
    *
    * Given an app module and several library module dependencies:
    * * In global analysis mode: this method will be called once on the app module.
-   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and
-   *   then the `--report-only` phase is run on just the app module): this method will be called in
-   *   the `--report-only` phase on the app module.
-   * * In isolated ("on-the-fly") mode: this method will be called on the containing module, even if
-   *   it is not a root module.
+   * * In partial analysis mode (assuming Lint's `--analyze-only` phase is run on each module, and then the `--report-only` phase is run on
+   *   just the app module): this method will be called in the `--report-only` phase on the app module.
+   * * In isolated ("on-the-fly") mode: this method will be called on the containing module, even if it is not a root module.
    */
   open fun checkMergedProject(context: Context) {}
 
   /**
-   * Filter which looks at incidents previously reported via [Context.report] with a [LintMap], and
-   * returns false if the issue does not apply in the current reporting project context, or true if
-   * the issue should be reported. For issues that are accepted, the detector is also allowed to
-   * mutate the issue, such as customizing the error message further.
+   * Filter which looks at incidents previously reported via [Context.report] with a [LintMap], and returns false if the issue does not
+   * apply in the current reporting project context, or true if the issue should be reported. For issues that are accepted, the detector is
+   * also allowed to mutate the issue, such as customizing the error message further.
    */
   open fun filterIncident(context: Context, incident: Incident, map: LintMap): Boolean {
     // Don't call super.accept! This is here to make sure you
@@ -758,18 +655,16 @@ abstract class Detector {
   }
 
   /**
-   * Returns true if the given new error message reported by this detector for the given [issue] is
-   * equivalent to a message previously created by the detector.
+   * Returns true if the given new error message reported by this detector for the given [issue] is equivalent to a message previously
+   * created by the detector.
    *
-   * This is used to allow error messages to change without invalidating older lint baseline
-   * warnings. If there is no match found in the baseline, the detector is consulted via this method
-   * to check whether it should be treated as the same.
+   * This is used to allow error messages to change without invalidating older lint baseline warnings. If there is no match found in the
+   * baseline, the detector is consulted via this method to check whether it should be treated as the same.
    *
-   * Note that the baseline mechanism will first try some simple checks on its own, such as allowing
-   * messages to append new details, so you don't have to explicitly check for equality.
+   * Note that the baseline mechanism will first try some simple checks on its own, such as allowing messages to append new details, so you
+   * don't have to explicitly check for equality.
    *
-   * **Avoid directly checking strings for equality here**. Instead, consider calling for example
-   * [LintBaseline.stringsEquivalent].
+   * **Avoid directly checking strings for equality here**. Instead, consider calling for example [LintBaseline.stringsEquivalent].
    *
    * Here are some examples:
    *

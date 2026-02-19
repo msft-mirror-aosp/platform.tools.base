@@ -21,26 +21,23 @@ import kotlinx.coroutines.CoroutineScope
 
 class ReaqHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val responsePacket =
-            DdmPacket.createResponse(
-                packet.id,
-                CHUNK_TYPE,
-                DdmPayload { writeByte(if (client.isAllocationTrackerEnabled) 1 else 0) })
-        responsePacket.write(jdwpHandlerOutput)
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val responsePacket =
+      DdmPacket.createResponse(packet.id, CHUNK_TYPE, DdmPayload { writeByte(if (client.isAllocationTrackerEnabled) 1 else 0) })
+    responsePacket.write(jdwpHandlerOutput)
 
-        // Keep JDWP connection open
-        return true
-    }
+    // Keep JDWP connection open
+    return true
+  }
 
-    companion object {
+  companion object {
 
-        val CHUNK_TYPE = DdmPacket.encodeChunkType("REAQ")
-    }
+    val CHUNK_TYPE = DdmPacket.encodeChunkType("REAQ")
+  }
 }

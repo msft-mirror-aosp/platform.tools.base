@@ -26,72 +26,62 @@ import org.junit.Test
 
 class AppWithResolutionStrategyForAarTest : ModelComparator() {
 
-    @get:Rule
-    val project = GradleTestProject.builder()
-        .fromTestProject("projectWithModules")
-        .disableBuiltInKotlin()
-        .create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
 
-    @Before
-    fun setUp() {
-        project.setIncludedProjects("app", "library")
-        TestFileUtils.appendToFile(
-            project.getSubproject("app").buildFile,
-            """
-                dependencies {
-                    debugImplementation project(":library")
-                    releaseImplementation project(":library")
-                }
-                android.applicationVariants.all { variant ->
-                  if (variant.buildType.name == "debug") {
-                    variant.getCompileConfiguration().resolutionStrategy {
-                      eachDependency { DependencyResolveDetails details ->
-                        if (details.requested.name == "jdeferred-android-aar") {
-                          details.useVersion "1.2.2"
-                        }
-                      }
-                    }
-                    variant.getRuntimeConfiguration().resolutionStrategy {
-                      eachDependency { DependencyResolveDetails details ->
-                        if (details.requested.name == "jdeferred-android-aar") {
-                          details.useVersion "1.2.2"
-                        }
-                      }
-                    }
-                  }
-                }
-            """.trimIndent())
+  @Before
+  fun setUp() {
+    project.setIncludedProjects("app", "library")
+    TestFileUtils.appendToFile(
+      project.getSubproject("app").buildFile,
+      """
+      dependencies {
+          debugImplementation project(":library")
+          releaseImplementation project(":library")
+      }
+      androidComponents {
+        onVariants(selector().withBuildType("debug")) { variant ->
+          variant.getCompileConfiguration().resolutionStrategy {
+            eachDependency { DependencyResolveDetails details ->
+              if (details.requested.name == "jdeferred-android-aar") {
+                details.useVersion "1.2.2"
+              }
+            }
+          }
+          variant.getRuntimeConfiguration().resolutionStrategy {
+            eachDependency { DependencyResolveDetails details ->
+              if (details.requested.name == "jdeferred-android-aar") {
+                details.useVersion "1.2.2"
+              }
+            }
+          }
+        }
+      }
+      """
+        .trimIndent(),
+    )
 
-        TestFileUtils.appendToFile(
-            project.getSubproject("library").buildFile,
-            """
-                dependencies {
-                    api "org.jdeferred:jdeferred-android-aar:1.2.3"
-                }
-            """.trimIndent())
-    }
+    TestFileUtils.appendToFile(
+      project.getSubproject("library").buildFile,
+      """
+      dependencies {
+          api "org.jdeferred:jdeferred-android-aar:1.2.3"
+      }
+      """
+        .trimIndent(),
+    )
+  }
 
-    @Test
-    fun `test debug VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "debug")
+  @Test
+  fun `test debug VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_debugVariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_debugVariantDependencies")
+  }
 
-    @Test
-    fun `test release VariantDependencies model`() {
-        val result =
-            project.modelV2()
-                .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
-                .fetchModels(variantName = "release")
+  @Test
+  fun `test release VariantDependencies model`() {
+    val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "release")
 
-        with(result).compareVariantDependencies(
-            projectAction = { getProject(":app") }, goldenFile = "app_releaseVariantDependencies"
-        )
-    }
+    with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_releaseVariantDependencies")
+  }
 }

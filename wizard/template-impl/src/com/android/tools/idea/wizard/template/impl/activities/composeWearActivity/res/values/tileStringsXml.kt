@@ -17,7 +17,7 @@
 package com.android.tools.idea.wizard.template.impl.activities.composeWearActivity.res.values
 
 fun tileStringsXml(): String {
-    return """
+  return """
 <resources>
     <string name="tile_label">Example tile</string>
 </resources>

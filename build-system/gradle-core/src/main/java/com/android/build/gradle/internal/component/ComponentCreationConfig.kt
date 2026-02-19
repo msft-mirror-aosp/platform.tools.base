@@ -26,12 +26,15 @@ import com.android.build.gradle.internal.component.features.AndroidResourcesCrea
 import com.android.build.gradle.internal.component.features.BuildConfigCreationConfig
 import com.android.build.gradle.internal.component.features.InstrumentationCreationConfig
 import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
-import com.android.build.gradle.internal.component.features.PrivacySandboxCreationConfig
 import com.android.build.gradle.internal.component.features.ResValuesCreationConfig
 import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySupport
 import com.android.build.gradle.internal.core.ProductFlavor
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.EXTERNAL
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.PROJECT
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.JAR
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.ANNOTATION_PROCESSOR
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
@@ -39,152 +42,141 @@ import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentType
+import java.io.File
+import java.util.function.Predicate
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.compile.JavaCompile
-import java.io.File
-import java.util.function.Predicate
 
 /**
  * Base of the interfaces used internally to access *PropertiesImpl object.
  *
- * This allows a graph hierarchy rather than a strict tree, in order to have multiple
- * supertype and make some tasks receive a generic type that does not fit the actual
- * implementation hierarchy (see for instance ApkCreationConfig)
+ * This allows a graph hierarchy rather than a strict tree, in order to have multiple supertype and make some tasks receive a generic type
+ * that does not fit the actual implementation hierarchy (see for instance ApkCreationConfig)
  */
 interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
-    // ---------------------------------------------------------------------------------------------
-    // BASIC INFO
-    // ---------------------------------------------------------------------------------------------
-    val dirName: String
-    val baseName: String
-    val componentType: ComponentType
-    val description: String
-    val productFlavorList: List<ProductFlavor>
+  // ---------------------------------------------------------------------------------------------
+  // BASIC INFO
+  // ---------------------------------------------------------------------------------------------
+  val dirName: String
+  val baseName: String
+  val componentType: ComponentType
+  val description: String
+  val productFlavorList: List<ProductFlavor>
 
-    // ---------------------------------------------------------------------------------------------
-    // NEEDED BY ALL COMPONENTS
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // NEEDED BY ALL COMPONENTS
+  // ---------------------------------------------------------------------------------------------
 
-    // needed by resource compilation/link
-    val applicationId: Provider<String>
-    val namespace: Provider<String>
-    val debuggable: Boolean
-    val minSdk: AndroidVersion
+  // needed by resource compilation/link
+  val applicationId: Provider<String>
+  val namespace: Provider<String>
+  val debuggable: Boolean
+  val minSdk: AndroidVersion
 
-    val builtInKotlinSupportMode: BuiltInKotlinSupportMode
-    val builtInKaptSupportMode: BuiltInKaptSupportMode
+  val builtInKotlinSupportMode: BuiltInKotlinSupportMode
+  val builtInKaptSupportMode: BuiltInKaptSupportMode
 
-    /**
-      * Whether we should provide Kotlin support for this component.
-      *
-      * The value is `true` when
-      *   - built-in Kotlin is enabled
-      *   - or built-in Kotlin is disabled, but we want to provide Kotlin support for
-      *     test-fixture / screenshot-test components
-      */
-    val useBuiltInKotlinSupport: Boolean
-        get() = builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported
-                || builtInKotlinSupportMode is BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest
+  /**
+   * Whether we should provide Kotlin support for this component.
+   *
+   * The value is `true` when
+   * - built-in Kotlin is enabled
+   * - or built-in Kotlin is disabled, but we want to provide Kotlin support for test-fixture / screenshot-test components
+   */
+  val useBuiltInKotlinSupport: Boolean
+    get() =
+      builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported ||
+        builtInKotlinSupportMode is BuiltInKotlinSupportMode.SupportedForTestFixturesAndScreenshotTest
 
-    val useBuiltInKaptSupport: Boolean
-        get() = builtInKaptSupportMode is BuiltInKaptSupportMode.Supported
-                || builtInKaptSupportMode is BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest
+  val useBuiltInKaptSupport: Boolean
+    get() =
+      builtInKaptSupportMode is BuiltInKaptSupportMode.Supported ||
+        builtInKaptSupportMode is BuiltInKaptSupportMode.SupportedForTestFixturesAndScreenshotTest
 
-    /**
-     * Attaches all the registered callbacks on the java compilation task once it's registered
-     */
-    fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>)
+  /** Attaches all the registered callbacks on the java compilation task once it's registered */
+  fun attachRegisteredActionsToJavaCompileTask(taskProvider: TaskProvider<out JavaCompile>)
 
-    // ---------------------------------------------------------------------------------------------
-    // OPTIONAL FEATURES
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // OPTIONAL FEATURES
+  // ---------------------------------------------------------------------------------------------
 
-    /**
-     * Will be null when corresponding feature processing is turned off for this component.
-     */
-    val androidResourcesCreationConfig: AndroidResourcesCreationConfig?
-    val resValuesCreationConfig: ResValuesCreationConfig?
-    val buildConfigCreationConfig: BuildConfigCreationConfig?
-    val instrumentationCreationConfig: InstrumentationCreationConfig?
-    val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig?
-    val privacySandboxCreationConfig: PrivacySandboxCreationConfig?
+  /** Will be null when corresponding feature processing is turned off for this component. */
+  val androidResourcesCreationConfig: AndroidResourcesCreationConfig?
+  val resValuesCreationConfig: ResValuesCreationConfig?
+  val buildConfigCreationConfig: BuildConfigCreationConfig?
+  val instrumentationCreationConfig: InstrumentationCreationConfig?
+  val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig?
 
-    /**
-     * android resources can be null for components like KMP that do not support android resources.
-     * Having a non null instance does not mean that android resources processing is turned on for
-     * this component.
-     */
-    val androidResources: AndroidResourcesImpl?
+  /**
+   * android resources can be null for components like KMP that do not support android resources. Having a non null instance does not mean
+   * that android resources processing is turned on for this component.
+   */
+  val androidResources: AndroidResourcesImpl?
 
-    // ---------------------------------------------------------------------------------------------
-    // INTERNAL DELEGATES
-    // ---------------------------------------------------------------------------------------------
-    val buildFeatures: BuildFeatureValues
-    val variantDependencies: VariantDependencies
-    val sources: InternalSources
-    val paths: VariantPathHelper
-    val lifecycleTasks: LifecycleTasksImpl
+  // ---------------------------------------------------------------------------------------------
+  // INTERNAL DELEGATES
+  // ---------------------------------------------------------------------------------------------
+  val buildFeatures: BuildFeatureValues
+  val variantDependencies: VariantDependencies
+  val sources: InternalSources
+  val paths: VariantPathHelper
+  val lifecycleTasks: LifecycleTasksImpl
 
-    /**
-     * Access to the global task creation configuration
-     */
-    val global: GlobalTaskCreationConfig
+  /** Access to the global task creation configuration */
+  val global: GlobalTaskCreationConfig
 
-    // ---------------------------------------------------------------------------------------------
-    // INTERNAL HELPERS
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // INTERNAL HELPERS
+  // ---------------------------------------------------------------------------------------------
 
-    fun finalizeAndLock()
+  fun finalizeAndLock()
 
-    /**
-     * Get the compile classpath for compiling sources in this component
-     */
-    fun getJavaClasspath(
-        configType: AndroidArtifacts.ConsumedConfigType,
-        classesType: AndroidArtifacts.ArtifactType,
-        generatedBytecodeKey: Any? = null
-    ): FileCollection
+  /** Get the compile classpath for compiling sources in this component */
+  fun getJavaClasspath(
+    configType: AndroidArtifacts.ConsumedConfigType,
+    classesType: AndroidArtifacts.ArtifactType,
+    generatedBytecodeKey: Any? = null,
+  ): FileCollection
 
-    val compileClasspath: FileCollection
+  val compileClasspath: FileCollection
 
-    val providedOnlyClasspath: FileCollection
+  val providedOnlyClasspath: FileCollection
 
-    val javaCompilation: JavaCompilation
+  val javaCompilation: JavaCompilation
 
-    fun computeLocalFileDependencies(filePredicate: Predicate<File>): FileCollection
+  fun computeLocalFileDependencies(filePredicate: Predicate<File>): FileCollection
 
-    fun computeLocalPackagedJars(): FileCollection
+  fun computeLocalPackagedJars(): FileCollection
 
-    /**
-     * Returns the artifact name modified depending on the component type.
-     */
-    fun getArtifactName(name: String): String
+  /** Returns the artifact name modified depending on the component type. */
+  fun getArtifactName(name: String): String
 
-    /** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs.  */
-    fun publishBuildArtifacts()
+  /** Publish intermediate artifacts in the BuildArtifactsHolder based on PublishingSpecs. */
+  fun publishBuildArtifacts()
 
-    /**
-     * Returns the Kotlinc output directory if built-in Kotlin support is enabled, or null if not.
-     */
-    fun getBuiltInKotlincOutput(): Provider<Directory>? =
-        artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
+  /** Returns the Kotlinc output directory if built-in Kotlin support is enabled, or null if not. */
+  fun getBuiltInKotlincOutput(): Provider<Directory>? =
+    artifacts.get(InternalArtifactType.BUILT_IN_KOTLINC).takeIf { useBuiltInKotlinSupport }
 
-    /**
-     * Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or
-     * null if not.
-     */
-    fun getBuiltInKaptArtifact(
-        internalArtifactType: InternalArtifactType<Directory>
-    ): Provider<Directory>? =
-        artifacts.get(internalArtifactType).takeIf { useBuiltInKaptSupport }
+  /** Returns the directory for the [internalArtifactType] if built-in KAPT support is enabled, or null if not. */
+  fun getBuiltInKaptArtifact(internalArtifactType: InternalArtifactType<Directory>): Provider<Directory>? =
+    artifacts.get(internalArtifactType).takeIf { useBuiltInKaptSupport }
 
-    // ---------------------------------------------------------------------------------------------
-    // LEGACY SUPPORT
-    // ---------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------
+  // LEGACY SUPPORT
+  // ---------------------------------------------------------------------------------------------
 
-    @Deprecated("DO NOT USE, this is just for old variant API legacy support")
-    val oldVariantApiLegacySupport: OldVariantApiLegacySupport?
+  @Deprecated("DO NOT USE, this is just for old variant API legacy support") val oldVariantApiLegacySupport: OldVariantApiLegacySupport?
+
+  fun getAnnotationProcessorJars(): FileCollection {
+    // Optimization: For project jars, query for JAR instead of PROCESSED_JAR as project jars are
+    // currently considered already processed (unlike external jars).
+    val projectJars = variantDependencies.getArtifactFileCollection(ANNOTATION_PROCESSOR, PROJECT, JAR)
+    val externalJars = variantDependencies.getArtifactFileCollection(ANNOTATION_PROCESSOR, EXTERNAL, global.aarOrJarTypeToConsume.jar)
+
+    return projectJars.plus(externalJars)
+  }
 }

@@ -19,43 +19,43 @@ import com.android.fakeadbserver.ClientState
 import com.android.fakeadbserver.DeviceState
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.createResponse
 import com.android.fakeadbserver.devicecommandhandlers.ddmsHandlers.DdmPacket.Companion.encodeChunkType
-import kotlinx.coroutines.CoroutineScope
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import kotlinx.coroutines.CoroutineScope
 
 class FeatHandler : DdmPacketHandler {
 
-    override fun handlePacket(
-        device: DeviceState,
-        client: ClientState,
-        packet: DdmPacket,
-        jdwpHandlerOutput: JdwpHandlerOutput,
-        socketScope: CoroutineScope
-    ): Boolean {
-        val features = client.features
-        // 4 = number of features
-        // for each feature:
-        //   4 = number of UTF-16 characters
-        //   2 = number of bytes per UTF-16 character
-        val payloadLength = 4 + features.sumOf { 4 + 2 * it.length }
-        val payload = ByteBuffer.allocate(payloadLength).order(ByteOrder.BIG_ENDIAN)
-        payload.putInt(features.size)
-        for (feature in features) {
-            payload.putInt(feature.length)
-            for (c in feature) {
-                payload.putChar(c)
-            }
-        }
-
-        val responsePacket = createResponse(packet.id, CHUNK_TYPE, payload.array())
-        responsePacket.write(jdwpHandlerOutput)
-
-        // Keep JDWP connection open
-        return true
+  override fun handlePacket(
+    device: DeviceState,
+    client: ClientState,
+    packet: DdmPacket,
+    jdwpHandlerOutput: JdwpHandlerOutput,
+    socketScope: CoroutineScope,
+  ): Boolean {
+    val features = client.features
+    // 4 = number of features
+    // for each feature:
+    //   4 = number of UTF-16 characters
+    //   2 = number of bytes per UTF-16 character
+    val payloadLength = 4 + features.sumOf { 4 + 2 * it.length }
+    val payload = ByteBuffer.allocate(payloadLength).order(ByteOrder.BIG_ENDIAN)
+    payload.putInt(features.size)
+    for (feature in features) {
+      payload.putInt(feature.length)
+      for (c in feature) {
+        payload.putChar(c)
+      }
     }
 
-    companion object {
+    val responsePacket = createResponse(packet.id, CHUNK_TYPE, payload.array())
+    responsePacket.write(jdwpHandlerOutput)
 
-        val CHUNK_TYPE = encodeChunkType("FEAT")
-    }
+    // Keep JDWP connection open
+    return true
+  }
+
+  companion object {
+
+    val CHUNK_TYPE = encodeChunkType("FEAT")
+  }
 }

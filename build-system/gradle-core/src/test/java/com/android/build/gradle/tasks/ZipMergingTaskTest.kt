@@ -18,86 +18,83 @@ package com.android.build.gradle.tasks
 
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.testutils.truth.ZipFileSubject.assertThat
-import org.gradle.testfixtures.ProjectBuilder
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import org.gradle.testfixtures.ProjectBuilder
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
-/** Test for ZipMergingTask.  */
+/** Test for ZipMergingTask. */
 class ZipMergingTaskTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-    @Test
-    @Throws(IOException::class)
-    fun merge() {
-        val zip = temporaryFolder.newFile("file1.zip")
-        val folder = temporaryFolder.newFolder("file2")
+  @Test
+  @Throws(IOException::class)
+  fun merge() {
+    val zip = temporaryFolder.newFile("file1.zip")
+    val folder = temporaryFolder.newFolder("file2")
 
-        createZip(zip, "foo.txt", "foo")
-        File(folder, "bar.txt").writeText("bar")
+    createZip(zip, "foo.txt", "foo")
+    File(folder, "bar.txt").writeText("bar")
 
-        val testDir = temporaryFolder.newFolder()
-        val project = ProjectBuilder.builder().withProjectDir(testDir).build()
+    val testDir = temporaryFolder.newFolder()
+    val project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        val output = File(temporaryFolder.newFolder(), "output.zip")
-        val task = project.tasks.create("test", ZipMergingTask::class.java)
+    val output = File(temporaryFolder.newFolder(), "output.zip")
+    val task = project.tasks.create("test", ZipMergingTask::class.java)
 
-        task.libraryInputFile.set(zip)
-        task.javaResDirectory.set(folder)
-        task.outputFile.set(output)
-        task.doTaskAction()
+    task.libraryInputFile.set(zip)
+    task.javaResDirectory.set(folder)
+    task.outputFile.set(output)
+    task.doTaskAction()
 
-        assertThat(output).exists()
+    assertThat(output).exists()
 
-        assertThat(output) {
-            it.containsFileWithContent("foo.txt", "foo")
-            it.containsFileWithContent("bar.txt", "bar")
-        }
+    assertThat(output) {
+      it.containsFileWithContent("foo.txt", "foo")
+      it.containsFileWithContent("bar.txt", "bar")
     }
+  }
 
-    @Test
-    fun mergeDuplicates() {
-        val zip = temporaryFolder.newFile("file1.zip")
-        val folder = temporaryFolder.newFolder("file2")
+  @Test
+  fun mergeDuplicates() {
+    val zip = temporaryFolder.newFile("file1.zip")
+    val folder = temporaryFolder.newFolder("file2")
 
-        createZip(zip, "foo.txt", "foo")
-        File(folder, "foo.txt").writeText("foo")
+    createZip(zip, "foo.txt", "foo")
+    File(folder, "foo.txt").writeText("foo")
 
-        val testDir = temporaryFolder.newFolder()
-        val project = ProjectBuilder.builder().withProjectDir(testDir).build()
+    val testDir = temporaryFolder.newFolder()
+    val project = ProjectBuilder.builder().withProjectDir(testDir).build()
 
-        val output = File(temporaryFolder.newFolder(), "output.zip")
-        val task = project.tasks.create("test", ZipMergingTask::class.java)
+    val output = File(temporaryFolder.newFolder(), "output.zip")
+    val task = project.tasks.create("test", ZipMergingTask::class.java)
 
-        task.libraryInputFile.set(zip)
-        task.javaResDirectory.set(folder)
-        task.outputFile.set(output)
-        task.doTaskAction()
+    task.libraryInputFile.set(zip)
+    task.javaResDirectory.set(folder)
+    task.outputFile.set(output)
+    task.doTaskAction()
 
-        assertThat(output).exists()
+    assertThat(output).exists()
 
-        assertThat(output) {
-            it.containsFileWithContent("foo.txt", "foo")
+    assertThat(output) { it.containsFileWithContent("foo.txt", "foo") }
+  }
+
+  @Throws(IOException::class)
+  private fun createZip(file: File, entry: String, content: String) {
+    FileOutputStream(file).use { fos ->
+      BufferedOutputStream(fos).use { bos ->
+        ZipOutputStream(bos).use { zos ->
+          zos.putNextEntry(ZipEntry(entry))
+          zos.write(content.toByteArray())
+          zos.closeEntry()
         }
+      }
     }
-
-    @Throws(IOException::class)
-    private fun createZip(file: File, entry: String, content: String) {
-        FileOutputStream(file).use { fos ->
-            BufferedOutputStream(fos).use { bos ->
-                ZipOutputStream(bos).use { zos ->
-                    zos.putNextEntry(ZipEntry(entry))
-                    zos.write(content.toByteArray())
-                    zos.closeEntry()
-                }
-            }
-        }
-    }
+  }
 }

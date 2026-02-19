@@ -50,8 +50,7 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
                 and not by calling `uAnnotations` directly on UAST or PSI elements.
             """,
         severity = Severity.ERROR,
-        implementation =
-          Implementation(ExternalAnnotationsDetector::class.java, Scope.JAVA_FILE_SCOPE),
+        implementation = Implementation(ExternalAnnotationsDetector::class.java, Scope.JAVA_FILE_SCOPE),
       )
 
     private val relevantClasses =
@@ -73,11 +72,7 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
   }
 
   // For references to Kotlin properties.
-  override fun visitReference(
-    context: JavaContext,
-    reference: UReferenceExpression,
-    referenced: PsiElement,
-  ) {
+  override fun visitReference(context: JavaContext, reference: UReferenceExpression, referenced: PsiElement) {
     if (isKotlin(referenced.language)) {
       check(reference, referenced as? PsiMember ?: return, context)
     }
@@ -85,10 +80,7 @@ class ExternalAnnotationsDetector : Detector(), SourceCodeScanner {
 
   private fun check(expression: UExpression, member: PsiMember, context: JavaContext) {
     val evaluator = context.evaluator
-    if (
-      relevantClasses.any { evaluator.isMemberInClass(member, it) } &&
-        isRelevantCaller(expression, evaluator)
-    ) {
+    if (relevantClasses.any { evaluator.isMemberInClass(member, it) } && isRelevantCaller(expression, evaluator)) {
       context.report(
         ISSUE,
         expression,

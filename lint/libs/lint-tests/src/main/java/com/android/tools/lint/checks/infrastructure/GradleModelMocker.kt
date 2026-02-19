@@ -84,8 +84,8 @@ import kotlin.text.Charsets
 import org.intellij.lang.annotations.Language
 
 /**
- * A utility class which builds mocks for the Gradle builder-model API, by loosely interpreting
- * .gradle files and building models based on recognizing common patterns there.
+ * A utility class which builds mocks for the Gradle builder-model API, by loosely interpreting .gradle files and building models based on
+ * recognizing common patterns there.
  *
  * TODO: Clean way to configure whether build dep cache is enabled
  * TODO: Handle scopes (test dependencies etc)
@@ -117,10 +117,8 @@ constructor(
       name = "defaultConfig",
       mainSourceProvider = createSourceProvider(projectDir, "main"),
       unitTestSourceProvider = createSourceProvider(projectDir, "test", isUnitTest = true),
-      instrumentationTestSourceProvider =
-        createSourceProvider(projectDir, "androidTest", isInstrumentationTest = true),
-      testFixturesSourceProvider =
-        createSourceProvider(projectDir, "testFixtures", isTestFixture = true),
+      instrumentationTestSourceProvider = createSourceProvider(projectDir, "androidTest", isInstrumentationTest = true),
+      testFixturesSourceProvider = createSourceProvider(projectDir, "testFixtures", isTestFixture = true),
     )
   private var flavorDimensions: List<String> = emptyList()
   private var buildTypes: List<TestBuildType> = emptyList()
@@ -133,14 +131,9 @@ constructor(
   private val libraryPublicResourcesFiles: MutableMap<String, String> = HashMap()
   private val librarySymbolFiles: MutableMap<String, String> = HashMap()
 
-  private val androidLibraryInstances:
-    MutableMap<TestLintModelAndroidLibrary, TestLintModelAndroidLibrary> =
-    mutableMapOf()
-  private val javaLibraryInstances: MutableMap<TestLintModelJavaLibrary, TestLintModelJavaLibrary> =
-    mutableMapOf()
-  private val moduleLibraryInstances:
-    MutableMap<TestLintModelModuleLibrary, TestLintModelModuleLibrary> =
-    mutableMapOf()
+  private val androidLibraryInstances: MutableMap<TestLintModelAndroidLibrary, TestLintModelAndroidLibrary> = mutableMapOf()
+  private val javaLibraryInstances: MutableMap<TestLintModelJavaLibrary, TestLintModelJavaLibrary> = mutableMapOf()
+  private val moduleLibraryInstances: MutableMap<TestLintModelModuleLibrary, TestLintModelModuleLibrary> = mutableMapOf()
   private val libraryTable: MutableMap<String, LintModelLibrary> = mutableMapOf()
 
   private val main = DepConf()
@@ -182,16 +175,18 @@ constructor(
     return this
   }
 
+  fun withHighlightGradualR8Api(flag: Boolean): GradleModelMocker {
+    updateModule { it.copy(highlightGradualR8Api = flag) }
+    return this
+  }
+
   fun withLibraryLintJar(library: String, lintJarPath: String): GradleModelMocker {
     ensureNotInitialized()
     libraryLintJars[library] = lintJarPath
     return this
   }
 
-  fun withLibraryPublicResourcesFile(
-    library: String,
-    publicResourcesPath: String,
-  ): GradleModelMocker {
+  fun withLibraryPublicResourcesFile(library: String, publicResourcesPath: String): GradleModelMocker {
     ensureNotInitialized()
     libraryPublicResourcesFiles[library] = publicResourcesPath
     return this
@@ -209,8 +204,7 @@ constructor(
   }
 
   /**
-   * If true, model a full/deep dependency graph in [ ]; the default is flat. (This is normally
-   * controlled by sync/model builder flag
+   * If true, model a full/deep dependency graph in [ ]; the default is flat. (This is normally controlled by sync/model builder flag
    * `AndroidProject.PROPERTY_BUILD_MODEL_FEATURE_FULL_DEPENDENCIES`.)
    */
   @Suppress("unused")
@@ -281,10 +275,13 @@ constructor(
   val generatedSourceFolders: Collection<File>
     get() {
       ensureInitialized()
-      return moduleModel.variants
-        .single { it.name == defaultVariantName }
-        .mainArtifact
-        .generatedSourceFolders
+      return moduleModel.variants.single { it.name == defaultVariantName }.mainArtifact.generatedSourceFolders
+    }
+
+  val keepRulesSourceFolders: Collection<File>
+    get() {
+      ensureInitialized()
+      return moduleModel.variants.single { it.name == defaultVariantName }.sourceProviders.flatMap { it.keepRulesDirectories }
     }
 
   fun syncFlagsTo(to: LintCliFlags) {
@@ -359,9 +356,7 @@ constructor(
         listOfNotNull(defaultConfig.mainSourceProvider) +
           productFlavorsInConfigOrder.mapNotNull { it.mainSourceProvider } +
           listOfNotNull(
-            if (productFlavorsInConfigOrder.size > 1)
-              createSourceProvider(projectDir, buildVariantName(productFlavors))
-            else null
+            if (productFlavorsInConfigOrder.size > 1) createSourceProvider(projectDir, buildVariantName(productFlavors)) else null
           ) +
           listOfNotNull(buildType.mainSourceProvider) +
           listOfNotNull(
@@ -370,23 +365,13 @@ constructor(
             else null
           )
       val testSourceProviders =
-        listOfNotNull(
-          defaultConfig.instrumentationTestSourceProvider,
-          defaultConfig.unitTestSourceProvider,
-        ) +
-          productFlavorsInConfigOrder.flatMap {
-            listOfNotNull(it.instrumentationTestSourceProvider, it.unitTestSourceProvider)
-          } +
-          listOfNotNull(
-            buildType.instrumentationTestSourceProvider,
-            buildType.unitTestSourceProvider,
-          )
+        listOfNotNull(defaultConfig.instrumentationTestSourceProvider, defaultConfig.unitTestSourceProvider) +
+          productFlavorsInConfigOrder.flatMap { listOfNotNull(it.instrumentationTestSourceProvider, it.unitTestSourceProvider) } +
+          listOfNotNull(buildType.instrumentationTestSourceProvider, buildType.unitTestSourceProvider)
 
       val testFixturesSourceProviders =
-        listOfNotNull(
-          defaultConfig.testFixturesSourceProvider,
-          buildType.testFixturesSourceProvider,
-        ) + productFlavorsInConfigOrder.mapNotNull { it.testFixturesSourceProvider }
+        listOfNotNull(defaultConfig.testFixturesSourceProvider, buildType.testFixturesSourceProvider) +
+          productFlavorsInConfigOrder.mapNotNull { it.testFixturesSourceProvider }
       val generated = File(projectDir, "generated")
       val mergedFlavorsAndBuildType = merge(defaultConfig, productFlavors, buildType)
       val artifact =
@@ -401,8 +386,7 @@ constructor(
               File(projectDir, "build/tmp/kotlin-classes/$variantName"),
             ),
           desugaredMethodsFiles =
-            if (buildFeatures.coreLibraryDesugaringEnabled)
-              getDefaultLibraryDesugaringFiles(defaultConfig.minSdkVersion?.apiLevel ?: 1)
+            if (buildFeatures.coreLibraryDesugaringEnabled) getDefaultLibraryDesugaringFiles(defaultConfig.minSdkVersion?.apiLevel ?: 1)
             else emptyList(),
           type = LintModelArtifactType.MAIN,
         )
@@ -443,10 +427,8 @@ constructor(
               desugaredMethodsFiles = emptySet(),
               type = LintModelArtifactType.TEST_FIXTURES,
             ),
-          mergedManifest =
-            null, // Injected elsewhere by the legacy Android Gradle Plugin lint runner
-          manifestMergeReport =
-            null, // Injected elsewhere by the legacy Android Gradle Plugin lint runner
+          mergedManifest = null, // Injected elsewhere by the legacy Android Gradle Plugin lint runner
+          manifestMergeReport = null, // Injected elsewhere by the legacy Android Gradle Plugin lint runner
           `package` = namespace,
           minSdkVersion = mergedFlavorsAndBuildType.minSdkVersion,
           targetSdkVersion = mergedFlavorsAndBuildType.targetSdkVersion,
@@ -464,8 +446,7 @@ constructor(
           libraryResolver = this,
           partialResultsDir = null,
           desugaredMethodsFiles =
-            if (buildFeatures.coreLibraryDesugaringEnabled)
-              getDefaultLibraryDesugaringFiles(defaultConfig.minSdkVersion?.apiLevel ?: 1)
+            if (buildFeatures.coreLibraryDesugaringEnabled) getDefaultLibraryDesugaringFiles(defaultConfig.minSdkVersion?.apiLevel ?: 1)
             else emptyList(),
         )
       )
@@ -475,12 +456,8 @@ constructor(
 
   private fun generateVariants(): List<Pair<TestBuildType, List<TestProductFlavor>>> {
     val dimensions =
-      flavorDimensions.takeUnless { it.isEmpty() }?.toList()
-        ?: if (productFlavors.isNotEmpty()) listOf(null) else emptyList()
-    val dimensionFlavors =
-      dimensions.map { dimensionNameOrNull ->
-        productFlavors.filter { it.dimension == dimensionNameOrNull }
-      }
+      flavorDimensions.takeUnless { it.isEmpty() }?.toList() ?: if (productFlavors.isNotEmpty()) listOf(null) else emptyList()
+    val dimensionFlavors = dimensions.map { dimensionNameOrNull -> productFlavors.filter { it.dimension == dimensionNameOrNull } }
     return dimensionFlavors
       .fold<List<TestProductFlavor>, Sequence<Pair<TestBuildType, List<TestProductFlavor>>>>(
         buildTypes.asSequence().map { it to emptyList() }
@@ -490,10 +467,7 @@ constructor(
       .toList()
   }
 
-  private fun buildVariantName(
-    productFlavors: List<TestProductFlavor>,
-    buildType: TestBuildType? = null,
-  ): String {
+  private fun buildVariantName(productFlavors: List<TestProductFlavor>, buildType: TestBuildType? = null): String {
     return buildString {
       productFlavors.forEach { appendCamelCase(it.name) }
       if (buildType != null) {
@@ -532,21 +506,17 @@ constructor(
     }
 
     fun <T> combineNullables(u: T?, v: T) = u ?: v
-    fun combineSuffixes(u: String?, v: String?) =
-      if (u != null || v != null) u.orEmpty() + v.orEmpty() else null
+    fun combineSuffixes(u: String?, v: String?) = if (u != null || v != null) u.orEmpty() + v.orEmpty() else null
     fun <T> combineSets(u: Collection<T>?, v: Collection<T>) = u.orEmpty().toSet() + v
     fun <T> combineMaps(u: Map<String, T>?, v: Map<String, T>) = v + (u ?: emptyMap())
 
     return TestProductFlavor(
       dimension = null,
       name = buildVariantName(productFlavors, buildType),
-      applicationIdSuffix =
-        combineValues(::combineSuffixes, { applicationIdSuffix }, { null }, reverseFlavors = false),
-      versionNameSuffix =
-        combineValues(::combineSuffixes, { versionNameSuffix }, { null }, reverseFlavors = false),
+      applicationIdSuffix = combineValues(::combineSuffixes, { applicationIdSuffix }, { null }, reverseFlavors = false),
+      versionNameSuffix = combineValues(::combineSuffixes, { versionNameSuffix }, { null }, reverseFlavors = false),
       resValues = combineValues(::combineMaps, { resValues }, { resValues }),
-      manifestPlaceholders =
-        combineValues(::combineMaps, { manifestPlaceholders }, { manifestPlaceholders }),
+      manifestPlaceholders = combineValues(::combineMaps, { manifestPlaceholders }, { manifestPlaceholders }),
       applicationId = combineValues(::combineNullables, { applicationId }, { null }),
       versionCode = combineValues(::combineNullables, { versionCode }),
       versionName = combineValues(::combineNullables, { versionName }),
@@ -566,8 +536,7 @@ constructor(
     fun <T : LintModelLibrary> Collection<T>.resolveConflicts(): Collection<T> {
       return groupBy {
           when (it) {
-            is LintModelExternalLibrary ->
-              it.resolvedCoordinates.groupId to it.resolvedCoordinates.artifactId
+            is LintModelExternalLibrary -> it.resolvedCoordinates.groupId to it.resolvedCoordinates.artifactId
             is LintModelModuleLibrary -> "artifacts" to it.projectPath
             else -> throw RuntimeException("Not supported library type")
           }
@@ -589,10 +558,7 @@ constructor(
           dep?.androidLibraries?.resolveConflicts()?.map {
             DefaultLintModelDependency(
               identifier = it.identifier,
-              artifactName =
-                it.resolvedCoordinates.let { mavenName ->
-                  "${mavenName.groupId}:${mavenName.artifactId}"
-                },
+              artifactName = it.resolvedCoordinates.let { mavenName -> "${mavenName.groupId}:${mavenName.artifactId}" },
               requestedCoordinates = null,
               dependencies = emptyList(),
               this,
@@ -601,10 +567,7 @@ constructor(
           dep?.javaLibraries?.resolveConflicts()?.map {
             DefaultLintModelDependency(
               identifier = it.identifier,
-              artifactName =
-                it.resolvedCoordinates.let { mavenName ->
-                  "${mavenName.groupId}:${mavenName.artifactId}"
-                },
+              artifactName = it.resolvedCoordinates.let { mavenName -> "${mavenName.groupId}:${mavenName.artifactId}" },
               requestedCoordinates = null,
               dependencies = emptyList(),
               this,
@@ -647,8 +610,7 @@ constructor(
             if (index != -1) {
               val jars = path.indexOf("jars")
               if (jars != -1) {
-                coordinateString =
-                  path.substring(index + 13, jars - 1).replace("/", ":").replace("\\", ":")
+                coordinateString = path.substring(index + 13, jars - 1).replace("/", ":").replace("\\", ":")
                 val library = createAndroidLibrary(coordinateString, null, false, lib)
                 main.androidLibraries.add(library)
                 return
@@ -800,13 +762,9 @@ constructor(
       val manifest = Manifest()
       manifest.mainAttributes[Attributes.Name.MANIFEST_VERSION] = "1.0"
       try {
-        JarOutputStream(BufferedOutputStream(FileOutputStream(jar)), manifest).use { jarOutputStream
-          ->
+        JarOutputStream(BufferedOutputStream(FileOutputStream(jar)), manifest).use { jarOutputStream ->
           jarOutputStream.putNextEntry(ZipEntry("sample.txt"))
-          ByteStreams.copy(
-            ByteArrayInputStream("Sample".toByteArray(Charsets.UTF_8)),
-            jarOutputStream,
-          )
+          ByteStreams.copy(ByteArrayInputStream("Sample".toByteArray(Charsets.UTF_8)), jarOutputStream)
           jarOutputStream.closeEntry()
         }
       } catch (e: IOException) {
@@ -924,11 +882,7 @@ constructor(
       return
     }
 
-    fun updateProjectType(
-      moduleType: LintModelModuleType,
-      hasJavaOrJavaLibraryPlugin: Boolean,
-      isLibrary: Boolean,
-    ): Boolean {
+    fun updateProjectType(moduleType: LintModelModuleType, hasJavaOrJavaLibraryPlugin: Boolean, isLibrary: Boolean): Boolean {
       this.hasJavaOrJavaLibraryPlugin = hasJavaOrJavaLibraryPlugin
       _isLibrary = isLibrary
       updateModule { it.copy(type = moduleType) }
@@ -941,54 +895,25 @@ constructor(
         "apply plugin: 'android-library'",
         "alias(libs.plugins.androidLibrary)",
         "alias(libs.plugins.android.library)" ->
-          updateProjectType(
-            LintModelModuleType.LIBRARY,
-            hasJavaOrJavaLibraryPlugin = false,
-            isLibrary = true,
-          )
+          updateProjectType(LintModelModuleType.LIBRARY, hasJavaOrJavaLibraryPlugin = false, isLibrary = true)
         "apply plugin: 'com.android.application'",
         "apply plugin: 'android'",
         "alias(libs.plugins.androidApplication)",
         "alias(libs.plugins.android.application)" ->
-          updateProjectType(
-            LintModelModuleType.APP,
-            hasJavaOrJavaLibraryPlugin = false,
-            isLibrary = false,
-          )
+          updateProjectType(LintModelModuleType.APP, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "apply plugin: 'com.android.feature'" ->
-          updateProjectType(
-            LintModelModuleType.FEATURE,
-            hasJavaOrJavaLibraryPlugin = false,
-            isLibrary = false,
-          )
+          updateProjectType(LintModelModuleType.FEATURE, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "apply plugin: 'com.android.instantapp'" ->
-          updateProjectType(
-            LintModelModuleType.INSTANT_APP,
-            hasJavaOrJavaLibraryPlugin = false,
-            isLibrary = false,
-          )
+          updateProjectType(LintModelModuleType.INSTANT_APP, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "apply plugin: 'com.android.privacy-sandbox-sdk'" ->
-          updateProjectType(
-            LintModelModuleType.PRIVACY_SANDBOX_SDK,
-            hasJavaOrJavaLibraryPlugin = false,
-            isLibrary = false,
-          )
+          updateProjectType(LintModelModuleType.PRIVACY_SANDBOX_SDK, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "java",
         "id('java')",
-        "apply plugin: 'java'" ->
-          updateProjectType(
-            LintModelModuleType.JAVA_LIBRARY,
-            hasJavaOrJavaLibraryPlugin = true,
-            isLibrary = false,
-          )
+        "apply plugin: 'java'" -> updateProjectType(LintModelModuleType.JAVA_LIBRARY, hasJavaOrJavaLibraryPlugin = true, isLibrary = false)
         "javaLibrary",
         "id('java-library')",
         "apply plugin: 'java-library'" ->
-          updateProjectType(
-            LintModelModuleType.LIBRARY,
-            hasJavaOrJavaLibraryPlugin = true,
-            isLibrary = true,
-          )
+          updateProjectType(LintModelModuleType.LIBRARY, hasJavaOrJavaLibraryPlugin = true, isLibrary = true)
         else ->
           when {
             context == "buildscript.repositories" || context == "allprojects.repositories" -> {
@@ -1024,8 +949,7 @@ constructor(
         declaration = declaration.removeSuffix("!!")
 
         if (declaration.startsWith("libs.")) {
-          val dependencies =
-            tomlDependencies ?: getTomlDependencies().also { tomlDependencies = it }
+          val dependencies = tomlDependencies ?: getTomlDependencies().also { tomlDependencies = it }
           declaration =
             dependencies[declaration]
               ?: run {
@@ -1045,11 +969,7 @@ constructor(
             var group: String? = null
             var artifact: String? = null
             var version: String? = null
-            for (part in
-              Splitter.on(',')
-                .trimResults()
-                .omitEmptyStrings()
-                .split(line.substring(line.indexOf(' ') + 1))) {
+            for (part in Splitter.on(',').trimResults().omitEmptyStrings().split(line.substring(line.indexOf(' ') + 1))) {
               if (part.startsWith("group:")) {
                 group = getUnquotedValue(part)
               } else if (part.startsWith("name:")) {
@@ -1109,26 +1029,19 @@ constructor(
       key.startsWith("android.buildToolsVersion ") -> {
         // Not used.
       }
-      (line.startsWith("minifyEnabled ") || line.startsWith("isMinifyEnabled")) &&
-        key.startsWith("android.buildTypes.") -> {
-        updateBuildTypeFromContext(context) {
-          it.copy(isMinifyEnabled = SdkConstants.VALUE_TRUE == getUnquotedValue(line))
-        }
+      (line.startsWith("minifyEnabled ") || line.startsWith("isMinifyEnabled")) && key.startsWith("android.buildTypes.") -> {
+        updateBuildTypeFromContext(context) { it.copy(isMinifyEnabled = SdkConstants.VALUE_TRUE == getUnquotedValue(line)) }
       }
       key.startsWith("android.compileSdkVersion ") ||
         key.startsWith("android.compileSdk ") ||
         key.startsWith("android.compileSdkPreview ") -> {
         val value = getUnquotedValue(key)
-        updateModule {
-          it.copy(compileTarget = if (Character.isDigit(value[0])) "android-$value" else value)
-        }
+        updateModule { it.copy(compileTarget = if (Character.isDigit(value[0])) "android-$value" else value) }
       }
       key.startsWith("android.namespace ") -> {
         val value = getUnquotedValue(key)
         namespace = value
-        updateModule { module ->
-          module.copy(variants = variants.map { variant -> variant.copy(`package` = value) })
-        }
+        updateModule { module -> module.copy(variants = variants.map { variant -> variant.copy(`package` = value) }) }
       }
       line.startsWith("resConfig") -> { // and resConfigs
         updateFlavorFromContext(context) {
@@ -1163,9 +1076,7 @@ constructor(
         */
       }
       key.startsWith("android.compileOptions.sourceCompatibility JavaVersion.VERSION_") -> {
-        updateSourceCompatibility(
-          key.substring(key.indexOf("VERSION_") + "VERSION_".length).replace('_', '.')
-        )
+        updateSourceCompatibility(key.substring(key.indexOf("VERSION_") + "VERSION_".length).replace('_', '.'))
       }
       key.startsWith("android.compileOptions.targetCompatibility JavaVersion.VERSION_") -> {
         // Not used.
@@ -1187,9 +1098,7 @@ constructor(
         key.startsWith("dependencies.androidTestCompile('") -> {
         // Ignored for now
       }
-      line.startsWith("manifestPlaceholders [") &&
-        key.startsWith("android.") &&
-        line.endsWith("]") -> {
+      line.startsWith("manifestPlaceholders [") && key.startsWith("android.") && line.endsWith("]") -> {
         fun updateManifestPlaceholders(manifestPlaceholders: MutableMap<String, String>) {
           val mapString = key.substring(key.indexOf('[') + 1, key.indexOf(']')).trim()
 
@@ -1223,11 +1132,7 @@ constructor(
       key.startsWith("android.flavorDimensions ") -> {
         val value = key.substring("android.flavorDimensions ".length)
         flavorDimensions =
-          (flavorDimensions.toSet() +
-              Splitter.on(',').omitEmptyStrings().trimResults().split(value).map {
-                getUnquotedValue(it)
-              })
-            .toList()
+          (flavorDimensions.toSet() + Splitter.on(',').omitEmptyStrings().trimResults().split(value).map { getUnquotedValue(it) }).toList()
       }
       line.startsWith("dimension ") && key.startsWith("android.productFlavors.") -> {
         val name = key.substring("android.productFlavors.".length, key.indexOf(".dimension"))
@@ -1276,8 +1181,7 @@ constructor(
             it.copy(resValues = resValues)
           }
       }
-      context.startsWith("android.splits.") &&
-        context.indexOf('.', "android.splits.".length) == -1 -> {
+      context.startsWith("android.splits.") && context.indexOf('.', "android.splits.".length) == -1 -> {
         val type = context.substring("android.splits.".length).uppercase(Locale.ROOT)
         if (line == "reset") {
           splits.removeAll(type)
@@ -1305,8 +1209,7 @@ constructor(
         when (key) {
           "quiet" -> flags.isQuiet = toBoolean(arg)
           "abortOnError" -> flags.isSetExitCode = toBoolean(arg)
-          "checkReleaseBuilds" ->
-            error("Test framework doesn't support lint DSL flag checkReleaseBuilds")
+          "checkReleaseBuilds" -> error("Test framework doesn't support lint DSL flag checkReleaseBuilds")
           "ignoreWarnings" -> flags.isIgnoreWarnings = toBoolean(arg)
           "absolutePaths" -> flags.isFullPath = toBoolean(arg)
           "checkAllWarnings" -> flags.isCheckAllWarnings = toBoolean(arg)
@@ -1396,8 +1299,7 @@ constructor(
   }
 
   private fun LintTomlValue.toGradleName(): String {
-    return "libs" +
-      (getFullKey() ?: "").removePrefix("libraries").replace('-', '.').replace('_', '.')
+    return "libs" + (getFullKey() ?: "").removePrefix("libraries").replace('-', '.').replace('_', '.')
   }
 
   private fun getTomlDependencies(): Map<String, String> {
@@ -1406,13 +1308,9 @@ constructor(
     if (toml.isFile) {
       val parser = TestLintClient().getTomlParser()
       val document =
-        parser.parse(toml, toml.readText()) { severity, location, message ->
-          warn("$severity in TOML file: $message at $location")
-        }
+        parser.parse(toml, toml.readText()) { severity, location, message -> warn("$severity in TOML file: $message at $location") }
       val versions = (document.getValue(VC_VERSIONS) as? LintTomlMapValue)
-      val libraries =
-        (document.getValue(VC_LIBRARIES) as? LintTomlMapValue)?.getMappedValues()
-          ?: return emptyMap()
+      val libraries = (document.getValue(VC_LIBRARIES) as? LintTomlMapValue)?.getMappedValues() ?: return emptyMap()
 
       val result = mutableMapOf<String, String>()
       for ((_, value: LintTomlValue) in libraries) {
@@ -1471,10 +1369,8 @@ constructor(
             lintConfig = lintConfig ?: it.lintOptions.lintConfig,
             severityOverrides = severities ?: severityOverrides,
             checkTestSources = tests ?: it.lintOptions.checkTestSources,
-            checkDependencies =
-              dependencies
-                ?: it.lintOptions
-                  .checkDependencies, // TODO: Allow these to be customized by model mocker
+            checkDependencies = dependencies ?: it.lintOptions.checkDependencies, // TODO: Allow these to be customized by model
+            // mocker
           )
       )
     }
@@ -1490,10 +1386,7 @@ constructor(
 
   private fun file(gradle: String, @Suppress("SameParameterValue") reportError: Boolean): File {
     var gradle = gradle
-    if (
-      gradle.startsWith("file(\"") && gradle.endsWith("\")") ||
-        gradle.startsWith("file('") && gradle.endsWith("')")
-    ) {
+    if (gradle.startsWith("file(\"") && gradle.endsWith("\")") || gradle.startsWith("file('") && gradle.endsWith("')")) {
       val path = gradle.substring(6, gradle.length - 2)
       return File(projectDir, path)
     }
@@ -1507,10 +1400,7 @@ constructor(
     return File(gradle)
   }
 
-  private fun stripQuotes(
-    string: String,
-    @Suppress("SameParameterValue") reportError: Boolean,
-  ): String {
+  private fun stripQuotes(string: String, @Suppress("SameParameterValue") reportError: Boolean): String {
     if (string.startsWith("'") && string.endsWith("'") && string.length >= 2) {
       return string.substring(1, string.length - 1)
     }
@@ -1532,18 +1422,10 @@ constructor(
   }
 
   private fun updateModuleMavenName(f: (TestLintModelMavenName) -> TestLintModelMavenName) {
-    updateModule {
-      it.copy(
-        mavenName = f(it.mavenName ?: TestLintModelMavenName(artifactId = moduleModel.modulePath))
-      )
-    }
+    updateModule { it.copy(mavenName = f(it.mavenName ?: TestLintModelMavenName(artifactId = moduleModel.modulePath))) }
   }
 
-  private fun updateFlavorFromContext(
-    context: String,
-    defaultToDefault: Boolean = false,
-    f: (TestProductFlavor) -> TestProductFlavor,
-  ) {
+  private fun updateFlavorFromContext(context: String, defaultToDefault: Boolean = false, f: (TestProductFlavor) -> TestProductFlavor) {
     when {
       context == "android.defaultConfig" -> {
         updateDefaultConfig(f)
@@ -1599,8 +1481,7 @@ constructor(
               TestBuildType(
                 name = name,
                 isDebuggable = isDebuggable,
-                mainSourceProvider =
-                  createSourceProvider(projectDir, name, isDebugOnly = isDebuggable),
+                mainSourceProvider = createSourceProvider(projectDir, name, isDebugOnly = isDebuggable),
                 unitTestSourceProvider = null,
                 instrumentationTestSourceProvider = null,
                 testFixturesSourceProvider = null,
@@ -1633,26 +1514,18 @@ constructor(
   }
 
   private fun block(name: String, @Language("Groovy") blockBody: String, context: String) {
-    if (
-      "android.productFlavors" == context && productFlavors.none { flavor -> flavor.name == name }
-    ) {
+    if ("android.productFlavors" == context && productFlavors.none { flavor -> flavor.name == name }) {
       // Defining new product flavors
       updateProductFlavor(name, true) { it }
     }
-    if (
-      "android.buildTypes" == context && buildTypes.none { buildType -> buildType.name == name }
-    ) {
+    if ("android.buildTypes" == context && buildTypes.none { buildType -> buildType.name == name }) {
       // Defining new build types
       updateBuildType(name, true) { it }
     }
     scan(blockBody, if (context.isEmpty()) name else "$context.$name")
   }
 
-  private fun updateProductFlavor(
-    name: String,
-    create: Boolean,
-    f: (TestProductFlavor) -> TestProductFlavor,
-  ) {
+  private fun updateProductFlavor(name: String, create: Boolean, f: (TestProductFlavor) -> TestProductFlavor) {
     val name = name.getContainerName()
     val index = productFlavors.indexOfFirst { it.name == name }
     if (index >= 0) {
@@ -1667,20 +1540,10 @@ constructor(
             TestProductFlavor(
               name = name,
               mainSourceProvider = createSourceProvider(projectDir, name),
-              unitTestSourceProvider =
-                createSourceProvider(projectDir, "test".appendCapitalized(name), isUnitTest = true),
+              unitTestSourceProvider = createSourceProvider(projectDir, "test".appendCapitalized(name), isUnitTest = true),
               instrumentationTestSourceProvider =
-                createSourceProvider(
-                  projectDir,
-                  "androidTest".appendCapitalized(name),
-                  isInstrumentationTest = true,
-                ),
-              testFixturesSourceProvider =
-                createSourceProvider(
-                  projectDir,
-                  "testFixtures".appendCapitalized(name),
-                  isTestFixture = true,
-                ),
+                createSourceProvider(projectDir, "androidTest".appendCapitalized(name), isInstrumentationTest = true),
+              testFixturesSourceProvider = createSourceProvider(projectDir, "testFixtures".appendCapitalized(name), isTestFixture = true),
             )
           )
     }
@@ -1710,15 +1573,13 @@ constructor(
     //
     // To compute these graphs, put the dependency you're interested into
     // a test project and then run ./gradlew app:dependencies
-    val wellKnownLibrary =
-      wellKnownLibraries.firstOrNull { declaration.startsWith(it.groupAndName + ":") }
+    val wellKnownLibrary = wellKnownLibraries.firstOrNull { declaration.startsWith(it.groupAndName + ":") }
     if (wellKnownLibrary != null) {
       val version =
         declaration
           .substring(wellKnownLibrary.groupAndName.length + 1)
-          .substringBefore(
-            "@"
-          ) // @jar/aar is not part of the version and should not be applied to other dependencies.
+          .substringBefore("@") // @jar/aar is not part of the version and should not be applied to other
+      // dependencies.
       addTransitiveLibrary(wellKnownLibrary.dependencies.replace("VERSION", version), artifact)
     } else {
       // Look for the library in the dependency graph provided
@@ -1770,10 +1631,7 @@ constructor(
     }
   }
 
-  private fun createAndroidLibrary(
-    coordinateString: String,
-    isProvided: Boolean,
-  ): TestLintModelAndroidLibrary {
+  private fun createAndroidLibrary(coordinateString: String, isProvided: Boolean): TestLintModelAndroidLibrary {
     return createAndroidLibrary(coordinateString, null, isProvided, null)
   }
 
@@ -1785,8 +1643,7 @@ constructor(
   ): TestLintModelAndroidLibrary {
     var jar = jar
     val component = getComponent(coordinateString, promotedTo)
-    val dir =
-      File(projectDir, component.run { "build/intermediates/exploded-aar/$group/$name/$version" })
+    val dir = File(projectDir, component.run { "build/intermediates/exploded-aar/$group/$name/$version" })
     if (jar == null) {
       jar = dir.resolve(File("jars/" + SdkConstants.FN_CLASSES_JAR))
     }
@@ -1803,10 +1660,7 @@ constructor(
         manifest = dir.resolve(File(SdkConstants.FN_ANDROID_MANIFEST_XML)),
         resFolder = dir.resolve(File("res")),
         assetsFolder = dir.resolve(File("assets")),
-        publicResources =
-          dir.resolve(
-            File(libraryPublicResourcesFiles.getOrDefault(coordinateString, "public.txt"))
-          ),
+        publicResources = dir.resolve(File(libraryPublicResourcesFiles.getOrDefault(coordinateString, "public.txt"))),
         symbolFile = dir.resolve(File(librarySymbolFiles.getOrDefault(coordinateString, "R.txt"))),
         proguardRules = dir.resolve(File("proguard.pro")),
         externalAnnotations = dir.resolve(File(SdkConstants.FN_ANNOTATIONS_ZIP)),
@@ -1816,19 +1670,11 @@ constructor(
     )
   }
 
-  private fun createJavaLibrary(
-    coordinateString: String,
-    isProvided: Boolean,
-  ): TestLintModelJavaLibrary {
+  private fun createJavaLibrary(coordinateString: String, isProvided: Boolean): TestLintModelJavaLibrary {
     return createJavaLibrary(coordinateString, null, isProvided, null)
   }
 
-  private fun createJavaLibrary(
-    coordinateString: String,
-    promotedTo: String?,
-    isProvided: Boolean,
-    jar: File?,
-  ): TestLintModelJavaLibrary {
+  private fun createJavaLibrary(coordinateString: String, promotedTo: String?, isProvided: Boolean, jar: File?): TestLintModelJavaLibrary {
     var jar = jar
     val component = getComponent(coordinateString, promotedTo)
     if (jar == null) {
@@ -1861,27 +1707,18 @@ constructor(
 
   private fun createModuleLibrary(name: String): TestLintModelModuleLibrary {
     return deduplicateLibrary(
-      TestLintModelModuleLibrary(
-        provided = false,
-        identifier = "artifacts:$name",
-        lintJar = null,
-        projectPath = name,
-      )
+      TestLintModelModuleLibrary(provided = false, identifier = "artifacts:$name", lintJar = null, projectPath = name)
     )
   }
 
-  private fun deduplicateLibrary(
-    library: TestLintModelAndroidLibrary
-  ): TestLintModelAndroidLibrary {
+  private fun deduplicateLibrary(library: TestLintModelAndroidLibrary): TestLintModelAndroidLibrary {
     return androidLibraryInstances.computeIfAbsent(library) { it: TestLintModelAndroidLibrary? ->
       library.also { registerInLibraryTable(it) }
     }
   }
 
   private fun deduplicateLibrary(library: TestLintModelJavaLibrary): TestLintModelJavaLibrary {
-    return javaLibraryInstances.computeIfAbsent(library) { it: TestLintModelJavaLibrary? ->
-      library.also { registerInLibraryTable(it) }
-    }
+    return javaLibraryInstances.computeIfAbsent(library) { it: TestLintModelJavaLibrary? -> library.also { registerInLibraryTable(it) } }
   }
 
   private fun deduplicateLibrary(library: TestLintModelModuleLibrary): TestLintModelModuleLibrary {
@@ -1908,8 +1745,7 @@ constructor(
   }
 
   /**
-   * Given a dependency graph, returns a populated [Dependencies] object. You can generate Gradle
-   * dependency graphs by running for example:
+   * Given a dependency graph, returns a populated [Dependencies] object. You can generate Gradle dependency graphs by running for example:
    * ```
    * $ ./gradlew :app:dependencies
    * ```
@@ -1939,10 +1775,7 @@ constructor(
    * @param graph the graph
    * @return the corresponding dependencies
    */
-  private fun parseDependencyGraph(
-    graph: String,
-    map: MutableMap<String, Dep> = Maps.newHashMap(),
-  ): List<Dep> {
+  private fun parseDependencyGraph(graph: String, map: MutableMap<String, Dep> = Maps.newHashMap()): List<Dep> {
     val lines = graph.split("\n").filter { it.isNotBlank() }.toTypedArray()
     // TODO: Check that it's using the expected graph format - e.g. indented to levels
     // that are multiples of 5
@@ -2023,9 +1856,7 @@ constructor(
         val name = coordinateString.substring("project ".length)
         result.add(createModuleLibrary(name))
       } else {
-        result.add(
-          this@GradleModelMocker.createAndroidLibrary(coordinateString, promotedTo, false, null)
-        )
+        result.add(this@GradleModelMocker.createAndroidLibrary(coordinateString, promotedTo, false, null))
       }
       if (!children.isEmpty()) {
         for (dep in children) {
@@ -2041,9 +1872,7 @@ constructor(
         val name = coordinateString.substring("project ".length)
         result.add(createModuleLibrary(name))
       } else {
-        result.add(
-          this@GradleModelMocker.createJavaLibrary(coordinateString, promotedTo, false, null)
-        )
+        result.add(this@GradleModelMocker.createJavaLibrary(coordinateString, promotedTo, false, null))
       }
       if (!children.isEmpty()) {
         for (dep in children) {
@@ -2094,8 +1923,7 @@ constructor(
 
   companion object {
 
-    private val configurationPattern =
-      Pattern.compile("^dependencies\\.(|test|androidTest)([Cc]ompile|[Ii]mplementation)[ (].*[)]?")
+    private val configurationPattern = Pattern.compile("^dependencies\\.(|test|androidTest)([Cc]ompile|[Ii]mplementation)[ (].*[)]?")
     private var libraryVersion = 0
 
     private fun normalize(line: String): String {
@@ -2160,13 +1988,13 @@ constructor(
         javaDirectories = listOf(File(root, "src/$name/java"), File(root, "src/$name/kotlin")),
         resDirectories = listOf(File(root, "src/$name/res")),
         assetsDirectories = listOf(File(root, "src/$name/assets")),
+        keepRulesDirectories = listOf(File(root, "src/$name/keepRules")),
       )
     }
 
     /**
-     * Returns whether a library declaration is a plain Java library instead of an Android library.
-     * There is no way to tell from the Gradle description; it involves looking at the actual Maven
-     * artifacts. For mocking purposes we have a hardcoded list.
+     * Returns whether a library declaration is a plain Java library instead of an Android library. There is no way to tell from the Gradle
+     * description; it involves looking at the actual Maven artifacts. For mocking purposes we have a hardcoded list.
      */
     private fun isJavaLibrary(declaration: String): Boolean {
       return _isJavaLibrary(declaration).also {
@@ -2180,28 +2008,18 @@ constructor(
     private fun _isJavaLibrary(declaration: String): Boolean {
       if (declaration.startsWith("com.android.support:support-annotations:")) {
         return true
-      } else if (
-        declaration.startsWith("com.android.support:support-v4:") ||
-          declaration.startsWith("com.android.support:support-v13:")
-      ) {
+      } else if (declaration.startsWith("com.android.support:support-v4:") || declaration.startsWith("com.android.support:support-v13:")) {
         // Jar prior to to v20
-        return (declaration.contains(":13") ||
-          declaration.contains(":18") ||
-          declaration.contains(":19"))
+        return (declaration.contains(":13") || declaration.contains(":18") || declaration.contains(":19"))
       } else if (declaration.startsWith("com.google.guava:guava:")) {
         return true
       } else if (declaration.startsWith("com.google.android.wearable:wearable:")) {
         return true
-      } else if (
-        declaration.startsWith("com.android.support.constraint:constraint-layout-solver:")
-      ) {
+      } else if (declaration.startsWith("com.android.support.constraint:constraint-layout-solver:")) {
         return true
       } else if (declaration.startsWith("junit:junit:")) {
         return true
-      } else if (
-        declaration.startsWith("org.jetbrains.kotlin:kotlin-") ||
-          declaration.startsWith("org.jetbrains:annotations")
-      ) {
+      } else if (declaration.startsWith("org.jetbrains.kotlin:kotlin-") || declaration.startsWith("org.jetbrains:annotations")) {
         return true
       }
       return false
@@ -2230,9 +2048,7 @@ constructor(
     // Join collections instead of using _libraryTable just to maintain the order of libraries in
     // the resolver
     // as expected by tests (though any order is correct).
-    return androidLibraryInstances.values +
-      javaLibraryInstances.values +
-      moduleLibraryInstances.values
+    return androidLibraryInstances.values + javaLibraryInstances.values + moduleLibraryInstances.values
   }
 
   override fun getLibrary(identifier: String): LintModelLibrary? {
@@ -2373,6 +2189,7 @@ private data class TestLintModelModule(
   override val bootClassPath: List<File> = emptyList(),
   override val javaSourceLevel: String = "",
   override val compileTarget: String = "",
+  override val highlightGradualR8Api: Boolean = false,
   override val variants: List<LintModelVariant> = emptyList(),
   val neverShrinking: Boolean = false,
 ) : LintModelModule {
@@ -2453,8 +2270,7 @@ private val emptyLibraryResolver = DefaultLintModelLibraryResolver(emptyMap())
 private val emptyLibraryResolverProvider: () -> LintModelLibraryResolver = { emptyLibraryResolver }
 
 private data class TestLintModelAndroidArtifact(
-  override val dependencies: LintModelDependencies =
-    TestLintModelDependencies(libraryResolver = emptyLibraryResolverProvider),
+  override val dependencies: LintModelDependencies = TestLintModelDependencies(libraryResolver = emptyLibraryResolverProvider),
   override val classOutputs: List<File>,
   override val type: LintModelArtifactType,
   override val applicationId: String,
@@ -2464,8 +2280,7 @@ private data class TestLintModelAndroidArtifact(
 ) : LintModelAndroidArtifact
 
 private data class TestLintModelJavaArtifact(
-  override val dependencies: LintModelDependencies =
-    TestLintModelDependencies(libraryResolver = emptyLibraryResolverProvider),
+  override val dependencies: LintModelDependencies = TestLintModelDependencies(libraryResolver = emptyLibraryResolverProvider),
   override val classOutputs: List<File>,
   override val type: LintModelArtifactType,
 ) : LintModelJavaArtifact
@@ -2533,11 +2348,8 @@ private data class TestBuildType(
   val testFixturesSourceProvider: TestLintModelSourceProvider?,
 )
 
-private data class TestLintModelResourceField(
-  override val type: String,
-  override val name: String,
-  override val value: String,
-) : LintModelResourceField
+private data class TestLintModelResourceField(override val type: String, override val name: String, override val value: String) :
+  LintModelResourceField
 
 private data class TestLintModelSourceProvider(
   val name: String,
@@ -2549,6 +2361,7 @@ private data class TestLintModelSourceProvider(
   override val javaDirectories: Collection<File>,
   override val resDirectories: Collection<File>,
   override val assetsDirectories: Collection<File>,
+  override val keepRulesDirectories: Collection<File>,
 ) : LintModelSourceProvider {
   override fun isUnitTest(): Boolean = _isUnitTest
 
@@ -2603,10 +2416,8 @@ private fun getMavenName(artifactAddress: String): LintModelMavenName {
       .minOrNull() ?: artifactAddress.length
   }
 
-  val lastDelimiterIndex =
-    0.nextDelimiterIndex(':').nextDelimiterIndex(':').nextDelimiterIndex(':', '@')
+  val lastDelimiterIndex = 0.nextDelimiterIndex(':').nextDelimiterIndex(':').nextDelimiterIndex(':', '@')
 
   // Currently [LintModelMavenName] supports group:name:version format only.
-  return LintModelMavenName.parse(artifactAddress.substring(0, lastDelimiterIndex))
-    ?: error("Cannot parse '$artifactAddress'")
+  return LintModelMavenName.parse(artifactAddress.substring(0, lastDelimiterIndex)) ?: error("Cannot parse '$artifactAddress'")
 }

@@ -28,8 +28,7 @@ import kotlin.io.path.useDirectoryEntries
 /**
  * A Snapshot that a LocalEmulatorDeviceHandle can boot from.
  *
- * Each AVD snapshot is stored in its own subdirectory, within the "snapshots" subdirectory of the
- * AVD directory.
+ * Each AVD snapshot is stored in its own subdirectory, within the "snapshots" subdirectory of the AVD directory.
  */
 data class LocalEmulatorSnapshot(override val name: String, val path: Path) : Snapshot {
   constructor(path: Path) : this(path.name, path)
@@ -39,16 +38,13 @@ data class LocalEmulatorSnapshot(override val name: String, val path: Path) : Sn
 class LocalEmulatorSnapshotReader(private val logger: AdbLogger) {
   companion object {
     /**
-     * The snapshot used for "quick boot", i.e. the default when no snapshot argument is passed to
-     * the emulator. We do not represent these as LocalEmulatorSnapshots.
+     * The snapshot used for "quick boot", i.e. the default when no snapshot argument is passed to the emulator. We do not represent these
+     * as LocalEmulatorSnapshots.
      */
     private const val QUICK_BOOT_SNAPSHOT_NAME = "default_boot"
   }
 
-  /**
-   * Reads snapshots from the given directory; this should normally be a directory named "snapshots"
-   * within an AVD.
-   */
+  /** Reads snapshots from the given directory; this should normally be a directory named "snapshots" within an AVD. */
   fun readSnapshots(snapshots: Path): List<LocalEmulatorSnapshot> {
     if (!Files.exists(snapshots)) {
       // AVDs that don't have any snapshots won't have a snapshots directory
@@ -75,8 +71,7 @@ class LocalEmulatorSnapshotReader(private val logger: AdbLogger) {
       return LocalEmulatorSnapshot(snapshotPath)
     }
     try {
-      val snapshotProto =
-        SnapshotOuterClass.Snapshot.parseFrom(Files.newInputStream(snapshotProtoPath))
+      val snapshotProto = SnapshotOuterClass.Snapshot.parseFrom(Files.newInputStream(snapshotProtoPath))
       return when {
         snapshotProto.imagesCount == 0 -> null
         snapshotProto.logicalName.isEmpty() -> LocalEmulatorSnapshot(snapshotPath)

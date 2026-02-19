@@ -28,11 +28,7 @@ import com.android.tools.idea.wizard.template.impl.activities.xrActivity.res.val
 import com.android.tools.idea.wizard.template.impl.activities.xrActivity.src.app_package.mainActivityKt
 import java.io.File
 
-fun RecipeExecutor.xrActivityRecipe(
-  moduleData: ModuleTemplateData,
-  activityClass: String,
-  packageName: String,
-) {
+fun RecipeExecutor.xrActivityRecipe(moduleData: ModuleTemplateData, activityClass: String, packageName: String) {
   val (_, srcOut, resOut, _, _, _, _, rootDir) = moduleData
   addAllKotlinDependencies(moduleData)
 
@@ -47,7 +43,8 @@ fun RecipeExecutor.xrActivityRecipe(
   addDependency(mavenCoordinate = "androidx.compose.runtime:runtime")
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 
-  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha05", )
+  addDependency(mavenCoordinate = "com.android.extensions.xr:extensions-xr:1.1.0")
+  addDependency(mavenCoordinate = "androidx.xr.compose:compose:1.0.0-alpha05")
   addDependency(mavenCoordinate = "androidx.xr.runtime:runtime:1.0.0-alpha05")
   addDependency(mavenCoordinate = "androidx.xr.scenecore:scenecore:1.0.0-alpha05")
 
@@ -63,10 +60,7 @@ fun RecipeExecutor.xrActivityRecipe(
 
   copy(File("xr-activity").resolve("drawable"), resOut.resolve("drawable"))
 
-  mergeXml(
-    themesXml(themeName = moduleData.themesData.main.name),
-    resOut.resolve("values/themes.xml"),
-  )
+  mergeXml(themesXml(themeName = moduleData.themesData.main.name), resOut.resolve("values/themes.xml"))
   mergeXml(stringsXml(), resOut.resolve("values/strings.xml"))
 
   val themeName = "${moduleData.themesData.appName}Theme"

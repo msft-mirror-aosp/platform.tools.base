@@ -32,76 +32,70 @@ import org.mockito.quality.Strictness
 
 class SourcesTest {
 
-    @get:Rule
-    val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
+  @get:Rule val rule: MockitoRule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS)
 
-    @Mock
-    lateinit var sources: Sources
+  @Mock lateinit var sources: Sources
 
-    @Test
-    fun testJavaAll() {
-        val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
-        Mockito.`when`(sources.java).thenReturn(javaSources)
-        sources.java?.all
+  @Test
+  fun testJavaAll() {
+    val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
+    Mockito.`when`(sources.java).thenReturn(javaSources)
+    sources.java?.all
+  }
+
+  @Test
+  fun testJavaStatic() {
+    val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
+    Mockito.`when`(sources.java).thenReturn(javaSources)
+    sources.java?.static
+  }
+
+  @Test
+  fun testJavaAddSource() {
+    abstract class AddingTask : DefaultTask() {
+      @get:OutputFiles abstract val output: DirectoryProperty
     }
+    @Suppress("UNCHECKED_CAST") val taskProvider = Mockito.mock(TaskProvider::class.java) as TaskProvider<AddingTask>
 
-    @Test
-    fun testJavaStatic() {
-        val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
-        Mockito.`when`(sources.java).thenReturn(javaSources)
-        sources.java?.static
+    val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
+    Mockito.`when`(sources.java).thenReturn(javaSources)
+
+    sources.java?.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
+  }
+
+  @Test
+  fun testJavaAddDirectory() {
+    val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
+    Mockito.`when`(sources.java).thenReturn(javaSources)
+
+    sources.java?.addStaticSourceDirectory("/path/to/directory")
+  }
+
+  @Test
+  fun testResAll() {
+    val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
+    Mockito.`when`(sources.res).thenReturn(resSources)
+    sources.res?.all
+  }
+
+  @Test
+  fun testResAddSource() {
+    abstract class AddingTask : DefaultTask() {
+      @get:OutputFiles abstract val output: DirectoryProperty
     }
+    @Suppress("UNCHECKED_CAST") val taskProvider = Mockito.mock(TaskProvider::class.java) as TaskProvider<AddingTask>
 
-    @Test
-    fun testJavaAddSource() {
-        abstract class AddingTask: DefaultTask() {
-            @get:OutputFiles
-            abstract val output: DirectoryProperty
-        }
-        @Suppress("UNCHECKED_CAST")
-        val taskProvider = Mockito.mock(TaskProvider::class.java) as TaskProvider<AddingTask>
+    val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
+    Mockito.`when`(sources.res).thenReturn(resSources)
 
-        val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
-        Mockito.`when`(sources.java).thenReturn(javaSources)
+    sources.res?.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
+  }
 
-        sources.java?.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
-    }
+  @Test
+  fun testResAddDirectory() {
+    val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
+    Mockito.`when`(sources.res).thenReturn(resSources)
 
-    @Test
-    fun testJavaAddDirectory() {
-        val javaSources = Mockito.mock(SourceDirectories.Flat::class.java)
-        Mockito.`when`(sources.java).thenReturn(javaSources)
-
-        sources.java?.addStaticSourceDirectory("/path/to/directory")
-    }
-
-    @Test
-    fun testResAll() {
-        val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
-        Mockito.`when`(sources.res).thenReturn(resSources)
-        sources.res?.all
-    }
-
-    @Test
-    fun testResAddSource() {
-        abstract class AddingTask: DefaultTask() {
-            @get:OutputFiles
-            abstract val output: DirectoryProperty
-        }
-        @Suppress("UNCHECKED_CAST")
-        val taskProvider = Mockito.mock(TaskProvider::class.java) as TaskProvider<AddingTask>
-
-        val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
-        Mockito.`when`(sources.res).thenReturn(resSources)
-
-        sources.res?.addGeneratedSourceDirectory(taskProvider, AddingTask::output)
-    }
-
-    @Test
-    fun testResAddDirectory() {
-        val resSources = Mockito.mock(SourceDirectories.Layered::class.java)
-        Mockito.`when`(sources.res).thenReturn(resSources)
-
-        sources.res?.addStaticSourceDirectory("/path/to/directory")
-    }
+    sources.res?.addStaticSourceDirectory("/path/to/directory")
+  }
 }

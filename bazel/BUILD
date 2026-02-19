@@ -330,7 +330,7 @@ java_jarjar(
 java_jarjar(
     name = "studio-grpc",
     srcs = [
-        "@maven//:com.google.api.grpc.proto-google-common-protos",
+        ":grpc-common-java_proto",
         "@maven//:io.grpc.grpc-api",
         "@maven//:io.grpc.grpc-auth",
         "@maven//:io.grpc.grpc-context",
@@ -577,6 +577,10 @@ java_binary(
 java_proto_library(
     name = "grpc-common-java_proto",
     srcs = ["@grpc-common-protos//:files"],
+    grpc_support = True,
+    java_deps = [
+        "@maven//:io.grpc.grpc-all",
+    ],
     visibility = ["//visibility:public"],
 )
 

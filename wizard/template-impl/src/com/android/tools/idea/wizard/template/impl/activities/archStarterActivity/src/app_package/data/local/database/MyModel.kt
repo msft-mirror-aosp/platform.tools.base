@@ -17,7 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.archStarterActivi
 
 import com.android.tools.idea.wizard.template.impl.activities.archStarterActivity.ArchStarterActivityTemplateVariables
 
-fun ArchStarterActivityTemplateVariables.dataModel() = """
+fun ArchStarterActivityTemplateVariables.dataModel() =
+  """
 package $databasePackage
 
 import androidx.room.Dao

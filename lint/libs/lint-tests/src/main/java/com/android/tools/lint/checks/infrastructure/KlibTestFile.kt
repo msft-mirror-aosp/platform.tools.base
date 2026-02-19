@@ -21,12 +21,7 @@ import java.io.File
 import kotlin.reflect.KClass
 import org.junit.Assert
 
-class KlibTestFile(
-  to: String,
-  val encoded: String?,
-  val checksum: Int?,
-  vararg val files: TestFile,
-) : TestFile() {
+class KlibTestFile(to: String, val encoded: String?, val checksum: Int?, vararg val files: TestFile) : TestFile() {
   private val sourceLanguage: KLibLanguage =
     KLibLanguage.values().find { lang -> files.all { it::class in lang.sourceFileTypes } }
       ?: throw IllegalArgumentException("Mismatched or unsupported source files in klib")
@@ -36,9 +31,7 @@ class KlibTestFile(
     if (encoded != null && checksum != null) {
       val computedChecksum = computeChecksum(encoded)
       assert(computedChecksum == checksum) {
-        "Expected checksum is ${computedChecksum.toString(16)}, given ${checksum.toString(16)}" +
-          "Encoded:\n" +
-          encoded
+        "Expected checksum is ${computedChecksum.toString(16)}, given ${checksum.toString(16)}" + "Encoded:\n" + encoded
       }
     }
   }
@@ -55,9 +48,7 @@ class KlibTestFile(
     fun findOnPath(target: String): String? =
       System.getenv("PATH")?.split(File.pathSeparator)?.firstNotNullOfOrNull { binDir ->
         val file = File(binDir + File.separator + target)
-        file.path.takeIf {
-          file.isFile /* maybe file.canExecute() too but not sure how .bat files behave */
-        }
+        file.path.takeIf { file.isFile /* maybe file.canExecute() too but not sure how .bat files behave */ }
       }
 
     fun find(tag: String, flag: String): String {
@@ -65,9 +56,7 @@ class KlibTestFile(
       val target =
         System.getenv(flag)
           ?: findOnPath("$tag${if (isWindows) ".bat" else ""}")
-          ?: error(
-            "Couldn't find $tag to update test file $targetPath with. Point to it with \$$flag"
-          )
+          ?: error("Couldn't find $tag to update test file $targetPath with. Point to it with \$$flag")
       if (!File(target).isFile) Assert.fail("$target is not a file")
       if (!File(target).canExecute()) Assert.fail("$target is not executable")
       return target
@@ -78,15 +67,11 @@ class KlibTestFile(
 
     CompiledSourceFile.executeProcess(
       when (sourceLanguage) {
-        KLibLanguage.Kotlin ->
-          listOf(findNativeCompiler(), "-p", "library", "-o", targetPath) +
-            files.map { it.createFile(tmpDir).path }
+        KLibLanguage.Kotlin -> listOf(findNativeCompiler(), "-p", "library", "-o", targetPath) + files.map { it.createFile(tmpDir).path }
         KLibLanguage.C ->
           listOf(
             findCinterop() +
-              files.filterIsInstance<DefTestFile>().flatMap {
-                listOf("-def", it.createFile(tmpDir).path)
-              } +
+              files.filterIsInstance<DefTestFile>().flatMap { listOf("-def", it.createFile(tmpDir).path) } +
               listOf("-o", targetPath.removeSuffix(".klib"))
           )
       }

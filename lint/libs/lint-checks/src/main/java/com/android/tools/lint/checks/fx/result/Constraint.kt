@@ -25,21 +25,17 @@ import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.plus
 
 /**
- * During the analysis, we accumulate [Constraint]s on symbolic invocations. At sites where we get a
- * concrete substitution for symbolic invocations, we discharge the constraints if they turn out
- * always true, or report errors if they fail.
+ * During the analysis, we accumulate [Constraint]s on symbolic invocations. At sites where we get a concrete substitution for symbolic
+ * invocations, we discharge the constraints if they turn out always true, or report errors if they fail.
  */
 data class Constraint<out FX>(
   val concreteUpperbounds: ConcreteUpperBounds<@UnsafeVariance FX>?,
   val symbolicUpperbounds: SymbolicUpperBounds<@UnsafeVariance FX>? = persistentMapOf(),
 ) {
-  constructor(
-    vararg concreteUpperBounds: Pair<Type.Sym.Invoke<FX>, FX>
-  ) : this(persistentMapOf(*concreteUpperBounds))
+  constructor(vararg concreteUpperBounds: Pair<Type.Sym.Invoke<FX>, FX>) : this(persistentMapOf(*concreteUpperBounds))
 
   internal fun prettyPrint(): String {
-    fun PersistentMap<*, *>?.formatAsBounds() =
-      this?.asSequence()?.joinToString(" ∧ ") { (l, r) -> "$l ⊑ $r" } ?: "⊤"
+    fun PersistentMap<*, *>?.formatAsBounds() = this?.asSequence()?.joinToString(" ∧ ") { (l, r) -> "$l ⊑ $r" } ?: "⊤"
     val c1 = concreteUpperbounds.formatAsBounds()
     val c2 = symbolicUpperbounds.formatAsBounds()
     val c =
@@ -59,10 +55,8 @@ data class Constraint<out FX>(
     val MostPermissive: Constraint<Nothing> = Constraint(persistentMapOf(), persistentMapOf())
     val LeastPermissive: Constraint<Nothing> = Constraint(null, null)
 
-    fun <FX> concrete(
-      upperbound: FX,
-      leftHandSides: UnboundedSet<Type.Sym<FX>>,
-    ): ConcreteUpperBounds<FX>? = leftHandSides?.assoc { it to upperbound }
+    fun <FX> concrete(upperbound: FX, leftHandSides: UnboundedSet<Type.Sym<FX>>): ConcreteUpperBounds<FX>? =
+      leftHandSides?.assoc { it to upperbound }
 
     /** A lattice on the concrete effect [FX] induces a lattice on the [Constraint]s */
     fun <FX> domain(onConcrete: Lattice<FX>): Lattice<Constraint<FX>> =
@@ -71,7 +65,8 @@ data class Constraint<out FX>(
         Constraint<FX>::concreteUpperbounds,
         Constraint<FX>::symbolicUpperbounds,
         // For upper-bound constraints, joining means conjunction.
-        // The absence of an entry means there's no constraint on it (i.e. trivial, most permissive
+        // The absence of an entry means there's no constraint on it (i.e. trivial, most
+        // permissive
         // upperbound).
         Lattice.Companion.pointWise(onConcrete.dual()),
         Lattice.Companion.pointWise(possibilityLattice()),
@@ -84,5 +79,4 @@ internal typealias ConcreteUpperBounds<FX> = PersistentMap<Type.Sym<FX>, FX>
 operator fun <FX> Constraint<FX>.plus(constraint: Pair<Type.Sym<FX>, FX>): Constraint<FX> =
   copy(concreteUpperbounds = concreteUpperbounds?.plus(constraint))
 
-internal typealias SymbolicUpperBounds<FX> =
-  PersistentMap<Type.Sym.Invoke<FX>, UnboundedSet<Type.Sym<FX>>>
+internal typealias SymbolicUpperBounds<FX> = PersistentMap<Type.Sym.Invoke<FX>, UnboundedSet<Type.Sym<FX>>>

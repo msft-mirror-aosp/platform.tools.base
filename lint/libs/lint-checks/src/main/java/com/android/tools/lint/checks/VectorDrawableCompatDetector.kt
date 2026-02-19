@@ -47,8 +47,7 @@ import org.w3c.dom.Element
 /**
  * Finds all the vector drawables and checks references to them in layouts.
  *
- * This detector looks for common mistakes related to AppCompat support for vector drawables, that
- * is:
+ * This detector looks for common mistakes related to AppCompat support for vector drawables, that is:
  * * Using app:srcCompat without useSupportLibrary in build.gradle
  * * Using android:src with useSupportLibrary in build.gradle
  */
@@ -69,19 +68,10 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
           category = Category.CORRECTNESS,
           priority = 5,
           severity = Severity.ERROR,
-          implementation =
-            Implementation(
-              VectorDrawableCompatDetector::class.java,
-              Scope.ALL_RESOURCES_SCOPE,
-              Scope.RESOURCE_FILE_SCOPE,
-            ),
+          implementation = Implementation(VectorDrawableCompatDetector::class.java, Scope.ALL_RESOURCES_SCOPE, Scope.RESOURCE_FILE_SCOPE),
         )
-        .addMoreInfo(
-          "https://developer.android.com/guide/topics/graphics/vector-drawable-resources"
-        )
-        .addMoreInfo(
-          "https://medium.com/androiddevelopers/using-vector-assets-in-android-apps-4318fd662eb9"
-        )
+        .addMoreInfo("https://developer.android.com/guide/topics/graphics/vector-drawable-resources")
+        .addMoreInfo("https://medium.com/androiddevelopers/using-vector-assets-in-android-apps-4318fd662eb9")
   }
 
   /** Whether to skip the checks altogether. */
@@ -110,8 +100,7 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
     if (context.project.minSdk >= 21 || context.resourceFolderType != DRAWABLE) {
       return
     }
-    val usingLibraryVectors =
-      context.project.buildVariant?.useSupportLibraryVectorDrawables ?: return
+    val usingLibraryVectors = context.project.buildVariant?.useSupportLibraryVectorDrawables ?: return
 
     val name = fileNameToResourceName(context.file.name)
 
@@ -131,10 +120,7 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
     }
     val name = attribute.localName
     val namespace = attribute.namespaceURI
-    if (
-      ATTR_SRC == name && ANDROID_URI != namespace ||
-        ATTR_SRC_COMPAT == name && AUTO_URI != namespace
-    ) {
+    if (ATTR_SRC == name && ANDROID_URI != namespace || ATTR_SRC_COMPAT == name && AUTO_URI != namespace) {
       // Not the attribute we are looking for.
       return
     }
@@ -172,10 +158,7 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
     if (useSupportLibrary && ATTR_SRC == name) {
       val location = context.getNameLocation(attribute)
       val message = "When using VectorDrawableCompat, you need to use `app:srcCompat`"
-      val fix =
-        fix()
-          .replaceAttribute(ANDROID_URI, ATTR_SRC, attribute.value, AUTO_URI, ATTR_SRC_COMPAT)
-          .build()
+      val fix = fix().replaceAttribute(ANDROID_URI, ATTR_SRC, attribute.value, AUTO_URI, ATTR_SRC_COMPAT).build()
       val incident = Incident(ISSUE, attribute, location, message, fix)
       // Report with minSdk<21 constraint since consuming modules could have a higher
       // minSdkVersion
@@ -189,8 +172,7 @@ class VectorDrawableCompatDetector : ResourceXmlDetector() {
         path = model.modulePath + File.separator + path
       }
       val message =
-        "To use VectorDrawableCompat, you need to set " +
-          "`android.defaultConfig.vectorDrawables.useSupportLibrary = true` in `$path`"
+        "To use VectorDrawableCompat, you need to set " + "`android.defaultConfig.vectorDrawables.useSupportLibrary = true` in `$path`"
       val incident = Incident(ISSUE, attribute, location, message)
       context.report(incident, minSdkLessThan(21))
     }

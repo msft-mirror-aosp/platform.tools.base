@@ -66,12 +66,15 @@ message AdbServerStatus {
         UNKNOWN_USB = 0;
         NATIVE = 1;
         LIBUSB = 2;
+        USB_DISABLED = 3;
     }
 
     enum MdnsBackend {
         UNKNOWN_MDNS = 0;
         BONJOUR = 1;
         OPENSCREEN = 2;
+        LIBADBMDNS = 3;
+        MDNS_DISABLED = 4;
     }
 
     UsbBackend usb_backend = 1;

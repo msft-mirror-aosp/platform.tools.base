@@ -20,35 +20,28 @@ import com.android.build.api.variant.BundleConfig
 import com.android.build.api.variant.CodeTransparency
 import com.android.tools.build.gradle.internal.profile.VariantPropertiesMethodType
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
+import javax.inject.Inject
 import org.gradle.api.file.RegularFile
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Provider
-import javax.inject.Inject
 
-open class AnalyticsEnabledBundleConfig @Inject constructor(
-    val delegate: BundleConfig,
-    val stats: GradleBuildVariant.Builder,
-    objectFactory: ObjectFactory
-): BundleConfig {
+open class AnalyticsEnabledBundleConfig
+@Inject
+constructor(val delegate: BundleConfig, val stats: GradleBuildVariant.Builder, objectFactory: ObjectFactory) : BundleConfig {
 
-    private val userVisibleCodeTransparency: CodeTransparency by lazy(LazyThreadSafetyMode.SYNCHRONIZED){
-        objectFactory.newInstance(
-            AnalyticsEnabledCodeTransparency::class.java,
-            delegate.codeTransparency,
-            stats
-        )
+  private val userVisibleCodeTransparency: CodeTransparency by
+    lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+      objectFactory.newInstance(AnalyticsEnabledCodeTransparency::class.java, delegate.codeTransparency, stats)
     }
 
-    override val codeTransparency: CodeTransparency
-        get() {
-            stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-                VariantPropertiesMethodType.GET_CODE_TRANSPARENCY_VALUE
-            return userVisibleCodeTransparency
-        }
-
-    override fun addMetadataFile(metadataDirectory: String, file: Provider<RegularFile>) {
-        stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type =
-            VariantPropertiesMethodType.BUNDLE_CONFIG_ADD_METADATA_VALUE
-        delegate.addMetadataFile(metadataDirectory, file)
+  override val codeTransparency: CodeTransparency
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_CODE_TRANSPARENCY_VALUE
+      return userVisibleCodeTransparency
     }
+
+  override fun addMetadataFile(metadataDirectory: String, file: Provider<RegularFile>) {
+    stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.BUNDLE_CONFIG_ADD_METADATA_VALUE
+    delegate.addMetadataFile(metadataDirectory, file)
+  }
 }

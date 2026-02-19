@@ -28,13 +28,16 @@ fun loginActivityJava(
   packageName: String,
   applicationPackage: String?,
   useAndroidX: Boolean,
-  isViewBindingSupported: Boolean
+  isViewBindingSupported: Boolean,
 ): String {
 
-  val contentViewBlock = if (isViewBindingSupported) """
+  val contentViewBlock =
+    if (isViewBindingSupported)
+      """
      binding = ${layoutToViewBindingClass(layoutName)}.inflate(getLayoutInflater());
      setContentView(binding.getRoot());
-  """ else "setContentView(R.layout.$layoutName);"
+  """
+    else "setContentView(R.layout.$layoutName);"
 
   return """package  ${packageName}.ui.login;
 
@@ -78,19 +81,19 @@ ${renderIf(isViewBindingSupported) {"""
         final EditText usernameEditText = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "username")};
+          id = "username",)};
         final EditText passwordEditText = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "password")};
+          id = "password",)};
         final Button loginButton = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "login")};
+          id = "login",)};
         final ProgressBar loadingProgressBar = ${findViewById(
           Language.Java,
           isViewBindingSupported = isViewBindingSupported,
-          id = "loading")};
+          id = "loading",)};
 
         loginViewModel.getLoginFormState().observe(this, new Observer<LoginFormState>() {
             @Override

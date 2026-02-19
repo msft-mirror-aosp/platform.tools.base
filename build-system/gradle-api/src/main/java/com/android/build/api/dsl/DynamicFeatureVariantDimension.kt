@@ -19,8 +19,6 @@ package com.android.build.api.dsl
 /**
  * Shared properties between DSL objects that contribute to an dynamic feature variant.
  *
- * That is, [DynamicFeatureBuildType] and [DynamicFeatureProductFlavor] and
- * [DynamicFeatureDefaultConfig].
+ * That is, [DynamicFeatureBuildType] and [DynamicFeatureProductFlavor] and [DynamicFeatureDefaultConfig].
  */
-interface DynamicFeatureVariantDimension :
-    VariantDimension
+interface DynamicFeatureVariantDimension : VariantDimension

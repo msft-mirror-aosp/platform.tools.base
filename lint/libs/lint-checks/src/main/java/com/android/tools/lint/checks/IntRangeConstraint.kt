@@ -29,10 +29,8 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
   constructor(
     range: FloatRangeConstraint
   ) : this(
-    if (range.from == Double.NEGATIVE_INFINITY) MIN_VALUE
-    else if (!range.fromInclusive) range.from.toLong() + 1 else range.from.toLong(),
-    if (range.to == Double.POSITIVE_INFINITY) MAX_VALUE
-    else if (!range.toInclusive) range.to.toLong() - 1 else range.to.toLong(),
+    if (range.from == Double.NEGATIVE_INFINITY) MIN_VALUE else if (!range.fromInclusive) range.from.toLong() + 1 else range.from.toLong(),
+    if (range.to == Double.POSITIVE_INFINITY) MAX_VALUE else if (!range.toInclusive) range.to.toLong() - 1 else range.to.toLong(),
   )
 
   fun isValid(value: Long): Boolean {
@@ -93,11 +91,7 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
     return sb.toString()
   }
 
-  override fun describeDelta(
-    actual: RangeConstraint,
-    actualLabel: String,
-    allowedLabel: String,
-  ): String {
+  override fun describeDelta(actual: RangeConstraint, actualLabel: String, allowedLabel: String): String {
     if (actual !is IntRangeConstraint) {
       return if (actual is FloatRangeConstraint) {
         describeDelta(IntRangeConstraint(actual), actualLabel, allowedLabel)
@@ -177,10 +171,7 @@ class IntRangeConstraint private constructor(val from: Long, val to: Long) : Ran
     if (other is IntRangeConstraint) {
       return other.from >= from && other.to <= to
     } else if (other is FloatRangeConstraint) {
-      if (
-        !other.fromInclusive && other.from == from.toDouble() ||
-          !other.toInclusive && other.to == to.toDouble()
-      ) {
+      if (!other.fromInclusive && other.from == from.toDouble() || !other.toInclusive && other.to == to.toDouble()) {
         return false
       }
 

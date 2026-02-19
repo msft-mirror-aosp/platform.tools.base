@@ -23,73 +23,71 @@ import org.objectweb.asm.tree.ClassNode
 /**
  * Information about a class to test with [ClassDefinitionSubject]
  *
- * This is not meant to be generated manually, but instead the subject is directly created
- * by [ClassesSubject.classDefinition]
+ * This is not meant to be generated manually, but instead the subject is directly created by [ClassesSubject.classDefinition]
  */
 sealed interface ClassDefinition {
-    val superClass: String?
-    val interfaces: List<String>
-    val innerClasses: List<String>
-    val fields: List<String>
-    val methods: List<String>
+  val superClass: String?
+  val interfaces: List<String>
+  val innerClasses: List<String>
+  val fields: List<String>
+  val methods: List<String>
 
-    /**
-     *  returns the initial value of a field.
-     *
-     *  if the field is not present, returns null
-     */
-    fun fieldByName(name: String): String?
+  /**
+   * returns the initial value of a field.
+   *
+   * if the field is not present, returns null
+   */
+  fun fieldByName(name: String): String?
 }
 
-/**
- * Implementation of [ClassDefinition] over ASM's [ClassNode]
- */
-internal class ClassDefinitionFromAsm(private val classNode: ClassNode): ClassDefinition {
+/** Implementation of [ClassDefinition] over ASM's [ClassNode] */
+internal class ClassDefinitionFromAsm(private val classNode: ClassNode) : ClassDefinition {
 
-    override val superClass: String?
-        get() = classNode.superName
-    override val interfaces: List<String>
-        get() = classNode.interfaces
-    override val innerClasses: List<String>
-        get() = classNode.innerClasses.map { it.name }
-    override val fields: List<String>
-        get() = classNode.fields.map { it.name }
-    override val methods: List<String>
-        get() = classNode.methods.map { it.name }
+  override val superClass: String?
+    get() = classNode.superName
 
-    override fun fieldByName(name: String): String? {
-        throw RuntimeException("Not Supported at the moment")
-    }
+  override val interfaces: List<String>
+    get() = classNode.interfaces
+
+  override val innerClasses: List<String>
+    get() = classNode.innerClasses.map { it.name }
+
+  override val fields: List<String>
+    get() = classNode.fields.map { it.name }
+
+  override val methods: List<String>
+    get() = classNode.methods.map { it.name }
+
+  override fun fieldByName(name: String): String? {
+    throw RuntimeException("Not Supported at the moment")
+  }
 }
 
-/**
- * Implementation of [ClassDefinition] over smali's [DexBackedClassDef]
- */
-internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef): ClassDefinition {
+/** Implementation of [ClassDefinition] over smali's [DexBackedClassDef] */
+internal class ClassDefinitionFromDex(private val dex: DexBackedClassDef) : ClassDefinition {
 
-    override val superClass: String?
-        get() = dex.superclass?.let {
-            // the format coming from dex is L...;, so we trim these characters.
-            it.substring(1, it.length - 1)
-        }
-    override val interfaces: List<String>
-        get() = dex.interfaces
-    override val innerClasses: List<String>
-        get() = throw RuntimeException("Not yet implemented")
-    override val fields: List<String>
-        get() = dex.fields.map { it.name }
-    override val methods: List<String>
-        get() = dex.methods.map { it.name }
+  override val superClass: String?
+    get() =
+      dex.superclass?.let {
+        // the format coming from dex is L...;, so we trim these characters.
+        it.substring(1, it.length - 1)
+      }
 
-    override fun fieldByName(name: String): String? =
-        dex.fields.singleOrNull { it.name == name }?.initialValue?.toString()
+  override val interfaces: List<String>
+    get() = dex.interfaces
 
-    /**
-     * Returns a map of all the methods of the class, and their different implementations.
-     */
-    fun methodsWithImplementations(): Map<String, List<DexBackedMethod>> = dex.methods.mapNotNull { method ->
-        method.implementation?.let {
-            method
-        }
-    }.groupBy { it.name }
+  override val innerClasses: List<String>
+    get() = throw RuntimeException("Not yet implemented")
+
+  override val fields: List<String>
+    get() = dex.fields.map { it.name }
+
+  override val methods: List<String>
+    get() = dex.methods.map { it.name }
+
+  override fun fieldByName(name: String): String? = dex.fields.singleOrNull { it.name == name }?.initialValue?.toString()
+
+  /** Returns a map of all the methods of the class, and their different implementations. */
+  fun methodsWithImplementations(): Map<String, List<DexBackedMethod>> =
+    dex.methods.mapNotNull { method -> method.implementation?.let { method } }.groupBy { it.name }
 }

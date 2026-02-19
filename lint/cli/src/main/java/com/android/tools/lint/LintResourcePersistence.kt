@@ -57,24 +57,17 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Persists a [LintResourceRepository] (and later reconstitutes it), intended for caching of
- * resources for projects, libraries and frameworks.
+ * Persists a [LintResourceRepository] (and later reconstitutes it), intended for caching of resources for projects, libraries and
+ * frameworks.
  *
- * This is temporary; the plan is to extract tools/adt/idea/resources-base code into tools/base and
- * use that binary format directly.
+ * This is temporary; the plan is to extract tools/adt/idea/resources-base code into tools/base and use that binary format directly.
  */
 object LintResourcePersistence {
   /**
-   * Serializes the lint resource repository; can be deserialized with [deserialize]. The
-   * [pathVariables] help write relative paths. If [sort] is true, elements will be sorted by name;
-   * this is used in tests to ensure stable output.
+   * Serializes the lint resource repository; can be deserialized with [deserialize]. The [pathVariables] help write relative paths. If
+   * [sort] is true, elements will be sorted by name; this is used in tests to ensure stable output.
    */
-  fun serialize(
-    repository: LintResourceRepository,
-    pathVariables: PathVariables,
-    root: File?,
-    sort: Boolean = false,
-  ): String {
+  fun serialize(repository: LintResourceRepository, pathVariables: PathVariables, root: File?, sort: Boolean = false): String {
     val typeToMap = repository.typeToMap
     if (typeToMap.isEmpty()) {
       return ""
@@ -139,13 +132,9 @@ object LintResourcePersistence {
           writer.write('V')
           if (item is LintResourceItem) {
             val position = item.position ?: SourcePosition.UNKNOWN
-            writer.writeHex(
-              encodeLineColumnOffset(position.startLine, position.startColumn, position.startOffset)
-            )
+            writer.writeHex(encodeLineColumnOffset(position.startLine, position.startColumn, position.startOffset))
             writer.write(',')
-            writer.writeHex(
-              encodeLineColumnOffset(position.endLine, position.endColumn, position.endOffset)
-            )
+            writer.writeHex(encodeLineColumnOffset(position.endLine, position.endColumn, position.endOffset))
             writer.write(',')
             val ignoredIds = item.getIgnoredIds()
             if (ignoredIds.isNotEmpty()) {
@@ -161,13 +150,9 @@ object LintResourcePersistence {
             val location = item.getLocation()
             val start = location.start
             val end = location.end
-            writer.writeHex(
-              encodeLineColumnOffset(start?.line ?: -1, start?.column ?: -1, start?.offset ?: -1)
-            )
+            writer.writeHex(encodeLineColumnOffset(start?.line ?: -1, start?.column ?: -1, start?.offset ?: -1))
             writer.write(',')
-            writer.writeHex(
-              encodeLineColumnOffset(end?.line ?: -1, end?.column ?: -1, end?.offset ?: -1)
-            )
+            writer.writeHex(encodeLineColumnOffset(end?.line ?: -1, end?.column ?: -1, end?.offset ?: -1))
             writer.write(',')
             if (item is IgnoredIdProvider) {
               val ignoredIds = item.getIgnoredIds()
@@ -247,8 +232,7 @@ object LintResourcePersistence {
                 }
               }
             }
-            DensityBasedResourceValue.isDensityBasedResourceType(type) &&
-              resourceValue is DensityBasedResourceValue -> {
+            DensityBasedResourceValue.isDensityBasedResourceType(type) && resourceValue is DensityBasedResourceValue -> {
               val density = resourceValue.resourceDensity.resourceValue
               writer.write(density)
             }
@@ -294,9 +278,8 @@ object LintResourcePersistence {
   }
 
   /**
-   * Writes characters and strings into a string builder, escaping characters which allows later
-   * usages of the [DeserializationReader] to pick out substrings while still allowing all kinds of
-   * characters to be used in the various string fragments.
+   * Writes characters and strings into a string builder, escaping characters which allows later usages of the [DeserializationReader] to
+   * pick out substrings while still allowing all kinds of characters to be used in the various string fragments.
    */
   private class SerializationWriter(private val sb: StringBuilder) {
     fun write(char: Char): SerializationWriter {
@@ -315,8 +298,8 @@ object LintResourcePersistence {
     }
 
     /**
-     * Given a string, replaces all occurrences of the various reserved separator characters (+:;,\)
-     * with a preceding \ to indicate that this is a literal occurrence of this character.
+     * Given a string, replaces all occurrences of the various reserved separator characters (+:;,\) with a preceding \ to indicate that
+     * this is a literal occurrence of this character.
      */
     fun escape(s: String): SerializationWriter {
       val n = s.length
@@ -334,9 +317,7 @@ object LintResourcePersistence {
       return this
     }
 
-    /**
-     * Writes the given path, stripping out the path prefix if under the given (optional) [rootPath]
-     */
+    /** Writes the given path, stripping out the path prefix if under the given (optional) [rootPath] */
     fun writePath(pathVariables: PathVariables, rootPath: String?, path: String) {
       escape(pathVariables.toPathString(path, rootPath, unix = true))
     }
@@ -406,9 +387,8 @@ object LintResourcePersistence {
     }
 
     /**
-     * Like [readString] but does not remove escape characters. This is intended for cases like the
-     * argument lists where we want to pick out the serialized arguments to for example an array,
-     * but we will later need to pick out elements from these as well.
+     * Like [readString] but does not remove escape characters. This is intended for cases like the argument lists where we want to pick out
+     * the serialized arguments to for example an array, but we will later need to pick out elements from these as well.
      */
     fun readRaw(terminator: Char): String {
       val begin = i
@@ -460,8 +440,7 @@ object LintResourcePersistence {
       return LintResourceRepository.Companion.EmptyRepository
     }
 
-    val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> =
-      EnumMap(ResourceType::class.java)
+    val map: MutableMap<ResourceType, ListMultimap<String, ResourceItem>> = EnumMap(ResourceType::class.java)
 
     val reader = DeserializationReader(s)
     val namespaceUri = reader.readString(';')
@@ -568,20 +547,7 @@ object LintResourcePersistence {
       val file = fileList[fileNum]
       val config = folderConfigMap[file]!!
       if (fileBased) {
-        val item =
-          LintResourceItem(
-            file,
-            name,
-            namespace,
-            type,
-            null,
-            false,
-            libraryName,
-            config,
-            true,
-            ignore,
-            null,
-          )
+        val item = LintResourceItem(file, name, namespace, type, null, false, libraryName, config, true, ignore, null)
         LintResourceRepository.recordItem(map, type, name, item)
 
         // As a side effect sets item.sourceFile
@@ -604,9 +570,7 @@ object LintResourcePersistence {
             end,
           )
         LintResourceRepository.recordItem(map, type, name, item)
-        val list =
-          valueItems[file]
-            ?: ArrayList<LintDeserializedResourceItem>().also { valueItems[file] = it }
+        val list = valueItems[file] ?: ArrayList<LintDeserializedResourceItem>().also { valueItems[file] = it }
         list.add(item)
       }
     }
@@ -640,17 +604,16 @@ object LintResourcePersistence {
     /** Source text. */
     private val text: String?,
     /**
-     * Additional serialized data, used to deserialize a specific resource value. This is done
-     * lazily since lint almost never consults resource values for anything other than strings and
-     * dimensions (and only usually when some other potentially triggering issue is there.)
+     * Additional serialized data, used to deserialize a specific resource value. This is done lazily since lint almost never consults
+     * resource values for anything other than strings and dimensions (and only usually when some other potentially triggering issue is
+     * there.)
      */
     private val arguments: String?,
     private val library: String?,
     private val ignoredIds: String,
     private val start: Long,
     private val end: Long,
-  ) :
-    ResourceMergerItem(name, namespace, type, null, false, null), LocationAware, IgnoredIdProvider {
+  ) : ResourceMergerItem(name, namespace, type, null, false, null), LocationAware, IgnoredIdProvider {
     override fun getConfiguration(): FolderConfiguration {
       return config
     }

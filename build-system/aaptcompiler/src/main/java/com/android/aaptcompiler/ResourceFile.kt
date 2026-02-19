@@ -21,7 +21,8 @@ data class ResourceFile(
   val configuration: ConfigDescription,
   val source: Source,
   val type: Type,
-  val exportedSymbols: MutableList<SourcedResourceName> = mutableListOf()) {
+  val exportedSymbols: MutableList<SourcedResourceName> = mutableListOf(),
+) {
 
   override fun equals(other: Any?): Boolean {
     if (other !is ResourceFile) return false
@@ -33,25 +34,24 @@ data class ResourceFile(
   }
 
   enum class Type {
-      Unknown,
-      Png,
-      BinaryXml,
-      ProtoXml
+    Unknown,
+    Png,
+    BinaryXml,
+    ProtoXml,
   }
 }
 
-data class ResourceName(
-  val pck: String?,
-  val type: AaptResourceType = AaptResourceType.RAW,
-  val entry: String? = null): Comparable<ResourceName> {
+data class ResourceName(val pck: String?, val type: AaptResourceType = AaptResourceType.RAW, val entry: String? = null) :
+  Comparable<ResourceName> {
 
   override fun compareTo(other: ResourceName): Int {
-    val pckCompare = when {
-      pck === other.pck -> 0
-      pck == null -> -1
-      other.pck == null -> 1
-      else -> pck.compareTo(other.pck)
-    }
+    val pckCompare =
+      when {
+        pck === other.pck -> 0
+        pck == null -> -1
+        other.pck == null -> 1
+        else -> pck.compareTo(other.pck)
+      }
     if (pckCompare != 0) {
       return pckCompare
     }
@@ -69,10 +69,10 @@ data class ResourceName(
     }
   }
 
-  override fun toString() : String {
-        val maybePck = if (!pck.isNullOrEmpty()) "$pck:" else ""
-        return "$maybePck${type.tagName}/$entry"
-    }
+  override fun toString(): String {
+    val maybePck = if (!pck.isNullOrEmpty()) "$pck:" else ""
+    return "$maybePck${type.tagName}/$entry"
+  }
 
   companion object {
     val EMPTY = ResourceName("", AaptResourceType.RAW, "")

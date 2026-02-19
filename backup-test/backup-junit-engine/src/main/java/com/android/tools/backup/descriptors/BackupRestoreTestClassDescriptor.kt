@@ -17,13 +17,17 @@
 package com.android.tools.backup.descriptors
 
 import com.android.tools.backup.TestBackupType
+import org.junit.platform.engine.TestDescriptor.Type
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
-import org.junit.platform.engine.TestDescriptor.Type
 
-class BackupRestoreTestClassDescriptor(uniqueId: UniqueId, val className: String, val backupTypes: List<TestBackupType>, val restoreBeforeEveryTest: Boolean) :
-    AbstractTestDescriptor(uniqueId, className, ClassSource.from(className)) {
+class BackupRestoreTestClassDescriptor(
+  uniqueId: UniqueId,
+  val className: String,
+  val backupTypes: List<TestBackupType>,
+  val restoreBeforeEveryTest: Boolean,
+) : AbstractTestDescriptor(uniqueId, className, ClassSource.from(className)) {
 
-    override fun getType(): Type = Type.CONTAINER
+  override fun getType(): Type = Type.CONTAINER
 }

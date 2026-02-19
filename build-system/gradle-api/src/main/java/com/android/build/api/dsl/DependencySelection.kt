@@ -19,30 +19,25 @@ package com.android.build.api.dsl
 import org.gradle.api.Action
 import org.gradle.api.provider.ListProperty
 
-/**
- * Specifies options for doing Gradle variant selection for external Android dependencies
- * based on build types and product flavors.
- */
+/** Specifies options for doing Gradle variant selection for external Android dependencies based on build types and product flavors. */
 interface DependencySelection {
-    /**
-     * Specifies a list of build types that the plugin should try to use when a
-     * direct variant match with a dependency is not possible.
-     *
-     * If the list is left empty, the default variant for the dependencies being
-     * consumed will be of build type "release"
-     *
-     * If you want to preserve the default value use `selectBuildTypeFrom.add()` and if you
-     * would like to set your own list of build types use `selectBuildTypeFrom.set()`
-     */
-    val selectBuildTypeFrom: ListProperty<String>
+  /**
+   * Specifies a list of build types that the plugin should try to use when a direct variant match with a dependency is not possible.
+   *
+   * If the list is left empty, the default variant for the dependencies being consumed will be of build type "release"
+   *
+   * If you want to preserve the default value use `selectBuildTypeFrom.add()` and if you would like to set your own list of build types use
+   * `selectBuildTypeFrom.set()`
+   */
+  val selectBuildTypeFrom: ListProperty<String>
 
-    /**
-     * Configures a single product flavor dimension that the plugin should try to use when a
-     * direct variant match with a dependency is not possible.
-     */
-    fun productFlavorDimension(dimension: String, action: Action<ProductFlavorDimensionSpec>)
+  /**
+   * Configures a single product flavor dimension that the plugin should try to use when a direct variant match with a dependency is not
+   * possible.
+   */
+  fun productFlavorDimension(dimension: String, action: Action<ProductFlavorDimensionSpec>)
 }
 
 interface ProductFlavorDimensionSpec {
-    val selectFrom: ListProperty<String>
+  val selectFrom: ListProperty<String>
 }

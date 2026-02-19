@@ -43,10 +43,7 @@ import org.jetbrains.uast.skipParenthesizedExprDown
 import org.jetbrains.uast.tryResolve
 import org.jetbrains.uast.visitor.AbstractUastVisitor
 
-/**
- * Checks for problems with wakelocks (such as failing to release them) which can lead to
- * unnecessary battery usage.
- */
+/** Checks for problems with wakelocks (such as failing to release them) which can lead to unnecessary battery usage. */
 private typealias Node = ControlFlowGraph.Node<UElement>
 
 private typealias Edge = ControlFlowGraph.Edge<UElement>
@@ -118,28 +115,20 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
 
   override fun afterCheckRootProject(context: Context) {
     if (!hasRelease && firstAcquireLocation != null) {
-      context.report(
-        ISSUE,
-        firstAcquireLocation!!,
-        "Found a wakelock `acquire()` but no `release()` calls anywhere",
-      )
+      context.report(ISSUE, firstAcquireLocation!!, "Found a wakelock `acquire()` but no `release()` calls anywhere")
     }
   }
 
   /** Whether any `acquire()` calls have been encountered. */
   private var hasAcquireCall = false
 
-  /**
-   * The location of the first `acquire` call, if any (and only if we're not doing isolated (single
-   * file) analysis)
-   */
+  /** The location of the first `acquire` call, if any (and only if we're not doing isolated (single file) analysis) */
   private var firstAcquireLocation: Location? = null
 
   /** Whether any `release()` calls have been encountered */
   private var hasRelease = false
 
-  override fun getApplicableMethodNames(): List<String> =
-    listOf(ACQUIRE_METHOD, RELEASE_METHOD, NEW_WAKE_LOCK_METHOD)
+  override fun getApplicableMethodNames(): List<String> = listOf(ACQUIRE_METHOD, RELEASE_METHOD, NEW_WAKE_LOCK_METHOD)
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     when (method.name) {
@@ -168,12 +157,7 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         if (context.isEnabled(TIMEOUT)) {
           val location = context.getLocation(node)
           val fix =
-            fix()
-              .name("Set timeout to 10 minutes")
-              .replace()
-              .pattern("acquire\\s*\\(()\\s*\\)")
-              .with("10*60*1000L /*10 minutes*/")
-              .build()
+            fix().name("Set timeout to 10 minutes").replace().pattern("acquire\\s*\\(()\\s*\\)").with("10*60*1000L /*10 minutes*/").build()
 
           context.report(
             TIMEOUT,
@@ -220,16 +204,8 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         val containingMethod = node.getParentOfType<UMethod>()
         if (containingMethod != null && containingMethod.name == "onDestroy") {
           val containingClass = containingMethod.javaPsi.containingClass
-          if (
-            containingClass != null &&
-              context.evaluator.inheritsFrom(containingClass, ANDROID_APP_ACTIVITY)
-          ) {
-            context.report(
-              ISSUE,
-              node,
-              context.getLocation(node),
-              "Wakelocks should be released in `onPause`, not `onDestroy`",
-            )
+          if (containingClass != null && context.evaluator.inheritsFrom(containingClass, ANDROID_APP_ACTIVITY)) {
+            context.report(ISSUE, node, context.getLocation(node), "Wakelocks should be released in `onPause`, not `onDestroy`")
           }
         }
       }
@@ -262,8 +238,7 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
   }
 
   private fun UCallExpression.isReleaseCall(): Boolean {
-    return methodName == RELEASE_METHOD &&
-      resolve()?.containingClass?.qualifiedName == WAKELOCK_OWNER
+    return methodName == RELEASE_METHOD && resolve()?.containingClass?.qualifiedName == WAKELOCK_OWNER
   }
 
   private fun checkFlow(context: JavaContext, method: UMethod, acquire: UCallExpression) {
@@ -308,19 +283,13 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
               val selector = conditional.findSelector()
               if (selector is UCallExpression) {
                 val resolved = selector.resolve()
-                if (
-                  resolved?.name == IS_HELD_METHOD &&
-                    resolved.containingClass?.qualifiedName == WAKELOCK_OWNER
-                ) {
+                if (resolved?.name == IS_HELD_METHOD && resolved.containingClass?.qualifiedName == WAKELOCK_OWNER) {
                   return ControlFlowGraph.FollowBranch.THEN
                 }
               } else if (selector is UBinaryExpression) {
                 // If lock != null { lock.release } is fine
                 val condition = selector.operator
-                if (
-                  condition == UastBinaryOperator.NOT_EQUALS ||
-                    condition == UastBinaryOperator.IDENTITY_NOT_EQUALS
-                ) {
+                if (condition == UastBinaryOperator.NOT_EQUALS || condition == UastBinaryOperator.IDENTITY_NOT_EQUALS) {
                   if (selector.rightOperand.isNullLiteral()) {
                     return ControlFlowGraph.FollowBranch.THEN
                   }
@@ -362,22 +331,12 @@ class WakelockDetector : Detector(), ClassScanner, SourceCodeScanner {
         return
       }
       val call = releaseNodes.first().instruction
-      val location: Location =
-        context.getCallLocation(
-          call as UCallExpression,
-          includeReceiver = false,
-          includeArguments = false,
-        )
+      val location: Location = context.getCallLocation(call as UCallExpression, includeReceiver = false, includeArguments = false)
       var last = location
       for (i in 1 until releaseNodes.size) {
         val release = releaseNodes[i]
         val element = release.instruction
-        val secondary =
-          context.getCallLocation(
-            element as UCallExpression,
-            includeReceiver = false,
-            includeArguments = false,
-          )
+        val secondary = context.getCallLocation(element as UCallExpression, includeReceiver = false, includeArguments = false)
         last.secondary = secondary
         last = secondary
       }

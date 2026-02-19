@@ -18,50 +18,45 @@ package com.android.testutils
 
 import java.io.File
 
-/**
- * A snapshot of the file hierarchy and contents at some filesystem location.
- */
-class FileSnapshot private constructor(
-    val directorySet: Set<File>,
-    val regularFileContentsMap: Map<File, ByteArray>
-) {
+/** A snapshot of the file hierarchy and contents at some filesystem location. */
+class FileSnapshot private constructor(val directorySet: Set<File>, val regularFileContentsMap: Map<File, ByteArray>) {
 
-    companion object {
+  companion object {
 
-        /**
-         * Takes a snapshot of the given regular file or directory. If a base directory is provided,
-         * the snapshot stores the file paths relative to it; otherwise, it stores absolute file
-         * paths.
-         */
-        fun snapshot(fileToSnapshot: File, baseDir: File? = null): FileSnapshot {
-            val directorySet = mutableSetOf<File>()
-            val regularFileContentsMap = mutableMapOf<File, ByteArray>()
+    /**
+     * Takes a snapshot of the given regular file or directory. If a base directory is provided, the snapshot stores the file paths relative
+     * to it; otherwise, it stores absolute file paths.
+     */
+    fun snapshot(fileToSnapshot: File, baseDir: File? = null): FileSnapshot {
+      val directorySet = mutableSetOf<File>()
+      val regularFileContentsMap = mutableMapOf<File, ByteArray>()
 
-            doSnapshot(fileToSnapshot, baseDir, directorySet, regularFileContentsMap)
+      doSnapshot(fileToSnapshot, baseDir, directorySet, regularFileContentsMap)
 
-            return FileSnapshot(directorySet.toSet(), regularFileContentsMap.toMap())
-        }
-
-        private fun doSnapshot(
-            fileToSnapshot: File,
-            baseDir: File? = null,
-            directorySet: MutableSet<File>,
-            regularFileContentsMap: MutableMap<File, ByteArray>
-        ) {
-            val normalizedFile = if (baseDir != null) {
-                fileToSnapshot.relativeTo(baseDir)
-            } else {
-                fileToSnapshot
-            }
-
-            if (fileToSnapshot.isDirectory) {
-                directorySet.add(normalizedFile)
-                for (fileInDir in fileToSnapshot.listFiles()!!) {
-                    doSnapshot(fileInDir, baseDir, directorySet, regularFileContentsMap)
-                }
-            } else {
-                regularFileContentsMap[normalizedFile] = fileToSnapshot.readBytes()
-            }
-        }
+      return FileSnapshot(directorySet.toSet(), regularFileContentsMap.toMap())
     }
+
+    private fun doSnapshot(
+      fileToSnapshot: File,
+      baseDir: File? = null,
+      directorySet: MutableSet<File>,
+      regularFileContentsMap: MutableMap<File, ByteArray>,
+    ) {
+      val normalizedFile =
+        if (baseDir != null) {
+          fileToSnapshot.relativeTo(baseDir)
+        } else {
+          fileToSnapshot
+        }
+
+      if (fileToSnapshot.isDirectory) {
+        directorySet.add(normalizedFile)
+        for (fileInDir in fileToSnapshot.listFiles()!!) {
+          doSnapshot(fileInDir, baseDir, directorySet, regularFileContentsMap)
+        }
+      } else {
+        regularFileContentsMap[normalizedFile] = fileToSnapshot.readBytes()
+      }
+    }
+  }
 }
