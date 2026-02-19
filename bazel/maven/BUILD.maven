@@ -2,10 +2,10 @@ load("@//tools/base/bazel:maven.bzl", "maven_artifact", "maven_import")
 
 # Bazel rules auto-generated from maven repo.
 maven_artifact(
-    name = "androidx.annotation.annotation-jvm_1.7.1",
-    pom = "repository/androidx/annotation/annotation-jvm/1.7.1/annotation-jvm-1.7.1.pom",
+    name = "androidx.annotation.annotation-jvm_1.9.0",
+    pom = "repository/androidx/annotation/annotation-jvm/1.9.0/annotation-jvm-1.9.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/annotation/annotation-jvm/1.7.1",
+    repo_path = "androidx/annotation/annotation-jvm/1.9.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
     ],
@@ -16,7 +16,7 @@ maven_import(
     name = "androidx.annotation.annotation-jvm",
     classifiers = [],
     jars = [
-        "repository/androidx/annotation/annotation-jvm/1.7.1/annotation-jvm-1.7.1.jar"
+        "repository/androidx/annotation/annotation-jvm/1.9.0/annotation-jvm-1.9.0.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
@@ -24,9 +24,9 @@ maven_import(
     original_deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
     ],
-    pom = "repository/androidx/annotation/annotation-jvm/1.7.1/annotation-jvm-1.7.1.pom",
+    pom = "repository/androidx/annotation/annotation-jvm/1.9.0/annotation-jvm-1.9.0.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/annotation/annotation-jvm/1.7.1",
+    repo_path = "androidx/annotation/annotation-jvm/1.9.0",
     visibility = ["//visibility:public"],
 )
 
@@ -77,6 +77,40 @@ maven_import(
     pom = "repository/androidx/arch/core/core-common/2.0.0/core-common-2.0.0.pom",
     repo_root_path = "repository",
     repo_path = "androidx/arch/core/core-common/2.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.collection.collection-jvm_1.4.5",
+    pom = "repository/androidx/collection/collection-jvm/1.4.5/collection-jvm-1.4.5.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/collection/collection-jvm/1.4.5",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "androidx.collection.collection-jvm",
+    classifiers = [],
+    jars = [
+        "repository/androidx/collection/collection-jvm/1.4.5/collection-jvm-1.4.5.jar"
+    ],
+    exports = [
+        "androidx.annotation.annotation-jvm",
+    ],
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "androidx.annotation.annotation-jvm_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    pom = "repository/androidx/collection/collection-jvm/1.4.5/collection-jvm-1.4.5.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/collection/collection-jvm/1.4.5",
     visibility = ["//visibility:public"],
 )
 
@@ -629,6 +663,90 @@ maven_import(
 )
 
 maven_artifact(
+    name = "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha01",
+    deps = [
+        "androidx.collection.collection-jvm_1.4.5",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "androidx.tracing.tracing-desktop",
+    classifiers = [],
+    jars = [
+        "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+        "androidx.annotation.annotation-jvm",
+    ],
+    deps = [
+        "androidx.collection.collection-jvm",
+    ],
+    original_deps = [
+        "androidx.collection.collection-jvm_1.4.5",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.0",
+    ],
+    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha01",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.tracing.tracing-wire-desktop_2.0.0-alpha01",
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha01",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+        "com.squareup.wire.wire-runtime-jvm_5.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.7.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "androidx.tracing.tracing-wire-desktop",
+    classifiers = [],
+    jars = [
+        "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "com.squareup.okio.okio-jvm",
+        "androidx.tracing.tracing-desktop",
+        "com.squareup.wire.wire-runtime-jvm",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+        "androidx.annotation.annotation-jvm",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "androidx.tracing.tracing-desktop_2.0.0-alpha01",
+        "com.squareup.wire.wire-runtime-jvm_5.4.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.7.0",
+    ],
+    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha01",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.tracing.tracing_1.1.0",
     pom = "repository/androidx/tracing/tracing/1.1.0/tracing-1.1.0.pom",
     repo_root_path = "repository",
@@ -920,12 +1038,12 @@ maven_import(
     exports = [
         "com.google.protobuf.protobuf-java",
         "net.sf.kxml.kxml2",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
     deps = [
         "com.android.tools.common",
         "org.jetbrains.kotlin.kotlin-reflect",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
     original_deps = [
         "com.android.tools.common_31.13.0",
@@ -3908,13 +4026,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.squareup.okio.okio-jvm_3.6.0",
-    pom = "repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.pom",
+    name = "com.squareup.okio.okio-jvm_3.9.1",
+    pom = "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/squareup/okio/okio-jvm/3.6.0",
+    repo_path = "com/squareup/okio/okio-jvm/3.9.1",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
     ],
     visibility = ["//visibility:public"],
 )
@@ -3923,20 +4040,17 @@ maven_import(
     name = "com.squareup.okio.okio-jvm",
     classifiers = [],
     jars = [
-        "repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.jar"
+        "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.jar"
     ],
     exports = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
-        "org.jetbrains.kotlin.kotlin-stdlib-common",
+        "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
     ],
-    pom = "repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.pom",
+    pom = "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/squareup/okio/okio-jvm/3.6.0",
-    srcjar = "repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0-sources.jar",
+    repo_path = "com/squareup/okio/okio-jvm/3.9.1",
     visibility = ["//visibility:public"],
 )
 
@@ -3966,6 +4080,38 @@ maven_import(
     pom = "repository/com/squareup/okio/okio/3.6.0/okio-3.6.0.pom",
     repo_root_path = "repository",
     repo_path = "com/squareup/okio/okio/3.6.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.wire.wire-runtime-jvm_5.4.0",
+    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
+    deps = [
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.squareup.wire.wire-runtime-jvm",
+    classifiers = [],
+    jars = [
+        "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.jar"
+    ],
+    exports = [
+        "com.squareup.okio.okio-jvm",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "com.squareup.okio.okio-jvm_3.9.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
     visibility = ["//visibility:public"],
 )
 
@@ -12864,10 +13010,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10/kotlin-stdlib-common-1.9.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.6.21",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21/kotlin-stdlib-common-1.6.21.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21",
     visibility = ["//visibility:public"],
 )
 
@@ -12875,12 +13021,12 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10/kotlin-stdlib-common-1.9.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21/kotlin-stdlib-common-1.6.21.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10/kotlin-stdlib-common-1.9.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21/kotlin-stdlib-common-1.6.21.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21",
     visibility = ["//visibility:public"],
 )
 
@@ -16552,6 +16698,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.annotation.annotation-jvm_1.7.1",
+    pom = "repository/androidx/annotation/annotation-jvm/1.7.1/annotation-jvm-1.7.1.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/annotation/annotation-jvm/1.7.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.annotation.annotation-jvm_1.8.0",
     pom = "repository/androidx/annotation/annotation-jvm/1.8.0/annotation-jvm-1.8.0.pom",
     repo_root_path = "repository",
@@ -16589,17 +16746,6 @@ maven_artifact(
     pom = "repository/androidx/annotation/annotation-jvm/1.8.2/annotation-jvm-1.8.2.pom",
     repo_root_path = "repository",
     repo_path = "androidx/annotation/annotation-jvm/1.8.2",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.annotation.annotation-jvm_1.9.0",
-    pom = "repository/androidx/annotation/annotation-jvm/1.9.0/annotation-jvm-1.9.0.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/annotation/annotation-jvm/1.9.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
     ],
@@ -17404,18 +17550,6 @@ maven_artifact(
     repo_path = "androidx/collection/collection-jvm/1.4.4",
     deps = [
         "androidx.annotation.annotation-jvm_1.8.1",
-        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.collection.collection-jvm_1.4.5",
-    pom = "repository/androidx/collection/collection-jvm/1.4.5/collection-jvm-1.4.5.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/collection/collection-jvm/1.4.5",
-    deps = [
-        "androidx.annotation.annotation-jvm_1.9.0",
         "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
     ],
     visibility = ["//visibility:public"],
@@ -41525,42 +41659,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "androidx.tracing.tracing-desktop_2.0.0-alpha01",
-    pom = "repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-desktop/2.0.0-alpha01",
-    deps = [
-        "androidx.collection.collection-jvm_1.4.5",
-        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "androidx.annotation.annotation-jvm_1.9.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "androidx.tracing.tracing-perfetto-handshake_1.0.0-beta02",
     pom = "repository/androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02/tracing-perfetto-handshake-1.0.0-beta02.pom",
     repo_root_path = "repository",
     repo_path = "androidx/tracing/tracing-perfetto-handshake/1.0.0-beta02",
     deps = [
         "androidx.annotation.annotation_1.3.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.tracing.tracing-wire-desktop_2.0.0-alpha01",
-    pom = "repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/tracing/tracing-wire-desktop/2.0.0-alpha01",
-    deps = [
-        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
-        "com.squareup.okio.okio-jvm_3.9.1",
-        "androidx.tracing.tracing-desktop_2.0.0-alpha01",
-        "com.squareup.wire.wire-runtime-jvm_5.4.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
-        "androidx.annotation.annotation-jvm_1.7.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76055,23 +76159,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.squareup.okio.okio-jvm_3.6.0",
+    pom = "repository/com/squareup/okio/okio-jvm/3.6.0/okio-jvm-3.6.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/okio/okio-jvm/3.6.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.9.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.squareup.okio.okio-jvm_3.9.0",
     pom = "repository/com/squareup/okio/okio-jvm/3.9.0/okio-jvm-3.9.0.pom",
     repo_root_path = "repository",
     repo_path = "com/squareup/okio/okio-jvm/3.9.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.squareup.okio.okio-jvm_3.9.1",
-    pom = "repository/com/squareup/okio/okio-jvm/3.9.1/okio-jvm-3.9.1.pom",
-    repo_root_path = "repository",
-    repo_path = "com/squareup/okio/okio-jvm/3.9.1",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.25",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76198,18 +76303,6 @@ maven_artifact(
     repo_path = "com/squareup/retrofit2/retrofit/2.9.0",
     deps = [
         "com.squareup.okhttp3.okhttp_3.14.9",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.squareup.wire.wire-runtime-jvm_5.4.0",
-    pom = "repository/com/squareup/wire/wire-runtime-jvm/5.4.0/wire-runtime-jvm-5.4.0.pom",
-    repo_root_path = "repository",
-    repo_path = "com/squareup/wire/wire-runtime-jvm/5.4.0",
-    deps = [
-        "com.squareup.okio.okio-jvm_3.9.1",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89348,14 +89441,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.6.21",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21/kotlin-stdlib-common-1.6.21.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.6.21",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.7.0",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.7.0/kotlin-stdlib-common-1.7.0.pom",
     repo_root_path = "repository",
@@ -89440,6 +89525,14 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.0/kotlin-stdlib-common-1.9.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.9.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10/kotlin-stdlib-common-1.9.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/1.9.10",
     visibility = ["//visibility:public"],
 )
 

@@ -1,6 +1,7 @@
 load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 coverage_java_library(
@@ -57,6 +58,14 @@ sh_test(
     tags = [
         "noci:studio-win",
     ],
+)
+
+# NOTE: this is important to preserve even in the absence of any consumers to ensure incorrect dependencies aren't added.
+kotlin_library(
+    name = "tools.tracing",
+    srcs = glob(["src/**/*"]),
+    runtime_deps = ["@maven//:com.squareup.wire.wire-runtime-jvm"],
+    deps = ["@maven//:androidx.tracing.tracing-wire-desktop"],
 )
 
 # managed by go/iml_to_build
