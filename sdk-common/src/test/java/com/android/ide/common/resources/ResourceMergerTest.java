@@ -93,6 +93,95 @@ public class ResourceMergerTest extends BaseTestCase {
     }
 
     @Test
+    public void testAndroidPrvNamespaceKept() throws Exception {
+        // Create a temporary directory structure for the resource set
+        File root = mTemporaryFolder.newFolder("res");
+        File xmlDir = new File(root, "xml");
+        xmlDir.mkdirs();
+
+        File valuesNightDir = new File(root, "values-night");
+        valuesNightDir.mkdirs();
+
+        // Create a manifest file that uses the androidprv namespace
+        String manifestContent =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                    + "    xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\"\n"
+                    + "    package=\"com.example.test\">\n"
+                    + "    <application androidprv:privateAttr=\"someValue\"/>\n"
+                    + "</manifest>";
+        File manifestFile = new File(xmlDir, "manifest.xml");
+        Files.asCharSink(manifestFile, StandardCharsets.UTF_8).write(manifestContent);
+
+        // Create a colors file that uses the androidprv namespace
+        String colorsContent =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                    + "<resources"
+                    + " xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\">\n"
+                    + "    <color name=\"test_color\""
+                    + " androidprv:privateAttr=\"someValue\">#FF0000</color>\n"
+                    + "</resources>";
+        File colorsFile = new File(valuesNightDir, "colors.xml");
+        Files.asCharSink(colorsFile, StandardCharsets.UTF_8).write(colorsContent);
+
+        // Create a ResourceSet and add the source
+        ResourceSet resourceSet = createResourceSet("main");
+        resourceSet.setDontNormalizeQualifiers(true);
+        resourceSet.addSource(root);
+        RecordingLogger logger = new RecordingLogger();
+        resourceSet.loadFromFiles(logger);
+        checkLogger(logger);
+
+        // Create a ResourceMerger and add the data set
+        ResourceMerger resourceMerger = new ResourceMerger(0);
+        resourceMerger.addDataSet(resourceSet);
+
+        // Merge the resources to a temporary output folder
+        File outputFolder = mTemporaryFolder.newFolder("out");
+        MergedResourceWriter writer = getConsumer(outputFolder);
+        resourceMerger.mergeData(writer, false /*doCleanUp*/);
+
+        // Verify the output
+        File outputManifestFile = new File(outputFolder, "xml" + File.separator + "manifest.xml");
+        assertTrue("Output manifest file should exist", outputManifestFile.exists());
+
+        String outputContent =
+                Files.asCharSource(outputManifestFile, StandardCharsets.UTF_8).read();
+
+        // Check if the namespace declaration is preserved
+        assertTrue(
+                "Output should contain xmlns:androidprv definition. Content:\n" + outputContent,
+                outputContent.contains(
+                        "xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\""));
+
+        // Check if the attribute usage is preserved
+        assertTrue(
+                "Output should contain androidprv:privateAttr usage. Content:\n" + outputContent,
+                outputContent.contains("androidprv:privateAttr=\"someValue\""));
+
+        // Verify colors output
+        File outputColorsFile =
+                new File(outputFolder, "values-night" + File.separator + "values-night.xml");
+        assertTrue("Output colors file should exist", outputColorsFile.exists());
+
+        String outputColorsContent =
+                Files.asCharSource(outputColorsFile, StandardCharsets.UTF_8).read();
+
+        // Check if the namespace declaration is preserved in colors
+        assertTrue(
+                "Output colors should contain xmlns:androidprv definition. Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains(
+                        "xmlns:androidprv=\"http://schemas.android.com/apk/prv/res/android\""));
+
+        // Check if the attribute usage is preserved in colors
+        assertTrue(
+                "Output colors should contain androidprv:privateAttr usage. Content:\n"
+                        + outputColorsContent,
+                outputColorsContent.contains("androidprv:privateAttr=\"someValue\""));
+    }
+
+    @Test
     public void testMergeWithNormalizationByCount() throws Exception {
         ResourceMerger merger = getResourceMerger();
 

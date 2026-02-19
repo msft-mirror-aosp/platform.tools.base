@@ -18,15 +18,18 @@ package com.android.ide.common.resources;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-import java.util.List;
+
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import java.util.List;
 
 /**
  * Utility class to handle Nodes.
@@ -202,7 +205,8 @@ class NodeUtils {
 
             String prefix = getPrefixForNs(docAttributes, ns);
             if (prefix == null) {
-                prefix = getUniqueNsAttribute(docAttributes);
+                prefix = getUniqueNsAttribute(docAttributes, node.getPrefix());
+
                 Attr nsAttr = document.createAttribute(prefix);
                 nsAttr.setValue(ns);
                 docAttributes.setNamedItem(nsAttr);
@@ -244,6 +248,17 @@ class NodeUtils {
         }
 
         return null;
+    }
+
+    private static String getUniqueNsAttribute(
+            @NonNull NamedNodeMap attributes, @Nullable String preferredPrefix) {
+        if (preferredPrefix != null) {
+            String candidate = SdkConstants.XMLNS_PREFIX + preferredPrefix;
+            if (attributes.getNamedItem(candidate) == null) {
+                return candidate;
+            }
+        }
+        return getUniqueNsAttribute(attributes);
     }
 
     private static String getUniqueNsAttribute(@NonNull NamedNodeMap attributes) {
