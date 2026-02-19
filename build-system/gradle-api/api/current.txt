@@ -1569,8 +1569,11 @@ package com.android.build.api.dsl {
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
     method @InaccessibleFromKotlin public boolean getEnable();
+    method @InaccessibleFromKotlin public String getResourcePrefix();
     method @InaccessibleFromKotlin public void setEnable(boolean);
+    method @InaccessibleFromKotlin public void setResourcePrefix(String);
     property public abstract boolean enable;
+    property public abstract String resourcePrefix;
   }
 
   public interface LibraryBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.LibraryVariantDimension {

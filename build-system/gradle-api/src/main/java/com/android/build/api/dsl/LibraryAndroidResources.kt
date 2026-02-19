@@ -23,4 +23,21 @@ interface LibraryAndroidResources : AndroidResources {
    * multiplatform libraries.
    */
   var enable: Boolean
+
+  /**
+   * Specifies this project's resource prefix to Android Studio for editor features, such as Lint checks. This property is useful only when
+   * using Android Studio.
+   *
+   * Including unique prefixes for project resources helps avoid naming collisions with resources from other projects.
+   *
+   * For example, when creating a library with String resources, you may want to name each resource with a unique prefix, such as "`mylib_`"
+   * to avoid naming collisions with similar resources that the consumer defines.
+   *
+   * You can then specify this prefix, as shown below, so that Android Studio expects this prefix when you name project resources:
+   * ```
+   * // This property is useful only when developing your project in Android Studio.
+   * resourcePrefix = "mylib_"
+   * ```
+   */
+  var resourcePrefix: String
 }

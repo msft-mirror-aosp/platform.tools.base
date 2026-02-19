@@ -114,4 +114,19 @@ class AndroidResourcesFunctionalTest {
     }
     assertConsistency(project, applicationExtension.androidResources)
   }
+
+  @Test
+  fun testResourcePrefixUnification_Library() {
+    val project = buildProject(TestProjects.Plugin.LIBRARY)
+    val extension = project.extensions.getByType(LibraryExtension::class.java)
+
+    extension.resourcePrefix = "common_prefix"
+    assertThat(extension.androidResources.resourcePrefix).isEqualTo("common_prefix")
+
+    extension.androidResources.resourcePrefix = "library_prefix"
+    assertThat(extension.resourcePrefix).isEqualTo("library_prefix")
+
+    extension.resourcePrefix = null
+    assertThat(extension.androidResources.resourcePrefix).isEqualTo("")
+  }
 }

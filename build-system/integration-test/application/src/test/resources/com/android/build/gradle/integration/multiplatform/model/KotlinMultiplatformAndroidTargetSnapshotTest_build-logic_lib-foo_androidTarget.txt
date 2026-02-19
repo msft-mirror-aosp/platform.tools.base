@@ -254,7 +254,8 @@
       "buildId": {
         "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/build-logic"
       },
-      "withJava": false
+      "withJava": false,
+      "resourcePrefix": ""
     }
   }
 }

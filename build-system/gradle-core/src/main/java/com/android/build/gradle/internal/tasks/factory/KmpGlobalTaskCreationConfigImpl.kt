@@ -180,13 +180,13 @@ internal class KmpGlobalTaskCreationConfigImpl(
   override val ndkPath: String?
     get() = settingsExtension?.ndkPath
 
+  override val resourcePrefix: String?
+    get() = extension.androidResources.resourcePrefix
+
   override val aidlPackagedList: Collection<String>?
     get() = null
 
   override val compileOptionsIncremental: Boolean?
-    get() = null
-
-  override val resourcePrefix: String?
     get() = null
 
   override val hasNoBuildTypeMinified: Boolean
