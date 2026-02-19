@@ -792,6 +792,7 @@ DATA = [
     "com.google.accompanist:accompanist-appcompat-theme:0.28.0",  # Dependency of architecture-samples
     "com.google.accompanist:accompanist-swiperefresh:0.28.0",  # Dependency of architecture-samples
     "com.google.ai.client.generativeai:generativeai:0.9.0",
+    "com.google.ai.edge.litertlm:litertlm-jvm:0.9.0-alpha05",
     "com.google.android:android:4.1.1.4",
     "com.google.android.gms:play-services-ads:20.6.0",
     "com.google.android.gms:play-services-ads:21.5.0",

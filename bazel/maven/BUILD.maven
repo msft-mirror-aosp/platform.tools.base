@@ -69458,6 +69458,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.ai.edge.litertlm.litertlm-jvm_0.9.0-alpha05",
+    pom = "repository/com/google/ai/edge/litertlm/litertlm-jvm/0.9.0-alpha05/litertlm-jvm-0.9.0-alpha05.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/ai/edge/litertlm/litertlm-jvm/0.9.0-alpha05",
+    deps = [
+        "com.google.code.gson.gson_2.13.2",
+        "org.jetbrains.kotlin.kotlin-reflect_2.2.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.android.apps.common.testing.accessibility.framework.accessibility-test-framework_2.0",
     pom = "repository/com/google/android/apps/common/testing/accessibility/framework/accessibility-test-framework/2.0/accessibility-test-framework-2.0.pom",
     repo_root_path = "repository",
@@ -71780,6 +71793,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.code.gson.gson_2.13.2",
+    pom = "repository/com/google/code/gson/gson/2.13.2/gson-2.13.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/code/gson/gson/2.13.2",
+    parent = "com.google.code.gson.gson-parent_2.13.2",
+    deps = [
+        "com.google.errorprone.error_prone_annotations_2.41.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.code.gson.gson_2.2.4",
     pom = "repository/com/google/code/gson/gson/2.2.4/gson-2.2.4.pom",
     repo_root_path = "repository",
@@ -73060,6 +73085,15 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/google/errorprone/error_prone_annotations/2.4.0",
     parent = "com.google.errorprone.error_prone_parent_2.4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.errorprone.error_prone_annotations_2.41.0",
+    pom = "repository/com/google/errorprone/error_prone_annotations/2.41.0/error_prone_annotations-2.41.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_annotations/2.41.0",
+    parent = "com.google.errorprone.error_prone_parent_2.41.0",
     visibility = ["//visibility:public"],
 )
 
@@ -96162,6 +96196,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.code.gson.gson-parent_2.13.2",
+    pom = "repository/com/google/code/gson/gson-parent/2.13.2/gson-parent-2.13.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/code/gson/gson-parent/2.13.2",
+)
+
+maven_artifact(
     name = "com.google.code.gson.gson-parent_2.6.2",
     pom = "repository/com/google/code/gson/gson-parent/2.6.2/gson-parent-2.6.2.pom",
     repo_root_path = "repository",
@@ -96443,6 +96484,13 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/google/errorprone/error_prone_parent/2.4.0",
     parent = "org.sonatype.oss.oss-parent_7",
+)
+
+maven_artifact(
+    name = "com.google.errorprone.error_prone_parent_2.41.0",
+    pom = "repository/com/google/errorprone/error_prone_parent/2.41.0/error_prone_parent-2.41.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/errorprone/error_prone_parent/2.41.0",
 )
 
 maven_artifact(
