@@ -83,7 +83,7 @@ constructor(
     baselineProfiles.filter.include("**/*.txt")
 
     keepRules = DefaultAndroidSourceDirectorySet(displayName, "keepRules", project, SourceArtifactType.KEEP_RULES)
-    baselineProfiles.filter.include("**/*.keep")
+    keepRules.filter.include("**/*.keep")
 
     jni = DefaultAndroidSourceDirectorySet(displayName, "jni", project, SourceArtifactType.JNI)
 
