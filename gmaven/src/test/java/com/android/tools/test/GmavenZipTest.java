@@ -126,9 +126,7 @@ public class GmavenZipTest {
                     "com/android/tools/utp/utp-common",
                     "com/android/tools/utp/utp-common:sources",
                     "com/android/zipflinger",
-                    "com/android/zipflinger:sources",
-                    "com/android/tools/studio/leakcanary/leakcanary",
-                    "com/android/tools/studio/leakcanary/leakcanary:sources");
+                    "com/android/zipflinger:sources");
 
     private static class PomInfo implements Comparable<PomInfo> {
 
@@ -420,28 +418,24 @@ public class GmavenZipTest {
         } else {
             expect.withMessage(
                             "There has been a change to what is published to gmaven.\n"
-                                + "\n"
-                                + "If that change is intentional, update the expectation files.\n"
-                                + "\n"
-                                + "To update the files, download and unzip the outputs.zip:\n"
-                                + "  unzip -d $(bazel info workspace) -o outputs.zip\n"
-                                + "\n"
-                                + "For a local invocation, outputs.zip will be in bazel-testlogs:\n"
-                                + "  unzip -d $(bazel info workspace) -o \\\n"
-                                + "    $(bazel info"
-                                + " bazel-testlogs)/tools/base/gmaven/tests/test.outputs/outputs.zip\n"
-                                + "\n"
-                                + "Or, to re-run the test and update the expectations in place,"
-                                + " run: \n"
-                                + "  bazel test //tools/base/gmaven:tests \\\n"
-                                + "    --nocache_test_results \\\n"
-                                + "    --strategy=TestRunner=standalone \\\n"
-                                + "    --jvmopt=\"-DUPDATE_TEST_SNAPSHOTS=$(bazel info workspace)\""
-                                + " \\\n"
-                                + "    --test_output=streamed\n"
-                                + "\n"
-                                + "NB: All the commands above assume 'tools/base/bazel' is on your"
-                                + " path.")
+                                    + "\n"
+                                    + "If that change is intentional, update the expectation files.\n"
+                                    + "\n"
+                                    + "To update the files, download and unzip the outputs.zip:\n"
+                                    + "  unzip -d $(bazel info workspace) -o outputs.zip\n"
+                                    + "\n"
+                                    + "For a local invocation, outputs.zip will be in bazel-testlogs:\n"
+                                    + "  unzip -d $(bazel info workspace) -o \\\n"
+                                    + "    $(bazel info bazel-testlogs)/tools/base/gmaven/tests/test.outputs/outputs.zip\n"
+                                    + "\n"
+                                    + "Or, to re-run the test and update the expectations in place, run: \n"
+                                    + "  bazel test //tools/base/gmaven:tests \\\n"
+                                    + "    --nocache_test_results \\\n"
+                                    + "    --strategy=TestRunner=standalone \\\n"
+                                    + "    --jvmopt=\"-DUPDATE_TEST_SNAPSHOTS=$(bazel info workspace)\" \\\n"
+                                    + "    --test_output=streamed\n"
+                                    + "\n"
+                                    + "NB: All the commands above assume 'tools/base/bazel' is on your path.")
                     .that(actual)
                     .named(name)
                     .isEqualTo(expected);
