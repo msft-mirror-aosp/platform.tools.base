@@ -45,26 +45,29 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
+// Class is published on gmaven and needs to be compatible with JVM 17
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 public class BinaryXmlParser {
 
-    @NotNull
-    public static byte[] decodeXml(
-            @NotNull byte[] bytes, @NotNull ResourceIdResolver resIdResolver) {
+    public static byte @NotNull [] decodeXml(
+            byte @NotNull [] bytes, @NotNull ResourceIdResolver resIdResolver) {
         ResourceFile file = new ResourceFile(bytes);
         List<Chunk> chunks = file.getChunks();
         if (chunks.size() != 1) {
-            //Logger.getInstance(BinaryXmlParser.class).warn("Expected 1, but got " + chunks.size() + " chunks while parsing " + fileName);
+            Logger.getLogger("BinaryXmlParser")
+                    .warning("Expected 1, but got " + chunks.size() + " chunks");
             return bytes;
         }
 
-        if (!(chunks.get(0) instanceof XmlChunk)) {
-            //Logger.getInstance(BinaryXmlParser.class)
-            //  .warn("First chunk in " + fileName + " is not an XmlChunk: " + chunks.get(0).getClass().getCanonicalName());
+        if (!(chunks.get(0) instanceof XmlChunk xmlChunk)) {
+            Logger.getLogger("BinaryXmlParser")
+                    .warning(
+                            "First chunk is not an XmlChunk: "
+                                    + chunks.get(0).getClass().getCanonicalName());
             return bytes;
         }
 
         XmlPrinter printer = new XmlPrinter(resIdResolver);
-        XmlChunk xmlChunk = (XmlChunk) chunks.get(0);
 
         visitChunks(xmlChunk.getChunks(), printer);
 
@@ -73,8 +76,7 @@ public class BinaryXmlParser {
         return reconstructedXml.getBytes(StandardCharsets.UTF_8);
     }
 
-    @NotNull
-    public static byte[] decodeXml(@NotNull byte[] bytes) {
+    public static byte @NotNull [] decodeXml(byte @NotNull [] bytes) {
         return decodeXml(bytes, ResourceIdResolver.NO_RESOLUTION);
     }
 
@@ -119,6 +121,7 @@ public class BinaryXmlParser {
         return chunks;
     }
 
+    @SuppressWarnings("unused")
     private interface XmlChunkHandler {
 
         default void stringPool(@NotNull StringPoolChunk chunk) {}
@@ -140,7 +143,7 @@ public class BinaryXmlParser {
 
         private final XmlBuilder builder;
 
-        private Map<String, String> namespaces = new HashMap<>();
+        private final Map<String, String> namespaces = new HashMap<>();
 
         private boolean namespacesAdded;
 
@@ -219,45 +222,31 @@ public class BinaryXmlParser {
             @NotNull ResourceIdResolver resourceIdResolver) {
         int data = resValue.data();
 
-        switch (resValue.type()) {
-            case NULL:
-                return data == 1 ? "@empty" : "@null";
-            case DYNAMIC_REFERENCE:
-            case REFERENCE:
+        return switch (resValue.type()) {
+            case NULL -> data == 1 ? "@empty" : "@null";
+            case DYNAMIC_REFERENCE, REFERENCE -> {
                 if (data == 0) {
-                    return "@null";
+                    yield "@null";
                 }
-                return resourceIdResolver.resolve(data);
-            case ATTRIBUTE:
-            case DYNAMIC_ATTRIBUTE:
-                return "?" + resourceIdResolver.resolve(data).substring(1);
-            case STRING:
-                return stringPool != null && data < stringPool.getStringCount()
-                        ? stringPool.getString(data)
-                        : String.format(Locale.US, "@string/0x%1$x", data);
-            case DIMENSION:
-                return complexToString(data, false);
-            case FRACTION:
-                return complexToString(data, true);
-            case FLOAT:
-                return DECIMAL_FORMAT.format(Float.intBitsToFloat(data));
-            case INT_DEC:
-                return Integer.toString(data);
-            case INT_HEX:
-                return "0x" + Integer.toHexString(data);
-            case INT_BOOLEAN:
-                return Boolean.toString(data != 0);
-            case INT_COLOR_ARGB8:
-                return String.format("#%08X", data);
-            case INT_COLOR_RGB8:
-                return String.format("#%06X", 0xFFFFFF & data);
-            case INT_COLOR_ARGB4:
-                return String.format("#%04X", 0xFFFF & data);
-            case INT_COLOR_RGB4:
-                return String.format("#%03X", 0xFFF & data);
-        }
-
-        return String.format("@res/0x%x", data);
+                yield resourceIdResolver.resolve(data);
+            }
+            case ATTRIBUTE, DYNAMIC_ATTRIBUTE ->
+                    "?" + resourceIdResolver.resolve(data).substring(1);
+            case STRING ->
+                    stringPool != null && data < stringPool.getStringCount()
+                            ? stringPool.getString(data)
+                            : String.format(Locale.US, "@string/0x%1$x", data);
+            case DIMENSION -> complexToString(data, false);
+            case FRACTION -> complexToString(data, true);
+            case FLOAT -> DECIMAL_FORMAT.format(Float.intBitsToFloat(data));
+            case INT_DEC -> Integer.toString(data);
+            case INT_HEX -> "0x" + Integer.toHexString(data);
+            case INT_BOOLEAN -> Boolean.toString(data != 0);
+            case INT_COLOR_ARGB8 -> String.format("#%08X", data);
+            case INT_COLOR_RGB8 -> String.format("#%06X", 0xFFFFFF & data);
+            case INT_COLOR_ARGB4 -> String.format("#%04X", 0xFFFF & data);
+            case INT_COLOR_RGB4 -> String.format("#%03X", 0xFFF & data);
+        };
     }
 
     public static String formatValue(
