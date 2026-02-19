@@ -17,7 +17,9 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
+
 import com.google.common.collect.ImmutableMap;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -71,7 +73,8 @@ public class DeployerException extends Exception {
                 "No running app process found.", "", "Run app", ResolutionAction.RUN_APP),
 
         REMOTE_APK_NOT_FOUND_IN_DB(
-                "Android Studio was unable to recognize the APK(s) currently installed on the device.",
+                "Android Studio was unable to recognize the APK(s) currently installed on the"
+                        + " device.",
                 "",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
@@ -95,13 +98,15 @@ public class DeployerException extends Exception {
                 ResolutionAction.RUN_APP),
 
         PROCESS_NOT_RESPONDING(
-                "Apply Changes could not complete because an application process is not responding.",
+                "Apply Changes could not complete because an application process is not"
+                        + " responding.",
                 "Process '%s' is not responding.",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
 
         PROCESS_TERMINATED(
-                "Apply Changes could not complete because one of the application's processes terminated unexpectedly.",
+                "Apply Changes could not complete because one of the application's processes"
+                        + " terminated unexpectedly.",
                 "PID #%s terminated before the operation could complete.",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
@@ -121,7 +126,8 @@ public class DeployerException extends Exception {
         // Errors pertaining to un-swappable changes.
 
         ISOLATED_SERVICE_NOT_SUPPORTED(
-                "Applications with services in isolated processes cannot be swapped with Apply Changes.",
+                "Applications with services in isolated processes cannot be swapped with Apply"
+                        + " Changes.",
                 "The following service(s) are set to run in an isolated process: %s",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
@@ -151,9 +157,9 @@ public class DeployerException extends Exception {
                 ResolutionAction.APPLY_CHANGES),
 
         CANNOT_SWAP_CRASHLYTICS_PROPERTY(
-                "Crashlytics modified your build ID, which requires an activity restart. "
-                        + "<a href=\"https://d.android.com/r/studio-ui/apply-changes-crashlytics-buildid\""
-                        + ">See here</a>",
+                "Crashlytics modified your build ID, which requires an activity restart. <a"
+                    + " href=\"https://d.android.com/r/studio-ui/apply-changes-crashlytics-buildid\">See"
+                    + " here</a>",
                 "Resource '%s' was modified.",
                 "Apply changes and restart activity",
                 ResolutionAction.APPLY_CHANGES),
@@ -263,7 +269,8 @@ public class DeployerException extends Exception {
 
         APP_OVERLAY_IN_UNKNOWN_STATE(
                 "The target app on the device is in a state unknown to Studio",
-                "Android Studio is unable to recognize the version of the application currently installed on the target device.",
+                "Android Studio is unable to recognize the version of the application currently"
+                        + " installed on the target device.",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
 
@@ -315,37 +322,43 @@ public class DeployerException extends Exception {
                 ResolutionAction.RETRY),
 
         UNSUPPORTED_IWI_CHANGE(
-                "A change was not supported by the IWI pipeline. Deployment should fall back to regular installation",
+                "A change was not supported by the IWI pipeline. Deployment should fall back to"
+                        + " regular installation",
                 "",
                 "",
                 ResolutionAction.NONE),
 
         UNSUPPORTED_IWI_FILE_DELETE(
-                "Deleting files from installed APKs is not supported by the IWI pipeline. Deployment should fall back to regular installation",
+                "Deleting files from installed APKs is not supported by the IWI pipeline."
+                        + " Deployment should fall back to regular installation",
                 "",
                 "",
                 ResolutionAction.NONE),
 
         IWI_RUN_TESTS_NOT_SUPPORTED(
-                "Running instrumented tests is not supported by the IWI pipeline. Deployment should fall back to regular installation",
+                "Running instrumented tests is not supported by the IWI pipeline. Deployment should"
+                        + " fall back to regular installation",
                 "",
                 "",
                 ResolutionAction.NONE),
 
         IWI_SDK_RUNTIME_NOT_SUPPORTED(
-                "Deploying SDK runtime apps is not supported by the IWI pipeline. Deployment should fall back to regular installation",
+                "Deploying SDK runtime apps is not supported by the IWI pipeline. Deployment should"
+                        + " fall back to regular installation",
                 "",
                 "",
                 ResolutionAction.NONE),
 
         IWI_RUN_PM_FLAGS_NOT_SUPPORTED(
-                "Specifying package manager flags is not supported by the IWI pipeline. Deployment should fall back to regular installation",
+                "Specifying package manager flags is not supported by the IWI pipeline. Deployment"
+                        + " should fall back to regular installation",
                 "",
                 "",
                 ResolutionAction.NONE),
 
         SWAP_AFTER_LIVE_EDIT_NOT_SUPPORTED(
-                "Apply Changes/Apply Code Changes are not compatible with Live Edit and require the running app to be restarted",
+                "Apply Changes/Apply Code Changes are not compatible with Live Edit and require the"
+                        + " running app to be restarted",
                 "",
                 "Reinstall and restart app",
                 ResolutionAction.RUN_APP),
@@ -355,7 +368,10 @@ public class DeployerException extends Exception {
         RUN_TIME_EXCEPTION("Runtime Exception.", "%s", "Retry", ResolutionAction.RETRY),
 
         COMPONENT_ACTIVATION_EXCEPTION(
-                "Component activation exception", "%s", "", ResolutionAction.NONE);
+                "Component activation exception", "%s", "", ResolutionAction.NONE),
+
+        CANNOT_TERMINATE_APPLICATION(
+                "Cannot terminate running application", "", "Retry", ResolutionAction.RUN_APP);
 
         private final String message;
         private final String details;
@@ -680,5 +696,9 @@ public class DeployerException extends Exception {
 
     public static DeployerException apiNotSupported() {
         return new DeployerException(Error.CANNOT_SWAP_BEFORE_API_26, NO_ARGS, NO_ARGS);
+    }
+
+    public static DeployerException cannotTerminateApplication() {
+        return new DeployerException(Error.CANNOT_TERMINATE_APPLICATION, NO_ARGS, NO_ARGS);
     }
 }

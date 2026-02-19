@@ -153,9 +153,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   }
 
   protected open fun createReportAggregationTask() {
-    if (isReportAggregationEnabled) {
-      taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
-    }
+    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   fun createPostApiTasks() {
@@ -197,15 +195,14 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     doCreateTasksForVariant(componentInfo)
 
-    if (isReportAggregationEnabled) {
-      val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
-      taskFactory.register(
-        CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-          jacocoAntConfiguration,
-          CodeCoverageReportCreationConfigImpl(variant, testComponents),
-        )
+    // Register code coverage collection task for report aggregation
+    val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
+    taskFactory.register(
+      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
+        jacocoAntConfiguration,
+        CodeCoverageReportCreationConfigImpl(variant, testComponents),
       )
-    }
+    )
 
     // now that the onVariants callback has run and tasks have been created,
     // register all the listeners so we can ensure there is a Task providing the artifact
@@ -429,10 +426,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         // if it is a data binding compiler dependency w/ a different version, report
         // error
         if (
-          dependency.group + ":" + dependency.name == SdkConstants.DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT &&
+          "${dependency.group}:${dependency.name}" == SdkConstants.DATA_BINDING_ANNOTATION_PROCESSOR_ARTIFACT &&
             dependency.version != version
         ) {
-          val depString = (dependency.group + ":" + dependency.name + ":" + dependency.version)
+          val depString = "${dependency.group}:${dependency.name}:${dependency.version}"
           globalConfig.services.issueReporter.reportError(
             IssueReporter.Type.GENERIC,
             "Data Binding annotation processor version needs to match the" +

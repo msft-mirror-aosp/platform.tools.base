@@ -33,7 +33,11 @@ class TestSuiteTaskManager(project: Project, globalConfig: GlobalTaskCreationCon
     // first create all tasks related to processing the source folders.
     val allSourcesProcessingTasks =
       creationConfig.sourceContainers.mapNotNull { testSuiteSourceContainer ->
-        testSuiteSourceContainer.createTasks(creationConfig.services, creationConfig)
+        testSuiteSourceContainer.createTasks(
+          testSuiteTaskManager = this,
+          taskCreationServices = creationConfig.services,
+          creationConfig = creationConfig,
+        )
       }
     creationConfig.targets
       .filter { it.value.enabled }

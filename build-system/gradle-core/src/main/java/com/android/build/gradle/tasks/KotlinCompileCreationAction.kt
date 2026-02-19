@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_CLASSES_DIR
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_JAVA_SOURCES
 import com.android.build.gradle.internal.scope.InternalArtifactType.BUILT_IN_KAPT_GENERATED_KOTLIN_SOURCES
-import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
 import com.android.build.gradle.internal.utils.KgpVersion
 import org.gradle.api.JavaVersion
@@ -114,8 +113,7 @@ abstract class KotlinTaskCreationAction<TASK : Task>(protected val creationConfi
     handleProvider(taskProvider)
 
     taskProvider.configure {
-      val taskContainer: MutableTaskContainer = creationConfig.taskContainer
-      it.dependsOn(taskContainer.preBuildTask)
+      it.dependsOn(creationConfig.taskContainer.preBuildTask)
       it.extensions.add(PROPERTY_VARIANT_NAME_KEY, creationConfig.name)
 
       configureTask(it)

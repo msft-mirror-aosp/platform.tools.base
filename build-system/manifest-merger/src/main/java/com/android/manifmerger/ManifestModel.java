@@ -162,11 +162,11 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
 
                 @Override
                 public String getKey(Element element) {
-                    // if the provider is a sub-element from queries, we are not expecting any key.
-                    if (element.getParentNode()
-                            .getNodeName()
-                            .equals(ManifestModel.NodeTypes.QUERIES.name())) {
-                        return null;
+                    // if the provider is a sub-element from queries, use the authorities as key.
+                    if (element.getParentNode().getNodeName().equals(SdkConstants.TAG_QUERIES)) {
+                        String key =
+                                element.getAttributeNS(ANDROID_URI, SdkConstants.ATTR_AUTHORITIES);
+                        return Strings.isNullOrEmpty(key) ? null : key;
                     }
                     return DEFAULT_NAME_ATTRIBUTE_RESOLVER.getKey(element);
                 }

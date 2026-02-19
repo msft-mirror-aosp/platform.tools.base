@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
@@ -263,6 +264,17 @@ class CodeCoverageReportTest {
 
     result.assertOutputContains("No code coverage data found.")
     result.assertOutputDoesNotContain("View coverage report at")
+  }
+
+  @Test
+  fun testCreateCoverageReportWithFeatureDisabled() {
+    val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
+
+    val result = build.executor.run(":app:createCoverageReport")
+
+    result.assertOutputContains("Report aggregation feature is disabled. Task execution is skipped.")
+    result.assertOutputDoesNotContain("View coverage report at")
+    assertThat(result.didWorkTasks).doesNotContain(":app:collectDebugCoverage")
   }
 
   private fun verifyHtmlReport(

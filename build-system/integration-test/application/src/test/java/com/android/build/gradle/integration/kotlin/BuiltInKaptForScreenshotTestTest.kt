@@ -24,7 +24,6 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.dsl.ModulePropertyKey.BooleanWithDefault.SCREENSHOT_TEST
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
@@ -50,7 +49,6 @@ class BuiltInKaptForScreenshotTestTest {
       )
       .withKotlinGradlePlugin(true)
       .withBuiltInKotlinSupport(true)
-      .disableBuiltInKotlin()
       .create()
 
   @Before
@@ -92,7 +90,6 @@ class BuiltInKaptForScreenshotTestTest {
       "apply plugin: 'com.android.application'",
       """
                 apply plugin: 'com.android.application'
-                apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
                 apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
                 """
         .trimIndent(),
@@ -122,7 +119,7 @@ class BuiltInKaptForScreenshotTestTest {
     )
     project
       .executor()
-      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .with(BooleanOption.BUILT_IN_KOTLIN, false)
       .with(BooleanOption.USE_NEW_DSL, false)
       .run("app:compileDebugScreenshotTestJavaWithJavac")
     val kaptGeneratedTestDir = app.buildDir.resolve("generated/source/kapt/screenshotTest/debug/com/example")

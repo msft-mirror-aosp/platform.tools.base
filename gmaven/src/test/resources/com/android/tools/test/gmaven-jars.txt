@@ -4115,19 +4115,23 @@ com/android/tools/sdklib
   com/android/sdklib/repository/generated/addon/v1/
   com/android/sdklib/repository/generated/addon/v2/
   com/android/sdklib/repository/generated/addon/v3/
+  com/android/sdklib/repository/generated/addon/v4/
   com/android/sdklib/repository/generated/common/
   com/android/sdklib/repository/generated/common/v1/
   com/android/sdklib/repository/generated/common/v2/
   com/android/sdklib/repository/generated/common/v3/
+  com/android/sdklib/repository/generated/common/v4/
   com/android/sdklib/repository/generated/repository/
   com/android/sdklib/repository/generated/repository/v1/
   com/android/sdklib/repository/generated/repository/v2/
   com/android/sdklib/repository/generated/repository/v3/
+  com/android/sdklib/repository/generated/repository/v4/
   com/android/sdklib/repository/generated/sysimg/
   com/android/sdklib/repository/generated/sysimg/v1/
   com/android/sdklib/repository/generated/sysimg/v2/
   com/android/sdklib/repository/generated/sysimg/v3/
   com/android/sdklib/repository/generated/sysimg/v4/
+  com/android/sdklib/repository/generated/sysimg/v5/
   com/android/sdklib/repository/installer/
   com/android/sdklib/repository/legacy/
   com/android/sdklib/repository/legacy/descriptors/
@@ -4147,6 +4151,7 @@ com/android/tools/sdklib
   com/android/sdklib/repository/sources/generated/v4/
   com/android/sdklib/repository/sources/generated/v5/
   com/android/sdklib/repository/sources/generated/v6/
+  com/android/sdklib/repository/sources/generated/v7/
   com/android/sdklib/repository/targets/
   com/android/sdklib/tool/
   com/android/sdklib/tool/sdkmanager/
@@ -4181,19 +4186,24 @@ com/android/tools/sdklib
   xsd/sdk-addon-01.xsd
   xsd/sdk-addon-02.xsd
   xsd/sdk-addon-03.xsd
+  xsd/sdk-addon-04.xsd
   xsd/sdk-common-01.xsd
   xsd/sdk-common-02.xsd
   xsd/sdk-common-03.xsd
+  xsd/sdk-common-04.xsd
   xsd/sdk-common-custom-01.xjb
   xsd/sdk-common-custom-02.xjb
   xsd/sdk-common-custom-03.xjb
+  xsd/sdk-common-custom-04.xjb
   xsd/sdk-repository-01.xsd
   xsd/sdk-repository-02.xsd
   xsd/sdk-repository-03.xsd
+  xsd/sdk-repository-04.xsd
   xsd/sdk-sys-img-01.xsd
   xsd/sdk-sys-img-02.xsd
   xsd/sdk-sys-img-03.xsd
   xsd/sdk-sys-img-04.xsd
+  xsd/sdk-sys-img-05.xsd
   xsd/sources/
   xsd/sources/sdk-sites-list-1.xsd
   xsd/sources/sdk-sites-list-2.xsd
@@ -4201,6 +4211,7 @@ com/android/tools/sdklib
   xsd/sources/sdk-sites-list-4.xsd
   xsd/sources/sdk-sites-list-5.xsd
   xsd/sources/sdk-sites-list-6.xsd
+  xsd/sources/sdk-sites-list-7.xsd
 
 com/android/tools/testutils
   META-INF/

@@ -242,9 +242,9 @@ interface DeviceProperties {
           characteristics.contains("tv") -> DeviceType.TV
           characteristics.contains("automotive") -> DeviceType.AUTOMOTIVE
           characteristics.contains("xr") -> DeviceType.XR_HEADSET
-          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains
-          // "xr".
-          properties["init.svc.sxrd"] == "running" -> DeviceType.XR_HEADSET
+          // TODO(b/408280128): Remove this workaround once RO_BUILD_CHARACTERISTICS contains "xr".
+          properties["ro.product.product.name"]?.let { it.startsWith("xr") || it.endsWith("xr") } == true &&
+            properties["init.svc.sxrd"] == "running" -> DeviceType.XR_HEADSET
           else -> DeviceType.HANDHELD
         }
       isVirtual = properties[RO_KERNEL_QEMU] == "1"

@@ -52,7 +52,7 @@ open class HostTestBuilderImpl(
         HostTestBuilder.SCREENSHOT_TEST_TYPE,
         ComponentTypeImpl.SCREENSHOT_TEST,
         enableCodeCoverage,
-        includeAndroidResources = false,
+        includeAndroidResources = true,
       )
 
     /**

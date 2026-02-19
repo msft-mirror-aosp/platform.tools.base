@@ -26,6 +26,7 @@ import com.android.repository.Revision;
 import com.android.repository.api.RepoPackage;
 import com.android.repository.impl.meta.PackageDisplayNameQualifier;
 import com.android.repository.impl.meta.TypeDetails;
+import com.android.sdklib.AndroidApiLevel;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.OptionalLibrary;
 import com.android.sdklib.SystemImageTags;
@@ -58,12 +59,29 @@ public final class DetailsTypes {
          */
         @NonNull
         default AndroidVersion getAndroidVersion() {
-            return new AndroidVersion(
-                    getApiLevel(),
-                    getApiMinorLevel(),
-                    getCodename(),
-                    getExtensionLevel(),
-                    isBaseExtension());
+            String betaApiLevelString = getBetaApiLevel();
+            AndroidApiLevel betaApiLevel =
+                    betaApiLevelString == null
+                            ? null
+                            : AndroidApiLevel.fromString(betaApiLevelString);
+            AndroidVersion version =
+                    betaApiLevel == null || getBetaNumber() == null
+                            ? new AndroidVersion(
+                                    getApiLevel(),
+                                    getApiMinorLevel(),
+                                    getCodename(),
+                                    getExtensionLevel(),
+                                    isBaseExtension())
+                            : new AndroidVersion(
+                                            betaApiLevel,
+                                            getCodename(),
+                                            getExtensionLevel(),
+                                            isBaseExtension())
+                                    .withBetaNumber(getBetaNumber());
+            if (betaApiLevel == null && getCanaryNumber() != null) {
+                return version.withCanaryNumber(getCanaryNumber());
+            }
+            return version;
         }
 
         /** Sets the api level this package corresponds to. */
@@ -71,8 +89,7 @@ public final class DetailsTypes {
             // Implementation for schema v3 and above.
             if (isBaseExtension()) {
                 setApiLevelString(String.valueOf(apiLevel));
-            }
-            else {
+            } else {
                 setApiLevelString(apiLevel + "x");
             }
         }
@@ -103,6 +120,21 @@ public final class DetailsTypes {
         default String getApiLevelString() {
             // Overridden by v3 and shouldn't be used otherwise
             throw new UnsupportedOperationException();
+        }
+
+        @Nullable
+        default String getBetaApiLevel() {
+            return null;
+        }
+
+        @Nullable
+        default Integer getBetaNumber() {
+            return null;
+        }
+
+        @Nullable
+        default Integer getCanaryNumber() {
+            return null;
         }
 
         /**

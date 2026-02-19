@@ -56,6 +56,8 @@ sealed interface ApkSelector : OutputSelector {
 
     @JvmField val NO_BUILD_TYPE = of(buildType = null, isSigned = true)
 
+    @JvmField val ANDROIDTEST_NO_BUILD_TYPE = of(buildType = null, testSuite = "androidTest", isSigned = true)
+
     @JvmStatic
     fun of(buildType: String?, isSigned: Boolean): ApkSelector {
       return ApkSelectorImp(buildType = buildType, testSuite = null, flavors = listOf(), isSigned = isSigned)

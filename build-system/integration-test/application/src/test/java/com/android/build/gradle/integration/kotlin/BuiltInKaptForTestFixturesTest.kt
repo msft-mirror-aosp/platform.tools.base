@@ -25,7 +25,6 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
 import com.android.build.gradle.options.BooleanOption
@@ -50,7 +49,6 @@ class BuiltInKaptForTestFixturesTest {
       )
       .withKotlinGradlePlugin(true)
       .withBuiltInKotlinSupport(true)
-      .disableBuiltInKotlin()
       .create()
 
   @Before
@@ -92,7 +90,6 @@ class BuiltInKaptForTestFixturesTest {
       "apply plugin: 'com.android.application'",
       """
                 apply plugin: 'com.android.application'
-                apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
                 apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
                 """
         .trimIndent(),
@@ -123,7 +120,7 @@ class BuiltInKaptForTestFixturesTest {
     project
       .executor()
       .withFailOnWarning(true)
-      .with(BooleanOption.ENABLE_LEGACY_API, true)
+      .with(BooleanOption.BUILT_IN_KOTLIN, false)
       .with(BooleanOption.USE_NEW_DSL, false)
       .run("app:assembleDebugTestFixtures")
 
@@ -140,7 +137,6 @@ class BuiltInKaptForTestFixturesTest {
       "apply plugin: 'com.android.application'",
       """
                 apply plugin: 'com.android.application'
-                apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
                 apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
 
 
@@ -188,7 +184,7 @@ class BuiltInKaptForTestFixturesTest {
     TestFileUtils.appendToFile(project.gradlePropertiesFile, "org.gradle.caching=true")
 
     val executor =
-      project.executor().withFailOnWarning(true).with(BooleanOption.ENABLE_LEGACY_API, true).with(BooleanOption.USE_NEW_DSL, false)
+      project.executor().withFailOnWarning(true).with(BooleanOption.BUILT_IN_KOTLIN, false).with(BooleanOption.USE_NEW_DSL, false)
     // test for caching when useBuildCache = true
     assertThat(executor.run("app:assembleDebugTestFixtures").didWorkTasks).contains(":app:kaptDebugTestFixturesKotlin")
     assertThat(executor.run("clean", "app:assembleDebugTestFixtures").fromCacheTasks).contains(":app:kaptDebugTestFixturesKotlin")

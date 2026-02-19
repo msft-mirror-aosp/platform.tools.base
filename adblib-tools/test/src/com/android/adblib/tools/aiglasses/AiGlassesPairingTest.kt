@@ -38,6 +38,7 @@ class AiGlassesPairingTest {
     get() = fakeAdbRule.adbSession.deviceServices
 
   private val broadcastResponses = ConcurrentHashMap<String, String>()
+  private val dumpsysResponses = ConcurrentHashMap<String, String>()
 
   @Test
   fun checkBondState_sendsCorrectCommandAndParsesResult() = runBlockingWithTimeout {
@@ -142,34 +143,106 @@ class AiGlassesPairingTest {
     AiGlassesPairing(fakeAdbRule.adbSession).run { device.setDisplayMode(true) }
   }
 
+  @Test
+  fun checkCompanionAppInForeground_returnsTrueIfAppInForeground() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerDumpsysResponse(
+      "dumpsys window windows",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val result = AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
+
+    assertEquals(true, result)
+    assertEquals(listOf("dumpsys window windows"), executedDumpsysCommands)
+  }
+
+  @Test
+  fun checkCompanionAppInForeground_returnsFalseIfAppNotInForeground() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    registerDumpsysResponse("dumpsys window windows", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+
+    val result = AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
+
+    assertEquals(false, result)
+  }
+
+  @Test(expected = java.io.IOException::class)
+  fun checkCompanionAppInForeground_throwsIoExceptionOnCommFailure() {
+    runBlockingWithTimeout {
+      val device = createConnectedDevice()
+
+      listOf(ShellProtocolType.SHELL, ShellProtocolType.SHELL_V2).forEach { type ->
+        fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+          0,
+          object : ShellHandler(type) {
+            override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
+              return shellCommand == "dumpsys" && shellCommandArgs?.contains("window") == true
+            }
+
+            override fun execute(
+              fakeAdbServer: FakeAdbServer,
+              statusWriter: StatusWriter,
+              shellCommandOutput: ShellCommandOutput,
+              device: DeviceState,
+              shellCommand: String,
+              shellCommandArgs: String?,
+            ) {
+              throw java.io.IOException("Simulated Connection Failure")
+            }
+          },
+        )
+      }
+
+      AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
+    }
+  }
+
   private val executedCommands = java.util.concurrent.CopyOnWriteArrayList<String>()
+  private val executedDumpsysCommands = java.util.concurrent.CopyOnWriteArrayList<String>()
 
   private suspend fun createConnectedDevice(): com.android.adblib.ConnectedDevice {
     val fakeDevice =
       fakeAdbRule.fakeAdb.connectDevice("device1", "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
     // Register handlers (SHELL and SHELL_V2 to be safe)
-    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(0, FakeBroadcastHandler(ShellProtocolType.SHELL, broadcastResponses, executedCommands))
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
       0,
-      FakeBroadcastHandler(ShellProtocolType.SHELL_V2, broadcastResponses, executedCommands),
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "am", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "am", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "dumpsys", dumpsysResponses, executedDumpsysCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "dumpsys", dumpsysResponses, executedDumpsysCommands),
     )
     return deviceServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
+  }
+
+  private fun registerDumpsysResponse(command: String, response: String) {
+    dumpsysResponses[command] = response
   }
 
   private fun registerBroadcastResponse(command: String, response: String) {
     broadcastResponses[command] = response
   }
 
-  /** Fake handler that intercepts `am` commands matching registered responses. */
-  class FakeBroadcastHandler(
+  /** Fake handler that intercepts a target command matching registered responses. */
+  class FakeShellCommandHandler(
     shellProtocolType: ShellProtocolType,
+    private val targetCommand: String,
     private val responses: Map<String, String>,
     private val commandTracker: MutableList<String>,
   ) : ShellHandler(shellProtocolType) {
 
     override fun shouldExecute(shellCommand: String, shellCommandArgs: String?): Boolean {
-      if (shellCommand != "am") return false
+      if (shellCommand != targetCommand) return false
       // Reconstruct the full command to check against responses
       val fullCommand = if (shellCommandArgs == null) shellCommand else "$shellCommand $shellCommandArgs"
       return responses.containsKey(fullCommand)

@@ -63,6 +63,12 @@ filegroup(
 )
 
 filegroup(
+    name = "gradle-distrib-9.1.0",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.1.0"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
     name = "gradle-distrib-9.0.0",
     srcs = ["//tools/external/gradle:gradle-distrib-9.0.0"],
     visibility = ["//visibility:public"],
@@ -682,7 +688,7 @@ gradle_build(
 maven_repository(
     name = "metalava_tool",
     artifacts = [
-        "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha12",
+        "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha14",
         "@maven//:ch.randelshofer.fastdoubleparser_0.8.0",
         "@maven//:com.google.protobuf.protobuf-bom_3.19.3",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",

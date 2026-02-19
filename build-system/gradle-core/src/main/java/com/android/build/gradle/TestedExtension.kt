@@ -4,6 +4,7 @@ import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.api.UnitTestVariant
 import com.android.build.gradle.internal.dependency.SourceSetManager
+import com.android.build.gradle.internal.errors.DeprecationReporter
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
 import com.android.build.gradle.options.BooleanOption
@@ -52,6 +53,12 @@ abstract class TestedExtension(
    */
   override val testVariants: DomainObjectSet<TestVariant>
     get() {
+      dslServices.deprecationReporter.reportDeprecatedApi( // TODO(b/482133164): Investigate using StackWalker for better blame attribution.
+        newApiElement = "AndroidComponentsExtension",
+        oldApiElement = "testVariants",
+        url = "http://developer.android.com/build/r/new-dsl",
+        deprecationTarget = DeprecationReporter.DeprecationTarget.LEGACY_VARIANT_API,
+      )
       recordOldVariantApiUsage()
       return testVariantList
     }
@@ -73,6 +80,12 @@ abstract class TestedExtension(
    */
   override val unitTestVariants: DomainObjectSet<UnitTestVariant>
     get() {
+      dslServices.deprecationReporter.reportDeprecatedApi( // TODO(b/482133164): Investigate using StackWalker for better blame attribution.
+        newApiElement = "AndroidComponentsExtension",
+        oldApiElement = "unitTestVariants",
+        url = "http://developer.android.com/build/r/new-dsl",
+        deprecationTarget = DeprecationReporter.DeprecationTarget.LEGACY_VARIANT_API,
+      )
       recordOldVariantApiUsage()
       return unitTestVariantList
     }

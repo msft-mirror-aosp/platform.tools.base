@@ -887,16 +887,16 @@ class VariantManager<
             val variantSpecificDependencies = project.objects.newInstance(AgpTestSuiteDependencies::class.java)
 
             TestSuiteSourceContainer(
-              project,
-              variantBuilder.name,
-              testSuiteSource.name,
+              project = project,
+              targetVariantName = variantBuilder.name,
+              testSuiteName = testSuiteSource.name,
               source =
                 testSuiteSource.createTestSuiteSourceSet(
                   variantServices,
                   true, // so far, java is always enabled.
                   variantInfo.variant.builtInKotlinSupportMode is BuiltInKotlinSupportMode.Supported,
                 ),
-              variantSpecificDependencies,
+              dependencies = variantSpecificDependencies,
               suiteSourceClasspath =
                 TestSuiteDependenciesBuilder(
                     project,

@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.component
 
-import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.InternalSources
@@ -39,7 +38,6 @@ import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
-import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import com.android.builder.core.ComponentType
 import java.io.File
@@ -123,10 +121,6 @@ interface ComponentCreationConfig : ComponentIdentity, TaskCreationConfig {
   val variantDependencies: VariantDependencies
   val sources: InternalSources
   val paths: VariantPathHelper
-  val lifecycleTasks: LifecycleTasksImpl
-
-  /** Access to the global task creation configuration */
-  val global: GlobalTaskCreationConfig
 
   // ---------------------------------------------------------------------------------------------
   // INTERNAL HELPERS

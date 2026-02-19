@@ -42,7 +42,16 @@ class ScreenshotTestTaskManager(project: Project, globalConfig: GlobalTaskCreati
 
     setupAndroidRequiredTasks(testedVariant, screenshotTestCreationConfig)
 
-    setupCompilationTaskDependencies(screenshotTestCreationConfig, taskContainer)
+    // Screenshot tests require the manifest and resources to render previews.
+    // Fail fast if they are missing to avoid obscure errors in GenerateTestConfig.
+    if (screenshotTestCreationConfig.androidResourcesIncluded) {
+      setupCompilationTaskDependencies(screenshotTestCreationConfig, taskContainer)
+    } else {
+      throw java.lang.RuntimeException(
+        "Screenshot tests require Android resources to be included. " +
+          "Ensure that `includeAndroidResources` is not disabled in your build configuration."
+      )
+    }
 
     setupAssembleTasks(screenshotTestCreationConfig, taskContainer, ASSEMBLE_SCREENSHOT_TEST)
 

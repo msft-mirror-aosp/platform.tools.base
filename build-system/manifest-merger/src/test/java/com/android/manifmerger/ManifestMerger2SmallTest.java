@@ -3983,6 +3983,131 @@ public class ManifestMerger2SmallTest {
         }
     }
 
+    @Test
+    public void testAdditiveProvidersInQueries() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <queries>\n"
+                        + "       <provider android:authorities=\"com.example.provider.a\" />\n"
+                        + "    </queries>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("testAdditiveProvidersInQueriesApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib1\">\n"
+                        + "\n"
+                        + "    <queries>\n"
+                        + "       <provider android:authorities=\"com.example.provider.b\" />\n"
+                        + "    </queries>\n"
+                        + "\n"
+                        + "</manifest>";
+        File libFile = TestUtils.inputAsFile("testAdditiveProvidersInQueriesLib", libInput);
+        assertTrue(libFile.exists());
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .merge();
+            assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
+            Document mergedDocument =
+                    parse(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED));
+
+            NodeList queries = mergedDocument.getElementsByTagName(SdkConstants.TAG_QUERIES);
+            assertThat(queries.getLength()).isEqualTo(1);
+            Element queriesElement = (Element) queries.item(0);
+
+            NodeList providers = queriesElement.getElementsByTagName(SdkConstants.TAG_PROVIDER);
+            assertThat(providers.getLength()).isEqualTo(2);
+
+            boolean foundA = false;
+            boolean foundB = false;
+            for (int i = 0; i < providers.getLength(); i++) {
+                Element provider = (Element) providers.item(i);
+                String authorities =
+                        provider.getAttributeNS(SdkConstants.ANDROID_URI, "authorities");
+                if (authorities == null || authorities.isEmpty()) {
+                    authorities = provider.getAttribute("android:authorities");
+                }
+
+                if ("com.example.provider.a".equals(authorities)) {
+                    foundA = true;
+                } else if ("com.example.provider.b".equals(authorities)) {
+                    foundB = true;
+                }
+            }
+            assertTrue("Provider A not found", foundA);
+            assertTrue("Provider B not found", foundB);
+
+        } finally {
+            assertTrue(appFile.delete());
+            assertTrue(libFile.delete());
+        }
+    }
+
+    @Test
+    public void testDuplicateProvidersInQueries() throws Exception {
+        MockLog mockLog = new MockLog();
+        String appInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.app1\">\n"
+                        + "\n"
+                        + "    <queries>\n"
+                        + "       <provider android:authorities=\"com.example.provider.a\" />\n"
+                        + "    </queries>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        File appFile = TestUtils.inputAsFile("testDuplicateProvidersInQueriesApp", appInput);
+        assertTrue(appFile.exists());
+
+        String libInput =
+                "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.lib1\">\n"
+                        + "\n"
+                        + "    <queries>\n"
+                        + "       <provider android:authorities=\"com.example.provider.a\" />\n"
+                        + "    </queries>\n"
+                        + "\n"
+                        + "</manifest>";
+        File libFile = TestUtils.inputAsFile("testDuplicateProvidersInQueriesLib", libInput);
+        assertTrue(libFile.exists());
+
+        try {
+            MergingReport mergingReport =
+                    ManifestMerger2.newMerger(
+                                    appFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                            .addLibraryManifest(libFile)
+                            .merge();
+            assertEquals(MergingReport.Result.SUCCESS, mergingReport.getResult());
+            Document mergedDocument =
+                    parse(mergingReport.getMergedDocument(MergingReport.MergedManifestKind.MERGED));
+
+            NodeList queries = mergedDocument.getElementsByTagName(SdkConstants.TAG_QUERIES);
+            assertThat(queries.getLength()).isEqualTo(1);
+            Element queriesElement = (Element) queries.item(0);
+
+            NodeList providers = queriesElement.getElementsByTagName(SdkConstants.TAG_PROVIDER);
+            // Should be 1 if deduplicated
+            assertThat(providers.getLength()).isEqualTo(1);
+        } finally {
+            assertTrue(appFile.delete());
+            assertTrue(libFile.delete());
+        }
+    }
+
     public static void validateFeatureName(
             ManifestMerger2.Invoker invoker, String featureName, boolean isValid) throws Exception {
         invoker.setFeatureName(featureName);

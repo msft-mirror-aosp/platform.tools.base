@@ -50,6 +50,7 @@ public class Deployer {
     private final SqlApkFileDatabase dexDb;
     private final DeploymentCacheDatabase deployCache;
     private final Installer installer;
+    private final DeployerApplicationTerminator terminator;
     private final TaskRunner runner;
     private final UIService service;
     private final MetricsRecorder metrics;
@@ -62,6 +63,7 @@ public class Deployer {
             SqlApkFileDatabase dexDb,
             TaskRunner runner,
             Installer installer,
+            DeployerApplicationTerminator terminator,
             UIService service,
             MetricsRecorder metrics,
             ILogger logger,
@@ -71,6 +73,7 @@ public class Deployer {
         this.dexDb = dexDb;
         this.runner = runner;
         this.installer = installer;
+        this.terminator = terminator;
         this.service = service;
         this.metrics = metrics;
         this.logger = logger;
@@ -298,7 +301,13 @@ public class Deployer {
             logger.info("Deploying with optimistic install for session %s", deploySessionUID);
             OptimisticApkInstaller apkInstaller =
                     new OptimisticApkInstaller(
-                            installer, adb, deployCache, metrics, deployOptions, logger);
+                            installer,
+                            adb,
+                            terminator,
+                            deployCache,
+                            metrics,
+                            deployOptions,
+                            logger);
             Task<List<String>> userFlags = runner.create(installOptions.getUserFlags());
             Task<OverlayId> overlayId =
                     runner.create(

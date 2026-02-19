@@ -91,3 +91,16 @@ com/android/databinding/viewbinding
   classes.jar:META-INF/com.android.databinding_viewbinding.version
   classes.jar:android/
   classes.jar:android/viewbinding/
+
+com/android/tools/studio/leakcanary/leakcanary
+  AndroidManifest.xml
+  R.txt
+  classes.jar
+  classes.jar:META-INF/
+  classes.jar:META-INF/MANIFEST.MF
+  classes.jar:com/
+  classes.jar:com/android/
+  classes.jar:com/android/tools/
+  classes.jar:com/android/tools/studio/
+  classes.jar:com/android/tools/studio/leakcanary/
+  res/

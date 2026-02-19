@@ -28,6 +28,8 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.util.PatternSet
 
 interface JavaCompileCreationConfig : TaskCreationConfig {
@@ -53,6 +55,8 @@ interface JavaCompileCreationConfig : TaskCreationConfig {
   val builtInKotlincOutput: Provider<Directory>?
   val builtInKaptArtifact: Provider<Directory>?
   val annotationProcessorPath: FileCollection?
+
+  fun setJavaCompileTask(task: TaskProvider<JavaCompile>)
 }
 
 fun createJavaCompileConfig(creationConfig: ComponentCreationConfig, usingKapt: Boolean): JavaCompileCreationConfig {
@@ -123,6 +127,10 @@ internal open class BaseJavaCompileCreationConfig(val creationConfig: ComponentC
 
   override val annotationProcessorPath: FileCollection?
     get() = creationConfig.getAnnotationProcessorJars()
+
+  override fun setJavaCompileTask(task: TaskProvider<JavaCompile>) {
+    creationConfig.taskContainer.javacTask = task
+  }
 }
 
 fun computeJavaSourceWithoutDependencies(creationConfig: ComponentCreationConfig): FileTree {

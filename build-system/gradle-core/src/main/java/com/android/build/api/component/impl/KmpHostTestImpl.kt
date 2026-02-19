@@ -18,7 +18,6 @@ package com.android.build.api.component.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.impl.features.AndroidResourcesCreationConfigImpl
-import com.android.build.api.component.impl.features.ManifestPlaceholdersCreationConfigImpl
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.instrumentation.AsmClassVisitorFactory
 import com.android.build.api.instrumentation.FramesComputationMode
@@ -34,7 +33,6 @@ import com.android.build.api.variant.impl.initializeAaptOptionsFromDsl
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
-import com.android.build.gradle.internal.component.features.ManifestPlaceholdersCreationConfig
 import com.android.build.gradle.internal.core.dsl.impl.KmpUnitTestDslInfoImpl
 import com.android.build.gradle.internal.core.dsl.impl.getDefaultInstrumentationTestRunner
 import com.android.build.gradle.internal.dependency.VariantDependencies
@@ -101,15 +99,6 @@ constructor(
 
   override val targetSdkVersion: AndroidVersion
     get() = global.unitTestOptions.targetSdkVersion ?: minSdk
-
-  override val manifestPlaceholdersCreationConfig: ManifestPlaceholdersCreationConfig by
-    lazy(LazyThreadSafetyMode.NONE) {
-      ManifestPlaceholdersCreationConfigImpl(
-        // no dsl for this
-        emptyMap(),
-        internalServices,
-      )
-    }
 
   override val manifestPlaceholders: MapProperty<String, String>
     get() = manifestPlaceholdersCreationConfig.placeholders

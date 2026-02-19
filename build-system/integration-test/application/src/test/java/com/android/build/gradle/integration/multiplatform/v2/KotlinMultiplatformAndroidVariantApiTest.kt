@@ -31,6 +31,16 @@ class KotlinMultiplatformAndroidVariantApiTest {
   @get:Rule val project = GradleTestProjectBuilder().fromTestProject("kotlinMultiplatform").create()
 
   @Test
+  fun testManifestPlaceholdersAreReplaced() {
+    executor().run(":kmpFirstLib:packageAndroidDeviceTest")
+
+    project.getSubproject("kmpFirstLib").assertApk(ApkSelector.ANDROIDTEST_NO_BUILD_TYPE) {
+      manifest().contains("android:value=\"main\"")
+      manifest().contains("android:value=\"device_test\"")
+    }
+  }
+
+  @Test
   fun testRegisteringCustomSourceDirs() {
     TestFileUtils.appendToFile(
       project.getSubproject("kmpFirstLib").ktsBuildFile,

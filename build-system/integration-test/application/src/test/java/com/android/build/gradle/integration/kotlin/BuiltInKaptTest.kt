@@ -29,9 +29,9 @@ import com.android.build.gradle.internal.TaskManager.Companion.COMPOSE_UI_VERSIO
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.getOutputDir
 import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KAPT_PLUGIN_ID
-import com.android.build.gradle.internal.utils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
 import com.android.build.gradle.internal.utils.KOTLIN_KAPT_PLUGIN_ID
+import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.SyncIssue
 import com.android.testutils.truth.PathSubject
 import com.android.utils.appendCapitalized
@@ -57,7 +57,6 @@ class BuiltInKaptTest {
       .withBuiltInKotlinSupport(true)
       .withKotlinGradlePlugin(true)
       .withComposeCompilerGradlePlugin(true)
-      .disableBuiltInKotlin()
       .create()
 
   @Before
@@ -68,7 +67,6 @@ class BuiltInKaptTest {
       "apply plugin: 'com.android.application'",
       """
                 apply plugin: 'com.android.application'
-                apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
                 apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'
                 """
         .trimIndent(),
@@ -223,13 +221,13 @@ class BuiltInKaptTest {
   }
 
   @Test
-  fun `fail when built-in Kotlin plugin is applied before kotlin-kapt plugin`() {
+  fun `fail when AGP is applied before kotlin-kapt plugin`() {
     val app = project.getSubproject(":app")
     TestFileUtils.searchAndReplace(
       app.buildFile,
-      "apply plugin: '$ANDROID_BUILT_IN_KAPT_PLUGIN_ID'",
+      "apply plugin: 'com.android.application'",
       """
-            apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'
+            apply plugin: 'com.android.application'
             apply plugin: '$KOTLIN_KAPT_PLUGIN_ID'
             """
         .trimIndent(),
@@ -240,7 +238,7 @@ class BuiltInKaptTest {
   }
 
   @Test
-  fun `fail when built-in Kotlin plugin is applied after kotlin-kapt plugin`() {
+  fun `fail when AGP is applied after kotlin-kapt plugin`() {
     val app = project.getSubproject(":app")
     TestFileUtils.searchAndReplace(
       app.buildFile,
@@ -257,11 +255,10 @@ class BuiltInKaptTest {
   }
 
   @Test
-  fun `fail when built-in Kapt plugin is applied without built-in Kotlin plugin`() {
+  fun `fail when built-in Kapt plugin is applied without built-in Kotlin`() {
     val app = project.getSubproject(":app")
-    TestFileUtils.searchAndReplace(app.buildFile, "apply plugin: '$ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID'", "")
 
-    val result = app.executor().expectFailure().run(":app:assembleDebug")
+    val result = app.executor().with(BooleanOption.BUILT_IN_KOTLIN, false).expectFailure().run(":app:assembleDebug")
     result.assertErrorContains("The 'com.android.legacy-kapt' plugin requires the 'com.android.built-in-kotlin' plugin to be applied.")
   }
 

@@ -140,22 +140,18 @@ class ApplicationTaskManager(
       createSoftwareComponent(variant, component.componentName, configType)
     }
 
-    if (isReportAggregationEnabled) {
-      val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
-      taskFactory.register(
-        CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-          jacocoAntConfiguration,
-          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
-        )
+    val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
+    taskFactory.register(
+      CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
+        jacocoAntConfiguration,
+        CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
       )
-    }
+    )
   }
 
   override fun createReportAggregationTask() {
     super.createReportAggregationTask()
-    if (isReportAggregationEnabled) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
-    }
+    taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   private fun createBundleTask(component: ComponentCreationConfig) {

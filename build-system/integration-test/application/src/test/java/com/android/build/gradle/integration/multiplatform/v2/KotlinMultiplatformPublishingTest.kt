@@ -101,6 +101,52 @@ class KotlinMultiplatformPublishingTest {
   }
 
   @Test
+  fun `test modern kmp and com_android_library consumer`() {
+    val build =
+      rule.build {
+        androidKotlinMultiplatformLibrary(":modernKmpConsumer") {
+          group = "com.example.modernKmpConsumer"
+          version = "1.0"
+
+          android {
+            namespace = "com.example.modernKmpConsumer"
+            compileSdk = DEFAULT_COMPILE_SDK_VERSION
+            minSdk = 24
+          }
+          pluginCallbacks += AndroidDependencyCallback::class.java
+        }
+      }
+    build.executor
+      .withFailOnWarning(false) // b/455891987
+      .run(":producer:publish")
+    var buildResult =
+      build.executor
+        .withFailOnWarning(false) // b/455891987
+        .run(
+          ":modernKmpConsumer:dependencyInsight",
+          "--configuration",
+          "androidCompileClasspath",
+          "--dependency",
+          "com.example.producer:producer:1.0",
+        )
+    ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
+
+    simulateDifferentProducerArtifact(build)
+    buildResult =
+      build.executor
+        .withFailOnWarning(false) // b/455891987
+        .run(
+          ":modernKmpConsumer:dependencyInsight",
+          "--configuration",
+          "androidCompileClasspath",
+          "--dependency",
+          "com.example.producer:producer:1.0",
+        )
+    ScannerSubject.assertThat(buildResult.stdout).contains("Variant androidApiElements-published")
+  }
+
+  // To be removed when we drop the support(e.g. AGP 10.0)
+  @Test
   fun `test kmp and com_android_library consumer`() {
     val build =
       rule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().build {

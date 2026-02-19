@@ -104,6 +104,12 @@ androidComponents {
         variant.sources.assets?.addGeneratedSourceDirectory(
             generateAssetTask, GenerateAssetTask::outputDir
         )
+
+        variant.manifestPlaceholders.put("exampleAndroidMainPlaceholder", "main")
+
+        (variant as? com.android.build.api.variant.HasDeviceTests)?.deviceTests?.forEach { string, test ->
+            test.manifestPlaceholders.put("exampleAndroidDeviceTestPlaceholder", "device_test")
+        }
     }
 }
 

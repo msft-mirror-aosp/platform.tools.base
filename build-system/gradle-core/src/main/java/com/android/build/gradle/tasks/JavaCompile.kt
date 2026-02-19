@@ -68,7 +68,7 @@ class JavaCompileCreationAction(val creationConfig: JavaCompileCreationConfig) :
   override fun handleProvider(taskProvider: TaskProvider<JavaCompile>) {
     super.handleProvider(taskProvider)
 
-    creationConfig.taskContainer.javacTask = taskProvider
+    creationConfig.setJavaCompileTask(taskProvider)
 
     val artifacts = creationConfig.artifacts
 

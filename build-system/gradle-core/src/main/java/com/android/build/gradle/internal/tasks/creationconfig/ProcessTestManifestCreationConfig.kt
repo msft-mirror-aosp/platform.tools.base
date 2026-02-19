@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks.creationconfig
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
+import com.android.build.api.component.impl.LifecycleTasksImpl
 import com.android.build.api.variant.TestSuiteSourceSet
 import com.android.build.api.variant.impl.TestSuiteSourceContainer
 import com.android.build.api.variant.impl.getApiString
@@ -34,6 +35,7 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactSco
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.TaskCreationServices
+import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.VariantPathHelper
 import java.io.File
@@ -84,6 +86,8 @@ interface ProcessTestManifestCreationConfig : TaskCreationConfig {
   val useLegacyPackaging: Provider<Boolean>
 
   val placeholderValues: MapProperty<String, String>
+
+  override val taskContainer: MutableTaskContainer
 }
 
 fun <T : Any> TaskCreationConfig.emptyProvider(): Provider<T> = this.services.provider { null }
@@ -118,6 +122,12 @@ fun forTestComponent(creationConfig: TestCreationConfig): ProcessTestManifestCre
 
       override val testedApkVariantArtifacts: ArtifactsImpl
         get() = creationConfig.mainVariant.artifacts
+
+      override val global: GlobalTaskCreationConfig
+        get() = creationConfig.global
+
+      override val lifecycleTasks: LifecycleTasksImpl
+        get() = creationConfig.lifecycleTasks
     }
   } else if (creationConfig is InstrumentedTestCreationConfig) {
     object : TestComponentProcessTestManifestCreationConfig(creationConfig) {
@@ -129,6 +139,12 @@ fun forTestComponent(creationConfig: TestCreationConfig): ProcessTestManifestCre
 
       override val testLabel: Provider<String>
         get() = creationConfig.testLabel
+
+      override val global: GlobalTaskCreationConfig
+        get() = creationConfig.global
+
+      override val lifecycleTasks: LifecycleTasksImpl
+        get() = creationConfig.lifecycleTasks
     }
   } else {
     TestComponentProcessTestManifestCreationConfig(creationConfig)
@@ -145,6 +161,11 @@ fun forTestSuite(
   return (creationConfig.testedVariant as? TargetSdkAwareConfig)?.let { variant ->
     object : TestSuiteProcessTestManifestCreationConfig(creationConfig, sourceContainer, source) {
       override val targetSdkVersion: String = variant.targetSdk.getApiString()
+      override val global: GlobalTaskCreationConfig
+        get() = creationConfig.global
+
+      override val lifecycleTasks: LifecycleTasksImpl
+        get() = creationConfig.testedVariant.lifecycleTasks
     }
   }
 }
@@ -240,6 +261,12 @@ abstract class BaseProcessTestManifestCreationConfig(val creationConfig: Compone
 
   override val artifacts: ArtifactsImpl
     get() = creationConfig.artifacts
+
+  override val global: GlobalTaskCreationConfig
+    get() = creationConfig.global
+
+  override val lifecycleTasks: LifecycleTasksImpl
+    get() = creationConfig.lifecycleTasks
 }
 
 /** Non-abstract class that init all values with TestCreationConfig */

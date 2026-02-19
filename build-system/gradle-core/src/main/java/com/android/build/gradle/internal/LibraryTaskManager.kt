@@ -242,7 +242,7 @@ class LibraryTaskManager(
 
     createBundleTask(libraryVariant)
 
-    if (isReportAggregationEnabled && libraryVariant.publishInfo?.components?.isNotEmpty() ?: false) {
+    if (libraryVariant.publishInfo?.components?.isNotEmpty() ?: false) {
       val jacocoAntConfiguration =
         JacocoConfigurations.getJacocoAntTaskConfiguration(project, libraryVariant.global.testCoverage.jacocoVersion)
       taskFactory.register(
@@ -256,8 +256,8 @@ class LibraryTaskManager(
 
   override fun createReportAggregationTask() {
     super.createReportAggregationTask()
-    if (isReportAggregationEnabled && variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+    if (variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
+      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
     }
   }
 

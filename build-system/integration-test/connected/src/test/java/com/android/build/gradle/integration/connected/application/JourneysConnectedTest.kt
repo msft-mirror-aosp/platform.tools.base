@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
+import com.android.build.gradle.integration.common.fixture.project.AndroidApplicationProject
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
@@ -51,6 +52,7 @@ import com.google.protobuf.Timestamp
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
+import kotlin.io.path.readText
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.gradle.api.Project
@@ -482,7 +484,7 @@ class JourneysConnectedTest {
     val outputDir = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/results/$DEVICE_SERIAL/simple")
     assertThat(outputDir.resolve("journey_results.pb")).exists()
 
-    result.assertOutputContains("Intentionally throwing an error.")
+    assertLogFileContains(appProject, "Intentionally throwing an error.")
     assertJourneyEvents(
       result,
       "$DEVICE_SERIAL > simple.journey.xml",
@@ -1050,5 +1052,12 @@ class JourneysConnectedTest {
       }
     }
     return extractedArtifacts
+  }
+
+  private fun assertLogFileContains(appProject: AndroidApplicationProject, expected: String) {
+    val logFile = appProject.buildDir.resolve("intermediates/debug/testJourneysTestT1DebugTestSuite/junit_engines_logging.txt")
+
+    assertThat(logFile).exists()
+    assertTrue(logFile.readText().contains(expected), "Log file ${logFile.toAbsolutePath()} does not contain expected string: '$expected'")
   }
 }

@@ -191,6 +191,48 @@ class LocalPackageUnmarshalTest {
     }
   }
 
+  @Test
+  fun testSysImgV5() {
+    unmarshalAndVerify("sys-img/v5/sys-img.xml") { pkg ->
+      val details = pkg.typeDetails as DetailsTypes.SysImgDetailsType
+      assertThat(details.apiLevel).isEqualTo(22)
+      assertThat(details.isBaseExtension).isTrue()
+      assertThat(details.abis).containsExactly("x86", "armeabi-v7a").inOrder()
+      assertThat(details.tags.map { it.id }).containsExactly("google_apis", "wear").inOrder()
+      assertThat(details.translatedAbis).containsExactly("riscv64")
+    }
+  }
+
+  @Test
+  fun testSysImgV5Beta() {
+    unmarshalAndVerify("sys-img/v5/sys-img-beta.xml") { pkg ->
+      val details = pkg.typeDetails as DetailsTypes.SysImgDetailsType
+      assertThat(details.androidVersion).isEqualTo(AndroidVersion(37, 0).withBetaNumber(3))
+      assertThat(details.apiLevel).isEqualTo(36)
+      assertThat(details.apiMinorLevel).isEqualTo(1)
+      assertThat(details.betaApiLevel).isEqualTo("37.0")
+      assertThat(details.betaNumber).isEqualTo(3)
+      assertThat(details.isBaseExtension).isTrue()
+      assertThat(details.abis).containsExactly("arm64-v8a", "armeabi-v7a").inOrder()
+      assertThat(details.tags.map { it.id }).containsExactly("google_apis_playstore", "tablet").inOrder()
+      assertThat(details.translatedAbis).containsExactly("riscv64")
+    }
+  }
+
+  @Test
+  fun testSysImgV5Canary() {
+    unmarshalAndVerify("sys-img/v5/sys-img-canary.xml") { pkg ->
+      val details = pkg.typeDetails as DetailsTypes.SysImgDetailsType
+      assertThat(details.androidVersion).isEqualTo(AndroidVersion(36, 1).withCanaryNumber(20260101))
+      assertThat(details.apiLevel).isEqualTo(36)
+      assertThat(details.apiMinorLevel).isEqualTo(1)
+      assertThat(details.isBaseExtension).isTrue()
+      assertThat(details.abis).containsExactly("arm64-v8a", "armeabi-v7a").inOrder()
+      assertThat(details.tags.map { it.id }).containsExactly("google_apis_playstore", "tablet").inOrder()
+      assertThat(details.translatedAbis).containsExactly("riscv64")
+    }
+  }
+
   private fun unmarshalAndVerify(relativePath: String, verification: (LocalPackage) -> Unit) {
     val path = "/com/android/sdklib/repository/testdata/$relativePath"
     val inputStream = this::class.java.getResourceAsStream(path)

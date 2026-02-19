@@ -300,7 +300,7 @@ private fun initBuiltInKaptSupport(project: Project) {
 }
 
 @OptIn(InternalKotlinGradlePluginApi::class)
-internal fun BuiltInKotlinCreationConfig.createKotlinCompilation(): KotlinCompilation<Any> {
+internal fun BuiltInKotlinCreationConfig.createKotlinCompilation(javaCompileTask: TaskProvider<JavaCompile>): KotlinCompilation<Any> {
   val kotlinServices = services.builtInKotlinServices
 
   @Suppress("UNCHECKED_CAST")
@@ -308,7 +308,7 @@ internal fun BuiltInKotlinCreationConfig.createKotlinCompilation(): KotlinCompil
     kotlinServices.kotlinBaseApiPlugin.createKotlinAndroidCompilation(
       name = name,
       androidTarget = kotlinServices.kotlinAndroidProjectExtension.target,
-      androidVariantJavaCompileTask = taskContainer.javacTask as TaskProvider<JavaCompile>,
+      androidVariantJavaCompileTask = javaCompileTask,
       androidVariantType = toAndroidVariantType(),
     )
 

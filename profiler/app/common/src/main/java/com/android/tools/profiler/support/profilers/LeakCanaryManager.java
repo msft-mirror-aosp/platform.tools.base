@@ -174,7 +174,9 @@ public class LeakCanaryManager {
                 context.registerReceiver(
                         sObjectCountReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
             } else {
-                context.registerReceiver(sObjectCountReceiver, filter);
+                String permissionName =
+                        context.getPackageName() + ".permission.LEAK_CANARY_INTERNAL";
+                context.registerReceiver(sObjectCountReceiver, filter, permissionName, null);
             }
             Log.d(TAG, "Started listening for retained object count updates.");
 

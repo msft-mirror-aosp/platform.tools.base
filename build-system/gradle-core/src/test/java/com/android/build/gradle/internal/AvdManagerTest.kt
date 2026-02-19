@@ -270,7 +270,7 @@ class AvdManagerTest {
       .isEqualTo(
         """
         Failed to find hardware profile for name: Pixel 300
-        Try one of the following device profiles: Pixel 3, Pixel 3a, Pixel C, Pixel XL, Pixel 2
+        Try one of the following device profiles: Pixel 3, Pixel 3a, Pixel 10, Pixel C, Pixel XL
         """
           .trimIndent()
       )

@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.options.BooleanOption
 import java.nio.file.Path
 import kotlin.io.path.readText
 import org.gradle.api.Project
@@ -35,22 +34,18 @@ class KotlinMultiplatformPublishingTest {
 
   @get:Rule
   val rule =
-    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().disableBrokenNewDslOptOutChecks().from {
-      androidLibrary {
-        applyPlugin(PluginType.KOTLIN_MPP)
+    GradleRule.from {
+      androidKotlinMultiplatformLibrary(":lib") {
         applyPlugin(PluginType.MAVEN_PUBLISH)
         pluginCallbacks += Callback::class.java
 
         android {
-          defaultConfig.minSdk = 24
-
-          group = "com.example"
-          version = "0.1.2"
+          namespace = "com.example.lib"
+          minSdk = 24
         }
-      }
-      gradleProperties {
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
+
+        group = "com.example"
+        version = "0.1.2"
       }
     }
 
@@ -69,16 +64,14 @@ class KotlinMultiplatformPublishingTest {
         }
       }
 
-      val kotlin = project.extensions.getByType(KotlinMultiplatformExtension::class.java)
-
-      kotlin.apply { androidTarget { target -> target.publishAllLibraryVariants() } }
+      project.extensions.getByType(KotlinMultiplatformExtension::class.java)
     }
   }
 
   @Test
   fun testKotlinMultiplatform() {
     val build = rule.build
-    val lib = build.androidLibrary()
+    val lib = build.kotlinMultiplatformLibrary(":lib")
 
     build.executor
       .withFailOnWarning(false) // b/455891987
@@ -86,11 +79,9 @@ class KotlinMultiplatformPublishingTest {
 
     val mainModule = lib.buildDir.resolve("testRepo/com/example/lib/0.1.2/lib-0.1.2.module")
     val androidModule = lib.buildDir.resolve("testRepo/com/example/lib-android/0.1.2/lib-android-0.1.2.module")
-    val androidDebugModule = lib.buildDir.resolve("testRepo/com/example/lib-android-debug/0.1.2/lib-android-debug-0.1.2.module")
 
     assertThat(normalizeModuleFile(mainModule)).isEqualTo(getExpectedFile("lib.module"))
     assertThat(normalizeModuleFile(androidModule)).isEqualTo(getExpectedFile("lib-android.module"))
-    assertThat(normalizeModuleFile(androidDebugModule)).isEqualTo(getExpectedFile("lib-android-debug.module"))
   }
 
   private fun getExpectedFile(fileName: String): String {

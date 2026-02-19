@@ -315,7 +315,16 @@ ${it.multiLineMessage}
       .filter { syncIssue: SyncIssue ->
         (syncIssue.type != SyncIssue.TYPE_UNSUPPORTED_PROJECT_OPTION_USE || !allowedOptions.contains(syncIssue.data))
       }
+      // b/482133164 Suppress legacy variant API warnings in general tests
+      .filter { syncIssue: SyncIssue -> !isLegacyVariantApiWarning(syncIssue.message) }
       .toList()
+  }
+
+  private fun isLegacyVariantApiWarning(message: String): Boolean {
+    return message.contains("API 'applicationVariants' is obsolete") ||
+      message.contains("API 'libraryVariants' is obsolete") ||
+      message.contains("API 'testVariants' is obsolete") ||
+      message.contains("API 'unitTestVariants' is obsolete")
   }
 }
 

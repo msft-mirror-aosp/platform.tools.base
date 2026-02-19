@@ -66,61 +66,11 @@
       ]
     },
     {
-      "name": "debugApiElements-published",
-      "attributes": {
-        "com.android.build.api.attributes.BuildTypeAttr": "debug",
-        "org.gradle.category": "library",
-        "org.gradle.jvm.environment": "android",
-        "org.gradle.usage": "java-api",
-        "org.jetbrains.kotlin.platform.type": "androidJvm"
-      },
-      "available-at": {
-        "url": "../../lib-android-debug/0.1.2/lib-android-debug-0.1.2.module",
-        "group": "com.example",
-        "module": "lib-android-debug",
-        "version": "0.1.2"
-      }
-    },
-    {
-      "name": "debugRuntimeElements-published",
-      "attributes": {
-        "com.android.build.api.attributes.BuildTypeAttr": "debug",
-        "org.gradle.category": "library",
-        "org.gradle.jvm.environment": "android",
-        "org.gradle.usage": "java-runtime",
-        "org.jetbrains.kotlin.platform.type": "androidJvm"
-      },
-      "available-at": {
-        "url": "../../lib-android-debug/0.1.2/lib-android-debug-0.1.2.module",
-        "group": "com.example",
-        "module": "lib-android-debug",
-        "version": "0.1.2"
-      }
-    },
-    {
-      "name": "debugSourcesElements-published",
-      "attributes": {
-        "com.android.build.api.attributes.BuildTypeAttr": "debug",
-        "org.gradle.category": "documentation",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.docstype": "sources",
-        "org.gradle.jvm.environment": "android",
-        "org.gradle.libraryelements": "jar",
-        "org.gradle.usage": "java-runtime",
-        "org.jetbrains.kotlin.platform.type": "androidJvm"
-      },
-      "available-at": {
-        "url": "../../lib-android-debug/0.1.2/lib-android-debug-0.1.2.module",
-        "group": "com.example",
-        "module": "lib-android-debug",
-        "version": "0.1.2"
-      }
-    },
-    {
-      "name": "releaseApiElements-published",
+      "name": "androidApiElements-published",
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "aar",
         "org.gradle.usage": "java-api",
         "org.jetbrains.kotlin.platform.type": "androidJvm"
       },
@@ -132,10 +82,11 @@
       }
     },
     {
-      "name": "releaseRuntimeElements-published",
+      "name": "androidRuntimeElements-published",
       "attributes": {
         "org.gradle.category": "library",
         "org.gradle.jvm.environment": "android",
+        "org.gradle.libraryelements": "aar",
         "org.gradle.usage": "java-runtime",
         "org.jetbrains.kotlin.platform.type": "androidJvm"
       },
@@ -147,7 +98,7 @@
       }
     },
     {
-      "name": "releaseSourcesElements-published",
+      "name": "androidSourcesElements-published",
       "attributes": {
         "org.gradle.category": "documentation",
         "org.gradle.dependency.bundling": "external",

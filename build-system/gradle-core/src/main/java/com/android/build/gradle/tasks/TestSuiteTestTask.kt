@@ -84,6 +84,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:OutputFile abstract val engineInputPropertiesFiles: RegularFileProperty
 
+  @get:OutputFile abstract val julConfigurationFile: RegularFileProperty
+
   @get:OutputFile abstract val logFile: RegularFileProperty
 
   @get:OutputFile abstract val streamingOutputFile: RegularFileProperty
@@ -128,6 +130,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     // untouched at the next execution.
     PathUtils.deleteRecursivelyIfExists(resultsDir.get().asFile.toPath())
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
+    logFile.get().asFile.delete()
 
     val engineInputParameters: List<TestEngineInputProperty> =
       engineInputParameters.get().map { inputProperty ->
@@ -216,6 +219,27 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
     if (onlineDeviceSerials != null) {
       standardInputs.add(TestEngineInputProperty(TestEngineInputProperty.SERIAL_IDS, onlineDeviceSerials))
+    }
+
+    // Configures java.util.logging to redirect all output from the test execution process
+    // to a separate log file. Note that Gradle redirects java.util.logging to stderr by
+    // default, which is why we need this configuration file to prevent JUL logs from
+    // cluttering the Gradle console.
+    if (!this.systemProperties.containsKey("java.util.logging.config.file")) {
+      val julConfigFile = julConfigurationFile.get().asFile
+      julConfigFile.parentFile.mkdirs()
+      julConfigFile.writeText(
+        """
+        handlers = java.util.logging.FileHandler
+        .level = INFO
+        java.util.logging.FileHandler.level = INFO
+        java.util.logging.FileHandler.pattern = ${logFile.get().asFile.absolutePath.replace("\\", "/")}
+        java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter
+        java.util.logging.FileHandler.append = true
+        """
+          .trimIndent()
+      )
+      this.systemProperty("java.util.logging.config.file", julConfigFile.absolutePath)
     }
 
     // write all the input properties for the junit engine. This mean the input properties
@@ -345,6 +369,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputPropertiesFiles.set(
         task.project.layout.buildDirectory.file("intermediates/${testedVariant.name}/$name/junit_inputs.txt")
       )
+      task.julConfigurationFile.set(task.project.layout.buildDirectory.file("intermediates/${testedVariant.name}/$name/logging.properties"))
       task.logFile.set(task.project.layout.buildDirectory.file("intermediates/${testedVariant.name}/$name/junit_engines_logging.txt"))
       task.streamingOutputFile.set(task.project.layout.buildDirectory.file("intermediates/${testedVariant.name}/$name/streaming.txt"))
       task.resultsDir.set(task.project.layout.buildDirectory.dir("intermediates/${testedVariant.name}/$name/results"))

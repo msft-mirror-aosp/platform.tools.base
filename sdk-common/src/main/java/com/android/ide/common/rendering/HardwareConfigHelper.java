@@ -88,11 +88,6 @@ public class HardwareConfigHelper {
         return this;
     }
 
-    /** Clears the overridden width and height to be used during rendering. */
-    public void clearOverrideRenderSize() {
-        mOverrideRenderWidth = -1;
-        mOverrideRenderHeight = -1;
-    }
 
     /**
      * Sets the max width and height to be used during rendering.
@@ -171,10 +166,6 @@ public class HardwareConfigHelper {
                 mDevice.getDefaultHardware().getButtonType() == ButtonType.SOFT);
     }
 
-    /** Returns true if the render size has been overridden. */
-    public boolean isRenderSizeOverridden() {
-        return mOverrideRenderWidth != -1 || mOverrideRenderHeight != -1;
-    }
 
     /**
      * Returns true if the given device is a generic device
