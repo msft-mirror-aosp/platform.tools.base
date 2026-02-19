@@ -199,7 +199,6 @@ enum class BooleanOption(
   ENABLE_LOCAL_TESTING("android.bundletool.enableLocalTesting", false, FeatureStage.Experimental),
   DISABLE_MINSDKLIBRARY_CHECK("android.unsafe.disable.minSdkLibraryCheck", false, FeatureStage.Experimental),
   ENABLE_INSTRUMENTATION_TEST_DESUGARING("android.experimental.library.desugarAndroidTest", false, FeatureStage.Experimental),
-  DISABLE_KOTLIN_ATTRIBUTE_SETUP("android.dependencyResolution.disable.kotlinPlatformTypeAttribute", false, FeatureStage.Experimental),
   /**
    * When enabled, incompatible APKs installed on a testing device will be uninstalled automatically during an instrumentation test run
    * (e.g. When INSTALL_FAILED_UPDATE_INCOMPATIBLE error happens after attempting to install APKs for testing).
@@ -773,7 +772,6 @@ enum class BooleanOption(
   /* ----------------
    * REMOVED FEATURES
    */
-
   @Suppress("unused") BUILD_FEATURE_BUILDCONFIG("android.defaults.buildfeatures.buildconfig", false, ApiStage.Removed(Version.VERSION_9_0)),
 
   /**
@@ -786,6 +784,11 @@ enum class BooleanOption(
     "android.enableLegacyVariantApi",
     false,
     ApiStage.Removed(Version.VERSION_9_0, "The android.enableLegacyVariantApi property has no effect, use android.newDsl instead"),
+  ),
+  DISABLE_KOTLIN_ATTRIBUTE_SETUP(
+    "android.dependencyResolution.disable.kotlinPlatformTypeAttribute",
+    false,
+    FeatureStage.Removed(Version.VERSION_9_2),
   ),
   @Suppress("unused")
   ENABLE_IN_PROCESS_AAPT2("android.enableAapt2jni", false, FeatureStage.Removed(VERSION_BEFORE_4_0, "AAPT2 JNI has been removed.")),
