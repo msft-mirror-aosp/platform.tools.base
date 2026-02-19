@@ -132,7 +132,7 @@ internal constructor(
       mServer.deviceChangeHub.deviceStatusChanged(this, status)
     }
 
-  val deviceCapabilities = DeviceCapabilities.forApi(apiLevel)
+  var deviceCapabilities = DeviceCapabilities.forApi(apiLevel)
 
   override fun toString(): String {
     return "${this::class.simpleName}(deviceId=$deviceId, deviceStatus=$deviceStatus, apiLevel=$apiLevel, transportId=$transportId)"
