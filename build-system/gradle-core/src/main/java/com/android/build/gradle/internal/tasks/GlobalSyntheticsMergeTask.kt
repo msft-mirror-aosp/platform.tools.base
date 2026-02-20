@@ -20,7 +20,6 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.getGlobalSyntheticsInput
 import com.android.build.gradle.internal.utils.setDisallowChanges
@@ -90,7 +89,7 @@ abstract class GlobalSyntheticsMergeTask : NonIncrementalTask() {
         errorFormatMode.setDisallowChanges(SyncOptions.ErrorFormatMode.HUMAN_READABLE)
         useThreadPool.setDisallowChanges(true)
         r8D8ThreadPoolBuildService.setDisallowChanges(
-          getBuildService(creationConfig.services.buildServiceRegistry, R8D8ThreadPoolBuildService::class.java)
+          R8D8ThreadPoolBuildService.RegistrationAction(task.project, creationConfig.services.projectOptions).execute()
         )
       }
 

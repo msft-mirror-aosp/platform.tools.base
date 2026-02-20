@@ -43,7 +43,6 @@ import com.android.build.gradle.internal.res.GenerateApiPublicTxtTask
 import com.android.build.gradle.internal.res.GenerateEmptyResourceFilesTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.tasks.LibraryJniLibsTask.ProjectOnlyCreationAction
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -181,7 +180,6 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
 
     if (variant.optimizationCreationConfig.minifiedEnabled) {
       project.tasks.registerTask(GenerateLibraryProguardRulesTask.CreationAction(variant))
-      R8MaxParallelTasksBuildService.RegistrationAction(project, variant.services.projectOptions).execute()
       project.tasks.registerTask(R8Task.CreationAction(variant, isTestApplication = false, addCompileRClass = false))
       if ((variant as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
         // Also convert shrunk resources from proto format to binary format so it can be

@@ -80,8 +80,6 @@ import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.createKotlinCompilation
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
@@ -1243,7 +1241,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Resource Shrinking
     maybeCreateResourcesShrinkerTasks(creationConfig)
 
-    R8D8ThreadPoolBuildService.RegistrationAction(project, creationConfig.services.projectOptions).execute()
     // Code Shrinking
     // Since the shrinker (R8) also dexes the class files, if we have minifedEnabled we stop
     // the flow and don't set-up dexing.
@@ -1739,8 +1736,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig.debuggable) {
       globalConfig.buildAnalyzerIssueReporter?.reportIssue(TaskCategoryIssue.MINIFICATION_ENABLED_IN_DEBUG_BUILD)
     }
-
-    R8MaxParallelTasksBuildService.RegistrationAction(project, creationConfig.services.projectOptions).execute()
 
     return taskFactory.register(R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
   }

@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.doClose
-import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_ALL
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_EXTERNAL_LIBS
 import com.android.build.gradle.internal.tasks.DexMergingAction.MERGE_LIBRARY_PROJECTS
@@ -304,7 +303,7 @@ abstract class DexMergingTask : NewIncrementalTask() {
       task.sharedParams.useThreadPool.setDisallowChanges(shouldUseThreadPool)
       if (shouldUseThreadPool) {
         task.sharedParams.r8D8ThreadPoolBuildService.setDisallowChanges(
-          getBuildService(creationConfig.services.buildServiceRegistry, R8D8ThreadPoolBuildService::class.java)
+          R8D8ThreadPoolBuildService.RegistrationAction(task.project, projectOptions).execute()
         )
       }
 

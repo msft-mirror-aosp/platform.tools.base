@@ -37,7 +37,6 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.doClose
-import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.utils.LibraryArtifactType
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.getFilteredFiles
@@ -752,9 +751,9 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     }
 
     private fun useR8D8BuildServices(task: R8Task, services: TaskCreationServices) {
-      task.usesService(getBuildService(services.buildServiceRegistry, R8MaxParallelTasksBuildService::class.java))
+      task.usesService(R8MaxParallelTasksBuildService.RegistrationAction(task.project, services.projectOptions).execute())
       task.r8D8ThreadPoolBuildService.setDisallowChanges(
-        getBuildService(services.buildServiceRegistry, R8D8ThreadPoolBuildService::class.java)
+        R8D8ThreadPoolBuildService.RegistrationAction(task.project, services.projectOptions).execute()
       )
     }
   }
