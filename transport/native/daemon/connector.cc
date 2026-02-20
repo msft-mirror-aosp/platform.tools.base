@@ -59,6 +59,27 @@ bool ConnectAndSendDataToPerfa(const std::string& connect_arg) {
     // Make a number of attempts to connect to the agent. The agent may just be
     // starting up and not ready for receiving the connection yet.
     retry_count = kRetryMaxCount;
+
+    // The connection argument format is expected to be
+    // "pid:C:fd:attach_timeout_ms" where 'attach_timeout_ms' is an optional
+    // parameter indicating how long the daemon should attempt to connect to the
+    // agent socket. If provided and greater than 0, we dynamically calculate
+    // the maximum number of retries based on the interval (kTimeoutUs). This
+    // allows specific commands to fail fast (e.g. for backgrounded apps)
+    // instead of spamming "Connection refused" logs for the default 5 minutes.
+    int fd_delimiter_index = connect_arg.find(':', delimiter_index + 3);
+    if (fd_delimiter_index != -1 &&
+        connect_arg.length() > fd_delimiter_index + 1) {
+      int attach_timeout_ms =
+          atoi(connect_arg.c_str() + fd_delimiter_index + 1);
+      if (attach_timeout_ms > 0) {
+        // Convert to microseconds and divide by interval (kTimeoutUs)
+        retry_count = (attach_timeout_ms * 1000) / kTimeoutUs;
+        if (retry_count == 0) {
+          retry_count = 1;  // Ensure at least 1 retry if timeout > 0
+        }
+      }
+    }
   }
 
   int sent_count = profiler::ConnectAndSendDataToSocket(

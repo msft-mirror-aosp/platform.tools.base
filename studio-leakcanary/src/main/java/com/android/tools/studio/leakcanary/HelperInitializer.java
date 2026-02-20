@@ -218,6 +218,24 @@ public class HelperInitializer extends ContentProvider {
                                 permissionName,
                                 null);
             }
+
+            IntentFilter getThresholdFilter = new IntentFilter(HelperConfig.GET_THRESHOLD_INTENT);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                getContext()
+                        .registerReceiver(
+                                new GetThresholdReceiver(),
+                                getThresholdFilter,
+                                Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                String permissionName =
+                        getContext().getPackageName() + HelperConfig.INTERNAL_PERMISSION_SUFFIX;
+                getContext()
+                        .registerReceiver(
+                                new GetThresholdReceiver(),
+                                getThresholdFilter,
+                                permissionName,
+                                null);
+            }
         } catch (Throwable t) {
             Log.e(HelperConfig.LOG_TAG, "Failed to register broadcast receivers.", t);
         }
