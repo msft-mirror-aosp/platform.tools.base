@@ -286,6 +286,7 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
 
   // Wear Tiles
   WEAR_TILES_TOOLING("androidx.wear.tiles", "tiles-tooling"),
+  WEAR_TILES_TOOLING_PREVIEW("androidx.wear.tiles", "tiles-tooling-preview"),
 
   // Lifecycle
   ANDROIDX_LIFECYCLE_VIEWMODEL_KTX("androidx.lifecycle", "lifecycle-viewmodel-ktx"),
