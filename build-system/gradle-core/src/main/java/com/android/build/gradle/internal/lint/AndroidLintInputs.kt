@@ -2237,18 +2237,29 @@ abstract class UastInputs {
   }
 }
 
-class LintFromMaven(val files: FileCollection, val version: String) {
+class LintFromMaven(val files: FileCollection) {
 
   companion object {
+    const val LINT_CONFIGURATION_NAME: String = "androidLintTool"
+
     @JvmStatic
     fun from(project: Project, projectOptions: ProjectOptions, issueReporter: IssueReporter): LintFromMaven {
       val lintVersion = getLintMavenArtifactVersion(projectOptions[StringOption.LINT_VERSION_OVERRIDE]?.trim(), issueReporter)
-      val config =
-        project.configurations.detachedConfiguration(project.dependencyFactory.create("com.android.tools.lint", "lint-gradle", lintVersion))
-      config.isTransitive = true
-      config.isCanBeConsumed = false
-      config.isCanBeResolved = true
-      return LintFromMaven(config, lintVersion)
+
+      val configuration =
+        project.configurations.findByName(LINT_CONFIGURATION_NAME)
+          ?: project.configurations.create(LINT_CONFIGURATION_NAME) {
+            it.isTransitive = true
+            it.isCanBeConsumed = false
+            it.isCanBeResolved = true
+            it.description = "Configuration for the lint tool dependencies."
+          }
+
+      if (configuration.dependencies.isEmpty()) {
+        configuration.dependencies.add(project.dependencyFactory.create("com.android.tools.lint", "lint-gradle", lintVersion))
+      }
+
+      return LintFromMaven(configuration)
     }
   }
 }
