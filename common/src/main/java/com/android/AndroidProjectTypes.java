@@ -32,7 +32,7 @@ public class AndroidProjectTypes {
     @Deprecated public static final int PROJECT_TYPE_ATOM = 3;
 
     /** Instant App Bundle. */
-    public static final int PROJECT_TYPE_INSTANTAPP = 4;
+    @Deprecated public static final int PROJECT_TYPE_INSTANTAPP = 4;
 
     /** com.android.feature module. */
     @Deprecated public static final int PROJECT_TYPE_FEATURE = 5;
