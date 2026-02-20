@@ -19,8 +19,7 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.impl.LayeredSourceDirectoriesImpl
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.caching.DisabledCachingReason.SIMPLE_MERGING_TASK
-import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.component.ConsumableCreationConfig
+import com.android.build.gradle.internal.component.MergeSourceSetFoldersCreationConfig
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactScope.ALL
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.ASSETS
@@ -49,6 +48,7 @@ import java.io.File
 import java.io.IOException
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileType
 import org.gradle.api.provider.ListProperty
@@ -312,8 +312,8 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
     return assetSetList
   }
 
-  abstract class CreationAction protected constructor(creationConfig: ComponentCreationConfig) :
-    VariantTaskCreationAction<MergeSourceSetFolders, ComponentCreationConfig>(creationConfig) {
+  abstract class CreationAction protected constructor(creationConfig: MergeSourceSetFoldersCreationConfig) :
+    VariantTaskCreationAction<MergeSourceSetFolders, MergeSourceSetFoldersCreationConfig>(creationConfig) {
 
     override val type: Class<MergeSourceSetFolders>
       get() = MergeSourceSetFolders::class.java
@@ -324,17 +324,17 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
       task.incrementalFolder.set(creationConfig.paths.getIncrementalDir(name))
 
       task.errorFormatMode = SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions)
+      creationConfig.inputSources?.let { configureWithAssets(task, it) }
     }
 
     protected fun configureWithAssets(task: MergeSourceSetFolders, assets: LayeredSourceDirectoriesImpl) {
       task.aaptEnv.setDisallowChanges(creationConfig.services.gradleEnvironmentProvider.getEnvVariable(ANDROID_AAPT_IGNORE))
       task.assetSets.setDisallowChanges(assets.getAscendingOrderAssetSets(task.aaptEnv))
-
       task.sourceFolderInputs.fromDisallowChanges(assets.all)
     }
   }
 
-  open class MergeAssetBaseCreationAction(creationConfig: ComponentCreationConfig, private val includeDependencies: Boolean) :
+  open class MergeAssetCreationAction(creationConfig: MergeSourceSetFoldersCreationConfig, private val includeDependencies: Boolean) :
     CreationAction(creationConfig) {
 
     override val name: String
@@ -343,11 +343,11 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
     override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
       super.handleProvider(taskProvider)
       creationConfig.taskContainer.mergeAssetsTask = taskProvider
+      creationConfig.artifacts.setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir).on(SingleArtifact.ASSETS)
     }
 
     override fun configure(task: MergeSourceSetFolders) {
       super.configure(task)
-      creationConfig.sources.assets { super.configureWithAssets(task, it) }
 
       creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.SHADER_ASSETS, task.shadersOutputDir)
 
@@ -365,73 +365,17 @@ abstract class MergeSourceSetFolders : NewIncrementalTask() {
     }
   }
 
-  class MergeAssetCreationAction(creationConfig: ComponentCreationConfig, includeDependencies: Boolean) :
-    MergeAssetBaseCreationAction(creationConfig, includeDependencies) {
-
+  class GenericMergeCreationAction(
+    val mergeCreationConfig: MergeSourceSetFoldersCreationConfig,
+    val taskSuffix: String,
+    val artifactType: InternalArtifactType<Directory>,
+  ) : CreationAction(mergeCreationConfig) {
     override val name: String
-      get() = computeTaskName("merge", "Assets")
+      get() = computeTaskName("merge", taskSuffix)
 
     override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
       super.handleProvider(taskProvider)
-
-      creationConfig.artifacts.setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir).on(SingleArtifact.ASSETS)
-    }
-  }
-
-  class MergeJniLibFoldersCreationAction(creationConfig: ConsumableCreationConfig) : CreationAction(creationConfig) {
-
-    override val name: String
-      get() = computeTaskName("merge", "JniLibFolders")
-
-    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
-      super.handleProvider(taskProvider)
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
-        .withName("out")
-        .on(InternalArtifactType.MERGED_JNI_LIBS)
-    }
-
-    override fun configure(task: MergeSourceSetFolders) {
-      super.configure(task)
-      creationConfig.sources.jniLibs { super.configureWithAssets(task, it) }
-    }
-  }
-
-  class MergeShaderSourceFoldersCreationAction(creationConfig: ConsumableCreationConfig) : CreationAction(creationConfig) {
-
-    override val name: String
-      get() = computeTaskName("merge", "Shaders")
-
-    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
-      super.handleProvider(taskProvider)
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
-        .withName("out")
-        .on(InternalArtifactType.MERGED_SHADERS)
-    }
-
-    override fun configure(task: MergeSourceSetFolders) {
-      super.configure(task)
-      creationConfig.sources.shaders { super.configureWithAssets(task, it) }
-    }
-  }
-
-  class MergeMlModelsSourceFoldersCreationAction(creationConfig: ComponentCreationConfig) : CreationAction(creationConfig) {
-
-    override val name: String
-      get() = computeTaskName("merge", "MlModels")
-
-    override fun handleProvider(taskProvider: TaskProvider<MergeSourceSetFolders>) {
-      super.handleProvider(taskProvider)
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir)
-        .withName("out")
-        .on(InternalArtifactType.MERGED_ML_MODELS)
-    }
-
-    override fun configure(task: MergeSourceSetFolders) {
-      super.configure(task)
-      creationConfig.sources.mlModels { super.configureWithAssets(task, it) }
+      mergeCreationConfig.artifacts.setInitialProvider(taskProvider, MergeSourceSetFolders::outputDir).withName("out").on(artifactType)
     }
   }
 }

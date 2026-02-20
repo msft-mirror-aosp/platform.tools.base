@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.UnitTestTaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedMergeSourceSetFoldersCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
@@ -127,7 +128,8 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
 
       // tasks to package assets in the library aar
       variant.taskContainer.assetGenTask = taskFactory.register(variant.computeTaskNameInternal("generate", "Assets"))
-      taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(variant, false))
+      val mergeSourceSetFoldersCreationConfig = ComponentBasedMergeSourceSetFoldersCreationConfig(variant, { variant.sources.assets })
+      taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(mergeSourceSetFoldersCreationConfig, false))
     }
 
     project.tasks.registerTask(

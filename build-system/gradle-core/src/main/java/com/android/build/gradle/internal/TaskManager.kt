@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedMergeSourceSetFoldersCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -169,8 +170,6 @@ import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.android.build.gradle.tasks.MapSourceSetPathsTask
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
-import com.android.build.gradle.tasks.MergeSourceSetFolders.MergeMlModelsSourceFoldersCreationAction
-import com.android.build.gradle.tasks.MergeSourceSetFolders.MergeShaderSourceFoldersCreationAction
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.ProcessApplicationManifest
 import com.android.build.gradle.tasks.ProcessManifestForBundleTask
@@ -511,12 +510,22 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   }
 
   fun createMergeAssetsTask(creationConfig: ComponentCreationConfig, includeDependencies: Boolean = true) {
-    taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(creationConfig, includeDependencies))
+    val mergeSourceSetFoldersCreationConfig =
+      ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.assets })
+    taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(mergeSourceSetFoldersCreationConfig, includeDependencies))
   }
 
   fun createMergeJniLibFoldersTasks(creationConfig: ConsumableCreationConfig) {
     // merge the source folders together using the proper priority.
-    taskFactory.register(MergeSourceSetFolders.MergeJniLibFoldersCreationAction(creationConfig))
+    val mergeSourceSetFoldersCreationConfig =
+      ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig) { creationConfig.sources.jniLibs }
+    taskFactory.register(
+      MergeSourceSetFolders.GenericMergeCreationAction(
+        mergeSourceSetFoldersCreationConfig,
+        "JniLibFolders",
+        InternalArtifactType.MERGED_JNI_LIBS,
+      )
+    )
     taskFactory.register(MergeNativeLibsTask.CreationAction(creationConfig))
   }
 
@@ -545,7 +554,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   fun createMlkitTask(creationConfig: ComponentCreationConfig) {
     if (creationConfig.buildFeatures.mlModelBinding) {
-      taskFactory.register(MergeMlModelsSourceFoldersCreationAction(creationConfig))
+      val mergeSourceSetFoldersCreationConfig =
+        ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.mlModels })
+      taskFactory.register(
+        MergeSourceSetFolders.GenericMergeCreationAction(
+          mergeSourceSetFoldersCreationConfig,
+          "MlModels",
+          InternalArtifactType.MERGED_ML_MODELS,
+        )
+      )
       val generateMlModelClassTask = taskFactory.register(GenerateMlModelClass.CreationAction(creationConfig))
       creationConfig.taskContainer.sourceGenTask.dependsOn(generateMlModelClassTask)
     }
@@ -764,8 +781,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   protected fun createShaderTask(creationConfig: ConsumableCreationConfig) {
     if (creationConfig.buildFeatures.shaders) {
       // merge the shader folders together using the proper priority.
-      taskFactory.register(MergeShaderSourceFoldersCreationAction(creationConfig))
-
+      val mergeSourceSetFoldersCreationConfig =
+        ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.shaders })
+      taskFactory.register(
+        MergeSourceSetFolders.GenericMergeCreationAction(
+          mergeSourceSetFoldersCreationConfig,
+          "Shaders",
+          InternalArtifactType.MERGED_SHADERS,
+        )
+      )
       // compile the shaders
       val shaderCompileTask = taskFactory.register(ShaderCompile.CreationAction(creationConfig))
       creationConfig.taskContainer.assetGenTask.dependsOn(shaderCompileTask)
