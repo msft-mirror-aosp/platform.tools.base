@@ -235,7 +235,17 @@ message TraceConfiguration {
     SimpleperfOptions simpleperf_options = 7;
     // Utilizes Perfetto's defined TraceConfig proto
     perfetto.protos.TraceConfig perfetto_options = 8;
+      LeakCanaryOptions leakcanary_options = 9;
   }
+}
+
+// The options for LeakCanary-based trace.
+message LeakCanaryOptions {
+  enum LeakCanaryMode {
+    ON_DEVICE = 0;
+    ON_HOST = 1;
+  }
+  LeakCanaryMode mode = 1;
 }
 
 // The options for a Simpleperf-based trace.
@@ -282,9 +292,9 @@ enum ProfilerType {
   MEMORY = 2;
 }
 
-// The command to initiate a trace/capture. 
-// It contains metadata for api initiated tracing and configuration 
-// information for the trace to be captured. 
+// The command to initiate a trace/capture.
+// It contains metadata for api initiated tracing and configuration
+// information for the trace to be captured.
 message StartTrace {
   // Agent is responsible for providing these additional info for API-
   // initiated tracing.
@@ -298,8 +308,8 @@ message StartTrace {
   ProfilerType profiler_type = 4;
 }
 
-// The command to terminate an ongoing trace/capture. 
-// It contains metadata for api initiated tracing and configuration 
+// The command to terminate an ongoing trace/capture.
+// It contains metadata for api initiated tracing and configuration
 // information for the ongoing capture it is sent to terminate.
 message StopTrace {
   // Agent is responsible for providing these additional info for API-
