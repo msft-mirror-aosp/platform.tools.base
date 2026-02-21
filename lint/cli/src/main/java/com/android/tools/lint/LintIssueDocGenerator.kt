@@ -1208,12 +1208,12 @@ class LintIssueDocGenerator(
           "        &lt;option name=\"${option.name}\" value=\"${defaultValue ?: "some string"}\" /&gt;\n" +
           "    &lt;/issue&gt;\n" +
           "&lt;/lint&gt;\n" +
-          "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
+          "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n"
       )
     }
   }
 
-  private fun writeCodeLine(sb: StringBuilder, language: String = "", lineNumbers: Boolean = false) {
+  private fun writeCodeBlock(sb: StringBuilder, language: String, lineNumbers: Boolean, content: String) {
     if (format == DocFormat.MARKDEEP) {
       val max = 70 - language.length - if (lineNumbers) " linenumbers".length else 0
       for (i in 0 until max) {
@@ -1224,8 +1224,17 @@ class LintIssueDocGenerator(
         sb.append(" linenumbers")
       }
       sb.append('\n')
+      sb.append(content.trimEnd())
+      sb.append('\n')
+      for (i in 0 until max) {
+        sb.append('~')
+      }
+      sb.append('\n')
     } else {
       sb.append("```$language\n")
+      sb.append(content.trimEnd())
+      sb.append('\n')
+      sb.append("```\n")
     }
   }
 
@@ -1233,9 +1242,12 @@ class LintIssueDocGenerator(
     sb.append("(##) Example\n")
     sb.append('\n')
     sb.append("Here is an example of lint warnings produced by this check:\n")
-    writeCodeLine(sb, "text")
-    sb.append((example.output ?: "").lines().filter { it.isNotBlank() }.joinToString("\n") { it.trimEnd() }).append('\n')
-    writeCodeLine(sb)
+    writeCodeBlock(
+      sb = sb,
+      language = "text",
+      lineNumbers = false,
+      content = (example.output ?: "").lines().filter { it.isNotBlank() }.joinToString("\n") { it.trimEnd() },
+    )
     sb.append('\n')
 
     if (example.files.size == 1) {
@@ -1271,18 +1283,18 @@ class LintIssueDocGenerator(
         sb.append("[${file.path}](${file.binaryUrl})\n\n")
       } else {
         // Source file: show inline as a markdown fenced block
-        val contents =
-          file.source.let {
-            if (file.language == "xml") {
-              escapeXml(it)
-            } else it
-          }
-        val lang = file.language.ifEmpty { "text" }
-
         sb.append("`${file.path}`:\n")
-        writeCodeLine(sb, lang, lineNumbers = lang.isNotEmpty())
-        sb.append(contents).append('\n')
-        writeCodeLine(sb)
+        writeCodeBlock(
+          sb = sb,
+          language = file.language.ifEmpty { "text" },
+          lineNumbers = true,
+          content =
+            file.source.let {
+              if (file.language == "xml") {
+                escapeXml(it)
+              } else it
+            },
+        )
         sb.append("\n")
       }
     }
