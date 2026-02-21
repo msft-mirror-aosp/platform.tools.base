@@ -15,6 +15,7 @@
  */
 package com.android.adblib.tools.aiglasses
 
+import com.android.adblib.ConnectedDevice
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.tools.testutils.waitForOnlineConnectedDevice
@@ -25,8 +26,11 @@ import com.android.fakeadbserver.services.ShellCommandOutput
 import com.android.fakeadbserver.services.StatusWriter
 import com.android.fakeadbserver.shellcommandhandlers.ShellHandler
 import com.android.sdklib.AndroidApiLevel
+import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,7 +58,7 @@ class AiGlassesPairingTest {
     assertEquals("TRULY_BONDED", result)
   }
 
-  @Test(expected = java.io.IOException::class)
+  @Test
   fun checkBondState_propagatesIoException() {
     runBlockingWithTimeout {
       val device = createConnectedDevice()
@@ -77,13 +81,22 @@ class AiGlassesPairingTest {
               shellCommand: String,
               shellCommandArgs: String?,
             ) {
-              throw java.io.IOException("Simulated Connection Failure")
+              throw IOException("Simulated Connection Failure")
             }
           },
         )
       }
 
-      AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkBondState(glassesAddress) }
+      try {
+        AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkBondState(glassesAddress) }
+        fail("Expected DeviceConnectionException")
+      } catch (e: DeviceConnectionException) {
+        assertEquals("device1", e.serialNumber)
+        assertEquals(
+          "am broadcast -a com.google.android.glasses.companion.CHECK_BOND_STATE --es address \"AA:BB:CC:DD:EE:FF\" -p com.google.android.glasses.companion",
+          e.command,
+        )
+      }
     }
   }
 
@@ -167,7 +180,7 @@ class AiGlassesPairingTest {
     assertEquals(false, result)
   }
 
-  @Test(expected = java.io.IOException::class)
+  @Test
   fun checkCompanionAppInForeground_throwsIoExceptionOnCommFailure() {
     runBlockingWithTimeout {
       val device = createConnectedDevice()
@@ -188,20 +201,26 @@ class AiGlassesPairingTest {
               shellCommand: String,
               shellCommandArgs: String?,
             ) {
-              throw java.io.IOException("Simulated Connection Failure")
+              throw IOException("Simulated Connection Failure")
             }
           },
         )
       }
 
-      AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
+      try {
+        AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
+        fail("Expected DeviceConnectionException")
+      } catch (e: DeviceConnectionException) {
+        assertEquals("device1", e.serialNumber)
+        assertEquals("dumpsys window windows", e.command)
+      }
     }
   }
 
-  private val executedCommands = java.util.concurrent.CopyOnWriteArrayList<String>()
-  private val executedDumpsysCommands = java.util.concurrent.CopyOnWriteArrayList<String>()
+  private val executedCommands = CopyOnWriteArrayList<String>()
+  private val executedDumpsysCommands = CopyOnWriteArrayList<String>()
 
-  private suspend fun createConnectedDevice(): com.android.adblib.ConnectedDevice {
+  private suspend fun createConnectedDevice(): ConnectedDevice {
     val fakeDevice =
       fakeAdbRule.fakeAdb.connectDevice("device1", "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
