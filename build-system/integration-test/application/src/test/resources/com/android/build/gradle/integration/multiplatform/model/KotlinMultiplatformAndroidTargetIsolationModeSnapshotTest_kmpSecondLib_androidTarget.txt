@@ -48,7 +48,8 @@
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",
-          "kotlinCompileTaskName": "compileAndroidMain"
+          "kotlinCompileTaskName": "compileAndroidMain",
+          "extraClassesFolders": []
         }
       }
     }
@@ -127,6 +128,10 @@
           },
           {
             "flag": "OLD_VARIANT_API_IN_USE",
+            "value": false
+          },
+          {
+            "flag": "BUILT_IN_KOTLIN_DEFAULT_ENABLED",
             "value": false
           }
         ]

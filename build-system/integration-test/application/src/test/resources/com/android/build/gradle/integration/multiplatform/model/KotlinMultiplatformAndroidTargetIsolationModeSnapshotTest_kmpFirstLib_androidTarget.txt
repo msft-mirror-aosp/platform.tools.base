@@ -52,7 +52,12 @@
           },
           "defaultSourceSetName": "androidDeviceTest",
           "assembleTaskName": "assembleAndroidDeviceTest",
-          "kotlinCompileTaskName": "compileAndroidDeviceTest"
+          "kotlinCompileTaskName": "compileAndroidDeviceTest",
+          "extraClassesFolders": [
+            {
+              "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidDeviceTest/compileAndroidDeviceTestJavaWithJavac/classes"
+            }
+          ]
         }
       }
     },
@@ -96,7 +101,12 @@
           },
           "defaultSourceSetName": "androidHostTest",
           "assembleTaskName": "assembleAndroidHostTest",
-          "kotlinCompileTaskName": "compileAndroidHostTest"
+          "kotlinCompileTaskName": "compileAndroidHostTest",
+          "extraClassesFolders": [
+            {
+              "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidHostTest/compileAndroidHostTestJavaWithJavac/classes"
+            }
+          ]
         }
       }
     },
@@ -151,7 +161,12 @@
           },
           "defaultSourceSetName": "androidMain",
           "assembleTaskName": "assembleAndroidMain",
-          "kotlinCompileTaskName": "compileAndroidMain"
+          "kotlinCompileTaskName": "compileAndroidMain",
+          "extraClassesFolders": [
+            {
+              "absolutePath": "{INCLUDED_BUILD(:kotlinMultiplatform)}/kmpFirstLib/build/intermediates/javac/androidMain/compileAndroidMainJavaWithJavac/classes"
+            }
+          ]
         }
       }
     }
@@ -231,6 +246,10 @@
           },
           {
             "flag": "OLD_VARIANT_API_IN_USE",
+            "value": false
+          },
+          {
+            "flag": "BUILT_IN_KOTLIN_DEFAULT_ENABLED",
             "value": false
           }
         ]
