@@ -46,6 +46,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
 import junit.framework.TestCase
+import kotlin.io.relativeToOrNull
 import kotlin.math.max
 import kotlin.math.min
 import org.intellij.lang.annotations.Language
@@ -420,17 +421,18 @@ private fun isLikelyPathSeparator(s: String, index: Int): Boolean {
 }
 
 /**
- * Runs lint on a tree of sources. This will recursively look for Java and Kotlin files (configurable via the [accept] parameter, and
- * optionally filtered out via the [ignore] parameter which omits dot directories and paths mentioning "test" by default), batch them into
- * groups of at most [bucketSize] files, and then run lint on those files (where the lint task which configures the issues to analyze etc is
- * constructed via the [lintFactory] lambda parameter), and finally asserts that the output is as [expected].
+ * Runs lint on a tree of sources.
+ *
+ * Recursively collects Java and Kotlin files that satisfy [accept] and do not satisfy [ignore] (which by default ignores dot directories
+ * and paths mentioning "test"). Batches the files into groups of at most [bucketSize] files, and then runs lint on those files (where the
+ * lint task that configures the issues to analyze etc. is constructed via [lintFactory]), and finally asserts that the output is as
+ * [expected].
  *
  * This is used to search larger project trees for false positives, where you don't have some easy other way to run your lint check on those
  * project trees.
  *
- * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to see what it finds, from `MyDetectorTest` I
- * can use
- *
+ * For example, to run lint on a new check called `MyDetector` in the directory tree `/my/src` to see what it finds, from `MyDetectorTest`,
+ * use:
  * ```
  * runOnSources(
  *    dir = File("/my/src"),
@@ -449,9 +451,14 @@ fun runOnSources(
     it.isFile &&
       (it.path.endsWith(DOT_KT) || it.path.endsWith(DOT_JAVA) && !it.path.endsWith("module-info.java") && !it.endsWith("package-info.java"))
   },
-  ignore: (File) -> Boolean = {
-    val path = it.path.portablePath()
-    path.contains("/.") || path.contains("/test")
+  ignore: (File) -> Boolean = ignore@{
+    val root = dir.canonicalFile
+    // If we cannot get `it` as a relative path from `root`, then exclude by default,
+    // otherwise we may end up including machine-specific paths, which can lead to inconsistent test
+    // behavior. In particular, bazel tests often run from "$HOME/.cache/...", causing all files to
+    // be excluded.
+    val relative = it.relativeToOrNull(root)?.path?.portablePath() ?: return@ignore true
+    relative.startsWith("../") || relative.contains("/../") || relative.contains("/.") || relative.contains("/test")
   },
   bucketSize: Int = 500,
   absolutePaths: Boolean = currentPlatform() != PLATFORM_WINDOWS,
