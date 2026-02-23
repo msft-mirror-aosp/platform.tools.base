@@ -95406,15 +95406,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.xerial.sqlite-jdbc_3.34.0",
-    pom = "repository/org/xerial/sqlite-jdbc/3.34.0/sqlite-jdbc-3.34.0.pom",
-    repo_root_path = "repository",
-    repo_path = "org/xerial/sqlite-jdbc/3.34.0",
-    parent = "org.sonatype.oss.oss-parent_9",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.xerial.sqlite-jdbc_3.36.0",
     pom = "repository/org/xerial/sqlite-jdbc/3.36.0/sqlite-jdbc-3.36.0.pom",
     repo_root_path = "repository",

@@ -1379,7 +1379,6 @@ DATA = [
     "org.threeten:threetenbp:1.3.3",
     "org.tukaani:xz:1.9",
     "org.xerial:sqlite-jdbc:3.21.0.1",
-    "org.xerial:sqlite-jdbc:3.34.0",
     "org.xerial:sqlite-jdbc:3.51.1.0",
 ] + [
     # Source JARs
