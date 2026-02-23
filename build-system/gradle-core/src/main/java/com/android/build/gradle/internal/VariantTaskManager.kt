@@ -39,7 +39,6 @@ import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
-import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.CheckJetifierTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
@@ -75,7 +74,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.plugins.BasePlugin
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
 abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : VariantCreationConfig>(
@@ -210,14 +208,12 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     createReportTasks()
 
     // Create C/C++ configuration, build, and clean tasks
-    val androidLocationBuildService: Provider<AndroidLocationsBuildService> = getBuildService(project.gradle.sharedServices)
     createCxxTasks(
-      androidLocationBuildService.get(),
       getBuildService(globalConfig.services.buildServiceRegistry, SdkComponentsBuildService::class.java).get(),
       globalConfig.services.issueReporter,
       taskFactory,
       globalConfig.services.projectOptions,
-      variants,
+      variantPropertiesList,
       project,
     )
   }
