@@ -2587,6 +2587,53 @@ public class ManifestMerger2SmallTest {
     }
 
     @Test
+    public void testRequireSecureEnvProperty() throws Exception {
+        String input =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    package=\"com.example.test\">\n"
+                        + "    <application>\n"
+                        + "        <property\n"
+                        + "            android:name=\"REQUIRE_SECURE_ENV\"\n"
+                        + "            android:value=\"1\" />\n"
+                        + "        <property\n"
+                        + "            android:name=\"OTHER_PROPERTY\"\n"
+                        + "            android:value=\"value\" />\n"
+                        + "    </application>\n"
+                        + "</manifest>";
+
+        File inputFile = TestUtils.inputAsFile("testRequireSecureEnv", input);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport =
+                ManifestMerger2.newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                        .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        Document xmlDocument = parse(mergingReport.getMergedDocument(MergedManifestKind.MERGED));
+
+        NodeList appProperties = xmlDocument.getElementsByTagName(SdkConstants.TAG_PROPERTY);
+        assertThat(appProperties.getLength()).isEqualTo(2);
+
+        // REQUIRE_SECURE_ENV should NOT be namespaced
+        assertEquals(
+                "REQUIRE_SECURE_ENV",
+                appProperties
+                        .item(0)
+                        .getAttributes()
+                        .getNamedItemNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME)
+                        .getNodeValue());
+
+        // OTHER_PROPERTY should be namespaced
+        assertEquals(
+                "com.example.test.OTHER_PROPERTY",
+                appProperties
+                        .item(1)
+                        .getAttributes()
+                        .getNamedItemNS(SdkConstants.ANDROID_URI, SdkConstants.ATTR_NAME)
+                        .getNodeValue());
+    }
+
+    @Test
     public void testDifferentIntentMerging() throws Exception {
         String appInput =
                 "<manifest\n"
