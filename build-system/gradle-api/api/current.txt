@@ -3240,8 +3240,8 @@ package com.android.build.api.variant {
   }
 
   public interface LibrarySources extends com.android.build.api.variant.Sources {
-    method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getAarKeepRules();
-    property public abstract com.android.build.api.variant.SourceDirectories.Flat? aarKeepRules;
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getAarKeepRules();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? aarKeepRules;
   }
 
   public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
@@ -3371,7 +3371,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
-    method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getKeepRules();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKeepRules();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
     method @InaccessibleFromKotlin public com.android.build.api.variant.ManifestFiles getManifests();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Layered? getMlModels();
@@ -3384,7 +3384,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? baselineProfiles;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? jniLibs;
-    property public abstract com.android.build.api.variant.SourceDirectories.Flat? keepRules;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? keepRules;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
     property public abstract com.android.build.api.variant.ManifestFiles manifests;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? mlModels;

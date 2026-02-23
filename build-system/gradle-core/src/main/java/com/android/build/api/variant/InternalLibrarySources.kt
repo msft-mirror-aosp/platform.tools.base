@@ -18,11 +18,12 @@ package com.android.build.api.variant
 
 import com.android.build.api.variant.impl.FlatSourceDirectoriesImpl
 import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
+import org.gradle.api.Incubating
 
 interface InternalLibrarySources : InternalSources, LibrarySources {
   override val aarKeepRules: FlatSourceDirectoriesImpl?
 
-  fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
+  @Incubating fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit)
 
   override val variantSourceProvider: DefaultAndroidLibrarySourceSet?
 }

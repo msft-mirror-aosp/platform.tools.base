@@ -16,11 +16,13 @@
 
 package com.android.build.api.variant
 
+import org.gradle.api.Incubating
+
 interface LibrarySources : Sources {
 
   /**
    * KeepRules files for R8 optimization when publishing AAR library. These optimization files are used for library own minification process
    * when publishing AAR.
    */
-  val aarKeepRules: SourceDirectories.Flat?
+  @get:Incubating val aarKeepRules: SourceDirectories.Flat?
 }
