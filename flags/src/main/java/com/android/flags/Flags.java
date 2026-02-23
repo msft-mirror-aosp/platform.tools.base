@@ -16,14 +16,16 @@
 
 package com.android.flags;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.flags.overrides.InMemoryFlagValueContainer;
 import com.android.flags.overrides.PropertyOverrides;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.TestOnly;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -93,8 +95,8 @@ public final class Flags {
      * fallback handler, enabling flag defaults to be specified on the command line.
      */
     public Flags(
-            @NonNull FlagValueProvider fileBasedDefaultProvider,
-            @NonNull FlagValueContainer userOverrides,
+            @NotNull FlagValueProvider fileBasedDefaultProvider,
+            @NotNull FlagValueContainer userOverrides,
             FlagValueProvider... fallbackProviders) {
         this.fileBasedDefaultProvider = fileBasedDefaultProvider;
         this.userOverrides = userOverrides;
@@ -115,7 +117,7 @@ public final class Flags {
      * <p>This container does not include any of the fallback providers, or the file based default
      * provider.
      */
-    @NonNull
+    @NotNull
     public FlagValueContainer getUserOverrides() {
         return userOverrides;
     }
@@ -130,7 +132,7 @@ public final class Flags {
      * its API.
      */
     @Nullable
-    String getValue(@NonNull Flag<?> flag) {
+    String getValue(@NotNull Flag<?> flag) {
         String flagValue = userOverrides.get(flag);
         if (flagValue != null) {
             return flagValue;
@@ -155,7 +157,7 @@ public final class Flags {
      * <p>Although it's unlikely one would define flags across multiple threads, this method is
      * still thread-safe just in case.
      */
-    void register(@NonNull Flag<?> flag) {
+    void register(@NotNull Flag<?> flag) {
         Flag<?> existingFlag = registeredFlags.putIfAbsent(flag.getId(), flag);
         if (existingFlag != null) {
             throw new IllegalArgumentException(
@@ -163,6 +165,11 @@ public final class Flags {
                             "Flag \"%s\" shares duplicate ID \"%s\" with flag \"%s\"",
                             flag.getDisplayName(), flag.getId(), existingFlag.getDisplayName()));
         }
+    }
+
+    @TestOnly
+    public Collection<Flag<?>> getRegisteredFlags() {
+        return registeredFlags.values();
     }
 
     /** Returns the flag with the given ID, or {@code null} if no such flag exists. */
