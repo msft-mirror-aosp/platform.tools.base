@@ -300,6 +300,7 @@ open class BasicModuleModelMock {
     doReturn(mergedNdkConfig).whenever(nativeBuildCreationConfig).ndkConfig
     doReturn(variantExperimentalProperties).whenever(nativeBuildCreationConfig).externalNativeExperimentalProperties
     doReturn(nativeBuildCreationConfig).whenever(this.variantImpl).nativeBuildCreationConfig
+    doReturn(variantExternalNativeBuild).whenever(nativeBuildCreationConfig).externalNativeBuild
     doReturn(abiSplitOptions).whenever(splits).abi
     doReturn(setOf<String>()).whenever(splits).abiFilters
     doReturn(false).whenever(abiSplitOptions).isUniversalApk

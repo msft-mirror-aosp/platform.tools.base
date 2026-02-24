@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.cxx.gradle.generator
 
 import com.android.build.api.dsl.ExternalNativeBuild
-import com.android.build.api.variant.impl.VariantImpl
 import com.android.build.api.variant.impl.toSharedAndroidVersion
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
@@ -291,7 +290,7 @@ fun tryCreateConfigurationParameters(projectOptions: ProjectOptions, variant: Va
     prefabPackageConfigurationList = prefabPackageConfigurationList,
     implicitBuildTargetSet = prefabTargets,
     variantName = variant.name,
-    nativeVariantConfig = createNativeBuildSystemVariantConfig(variant as VariantImpl<*>, nativeBuildCreationConfig),
+    nativeVariantConfig = createNativeBuildSystemVariantConfig(nativeBuildCreationConfig),
     outputOptions = outputOptions,
   )
 }
