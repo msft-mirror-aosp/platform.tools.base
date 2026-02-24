@@ -76,7 +76,6 @@ def find_test_targets(
   runs_per_test_info = runs_per_test.get_runs_per_test_info(
       build_env,
       gerrit_info,
-      impacted_targets_info,
   )
 
   flags = gerrit_info.get_bazel_flags() + runs_per_test_info.get_bazel_flags()
@@ -100,7 +99,6 @@ def find_test_targets(
     failure_retry_info = failure_retry.get_failure_retry_info(
         build_env,
         gerrit_info,
-        runs_per_test_info,
     )
     return SelectivePresubmitResult(
         strategy=SelectivePresubmitStrategy.RETRY_FAILED,

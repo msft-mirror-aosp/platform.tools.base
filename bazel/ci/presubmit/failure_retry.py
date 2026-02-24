@@ -9,7 +9,6 @@ from typing import List
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import gerrit
-from tools.base.bazel.ci.presubmit import runs_per_test
 
 
 _BUCKET = 'adt-byob'
@@ -36,7 +35,6 @@ class FailureRetryInfo:
 def get_failure_retry_info(
     build_env: bazel.BuildEnv,
     gerrit_info: gerrit.GerritInfo,
-    runs_per_test_info: runs_per_test.RunsPerTestInfo,
 ) -> FailureRetryInfo:
   """Returns information for retrying failed targets.
 
@@ -62,11 +60,6 @@ def get_failure_retry_info(
       raise NoFailedTestsError(f'Failed tests file {object_name} not found')
     logging.info('Failed tests file %s found', object_name)
     targets = temp_path.read_text().splitlines()
-    # If impacted flakes (highly flaky targets that are run 100 times) are
-    # included, they get run with --flaky_test_attempts, which causes them to be
-    # more likely to pass.
-    # This is undesired behavior, so those targets are excluded here.
-    targets = [t for t in targets if t not in runs_per_test_info.impacted_flakes]
     return FailureRetryInfo(targets=targets)
 
 

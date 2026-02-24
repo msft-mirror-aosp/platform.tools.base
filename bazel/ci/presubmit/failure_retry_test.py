@@ -7,7 +7,6 @@ from tools.base.bazel.ci import fake_gce
 from tools.base.bazel.ci import gce
 from tools.base.bazel.ci.presubmit import failure_retry
 from tools.base.bazel.ci.presubmit import gerrit
-from tools.base.bazel.ci.presubmit import runs_per_test
 
 
 class FailureRetryTest(parameterized.TestCase):
@@ -23,7 +22,7 @@ class FailureRetryTest(parameterized.TestCase):
 
   def test_failure_retry_info(self):
     failed_tests_path = self.build_env.tmp_path / 'failed_tests.txt'
-    failed_tests_path.write_text('\n'.join(['1', '2', '3', '4', '5']))
+    failed_tests_path.write_text('\n'.join(['1', '2', '3']))
     gce.upload_to_gcs(
         failed_tests_path,
         'adt-byob',
@@ -33,13 +32,6 @@ class FailureRetryTest(parameterized.TestCase):
     info = failure_retry.get_failure_retry_info(
         self.build_env,
         self.gerrit_info,
-        runs_per_test.RunsPerTestInfo(
-            runs_per_target={},
-            impacted_flakes={
-                '4': 0.1,
-                '5': 0.1,
-            },
-        ),
     )
     self.assertEqual(
         info,
