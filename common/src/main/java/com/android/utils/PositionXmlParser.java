@@ -1046,6 +1046,7 @@ public class PositionXmlParser {
         void closeUnfinishedElements() {
             flushText();
             while (!mStack.isEmpty()) {
+                ProgressManagerAdapter.checkCanceled();
                 Element element = mStack.remove(mStack.size() - 1);
 
                 Position pos = (Position) element.getUserData(POS_KEY);
@@ -1064,6 +1065,7 @@ public class PositionXmlParser {
         @Override
         public void startElement(String uri, String localName, String qName,
                 Attributes attributes) throws SAXException {
+            ProgressManagerAdapter.checkCanceled();
             try {
                 flushText();
                 Element element = mDocument.createElementNS(uri, qName);
@@ -1101,6 +1103,7 @@ public class PositionXmlParser {
 
         @Override
         public void endElement(String uri, String localName, String qName) {
+            ProgressManagerAdapter.checkCanceled();
             flushText();
             Element element = mStack.remove(mStack.size() - 1);
 
@@ -1113,6 +1116,7 @@ public class PositionXmlParser {
 
         @Override
         public void comment(char[] chars, int start, int length) throws SAXException {
+            ProgressManagerAdapter.checkCanceled();
             flushText();
             String comment = new String(chars, start, length);
             Comment domComment = mDocument.createComment(comment);
@@ -1238,18 +1242,21 @@ public class PositionXmlParser {
 
         @Override
         public void startCDATA() {
+            ProgressManagerAdapter.checkCanceled();
             flushText();
             mCdata = true;
         }
 
         @Override
         public void endCDATA() {
+            ProgressManagerAdapter.checkCanceled();
             flushText();
             mCdata = false;
         }
 
         @Override
         public void characters(char[] c, int start, int length) throws SAXException {
+            ProgressManagerAdapter.checkCanceled();
             mPendingText.append(c, start, length);
         }
 
