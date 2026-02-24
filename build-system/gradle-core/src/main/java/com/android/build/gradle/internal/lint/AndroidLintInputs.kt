@@ -21,6 +21,7 @@ import com.android.SdkConstants
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.Lint
+import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.InternalSources
 import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.ScopedArtifacts
@@ -348,7 +349,6 @@ abstract class ProjectInputs {
       lintOptions.initialize(globalConfig.lintOptions, lintMode)
     }
 
-
     resourcePrefix.setDisallowChanges(globalConfig.resourcePrefix)
 
     dynamicFeatures.setDisallowChanges(globalConfig.dynamicFeatures)
@@ -360,7 +360,14 @@ abstract class ProjectInputs {
     neverShrinking.setDisallowChanges(globalConfig.hasNoBuildTypeMinified)
   }
 
-  internal fun initializeForStandalone(project: Project, projectOptions: ProjectOptions, javaExtension: JavaPluginExtension, dslLintOptions: Lint, lintMode: LintMode, checkDependenciesOverride: Boolean? = null) {
+  internal fun initializeForStandalone(
+    project: Project,
+    projectOptions: ProjectOptions,
+    javaExtension: JavaPluginExtension,
+    dslLintOptions: Lint,
+    lintMode: LintMode,
+    checkDependenciesOverride: Boolean? = null,
+  ) {
     initializeFromProject(ProjectInfo(project), lintMode)
     projectType.setDisallowChanges(LintModelModuleType.JAVA_LIBRARY)
     if (projectOptions[BooleanOption.LINT_REPORT_AGGREGATION]) {
@@ -1236,6 +1243,8 @@ abstract class SourceProviderInput {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesDirectories: ConfigurableFileCollection
 
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val aarKeepRulesDirectories: ConfigurableFileCollection
+
   // Without javaDirectoriesClasspath, the lint analysis task would be UP-TO-DATE after a change
   // in the *order* of java source directories, which would be incorrect. We can't get rid of
   // javaDirectories entirely because without javaDirectories, the lint analysis task would be
@@ -1303,6 +1312,11 @@ abstract class SourceProviderInput {
     sources.keepRules?.getFilteredSourceProviders(keepRulesDirectories)
     keepRulesDirectories.disallowChanges()
 
+    if (sources is InternalLibrarySources) {
+      sources.aarKeepRules?.getFilteredSourceProviders(aarKeepRulesDirectories)
+    }
+    aarKeepRulesDirectories.disallowChanges()
+
     if (lintMode == LintMode.ANALYSIS) {
       this.javaDirectoriesClasspath.from(javaDirectories)
       this.resDirectoriesClasspath.from(resDirectories)
@@ -1341,6 +1355,7 @@ abstract class SourceProviderInput {
     this.javaDirectoriesClasspath.disallowChanges()
     this.resDirectoriesClasspath.disallowChanges()
     this.assetsDirectoriesClasspath.disallowChanges()
+    this.aarKeepRulesDirectories.disallowChanges()
     this.debugOnly.setDisallowChanges(false)
     this.unitTestOnly.setDisallowChanges(unitTestOnly)
     this.instrumentationTestOnly.setDisallowChanges(false)
@@ -1364,6 +1379,7 @@ abstract class SourceProviderInput {
     this.javaDirectoriesClasspath.disallowChanges()
     this.resDirectoriesClasspath.disallowChanges()
     this.assetsDirectoriesClasspath.disallowChanges()
+    this.aarKeepRulesDirectories.disallowChanges()
     this.debugOnly.setDisallowChanges(false)
     this.unitTestOnly.setDisallowChanges(unitTestOnly)
     this.instrumentationTestOnly.setDisallowChanges(false)
@@ -1380,6 +1396,7 @@ abstract class SourceProviderInput {
     this.javaDirectoriesClasspath.disallowChanges()
     this.resDirectoriesClasspath.disallowChanges()
     this.assetsDirectoriesClasspath.disallowChanges()
+    this.aarKeepRulesDirectories.disallowChanges()
     this.debugOnly.setDisallowChanges(false)
     this.unitTestOnly.setDisallowChanges(false)
     this.instrumentationTestOnly.setDisallowChanges(false)
@@ -1397,6 +1414,7 @@ abstract class SourceProviderInput {
         resDirectories = resDirectories.files.toList(),
         assetsDirectories = assetsDirectories.files.toList(),
         keepRulesDirectories = keepRulesDirectories.files.toList(),
+        aarKeepRulesDirectories = aarKeepRulesDirectories.files.toList(),
         debugOnly = debugOnly.get(),
         unitTestOnly = unitTestOnly.get(),
         instrumentationTestOnly = instrumentationTestOnly.get(),

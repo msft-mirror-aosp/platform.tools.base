@@ -16,7 +16,8 @@
         javaDirectories="src/main/java:src/debug/java:src/main/kotlin:src/debug/kotlin"
         resDirectories="src/main/res:src/debug/res"
         assetsDirectories="src/main/assets:src/debug/assets"
-        keepRulesDirectories="src/main/keepRules:src/debug/keepRules"/>
+        keepRulesDirectories="src/main/keepRules:src/debug/keepRules"
+        aarKeepRulesDirectories="src/main/aarKeepRules:src/debug/aarKeepRules"/>
   </sourceProviders>
   <testSourceProviders>
   </testSourceProviders>

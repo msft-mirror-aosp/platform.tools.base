@@ -227,31 +227,36 @@ class LintModelSerializationTest {
                         javaDirectories="src/main/java:src/main/kotlin"
                         resDirectories="src/main/res"
                         assetsDirectories="src/main/assets"
-                        keepRulesDirectories="src/main/keepRules"/>
+                        keepRulesDirectories="src/main/keepRules"
+                        aarKeepRulesDirectories="src/main/aarKeepRules"/>
                     <sourceProvider
                         manifests="src/beta/AndroidManifest.xml"
                         javaDirectories="src/beta/java:src/beta/kotlin"
                         resDirectories="src/beta/res"
                         assetsDirectories="src/beta/assets"
-                        keepRulesDirectories="src/beta/keepRules"/>
+                        keepRulesDirectories="src/beta/keepRules"
+                        aarKeepRulesDirectories="src/beta/aarKeepRules"/>
                     <sourceProvider
                         manifests="src/free/AndroidManifest.xml"
                         javaDirectories="src/free/java:src/free/kotlin"
                         resDirectories="src/free/res"
                         assetsDirectories="src/free/assets"
-                        keepRulesDirectories="src/free/keepRules"/>
+                        keepRulesDirectories="src/free/keepRules"
+                        aarKeepRulesDirectories="src/free/aarKeepRules"/>
                     <sourceProvider
                         manifests="src/freeBeta/AndroidManifest.xml"
                         javaDirectories="src/freeBeta/java:src/freeBeta/kotlin"
                         resDirectories="src/freeBeta/res"
                         assetsDirectories="src/freeBeta/assets"
-                        keepRulesDirectories="src/freeBeta/keepRules"/>
+                        keepRulesDirectories="src/freeBeta/keepRules"
+                        aarKeepRulesDirectories="src/freeBeta/aarKeepRules"/>
                     <sourceProvider
                         manifests="src/debug/AndroidManifest.xml"
                         javaDirectories="src/debug/java:src/debug/kotlin"
                         resDirectories="src/debug/res"
                         assetsDirectories="src/debug/assets"
                         keepRulesDirectories="src/debug/keepRules"
+                        aarKeepRulesDirectories="src/debug/aarKeepRules"
                         debugOnly="true"/>
                     <sourceProvider
                         manifests="src/freeBetaDebug/AndroidManifest.xml"
@@ -259,6 +264,7 @@ class LintModelSerializationTest {
                         resDirectories="src/freeBetaDebug/res"
                         assetsDirectories="src/freeBetaDebug/assets"
                         keepRulesDirectories="src/freeBetaDebug/keepRules"
+                        aarKeepRulesDirectories="src/freeBetaDebug/aarKeepRules"
                         debugOnly="true"/>
                   </sourceProviders>
                   <testSourceProviders>
@@ -268,6 +274,7 @@ class LintModelSerializationTest {
                         resDirectories="src/androidTest/res"
                         assetsDirectories="src/androidTest/assets"
                         keepRulesDirectories="src/androidTest/keepRules"
+                        aarKeepRulesDirectories="src/androidTest/aarKeepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/test/AndroidManifest.xml"
@@ -275,6 +282,7 @@ class LintModelSerializationTest {
                         resDirectories="src/test/res"
                         assetsDirectories="src/test/assets"
                         keepRulesDirectories="src/test/keepRules"
+                        aarKeepRulesDirectories="src/test/aarKeepRules"
                         unitTest="true"/>
                     <sourceProvider
                         manifests="src/androidTestBeta/AndroidManifest.xml"
@@ -282,6 +290,7 @@ class LintModelSerializationTest {
                         resDirectories="src/androidTestBeta/res"
                         assetsDirectories="src/androidTestBeta/assets"
                         keepRulesDirectories="src/androidTestBeta/keepRules"
+                        aarKeepRulesDirectories="src/androidTestBeta/aarKeepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/testBeta/AndroidManifest.xml"
@@ -289,6 +298,7 @@ class LintModelSerializationTest {
                         resDirectories="src/testBeta/res"
                         assetsDirectories="src/testBeta/assets"
                         keepRulesDirectories="src/testBeta/keepRules"
+                        aarKeepRulesDirectories="src/testBeta/aarKeepRules"
                         unitTest="true"/>
                     <sourceProvider
                         manifests="src/androidTestFree/AndroidManifest.xml"
@@ -296,6 +306,7 @@ class LintModelSerializationTest {
                         resDirectories="src/androidTestFree/res"
                         assetsDirectories="src/androidTestFree/assets"
                         keepRulesDirectories="src/androidTestFree/keepRules"
+                        aarKeepRulesDirectories="src/androidTestFree/aarKeepRules"
                         androidTest="true"/>
                     <sourceProvider
                         manifests="src/testFree/AndroidManifest.xml"
@@ -303,6 +314,7 @@ class LintModelSerializationTest {
                         resDirectories="src/testFree/res"
                         assetsDirectories="src/testFree/assets"
                         keepRulesDirectories="src/testFree/keepRules"
+                        aarKeepRulesDirectories="src/testFree/aarKeepRules"
                         unitTest="true"/>
                   </testSourceProviders>
                   <testFixturesSourceProviders>
@@ -312,6 +324,7 @@ class LintModelSerializationTest {
                         resDirectories="src/testFixtures/res"
                         assetsDirectories="src/testFixtures/assets"
                         keepRulesDirectories="src/testFixtures/keepRules"
+                        aarKeepRulesDirectories="src/testFixtures/aarKeepRules"
                         testFixture="true"/>
                     <sourceProvider
                         manifests="src/testFixturesBeta/AndroidManifest.xml"
@@ -319,6 +332,7 @@ class LintModelSerializationTest {
                         resDirectories="src/testFixturesBeta/res"
                         assetsDirectories="src/testFixturesBeta/assets"
                         keepRulesDirectories="src/testFixturesBeta/keepRules"
+                        aarKeepRulesDirectories="src/testFixturesBeta/aarKeepRules"
                         testFixture="true"/>
                     <sourceProvider
                         manifests="src/testFixturesFree/AndroidManifest.xml"
@@ -326,6 +340,7 @@ class LintModelSerializationTest {
                         resDirectories="src/testFixturesFree/res"
                         assetsDirectories="src/testFixturesFree/assets"
                         keepRulesDirectories="src/testFixturesFree/keepRules"
+                        aarKeepRulesDirectories="src/testFixturesFree/aarKeepRules"
                         testFixture="true"/>
                   </testFixturesSourceProviders>
                   <resValues>
@@ -677,37 +692,43 @@ class LintModelSerializationTest {
                             javaDirectories="src/main/java:src/main/kotlin"
                             resDirectories="src/main/res"
                             assetsDirectories="src/main/assets"
-                            keepRulesDirectories="src/main/keepRules"/>
+                            keepRulesDirectories="src/main/keepRules"
+                            aarKeepRulesDirectories="src/main/aarKeepRules"/>
                         <sourceProvider
                             manifests="src/normal/AndroidManifest.xml"
                             javaDirectories="src/normal/java:src/normal/kotlin"
                             resDirectories="src/normal/res"
                             assetsDirectories="src/normal/assets"
-                            keepRulesDirectories="src/normal/keepRules"/>
+                            keepRulesDirectories="src/normal/keepRules"
+                            aarKeepRulesDirectories="src/normal/aarKeepRules"/>
                         <sourceProvider
                             manifests="src/paid/AndroidManifest.xml"
                             javaDirectories="src/paid/java:src/paid/kotlin"
                             resDirectories="src/paid/res"
                             assetsDirectories="src/paid/assets"
-                            keepRulesDirectories="src/paid/keepRules"/>
+                            keepRulesDirectories="src/paid/keepRules"
+                            aarKeepRulesDirectories="src/paid/aarKeepRules"/>
                         <sourceProvider
                             manifests="src/paidNormal/AndroidManifest.xml"
                             javaDirectories="src/paidNormal/java:src/paidNormal/kotlin"
                             resDirectories="src/paidNormal/res"
                             assetsDirectories="src/paidNormal/assets"
-                            keepRulesDirectories="src/paidNormal/keepRules"/>
+                            keepRulesDirectories="src/paidNormal/keepRules"
+                            aarKeepRulesDirectories="src/paidNormal/aarKeepRules"/>
                         <sourceProvider
                             manifests="src/release/AndroidManifest.xml"
                             javaDirectories="src/release/java:src/release/kotlin"
                             resDirectories="src/release/res"
                             assetsDirectories="src/release/assets"
-                            keepRulesDirectories="src/release/keepRules"/>
+                            keepRulesDirectories="src/release/keepRules"
+                            aarKeepRulesDirectories="src/release/aarKeepRules"/>
                         <sourceProvider
                             manifests="src/paidNormalRelease/AndroidManifest.xml"
                             javaDirectories="src/paidNormalRelease/java:src/paidNormalRelease/kotlin"
                             resDirectories="src/paidNormalRelease/res"
                             assetsDirectories="src/paidNormalRelease/assets"
-                            keepRulesDirectories="src/paidNormalRelease/keepRules"/>
+                            keepRulesDirectories="src/paidNormalRelease/keepRules"
+                            aarKeepRulesDirectories="src/paidNormalRelease/aarKeepRules"/>
                       </sourceProviders>
                       <testSourceProviders>
                         <sourceProvider
@@ -716,6 +737,7 @@ class LintModelSerializationTest {
                             resDirectories="src/androidTest/res"
                             assetsDirectories="src/androidTest/assets"
                             keepRulesDirectories="src/androidTest/keepRules"
+                            aarKeepRulesDirectories="src/androidTest/aarKeepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/test/AndroidManifest.xml"
@@ -723,6 +745,7 @@ class LintModelSerializationTest {
                             resDirectories="src/test/res"
                             assetsDirectories="src/test/assets"
                             keepRulesDirectories="src/test/keepRules"
+                            aarKeepRulesDirectories="src/test/aarKeepRules"
                             unitTest="true"/>
                         <sourceProvider
                             manifests="src/androidTestNormal/AndroidManifest.xml"
@@ -730,6 +753,7 @@ class LintModelSerializationTest {
                             resDirectories="src/androidTestNormal/res"
                             assetsDirectories="src/androidTestNormal/assets"
                             keepRulesDirectories="src/androidTestNormal/keepRules"
+                            aarKeepRulesDirectories="src/androidTestNormal/aarKeepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/testNormal/AndroidManifest.xml"
@@ -737,6 +761,7 @@ class LintModelSerializationTest {
                             resDirectories="src/testNormal/res"
                             assetsDirectories="src/testNormal/assets"
                             keepRulesDirectories="src/testNormal/keepRules"
+                            aarKeepRulesDirectories="src/testNormal/aarKeepRules"
                             unitTest="true"/>
                         <sourceProvider
                             manifests="src/androidTestPaid/AndroidManifest.xml"
@@ -744,6 +769,7 @@ class LintModelSerializationTest {
                             resDirectories="src/androidTestPaid/res"
                             assetsDirectories="src/androidTestPaid/assets"
                             keepRulesDirectories="src/androidTestPaid/keepRules"
+                            aarKeepRulesDirectories="src/androidTestPaid/aarKeepRules"
                             androidTest="true"/>
                         <sourceProvider
                             manifests="src/testPaid/AndroidManifest.xml"
@@ -751,6 +777,7 @@ class LintModelSerializationTest {
                             resDirectories="src/testPaid/res"
                             assetsDirectories="src/testPaid/assets"
                             keepRulesDirectories="src/testPaid/keepRules"
+                            aarKeepRulesDirectories="src/testPaid/aarKeepRules"
                             unitTest="true"/>
                       </testSourceProviders>
                       <testFixturesSourceProviders>
@@ -760,6 +787,7 @@ class LintModelSerializationTest {
                             resDirectories="src/testFixtures/res"
                             assetsDirectories="src/testFixtures/assets"
                             keepRulesDirectories="src/testFixtures/keepRules"
+                            aarKeepRulesDirectories="src/testFixtures/aarKeepRules"
                             testFixture="true"/>
                         <sourceProvider
                             manifests="src/testFixturesNormal/AndroidManifest.xml"
@@ -767,6 +795,7 @@ class LintModelSerializationTest {
                             resDirectories="src/testFixturesNormal/res"
                             assetsDirectories="src/testFixturesNormal/assets"
                             keepRulesDirectories="src/testFixturesNormal/keepRules"
+                            aarKeepRulesDirectories="src/testFixturesNormal/aarKeepRules"
                             testFixture="true"/>
                         <sourceProvider
                             manifests="src/testFixturesPaid/AndroidManifest.xml"
@@ -774,6 +803,7 @@ class LintModelSerializationTest {
                             resDirectories="src/testFixturesPaid/res"
                             assetsDirectories="src/testFixturesPaid/assets"
                             keepRulesDirectories="src/testFixturesPaid/keepRules"
+                            aarKeepRulesDirectories="src/testFixturesPaid/aarKeepRules"
                             testFixture="true"/>
                       </testFixturesSourceProviders>
                       <resValues>
