@@ -64,7 +64,6 @@ import com.android.tools.idea.wizard.template.impl.other.automotiveMessagingServ
 import com.android.tools.idea.wizard.template.impl.other.broadcastReceiver.broadcastReceiverTemplate
 import com.android.tools.idea.wizard.template.impl.other.contentProvider.contentProviderTemplate
 import com.android.tools.idea.wizard.template.impl.other.customView.customViewTemplate
-import com.android.tools.idea.wizard.template.impl.other.emptyCalApp.emptyCalAppTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.aidlFile.aidlFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.layoutResourceFile.layoutResourceFileTemplate
 import com.android.tools.idea.wizard.template.impl.other.files.shortcutResourceFile.shortcutsResourceFileTemplate
@@ -122,7 +121,6 @@ class WizardTemplateProviderImpl : WizardTemplateProvider() {
       appWidgetTemplate,
       automotiveMediaServiceTemplate,
       automotiveMessagingServiceTemplate,
-      emptyCalAppTemplate,
       broadcastReceiverTemplate,
       contentProviderTemplate,
       customViewTemplate,
