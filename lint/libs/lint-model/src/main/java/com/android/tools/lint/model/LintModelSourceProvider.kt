@@ -24,7 +24,6 @@ interface LintModelSourceProvider {
   val resDirectories: Collection<File>
   val assetsDirectories: Collection<File>
   val keepRulesDirectories: Collection<File>
-  val aarKeepRulesDirectories: Collection<File>
 
   /** Are the sources from this source provider specific to tests (of any type) ? */
   fun isTest(): Boolean = isUnitTest() or isInstrumentationTest()
@@ -48,7 +47,6 @@ class DefaultLintModelSourceProvider(
   override val resDirectories: Collection<File>,
   override val assetsDirectories: Collection<File>,
   override val keepRulesDirectories: Collection<File>,
-  override val aarKeepRulesDirectories: Collection<File>,
   private val debugOnly: Boolean,
   private val unitTestOnly: Boolean,
   private val instrumentationTestOnly: Boolean,

@@ -451,7 +451,6 @@ private open class LintModelWriter(protected val adapter: LintModelSerialization
     printer.printFiles("resDirectories", sourceProvider.resDirectories, indent)
     printer.printFiles("assetsDirectories", sourceProvider.assetsDirectories, indent)
     printer.printFiles("keepRulesDirectories", sourceProvider.keepRulesDirectories, indent)
-    printer.printFiles("aarKeepRulesDirectories", sourceProvider.aarKeepRulesDirectories, indent)
     if (sourceProvider.isInstrumentationTest()) {
       printer.printAttribute("androidTest", VALUE_TRUE, indent)
     }
@@ -1074,7 +1073,6 @@ private abstract class LintModelReader(protected val adapter: LintModelSerializa
     val resDirectories = getFiles("resDirectories")
     val assetsDirectories = getFiles("assetsDirectories")
     val keepRulesDirectories = getFiles("keepRulesDirectories")
-    val aarKeepRulesDirectories = getFiles("aarKeepRulesDirectories")
     val androidTestOnly = getOptionalBoolean("androidTest", false)
     val unitTestOnly = getOptionalBoolean("unitTest", false)
     val debugOnly = getOptionalBoolean("debugOnly", false)
@@ -1087,7 +1085,6 @@ private abstract class LintModelReader(protected val adapter: LintModelSerializa
       resDirectories = resDirectories,
       assetsDirectories = assetsDirectories,
       keepRulesDirectories = keepRulesDirectories,
-      aarKeepRulesDirectories = aarKeepRulesDirectories,
       debugOnly = debugOnly,
       instrumentationTestOnly = androidTestOnly,
       unitTestOnly = unitTestOnly,

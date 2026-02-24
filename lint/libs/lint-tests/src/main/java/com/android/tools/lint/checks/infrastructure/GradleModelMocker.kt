@@ -284,12 +284,6 @@ constructor(
       return moduleModel.variants.single { it.name == defaultVariantName }.sourceProviders.flatMap { it.keepRulesDirectories }
     }
 
-  val aarKeepRulesSourceFolders: Collection<File>
-    get() {
-      ensureInitialized()
-      return moduleModel.variants.single { it.name == defaultVariantName }.sourceProviders.flatMap { it.aarKeepRulesDirectories }
-    }
-
   fun syncFlagsTo(to: LintCliFlags) {
     ensureInitialized()
     to.suppressedIds.clear()
@@ -1995,7 +1989,6 @@ constructor(
         resDirectories = listOf(File(root, "src/$name/res")),
         assetsDirectories = listOf(File(root, "src/$name/assets")),
         keepRulesDirectories = listOf(File(root, "src/$name/keepRules")),
-        aarKeepRulesDirectories = listOf(File(root, "src/$name/aarKeepRules")),
       )
     }
 
@@ -2369,7 +2362,6 @@ private data class TestLintModelSourceProvider(
   override val resDirectories: Collection<File>,
   override val assetsDirectories: Collection<File>,
   override val keepRulesDirectories: Collection<File>,
-  override val aarKeepRulesDirectories: Collection<File>,
 ) : LintModelSourceProvider {
   override fun isUnitTest(): Boolean = _isUnitTest
 

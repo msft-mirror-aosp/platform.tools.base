@@ -75,15 +75,6 @@ class LintProguardFilesTest {
       .contains("proguard-rules.keep:1: Error: Found byte-order-mark in the middle of a file")
   }
 
-  @Test
-  fun testIssueFromProguardFileInAARSourceSet() {
-    val build =
-      libRule.build { androidLibrary(":libProject") {}.files { add("src/main/aarKeepRules/proguard-rules.keep", "foo.\ufeffbar") } }
-    build.executor.run("lintRelease")
-    assertThat(build.directory.resolve("libProject/lint-results.txt"))
-      .contains("proguard-rules.keep:1: Error: Found byte-order-mark in the middle of a file")
-  }
-
   // regression for b/67156629
   @Test
   fun testIssueFromConsumerProguardFile() {

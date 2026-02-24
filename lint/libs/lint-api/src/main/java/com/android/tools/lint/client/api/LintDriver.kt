@@ -1505,10 +1505,6 @@ class LintDriver(
       for (dir in keepRules) {
         files.addAll(dir.walk().maxDepth(3).filter { it.isFile })
       }
-      val aarKeepRules = project.aarKeepRulesSourceFolders
-      for (dir in aarKeepRules) {
-        files.addAll(dir.walk().maxDepth(3).filter { it.isFile })
-      }
 
       for (file in files) {
         val context = Context(this, project, main, file)
@@ -2717,8 +2713,6 @@ class LintDriver(
     override fun createSuperClassMap(project: Project): Map<String, String> = delegate.createSuperClassMap(project)
 
     override fun getKeepRulesSourceFolders(project: Project): List<File> = delegate.getKeepRulesSourceFolders(project)
-
-    override fun getAarKeepRulesSourceFolders(project: Project): List<File> = delegate.getAarKeepRulesSourceFolders(project)
 
     override fun getResourceFolders(project: Project): List<File> = delegate.getResourceFolders(project)
 
