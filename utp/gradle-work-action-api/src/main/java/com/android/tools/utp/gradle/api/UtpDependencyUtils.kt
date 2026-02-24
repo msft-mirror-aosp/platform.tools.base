@@ -90,7 +90,7 @@ enum class UtpDependency(
     ANDROID_TOOLS_UTP_PLUGIN_MAVEN_GROUP_ID,
   );
 
-  val configurationName: String = "_internal-unified-test-platform-${artifactId}"
+  val configurationName: String = "unified-test-platform-${artifactId}"
 
   /** Returns a maven coordinate string to download dependencies from the Maven repository. */
   fun mavenCoordinate(androidToolsBaseVersion: String): String {
