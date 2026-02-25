@@ -28,7 +28,7 @@ import org.gradle.api.services.BuildServiceRegistry
 /** Impl for BaseScope over a [ProjectServices] */
 open class BaseServicesImpl(protected val projectServices: ProjectServices) : BaseServices {
 
-  final override fun <T> newInstance(type: Class<T>, vararg args: Any?): T = projectServices.objectFactory.newInstance(type, *args)
+  final override fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T = projectServices.objectFactory.newInstance(type, *args)
 
   final override fun file(file: Any): File = projectServices.fileResolver.invoke(file)
 

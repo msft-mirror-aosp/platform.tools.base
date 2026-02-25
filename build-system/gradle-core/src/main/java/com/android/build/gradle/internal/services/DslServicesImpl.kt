@@ -45,22 +45,23 @@ constructor(
       versionedSdkLoaderServiceProvider?.invoke()
         ?: throw RuntimeException("Calling versionedSdkLoaderService on a plugin that does not support it")
 
-  override fun <T> domainObjectSet(type: Class<T>): DomainObjectSet<T> = projectServices.objectFactory.domainObjectSet(type)
+  override fun <T : Any> domainObjectSet(type: Class<T>): DomainObjectSet<T> = projectServices.objectFactory.domainObjectSet(type)
 
-  override fun <T> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T> =
+  override fun <T : Any> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T> =
     projectServices.objectFactory.domainObjectContainer(type, factory)
 
-  override fun <T> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T> =
+  override fun <T : Any> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T> =
     projectServices.objectFactory.domainObjectContainer(type)
 
-  override fun <T> polymorphicDomainObjectContainer(type: Class<T>): ExtensiblePolymorphicDomainObjectContainer<T> =
+  override fun <T : Any> polymorphicDomainObjectContainer(type: Class<T>): ExtensiblePolymorphicDomainObjectContainer<T> =
     projectServices.objectFactory.polymorphicDomainObjectContainer(type)
 
-  override fun <T> property(type: Class<T>): Property<T> = projectServices.objectFactory.property(type)
+  override fun <T : Any> property(type: Class<T>): Property<T> = projectServices.objectFactory.property(type)
 
   override fun directoryProperty(): DirectoryProperty = projectServices.objectFactory.directoryProperty()
 
-  override fun <T> provider(type: Class<T>, value: T?): Provider<T> = projectServices.objectFactory.property(type).also { it.set(value) }
+  override fun <T : Any> provider(type: Class<T>, value: T?): Provider<T> =
+    projectServices.objectFactory.property(type).also { it.set(value) }
 
   override val buildDirectory: DirectoryProperty
     get() = projectServices.projectLayout.buildDirectory
