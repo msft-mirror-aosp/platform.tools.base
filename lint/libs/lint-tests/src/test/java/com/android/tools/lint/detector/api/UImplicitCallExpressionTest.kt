@@ -241,21 +241,9 @@ class UImplicitCallExpressionTest {
             src/test/pkg/Test.kt:12: Error: Found overloaded function call set [_DispatchTestIssue]
                 test[string] = color
                              ~
-            src/test/pkg/Test.kt:17: Error: Found overloaded function call plus [_DispatchTestIssue]
-                operator fun inc() = Point(x + 1, y + 1)
-                                             ~
-            src/test/pkg/Test.kt:17: Error: Found overloaded function call plus [_DispatchTestIssue]
-                operator fun inc() = Point(x + 1, y + 1)
-                                                    ~
             src/test/pkg/Test.kt:26: Error: Found overloaded function call inc [_DispatchTestIssue]
                 point++
                      ~~
-            src/test/pkg/Test.kt:32: Error: Found overloaded function call plus [_DispatchTestIssue]
-                    return Counter(dayIndex + increment)
-                                            ~
-            src/test/pkg/Test.kt:37: Error: Found overloaded function call plus [_DispatchTestIssue]
-                    return Counter(dayIndex + other.dayIndex)
-                                            ~
             src/test/pkg/Test.kt:43: Error: Found overloaded function call plus [_DispatchTestIssue]
                 val x = counter + 5
                                 ~
@@ -268,7 +256,7 @@ class UImplicitCallExpressionTest {
             src/test/pkg/Test.kt:56: Error: Found overloaded function call rangeTo [_DispatchTestIssue]
                 println(resource..string)
                                 ~~
-            11 errors, 0 warnings
+            7 errors, 0 warnings
             """
       )
   }
@@ -278,6 +266,9 @@ class UImplicitCallExpressionTest {
       listOf("get", "set", "compareTo", "inc", "in", "rangeTo", "contains", "plus", "minus")
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+      if (method.isMemberOfPrimitive()) {
+        return
+      }
       context.report(
         ISSUE,
         context.getCallLocation(node, includeReceiver = false, includeArguments = false),

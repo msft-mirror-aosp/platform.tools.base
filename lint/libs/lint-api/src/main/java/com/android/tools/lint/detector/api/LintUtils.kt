@@ -98,16 +98,7 @@ import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.pom.java.LanguageLevel
 import com.intellij.psi.CommonClassNames
-import com.intellij.psi.CommonClassNames.JAVA_LANG_BOOLEAN
-import com.intellij.psi.CommonClassNames.JAVA_LANG_BYTE
-import com.intellij.psi.CommonClassNames.JAVA_LANG_CHARACTER
 import com.intellij.psi.CommonClassNames.JAVA_LANG_CHAR_SEQUENCE
-import com.intellij.psi.CommonClassNames.JAVA_LANG_DOUBLE
-import com.intellij.psi.CommonClassNames.JAVA_LANG_FLOAT
-import com.intellij.psi.CommonClassNames.JAVA_LANG_INTEGER
-import com.intellij.psi.CommonClassNames.JAVA_LANG_LONG
-import com.intellij.psi.CommonClassNames.JAVA_LANG_NUMBER
-import com.intellij.psi.CommonClassNames.JAVA_LANG_SHORT
 import com.intellij.psi.CommonClassNames.JAVA_LANG_STRING
 import com.intellij.psi.PsiAnonymousClass
 import com.intellij.psi.PsiClass
@@ -616,22 +607,19 @@ fun UBinaryExpression.resolveOverloadedOperator(): PsiMethod? {
   return operator
 }
 
+/** Returns `true` if the given [PsiMember] belongs to primitive types. */
+fun PsiMember.isMemberOfPrimitive(): Boolean {
+  val fqName = containingClass?.qualifiedName ?: return false
+  return getPrimitiveType(fqName) != null
+}
+
 /** Returns `true` if the given [PsiMember] belongs to primitive types or [String]. */
 fun PsiMember.isMemberOfPrimitiveOrString(): Boolean {
   val fqName = containingClass?.qualifiedName ?: return false
   return when (fqName) {
-    JAVA_LANG_NUMBER,
-    JAVA_LANG_BOOLEAN,
-    JAVA_LANG_BYTE,
-    JAVA_LANG_SHORT,
-    JAVA_LANG_INTEGER,
-    JAVA_LANG_LONG,
-    JAVA_LANG_FLOAT,
-    JAVA_LANG_DOUBLE,
-    JAVA_LANG_CHARACTER,
     JAVA_LANG_CHAR_SEQUENCE,
     JAVA_LANG_STRING -> true
-    else -> false
+    else -> getPrimitiveType(fqName) != null
   }
 }
 
