@@ -43,6 +43,7 @@ abstract class LintClassLoaderBuildService : BuildService<BuildServiceParameters
    * This is cleared at the end of each build
    */
   @GuardedBy("this") private val jarsToHashCode: MutableMap<List<URI>, HashCode> = mutableMapOf()
+  @GuardedBy("this") private val classpathToHashCode: MutableMap<List<URI>, HashCode> = mutableMapOf()
 
   // ** Hash the contents of the given file collection */
   @Synchronized
@@ -58,6 +59,16 @@ abstract class LintClassLoaderBuildService : BuildService<BuildServiceParameters
     if (shouldDispose) {
       AndroidLintWorkAction.dispose()
     }
+  }
+
+  @Synchronized
+  internal fun hashPath(classpath: Iterable<FileSystemLocation>): String {
+    val uris = classpath.map { it.asFile.toURI() }
+    val hashCode =
+      jarsToHashCode.getOrPut(uris) {
+        Hashing.combineOrdered(classpath.map { Hashing.murmur3_128().hashString(it.asFile.canonicalPath, Charsets.UTF_8) })
+      }
+    return hashCode.toString()
   }
 
   class RegistrationAction(project: Project) :

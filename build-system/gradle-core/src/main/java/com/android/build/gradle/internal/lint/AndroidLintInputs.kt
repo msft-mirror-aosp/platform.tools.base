@@ -97,6 +97,7 @@ import com.android.tools.lint.model.LintModelVariant
 import com.android.utils.FileUtils
 import com.android.utils.PathUtils
 import com.android.utils.appendCapitalized
+import com.google.common.annotations.VisibleForTesting
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.Callable
@@ -208,7 +209,8 @@ abstract class LintTool {
     )
   }
 
-  private fun deriveVersionKey(
+  @VisibleForTesting
+  internal fun deriveVersionKey(
     taskCreationServices: TaskCreationServices,
     lintClassLoaderBuildService: Provider<LintClassLoaderBuildService>,
   ): Provider<String> {
@@ -221,7 +223,11 @@ abstract class LintTool {
         val jarsHash = lintClassLoaderBuildService.zip(classpath.elements, LintClassLoaderBuildService::hashJars)
         versionProvider.zip(jarsHash) { version, hash -> "${version}_$hash" }
       }
-      else -> versionProvider
+
+      else -> {
+        val classpathHash = lintClassLoaderBuildService.zip(classpath.elements, LintClassLoaderBuildService::hashPath)
+        versionProvider.zip(classpathHash) { version, hash -> "${version}_$hash" }
+      }
     }
   }
 
