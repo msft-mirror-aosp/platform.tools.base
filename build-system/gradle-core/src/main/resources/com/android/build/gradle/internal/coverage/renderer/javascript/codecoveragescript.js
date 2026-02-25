@@ -66,8 +66,8 @@ const App = {
     },
 
     showSourceView(classData, context) {
-        document.getElementById('report-view').style.display = 'none';
-        document.getElementById('source-view').style.display = 'block';
+        document.getElementById('report-view').classList.add('hidden-view');
+        document.getElementById('source-view').classList.remove('hidden-view');
         document.getElementById('report-view-controls').classList.add('hidden');
         document.getElementById('source-view-controls').classList.remove('hidden');
 
@@ -75,8 +75,8 @@ const App = {
     },
 
     showReportView() {
-        document.getElementById('source-view').style.display = 'none';
-        document.getElementById('report-view').style.display = 'block';
+        document.getElementById('source-view').classList.add('hidden-view');
+        document.getElementById('report-view').classList.remove('hidden-view');
         document.getElementById('source-view-controls').classList.add('hidden');
         document.getElementById('report-view-controls').classList.remove('hidden');
     }
@@ -115,6 +115,8 @@ const CoverageReportApp = {
             testSuiteFilterText: document.getElementById('testsuite-filter-text'),
             testSuiteFilterDropdown: document.getElementById('testsuite-filter-dropdown'),
             testSuiteFilterList: document.getElementById('testsuite-filter-list'),
+            tsAllState: document.getElementById('ts-all-state'),
+            tsSelectedState: document.getElementById('ts-selected-state'),
             moduleFilterBtn: document.getElementById('module-filter-btn'),
             moduleFilterText: document.getElementById('module-filter-text'),
             moduleFilterDropdown: document.getElementById('module-filter-dropdown'),
@@ -159,12 +161,14 @@ const CoverageReportApp = {
         ];
 
         allDropdowns.forEach(dropdown => {
-            if (dropdown !== dropdownToToggle) {
+            if (dropdown && dropdown !== dropdownToToggle) {
                 dropdown.classList.add('hidden');
             }
         });
 
-        dropdownToToggle.classList.toggle('hidden');
+        if (dropdownToToggle) {
+            dropdownToToggle.classList.toggle('hidden');
+        }
     },
 
     populateHeaderInfo() {
@@ -306,9 +310,14 @@ const CoverageReportApp = {
             ? 'All'
             : this.state.filters.class;
 
-        this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite === 'Aggregated'
-            ? 'All'
-            : this.state.filters.testSuite;
+        if (this.state.filters.testSuite === 'Aggregated') {
+            this.elements.tsAllState.classList.remove('hidden');
+            this.elements.tsSelectedState.classList.add('hidden');
+        } else {
+            this.elements.tsAllState.classList.add('hidden');
+            this.elements.tsSelectedState.classList.remove('hidden');
+            this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite;
+        }
     },
 
     updateVariantButtonText() {
@@ -418,7 +427,13 @@ const CoverageReportApp = {
 
         this.updateFilterButtons();
 
-        const dropdownElementKey = `${filterType}FilterDropdown`;
+        let dropdownElementKey;
+        if (filterType === 'testSuite') {
+            dropdownElementKey = 'testSuiteFilterDropdown';
+        } else {
+            dropdownElementKey = `${filterType}FilterDropdown`;
+        }
+
         if(this.elements[dropdownElementKey]) {
             this.elements[dropdownElementKey].classList.add('hidden');
         }
@@ -438,7 +453,7 @@ const CoverageReportApp = {
 
         document.addEventListener('click', (event) => {
             dropdownConfigs.forEach(({ btn, dropdown }) => {
-                if (!btn.contains(event.target) && !dropdown.contains(event.target)) {
+                if (btn && dropdown && !btn.contains(event.target) && !dropdown.contains(event.target)) {
                     dropdown.classList.add('hidden');
                 }
             });
