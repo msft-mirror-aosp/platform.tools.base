@@ -13,227 +13,204 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.builder.merge
 
-package com.android.builder.merge;
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
+import com.android.tools.build.apkzlib.zip.ZFile
+import com.android.tools.build.apkzlib.zip.ZFileOptions
+import com.android.utils.FileUtils
+import com.google.common.base.Preconditions
+import com.google.common.io.ByteStreams
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import java.io.InputStream
+import java.io.UncheckedIOException
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.tools.build.apkzlib.zip.StoredEntry;
-import com.android.tools.build.apkzlib.zip.ZFile;
-import com.android.tools.build.apkzlib.zip.ZFileOptions;
-import com.android.utils.FileUtils;
-import com.google.common.base.Preconditions;
-import com.google.common.io.ByteStreams;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.file.Path;
-
-/**
- * Factory methods for {@link MergeOutputWriter}.
- */
-public final class MergeOutputWriters {
-
-    private MergeOutputWriters() {}
-
-    /**
-     * Creates a writer that writes files to a directory.
-     *
-     * @param directory the directory; will be created if it doesn't exist
-     * @return the writer
+/** Factory methods for [MergeOutputWriter]. */
+object MergeOutputWriters {
+  /**
+   * Creates a writer that writes files to a directory.
+   *
+   * @param directory the directory; will be created if it doesn't exist
+   * @return the writer
+   */
+  @JvmStatic
+  fun toDirectory(directory: File): MergeOutputWriter {
+    /*
+     * In theory we could just create the directory here. However, some tasks in gradle fail
+     * if we create an empty directory for very obscure reasons. To avoid those errors, we
+     * delay directory creation until it is really necessary.
      */
-    @NonNull
-    public static MergeOutputWriter toDirectory(@NonNull File directory) {
 
-        /*
-         * In theory we could just create the directory here. However, some tasks in gradle fail
-         * if we create an empty directory for very obscure reasons. To avoid those errors, we
-         * delay directory creation until it is really necessary.
-         */
-        Path directoryPath = directory.toPath();
+    val directoryPath = directory.toPath()
 
-        return new MergeOutputWriter() {
+    return object : MergeOutputWriter {
+      /** Is the writer open? */
+      private var isOpen = false
 
-            /** Is the writer open? */
-            private boolean isOpen = false;
+      /** Have we ensured that the directory has been created? */
+      private var created = false
 
-            /** Have we ensured that the directory has been created? */
-            private boolean created = false;
+      override fun open() {
+        Preconditions.checkState(!isOpen, "Writer already open")
+        isOpen = true
+      }
 
-            @Override
-            public void open() {
-                Preconditions.checkState(!isOpen, "Writer already open");
-                isOpen = true;
+      override fun close() {
+        Preconditions.checkState(isOpen, "Writer closed")
+        isOpen = false
+      }
+
+      /**
+       * Converts a path to the file, resolving it against the `directoryUri`.
+       *
+       * @param path the path
+       * @return the resolved file
+       */
+      fun toFile(path: String): File {
+        if (!created) {
+          FileUtils.mkdirs(directory)
+          created = true
+        }
+
+        return directoryPath.resolve(path).toFile()
+      }
+
+      override fun remove(path: String) {
+        Preconditions.checkState(isOpen, "Writer closed")
+
+        val f = toFile(path)
+        // it's possible that some folders only containing .class files got removed.
+        // those were never merged in so we just ignore removing a non existent folder.
+        if (!f.exists()) return
+
+        // since we are notified of folders add/remove by the transform pipeline, handle
+        // folders and files.
+        if (f.isDirectory) {
+          try {
+            FileUtils.deletePath(f)
+          } catch (e: IOException) {
+            throw UncheckedIOException(e)
+          }
+          return
+        }
+
+        if (!f.delete()) {
+          throw UncheckedIOException(IOException("Cannot delete file " + f.getAbsolutePath()))
+        }
+
+        var dir = f.parentFile
+        while (dir.toPath() != directory.toPath()) {
+          val names: Array<String?> = checkNotNull(dir.list())
+          if (names.isEmpty()) {
+            try {
+              FileUtils.delete(dir)
+            } catch (e: IOException) {
+              throw UncheckedIOException(e)
             }
+          } else {
+            break
+          }
+          dir = dir.parentFile
+        }
+      }
 
-            @Override
-            public void close() {
-                Preconditions.checkState(isOpen, "Writer closed");
-                isOpen = false;
-            }
+      override fun create(path: String, data: InputStream, compress: Boolean) {
+        Preconditions.checkState(isOpen, "Writer closed")
 
-            /**
-             * Converts a path to the file, resolving it against the {@code directoryUri}.
-             *
-             * @param path the path
-             * @return the resolved file
-             */
-            @NonNull
-            private File toFile(@NonNull String path) {
-                if (!created) {
-                    FileUtils.mkdirs(directory);
-                    created = true;
-                }
+        val f = toFile(path)
+        FileUtils.mkdirs(f.parentFile)
 
-                return directoryPath.resolve(path).toFile();
-            }
+        try {
+          FileOutputStream(f).use { fos -> ByteStreams.copy(data, fos) }
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
 
-            @Override
-            public void remove(@NonNull String path) {
-                Preconditions.checkState(isOpen, "Writer closed");
+      override fun replace(path: String, data: InputStream, compress: Boolean) {
+        Preconditions.checkState(isOpen, "Writer closed")
 
-                File f = toFile(path);
-                // it's possible that some folders only containing .class files got removed.
-                // those were never merged in so we just ignore removing a non existent folder.
-                if (!f.exists()) return;
+        val f = toFile(path)
+        FileUtils.mkdirs(f.parentFile)
 
-                // since we are notified of folders add/remove by the transform pipeline, handle
-                // folders and files.
-                if (f.isDirectory()) {
-                    try {
-                        FileUtils.deletePath(f);
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                    return;
-                }
-
-                if (!f.delete()) {
-                    throw new UncheckedIOException(
-                            new IOException("Cannot delete file " + f.getAbsolutePath()));
-                }
-
-                for (File dir = f.getParentFile();
-                        !dir.equals(directory);
-                        dir = dir.getParentFile()) {
-                    String[] names = dir.list();
-                    assert names != null;
-                    if (names.length == 0) {
-                        try {
-                            FileUtils.delete(dir);
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-            @Override
-            public void create(@NonNull String path, @NonNull InputStream data, boolean compress) {
-                Preconditions.checkState(isOpen, "Writer closed");
-
-                File f = toFile(path);
-                FileUtils.mkdirs(f.getParentFile());
-
-                try (FileOutputStream fos = new FileOutputStream(f)) {
-                    ByteStreams.copy(data, fos);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-
-            @Override
-            public void replace(@NonNull String path, @NonNull InputStream data, boolean compress) {
-                Preconditions.checkState(isOpen, "Writer closed");
-
-                File f = toFile(path);
-                FileUtils.mkdirs(f.getParentFile());
-
-                try (FileOutputStream fos = new FileOutputStream(f)) {
-                    ByteStreams.copy(data, fos);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        };
+        try {
+          FileOutputStream(f).use { fos -> ByteStreams.copy(data, fos) }
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
     }
+  }
 
-    /**
-     * Creates a writer that writes files to a zip file.
-     *
-     * @param file the existing zip file
-     * @return the writer
-     */
-    @NonNull
-    public static MergeOutputWriter toZip(@NonNull File file, @NonNull ZFileOptions zFileOptions) {
-        return new MergeOutputWriter() {
+  /**
+   * Creates a writer that writes files to a zip file.
+   *
+   * @param file the existing zip file
+   * @return the writer
+   */
+  @NonNull
+  fun toZip(@NonNull file: File, @NonNull zFileOptions: ZFileOptions): MergeOutputWriter {
+    return object : MergeOutputWriter {
+      /** The open zip file, `null` if not open. */
+      @Nullable private var zipFile: ZFile? = null
 
-            /** The open zip file, {@code null} if not open. */
-            @Nullable private ZFile zipFile = null;
+      override fun open() {
+        Preconditions.checkState(zipFile == null, "Writer already open")
 
-            @Override
-            public void open() {
-                Preconditions.checkState(zipFile == null, "Writer already open");
+        try {
+          zipFile = ZFile.openReadWrite(file, zFileOptions)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
 
-                try {
-                    zipFile = ZFile.openReadWrite(file, zFileOptions);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
+      override fun close() {
+        Preconditions.checkState(zipFile != null, "Writer not open")
 
-            @Override
-            public void close() {
-                Preconditions.checkState(zipFile != null, "Writer not open");
+        try {
+          zipFile!!.close()
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        } finally {
+          zipFile = null
+        }
+      }
 
-                try {
-                    zipFile.close();
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                } finally {
-                    zipFile = null;
-                }
-            }
+      override fun remove(path: String) {
+        Preconditions.checkState(zipFile != null, "Writer not open")
 
-            @Override
-            public void remove(@NonNull String path) {
-                Preconditions.checkState(zipFile != null, "Writer not open");
+        val entry = zipFile!!.get(path)
+        if (entry != null) {
+          try {
+            entry.delete()
+          } catch (e: IOException) {
+            throw UncheckedIOException(e)
+          }
+        }
+      }
 
-                StoredEntry entry = zipFile.get(path);
-                if (entry != null) {
-                    try {
-                        entry.delete();
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-            }
+      override fun create(path: String, data: InputStream, compress: Boolean) {
+        Preconditions.checkState(zipFile != null, "Writer not open")
 
-            @Override
-            public void create(@NonNull String path, @NonNull InputStream data, boolean compress) {
-                Preconditions.checkState(zipFile != null, "Writer not open");
+        try {
+          zipFile!!.add(path, data, compress)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
 
-                try {
-                    zipFile.add(path, data, compress);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
+      override fun replace(path: String, data: InputStream, compress: Boolean) {
+        Preconditions.checkState(zipFile != null, "Writer not open")
 
-            @Override
-            public void replace(@NonNull String path, @NonNull InputStream data, boolean compress) {
-                Preconditions.checkState(zipFile != null, "Writer not open");
-
-                try {
-                    zipFile.add(path, data, compress);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        };
+        try {
+          zipFile!!.add(path, data, compress)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
     }
+  }
 }
