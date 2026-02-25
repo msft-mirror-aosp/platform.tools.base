@@ -68,11 +68,6 @@ public class AdbInstallerTest {
         logger = new TestLogger();
     }
 
-    @After
-    public void tearDown() {
-        AndroidDebugBridge.terminate();
-    }
-
     @Test
     public void testWrongVersionDetection() throws Exception {
         AssumeUtil.assumeNotWindows(); // This test runs the installer on the host

@@ -233,6 +233,7 @@ coverage_java_test(
         ":java_version",
         ":tools.deployer",
         "//prebuilts/r8",
+        "//tools/base/adblib:adblib.tests.testlib",
         "//tools/base/annotations",
         "//tools/base/bazel:studio-grpc",
         "//tools/base/bazel:studio-proto",

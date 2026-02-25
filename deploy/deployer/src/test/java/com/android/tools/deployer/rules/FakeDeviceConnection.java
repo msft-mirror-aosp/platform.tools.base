@@ -15,12 +15,9 @@
  */
 package com.android.tools.deployer.rules;
 
-
+import com.android.adblib.testingutils.FakeAdbServerRule;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.fakeadbserver.FakeAdbServer;
-import com.android.fakeadbserver.hostcommandhandlers.FeaturesCommandHandler;
-import com.android.fakeadbserver.hostcommandhandlers.HostFeaturesCommandHandler;
-import com.android.fakeadbserver.hostcommandhandlers.TrackDevicesCommandHandler;
 import com.android.tools.deployer.devices.DeviceId;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
@@ -33,7 +30,13 @@ public class FakeDeviceConnection implements TestRule {
 
     private final DeviceId deviceId;
     private FakeDevice device;
-    private FakeAdbServer server;
+    private final FakeDeviceHandler handler = new FakeDeviceHandler();
+    private final FakeAdbServerRule fakeAdbServerRule = new FakeAdbServerRule(
+            builder -> {
+                builder.addDeviceHandler(handler);
+                return kotlin.Unit.INSTANCE;
+            }
+    );
 
     public FakeDeviceConnection(DeviceId deviceId) {
         this.deviceId = deviceId;
@@ -46,7 +49,7 @@ public class FakeDeviceConnection implements TestRule {
     }
 
     public FakeAdbServer getServer() {
-        return server;
+        return fakeAdbServerRule.getAdbServer();
     }
 
     @Override
@@ -54,37 +57,25 @@ public class FakeDeviceConnection implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                startFakeAdbServer();
-                try {
-                    base.evaluate();
-                } finally {
-                    stopFakeAdbServer();
-                }
+                device = new FakeDeviceLibrary().build(deviceId);
+
+                fakeAdbServerRule.apply(new Statement() {
+                    @Override
+                    public void evaluate() throws Throwable {
+                        FakeAdbServer adbServer = fakeAdbServerRule.getAdbServer();
+                        handler.connect(device, adbServer);
+                        AndroidDebugBridge.enableFakeAdbServerMode(adbServer.getPort());
+
+                        try {
+                            base.evaluate();
+                        } finally {
+                            device.shutdown();
+                            AndroidDebugBridge.terminate();
+                            AndroidDebugBridge.disableFakeAdbServerMode();
+                        }
+                    }
+                }, description).evaluate();
             }
         };
-    }
-
-    private void startFakeAdbServer() throws Exception {
-        device = new FakeDeviceLibrary().build(deviceId);
-        FakeAdbServer.Builder builder = new FakeAdbServer.Builder();
-        builder.addHostHandler(new TrackDevicesCommandHandler());
-
-        FakeDeviceHandler handler = new FakeDeviceHandler();
-        builder.addDeviceHandler(handler);
-        builder.addHostHandler(new FeaturesCommandHandler());
-        builder.addHostHandler(new HostFeaturesCommandHandler());
-
-        server = builder.build();
-        handler.connect(device, server);
-        server.start();
-
-        AndroidDebugBridge.enableFakeAdbServerMode(server.getPort());
-    }
-
-    private void stopFakeAdbServer() throws Exception {
-        device.shutdown();
-        server.close();
-        AndroidDebugBridge.terminate();
-        AndroidDebugBridge.disableFakeAdbServerMode();
     }
 }
