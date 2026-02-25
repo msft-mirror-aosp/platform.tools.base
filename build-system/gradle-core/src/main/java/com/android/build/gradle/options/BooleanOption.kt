@@ -165,14 +165,19 @@ enum class BooleanOption(
   /* -----------------
    * EXPERIMENTAL APIs
    */
-
   BUILD_FEATURE_MLMODELBINDING("android.defaults.buildfeatures.mlmodelbinding", false, ApiStage.Experimental),
   ENABLE_DEFAULT_DEBUG_SIGNING_CONFIG(
     "android.experimental.useDefaultDebugSigningConfigForProfileableBuildtypes",
     false,
     ApiStage.Experimental,
   ),
-
+  /** If the user has not specified a minAgpVersion in the aarMetadata DSL, we will infer it based on the compileSdk version. */
+  AUTO_ENCODE_MINIMUM_AGP_VERSION_IN_AAR_METADATA(
+    "android.aar.metadata.autoEncodeMinAgpVersion",
+    false,
+    FeatureStage.Experimental,
+    FutureStage(version = Version.VERSION_10_0, defaultValue = true, stage = FeatureStage.Enforced(enforcedVersion = Version.VERSION_11_0)),
+  ),
   /** When enabled, manifest merger warnings will be treated as errors and fail the build. */
   TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS("android.experimental.treatManifestMergerWarningsAsErrors", false, FeatureStage.Experimental),
 
