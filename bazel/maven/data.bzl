@@ -245,6 +245,7 @@ _CLASS_JARS = [
     "androidx.games:games-activity:4.0.0",
     "androidx.graphics:graphics-shapes-desktop:1.0.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.leanback:leanback:1.0.0",
+    "androidx.leanback:leanback:1.2.0",
     "androidx.legacy:legacy-support-v13:1.0.0",
     "androidx.legacy:legacy-support-v4:1.0.0",
     "androidx.lifecycle:lifecycle-common:2.8.7",

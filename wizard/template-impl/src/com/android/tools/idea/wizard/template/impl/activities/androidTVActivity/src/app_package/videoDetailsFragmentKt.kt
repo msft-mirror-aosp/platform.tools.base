@@ -68,8 +68,6 @@ import java.util.Collections
  */
 class ${detailsFragment} : DetailsSupportFragment() {
 
-    private var mSelectedMovie: Movie? = null
-
     private lateinit var mDetailsBackground: DetailsSupportFragmentBackgroundController
     private lateinit var mPresenterSelector: ClassPresenterSelector
     private lateinit var mAdapter: ArrayObjectAdapter
@@ -80,96 +78,107 @@ class ${detailsFragment} : DetailsSupportFragment() {
 
         mDetailsBackground = DetailsSupportFragmentBackgroundController(this)
 
-        mSelectedMovie = activity!!.intent.getSerializableExtra(${detailsActivity}.MOVIE) as Movie
-        if (mSelectedMovie != null) {
+        var selectedMovie: Movie? = activity!!.intent.getSerializableExtra(${detailsActivity}.MOVIE) as Movie?
+        if (selectedMovie != null) {
             mPresenterSelector = ClassPresenterSelector()
             mAdapter = ArrayObjectAdapter(mPresenterSelector)
-            setupDetailsOverviewRow()
-            setupDetailsOverviewRowPresenter()
+            setupDetailsOverviewRow(selectedMovie)
+            setupDetailsOverviewRowPresenter(selectedMovie)
             setupRelatedMovieListRow()
             adapter = mAdapter
-            initializeBackground(mSelectedMovie)
-            onItemViewClickedListener = ItemViewClickedListener()
+            initializeBackground(selectedMovie)
+            onItemViewClickedListener = ItemViewClickedListener(selectedMovie)
         } else {
             val intent = Intent($contextArgBlock, ${activityClass}::class.java)
             startActivity(intent)
         }
     }
 
-    private fun initializeBackground(movie: Movie?) {
+    private fun initializeBackground(movie: Movie) {
         mDetailsBackground.enableParallax()
         Glide.with($contextArgBlock)
-                .asBitmap()
-                .centerCrop()
-                .error(R.drawable.default_background)
-                .load(movie?.backgroundImageUrl)
-                .into<SimpleTarget<Bitmap>>(object : SimpleTarget<Bitmap>() {
-                    override fun onResourceReady(bitmap: Bitmap,
-                                                 transition: Transition<in Bitmap>?) {
-                        mDetailsBackground.coverBitmap = bitmap
-                        mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size())
-                    }
-                })
+            .asBitmap()
+            .centerCrop()
+            .error(R.drawable.default_background)
+            .load(movie?.backgroundImageUrl)
+            .into<SimpleTarget<Bitmap>>(object : SimpleTarget<Bitmap>() {
+                override fun onResourceReady(
+                    bitmap: Bitmap,
+                    transition: Transition<in Bitmap>?
+                ) {
+                    mDetailsBackground.coverBitmap = bitmap
+                    mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size())
+                }
+            })
     }
 
-    private fun setupDetailsOverviewRow() {
-        Log.d(TAG, "doInBackground: " + mSelectedMovie?.toString())
-        val row = DetailsOverviewRow(mSelectedMovie)
+    private fun setupDetailsOverviewRow(movie: Movie) {
+        Log.d(TAG, "doInBackground: " + movie.toString())
+        val row = DetailsOverviewRow(movie)
         row.imageDrawable = ContextCompat.getDrawable($contextArgBlock, R.drawable.default_background)
         val width = convertDpToPixel($contextArgBlock, DETAIL_THUMB_WIDTH)
         val height = convertDpToPixel($contextArgBlock, DETAIL_THUMB_HEIGHT)
         Glide.with($contextArgBlock)
-            .load(mSelectedMovie?.cardImageUrl)
+            .load(movie.cardImageUrl)
             .centerCrop()
             .error(R.drawable.default_background)
             .into<SimpleTarget<Drawable>>(object : SimpleTarget<Drawable>(width, height) {
-                        override fun onResourceReady(drawable: Drawable,
-                                                     transition: Transition<in Drawable>?) {
-                            Log.d(TAG, "details overview card image url ready: " + drawable)
-                            row.imageDrawable = drawable
-                            mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size())
-                        }
-                    })
+                override fun onResourceReady(
+                    drawable: Drawable,
+                    transition: Transition<in Drawable>?
+                ) {
+                    Log.d(TAG, "details overview card image url ready: " + drawable)
+                    row.imageDrawable = drawable
+                    mAdapter.notifyArrayItemRangeChanged(0, mAdapter.size())
+                }
+            })
 
         val actionAdapter = ArrayObjectAdapter()
 
         actionAdapter.add(
-                Action(
-                        ACTION_WATCH_TRAILER,
-                        resources.getString(R.string.watch_trailer_1),
-                        resources.getString(R.string.watch_trailer_2)))
+            Action(
+                ACTION_WATCH_TRAILER,
+                resources.getString(R.string.watch_trailer_1),
+                resources.getString(R.string.watch_trailer_2)
+            )
+        )
         actionAdapter.add(
-                Action(
-                        ACTION_RENT,
-                        resources.getString(R.string.rent_1),
-                        resources.getString(R.string.rent_2)))
+            Action(
+                ACTION_RENT,
+                resources.getString(R.string.rent_1),
+                resources.getString(R.string.rent_2)
+            )
+        )
         actionAdapter.add(
-                Action(
-                        ACTION_BUY,
-                        resources.getString(R.string.buy_1),
-                        resources.getString(R.string.buy_2)))
+            Action(
+                ACTION_BUY,
+                resources.getString(R.string.buy_1),
+                resources.getString(R.string.buy_2)
+            )
+        )
         row.actionsAdapter = actionAdapter
 
         mAdapter.add(row)
     }
 
-    private fun setupDetailsOverviewRowPresenter() {
+    private fun setupDetailsOverviewRowPresenter(movie: Movie) {
         // Set detail background.
         val detailsPresenter = FullWidthDetailsOverviewRowPresenter(DetailsDescriptionPresenter())
         detailsPresenter.backgroundColor =
-                ContextCompat.getColor($contextArgBlock, R.color.selected_background)
+            ContextCompat.getColor($contextArgBlock, R.color.selected_background)
 
         // Hook up transition element.
         val sharedElementHelper = FullWidthDetailsOverviewSharedElementHelper()
         sharedElementHelper.setSharedElementEnterTransition(
-                activity, ${detailsActivity}.SHARED_ELEMENT_NAME)
+            activity, ${detailsActivity}.SHARED_ELEMENT_NAME
+        )
         detailsPresenter.setListener(sharedElementHelper)
         detailsPresenter.isParticipatingEntranceTransition = true
 
         detailsPresenter.onActionClickedListener = OnActionClickedListener { action ->
             if (action.id == ACTION_WATCH_TRAILER) {
                 val intent = Intent($contextArgBlock, PlaybackActivity::class.java)
-                intent.putExtra(${detailsActivity}.MOVIE, mSelectedMovie)
+                intent.putExtra(${detailsActivity}.MOVIE, movie)
                 startActivity(intent)
             } else {
                 Toast.makeText($contextArgBlock, action.toString(), Toast.LENGTH_SHORT).show()
@@ -184,7 +193,7 @@ class ${detailsFragment} : DetailsSupportFragment() {
 
         Collections.shuffle(list)
         val listRowAdapter = ArrayObjectAdapter(CardPresenter())
-        for (j in 0 until NUM_COLS ) {
+        for (j in 0 until NUM_COLS) {
             listRowAdapter.add(list[j % 5])
         }
 
@@ -198,22 +207,24 @@ class ${detailsFragment} : DetailsSupportFragment() {
         return Math.round(dp.toFloat() * density)
     }
 
-    private inner class ItemViewClickedListener : OnItemViewClickedListener {
+    private inner class ItemViewClickedListener(private val movie: Movie) : OnItemViewClickedListener {
         override fun onItemClicked(
-                itemViewHolder: Presenter.ViewHolder?,
-                item: Any?,
-                rowViewHolder: RowPresenter.ViewHolder,
-                row: Row) {
+            itemViewHolder: Presenter.ViewHolder,
+            item: Any?,
+            rowViewHolder: RowPresenter.ViewHolder,
+            row: Row
+        ) {
             if (item is Movie) {
                 Log.d(TAG, "Item: " + item.toString())
                 val intent = Intent($contextArgBlock, ${detailsActivity}::class.java)
-                intent.putExtra(resources.getString(R.string.movie), mSelectedMovie)
+                intent.putExtra(resources.getString(R.string.movie), movie)
 
                 val bundle =
-                        ActivityOptionsCompat.makeSceneTransitionAnimation(
-                            activity!!,
-                            (itemViewHolder?.view as ImageCardView).mainImageView,
-                            ${detailsActivity}.SHARED_ELEMENT_NAME)
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        activity!!,
+                        (itemViewHolder.view as ImageCardView).mainImageView!!,
+                        ${detailsActivity}.SHARED_ELEMENT_NAME
+                    )
                         .toBundle()
                 startActivity(intent, bundle)
             }
