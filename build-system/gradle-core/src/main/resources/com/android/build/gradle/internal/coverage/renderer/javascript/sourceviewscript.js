@@ -170,7 +170,6 @@ const SourceViewApp = {
 
     bindEvents() {
         this.elements.variantFilterBtn.addEventListener('click', this.toggleVariantDropdown.bind(this));
-        this.elements.variantFilters.addEventListener('change', this.handleVariantToggle.bind(this));
         this.elements.functionSearch.addEventListener('input', this.handleFunctionSearch.bind(this));
         this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
@@ -222,31 +221,6 @@ const SourceViewApp = {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
             }
         });
-    },
-
-    handleVariantToggle(e) {
-        const checkbox = e.target;
-        const variant = checkbox.dataset.variant;
-        const available = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
-
-        if (variant === 'all') {
-            this.state.selectedVariants = checkbox.checked ? available : [];
-            this.elements.variantFilters.querySelectorAll('.variant-toggle').forEach(cb => {
-                cb.checked = checkbox.checked;
-            });
-        } else {
-            if (checkbox.checked) {
-                this.state.selectedVariants.push(variant);
-            } else {
-                this.state.selectedVariants = this.state.selectedVariants.filter(v => v !== variant);
-            }
-
-            const allCheckbox = this.elements.variantFilters.querySelector('[data-variant="all"]');
-            if(allCheckbox) allCheckbox.checked = this.state.selectedVariants.length === available.length;
-        }
-
-        this.renderAllVariantViews();
-        this.updateVariantButtonText();
     },
 
     updateVariantButtonText() {
@@ -319,14 +293,12 @@ const SourceViewApp = {
     },
 
     renderFilters(availableVariants) {
-        const variantOptions = [{name: 'All', value: 'all'}, ...availableVariants.map(v => ({name: v, value: v}))];
+        const variantOptions = availableVariants.map(v => ({name: v, value: v}));
 
-        this.elements.variantFilters.innerHTML = variantOptions.map(opt => `
-            <label class="flex items-center gap-2 cursor-pointer px-2 py-1 hover:bg-gray-100 rounded">
-                <input type="checkbox" class="variant-toggle w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" data-variant="${opt.value}" ${this.state.selectedVariants.includes(opt.value) || (this.state.selectedVariants.length === availableVariants.length && opt.value === 'all') ? 'checked' : ''} />
-                <span class="text-sm text-gray-700">${opt.name}</span>
-            </label>
-        `).join('');
+        UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
+            this.renderAllVariantViews();
+            this.updateVariantButtonText();
+        }, false);
     },
 
     renderFunctionList() {
@@ -354,12 +326,6 @@ const SourceViewApp = {
         if (covered === 0 && total > 0) return 'cell-uncovered';
         if (covered === total) return 'cell-covered';
         return 'cell-partial';
-    },
-
-    getTextClass(percent) {
-        if (percent >=80) return 'text-green-600';
-        if (percent >= 60) return 'text-yellow-600';
-        return 'text-red-600';
     },
 
     /**
@@ -403,7 +369,7 @@ const SourceViewApp = {
         const percent = summaryStats ? summaryStats.instruction.percent : 0;
         const covered = summaryStats ? summaryStats.instruction.covered : 0;
         const total = summaryStats ? summaryStats.instruction.total : 0;
-        const colorClass = this.getTextClass(percent);
+        const colorClass = UIUtils.getCoverageClass(percent);
 
         const tbody = fileReport.linesCoverages.map(line => {
             const { lineNumber, lineText, variantCoverageDetails } = line;
