@@ -19,12 +19,10 @@ package com.android.build.gradle.integration.testing.suites
 import com.android.Version
 import com.android.build.api.dsl.AgpTestSuite
 import com.android.build.api.dsl.AgpTestSuiteInputParameters
-import com.android.build.api.testsuites.TestSuiteExecutionClient
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.AssumeUtil
 import org.junit.Rule
 import org.junit.Test
 import org.junit.platform.engine.EngineDiscoveryRequest
@@ -35,6 +33,8 @@ import org.junit.platform.engine.TestEngine
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.ClassSource
+import org.junit.platform.engine.support.descriptor.MethodSource
 
 class TestSuitesTestReportTest {
 
@@ -47,7 +47,12 @@ class TestSuitesTestReportTest {
         jar("org.junit.platform:junit-platform-launcher:1.10.1")
         jar("org.jetbrains.kotlin:kotlin-stdlib:2.1.20")
         jar("com.test:custom-junit-engine:1.0")
-          .addClasses(CustomJunitEngineForTesting::class.java, CustomTestDescriptor::class.java, CustomEngineDescriptor::class.java)
+          .addClasses(
+            CustomJunitEngineForTesting::class.java,
+            CustomTestDescriptor::class.java,
+            CustomEngineDescriptor::class.java,
+            CustomClassDescriptor::class.java,
+          )
           .addTextFile("META-INF/services/org.junit.platform.engine.TestEngine", CustomJunitEngineForTesting::class.java.name)
       }
       .from {
@@ -75,7 +80,6 @@ class TestSuitesTestReportTest {
 
   @Test
   fun testSingleModuleReporting() {
-    AssumeUtil.assumeNotWindows()
     val build = rule.build
     build.executor.run(":app:createTestReport")
     val xmlFiles =
@@ -100,7 +104,6 @@ class TestSuitesTestReportTest {
 
   @Test
   fun testAcrossModuleReporting() {
-    AssumeUtil.assumeNotWindows()
     val build =
       rule.build {
         androidLibrary {
@@ -142,13 +145,17 @@ class TestSuitesTestReportTest {
     override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
   }
 
-  class CustomTestDescriptor(uniqueId: UniqueId, testDescriptor: String) : AbstractTestDescriptor(uniqueId, testDescriptor) {
+  class CustomClassDescriptor(uniqueId: UniqueId, className: String) :
+    AbstractTestDescriptor(uniqueId, className, ClassSource.from(className)) {
+    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+  }
+
+  class CustomTestDescriptor(uniqueId: UniqueId, testDescriptor: String, private val className: String) :
+    AbstractTestDescriptor(uniqueId, testDescriptor, MethodSource.from(className, testDescriptor)) {
     override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
   }
 
   class CustomJunitEngineForTesting : TestEngine {
-
-    private val inputParams = TestSuiteExecutionClient.default()
 
     override fun getId(): String {
       return "[engine:custom-junit-engine-for-tests]"
@@ -157,36 +164,43 @@ class TestSuitesTestReportTest {
     override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
       val engineDescriptor = CustomEngineDescriptor(uniqueId)
 
-      val testId = uniqueId.append("test", "some-test")
-      val testDescriptor = CustomTestDescriptor(testId, "testFunctionName")
-      engineDescriptor.addChild(testDescriptor)
+      val classId = uniqueId.append("class", "some-class")
+      val classDescriptor = CustomClassDescriptor(classId, "testClassName")
+      engineDescriptor.addChild(classDescriptor)
+
+      val testId = classId.append("test", "some-test")
+      val testDescriptor = CustomTestDescriptor(testId, "testFunctionName", "testClassName")
+      classDescriptor.addChild(testDescriptor)
 
       return engineDescriptor
     }
 
     override fun execute(request: ExecutionRequest) {
       val listener: EngineExecutionListener = request.engineExecutionListener
-      val rootDescriptor = request.rootTestDescriptor
-
-      listener.executionStarted(rootDescriptor)
-
-      for (testDescriptor in rootDescriptor.children) {
-        listener.executionStarted(testDescriptor)
-        val testResult =
-          try {
-            val testSucceeded = System.getenv("CUSTOM_ENGINE_SUCCEED")?.toBoolean() ?: true
-            if (testSucceeded) {
-              TestExecutionResult.successful()
-            } else {
-              TestExecutionResult.failed(Exception("Test failed"))
+      fun executeNode(descriptor: TestDescriptor) {
+        listener.executionStarted(descriptor)
+        if (descriptor is CustomTestDescriptor) {
+          val testResult =
+            try {
+              val testSucceeded = System.getenv("CUSTOM_ENGINE_SUCCEED")?.toBoolean() ?: true
+              if (testSucceeded) {
+                TestExecutionResult.successful()
+              } else {
+                TestExecutionResult.failed(Exception("Test failed"))
+              }
+            } catch (t: Throwable) {
+              TestExecutionResult.failed(t)
             }
-          } catch (t: Throwable) {
-            TestExecutionResult.failed(t)
+          listener.executionFinished(descriptor, testResult)
+        } else {
+          for (child in descriptor.children) {
+            executeNode(child)
           }
-        listener.executionFinished(testDescriptor, testResult)
+          listener.executionFinished(descriptor, TestExecutionResult.successful())
+        }
       }
 
-      listener.executionFinished(rootDescriptor, TestExecutionResult.successful())
+      executeNode(request.rootTestDescriptor)
     }
   }
 }
