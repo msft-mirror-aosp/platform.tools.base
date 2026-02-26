@@ -16,39 +16,76 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuilder
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.utils.FileUtils
-import com.google.common.truth.Truth
-import org.junit.Before
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.HostTestBuilder
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.google.common.truth.Truth.assertThat
+import kotlin.io.path.exists
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 class JacocoWithUnitTestThroughVariantApiTest {
-  @get:Rule val testProject = GradleTestProjectBuilder().fromTestProject("unitTesting").create()
 
-  @Before
-  fun setup() {
-    // Make sure you can turn on code coverage though the variant API.
-    TestFileUtils.appendToFile(
-      testProject.buildFile,
-      """
-      androidComponents {
-          beforeVariants(selector().withBuildType("debug")) {
-              it.hostTests.get(
-                  com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE
-              ).enableCodeCoverage = true
-          }
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidApplication {
+        android {
+          namespace = "com.example.helloworld"
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+
+          files.add(
+            "src/main/java/com/example/helloworld/HelloWorld.java",
+            // language=java
+            """
+            package com.example.helloworld;
+
+            public class HelloWorld {
+                public void foo() {}
+            }
+            """
+              .trimIndent(),
+          )
+
+          files.add(
+            "src/test/java/com/example/helloworld/HelloWorldTest.java",
+            // language=java
+            """
+            package com.example.helloworld;
+
+            import org.junit.Test;
+
+            public class HelloWorldTest {
+                @Test
+                public void testFoo() {
+                    new HelloWorld().foo();
+                }
+            }
+            """
+              .trimIndent(),
+          )
+        }
+        dependencies { testImplementation("junit:junit:4.13.2") }
+        pluginCallbacks += EnableUnitTestCoverageCallback::class.java
       }
-      """
-        .trimIndent(),
-    )
+    }
+
+  class EnableUnitTestCoverageCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) {
+        it.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enableCodeCoverage = true
+      }
+    }
   }
 
   @Test
   fun `test expected report contents`() {
-    testProject.executor().run("createDebugUnitTestCoverageReport")
-    val generatedCoverageReport = FileUtils.join(testProject.buildDir, "reports", "coverage", "test", "debug", "index.html")
-    Truth.assertThat(generatedCoverageReport.exists()).isTrue()
+    val build = rule.build
+    build.executor.run(":app:createDebugUnitTestCoverageReport")
+    val generatedCoverageReport = build.androidApplication().buildDir.resolve("reports/coverage/test/debug/index.html")
+    assertThat(generatedCoverageReport.exists()).isTrue()
   }
 }

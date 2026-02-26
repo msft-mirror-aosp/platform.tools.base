@@ -99,7 +99,6 @@ com.android.build.gradle.integration.application.JacocoWithButterKnifeTest
 com.android.build.gradle.integration.application.JacocoWithKotlinTest
 com.android.build.gradle.integration.application.JacocoWithMinificationIntegrationTest
 com.android.build.gradle.integration.application.JacocoWithUnitTestReportTest
-com.android.build.gradle.integration.application.JacocoWithUnitTestThroughVariantApiTest
 com.android.build.gradle.integration.application.JarJarTest
 com.android.build.gradle.integration.application.Java11CompileTest
 com.android.build.gradle.integration.application.Java11CompositeBuildTest
