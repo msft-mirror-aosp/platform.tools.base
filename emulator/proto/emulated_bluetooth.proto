@@ -33,10 +33,10 @@ service EmulatedBluetoothService {
     // the emulated device to read/write and subscribe to properties.
     //
     // The following gRPC error codes can be returned:
-    // -  FAILED_PRECONDITION (code 9):
-    //      - root canal is not available on this device
-    //      - unable to reach the endpoint for the GattDevice
-    // -  INTERNAL (code 13) if there was an internal emulator failure.
+    // -  INTERNAL (code 13) if:
+    //     - The 'nimble_bridge' executable is missing.
+    //     - Unable to create a temporary file for the device description.
+    //     - Failed to launch the nimble bridge process.
     //
     // The device will not be discoverable in case of an error.
     rpc registerGattDevice(GattDevice) returns (RegistrationStatus);
