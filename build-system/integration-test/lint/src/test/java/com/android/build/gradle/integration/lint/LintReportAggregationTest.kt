@@ -20,7 +20,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import org.junit.Rule
 import org.junit.Test
 
@@ -105,19 +104,16 @@ class LintReportAggregationTest {
 
   @Test
   fun testAppUpdateLintBaseline() {
-    configureBaseline()
     checkLintBaselineUpdate(task = ":app:updateLintBaselineDebug", expectAppBaseline = true, expectLibBaseline = false)
   }
 
   @Test
   fun testLibUpdateLintBaseline() {
-    configureBaseline()
     checkLintBaselineUpdate(task = ":lib:updateLintBaselineDebug", expectAppBaseline = false, expectLibBaseline = true)
   }
 
   @Test
   fun testTopLevelUpdateLintBaseline() {
-    configureBaseline()
     checkLintBaselineUpdate(task = "updateLintBaseline", expectAppBaseline = true, expectLibBaseline = true)
   }
 
@@ -138,11 +134,6 @@ class LintReportAggregationTest {
     assertThat(aggregatedReport).contains("AuthLeak")
   }
 
-  private fun configureBaseline() {
-    rule.build.androidApplication(":app").reconfigure { android { lint { baseline = File("lint-baseline.xml") } } }
-    rule.build.androidLibrary(":lib").reconfigure { android { lint { baseline = File("lint-baseline.xml") } } }
-  }
-
   private fun checkLintBaselineUpdate(task: String, expectAppBaseline: Boolean, expectLibBaseline: Boolean) {
     val build = rule.build
     val appBaseline = build.directory.resolve("app/lint-baseline.xml")
@@ -151,7 +142,7 @@ class LintReportAggregationTest {
     assertThat(appBaseline).doesNotExist()
     assertThat(libBaseline).doesNotExist()
 
-    build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(task)
+    build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run(task)
 
     if (expectAppBaseline) {
       assertThat(appBaseline).exists()
@@ -168,5 +159,21 @@ class LintReportAggregationTest {
     } else {
       assertThat(libBaseline).doesNotExist()
     }
+  }
+
+  @Test
+  fun testUpdateLintBaselineWithExplicitBaseline() {
+    rule.build.androidApplication(":app").reconfigure { android { lint { baseline = java.io.File("explicit-baseline.xml") } } }
+    val build = rule.build
+    val explicitBaseline = build.directory.resolve("app/explicit-baseline.xml")
+    val defaultBaseline = build.directory.resolve("app/lint-baseline.xml")
+
+    assertThat(explicitBaseline).doesNotExist()
+    assertThat(defaultBaseline).doesNotExist()
+
+    build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:updateLintBaselineDebug")
+
+    assertThat(explicitBaseline).exists()
+    assertThat(defaultBaseline).doesNotExist()
   }
 }

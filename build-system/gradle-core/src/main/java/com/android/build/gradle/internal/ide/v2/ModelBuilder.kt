@@ -776,7 +776,11 @@ class ModelBuilder<ExtensionT : CommonExtension>(
       productFlavors = productFlavors,
       signingConfigs = extension.signingConfigs.map { it.convert() },
       aaptOptions = extension.androidResources.convert(),
-      lintOptions = extension.lint.convert(),
+      lintOptions =
+        extension.lint.convert(
+          project.layout.projectDirectory.asFile,
+          variantModel.projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
+        ),
       installation = extension.installation.convert(),
       dependenciesInfo = dependenciesInfo,
     )

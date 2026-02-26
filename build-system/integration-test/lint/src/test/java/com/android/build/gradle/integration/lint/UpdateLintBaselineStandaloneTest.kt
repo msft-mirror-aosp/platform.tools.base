@@ -176,4 +176,29 @@ class UpdateLintBaselineStandaloneTest {
     val result = project.executor().with(BooleanOption.MISSING_LINT_BASELINE_IS_EMPTY_BASELINE, true).expectFailure().run("lint")
     ScannerSubject.assertThat(result.stdout).contains("UseValueOf")
   }
+
+  @Test
+  fun testDefaultBaseline() {
+    val baselineFile = File(project.projectDir, "lint-baseline.xml")
+    PathSubject.assertThat(baselineFile).doesNotExist()
+
+    TestFileUtils.appendToFile(
+      project.buildFile,
+      """
+      lint {
+          error 'UseValueOf', 'JavaPluginLanguageLevel'
+      }
+      """
+        .trimIndent(),
+    )
+
+    // First, run updateLintBaseline with default baseline convention disabled and check that the baseline file is NOT written.
+    project.executor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, false).run("updateLintBaseline")
+    PathSubject.assertThat(baselineFile).doesNotExist()
+
+    // Then, run updateLintBaseline with default baseline convention enabled and check that the baseline file IS written.
+    project.executor().with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run("updateLintBaseline")
+    PathSubject.assertThat(baselineFile).exists()
+    PathSubject.assertThat(baselineFile).contains("UseValueOf")
+  }
 }

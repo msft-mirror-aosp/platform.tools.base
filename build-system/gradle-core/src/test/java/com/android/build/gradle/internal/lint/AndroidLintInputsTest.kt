@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.internal.lint
 
+import com.android.build.gradle.internal.dsl.LintImpl
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.internal.services.createDslServices
 import com.android.build.gradle.options.ProjectOptions
 import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
@@ -161,6 +163,85 @@ class AndroidLintInputsTest {
     assertThat(resolved.first().moduleGroup).isEqualTo("org.ow2.asm")
     assertThat(resolved.first().moduleName).isEqualTo("asm")
     assertThat(resolved.first().moduleVersion).isEqualTo("9.1")
+  }
+
+  @Test
+  fun `test baseline convention with DSL baseline set`() {
+    checkBaselineConvention(
+      setup = { projectDir, lintOptions ->
+        val dslBaseline = File(projectDir, "dsl-baseline.xml")
+        dslBaseline.createNewFile()
+        lintOptions.baseline = dslBaseline
+        dslBaseline
+      },
+      useBaselineConvention = true,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  @Test
+  fun `test baseline convention with default file exists`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val defaultBaseline = File(projectDir, "lint-baseline.xml")
+        defaultBaseline.createNewFile()
+        defaultBaseline
+      },
+      useBaselineConvention = true,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test baseline convention with default file does not exist, not updating`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ -> File(projectDir, "lint-baseline.xml") },
+      useBaselineConvention = true,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test baseline convention with default file does not exist, updating`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ -> File(projectDir, "lint-baseline.xml") },
+      mode = LintMode.UPDATE_BASELINE,
+      useBaselineConvention = true,
+      expectedDefaultBaseline = true,
+    )
+  }
+
+  @Test
+  fun `test baseline convention disabled by property`() {
+    checkBaselineConvention(
+      setup = { projectDir, _ ->
+        val defaultBaseline = File(projectDir, "lint-baseline.xml")
+        defaultBaseline.createNewFile()
+        null
+      },
+      useBaselineConvention = false,
+      expectedDefaultBaseline = false,
+    )
+  }
+
+  private fun checkBaselineConvention(
+    setup: (File, LintImpl) -> File?,
+    mode: LintMode = LintMode.REPORTING,
+    useBaselineConvention: Boolean,
+    expectedDefaultBaseline: Boolean,
+  ) {
+    val projectDir = temporaryFolder.newFolder()
+    val projectDirectory = project.layout.projectDirectory.dir(projectDir.absolutePath)
+    val lintOptionsInput = project.objects.newInstance(LintOptionsInput::class.java)
+    val dslServices = createDslServices()
+    val lintOptions = dslServices.newDecoratedInstance(LintImpl::class.java, dslServices)
+
+    val expectedBaselineFile = setup(projectDir, lintOptions)
+
+    lintOptionsInput.initialize(lintOptions, mode, projectDirectory, useBaselineConvention)
+
+    assertThat(lintOptionsInput.toLintModel().baselineFile?.absolutePath).isEqualTo(expectedBaselineFile?.absolutePath)
+    assertThat(lintOptionsInput.defaultBaseline.get()).isEqualTo(expectedDefaultBaseline)
   }
 
   private fun createMavenArtifact(repoDir: File, group: String, artifact: String, version: String) {

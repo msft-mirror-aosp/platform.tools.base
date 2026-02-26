@@ -246,4 +246,29 @@ class UpdateLintBaselineTest {
     PathSubject.assertThat(baselineFile).exists()
     PathSubject.assertThat(baselineFile).doesNotContain("line=")
   }
+
+  @Test
+  fun testDefaultBaseline() {
+    projectWithoutIssues.build.androidApplication(":app").reconfigure {
+      android.lint {
+        error += "MissingApplicationIcon"
+        error += "GradleDependency"
+        disable -= "MissingApplicationIcon"
+        disable -= "GradleDependency"
+        // baseline is NOT set
+      }
+    }
+
+    val defaultBaselineFile = projectWithoutIssues.build.androidApplication(":app").resolve("lint-baseline.xml").toFile()
+    PathSubject.assertThat(defaultBaselineFile).doesNotExist()
+
+    // First, run updateLintBaseline with default baseline convention disabled and check that the baseline file is NOT written.
+    projectWithoutIssues.build.executor.with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, false).run("updateLintBaseline")
+    PathSubject.assertThat(defaultBaselineFile).doesNotExist()
+
+    // Then, run updateLintBaseline with default baseline convention enabled and check that the baseline file IS written.
+    projectWithoutIssues.build.executor.with(BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION, true).run("updateLintBaseline")
+    PathSubject.assertThat(defaultBaselineFile).exists()
+    PathSubject.assertThat(defaultBaselineFile).contains("MissingApplicationIcon")
+  }
 }
