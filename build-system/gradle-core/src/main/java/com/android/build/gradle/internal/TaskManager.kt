@@ -111,6 +111,7 @@ import com.android.build.gradle.internal.tasks.ManagedDeviceSetupTask
 import com.android.build.gradle.internal.tasks.ManagedDeviceTestTask
 import com.android.build.gradle.internal.tasks.MergeAaptProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeClassesTask
+import com.android.build.gradle.internal.tasks.MergeCompressedJavaResTask
 import com.android.build.gradle.internal.tasks.MergeGeneratedProguardFilesCreationAction
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.build.gradle.internal.tasks.MergeNativeLibsTask
@@ -777,7 +778,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    */
   protected fun createMergeJavaResTask(creationConfig: ConsumableCreationConfig) {
     // Compute the scopes that need to be merged.
-    taskFactory.register(MergeJavaResourceTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+      taskFactory.register(MergeCompressedJavaResTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    } else {
+      taskFactory.register(MergeJavaResourceTask.CreationAction(javaResMergingScopes, creationConfig.packaging, creationConfig))
+    }
   }
 
   protected fun createAidlTask(creationConfig: ConsumableCreationConfig) {

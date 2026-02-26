@@ -33,6 +33,7 @@ abstract class JavaResCompressionTransform : TransformAction<GenericTransformPar
 
   override fun transform(outputs: TransformOutputs) {
     val inputFile = inputArtifact.get().asFile
+    if (!inputFile.exists()) return
     val outputFile = outputs.file("${inputFile.nameWithoutExtension}${SdkConstants.DOT_JAR}")
     UncompressedJavaRes.Jar(inputFile).compressToJar(outputFile)
   }
