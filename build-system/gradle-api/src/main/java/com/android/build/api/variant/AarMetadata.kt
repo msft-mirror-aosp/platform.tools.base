@@ -16,6 +16,8 @@
 
 package com.android.build.api.variant
 
+import com.android.build.api.dsl.CompileSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
 import org.gradle.api.Incubating
 import org.gradle.api.provider.Property
 
@@ -30,7 +32,12 @@ interface AarMetadata {
    * Minimum compileSdkVersion needed to consume this library. This is the minimum sdk version a module must use in order to import this
    * library.
    */
-  val minCompileSdk: Property<Int>
+  @Deprecated("Use minCompileSdk() instead. Once minCompileSdk() is set, this property has no effect.") val minCompileSdk: Property<Int>
+
+  /** Do not set this property directly. Use [minCompileSdk] instead. */
+  val minCompileSdkVersion: Property<CompileSdkVersion>
+
+  fun minCompileSdk(action: MinCompileSdkSpec.() -> Unit)
 
   /**
    * Minimum compileSdkExtension needed to consume this library. This is the minimum sdk extension version a module must use in order to
@@ -38,7 +45,9 @@ interface AarMetadata {
    *
    * The default value of [minCompileSdkExtension] is 0 if not set via the DSL.
    */
-  @get:Incubating val minCompileSdkExtension: Property<Int>
+  @get:Incubating
+  @Deprecated("Use minCompileSdk() instead. Once minCompileSdk() is set, this property has no effect.")
+  val minCompileSdkExtension: Property<Int>
 
   /**
    * Minimum Android Gradle Plugin version needed to consume this library. This is the minimum AGP version a module must use in order to

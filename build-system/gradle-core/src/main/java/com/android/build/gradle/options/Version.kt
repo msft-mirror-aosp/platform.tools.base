@@ -41,6 +41,7 @@ enum class Version(val major: Int, val minor: Int) {
   VERSION_8_3(8, 3),
   VERSION_8_11(8, 11),
   VERSION_9_0(9, 0),
+  VERSION_9_2(9, 2),
   VERSION_10_0(10, 0),
   VERSION_11_0(11, 0); // end of enums
 

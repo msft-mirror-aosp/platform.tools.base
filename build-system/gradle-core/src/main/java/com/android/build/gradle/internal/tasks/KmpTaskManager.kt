@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.UnitTestTaskManager
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedMergeSourceSetFoldersCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
@@ -42,7 +43,6 @@ import com.android.build.gradle.internal.res.GenerateApiPublicTxtTask
 import com.android.build.gradle.internal.res.GenerateEmptyResourceFilesTask
 import com.android.build.gradle.internal.res.GenerateLibraryRFileTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.tasks.LibraryJniLibsTask.ProjectOnlyCreationAction
 import com.android.build.gradle.internal.tasks.creationconfig.ProcessJavaResCreationConfig
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
@@ -127,7 +127,8 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
 
       // tasks to package assets in the library aar
       variant.taskContainer.assetGenTask = taskFactory.register(variant.computeTaskNameInternal("generate", "Assets"))
-      taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(variant, false))
+      val mergeSourceSetFoldersCreationConfig = ComponentBasedMergeSourceSetFoldersCreationConfig(variant, { variant.sources.assets })
+      taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(mergeSourceSetFoldersCreationConfig, false))
     }
 
     project.tasks.registerTask(
@@ -179,7 +180,6 @@ class KmpTaskManager(project: Project, global: GlobalTaskCreationConfig) : TaskM
 
     if (variant.optimizationCreationConfig.minifiedEnabled) {
       project.tasks.registerTask(GenerateLibraryProguardRulesTask.CreationAction(variant))
-      R8MaxParallelTasksBuildService.RegistrationAction(project, variant.services.projectOptions).execute()
       project.tasks.registerTask(R8Task.CreationAction(variant, isTestApplication = false, addCompileRClass = false))
       if ((variant as? ApplicationCreationConfig)?.runResourceShrinking() == true) {
         // Also convert shrunk resources from proto format to binary format so it can be

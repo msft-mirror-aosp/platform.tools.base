@@ -51,5 +51,5 @@ public class ToolsRevisionUtils {
      * encourage build authors to upgrade the Android Gradle Plugin.
      */
     public static final AndroidVersion MAX_RECOMMENDED_COMPILE_SDK_VERSION =
-            SdkConstants.MAX_SUPPORTED_ANDROID_PLATFORM_VERSION;
+            new AndroidVersion(37, 0);
 }

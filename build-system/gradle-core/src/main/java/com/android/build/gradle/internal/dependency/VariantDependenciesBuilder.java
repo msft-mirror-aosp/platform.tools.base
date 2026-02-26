@@ -749,9 +749,6 @@ public class VariantDependenciesBuilder {
     }
 
     private boolean shouldConfigureKotlinPlatformAttribute(ProjectOptions projectOptions) {
-        if (projectOptions.get(BooleanOption.DISABLE_KOTLIN_ATTRIBUTE_SETUP)) {
-            return false;
-        }
         boolean legacyOrBuiltInKotlinPluginApplied =
                 kgpApplied()
                         || projectOptions.get(BooleanOption.BUILT_IN_KOTLIN)

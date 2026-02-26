@@ -15,95 +15,103 @@
  */
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.fixture.LoggingLevel
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleBuild
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
-import org.junit.Before
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 class JacocoLibraryProjectTest {
 
-  @Rule @JvmField val project = builder().fromTestApp(HelloWorldApp.forPlugin("com.android.library")).create()
+  @get:Rule
+  val rule =
+    GradleRule.from {
+      androidLibrary(":lib") {
+        android {
+          namespace = "com.example.helloworld"
 
-  @Before
-  fun enableCodeCoverage() {
-    project.projectDir.resolve("src/test/java/example/MyTest.java").also {
-      it.parentFile.mkdirs()
-      it.writeText(
-        """
-        package example;
-        import org.junit.Test;
+          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
 
-        public class MyTest {
-            @Test
-            public void foo() {
-                System.out.println(com.example.helloworld.HelloWorld.class);
-            }
+          defaultConfig { minSdk { version = release(24) } }
+
+          dependencies { testImplementation("junit:junit:4.13.2") }
+
+          files {
+            add(
+              "src/main/java/com/example/helloworld/HelloWorld.java",
+              // language=java
+              """
+              package com.example.helloworld;
+
+              import android.app.Activity;
+              import android.os.Bundle;
+
+              public class HelloWorld extends Activity {
+                  @Override
+                  public void onCreate(Bundle savedInstanceState) {
+                      super.onCreate(savedInstanceState);
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/test/java/example/MyTest.java",
+              // language=java
+              """
+              package example;
+              import org.junit.Test;
+
+              public class MyTest {
+                  @Test
+                  public void foo() {
+                      System.out.println(com.example.helloworld.HelloWorld.class);
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
         }
+      }
+    }
 
-        """
-          .trimIndent()
-      )
+  class EnableCodeCoverageCallback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.beforeVariants(androidComponents.selector().withBuildType("debug")) {
+        it.hostTests[com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE]?.enableCodeCoverage = true
+      }
     }
   }
 
   @Test
   fun testUnitTestsWithJacocoPlugin() {
-    val buildFile = project.buildFile.readText()
-    project.buildFile.writeText(
-      """
-            apply plugin: 'jacoco'
-
-            $buildFile
-            android.buildTypes.debug.enableAndroidTestCoverage = true
-            dependencies {
-                testImplementation "junit:junit:4.12"
-            }
-        """
-        .trimIndent()
-    )
-    verifyJacocoExecution()
+    val build = rule.build { androidLibrary(":lib") { android { buildTypes { named("debug") { it.enableUnitTestCoverage = true } } } } }
+    verifyJacocoExecution(build)
   }
 
   @Test
   fun testUnitTestsWithJacocoThroughVariantApi() {
-    val buildFile = project.buildFile.readText()
-    project.buildFile.writeText(
-      """
-            apply plugin: 'jacoco'
-
-            $buildFile
-
-            dependencies {
-                testImplementation "junit:junit:4.12"
-            }
-
-            androidComponents {
-                beforeVariants(selector().withBuildType("debug")) {
-                    it.hostTests.get(
-                        com.android.build.api.variant.HostTestBuilder.UNIT_TEST_TYPE
-                    ).enableCodeCoverage = true
-                }
-            }
-            """
-        .trimIndent()
-    )
-    verifyJacocoExecution()
+    val build = rule.build { androidLibrary(":lib") { pluginCallbacks += EnableCodeCoverageCallback::class.java } }
+    verifyJacocoExecution(build)
   }
 
-  private fun verifyJacocoExecution() {
-    val result = project.executor().withLoggingLevel(LoggingLevel.INFO).run("createDebugUnitTestCoverageReport")
+  private fun verifyJacocoExecution(build: GradleBuild) {
+    val result = build.executor.run(":lib:createDebugUnitTestCoverageReport")
 
-    assertThat(result.stdout).doesNotContain("Cannot process instrumented class")
+    result.assertOutputDoesNotContain("Cannot process instrumented class")
 
-    val coverageData = project.buildDir.walk().filter { it.extension == "exec" }.toList()
+    val libProject = build.androidLibrary(":lib")
+    val buildDir = libProject.buildDir.toFile()
+    val coverageData = buildDir.walk().filter { it.extension == "exec" }.toList()
     assertThat(coverageData).hasSize(1)
 
-    val coveragePackageFolder = FileUtils.join(project.buildDir, "reports", "coverage", "test", "debug", "com.example.helloworld")
+    val coveragePackageFolder = FileUtils.join(buildDir, "reports", "coverage", "test", "debug", "com.example.helloworld")
 
     assertThat(coveragePackageFolder.exists()).isTrue()
 

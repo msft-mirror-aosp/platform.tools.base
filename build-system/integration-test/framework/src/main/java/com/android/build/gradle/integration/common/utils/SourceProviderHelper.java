@@ -21,7 +21,9 @@ import static org.junit.Assert.assertEquals;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.v2.ide.SourceProvider;
+
 import com.google.common.truth.Truth;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -29,7 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class SourceProviderHelper {
+public class SourceProviderHelper {
 
     @NonNull
     private final String projectName;
@@ -164,7 +166,7 @@ public final class SourceProviderHelper {
                                 .collect(Collectors.toList()));
     }
 
-    private void testSinglePathCollection(
+    protected void testSinglePathCollection(
             @NonNull String setName,
             @NonNull String referencePath,
             @Nullable Collection<File> pathSet) {

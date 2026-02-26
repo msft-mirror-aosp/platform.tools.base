@@ -41,6 +41,7 @@ kotlin_library(
         "src/main/java/**/*.java",
         "src/main/java/**/*.kt",
     ]),
+    jvm_target = "17",
     visibility = ["//visibility:public"],
     deps = [
         "//prebuilts/tools/common/archive-patcher:explainer",

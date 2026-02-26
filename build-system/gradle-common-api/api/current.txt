@@ -35,6 +35,107 @@ package com.android.build.api.dsl {
     property public abstract String? vendorName;
   }
 
+  public interface Lint {
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getAbortOnError();
+    method @InaccessibleFromKotlin public boolean getAbsolutePaths();
+    method @InaccessibleFromKotlin public java.io.File? getBaseline();
+    method @InaccessibleFromKotlin public boolean getCheckAllWarnings();
+    method @InaccessibleFromKotlin public boolean getCheckDependencies();
+    method @InaccessibleFromKotlin public boolean getCheckGeneratedSources();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getCheckOnly();
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getCheckReleaseBuilds();
+    method @InaccessibleFromKotlin public boolean getCheckTestSources();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getDisable();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getEnable();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getError();
+    method @InaccessibleFromKotlin public boolean getExplainIssues();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getFatal();
+    method @InaccessibleFromKotlin public java.io.File? getHtmlOutput();
+    method @InaccessibleFromKotlin public boolean getHtmlReport();
+    method @InaccessibleFromKotlin @Deprecated public java.util.Set<java.lang.String> getIgnore();
+    method @InaccessibleFromKotlin public boolean getIgnoreTestFixturesSources();
+    method @InaccessibleFromKotlin public boolean getIgnoreTestSources();
+    method @InaccessibleFromKotlin public boolean getIgnoreWarnings();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getInformational();
+    method @InaccessibleFromKotlin public java.io.File? getLintConfig();
+    method @InaccessibleFromKotlin public boolean getNoLines();
+    method @InaccessibleFromKotlin public boolean getQuiet();
+    method @InaccessibleFromKotlin public java.io.File? getSarifOutput();
+    method @InaccessibleFromKotlin public boolean getSarifReport();
+    method @InaccessibleFromKotlin public boolean getShowAll();
+    method @InaccessibleFromKotlin public Integer? getTargetSdk();
+    method @InaccessibleFromKotlin public String? getTargetSdkPreview();
+    method @InaccessibleFromKotlin public java.io.File? getTextOutput();
+    method @InaccessibleFromKotlin public boolean getTextReport();
+    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getWarning();
+    method @InaccessibleFromKotlin public boolean getWarningsAsErrors();
+    method @InaccessibleFromKotlin public java.io.File? getXmlOutput();
+    method @InaccessibleFromKotlin public boolean getXmlReport();
+    method @InaccessibleFromKotlin public void setAbortOnError(boolean);
+    method @InaccessibleFromKotlin public void setAbsolutePaths(boolean);
+    method @InaccessibleFromKotlin public void setBaseline(java.io.File?);
+    method @InaccessibleFromKotlin public void setCheckAllWarnings(boolean);
+    method @InaccessibleFromKotlin public void setCheckDependencies(boolean);
+    method @InaccessibleFromKotlin public void setCheckGeneratedSources(boolean);
+    method @InaccessibleFromKotlin public void setCheckReleaseBuilds(boolean);
+    method @InaccessibleFromKotlin public void setCheckTestSources(boolean);
+    method @InaccessibleFromKotlin public void setExplainIssues(boolean);
+    method @InaccessibleFromKotlin public void setHtmlOutput(java.io.File?);
+    method @InaccessibleFromKotlin public void setHtmlReport(boolean);
+    method @InaccessibleFromKotlin public void setIgnoreTestFixturesSources(boolean);
+    method @InaccessibleFromKotlin public void setIgnoreTestSources(boolean);
+    method @InaccessibleFromKotlin public void setIgnoreWarnings(boolean);
+    method @InaccessibleFromKotlin public void setLintConfig(java.io.File?);
+    method @InaccessibleFromKotlin public void setNoLines(boolean);
+    method @InaccessibleFromKotlin public void setQuiet(boolean);
+    method @InaccessibleFromKotlin public void setSarifOutput(java.io.File?);
+    method @InaccessibleFromKotlin public void setSarifReport(boolean);
+    method @InaccessibleFromKotlin public void setShowAll(boolean);
+    method @InaccessibleFromKotlin public void setTargetSdk(Integer?);
+    method @InaccessibleFromKotlin public void setTargetSdkPreview(String?);
+    method @InaccessibleFromKotlin public void setTextOutput(java.io.File?);
+    method @InaccessibleFromKotlin public void setTextReport(boolean);
+    method @InaccessibleFromKotlin public void setWarningsAsErrors(boolean);
+    method @InaccessibleFromKotlin public void setXmlOutput(java.io.File?);
+    method @InaccessibleFromKotlin public void setXmlReport(boolean);
+    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
+    property public abstract boolean absolutePaths;
+    property public abstract java.io.File? baseline;
+    property public abstract boolean checkAllWarnings;
+    property public abstract boolean checkDependencies;
+    property public abstract boolean checkGeneratedSources;
+    property public abstract java.util.Set<java.lang.String> checkOnly;
+    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean checkReleaseBuilds;
+    property public abstract boolean checkTestSources;
+    property public abstract java.util.Set<java.lang.String> disable;
+    property public abstract java.util.Set<java.lang.String> enable;
+    property public abstract java.util.Set<java.lang.String> error;
+    property public abstract boolean explainIssues;
+    property public abstract java.util.Set<java.lang.String> fatal;
+    property public abstract java.io.File? htmlOutput;
+    property public abstract boolean htmlReport;
+    property @Deprecated public abstract java.util.Set<java.lang.String> ignore;
+    property public abstract boolean ignoreTestFixturesSources;
+    property public abstract boolean ignoreTestSources;
+    property public abstract boolean ignoreWarnings;
+    property public abstract java.util.Set<java.lang.String> informational;
+    property public abstract java.io.File? lintConfig;
+    property public abstract boolean noLines;
+    property public abstract boolean quiet;
+    property public abstract java.io.File? sarifOutput;
+    property public abstract boolean sarifReport;
+    property public abstract boolean showAll;
+    property public abstract Integer? targetSdk;
+    property public abstract String? targetSdkPreview;
+    property public abstract java.io.File? textOutput;
+    property public abstract boolean textReport;
+    property public abstract java.util.Set<java.lang.String> warning;
+    property public abstract boolean warningsAsErrors;
+    property public abstract java.io.File? xmlOutput;
+    property public abstract boolean xmlReport;
+  }
+
   public interface MaxSdkSpec {
     method @InaccessibleFromKotlin public com.android.build.api.dsl.MaxSdkVersion? getVersion();
     method public com.android.build.api.dsl.MaxSdkVersion release(int version);
@@ -45,6 +146,14 @@ package com.android.build.api.dsl {
   public interface MaxSdkVersion {
     method @InaccessibleFromKotlin public int getApiLevel();
     property public abstract int apiLevel;
+  }
+
+  public interface MinCompileSdkSpec {
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.CompileSdkVersion? getVersion();
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version);
+    method public com.android.build.api.dsl.CompileSdkVersion release(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkReleaseSpec,kotlin.Unit> action);
+    method @InaccessibleFromKotlin public void setVersion(com.android.build.api.dsl.CompileSdkVersion?);
+    property public abstract com.android.build.api.dsl.CompileSdkVersion? version;
   }
 
   public interface MinSdkSpec {

@@ -240,4 +240,21 @@ class AarMetadataTaskTest {
 
     AarMetadataSubject.assertThat(aarMetadataFile) { forceCompileSdkPreview().isEqualTo("Tiramisu") }
   }
+
+  @Test
+  fun testMinSdkWithMinor() {
+    val build =
+      rule.build {
+        androidLibrary { android { defaultConfig { aarMetadata { minCompileSdk { version = release(33) { minorApiLevel = 1 } } } } } }
+      }
+
+    build.executor.run(":lib:assembleDebug")
+
+    build.androidLibrary().assertAar(AarSelector.DEBUG) {
+      aarMetadata {
+        this.minCompileSdk().isEqualTo("33")
+        this.minCompileSdkMinor().isEqualTo("1")
+      }
+    }
+  }
 }

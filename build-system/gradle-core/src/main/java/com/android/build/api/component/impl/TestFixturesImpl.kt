@@ -23,6 +23,7 @@ import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.JavaCompilation
 import com.android.build.api.variant.ResValue
 import com.android.build.api.variant.TestFixtures
+import com.android.build.api.variant.impl.AarMetadataUtil
 import com.android.build.api.variant.impl.ResValueKeyImpl
 import com.android.build.gradle.internal.component.PublishableCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
@@ -34,15 +35,18 @@ import com.android.build.gradle.internal.component.legacy.OldVariantApiLegacySup
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.TestFixturesComponentDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.publishing.VariantPublishingInfo
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
 import com.android.build.gradle.internal.services.BuiltInKotlinSupportMode
+import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
 import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
+import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.testFixtures.testFixturesFeatureName
 import com.android.build.gradle.internal.utils.KOTLIN_ANDROID_PLUGIN_ID
@@ -72,6 +76,7 @@ constructor(
   variantServices: VariantServices,
   taskCreationServices: TaskCreationServices,
   global: GlobalTaskCreationConfig,
+  dslServices: DslServices,
 ) :
   ComponentImpl<TestFixturesComponentDslInfo>(
     componentIdentity,
@@ -119,11 +124,13 @@ constructor(
     get() = (mainVariant as? PublishableCreationConfig)?.publishInfo
 
   override val aarMetadata: AarMetadata =
-    internalServices.newInstance(AarMetadata::class.java).also {
-      it.minCompileSdk.set(1)
-      it.minCompileSdkExtension.set(DEFAULT_MIN_COMPILE_SDK_EXTENSION)
-      it.minAgpVersion.set(DEFAULT_MIN_AGP_VERSION)
-    }
+    AarMetadataUtil.createAndInitialize(
+      dslServices,
+      taskCreationServices,
+      global,
+      CompileSdkVersionImpl(apiLevel = DEFAULT_MIN_COMPILE_SDK_VERSION, sdkExtension = DEFAULT_MIN_COMPILE_SDK_EXTENSION),
+      DEFAULT_MIN_AGP_VERSION,
+    )
 
   override val javaCompilation: JavaCompilation =
     JavaCompilationImpl(variantDslInfo.javaCompileOptionsSetInDSL, buildFeatures.dataBinding, internalServices, variantDependencies)

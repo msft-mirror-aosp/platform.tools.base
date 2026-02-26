@@ -385,6 +385,14 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       arguments += "--offline"
     }
 
+    if (projectInputs.lintOptions.checkDependencies.isPresent) {
+      arguments += if (projectInputs.lintOptions.checkDependencies.get()) {
+        "--check-dependencies"
+      } else {
+        "--no-check-dependencies"
+      }
+    }
+
     return Collections.unmodifiableList(arguments)
   }
 
@@ -443,6 +451,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     override val fatalOnly: Boolean
       get() = false
 
+    override val checkDependenciesOverride: Boolean
+      get() = false
+
     override val autoFix: Boolean
       get() = false
 
@@ -486,6 +497,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
 
     override val description: String
       get() = "Create aggregated lint report on the ${creationConfig.name} variant"
+
+    override val checkDependenciesOverride: Boolean
+      get() = true
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
       registerLintReportArtifacts(
@@ -566,6 +580,14 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     override val description: String
       get() = "Update the lint baseline using the ${creationConfig.name} variant"
 
+    override val checkDependenciesOverride: Boolean?
+      get() =
+        if (creationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION)) {
+          false
+        } else {
+          super.checkDependenciesOverride
+        }
+
     override fun configureOutputSettings(task: AndroidLintTask) {
       // do nothing
     }
@@ -580,6 +602,8 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     abstract val autoFix: Boolean
     abstract val description: String
     abstract val lintMode: LintMode
+    open val checkDependenciesOverride: Boolean?
+      get() = null
 
     final override fun configure(task: AndroidLintTask) {
       super.configure(task)
@@ -604,7 +628,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       }
       task.lintFixBuildService.disallowChanges()
       task.checkOnly.setDisallowChanges(creationConfig.services.provider { creationConfig.global.lintOptions.checkOnly })
-      task.projectInputs.initialize(variant, lintMode)
+      task.projectInputs.initialize(variant, lintMode, checkDependenciesOverride)
       task.outputs.upToDateWhen {
         // Workaround for b/193244776
         // Ensure the task runs if inputBaselineFile is set and the file doesn't exist,
@@ -941,7 +965,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.lintFixBuildService.disallowChanges()
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
     this.lintTool.initialize(taskCreationServices, this)
-    this.projectInputs.initializeForStandalone(project, javaPluginExtension, lintOptions, lintMode)
+    this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, lintMode)
     // Workaround for b/193244776 - Ensure the task runs if a baseline file is set and the file
     // doesn't exist, unless missingBaselineIsEmptyBaseline is true.
     this.outputs.upToDateWhen {

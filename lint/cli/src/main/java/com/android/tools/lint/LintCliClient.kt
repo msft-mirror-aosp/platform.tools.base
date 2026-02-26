@@ -99,8 +99,6 @@ import java.net.URL
 import java.net.URLConnection
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.Collections
-import java.util.IdentityHashMap
 import org.jetbrains.jps.model.java.impl.JavaSdkUtil
 import org.jetbrains.kotlin.analysis.api.KaNonPublicApi
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
@@ -1222,7 +1220,7 @@ open class LintCliClient : LintClient {
   }
 
   /** Returns true if Kotlin scripting may be required based on the [driver]'s [LintDriver.scope] and the files in [allProjects]. */
-  private fun mayNeedKotlinScripting(allProjects: Set<Project>): Boolean {
+  private fun mayNeedKotlinScripting(allProjects: Collection<Project>): Boolean {
     if (allProjects.none { it.isGradleProject }) {
       return false
     }
@@ -1238,29 +1236,28 @@ open class LintCliClient : LintClient {
     return false
   }
 
-  private fun <T> identitySet(): MutableSet<T> {
-    return Collections.newSetFromMap(IdentityHashMap<T, Boolean>())
-  }
+  private class IdentityWrapper<T>(val value: T) {
+    override fun equals(other: Any?) =
+      when {
+        this === other -> true
+        other !is IdentityWrapper<*> -> false
+        else -> this.value === other.value
+      }
 
-  private fun <T> Sequence<T>.toIdentitySet(): MutableSet<T> {
-    val result = identitySet<T>()
-    for (element in this) {
-      result.add(element)
-    }
-
-    return result
+    override fun hashCode(): Int = System.identityHashCode(value)
   }
 
   public override fun initializeProjects(driver: LintDriver?, knownProjects: Collection<Project>) {
     if (driver?.mode == LintDriver.DriverMode.MERGE) {
       // The costly parsing environment is not required (or supported!) when merging
-      val config = UastEnvironment.Configuration.create(enableKotlinScripting = false, useFirUast = flags.useK2Uast() && useFirUast())
+      val config = UastEnvironment.Configuration.create(enableKotlinScripting = false)
       val env = UastEnvironment.create(config)
       uastEnvironment = env
       return
     }
-    // knownProject only lists root projects, not dependencies
-    val allProjects = knownProjects.asSequence().flatMap { sequenceOf(it) + it.allLibraries }.toIdentitySet()
+    // knownProject only lists root projects, not dependencies.
+    // Note: we avoid collecting the projects into an IdentityHashMap because the project order then becomes nondeterministic.
+    val allProjects = knownProjects.asSequence().flatMap { sequenceOf(it) + it.allLibraries }.distinctBy(::IdentityWrapper).toList()
 
     val bootClassPaths = getBootClassPath(knownProjects)
     // Don't initialize JDK classpath in UastEnvironmentUtils if
@@ -1281,11 +1278,7 @@ open class LintCliClient : LintClient {
         require(file.isAbsolute) { "Relative Path found: $file. All paths should be absolute." }
       }
     }
-    val config =
-      UastEnvironment.Configuration.create(
-        enableKotlinScripting = mayNeedKotlinScripting(allProjects),
-        useFirUast = flags.useK2Uast() && useFirUast(),
-      )
+    val config = UastEnvironment.Configuration.create(enableKotlinScripting = mayNeedKotlinScripting(allProjects))
     config.javaLanguageLevel = maxLevel
     config.addModules(allModules, bootClassPaths)
     kotlinPerformanceManager?.let { config.kotlinCompilerConfig.perfManager = it }

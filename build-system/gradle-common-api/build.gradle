@@ -23,6 +23,7 @@ plugins {
 
 dependencies {
     implementation libs.kotlin_stdlib
+    compileOnly gradleApi()
 
     metalavaTestImplementation libs.com.android.tools.testutils
     metalavaTestImplementation libs.guava

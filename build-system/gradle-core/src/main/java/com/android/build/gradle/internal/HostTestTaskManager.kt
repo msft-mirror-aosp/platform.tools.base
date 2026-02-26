@@ -24,8 +24,8 @@ import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.coverage.JacocoConfigurations
-import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.coverage.JacocoReportTask
+import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
 import com.android.build.gradle.internal.lint.AndroidLintAnalysisTask
 import com.android.build.gradle.internal.lint.LintModelWriterTask
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -34,7 +34,6 @@ import com.android.build.gradle.internal.tasks.PackageForHostTest
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.StringOption
 import com.android.build.gradle.tasks.GenerateTestConfig
 import com.android.build.gradle.tasks.factory.AndroidUnitTest
 import com.google.common.collect.ImmutableSet
@@ -44,7 +43,6 @@ import org.gradle.api.file.RegularFile
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
-import org.gradle.testing.jacoco.plugins.JacocoPluginExtension
 
 open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreationConfig) : TaskManager(project, globalConfig) {
 
@@ -64,30 +62,6 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     taskFactory.configure(JavaBasePlugin.CHECK_TASK_NAME) { check: Task -> check.dependsOn(taskName) }
   }
 
-  /**
-   * This version will be set for the Jacoco plugin extension in AndroidUnitTest, and the JacocoReportTask Test Ant configuration.
-   *
-   * The priority of version that will be chosen is:
-   * 1. Gradle Property: [StringOption.JACOCO_TOOL_VERSION]
-   * 2. Android DSL: android.testCoverage.jacocoVersion
-   * 3. Jacoco DSL: jacoco.toolVersion
-   * 4. JacocoOptions.DEFAULT_VERSION
-   */
-  protected fun getJacocoVersion(hostTestCreationConfig: HostTestCreationConfig): String {
-    val jacocoVersionProjectOption = hostTestCreationConfig.services.projectOptions[StringOption.JACOCO_TOOL_VERSION]
-    if (!jacocoVersionProjectOption.isNullOrEmpty()) {
-      return jacocoVersionProjectOption
-    }
-    if ((hostTestCreationConfig.global.testCoverage as JacocoOptions).versionSetByUser) {
-      return hostTestCreationConfig.global.testCoverage.jacocoVersion
-    }
-    val pluginExtension = project.extensions.findByType(JacocoPluginExtension::class.java)
-    if (pluginExtension != null) {
-      return pluginExtension.toolVersion
-    }
-    return JacocoOptions.DEFAULT_VERSION
-  }
-
   protected fun createRunHostTestTask(
     hostTestCreationConfig: HostTestCreationConfig,
     taskName: String,
@@ -99,14 +73,18 @@ open class HostTestTaskManager(project: Project, globalConfig: GlobalTaskCreatio
     }
     val runTestsTask =
       taskFactory.register(
-        AndroidUnitTest.CreationAction(hostTestCreationConfig, getJacocoVersion(hostTestCreationConfig), internalArtifactType)
+        AndroidUnitTest.CreationAction(
+          hostTestCreationConfig,
+          getUnitTestJacocoVersion(project, hostTestCreationConfig),
+          internalArtifactType,
+        )
       )
 
     hostTestCreationConfig.runTestTaskConfigurationActions(runTestsTask)
     taskFactory.configure(taskName) { test: Task -> test.dependsOn(runTestsTask) }
 
     if (hostTestCreationConfig.codeCoverageEnabled) {
-      val ant = JacocoConfigurations.getJacocoAntTaskConfiguration(project, getJacocoVersion(hostTestCreationConfig))
+      val ant = JacocoConfigurations.getJacocoAntTaskConfiguration(project, getUnitTestJacocoVersion(project, hostTestCreationConfig))
       project.plugins.withType(JacocoPlugin::class.java) {
         // Jacoco plugin is applied and test coverage enabled, ∴ generate coverage report.
         taskFactory.register(JacocoReportTask.CreateActionHostTest(hostTestCreationConfig, ant, coverageTestTaskName, internalArtifactType))

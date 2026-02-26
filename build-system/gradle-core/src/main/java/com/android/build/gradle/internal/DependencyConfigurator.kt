@@ -207,6 +207,7 @@ class DependencyConfigurator(private val project: Project, private val projectSe
         AndroidArtifacts.ArtifactType.COMPILED_DEPENDENCIES_RESOURCES,
       ) { params ->
         projectServices.initializeAapt2Input(params.aapt2, task = null)
+        params.gradleUserHomePath.setDisallowChanges(project.gradle.gradleUserHomeDir.absolutePath)
       }
     }
     // API Jar: Produce a single API jar that can also contain the library R class from the AAR

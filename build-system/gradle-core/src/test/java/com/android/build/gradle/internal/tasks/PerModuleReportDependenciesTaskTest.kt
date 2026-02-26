@@ -55,6 +55,7 @@ import org.gradle.api.artifacts.repositories.IvyArtifactRepository
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedVariantResult
+import org.gradle.api.internal.artifacts.ivyservice.resolveengine.result.ComponentSelectionReasonInternal
 import org.gradle.api.internal.artifacts.repositories.DefaultIvyArtifactRepository
 import org.gradle.api.internal.artifacts.repositories.DefaultMavenArtifactRepository
 import org.gradle.api.internal.artifacts.result.ResolvedComponentResultInternal
@@ -253,4 +254,6 @@ private class FakeResolvedComponentResultInternal(thingy: ResolvedComponentResul
   override fun getVariant(id: Long): ResolvedVariantResult? {
     TODO("Not yet implemented")
   }
+
+  override fun getSelectionReason(): ComponentSelectionReasonInternal? = null
 }

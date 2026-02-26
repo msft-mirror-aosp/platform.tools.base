@@ -12,3 +12,4 @@ rule com.google.longrunning.** com.android.tools.idea.com.google.longrunning.@1
 rule com.google.rpc.** com.android.tools.idea.com.google.rpc.@1
 rule com.google.shopping.** com.android.tools.idea.com.google.shopping.@1
 rule com.google.type.** com.android.tools.idea.com.google.type.@1
+rule io.opencensus.** com.android.tools.idea.io.opencensus.@1

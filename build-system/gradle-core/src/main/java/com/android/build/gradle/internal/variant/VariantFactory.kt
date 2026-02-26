@@ -81,6 +81,7 @@ interface VariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT : Var
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): VariantT
 
   fun createTestFixtures(
@@ -96,6 +97,7 @@ interface VariantFactory<VariantBuilderT : VariantBuilder, VariantDslInfoT : Var
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): TestFixturesCreationConfig
 
   fun createUnitTest(

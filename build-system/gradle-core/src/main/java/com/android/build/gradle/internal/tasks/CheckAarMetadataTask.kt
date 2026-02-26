@@ -22,10 +22,13 @@ import com.android.SdkConstants.DESUGAR_JDK_LIB_PROPERTY
 import com.android.SdkConstants.FORCE_COMPILE_SDK_PREVIEW_PROPERTY
 import com.android.SdkConstants.MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_EXTENSION_PROPERTY
+import com.android.SdkConstants.MIN_COMPILE_SDK_MINOR_PROPERTY
 import com.android.SdkConstants.MIN_COMPILE_SDK_PROPERTY
 import com.android.Version
+import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.ide.dependencies.getIdString
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
@@ -116,7 +119,7 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
 
   @get:Input abstract val agpVersion: Property<String>
 
-  @get:Input abstract val maxRecommendedStableCompileSdkVersionForThisAgp: Property<Int>
+  @get:Input abstract val maxRecommendedStableCompileSdkVersionForThisAgp: Property<CompileSdkVersion>
 
   @get:Input abstract val disableCompileSdkChecks: Property<Boolean>
 
@@ -189,7 +192,12 @@ abstract class CheckAarMetadataTask : NonIncrementalTask() {
         task.desugarJdkLibDependencyGraph.set(getDesugarLibDependencyGraph(creationConfig.services))
       }
       task.maxRecommendedStableCompileSdkVersionForThisAgp.setDisallowChanges(
-        ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel
+        ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.let {
+          CompileSdkVersionImpl(
+            apiLevel = it.androidApiLevel.majorVersion,
+            minorApiLevel = it.androidApiLevel.minorVersion.takeIf { it > 0 },
+          )
+        }
       )
       task.platformSdkExtension.setDisallowChanges(
         creationConfig.global.versionedSdkLoader.flatMap { sdkLoader -> sdkLoader.targetAndroidVersionProvider.map { it.extensionLevel } }
@@ -414,39 +422,70 @@ abstract class CheckAarMetadataWorkAction : WorkAction<CheckAarMetadataWorkParam
               .trimIndent()
           )
         } else {
-          val compileSdkVersion = parameters.compileSdkVersion.get()
-          val compileSdkVersionInt =
-            getApiIntFromString(compileSdkVersion).let {
-              if (it > SdkVersionInfo.HIGHEST_KNOWN_API) {
-                parameters.platformSdkApiLevel.get()
-              } else {
-                it
-              }
-            }
-          if (minCompileSdkInt > compileSdkVersionInt) {
-            val maxRecommendedCompileSdk = parameters.maxRecommendedStableCompileSdkVersionForThisAgp.get()
-            val recommendation =
-              if (minCompileSdkInt <= maxRecommendedCompileSdk) {
-                """
-                                Recommended action: Update this project to use a newer compileSdk
-                                of at least $minCompileSdk, for example $maxRecommendedCompileSdk.
+          val minCompileSdkMinorString = aarMetadataReader.minCompileSdkMinor
+          val minCompileSdkMinor = minCompileSdkMinorString?.toIntOrNull()
+          if (minCompileSdkMinorString != null && minCompileSdkMinor == null) {
+            errorMessages.add(
+              """
+                            The AAR metadata for dependency '$displayName' has an invalid
+                            $MIN_COMPILE_SDK_MINOR_PROPERTY value ($minCompileSdkMinorString).
+
+                            $MIN_COMPILE_SDK_MINOR_PROPERTY must be an integer.
                             """
+                .trimIndent()
+            )
+          }
+          val compileSdkVersion = parameters.compileSdkVersion.get()
+          val compileSdkData = parseTargetHash(compileSdkVersion)
+          val apiLevelInt =
+            compileSdkData.apiLevel
+              ?: compileSdkData.codeName?.let { SdkVersionInfo.getApiByPreviewName(it, true) }
+              ?: throw RuntimeException("Unsupported target hash: $compileSdkVersion")
+
+          val compileSdkVersionInt =
+            if (apiLevelInt > SdkVersionInfo.HIGHEST_KNOWN_API) {
+              parameters.platformSdkApiLevel.get()
+            } else {
+              apiLevelInt
+            }
+          val compileSdkVersionMinor = compileSdkData.minorApiLevel ?: 0
+
+          val isCompatible =
+            minCompileSdkInt < compileSdkVersionInt ||
+              (minCompileSdkInt == compileSdkVersionInt && (minCompileSdkMinor == null || minCompileSdkMinor <= compileSdkVersionMinor))
+
+          if (!isCompatible) {
+            val minCompileSdkDisplay = listOfNotNull(minCompileSdk, minCompileSdkMinor?.takeIf { it > 0 }).joinToString(separator = ".")
+            val maxRecommendedCompileSdk = parameters.maxRecommendedStableCompileSdkVersionForThisAgp.get()
+            val maxRecommendedCompileSdkDisplay =
+              listOfNotNull(maxRecommendedCompileSdk.apiLevel, maxRecommendedCompileSdk.minorApiLevel?.takeIf { it > 0 })
+                .joinToString(separator = ".")
+            val minCompileSdkSupported =
+              minCompileSdkInt <= (maxRecommendedCompileSdk.apiLevel ?: 0) ||
+                (minCompileSdkInt == (maxRecommendedCompileSdk.apiLevel ?: 0) &&
+                  (minCompileSdkMinor ?: 0) <= (maxRecommendedCompileSdk.minorApiLevel ?: 0))
+            val recommendation =
+              if (minCompileSdkSupported) {
+                """
+                  Recommended action: Update this project to use a newer compileSdk
+                  ${ if (minCompileSdkDisplay == maxRecommendedCompileSdkDisplay) { "of $maxRecommendedCompileSdkDisplay." } else { "of at least $minCompileSdkDisplay, for example $maxRecommendedCompileSdkDisplay." } }
+                  """
                   .trimIndent()
               } else {
                 """
                                 Also, the maximum recommended compile SDK version for Android Gradle
-                                plugin ${parameters.agpVersion.get()} is $maxRecommendedCompileSdk.
+                                plugin ${parameters.agpVersion.get()} is $maxRecommendedCompileSdkDisplay.
 
                                 Recommended action: Update this project's version of the Android Gradle
-                                plugin to one that supports $minCompileSdk, then update this project to use
-                                compileSdk of at least $minCompileSdk.
+                                plugin to one that supports $minCompileSdkDisplay, then update this project to use
+                                compileSdk of at least $minCompileSdkDisplay.
                             """
                   .trimIndent()
               }
             errorMessages.add(
               """
                                 Dependency '$displayName' requires libraries and applications that
-                                depend on it to compile against version $minCompileSdk or later of the
+                                depend on it to compile against version $minCompileSdkDisplay or later of the
                                 Android APIs.
 
                                 ${parameters.projectPath.get()} is currently compiled against $compileSdkVersion.
@@ -574,23 +613,6 @@ abstract class CheckAarMetadataWorkAction : WorkAction<CheckAarMetadataWorkParam
       }
     }
   }
-
-  /** Return the [Int] API version, given a string representation, or [SdkVersionInfo.HIGHEST_KNOWN_API] + 1 if an unknown version. */
-  private fun getApiIntFromString(sdkVersion: String): Int {
-    val compileData = parseTargetHash(sdkVersion)
-    if (compileData.apiLevel != null) {
-      // this covers normal compileSdk + addons.
-      return compileData.apiLevel
-    }
-
-    if (compileData.codeName != null) {
-      return SdkVersionInfo.getApiByPreviewName(compileData.codeName, true)
-    }
-
-    // this should not happen since the target hash should be valid (this is running inside a
-    // task).
-    throw RuntimeException("Unsupported target hash: $sdkVersion")
-  }
 }
 
 /** [WorkParameters] for [CheckAarMetadataWorkAction] */
@@ -605,7 +627,7 @@ abstract class CheckAarMetadataWorkParameters : WorkParameters {
   abstract val platformSdkExtension: Property<Int>
   abstract val platformSdkApiLevel: Property<Int>
   abstract val agpVersion: Property<String>
-  abstract val maxRecommendedStableCompileSdkVersionForThisAgp: Property<Int>
+  abstract val maxRecommendedStableCompileSdkVersionForThisAgp: Property<CompileSdkVersion>
   abstract val projectPath: Property<String>
   abstract val disableCompileSdkChecks: Property<Boolean>
   abstract val disallowedAsarArtifacts: ListProperty<String>
@@ -616,6 +638,7 @@ data class AarMetadataReader(
   val aarFormatVersion: String?,
   val aarMetadataVersion: String?,
   val minCompileSdk: String?,
+  val minCompileSdkMinor: String?,
   val minAgpVersion: String?,
   val forceCompileSdkPreview: String?,
   val minCompileSdkExtension: String?,
@@ -631,6 +654,7 @@ data class AarMetadataReader(
         aarFormatVersion = properties.getProperty(AAR_FORMAT_VERSION_PROPERTY),
         aarMetadataVersion = properties.getProperty(AAR_METADATA_VERSION_PROPERTY),
         minCompileSdk = properties.getProperty(MIN_COMPILE_SDK_PROPERTY),
+        minCompileSdkMinor = properties.getProperty(MIN_COMPILE_SDK_MINOR_PROPERTY),
         minAgpVersion = properties.getProperty(MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY),
         forceCompileSdkPreview = properties.getProperty(FORCE_COMPILE_SDK_PREVIEW_PROPERTY),
         minCompileSdkExtension = properties.getProperty(MIN_COMPILE_SDK_EXTENSION_PROPERTY),

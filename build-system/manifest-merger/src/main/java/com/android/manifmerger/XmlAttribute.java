@@ -16,6 +16,8 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.ManifestModel.NodeTypes;
+
 import com.android.SdkConstants;
 import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourcePosition;
@@ -36,10 +38,12 @@ import java.util.Optional;
  *
  * Basically a facade object on {@link Attr} objects with some added features like automatic
  * namespace handling, manifest merger friendly identifiers and smart replacement of shortened
- * full qualified class names using manifest node's package setting from the the owning Android's
+ * full qualified class names using manifest node's package setting from the owning Android's
  * document.
  */
 public class XmlAttribute extends XmlNode {
+
+    private static final String PROPERTY_REQUIRE_SECURE_ENV = "REQUIRE_SECURE_ENV";
 
     @NotNull
     private final XmlElement mOwnerElement;
@@ -93,6 +97,11 @@ public class XmlAttribute extends XmlNode {
                 // We know it's a shortened FQCN if it starts with a dot
                 // or does not contain any dot.
                 if (value.indexOf('.') == -1 || value.charAt(0) == '.') {
+                    // b/445646882: REQUIRE_SECURE_ENV should not be namespaced
+                    if (mOwnerElement.isA(NodeTypes.PROPERTY)
+                            && PROPERTY_REQUIRE_SECURE_ENV.equals(value)) {
+                        return;
+                    }
                     if (value.charAt(0) == '.') {
                         value = pkg + value;
                     } else {

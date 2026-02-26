@@ -99,7 +99,7 @@ sealed class SingleArtifact<T : FileSystemLocation>(
    *
    * To add new folders to [ASSETS], you must use [com.android.build.api.variant.Sources.assets]
    */
-  @Incubating object ASSETS : SingleArtifact<Directory>(DIRECTORY), Replaceable, Transformable
+  object ASSETS : SingleArtifact<Directory>(DIRECTORY), Replaceable, Transformable
 
   /**
    * Universal APK that contains assets for all screen densities. It is not optimized for particular phone and is much bigger than regular

@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.resources
 
-import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
@@ -325,8 +324,7 @@ class PrecompileRemoteResourcesTest {
     var outputDir: File? = null
     for (subdirectory in transformCacheDir.listFiles()!!) {
       if (subdirectory.isDirectory) {
-        val windowsPlatformPrefix = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) "workspace/" else ""
-        val outputDirCandidate = File(subdirectory, "${windowsPlatformPrefix}transformed/com.precompileRemoteResourcesTest.publishedLib")
+        val outputDirCandidate = File(subdirectory, "transformed/com.precompileRemoteResourcesTest.publishedLib")
         if (outputDirCandidate.exists() && outputDirCandidate.isDirectory) {
           assertWithMessage("Found more than one directory that could contain the output of the transform").that(outputDir).isNull()
           outputDir = outputDirCandidate

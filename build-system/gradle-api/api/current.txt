@@ -199,7 +199,7 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.APK_FROM_BUNDLE INSTANCE;
   }
 
-  @org.gradle.api.Incubating public static final class SingleArtifact.ASSETS extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.Directory> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
+  public static final class SingleArtifact.ASSETS extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.Directory> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.SingleArtifact.ASSETS INSTANCE;
   }
 
@@ -296,6 +296,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getMinAgpVersion();
     method @InaccessibleFromKotlin public Integer? getMinCompileSdk();
     method @InaccessibleFromKotlin public Integer? getMinCompileSdkExtension();
+    method public void minCompileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinCompileSdkSpec,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setMinAgpVersion(String?);
     method @InaccessibleFromKotlin public void setMinCompileSdk(Integer?);
     method @InaccessibleFromKotlin public void setMinCompileSdkExtension(Integer?);
@@ -341,6 +342,7 @@ package com.android.build.api.dsl {
   public enum AgpTestSuiteInputParameters {
     method @InaccessibleFromKotlin public String getPropertyName();
     property public String propertyName;
+    enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters AAPT2_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters ADB_EXECUTABLE;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters MERGED_MANIFEST;
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.AgpTestSuiteInputParameters STATIC_FILES;
@@ -364,6 +366,12 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.DynamicDelivery dynamicDelivery;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ModelDependency modelDependency;
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> packName;
+  }
+
+  public interface AndroidLibrarySourceSet extends com.android.build.api.dsl.AndroidSourceSet {
+    method @org.gradle.api.Incubating public void aarKeepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.AndroidSourceDirectorySet getAarKeepRules();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.AndroidSourceDirectorySet aarKeepRules;
   }
 
   public interface AndroidResources {
@@ -1616,6 +1624,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.Prefab> getPrefab();
     method @InaccessibleFromKotlin public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> getProductFlavors();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.LibraryPublishing getPublishing();
+    method @InaccessibleFromKotlin public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidLibrarySourceSet> getSourceSets();
     method public void installation(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryInstallation,kotlin.Unit> action);
     method @Deprecated @org.gradle.api.Incubating public void jacoco(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.JacocoOptions,kotlin.Unit> action);
     method @org.gradle.declarative.dsl.model.annotations.Configuring public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
@@ -1626,7 +1635,7 @@ package com.android.build.api.dsl {
     method public void publishing(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryPublishing,kotlin.Unit> action);
     method public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.LibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.LibraryBuildType,kotlin.Unit> action);
     method public void signingConfigs(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig>,kotlin.Unit> action);
-    method public void sourceSets(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet>,kotlin.Unit> action);
+    method public void sourceSets(kotlin.jvm.functions.Function1<? super org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.AndroidLibrarySourceSet>,kotlin.Unit> action);
     method public void splits(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Splits,kotlin.Unit> action);
     method public void testCoverage(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestCoverage,kotlin.Unit> action);
     method public void testOptions(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestOptions,kotlin.Unit> action);
@@ -1652,7 +1661,7 @@ package com.android.build.api.dsl {
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.LibraryProductFlavor> productFlavors;
     property public abstract com.android.build.api.dsl.LibraryPublishing publishing;
     property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.ApkSigningConfig> signingConfigs;
-    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidSourceSet> sourceSets;
+    property public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.AndroidLibrarySourceSet> sourceSets;
     property public abstract com.android.build.api.dsl.Splits splits;
     property public abstract com.android.build.api.dsl.TestCoverage testCoverage;
     property public abstract com.android.build.api.dsl.TestOptions testOptions;
@@ -1698,107 +1707,6 @@ package com.android.build.api.dsl {
     property public abstract java.util.List<java.io.File> consumerProguardFiles;
     property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
-  }
-
-  public interface Lint {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getAbortOnError();
-    method @InaccessibleFromKotlin public boolean getAbsolutePaths();
-    method @InaccessibleFromKotlin public java.io.File? getBaseline();
-    method @InaccessibleFromKotlin public boolean getCheckAllWarnings();
-    method @InaccessibleFromKotlin public boolean getCheckDependencies();
-    method @InaccessibleFromKotlin public boolean getCheckGeneratedSources();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getCheckOnly();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getCheckReleaseBuilds();
-    method @InaccessibleFromKotlin public boolean getCheckTestSources();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getDisable();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getEnable();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getError();
-    method @InaccessibleFromKotlin public boolean getExplainIssues();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getFatal();
-    method @InaccessibleFromKotlin public java.io.File? getHtmlOutput();
-    method @InaccessibleFromKotlin public boolean getHtmlReport();
-    method @InaccessibleFromKotlin @Deprecated public java.util.Set<java.lang.String> getIgnore();
-    method @InaccessibleFromKotlin public boolean getIgnoreTestFixturesSources();
-    method @InaccessibleFromKotlin public boolean getIgnoreTestSources();
-    method @InaccessibleFromKotlin public boolean getIgnoreWarnings();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getInformational();
-    method @InaccessibleFromKotlin public java.io.File? getLintConfig();
-    method @InaccessibleFromKotlin public boolean getNoLines();
-    method @InaccessibleFromKotlin public boolean getQuiet();
-    method @InaccessibleFromKotlin public java.io.File? getSarifOutput();
-    method @InaccessibleFromKotlin public boolean getSarifReport();
-    method @InaccessibleFromKotlin public boolean getShowAll();
-    method @InaccessibleFromKotlin public Integer? getTargetSdk();
-    method @InaccessibleFromKotlin public String? getTargetSdkPreview();
-    method @InaccessibleFromKotlin public java.io.File? getTextOutput();
-    method @InaccessibleFromKotlin public boolean getTextReport();
-    method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getWarning();
-    method @InaccessibleFromKotlin public boolean getWarningsAsErrors();
-    method @InaccessibleFromKotlin public java.io.File? getXmlOutput();
-    method @InaccessibleFromKotlin public boolean getXmlReport();
-    method @InaccessibleFromKotlin public void setAbortOnError(boolean);
-    method @InaccessibleFromKotlin public void setAbsolutePaths(boolean);
-    method @InaccessibleFromKotlin public void setBaseline(java.io.File?);
-    method @InaccessibleFromKotlin public void setCheckAllWarnings(boolean);
-    method @InaccessibleFromKotlin public void setCheckDependencies(boolean);
-    method @InaccessibleFromKotlin public void setCheckGeneratedSources(boolean);
-    method @InaccessibleFromKotlin public void setCheckReleaseBuilds(boolean);
-    method @InaccessibleFromKotlin public void setCheckTestSources(boolean);
-    method @InaccessibleFromKotlin public void setExplainIssues(boolean);
-    method @InaccessibleFromKotlin public void setHtmlOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setHtmlReport(boolean);
-    method @InaccessibleFromKotlin public void setIgnoreTestFixturesSources(boolean);
-    method @InaccessibleFromKotlin public void setIgnoreTestSources(boolean);
-    method @InaccessibleFromKotlin public void setIgnoreWarnings(boolean);
-    method @InaccessibleFromKotlin public void setLintConfig(java.io.File?);
-    method @InaccessibleFromKotlin public void setNoLines(boolean);
-    method @InaccessibleFromKotlin public void setQuiet(boolean);
-    method @InaccessibleFromKotlin public void setSarifOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setSarifReport(boolean);
-    method @InaccessibleFromKotlin public void setShowAll(boolean);
-    method @InaccessibleFromKotlin public void setTargetSdk(Integer?);
-    method @InaccessibleFromKotlin public void setTargetSdkPreview(String?);
-    method @InaccessibleFromKotlin public void setTextOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setTextReport(boolean);
-    method @InaccessibleFromKotlin public void setWarningsAsErrors(boolean);
-    method @InaccessibleFromKotlin public void setXmlOutput(java.io.File?);
-    method @InaccessibleFromKotlin public void setXmlReport(boolean);
-    method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
-    property public abstract boolean absolutePaths;
-    property public abstract java.io.File? baseline;
-    property public abstract boolean checkAllWarnings;
-    property public abstract boolean checkDependencies;
-    property public abstract boolean checkGeneratedSources;
-    property public abstract java.util.Set<java.lang.String> checkOnly;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean checkReleaseBuilds;
-    property public abstract boolean checkTestSources;
-    property public abstract java.util.Set<java.lang.String> disable;
-    property public abstract java.util.Set<java.lang.String> enable;
-    property public abstract java.util.Set<java.lang.String> error;
-    property public abstract boolean explainIssues;
-    property public abstract java.util.Set<java.lang.String> fatal;
-    property public abstract java.io.File? htmlOutput;
-    property public abstract boolean htmlReport;
-    property @Deprecated public abstract java.util.Set<java.lang.String> ignore;
-    property public abstract boolean ignoreTestFixturesSources;
-    property public abstract boolean ignoreTestSources;
-    property public abstract boolean ignoreWarnings;
-    property public abstract java.util.Set<java.lang.String> informational;
-    property public abstract java.io.File? lintConfig;
-    property public abstract boolean noLines;
-    property public abstract boolean quiet;
-    property public abstract java.io.File? sarifOutput;
-    property public abstract boolean sarifReport;
-    property public abstract boolean showAll;
-    property public abstract Integer? targetSdk;
-    property public abstract String? targetSdkPreview;
-    property public abstract java.io.File? textOutput;
-    property public abstract boolean textReport;
-    property public abstract java.util.Set<java.lang.String> warning;
-    property public abstract boolean warningsAsErrors;
-    property public abstract java.io.File? xmlOutput;
-    property public abstract boolean xmlReport;
   }
 
   @Deprecated @org.gradle.api.Incubating public interface LintOptions {
@@ -2658,11 +2566,14 @@ package com.android.build.api.variant {
 
   public interface AarMetadata {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getMinAgpVersion();
-    method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdk();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdkExtension();
+    method @InaccessibleFromKotlin @Deprecated public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdk();
+    method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.Integer> getMinCompileSdkExtension();
+    method @InaccessibleFromKotlin public org.gradle.api.provider.Property<com.android.build.api.dsl.CompileSdkVersion> getMinCompileSdkVersion();
+    method public void minCompileSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinCompileSdkSpec,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> minAgpVersion;
-    property public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdk;
-    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdkExtension;
+    property @Deprecated public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdk;
+    property @Deprecated @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.Integer> minCompileSdkExtension;
+    property public abstract org.gradle.api.provider.Property<com.android.build.api.dsl.CompileSdkVersion> minCompileSdkVersion;
   }
 
   public interface Aidl {
@@ -3328,6 +3239,11 @@ package com.android.build.api.variant {
   public interface LibraryAndroidComponentsExtension extends com.android.build.api.variant.AndroidComponentsExtension<com.android.build.api.dsl.LibraryExtension,com.android.build.api.variant.LibraryVariantBuilder,com.android.build.api.variant.LibraryVariant> {
   }
 
+  public interface LibrarySources extends com.android.build.api.variant.Sources {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getAarKeepRules();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? aarKeepRules;
+  }
+
   public interface LibraryVariant extends com.android.build.api.variant.Variant com.android.build.api.variant.CanMinifyCode com.android.build.api.variant.CanProduceConsumerProguardFiles com.android.build.api.variant.GeneratesAar com.android.build.api.variant.HasAndroidTest com.android.build.api.variant.HasDeviceTests com.android.build.api.variant.HasHostTests com.android.build.api.variant.HasTestFixtures com.android.build.api.variant.HasUnitTest {
     method @InaccessibleFromKotlin public com.android.build.api.variant.Renderscript? getRenderscript();
     property public abstract com.android.build.api.variant.Renderscript? renderscript;
@@ -3455,7 +3371,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.SourceDirectories.Flat getByName(String name);
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getJava();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Layered? getJniLibs();
-    method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getKeepRules();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.variant.SourceDirectories.Flat? getKeepRules();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Flat? getKotlin();
     method @InaccessibleFromKotlin public com.android.build.api.variant.ManifestFiles getManifests();
     method @InaccessibleFromKotlin public com.android.build.api.variant.SourceDirectories.Layered? getMlModels();
@@ -3468,7 +3384,7 @@ package com.android.build.api.variant {
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? baselineProfiles;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? java;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? jniLibs;
-    property public abstract com.android.build.api.variant.SourceDirectories.Flat? keepRules;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.variant.SourceDirectories.Flat? keepRules;
     property public abstract com.android.build.api.variant.SourceDirectories.Flat? kotlin;
     property public abstract com.android.build.api.variant.ManifestFiles manifests;
     property public abstract com.android.build.api.variant.SourceDirectories.Layered? mlModels;

@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
+import com.android.builder.dexing.KeepRuleFile
 import com.android.builder.errors.EvalIssueException
 import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.FileUtils
@@ -102,7 +103,7 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
 
     val input = inputFiles + keepRulesDirectories.filter(File::isFile)
 
-    val filteredProguardFiles =
+    val filteredProguardFiles: List<KeepRuleFile> =
       if (isDynamicFeature) {
         getFilteredFiles(
           ignoreFromInKeepRules.get(),
@@ -113,12 +114,12 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
           LibraryArtifactType.KEEP_RULES,
         )
       } else {
-        input
+        input.map { KeepRuleFile.WithoutOrigin(it.toPath()) }
       }
 
     workerExecutor.noIsolation().submit(ExportConsumerProguardRunnable::class.java) {
       it.initializeFromBaseTask(this)
-      it.input.from(filteredProguardFiles)
+      it.input.from(filteredProguardFiles.map { ruleFile -> ruleFile.file })
       it.outputDir.set(outputDir)
     }
   }

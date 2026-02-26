@@ -35,7 +35,7 @@ class AdbApkInstallerTest {
   @get:Rule val tempFolder = TemporaryFolder()
 
   private lateinit var adb: File
-  private lateinit var aapt: File
+  private lateinit var aapt2: File
   private lateinit var apk1: File
   private lateinit var apk2: File
 
@@ -47,7 +47,7 @@ class AdbApkInstallerTest {
   @Before
   fun setUp() {
     adb = tempFolder.newFile("adb")
-    aapt = tempFolder.newFile("aapt")
+    aapt2 = tempFolder.newFile("aapt2")
     apk1 = tempFolder.newFile("app1.apk")
     apk2 = tempFolder.newFile("app2.apk")
 
@@ -59,7 +59,7 @@ class AdbApkInstallerTest {
   private fun createHelper(deviceApiLevel: Int, installTimeoutMs: Long = 60000L): AdbApkInstaller {
     mockCommand("getprop ro.build.version.sdk", exitCode = 0, output = deviceApiLevel.toString())
     val installer =
-      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = installTimeoutMs, logger = mockLogger) {
+      AdbApkInstaller(adb = adb, aapt2 = aapt2, deviceSerial = "test-serial", installTimeoutMs = installTimeoutMs, logger = mockLogger) {
         command ->
         val commandKey = getCommandKey(command)
         executedCommands.getOrPut(commandKey) { mutableListOf() }.add(command.joinToString(" "))
@@ -81,7 +81,7 @@ class AdbApkInstallerTest {
     val commandString = command.joinToString(" ")
     return when {
       commandString.contains("getprop ro.build.version.sdk") -> "getprop ro.build.version.sdk"
-      commandString.contains("aapt dump badging") -> "aapt dump badging"
+      commandString.contains("aapt2 dump badging") -> "aapt2 dump badging"
       commandString.contains("am get-current-user") -> "am get-current-user"
       commandString.contains("settings put global") -> "settings put global"
       commandString.contains("am set-debug-app") -> "am set-debug-app"
@@ -107,7 +107,7 @@ class AdbApkInstallerTest {
   }
 
   private fun mockAapt(packageName: String) {
-    mockCommand("aapt dump badging", 0, "package: name='$packageName' versionCode='1'")
+    mockCommand("aapt2 dump badging", 0, "package: name='$packageName' versionCode='1'")
   }
 
   @Test
@@ -219,7 +219,7 @@ class AdbApkInstallerTest {
 
     helper.uninstallApk(apk1)
 
-    val executedAapt = executedCommands["aapt dump badging"]?.first()!!
+    val executedAapt = executedCommands["aapt2 dump badging"]?.first()!!
     assertThat(executedAapt).contains(apk1.absolutePath)
 
     val executedUninstall = executedCommands["uninstall"]?.first()!!
@@ -229,7 +229,7 @@ class AdbApkInstallerTest {
   @Test
   fun `uninstallApk aapt fails does not uninstall`() {
     val helper = createHelper(deviceApiLevel = 30)
-    mockCommand("aapt dump badging", exitCode = 1, error = "Failed to parse")
+    mockCommand("aapt2 dump badging", exitCode = 1, error = "Failed to parse")
 
     helper.uninstallApk(apk1)
 
@@ -274,7 +274,7 @@ class AdbApkInstallerTest {
   fun `deviceApiLevel throws exception on command failure`() {
     adb = tempFolder.newFile("adb_fail")
     val installer =
-      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
+      AdbApkInstaller(adb = adb, aapt2 = aapt2, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
         val process =
           mock<Process> {
             on { it.exitValue() } doReturn 1
@@ -292,7 +292,7 @@ class AdbApkInstallerTest {
   fun `deviceApiLevel throws exception on invalid output`() {
     adb = tempFolder.newFile("adb_invalid")
     val installer =
-      AdbApkInstaller(adb = adb, aapt = aapt, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
+      AdbApkInstaller(adb = adb, aapt2 = aapt2, deviceSerial = "test-serial", installTimeoutMs = 60000L, logger = mockLogger) { command ->
         val process =
           mock<Process> {
             on { it.exitValue() } doReturn 0

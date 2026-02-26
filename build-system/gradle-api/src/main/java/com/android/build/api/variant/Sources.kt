@@ -16,6 +16,8 @@
 
 package com.android.build.api.variant
 
+import org.gradle.api.Incubating
+
 /** Provides access to all source directories for a [Variant]. */
 interface Sources {
 
@@ -66,7 +68,7 @@ interface Sources {
   val manifests: ManifestFiles
 
   /** KeepRules files for R8 configuration */
-  val keepRules: SourceDirectories.Flat?
+  @get:Incubating val keepRules: SourceDirectories.Flat?
 
   /**
    * Access (and potentially creates) a new [SourceDirectories.Flat] for a custom source type that can be referenced by its [name].

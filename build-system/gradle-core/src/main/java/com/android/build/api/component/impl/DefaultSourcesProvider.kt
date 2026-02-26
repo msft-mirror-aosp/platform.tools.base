@@ -89,3 +89,9 @@ interface DefaultSourcesProvider {
 
   val sourceProvidersNames: List<String>
 }
+
+interface LibrarySourcesProvider : DefaultSourcesProvider {
+
+  /** the list of sources [DirectoryEntry] for AAR publishing optimization with R8 */
+  fun getAarKeepRules(lateAdditionsDelegate: FlatSourceDirectoriesImpl): List<DirectoryEntry>
+}

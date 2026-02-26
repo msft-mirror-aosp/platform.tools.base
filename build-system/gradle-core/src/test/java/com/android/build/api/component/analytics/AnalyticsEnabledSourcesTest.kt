@@ -39,7 +39,9 @@ class AnalyticsEnabledSourcesTest {
   private val delegate: Sources = mock()
 
   private val stats = GradleBuildVariant.newBuilder()
-  private val proxy: AnalyticsEnabledSources by lazy { object : AnalyticsEnabledSources(delegate, stats, FakeObjectFactory.factory) {} }
+  private val proxy: AnalyticsEnabledSources<Sources> by lazy {
+    object : AnalyticsEnabledSources<Sources>(delegate, stats, FakeObjectFactory.factory) {}
+  }
 
   @Test
   fun getJava() {

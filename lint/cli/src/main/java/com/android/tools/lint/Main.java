@@ -192,6 +192,8 @@ public class Main {
     private static final String ARG_CACHE_DIR = "--cache-dir";
     private static final String ARG_SKIP_ANNOTATED = "--skip-annotated";
     private static final String ARG_OFFLINE = "--offline";
+    private static final String ARG_CHECK_DEPENDENCIES = "--check-dependencies";
+    private static final String ARG_NO_CHECK_DEPENDENCIES = "--no-check-dependencies";
 
     @SuppressWarnings("SpellCheckingInspection")
     private static final String ARG_NO_WARN_2 = "--nowarn";
@@ -1263,6 +1265,10 @@ public class Main {
                 }
             } else if (arg.equals(ARG_OFFLINE)) {
                 flags.setOffline(true);
+            } else if (arg.equals(ARG_CHECK_DEPENDENCIES)) {
+                flags.setCheckDependencies(true);
+            } else if (arg.equals(ARG_NO_CHECK_DEPENDENCIES)) {
+                flags.setCheckDependencies(false);
             } else if (arg.equals(ARG_BUILD_API)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing compileSdkVersion");
@@ -1505,8 +1511,10 @@ public class Main {
                 } else {
                     return ERRNO_ERRORS;
                 }
-            } else if (arg.equals("--XuseK1Uast") || arg.equals("--XuseK2Uast")) {
+            } else if (arg.equals("--XuseK1Uast")) {
                 System.out.printf("%s is no longer in effect, and will be an error in the next release.\n", arg);
+            } else if (arg.equals("--XuseK2Uast")) {
+                // no-op, but no warning either until AGP usages are removed.
             } else if (arg.equals("--XuseKlibLightElementProvider")) {
                 flags.setUseKlibLightElementProvider(true);
             } else if (arg.equals(ARG_PRINT_INTERNAL_ERROR_STACKTRACE)) {
@@ -2268,6 +2276,8 @@ public class Main {
                     ARG_SKIP_ANNOTATED,
                     "Comma separated list of annotations (by fully qualified name) which indicate that "
                             + "lint should ignore this compilation unit (only allowed on top level classes and files)",
+                    ARG_CHECK_DEPENDENCIES,
+                    "Whether to check dependencies",
                     "",
                     "\nOutput Options:",
                     ARG_QUIET,

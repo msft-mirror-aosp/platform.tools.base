@@ -888,11 +888,7 @@ internal open class Analysis<FX : Any>(
       is Type.Lambda -> if (receiver.params.size == args.size) rec[receiver, listOf(receiver) + args] else instantiationLattice.bottom
       is Type.MethodRef -> rec[receiver, args]
       is Type.SpecializedMethodRef -> rec[receiver.ref, listOf(receiver.receiver) + args]
-      is Type.Sym.Param,
-      is Type.Sym.This,
-      is Type.Sym.Invoke,
-      is Type.Sym.Fix,
-      is Type.Sym.Rec -> {
+      is Type.Sym -> {
         val sym = Type.Sym.Invoke(receiver, method, args)
         Result(sym, Instantiation(Effect(concreteEffect.bottom, persistentSetOf(sym))))
       }

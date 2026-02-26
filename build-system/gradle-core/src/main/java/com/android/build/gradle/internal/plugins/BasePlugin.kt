@@ -29,6 +29,7 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LintLifecycleExtensionImpl
 import com.android.build.gradle.api.AndroidBasePlugin
+import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BadPluginException
@@ -223,7 +224,7 @@ abstract class BasePlugin<
   }
 
   @get:VisibleForTesting
-  val variantInputModel: LegacyVariantInputManager by lazy {
+  open val variantInputModel: LegacyVariantInputManager by lazy {
     withProject("LegacyVariantInputManager") { project ->
       LegacyVariantInputManager(
         dslServices,
@@ -770,5 +771,10 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
     settings.ndkPath?.let { ndkPath -> this.ndkPath = ndkPath }
 
     settings.buildToolsVersion.let { buildToolsVersion -> this.buildToolsVersion = buildToolsVersion }
+
+    settings.lint lintSettings@{
+      val commonExtension = this@doInitExtensionFromSettings
+      commonExtension.lint.applySettings(this)
+    }
   }
 }

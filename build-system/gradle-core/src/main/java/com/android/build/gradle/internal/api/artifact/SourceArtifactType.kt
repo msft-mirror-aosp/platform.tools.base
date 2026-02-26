@@ -42,6 +42,8 @@ sealed class SourceArtifactType : Artifact.Single<Directory>(ArtifactKind.DIRECT
 
   object KEEP_RULES : SourceArtifactType()
 
+  object AAR_KEEP_RULES : SourceArtifactType()
+
   object JNI : SourceArtifactType()
 
   object JNI_LIBS : SourceArtifactType()

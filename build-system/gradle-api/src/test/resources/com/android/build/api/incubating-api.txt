@@ -8,8 +8,6 @@ https://issuetracker.google.com/328747467
 https://issuetracker.google.com/328747468
   * com.android.build.api.dsl.TestOptions.emulatorControl: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.EmulatorControl, kotlin.Unit>)
   * com.android.build.api.dsl.TestOptions.getEmulatorControl: com.android.build.api.dsl.EmulatorControl ()
-https://issuetracker.google.com/328747927
-  * com.android.build.api.artifact.SingleArtifact$ASSETS extends com.android.build.api.artifact.SingleArtifact implements com.android.build.api.artifact.Artifact$Replaceable, com.android.build.api.artifact.Artifact$Transformable
 https://issuetracker.google.com/328747928
   * com.android.build.api.dsl.BundleTexture.getDefaultFormat: java.lang.String ()
   * com.android.build.api.dsl.BundleTexture.setDefaultFormat: void (java.lang.String)
@@ -118,8 +116,6 @@ https://issuetracker.google.com/328748571
 https://issuetracker.google.com/328748591
   * com.android.build.api.dsl.BuildType.getVcsInfo: com.android.build.api.dsl.VcsInfo ()
   * com.android.build.api.dsl.BuildType.vcsInfo: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.VcsInfo, kotlin.Unit>)
-https://issuetracker.google.com/328748594
-  * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
 https://issuetracker.google.com/328748602
   * com.android.build.api.dsl.BundleAbi.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleAbi.setEnableSplit: void (java.lang.Boolean)
@@ -675,9 +671,16 @@ https://issuetracker.google.com/444699160
   * com.android.build.api.variant.HostTestBuilder.setIncludeAndroidResources: void (boolean)
 https://issuetracker.google.com/467692785
   * com.android.build.api.KotlinMultiplatformHierarchyDsl.withAndroid: void (org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyBuilder)
+https://issuetracker.google.com/475856688
+  * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
 https://issuetracker.google.com/476099690
   * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
   * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
+  * com.android.build.api.variant.Sources.getKeepRules: com.android.build.api.variant.SourceDirectories$Flat ()
 https://issuetracker.google.com/477630142
   * com.android.build.api.dsl.KeepRules.getIncludeDefault: boolean ()
   * com.android.build.api.dsl.KeepRules.setIncludeDefault: void (boolean)
+https://issuetracker.google.com/481403863
+  * com.android.build.api.dsl.AndroidLibrarySourceSet.aarKeepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
+  * com.android.build.api.dsl.AndroidLibrarySourceSet.getAarKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
+  * com.android.build.api.variant.LibrarySources.getAarKeepRules: com.android.build.api.variant.SourceDirectories$Flat ()

@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.core
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.utils.immutableMapBuilder
 import com.android.builder.core.ComponentType
@@ -26,7 +27,7 @@ import com.google.common.collect.Lists
 import java.io.File
 
 /** Represents the sources for a Variant */
-class VariantSources
+open class VariantSources
 internal constructor(
   val fullName: String,
   val componentType: ComponentType,
@@ -37,7 +38,7 @@ internal constructor(
   /** MultiFlavors specific source provider, may be null */
   val multiFlavorSourceProvider: DefaultAndroidSourceSet? = null,
   /** Variant specific source provider, may be null */
-  val variantSourceProvider: DefaultAndroidSourceSet? = null,
+  open val variantSourceProvider: DefaultAndroidSourceSet? = null,
 ) {
 
   /**
@@ -117,3 +118,23 @@ internal constructor(
         .toMap()
     }
 }
+
+class LibraryVariantSources
+internal constructor(
+  fullName: String,
+  componentType: ComponentType,
+  defaultSourceProvider: SourceProvider,
+  buildTypeSourceProvider: SourceProvider? = null,
+  flavorSourceProviders: List<SourceProvider>,
+  multiFlavorSourceProvider: DefaultAndroidSourceSet? = null,
+  override val variantSourceProvider: DefaultAndroidLibrarySourceSet? = null,
+) :
+  VariantSources(
+    fullName,
+    componentType,
+    defaultSourceProvider,
+    buildTypeSourceProvider,
+    flavorSourceProviders,
+    multiFlavorSourceProvider,
+    variantSourceProvider,
+  )

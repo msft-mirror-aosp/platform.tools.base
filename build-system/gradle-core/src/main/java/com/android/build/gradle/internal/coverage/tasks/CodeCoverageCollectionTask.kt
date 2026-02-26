@@ -18,18 +18,24 @@ package com.android.build.gradle.internal.coverage.tasks
 
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.variant.ScopedArtifacts
+import com.android.build.gradle.internal.component.ComponentCreationConfig
+import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.generateReport
+import com.android.build.gradle.internal.coverage.getUnitTestJacocoVersion
 import com.android.build.gradle.internal.coverage.report.ReportType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
+import com.android.build.gradle.internal.tasks.JacocoTask
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
+import com.android.build.gradle.tasks.TestSuiteTestTask
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
-import java.io.UncheckedIOException
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.parsers.ParserConfigurationException
 import javax.xml.transform.TransformerException
@@ -37,6 +43,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.ConfigurableFileTree
@@ -77,6 +84,8 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:Optional
   abstract val connectedTestCoverageDirectory: ConfigurableFileCollection
 
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) @get:Optional abstract val testSuiteCoverageData: ConfigurableFileCollection
+
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val classFileCollection: ConfigurableFileCollection
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sources: ListProperty<Provider<List<ConfigurableFileTree>>>
@@ -86,17 +95,18 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val dependentModuleCoverageData: ConfigurableFileCollection
 
-  @get:Classpath abstract val jacocoClasspath: ConfigurableFileCollection
+  @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
   @get:Internal abstract val projectName: Property<String>
 
   @get:Internal abstract val projectRoot: DirectoryProperty
 
   override fun doTaskAction() {
+    if (jacocoClasspath.isEmpty) {
+      throw GradleException("Cannot generate report. Please ensure a single Jacoco version is configured.")
+    }
     val sourceFolders: List<File> =
       sources.get().map { it.get().map(ConfigurableFileTree::getDir) }.flatten().distinctBy { it.absolutePath }
-
-    // TODO: Add test suites implementation for XML reports generation.
 
     // ClassLoaderIsolation is used to ensure that the Jacoco classes and dependencies
     // are loaded in a separate classloader. This prevents potential conflicts with
@@ -108,6 +118,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.reportOutputDir.set(reportOutputDir)
         it.unitTestCoverageFile.setFrom(unitTestCoverageFile)
         it.connectedTestCoverageDirectory.setFrom(connectedTestCoverageDirectory)
+        it.testSuiteCoverageData.setFrom(testSuiteCoverageData)
         it.classFolders.setFrom(classFileCollection)
         it.sourceFolders.setFrom(sourceFolders)
         it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
@@ -118,7 +129,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   }
 
   abstract class BaseCoverageCollectionCreationAction(
-    val jacocoAntConfiguration: Configuration,
+    val jacocoAntConfiguration: Configuration? = null,
     creationConfig: CodeCoverageReportCreationConfig,
   ) : VariantTaskCreationAction<CodeCoverageCollectionTask, CodeCoverageReportCreationConfig>(creationConfig) {
 
@@ -130,11 +141,13 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
       task.projectName.set(creationConfig.services.projectInfo.path)
       task.projectRoot.set(task.project.rootDir)
-      task.jacocoClasspath.setFrom(jacocoAntConfiguration)
+      jacocoAntConfiguration?.let { task.jacocoClasspath.setFrom(it) }
 
       creationConfig.unitTestCoverageFile?.let { task.unitTestCoverageFile.fromDisallowChanges(it) }
 
       creationConfig.connectedTestCoverageDirectory?.let { task.connectedTestCoverageDirectory.fromDisallowChanges(it) }
+
+      task.testSuiteCoverageData.fromDisallowChanges(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE))
 
       creationConfig.java { javaSources -> task.sources.addAll(javaSources.getAsFileTrees()) }
       creationConfig.kotlin { kotlinSources -> task.sources.addAll(kotlinSources.getAsFileTrees()) }
@@ -148,7 +161,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     }
   }
 
-  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration, creationConfig: CodeCoverageReportCreationConfig) :
+  class CoverageCollectionCreationAction(jacocoAntConfiguration: Configuration? = null, creationConfig: CodeCoverageReportCreationConfig) :
     BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
     override val name: String
@@ -169,7 +182,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
   }
 
   class AggregatedCoverageCollectionCreationAction(
-    jacocoAntConfiguration: Configuration,
+    jacocoAntConfiguration: Configuration? = null,
     creationConfig: CodeCoverageReportCreationConfig,
   ) : BaseCoverageCollectionCreationAction(jacocoAntConfiguration, creationConfig) {
 
@@ -196,6 +209,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     val reportOutputDir: DirectoryProperty
     val unitTestCoverageFile: ConfigurableFileCollection
     val connectedTestCoverageDirectory: ConfigurableFileCollection
+    val testSuiteCoverageData: ConfigurableFileCollection
     val classFolders: ConfigurableFileCollection
     val sourceFolders: ConfigurableFileCollection
     val dependentModuleCoverageData: ConfigurableFileCollection
@@ -256,7 +270,22 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val connectedTestCoverageFile = parameters.connectedTestCoverageDirectory.asFileTree.files.filter(File::isFile)
         generateXmlReport(connectedTestCoverageFile, "AndroidTest")
 
-        val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile
+        val testSuiteCoverageFiles = mutableListOf<File>()
+        parameters.testSuiteCoverageData.files.forEach { directory ->
+          if (directory.exists()) {
+            val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
+            if (metadataFile.exists()) {
+              val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
+              val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
+              val coverageFiles =
+                directory.listFiles { file -> file.extension == "ec" || file.extension == "exec" }?.toList() ?: emptyList()
+              generateXmlReport(coverageFiles, testSuiteName)
+              testSuiteCoverageFiles.addAll(coverageFiles)
+            }
+          }
+        }
+
+        val mergedCoverageFiles = connectedTestCoverageFile + unitTestCoverageFile + testSuiteCoverageFiles
         generateXmlReport(mergedCoverageFiles, "Aggregated")
 
         parameters.dependentModuleCoverageData.asFileTree.forEach { xmlFile ->
@@ -354,6 +383,30 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
           throw Exception("Error transforming XML Report", e)
         }
       }
+    }
+  }
+
+  companion object {
+    /**
+     * Returns the Jacoco Ant task configuration if the Jacoco version used for unit tests and Android tests is the same.
+     *
+     * This check is necessary because using different Jacoco versions for different test types can lead to inconsistencies or failures in
+     * coverage report generation.
+     *
+     * @param project The Gradle project.
+     * @param creationConfig The component creation configuration.
+     * @return A [Configuration] for the Jacoco Ant task if the versions match, otherwise null.
+     */
+    fun getJacocoAntTaskConfiguration(project: Project, creationConfig: ComponentCreationConfig): Configuration? {
+      return if (isJacocoVersionSame(project, creationConfig)) {
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(creationConfig))
+      } else {
+        null
+      }
+    }
+
+    private fun isJacocoVersionSame(project: Project, creationConfig: ComponentCreationConfig): Boolean {
+      return getUnitTestJacocoVersion(project, creationConfig) == JacocoTask.getAndroidTestJacocoVersion(creationConfig)
     }
   }
 }

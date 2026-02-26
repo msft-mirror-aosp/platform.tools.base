@@ -20,6 +20,7 @@ import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifact
 import com.android.build.api.artifact.impl.InternalScopedArtifacts
+import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.gradle.ProguardFiles
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
@@ -45,10 +46,13 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.ComponentType
+import com.android.builder.dexing.KeepRuleFile
 import com.google.common.base.Preconditions
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.Callable
 import javax.inject.Inject
+import kotlin.io.path.name
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.transform.TransformParameters
 import org.gradle.api.artifacts.transform.TransformSpec
@@ -111,8 +115,10 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
     private set
 
   @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesFiles: ConfigurableFileCollection
+  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val aarKeepRulesFiles: ConfigurableFileCollection
 
   @get:Internal abstract val keepRulesDirectories: ListProperty<Directory>
+  @get:Internal abstract val aarKeepRulesDirectories: ListProperty<Directory>
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val libraryKeepRulesFileCollection: ConfigurableFileCollection
 
@@ -135,48 +141,50 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
    * proguard file and swap them with the final location from [InternalArtifactType.DEFAULT_PROGUARD_FILES]
    */
   internal fun reconcileDefaultProguardFile(
-    proguardFiles: FileCollection,
+    keepRules: List<KeepRuleFile>,
     extractedDefaultProguardFile: Provider<Directory>,
     failOnMissingProguardFiles: Boolean,
-  ): Collection<File> {
+  ): List<KeepRuleFile> {
 
     // if this is not a base module, there should not be any default proguard files so just
     // return.
     if (!componentType.get().isBaseModule) {
-      return proguardFiles.files.mapNotNull { proguardFile -> removeIfAbsent(proguardFile, failOnMissingProguardFiles) }
+      return keepRules.filter { checkKeepRuleFile(it.file, failOnMissingProguardFiles) }
     }
 
     // get the default proguard files default locations.
-    val defaultFiles =
-      ProguardFiles.KNOWN_FILE_NAMES.map { name -> ProguardFiles.getDefaultProguardFile(name, projectLayout.buildDirectory) }
+    val defaultFiles: List<Path> =
+      ProguardFiles.KNOWN_FILE_NAMES.map { name -> ProguardFiles.getDefaultProguardFile(name, projectLayout.buildDirectory).toPath() }
 
-    return proguardFiles.files.mapNotNull { proguardFile ->
+    return keepRules.mapNotNull { proguardFile ->
       // if the file is a default proguard file, swap its location with the directory
       // where the final artifacts are.
-      if (defaultFiles.contains(proguardFile) && extractedDefaultProguardFile.isPresent) {
-        extractedDefaultProguardFile.get().file(proguardFile.name).asFile
+      if (defaultFiles.contains(proguardFile.file) && extractedDefaultProguardFile.isPresent) {
+        KeepRuleFile.AgpInternalOrigin(extractedDefaultProguardFile.get().asFile.toPath().resolve(proguardFile.file.name))
+      } else if (checkKeepRuleFile(proguardFile.file, failOnMissingProguardFiles)) {
+        proguardFile
       } else {
-        removeIfAbsent(proguardFile, failOnMissingProguardFiles)
+        null
       }
     }
   }
 
-  private fun removeIfAbsent(file: File, failOnMissingProguardFiles: Boolean): File? {
-    return if (file.isFile) {
-      file
-    } else if (file.isDirectory) {
+  private fun checkKeepRuleFile(file: Path, failOnMissingProguardFiles: Boolean): Boolean {
+    return if (Files.isRegularFile(file)) {
+      true
+    } else if (Files.isDirectory(file)) {
       if (failOnMissingProguardFiles) {
-        throw RuntimeException("Directories as proguard configuration are not supported: ${file.path}")
+        throw RuntimeException("Directories as proguard configuration are not supported: ${file}")
       } else {
-        logger.warn("Directories as proguard configuration are not supported: ${file.path}")
-        null
+        logger.warn("Directories as proguard configuration are not supported: ${file}")
+        false
       }
     } else {
       if (failOnMissingProguardFiles) {
-        throw RuntimeException("Supplied proguard configuration does not exist: ${file.path}")
+        throw RuntimeException("Supplied proguard configuration does not exist: ${file}")
       } else {
-        logger.warn("Supplied proguard configuration does not exist: ${file.path}")
-        null
+        logger.warn("Supplied proguard configuration does not exist: ${file}")
+        false
       }
     }
   }
@@ -439,6 +447,10 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
       creationConfig.sources.keepRules {
         task.keepRulesFiles.from(it.getAsFileTrees())
         task.keepRulesDirectories.setDisallowChanges(it.all)
+      }
+      (creationConfig.sources as? InternalLibrarySources)?.aarKeepRules {
+        task.aarKeepRulesFiles.from(it.getAsFileTrees())
+        task.aarKeepRulesDirectories.setDisallowChanges(it.all)
       }
     }
 

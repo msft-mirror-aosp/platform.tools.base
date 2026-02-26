@@ -68,9 +68,7 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
       logger.lifecycle("View coverage report at $reportLocation")
     } else {
       logger.lifecycle(
-        "No code coverage data found. The code coverage report is not generated. " +
-          "This can happen if code coverage support is not enabled, " +
-          "or if the tests did not execute any source code."
+        "No code coverage data found. The code coverage report is not generated. This can happen if code coverage is not enabled"
       )
     }
   }

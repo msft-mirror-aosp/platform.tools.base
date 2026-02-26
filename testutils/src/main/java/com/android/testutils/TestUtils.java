@@ -61,7 +61,7 @@ public class TestUtils {
      * <p>This version needs to be present in prebuilts for tests to pass (see
      * tools/base/bazel/README.md).
      */
-    public static final String KOTLIN_VERSION_FOR_TESTS = "2.3.20-Beta1";
+    public static final String KOTLIN_VERSION_FOR_TESTS = "2.3.20-RC";
 
     /** KSP version used by AGP integration tests. */
     public static final String KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2";
@@ -73,7 +73,7 @@ public class TestUtils {
      * upgrade the test projects to the latest version of the Kotlin Gradle plugin if there isn't a
      * compatible Compose version yet.
      */
-    public static final String KOTLIN_VERSION_FOR_COMPOSE_TESTS = "2.2.10";
+    public static final String KOTLIN_VERSION_FOR_COMPOSE_TESTS = "2.3.10";
 
     /**
      * The latest Kotlin version in prebuilts.
@@ -84,7 +84,7 @@ public class TestUtils {
      * <p>The following script updates the dev Kotlin version:
      * sync-memory-tests/src/com/android/tools/idea/gradle/project/sync/UpdateBenchmarkVersions.kt
      */
-    public static final String LATEST_KOTLIN_VERSION = "2.3.20-dev-6126";
+    public static final String LATEST_KOTLIN_VERSION = "2.4.0-dev-4131";
 
     /** Compose compiler compatible with {@link #KOTLIN_VERSION_FOR_COMPOSE_TESTS}. */
     public static final String COMPOSE_COMPILER_FOR_TESTS = "1.5.11";

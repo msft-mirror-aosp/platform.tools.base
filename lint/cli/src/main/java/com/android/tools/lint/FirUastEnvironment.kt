@@ -121,6 +121,11 @@ private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastE
   val analysisSession =
     buildStandaloneAnalysisAPISession(projectDisposable = parentDisposable, compilerConfiguration = config.kotlinCompilerConfig) {
       appLock.withLock {
+        // TODO: Avoid creating AA session per test mode, while app env. is not disposed,
+        //  which led to duplicate app-level service registration.
+        // We need to re-register Application-level service before AA session is built.
+        reRegisterProgressManager(application as MockApplication)
+
         // Should register this before the project structure is built
         registerCommonElementTypeConverters(application as MockApplication)
       }
@@ -132,13 +137,6 @@ private fun createAnalysisSession(parentDisposable: Disposable, config: FirUastE
       // Scripting support
       registerProjectService(ScriptDefinitionProvider::class.java, CliScriptDefinitionProvider())
       registerProjectService(ClsJavaStubByVirtualFileCache::class.java, ClsJavaStubByVirtualFileCache())
-
-      appLock.withLock {
-        // TODO: Avoid creating AA session per test mode, while app env. is not disposed,
-        //  which led to duplicate app-level service registration.
-        // We need to re-register Application-level service before AA session is built.
-        reRegisterProgressManager(application as MockApplication)
-      }
 
       buildKtModuleProvider(configureAnalysisApiProjectStructure(config))
     }

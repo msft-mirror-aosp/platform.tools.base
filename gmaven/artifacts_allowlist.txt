@@ -70,6 +70,7 @@
   com/android/tools/lint:lint-tests
   com/android/tools/lint:lint-typedef-remover
   com/android/tools/pixelprobe:pixelprobe
+  com/android/tools/studio/leakcanary:leakcanary
   com/android/tools/utp:android-device-provider-ddmlib
   com/android/tools/utp:android-device-provider-ddmlib-proto
   com/android/tools/utp:android-test-plugin-host-additional-test-output

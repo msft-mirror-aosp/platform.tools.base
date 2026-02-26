@@ -125,7 +125,7 @@ abstract class TransformClassesWithAsmTask : NewIncrementalTask() {
     params.framesComputationMode.set(framesComputationMode)
     params.excludes.set(excludes)
     params.shouldPackageProfilerDependencies.set(shouldPackageProfilerDependencies.getOrElse(false))
-    params.profilingTransforms.set(profilingTransforms.getOrElse(emptyList()))
+    params.profilingTransforms.set(profilingTransforms.orNull ?: emptyList())
     params.projectSources.from(inputClassesDir).from(inputJarsWithIdentity.inputJars)
     params.dependenciesSources.from(runtimeClasspath).from(bootClasspath)
     params.mappingState.set(inputJarsWithIdentity.getMappingState(inputChanges))
@@ -277,7 +277,7 @@ abstract class TransformClassesWithAsmTask : NewIncrementalTask() {
         issueHandler = parameters.classesHierarchyBuildService.get().issueHandler,
         framesComputationMode = parameters.framesComputationMode.get(),
         excludes = parameters.excludes.get(),
-        profilingTransforms = parameters.profilingTransforms.getOrElse(emptyList()),
+        profilingTransforms = parameters.profilingTransforms.orNull ?: emptyList(),
       )
     }
 

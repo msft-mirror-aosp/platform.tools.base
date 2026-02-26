@@ -31,6 +31,7 @@ import com.android.build.api.dsl.LibraryDefaultConfig
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.dsl.MaxSdkSpec
 import com.android.build.api.dsl.MaxSdkVersion
+import com.android.build.api.dsl.MinCompileSdkSpec
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.TargetSdkSpec
@@ -333,6 +334,7 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         "maxSdk" to MaxSdkSpec::class.java,
         "compileSdk" to CompileSdkSpec::class.java,
         "targetSdk" to TargetSdkSpec::class.java,
+        "minCompileSdk" to MinCompileSdkSpec::class.java,
       )
 
     private val endPoints =
@@ -419,6 +421,8 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.release(int)",
         "public abstract com.android.build.api.dsl.TargetSdkVersion com.android.build.api.dsl.TargetSdkSpec.preview(java.lang.String)",
         "public abstract void com.android.build.api.dsl.ApplicationBaseFlavor.targetSdk(kotlin.jvm.functions.Function1)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.MinCompileSdkSpec.release(int,kotlin.jvm.functions.Function1)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.MinCompileSdkSpec.release(int)",
         "public abstract void com.android.build.api.dsl.CommonExtension.compileSdk(kotlin.jvm.functions.Function1)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.preview(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release(int,kotlin.jvm.functions.Function1)",

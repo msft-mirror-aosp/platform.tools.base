@@ -462,20 +462,23 @@ private fun <T, BEAN_TYPE : KeyedLazyInstance<T>, KeyT> addExtension(
   collector.clearCache()
 }
 
+private object NoOpProgressManager : CoreProgressManager() {
+  override fun doCheckCanceled() {
+    // Do nothing
+  }
+
+  override fun isInNonCancelableSection() = true
+}
+
 internal fun reRegisterProgressManager(application: MockApplication) {
+  // Avoid re-registering if already registered.
+  val progressManager = application.getService(ProgressManager::class.java)
+  if (progressManager === NoOpProgressManager) return
+
   // The ProgressManager service is registered early in CoreApplicationEnvironment, we need to
   // remove it first.
   application.picoContainer.unregisterComponent(ProgressManager::class.java.name)
-  application.registerService(
-    ProgressManager::class.java,
-    object : CoreProgressManager() {
-      override fun doCheckCanceled() {
-        // Do nothing
-      }
-
-      override fun isInNonCancelableSection() = true
-    },
-  )
+  application.registerService(ProgressManager::class.java, NoOpProgressManager)
 }
 
 // Most Logger.error() calls exist to trigger bug reports but are

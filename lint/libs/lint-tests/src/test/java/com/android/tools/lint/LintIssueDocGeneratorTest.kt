@@ -28,6 +28,7 @@ import java.io.File.pathSeparator
 import java.io.PrintWriter
 import java.io.StringWriter
 import kotlin.test.assertContains
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -43,6 +44,11 @@ class LintIssueDocGeneratorTest {
   @Before
   fun setUp() {
     LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
+  }
+
+  @After
+  fun tearDown() {
+    UastEnvironment.disposeApplicationEnvironment()
   }
 
   @Test

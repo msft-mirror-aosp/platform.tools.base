@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.component.NestedComponentCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
@@ -39,7 +38,6 @@ import com.android.build.gradle.internal.cxx.configure.createCxxTasks
 import com.android.build.gradle.internal.dsl.DataBindingOptions
 import com.android.build.gradle.internal.lint.LintTaskManager
 import com.android.build.gradle.internal.profile.AnalyticsConfiguratorService
-import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.CheckJetifierTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
@@ -75,7 +73,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.plugins.BasePlugin
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 
 abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : VariantCreationConfig>(
@@ -131,9 +128,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     checkMultidexDependency()
 
-    createReportAggregationTask()
-
-    registerTestReportTasks()
+    registerTestAndCodeCoverageReportTasks()
 
     // Create tasks for all variants (main, testFixtures and tests)
     for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
@@ -150,10 +145,6 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
       createTasksForTest(testComponent)
     }
     createTopLevelTasks(componentType, variantModel)
-  }
-
-  protected open fun createReportAggregationTask() {
-    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   fun createPostApiTasks() {
@@ -195,21 +186,12 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
     doCreateTasksForVariant(componentInfo)
 
-    // Register code coverage collection task for report aggregation
-    val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
-    taskFactory.register(
-      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-        jacocoAntConfiguration,
-        CodeCoverageReportCreationConfigImpl(variant, testComponents),
-      )
-    )
-
     // now that the onVariants callback has run and tasks have been created,
     // register all the listeners so we can ensure there is a Task providing the artifact
     // they are listening too.
     variant.artifacts.listenerManager.executeActions()
 
-    registerTestDataCollectionTasks(componentInfo)
+    registerTestAndCodeCoverageCollectionTasks(componentInfo)
   }
 
   open fun createTopLevelTasks(componentType: ComponentType, variantModel: VariantModel) {
@@ -225,14 +207,12 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     createReportTasks()
 
     // Create C/C++ configuration, build, and clean tasks
-    val androidLocationBuildService: Provider<AndroidLocationsBuildService> = getBuildService(project.gradle.sharedServices)
     createCxxTasks(
-      androidLocationBuildService.get(),
       getBuildService(globalConfig.services.buildServiceRegistry, SdkComponentsBuildService::class.java).get(),
       globalConfig.services.issueReporter,
       taskFactory,
       globalConfig.services.projectOptions,
-      variants,
+      variantPropertiesList,
       project,
     )
   }
@@ -656,17 +636,21 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   }
 
   /** Register report tasks for test results and code coverage reporting */
-  private fun registerTestReportTasks() {
-    // TODO: Only register the aggregated report task if it is applicable(e.g. for app project)
+  protected open fun registerTestAndCodeCoverageReportTasks() {
+    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
     taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig, isReportAggregationEnabled))
-    taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   /** Register test data collection tasks for test results and code coverage reporting */
-  private fun registerTestDataCollectionTasks(variantInfo: ComponentInfo<VariantBuilderT, VariantT>) {
-    // TODO: Only register the aggregated report task if it is applicable(e.g. for app project)
+  protected open fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<VariantBuilderT, VariantT>) {
     taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
-    taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+
+    taskFactory.register(
+      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
+        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
+        CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+      )
+    )
   }
 
   companion object {

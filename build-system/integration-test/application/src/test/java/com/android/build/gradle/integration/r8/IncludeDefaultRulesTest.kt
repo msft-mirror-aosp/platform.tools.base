@@ -51,7 +51,8 @@ class IncludeDefaultRulesTest {
       }
     }
 
-  val pathPrefix = "# The proguard configuration file for the following section is "
+  val pathPrefix =
+    "The proguard configuration file for the following section is Android Gradle plugin ${com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION} (extracted file: "
 
   @Test
   fun `test includeDefault Rules positive case`() {

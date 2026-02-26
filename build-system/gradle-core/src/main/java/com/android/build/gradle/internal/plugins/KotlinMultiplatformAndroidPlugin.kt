@@ -94,7 +94,6 @@ import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.DslServicesImpl
 import com.android.build.gradle.internal.services.FakeDependencyJarBuildService
 import com.android.build.gradle.internal.services.LintClassLoaderBuildService
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.StringCachingBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
@@ -187,7 +186,6 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
     SymbolTableBuildService.RegistrationAction(project).execute()
     LintClassLoaderBuildService.RegistrationAction(project).execute()
     LintFixBuildService.RegistrationAction(project).execute()
-    R8D8ThreadPoolBuildService.RegistrationAction(project, projectServices.projectOptions).execute()
 
     val stringCachingService: Provider<StringCachingBuildService> = StringCachingBuildService.RegistrationAction(project).execute()
     val mavenCoordinatesCacheBuildService = MavenCoordinatesCacheBuildService.RegistrationAction(project, stringCachingService).execute()
@@ -560,6 +558,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
         global = global,
         androidKotlinCompilation = kotlinCompilation,
         manifestFile = getAndroidManifestDefaultLocation(kotlinCompilation),
+        dslServices = dslServices,
       )
       .also { variant ->
         variant.sources.let { sourcesImpl ->

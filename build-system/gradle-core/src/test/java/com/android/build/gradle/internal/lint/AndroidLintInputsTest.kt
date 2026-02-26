@@ -17,9 +17,12 @@
 package com.android.build.gradle.internal.lint
 
 import com.android.build.gradle.internal.fixtures.FakeSyncIssueReporter
+import com.android.build.gradle.options.ProjectOptions
 import com.android.testutils.SystemPropertyOverrides
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Configuration
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test
@@ -123,5 +126,50 @@ class AndroidLintInputsTest {
       check("17.0.17+10-LTS", "17")
       check("17+35-LTS-2724", "17")
     }
+  }
+
+  @Test
+  fun `check androidLint configuration is accessible and configurable`() {
+    val repoDir = temporaryFolder.newFolder("repo")
+    project.repositories.maven { it.url = repoDir.toURI() }
+
+    createMavenArtifact(repoDir, "org.ow2.asm", "asm", "9.0")
+    createMavenArtifact(repoDir, "org.ow2.asm", "asm", "9.1")
+
+    project.configurations.create("androidLintTool") { config ->
+      config.resolutionStrategy.eachDependency {
+        if (it.requested.group == "org.ow2.asm") {
+          it.useVersion("9.1")
+        }
+      }
+    }
+
+    val issueReporter = FakeSyncIssueReporter(throwOnError = false)
+    val projectOptions = ProjectOptions(project.providers)
+
+    val lintFromMaven = LintFromMaven.from(project, projectOptions, issueReporter)
+    val config = lintFromMaven.files as Configuration
+
+    assertThat(config.name).isEqualTo("androidLintTool")
+    assertThat(project.configurations.findByName("androidLintTool")).isNotNull()
+
+    config.dependencies.clear()
+    config.dependencies.add(project.dependencies.create("org.ow2.asm:asm:9.0"))
+
+    val resolved = config.resolvedConfiguration.firstLevelModuleDependencies
+    assertThat(resolved).hasSize(1)
+    assertThat(resolved.first().moduleGroup).isEqualTo("org.ow2.asm")
+    assertThat(resolved.first().moduleName).isEqualTo("asm")
+    assertThat(resolved.first().moduleVersion).isEqualTo("9.1")
+  }
+
+  private fun createMavenArtifact(repoDir: File, group: String, artifact: String, version: String) {
+    val dir = File(repoDir, "${group.replace('.', '/')}/$artifact/$version")
+    dir.mkdirs()
+    File(dir, "$artifact-$version.pom")
+      .writeText(
+        "<project><modelVersion>4.0.0</modelVersion><groupId>$group</groupId><artifactId>$artifact</artifactId><version>$version</version></project>"
+      )
+    File(dir, "$artifact-$version.jar").writeText("foo-bar")
   }
 }

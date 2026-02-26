@@ -52,13 +52,12 @@ import com.android.build.gradle.internal.component.features.RenderscriptCreation
 import com.android.build.gradle.internal.component.features.ShadersCreationConfig
 import com.android.build.gradle.internal.core.dsl.KmpVariantDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.dsl.AarMetadataImpl
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
 import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.variant.VariantPathHelper
@@ -66,7 +65,7 @@ import com.google.common.collect.ImmutableMap
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import java.io.File
 import java.io.Serializable
-import java.util.Collections
+import java.util.*
 import javax.inject.Inject
 import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.ListProperty
@@ -88,6 +87,7 @@ constructor(
   global: GlobalTaskCreationConfig,
   androidKotlinCompilation: KotlinMultiplatformAndroidCompilation,
   manifestFile: File,
+  dslServices: DslServices,
 ) :
   KmpComponentImpl<KmpVariantDslInfo>(
     dslInfo,
@@ -116,13 +116,13 @@ constructor(
     internalServices.newPropertyBackingDeprecatedApi(String::class.java, services.projectInfo.getProjectBaseName().map { it + DOT_AAR })
 
   override val aarMetadata: AarMetadata =
-    internalServices.newInstance(AarMetadata::class.java).also {
-      it.minCompileSdk.set(
-        dslInfo.aarMetadata.minCompileSdk ?: parseTargetHash(global.compileSdkHashString).apiLevel ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-      )
-      it.minCompileSdkExtension.set(dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION)
-      it.minAgpVersion.set(dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION)
-    }
+    AarMetadataUtil.createAndInitialize(
+      dslServices,
+      services,
+      global,
+      (dslInfo.aarMetadata as AarMetadataImpl).minCompileSdkVersion,
+      dslInfo.aarMetadata.minAgpVersion,
+    )
 
   override val optimizationCreationConfig by
     lazy(LazyThreadSafetyMode.NONE) {

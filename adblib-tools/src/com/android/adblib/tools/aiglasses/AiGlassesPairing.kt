@@ -17,6 +17,7 @@ package com.android.adblib.tools.aiglasses
 
 import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
+import com.android.adblib.ShellCommandOutput
 import com.android.adblib.ShellCommandOutputElement
 import com.android.adblib.adbLogger
 import com.android.adblib.serialNumber
@@ -27,6 +28,7 @@ import kotlin.time.TimeSource
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.any
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -45,14 +47,16 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.hasGlassesCompanionApp(): Boolean {
     var hasCompanion = false
     var hasCore = false
-    shell.executeAsLines("pm list packages $GLASSES_PKG").collect {
-      when (it) {
-        is ShellCommandOutputElement.StdoutLine ->
-          when (it.contents) {
-            "package:$COMPANION_PKG" -> hasCompanion = true
-            "package:$CORE_PKG" -> hasCore = true
-          }
-        else -> {}
+    runCatchingIoException("pm list packages $GLASSES_PKG") {
+      shell.executeAsLines(it).collect { element ->
+        when (element) {
+          is ShellCommandOutputElement.StdoutLine ->
+            when (element.contents) {
+              "package:$COMPANION_PKG" -> hasCompanion = true
+              "package:$CORE_PKG" -> hasCore = true
+            }
+          else -> {}
+        }
       }
     }
     return hasCompanion && hasCore
@@ -68,29 +72,31 @@ class AiGlassesPairing(val session: AdbSession) {
     val command = "am broadcast -a $COMPANION_PKG.GET_PAIRING_STATE $COMPANION_PKG"
 
     logger.info { "Executing: $command" }
-    return shell
-      .executeAsLines(command)
-      .mapNotNull {
-        when (it) {
-          is ShellCommandOutputElement.StdoutLine -> {
-            logger.debug { "Output: ${it.contents}" }
-            "state=([\\w_]+)".toRegex().find(it.contents)?.groupValues?.get(1)
-          }
-          is ShellCommandOutputElement.StderrLine -> {
-            if (it.contents.isNotBlank()) {
-              logger.warn("Poll pairing state error output: ${it.contents}")
+    return runCatchingIoException(command) {
+      shell
+        .executeAsLines(it)
+        .mapNotNull { element ->
+          when (element) {
+            is ShellCommandOutputElement.StdoutLine -> {
+              logger.debug { "Output: ${element.contents}" }
+              "state=([\\w_]+)".toRegex().find(element.contents)?.groupValues?.get(1)
             }
-            null
+            is ShellCommandOutputElement.StderrLine -> {
+              if (element.contents.isNotBlank()) {
+                logger.warn("Poll pairing state error output: ${element.contents}")
+              }
+              null
+            }
+            else -> null
           }
-          else -> null
         }
-      }
-      .firstOrNull()
+        .firstOrNull()
+    }
   }
 
   private suspend fun ConnectedDevice.grantPermission(pkg: String, permission: String) {
     val command = "pm grant $pkg $permission"
-    val output = shell.executeAsText(command)
+    val output = runCatchingIoException(command) { shell.executeAsText(it) }
 
     if (output.exitCode != 0) {
       throw ShellCommandException("Failed to execute \"$command\": ${output.stderr}")
@@ -104,7 +110,7 @@ class AiGlassesPairing(val session: AdbSession) {
    */
   suspend fun ConnectedDevice.launchCompanionApp() {
     val command = "monkey -p $COMPANION_PKG -c android.intent.category.LAUNCHER 1"
-    shell.executeAsText(command)
+    runCatchingIoException(command) { shell.executeAsText(it) }
   }
 
   /**
@@ -121,27 +127,29 @@ class AiGlassesPairing(val session: AdbSession) {
     val command = "dumpsys window windows"
     val regex = "mCurrentFocus=.*$pkg".toRegex()
 
-    return shell
-      .executeAsLines(command)
-      .mapNotNull {
-        when (it) {
-          is ShellCommandOutputElement.StdoutLine -> it.contents
-          is ShellCommandOutputElement.StderrLine -> {
-            if (it.contents.isNotBlank()) {
-              logger.warn("checkAppInForeground error output: ${it.contents}")
+    return runCatchingIoException(command) {
+      shell
+        .executeAsLines(it)
+        .mapNotNull { element ->
+          when (element) {
+            is ShellCommandOutputElement.StdoutLine -> element.contents
+            is ShellCommandOutputElement.StderrLine -> {
+              if (element.contents.isNotBlank()) {
+                logger.warn("checkAppInForeground error output: ${element.contents}")
+              }
+              null
             }
-            null
+            else -> null
           }
-          else -> null
         }
-      }
-      .any { regex.containsMatchIn(it) }
+        .any { line -> regex.containsMatchIn(line) }
+    }
   }
 
   private suspend fun ConnectedDevice.clearPackage(pkg: String) {
     val command = "pm clear $pkg"
     logger.info { "Executing on $serialNumber: $command" }
-    val output = shell.executeAsText(command)
+    val output = runCatchingIoException(command) { shell.executeAsText(it) }
     if (output.exitCode != 0) {
       throw ShellCommandException("Failed to execute \"$command\": ${output.stderr}")
     }
@@ -168,15 +176,17 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.getPairedBluetoothDeviceCount(): Int? {
     val command = "dumpsys bluetooth_manager | grep 'Bonded devices:'"
     var deviceCount: Int? = null
-    shell.executeAsLines(command).collect {
-      when (it) {
-        is ShellCommandOutputElement.StdoutLine ->
-          "Bonded devices:\\s+(\\d+)".toRegex().find(it.contents)?.let { deviceCount = it.groupValues[1].toIntOrNull() }
-        is ShellCommandOutputElement.StderrLine ->
-          if (it.contents.isNotBlank()) {
-            logger.warn("dumpsys bluetooth_manager error output: ${it.contents}")
-          }
-        else -> {}
+    runCatchingIoException(command) {
+      shell.executeAsLines(it).collect { element ->
+        when (element) {
+          is ShellCommandOutputElement.StdoutLine ->
+            "Bonded devices:\\s+(\\d+)".toRegex().find(element.contents)?.let { deviceCount = it.groupValues[1].toIntOrNull() }
+          is ShellCommandOutputElement.StderrLine ->
+            if (element.contents.isNotBlank()) {
+              logger.warn("dumpsys bluetooth_manager error output: ${element.contents}")
+            }
+          else -> {}
+        }
       }
     }
     return deviceCount
@@ -191,7 +201,7 @@ class AiGlassesPairing(val session: AdbSession) {
   suspend fun ConnectedDevice.getBluetoothAddress(): String? {
     val command = "settings get secure bluetooth_address"
     logger.info { "Executing on $serialNumber: $command" }
-    val result = shell.executeAsText(command)
+    val result = runCatchingIoException(command) { shell.executeAsText(it) }
     if (result.stderr.isNotEmpty()) {
       logger.warn("Get Bluetooth address command error output: ${result.stderr}")
     }
@@ -263,9 +273,9 @@ class AiGlassesPairing(val session: AdbSession) {
     return "result=(-?\\d+)".toRegex().find(stdout)?.groupValues?.get(1)?.toIntOrNull()
   }
 
-  private suspend fun ConnectedDevice.executeBroadcastCommand(command: String): com.android.adblib.ShellCommandOutput {
+  private suspend fun ConnectedDevice.executeBroadcastCommand(command: String): ShellCommandOutput {
     logger.info { "Executing on $serialNumber: $command" }
-    val output = shell.executeAsText(command)
+    val output = runCatchingIoException(command) { shell.executeAsText(it) }
     logger.debug { output.stdout }
     if (output.stderr.isNotEmpty()) {
       logger.warn("Command '$command' error output: ${output.stderr}")
@@ -350,6 +360,20 @@ class AiGlassesPairing(val session: AdbSession) {
         }
       }
       .retry(1) { cause -> cause is IOException || cause is ShellCommandException }
+      .catch { cause ->
+        if (cause is IOException && cause !is DeviceConnectionException) {
+          throw DeviceConnectionException(serialNumber, "pairToGlasses flow", cause)
+        }
+        throw cause
+      }
+
+  private suspend inline fun <T> ConnectedDevice.runCatchingIoException(command: String, block: (String) -> T): T {
+    try {
+      return block(command)
+    } catch (e: IOException) {
+      throw DeviceConnectionException(serialNumber, command, e)
+    }
+  }
 
   companion object {
 
@@ -382,3 +406,6 @@ class AiGlassesPairing(val session: AdbSession) {
 }
 
 class ShellCommandException(message: String) : Exception(message)
+
+class DeviceConnectionException(val serialNumber: String, val command: String, cause: Throwable) :
+  IOException("Connection to $serialNumber lost while executing '$command'.", cause)

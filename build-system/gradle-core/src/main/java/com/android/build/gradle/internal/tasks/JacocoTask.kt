@@ -290,7 +290,7 @@ abstract class JacocoTask : NewIncrementalTask() {
     override fun configure(task: JacocoTask) {
       super.configure(task)
       task.jacocoAntTaskConfiguration.from(
-        JacocoConfigurations.getJacocoAntTaskConfiguration(task.project, getJacocoVersion(creationConfig))
+        JacocoConfigurations.getJacocoAntTaskConfiguration(task.project, getAndroidTestJacocoVersion(creationConfig))
       )
       task.forceOutOfProcess.set(creationConfig.services.projectOptions[BooleanOption.FORCE_JACOCO_OUT_OF_PROCESS])
     }
@@ -298,7 +298,7 @@ abstract class JacocoTask : NewIncrementalTask() {
 
   companion object {
     /** Returns which Jacoco version to use. */
-    fun getJacocoVersion(creationConfig: ComponentCreationConfig): String {
+    fun getAndroidTestJacocoVersion(creationConfig: ComponentCreationConfig): String {
       return creationConfig.global.testCoverage.jacocoVersion
     }
 

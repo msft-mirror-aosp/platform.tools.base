@@ -112,7 +112,8 @@ public class TestVariantFactory
             @NonNull MutableTaskContainer taskContainer,
             @NonNull VariantServices variantServices,
             @NonNull TaskCreationServices taskCreationServices,
-            @NonNull GlobalTaskCreationConfig globalConfig) {
+            @NonNull GlobalTaskCreationConfig globalConfig,
+            @NonNull ProjectServices projectServices) {
         return dslServices.newInstance(
                 TestVariantImpl.class,
                 variantBuilder,
@@ -196,7 +197,8 @@ public class TestVariantFactory
             @NonNull VariantCreationConfig mainVariant,
             @NonNull VariantServices variantServices,
             @NonNull TaskCreationServices taskCreationServices,
-            @NonNull GlobalTaskCreationConfig globalConfig) {
+            @NonNull GlobalTaskCreationConfig globalConfig,
+            @NonNull ProjectServices projectServices) {
         throw new RuntimeException("cannot instantiate test-fixtures properties in test plugin");
     }
 

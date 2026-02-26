@@ -27,6 +27,7 @@ import com.android.build.api.variant.impl.LibraryVariantBuilderImpl
 import com.android.build.api.variant.impl.LibraryVariantImpl
 import com.android.build.gradle.internal.api.BaseVariantImpl
 import com.android.build.gradle.internal.component.LibraryCreationConfig
+import com.android.build.gradle.internal.core.LibraryVariantSources
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
@@ -85,6 +86,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
     variantServices: VariantServices,
     taskCreationServices: TaskCreationServices,
     globalConfig: GlobalTaskCreationConfig,
+    projectServices: ProjectServices,
   ): LibraryCreationConfig {
     val libraryVariant =
       dslServices.newInstance(
@@ -93,7 +95,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
         buildFeatures,
         variantDslInfo,
         variantDependencies,
-        variantSources,
+        variantSources as LibraryVariantSources,
         paths,
         artifacts,
         variantData,
@@ -101,6 +103,7 @@ class LibraryVariantFactory(dslServices: DslServices) :
         variantServices,
         taskCreationServices,
         globalConfig,
+        dslServices,
       )
     restrictRenderScriptOnRiscv(dslServices, libraryVariant, buildFeatures, globalConfig)
     return libraryVariant

@@ -91,6 +91,13 @@ interface SourceProvider : AndroidModel {
   val keepRulesDirectories: Collection<File>?
 
   /**
+   * Returns the keep rules source folders for optimizing AARs to publish
+   *
+   * @return a list of folders. They may not all exist.
+   */
+  val aarKeepRulesDirectories: Collection<File>?
+
+  /**
    * Returns the android resources folders, or null if resource processing is disabled
    *
    * @return a list of folders. They may not all exist.

@@ -6,6 +6,8 @@ are announced on go/as-release-notes.
 Deprecated from AGP 9.1.0
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget implements com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget)
+  * com.android.build.api.variant.AarMetadata.getMinCompileSdk: org.gradle.api.provider.Property<java.lang.Integer> ()
+  * com.android.build.api.variant.AarMetadata.getMinCompileSdkExtension: org.gradle.api.provider.Property<java.lang.Integer> ()
   * com.android.build.api.variant.TestSuiteSourceSet$Assets$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$Assets)
   * com.android.build.api.variant.TestSuiteSourceSet$HostJar$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$HostJar)
   * com.android.build.api.variant.TestSuiteSourceSet$TestApk$DefaultImpls.getType: com.android.build.api.variant.TestSuiteSourceType (com.android.build.api.variant.TestSuiteSourceSet$TestApk)

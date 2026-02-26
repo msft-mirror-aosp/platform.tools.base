@@ -43,6 +43,8 @@ class AarMetadataSubject internal constructor(metadata: FailureMetadata, actual:
 
   fun minCompileSdk(): StringSubject = check("minCompileSdk()").that(actual().minCompileSdk)
 
+  fun minCompileSdkMinor(): StringSubject = check("minCompileSdkMinor()").that(actual().minCompileSdkMinor)
+
   fun minCompileSdkExtension(): StringSubject = check("minCompileSdkExtension()").that(actual().minCompileSdkExtension)
 
   fun minAgpVersion(): StringSubject = check("minAgpVersion()").that(actual().minAgpVersion)

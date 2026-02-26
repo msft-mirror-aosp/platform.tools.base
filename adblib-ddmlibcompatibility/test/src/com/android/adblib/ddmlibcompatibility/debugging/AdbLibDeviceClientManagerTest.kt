@@ -775,7 +775,7 @@ class AdbLibDeviceClientManagerTest {
     }
   }
 
-  class AndroidDebugBridgeListener(private val ddmlibListener: IDeviceChangeListener) : DeviceClientManagerListener {
+  private class AndroidDebugBridgeListener(private val ddmlibListener: IDeviceChangeListener) : DeviceClientManagerListener {
     override fun processListUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager) {
       if (bridge === AndroidDebugBridge.getBridge()) {
         ddmlibListener.deviceChanged(deviceClientManager.device, IDevice.CHANGE_CLIENT_LIST)
@@ -789,19 +789,19 @@ class AdbLibDeviceClientManagerTest {
     }
 
     override fun processNameUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
-      throw NotImplementedError("processNameUpdated")
+      // Ignore
     }
 
     override fun processDebuggerStatusUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
-      throw NotImplementedError("processDebuggerStatusUpdated")
+      // Ignore
     }
 
     override fun processHeapAllocationsUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
-      throw NotImplementedError("processHeapAllocationsUpdated")
+      // Ignore
     }
 
     override fun processMethodProfilingStatusUpdated(bridge: AndroidDebugBridge, deviceClientManager: DeviceClientManager, client: Client) {
-      throw NotImplementedError("processMethodProfilingStatusUpdated")
+      // Ignore
     }
   }
 }

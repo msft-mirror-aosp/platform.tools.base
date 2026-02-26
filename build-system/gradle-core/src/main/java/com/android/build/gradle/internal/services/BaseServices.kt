@@ -43,7 +43,7 @@ interface BaseServices {
    */
   val builtInKotlinServices: BuiltInKotlinServices
 
-  fun <T> newInstance(type: Class<T>, vararg args: Any?): T
+  fun <T : Any> newInstance(type: Class<T>, vararg args: Any?): T
 
   fun file(file: Any): File
 }

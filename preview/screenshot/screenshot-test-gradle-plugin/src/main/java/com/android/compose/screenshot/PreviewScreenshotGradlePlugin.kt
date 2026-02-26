@@ -226,9 +226,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
               task.testLogging { it.showStandardStreams = true }
               task.isScanForTestClasses = false
               task.systemProperty("java.awt.headless", "true")
-              task.classpath.from(
-                task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
+              val engineClasspath = task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName)
+              task.classpath.setFrom(
+                engineClasspath,
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
+                task.classpath,
               )
               maxHeapSize?.let { task.maxHeapSize = it }
             }
@@ -274,9 +276,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 it.html.outputLocation.set(buildDir.dir("$PREVIEW_REPORTS/${variant.computePathSegments()}"))
               }
 
-              task.classpath.from(
-                task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName),
+              val engineClasspath = task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName)
+              task.classpath.setFrom(
+                engineClasspath,
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
+                task.classpath,
               )
 
               maxHeapSize?.let { task.maxHeapSize = it }

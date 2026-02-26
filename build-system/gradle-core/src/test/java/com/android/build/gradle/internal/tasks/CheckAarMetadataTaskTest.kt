@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.Version
+import com.android.build.gradle.internal.dsl.CompileSdkVersionImpl
 import com.android.build.gradle.internal.fixtures.FakeArtifactCollection
 import com.android.build.gradle.internal.fixtures.FakeComponentIdentifier
 import com.android.build.gradle.internal.fixtures.FakeGradleWorkExecutor
@@ -213,7 +214,7 @@ class CheckAarMetadataTaskTest {
     task.compileSdkVersion.set("android-27")
     task.disableCompileSdkChecks.set(false)
     task.agpVersion.set("7.2.0")
-    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(30)
+    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(CompileSdkVersionImpl(30))
     task.coreLibraryDesugaringEnabled.set(false)
     task.checkCoreLibraryDesugaring.set(false)
     task.projectPath.set(":app")
@@ -272,7 +273,7 @@ class CheckAarMetadataTaskTest {
     task.compileSdkVersion.set("android-27")
     task.disableCompileSdkChecks.set(false)
     task.agpVersion.set("7.2.0")
-    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(30)
+    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(CompileSdkVersionImpl(30))
     task.coreLibraryDesugaringEnabled.set(false)
     task.checkCoreLibraryDesugaring.set(false)
     task.projectPath.set(":app")
@@ -336,7 +337,7 @@ class CheckAarMetadataTaskTest {
     task.disableCompileSdkChecks.set(false)
     task.platformSdkApiLevel.set(46)
     task.agpVersion.set("7.2.0")
-    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(30)
+    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(CompileSdkVersionImpl(30))
     task.coreLibraryDesugaringEnabled.set(false)
     task.checkCoreLibraryDesugaring.set(false)
     task.projectPath.set(":app")
@@ -688,7 +689,7 @@ class CheckAarMetadataTaskTest {
     task.checkCoreLibraryDesugaring.set(false)
     task.agpVersion.set("3.0.0-beta1")
     task.projectPath.set(":app")
-    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(30)
+    task.maxRecommendedStableCompileSdkVersionForThisAgp.set(CompileSdkVersionImpl(30))
     try {
       task.taskAction()
     } catch (e: RuntimeException) {

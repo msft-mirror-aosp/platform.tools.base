@@ -208,8 +208,8 @@ class AnalyticsEnabledComponentTest {
     whenever(delegate.sources).thenReturn(sources)
 
     val sourcesProxy = proxy.sources
-    Truth.assertThat(sources.javaClass).`is`(AnalyticsEnabledSources::class.java)
-    Truth.assertThat((sourcesProxy as AnalyticsEnabledSources).delegate).isEqualTo(sources)
+    Truth.assertThat(sourcesProxy).isInstanceOf(AnalyticsEnabledSources::class.java)
+    Truth.assertThat((sourcesProxy as AnalyticsEnabledSources<*>).delegate).isEqualTo(sources)
 
     Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
       .isEqualTo(VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE)

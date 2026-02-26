@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalGlobalTask
@@ -30,9 +29,10 @@ import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -42,14 +42,15 @@ import org.gradle.internal.logging.ConsoleRenderer
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class TestReportTask : NonIncrementalGlobalTask() {
 
-  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
+  @get:Input abstract val reportAggregationEnabled: Property<Boolean>
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
 
   @get:OutputDirectory abstract val reportDir: DirectoryProperty
 
   override fun doTaskAction() {
-    if (!testResults.isPresent) {
-      LoggerWrapper.getLogger(TestReportTask::class.java)
-        .warning("Aggregated Test reporting feature is disabled, TestReportTask's execution is skipped.")
+    if (!reportAggregationEnabled.get()) {
+      logger.warn("Aggregated Test reporting feature is disabled, TestReportTask's execution is skipped.")
       return
     }
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
@@ -85,6 +86,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
+      task.reportAggregationEnabled.set(isReportAggregationEnabled)
       if (isReportAggregationEnabled) {
         task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
       }

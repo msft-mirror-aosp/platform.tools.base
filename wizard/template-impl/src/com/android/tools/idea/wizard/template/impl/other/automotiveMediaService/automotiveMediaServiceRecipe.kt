@@ -63,13 +63,11 @@ fun RecipeExecutor.automotiveMediaServiceRecipe(
       // module.
       source =
         buildGradle(
-          agpVersion = projectData.agpVersion,
+          projectData = projectData,
           packageName = sharedPackageName,
           buildApi = apis.buildApi,
-          generateKotlin = projectData.language == Language.Kotlin,
           minApi = apis.minApi,
           targetApi = apis.targetApi,
-          useAndroidX = useAndroidX,
         ),
       to = projectData.rootDir.resolve(sharedModule).resolve("build.gradle"),
     )

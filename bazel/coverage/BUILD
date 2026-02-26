@@ -994,7 +994,6 @@ coverage_report(
         "//tools/adt/idea/android/gradle:intellij.android.core.gradle_tests",
         "//tools/adt/idea/android/gradle.project.sync:intellij.android.core.gradle.project.sync_tests",
         "//tools/adt/idea/android/imports:intellij.android.core.imports_tests",
-        "//tools/adt/idea/android/instantapp:intellij.android.core.instantapp_tests",
         "//tools/adt/idea/android/jetbrains:intellij.android.core.jetbrains_tests",
         "//tools/adt/idea/android/lang:intellij.android.core.lang_tests",
         "//tools/adt/idea/android/model:intellij.android.core.model_tests",

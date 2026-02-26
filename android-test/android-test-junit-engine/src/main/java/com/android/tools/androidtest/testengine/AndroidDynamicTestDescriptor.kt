@@ -18,23 +18,39 @@ package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.instrument.AmInstrumentationParser
 import com.android.tools.androidtest.testengine.instrument.TestResult
-import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.engine.support.hierarchical.Node
 
-/** A dynamic test descriptor representing a single test case running on an Android device. */
+/**
+ * A dynamic test descriptor representing a single test case running on an Android device.
+ *
+ * This descriptor is created dynamically when the instrumentation runner reports that a test has started. It uses a [CompletableDeferred]
+ * to wait for the test result, which is delivered by the instrumentation listener.
+ */
 class AndroidDynamicTestDescriptor(uniqueId: UniqueId, displayName: String, className: String, methodName: String) :
   AbstractTestDescriptor(uniqueId, displayName, MethodSource.from(className, methodName)), Node<AndroidTestExecutionContext> {
 
-  val resultFuture = CompletableFuture<TestResult>()
+  /**
+   * A deferred result that is completed by the instrumentation listener when the test ends. The [execute] method awaits this deferred value
+   * to report the final status to JUnit.
+   */
+  val resultDeferred = CompletableDeferred<TestResult>()
 
   override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
 
+  /**
+   * Blocks (suspends) until the test result is available via [resultDeferred].
+   *
+   * Once the result is received, it evaluates the status code. If the test failed (i.e., status is not OK, IGNORED, or ASSUMPTION_FAILURE),
+   * it throws a [RuntimeException] with the stack trace, which JUnit captures as a test failure.
+   */
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
-    val result = resultFuture.get() // Blocks until testEnded is called in the listener
+    val result = runBlocking { resultDeferred.await() } // Suspends until testEnded is called in the listener
     when (result.status) {
       AmInstrumentationParser.STATUS_CODE_OK -> {
         // Success

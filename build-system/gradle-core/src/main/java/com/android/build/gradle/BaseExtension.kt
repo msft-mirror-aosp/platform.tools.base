@@ -442,7 +442,7 @@ protected constructor(
 
   abstract fun signingConfigs(action: Action<NamedDomainObjectContainer<SigningConfig>>)
 
-  abstract override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+  abstract override val sourceSets: NamedDomainObjectContainer<out AndroidSourceSet>
 
   abstract override val splits: Splits
 

@@ -45,19 +45,19 @@ interface DslServices : BaseServices {
   val projectType: ProjectType?
   val configurations: ConfigurationContainer
 
-  fun <T> domainObjectSet(type: Class<T>): DomainObjectSet<T>
+  fun <T : Any> domainObjectSet(type: Class<T>): DomainObjectSet<T>
 
-  fun <T> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T>
+  fun <T : Any> domainObjectContainer(type: Class<T>, factory: NamedDomainObjectFactory<T>): NamedDomainObjectContainer<T>
 
-  fun <T> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T>
+  fun <T : Any> domainObjectContainer(type: Class<T>): NamedDomainObjectContainer<T>
 
-  fun <T> polymorphicDomainObjectContainer(type: Class<T>): ExtensiblePolymorphicDomainObjectContainer<T>
+  fun <T : Any> polymorphicDomainObjectContainer(type: Class<T>): ExtensiblePolymorphicDomainObjectContainer<T>
 
-  @Deprecated("do not use. DSL elements should not use Property<T> objects") fun <T> property(type: Class<T>): Property<T>
+  @Deprecated("do not use. DSL elements should not use Property<T> objects") fun <T : Any> property(type: Class<T>): Property<T>
 
   @Deprecated("do not use. DSL elements should not use DirectoryProperty objects") fun directoryProperty(): DirectoryProperty
 
-  fun <T> provider(type: Class<T>, value: T?): Provider<T>
+  fun <T : Any> provider(type: Class<T>, value: T?): Provider<T>
 
   fun <T : Any> newDecoratedInstance(dslClass: Class<T>, vararg args: Any): T
 }

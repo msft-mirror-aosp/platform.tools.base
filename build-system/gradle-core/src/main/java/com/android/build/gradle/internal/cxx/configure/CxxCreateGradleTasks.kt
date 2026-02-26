@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.cxx.configure
 
-import com.android.build.api.variant.ComponentBuilder
 import com.android.build.gradle.internal.SdkComponentsBuildService
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
@@ -47,7 +46,6 @@ import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedCon
 import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH
 import com.android.build.gradle.internal.tasks.factory.TaskFactory
 import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.tasks.ExternalNativeBuildTask
 import com.android.build.gradle.tasks.PrefabPackageConfigurationTask
@@ -57,7 +55,6 @@ import com.android.build.gradle.tasks.createRepublishCxxBuildTask
 import com.android.build.gradle.tasks.createVariantCxxCleanTask
 import com.android.build.gradle.tasks.createWorkingCxxBuildTask
 import com.android.builder.errors.IssueReporter
-import com.android.prefs.AndroidLocationsProvider
 import com.android.utils.appendCapitalized
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -66,13 +63,12 @@ import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.TaskProvider
 
 /** Construct gradle tasks for C/C++ configuration and build. */
-fun <VariantBuilderT : ComponentBuilder, VariantT : VariantCreationConfig> createCxxTasks(
-  androidLocationsProvider: AndroidLocationsProvider,
+fun createCxxTasks(
   sdkComponents: SdkComponentsBuildService,
   issueReporter: IssueReporter,
   taskFactory: TaskFactory,
   projectOptions: ProjectOptions,
-  variants: Collection<ComponentInfo<VariantBuilderT, VariantT>>,
+  variants: Collection<VariantCreationConfig>,
   project: Project,
 ) {
   if (variants.isEmpty()) return
@@ -80,18 +76,18 @@ fun <VariantBuilderT : ComponentBuilder, VariantT : VariantCreationConfig> creat
   val layout = project.layout
   IssueReporterLoggingEnvironment(
       issueReporter = issueReporter,
-      rootBuildGradleFolder = variants.first().variant.services.projectInfo.rootDir,
+      rootBuildGradleFolder = variants.first().services.projectInfo.rootDir,
       allowStructuredLogging = false, // Don't want to write files during configuration phase
       cxxFolder = null,
     )
     .use {
-      val configurationParameters = variants.mapNotNull { tryCreateConfigurationParameters(projectOptions, it.variant) }
+      val configurationParameters = variants.mapNotNull { tryCreateConfigurationParameters(projectOptions, it) }
       if (configurationParameters.isEmpty()) return
       NativeLocationsBuildService.register(project)
 
       val abis = createInitialCxxModel(sdkComponents, configurationParameters, providers, layout)
 
-      val variantMap = variants.associate { it.variant.name to it.variant }
+      val variantMap = variants.associate { it.name to it }
 
       val taskModel = createFoldedCxxTaskDependencyModel(abis)
 

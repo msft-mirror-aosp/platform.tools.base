@@ -17,7 +17,7 @@ package com.android.build.gradle
 
 import com.android.build.api.dsl.LibraryBuildFeatures
 import com.android.build.api.dsl.LibraryDefaultConfig
-import com.android.build.gradle.api.AndroidSourceSet
+import com.android.build.gradle.api.AndroidLibrarySourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.LibraryVariant
@@ -127,7 +127,7 @@ constructor(
   override val productFlavors: NamedDomainObjectContainer<out ProductFlavor>
     get() = publicExtensionImpl.productFlavors as NamedDomainObjectContainer<ProductFlavor>
 
-  override val sourceSets: NamedDomainObjectContainer<AndroidSourceSet>
+  override val sourceSets: NamedDomainObjectContainer<AndroidLibrarySourceSet>
     get() = publicExtensionImpl.sourceSets
 
   override val packagingOptions: PackagingOptions

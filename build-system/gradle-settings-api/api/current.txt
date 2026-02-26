@@ -28,12 +28,14 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public Integer? getCompileSdkExtension();
     method @InaccessibleFromKotlin public String? getCompileSdkPreview();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Execution getExecution();
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.Lint getLint();
     method @InaccessibleFromKotlin public Integer? getMinSdk();
     method @InaccessibleFromKotlin public String? getMinSdkPreview();
     method @InaccessibleFromKotlin public String? getNdkPath();
     method @InaccessibleFromKotlin public String getNdkVersion();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public Integer? getTargetSdk();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public String? getTargetSdkPreview();
+    method public void lint(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Lint,kotlin.Unit> action);
     method public void minSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MinSdkSpec,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setBuildToolsVersion(String);
     method @InaccessibleFromKotlin public void setCompileSdk(Integer?);
@@ -54,6 +56,7 @@ package com.android.build.api.dsl {
     property public abstract Integer? compileSdkExtension;
     property public abstract String? compileSdkPreview;
     property public abstract com.android.build.api.dsl.Execution execution;
+    property public abstract com.android.build.api.dsl.Lint lint;
     property public abstract Integer? minSdk;
     property public abstract String? minSdkPreview;
     property public abstract String? ndkPath;

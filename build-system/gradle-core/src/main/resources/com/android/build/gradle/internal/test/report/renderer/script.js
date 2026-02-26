@@ -477,10 +477,15 @@ const TestReportApp = {
       const passRateColor = rate >= 95 ? 'text-green' : rate >= 80 ? 'text-yellow' : 'text-red';
       const relevantTotal = passed + failed;
 
+      const filter = this.state.filters.status;
+      const showPassed = filter === 'all' || filter === 'passed';
+      const showFailed = filter === 'all' || filter === 'failed';
+      const showSkipped = filter === 'all' || filter === 'skipped';
+
       return `
-                <td class="text-center text-green font-medium border-l">${passed}</td>
-                <td class="text-center ${failed > 0 ? 'text-red font-bold' : 'text-gray'}">${failed}</td>
-                <td class="text-center text-yellow">${skipped}</td>
+                <td class="text-center ${showPassed ? 'text-green' : 'text-gray'} font-medium border-l">${showPassed ? passed : '-'}</td>
+                <td class="text-center ${showFailed ? (failed > 0 ? 'text-red font-bold' : 'text-gray') : 'text-gray'}">${showFailed ? failed : '-'}</td>
+                <td class="text-center ${showSkipped ? 'text-yellow' : 'text-gray'}">${showSkipped ? skipped : '-'}</td>
                 <td class="text-center">
                     <div class="flex-col">
                         <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>

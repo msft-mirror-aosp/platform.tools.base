@@ -258,7 +258,7 @@ severity: $severity
 type: $type
 data: ${additionalData}
 message:
-${it.contextualLabel.contextualLabel}
+${it.contextualLabel.contextualLabel.normalizeMessage()}
 multiLineMessage:
 ${it.details?.details?.lines()}
                 """
@@ -271,7 +271,7 @@ severity: ${it.severity}
 type: ${it.type}
 data: ${it.data}
 message:
-${it.message}
+${it.message.normalizeMessage()}
 multiLineMessage:
 ${it.multiLineMessage}
             """
@@ -381,9 +381,7 @@ class FileNormalizerImpl(
       RootData(gradleCacheDir, "GRADLE_CACHE") {
         // Remove the actual checksum (size 32)
         // incoming string is "XXXX/..." so removing XXX leaves a leading /
-        // For windows platform, also need to remove the "workspace/" which is "added" due to
-        // our bazel set up
-        val startingIndex = if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) 42 else 32
+        val startingIndex = 32
         "{CHECKSUM}${it.substring(startingIndex)}"
       }
     )
@@ -521,3 +519,5 @@ fun ModelBuilderParameter.buildAllRuntimeClasspaths() {
   dontBuildHostTestRuntimeClasspath = mapOf("UnitTest" to false, "ScreenshotTest" to false)
   additionalArtifactsInModel = true
 }
+
+private fun String?.normalizeMessage(): String = this?.replace(Regex("\\s+"), " ")?.trim() ?: "null"

@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
@@ -72,6 +71,8 @@ import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.ProcessLibraryArtProfileTask
 import com.android.build.gradle.tasks.ProcessLibraryManifest
 import com.android.build.gradle.tasks.SourceJarTask
+import com.android.build.gradle.tasks.TestReportTask
+import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.ZipMergingTask
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
@@ -241,23 +242,27 @@ class LibraryTaskManager(
     taskFactory.register(ExtractSupportedLocalesTask.CreationAction(libraryVariant))
 
     createBundleTask(libraryVariant)
+  }
 
-    if (libraryVariant.publishInfo?.components?.isNotEmpty() ?: false) {
-      val jacocoAntConfiguration =
-        JacocoConfigurations.getJacocoAntTaskConfiguration(project, libraryVariant.global.testCoverage.jacocoVersion)
+  override fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<LibraryVariantBuilder, LibraryCreationConfig>) {
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
+    if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
+      taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+
       taskFactory.register(
         CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-          jacocoAntConfiguration,
+          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
           CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
         )
       )
     }
   }
 
-  override fun createReportAggregationTask() {
-    super.createReportAggregationTask()
+  override fun registerTestAndCodeCoverageReportTasks() {
+    super.registerTestAndCodeCoverageReportTasks()
     if (variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
       taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
+      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
     }
   }
 

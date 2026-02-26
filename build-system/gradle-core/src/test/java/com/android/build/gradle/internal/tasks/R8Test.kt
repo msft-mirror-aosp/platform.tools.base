@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.transforms.testdata.Toy
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.SyncOptions
 import com.android.builder.core.ComponentTypeImpl
+import com.android.builder.dexing.KeepRuleFile
 import com.android.builder.dexing.PartialShrinking
 import com.android.builder.dexing.PartialShrinkingConfig
 import com.android.builder.dexing.R8OutputType
@@ -207,8 +208,9 @@ class R8Test(private val r8OutputType: R8OutputType) {
       it.println("-keep class " + Cat::class.java.name + " {*;}")
       it.println("-keep class " + Toy::class.java.name + " {*;}")
     }
+    val keepRuleFiles = listOf(KeepRuleFile.WithoutOrigin(proguardConfiguration.toPath()))
 
-    runR8(classes = listOf(classes.toFile()), java8Support = Java8LangSupport.R8, proguardRulesFiles = listOf(proguardConfiguration))
+    runR8(classes = listOf(classes.toFile()), java8Support = Java8LangSupport.R8, keepRuleFiles = keepRuleFiles)
 
     // Super classes are not explicitly kept and thus may be merged into Cat.
     assertClassExists(Cat::class.java)
@@ -256,12 +258,9 @@ class R8Test(private val r8OutputType: R8OutputType) {
       it.println("-keep class " + Toy::class.java.name + " {*;}")
     }
 
-    runR8(
-      classes = listOf(classes.toFile()),
-      java8Support = Java8LangSupport.R8,
-      proguardRulesFiles = listOf(proguardConfiguration),
-      useFullR8 = true,
-    )
+    val keepRuleFiles = listOf(KeepRuleFile.WithoutOrigin(proguardConfiguration.toPath()))
+
+    runR8(classes = listOf(classes.toFile()), java8Support = Java8LangSupport.R8, keepRuleFiles = keepRuleFiles, useFullR8 = true)
 
     // Super classes are not explicitly kept and thus may be merged into Cat.
     assertClassExists(Cat::class.java)
@@ -300,11 +299,12 @@ class R8Test(private val r8OutputType: R8OutputType) {
       it.println("-keep class " + Toy::class.java.name + " {*;}")
       it.println("-keep class " + CarbonForm::class.java.name + " {*;}")
     }
+    val keepRuleFiles = listOf(KeepRuleFile.WithoutOrigin(proguardConfiguration.toPath()))
 
     runR8(
       classes = listOf(classes.toFile()),
       java8Support = Java8LangSupport.R8,
-      proguardRulesFiles = listOf(proguardConfiguration),
+      keepRuleFiles = keepRuleFiles,
       featureClassJars = listOf(featureClassesJar.toFile()),
       featureJavaResourceJars = listOf(featureJavaResJar.toFile()),
       featureDexDir = featureDexDir,
@@ -335,7 +335,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
     runR8(
       classes = listOf(classes.toFile()),
       java8Support = Java8LangSupport.R8,
-      proguardRulesFiles = listOf(proguardConfiguration),
+      keepRuleFiles = keepRuleFiles,
       featureClassJars = listOf(featureClassesJar.toFile()),
       featureJavaResourceJars = listOf(featureJavaResJar.toFile()),
       featureDexDir = featureDexDir,
@@ -560,7 +560,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
     resourcesJar: Path = outputDir.resolve("resources.jar").also { TestInputsGenerator.jarWithEmptyClasses(it, listOf()) },
     mainDexRulesFiles: List<File> = listOf(),
     java8Support: Java8LangSupport = Java8LangSupport.UNUSED,
-    proguardRulesFiles: List<File> = listOf(),
+    keepRuleFiles: List<KeepRuleFile> = listOf(),
     outputProguardMapping: File = outputDir.resolve("mapping.txt").toFile(),
     outputPartitionMapping: File = outputDir.resolve("mapping.prt").toFile(),
     disableMinification: Boolean = true,
@@ -594,7 +594,7 @@ class R8Test(private val r8OutputType: R8OutputType) {
       mainDexListFiles = listOf(),
       mainDexRulesFiles = mainDexRulesFiles,
       inputProguardMapping = null,
-      proguardConfigurationFiles = proguardRulesFiles,
+      keepRuleWithOrigins = keepRuleFiles,
       proguardConfigurations = proguardConfigurations,
       errorFormatMode = SyncOptions.ErrorFormatMode.HUMAN_READABLE,
       legacyMultiDexEnabled = false,

@@ -17,18 +17,21 @@ package com.android.tools.apk.analyzer;
 
 import com.android.SdkConstants;
 import com.android.xml.XmlBuilder;
+
 import com.google.common.collect.Lists;
 import com.google.devrel.gmscore.tools.apk.arsc.Chunk;
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceFile;
 import com.google.devrel.gmscore.tools.apk.arsc.ResourceValue;
 import com.google.devrel.gmscore.tools.apk.arsc.StringPoolChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlAttribute;
+import com.google.devrel.gmscore.tools.apk.arsc.XmlCdataChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlEndElementChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceEndChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlNamespaceStartChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlResourceMapChunk;
 import com.google.devrel.gmscore.tools.apk.arsc.XmlStartElementChunk;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,26 +43,31 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Logger;
 
+// Class is published on gmaven and needs to be compatible with JVM 17
+@SuppressWarnings("SequencedCollectionMethodCanBeUsed")
 public class BinaryXmlParser {
-    @NotNull
-    public static byte[] decodeXml(
-            @NotNull byte[] bytes, @NotNull ResourceIdResolver resIdResolver) {
+
+    public static byte @NotNull [] decodeXml(
+            byte @NotNull [] bytes, @NotNull ResourceIdResolver resIdResolver) {
         ResourceFile file = new ResourceFile(bytes);
         List<Chunk> chunks = file.getChunks();
         if (chunks.size() != 1) {
-            //Logger.getInstance(BinaryXmlParser.class).warn("Expected 1, but got " + chunks.size() + " chunks while parsing " + fileName);
+            Logger.getLogger("BinaryXmlParser")
+                    .warning("Expected 1, but got " + chunks.size() + " chunks");
             return bytes;
         }
 
-        if (!(chunks.get(0) instanceof XmlChunk)) {
-            //Logger.getInstance(BinaryXmlParser.class)
-            //  .warn("First chunk in " + fileName + " is not an XmlChunk: " + chunks.get(0).getClass().getCanonicalName());
+        if (!(chunks.get(0) instanceof XmlChunk xmlChunk)) {
+            Logger.getLogger("BinaryXmlParser")
+                    .warning(
+                            "First chunk is not an XmlChunk: "
+                                    + chunks.get(0).getClass().getCanonicalName());
             return bytes;
         }
 
         XmlPrinter printer = new XmlPrinter(resIdResolver);
-        XmlChunk xmlChunk = (XmlChunk) chunks.get(0);
 
         visitChunks(xmlChunk.getChunks(), printer);
 
@@ -68,8 +76,7 @@ public class BinaryXmlParser {
         return reconstructedXml.getBytes(StandardCharsets.UTF_8);
     }
 
-    @NotNull
-    public static byte[] decodeXml(@NotNull byte[] bytes) {
+    public static byte @NotNull [] decodeXml(byte @NotNull [] bytes) {
         return decodeXml(bytes, ResourceIdResolver.NO_RESOLUTION);
     }
 
@@ -77,9 +84,12 @@ public class BinaryXmlParser {
             @NotNull Map<Integer, Chunk> chunks, @NotNull XmlChunkHandler handler) {
         // sort the chunks by their offset in the file in order to traverse them in the right order
         List<Chunk> contentChunks = sortByOffset(chunks);
-
+        Logger logger = Logger.getLogger("BinaryXmlParser");
         for (Chunk chunk : contentChunks) {
-            if (chunk instanceof StringPoolChunk) {
+            //noinspection IfCanBeSwitch
+            if (chunk == null) {
+                logger.warning("Got a null chunk");
+            } else if (chunk instanceof StringPoolChunk) {
                 handler.stringPool((StringPoolChunk) chunk);
             } else if (chunk instanceof XmlResourceMapChunk) {
                 handler.xmlResourceMap((XmlResourceMapChunk) chunk);
@@ -91,8 +101,10 @@ public class BinaryXmlParser {
                 handler.startElement((XmlStartElementChunk) chunk);
             } else if (chunk instanceof XmlEndElementChunk) {
                 handler.endElement((XmlEndElementChunk) chunk);
+            } else if (chunk instanceof XmlCdataChunk) {
+                handler.cdata((XmlCdataChunk) chunk);
             } else {
-                //Logger.getInstance(BinaryXmlParser.class).warn("XmlNode of type " + chunk.getClass().getCanonicalName() + " not handled.");
+                logger.warning(String.format("Node %s not handled.", chunk.getClass().getName()));
             }
         }
     }
@@ -109,7 +121,9 @@ public class BinaryXmlParser {
         return chunks;
     }
 
+    @SuppressWarnings("unused")
     private interface XmlChunkHandler {
+
         default void stringPool(@NotNull StringPoolChunk chunk) {}
 
         default void xmlResourceMap(@NotNull XmlResourceMapChunk chunk) {}
@@ -121,13 +135,20 @@ public class BinaryXmlParser {
         default void startElement(@NotNull XmlStartElementChunk chunk) {}
 
         default void endElement(@NotNull XmlEndElementChunk chunk) {}
+
+        default void cdata(@NotNull XmlCdataChunk chunk) {}
     }
 
     private static class XmlPrinter implements XmlChunkHandler {
+
         private final XmlBuilder builder;
-        private Map<String, String> namespaces = new HashMap<>();
+
+        private final Map<String, String> namespaces = new HashMap<>();
+
         private boolean namespacesAdded;
+
         private StringPoolChunk stringPool;
+
         private final ResourceIdResolver resIdResolver;
 
         public XmlPrinter(@NotNull ResourceIdResolver resourceIdResolver) {
@@ -173,6 +194,11 @@ public class BinaryXmlParser {
             builder.endTag(chunk.getName());
         }
 
+        @Override
+        public void cdata(@NotNull XmlCdataChunk chunk) {
+            builder.characterData(chunk.getRawValue());
+        }
+
         @NotNull
         public String getReconstructedXml() {
             return builder.toString();
@@ -196,45 +222,31 @@ public class BinaryXmlParser {
             @NotNull ResourceIdResolver resourceIdResolver) {
         int data = resValue.data();
 
-        switch (resValue.type()) {
-            case NULL:
-                return data == 1 ? "@empty" : "@null";
-            case DYNAMIC_REFERENCE:
-            case REFERENCE:
+        return switch (resValue.type()) {
+            case NULL -> data == 1 ? "@empty" : "@null";
+            case DYNAMIC_REFERENCE, REFERENCE -> {
                 if (data == 0) {
-                    return "@null";
+                    yield "@null";
                 }
-                return resourceIdResolver.resolve(data);
-            case ATTRIBUTE:
-            case DYNAMIC_ATTRIBUTE:
-                return "?" + resourceIdResolver.resolve(data).substring(1);
-            case STRING:
-                return stringPool != null && data < stringPool.getStringCount()
-                        ? stringPool.getString(data)
-                        : String.format(Locale.US, "@string/0x%1$x", data);
-            case DIMENSION:
-                return complexToString(data, false);
-            case FRACTION:
-                return complexToString(data, true);
-            case FLOAT:
-                return DECIMAL_FORMAT.format(Float.intBitsToFloat(data));
-            case INT_DEC:
-                return Integer.toString(data);
-            case INT_HEX:
-                return "0x" + Integer.toHexString(data);
-            case INT_BOOLEAN:
-                return Boolean.toString(data != 0);
-            case INT_COLOR_ARGB8:
-                return String.format("#%08X", data);
-            case INT_COLOR_RGB8:
-                return String.format("#%06X", 0xFFFFFF & data);
-            case INT_COLOR_ARGB4:
-                return String.format("#%04X", 0xFFFF & data);
-            case INT_COLOR_RGB4:
-                return String.format("#%03X", 0xFFF & data);
-        }
-
-        return String.format("@res/0x%x", data);
+                yield resourceIdResolver.resolve(data);
+            }
+            case ATTRIBUTE, DYNAMIC_ATTRIBUTE ->
+                    "?" + resourceIdResolver.resolve(data).substring(1);
+            case STRING ->
+                    stringPool != null && data < stringPool.getStringCount()
+                            ? stringPool.getString(data)
+                            : String.format(Locale.US, "@string/0x%1$x", data);
+            case DIMENSION -> complexToString(data, false);
+            case FRACTION -> complexToString(data, true);
+            case FLOAT -> DECIMAL_FORMAT.format(Float.intBitsToFloat(data));
+            case INT_DEC -> Integer.toString(data);
+            case INT_HEX -> "0x" + Integer.toHexString(data);
+            case INT_BOOLEAN -> Boolean.toString(data != 0);
+            case INT_COLOR_ARGB8 -> String.format("#%08X", data);
+            case INT_COLOR_RGB8 -> String.format("#%06X", 0xFFFFFF & data);
+            case INT_COLOR_ARGB4 -> String.format("#%04X", 0xFFFF & data);
+            case INT_COLOR_RGB4 -> String.format("#%03X", 0xFFF & data);
+        };
     }
 
     public static String formatValue(
@@ -243,15 +255,25 @@ public class BinaryXmlParser {
     }
 
     private static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("0.######");
+
     private static final String[] DIMENSION_UNITS = {"px", "dp", "sp", "pt", "in", "mm"};
+
     private static final String[] FACTION_UNITS = {"%", "%p"};
+
     private static final String UNKNOWN_UNIT = "???";
+
     private static final int[] RADIX_SHIFTS = {23, 16, 8, 0};
+
     private static final int COMPLEX_RADIX_SHIFT = 4;
+
     private static final int COMPLEX_RADIX_MASK = 0x3;
+
     private static final int COMPLEX_MANTISSA_SHIFT = 8;
+
     private static final int COMPLEX_MANTISSA_MASK = 0xFFFFFF;
+
     private static final int COMPLEX_UNIT_SHIFT = 0;
+
     private static final int COMPLEX_UNIT_MASK = 0xF;
 
     // Java implementation of frameworks/base/tools/aapt2/ResourceValues.cpp ComplexToString

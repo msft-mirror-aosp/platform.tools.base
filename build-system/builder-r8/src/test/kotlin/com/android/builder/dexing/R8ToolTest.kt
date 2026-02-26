@@ -16,6 +16,7 @@
 
 package com.android.builder.dexing
 
+import com.android.Version
 import com.android.builder.dexing.testdata.ClassWithAssertions
 import com.android.ide.common.blame.MessageReceiver
 import com.android.testutils.TestClassesGenerator
@@ -36,6 +37,7 @@ import java.nio.file.Path
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.readLines
 import kotlin.test.fail
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -150,7 +152,7 @@ class R8ToolTest {
 
     val proguardRules = tmp.newFile().toPath()
     Files.write(proguardRules, listOf("-keep class test.A"))
-    val proguardConfig = ProguardConfig(listOf(proguardRules), null, listOf(), emptyProguardOutputFiles)
+    val proguardConfig = ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRules)), null, listOf(), emptyProguardOutputFiles)
 
     val output = tmp.newFolder().toPath()
 
@@ -159,6 +161,64 @@ class R8ToolTest {
     assertThat(getDexFileCount(output)).isEqualTo(1)
     assertThatDex(output.resolve("classes.dex").toFile()).containsClass("Ltest/A;")
     assertThatDex(output.resolve("classes.dex").toFile()).doesNotContainClasses("Ltest/B;")
+  }
+
+  @Test
+  fun testConfigurationOutput() {
+    val classes = tmp.newFolder().toPath().resolve("classes.jar")
+    TestInputsGenerator.dirWithEmptyClasses(classes, listOf("test/A", "test/B", "external/A", "external/B", "agp/A", "agp/B"))
+
+    val keepRulesDir = tmp.newFolder().toPath()
+    val userKeepRules = keepRulesDir.resolve("user.keep")
+    Files.write(userKeepRules, listOf("-keep class test.A"))
+    val agpInternalKeepRules = keepRulesDir.resolve("agp.keep")
+    Files.write(agpInternalKeepRules, listOf("-keep class agp.A"))
+    val externalKeepRules = keepRulesDir.resolve("external.keep")
+    Files.write(externalKeepRules, listOf("-keep class external.A"))
+    val keepRuleWithOrigins =
+      listOf(
+        KeepRuleFile.WithoutOrigin(userKeepRules),
+        KeepRuleFile.AgpInternalOrigin(agpInternalKeepRules),
+        KeepRuleFile.MavenOrigin("com.example:foo:0.1", "com.example", "foo", "0.1", externalKeepRules.toString()),
+      )
+
+    val mappingFileDir = tmp.newFolder().toPath()
+    val proguardConfigurationOutput = mappingFileDir.resolve("configuration.txt")
+    val mappingOutputFiles =
+      ProguardOutputFiles(
+        mappingFileDir.resolve("mapping.txt"),
+        mappingFileDir.resolve("mapping.prt"),
+        mappingFileDir.resolve("seeds.txt"),
+        mappingFileDir.resolve("usage.txt"),
+        proguardConfigurationOutput,
+        mappingFileDir.resolve("missing_rules.txt"),
+      )
+    val proguardConfig = ProguardConfig(keepRuleWithOrigins, null, listOf(), mappingOutputFiles)
+
+    val output = tmp.newFolder().toPath()
+
+    runR8Tool(inputClasses = listOf(classes), output = output, proguardConfig = proguardConfig)
+
+    assertThat(getDexFileCount(output)).isEqualTo(1)
+    assertThatDex(output.resolve("classes.dex").toFile()).containsClass("Ltest/A;")
+    assertThatDex(output.resolve("classes.dex").toFile()).doesNotContainClasses("Ltest/B;")
+
+    val outputText = proguardConfigurationOutput.readLines().filter { it.isNotEmpty() }.joinToString("\n")
+    assertThat(outputText)
+      .contains(
+        """
+          # The proguard configuration file for the following section is $userKeepRules
+          -keep class test.A
+          # End of content from $userKeepRules
+          # The proguard configuration file for the following section is Android Gradle plugin ${Version.ANDROID_GRADLE_PLUGIN_VERSION} (extracted file: $agpInternalKeepRules)
+          -keep class agp.A
+          # End of content from Android Gradle plugin ${Version.ANDROID_GRADLE_PLUGIN_VERSION} (extracted file: $agpInternalKeepRules)
+          # The proguard configuration file for the following section is com.example:foo:0.1 (extracted file: $externalKeepRules)
+          -keep class external.A
+          # End of content from com.example:foo:0.1 (extracted file: $externalKeepRules)
+          """
+          .trimIndent()
+      )
   }
 
   @Test
@@ -244,7 +304,7 @@ class R8ToolTest {
   fun testErrorReporting() {
     val proguardRules = tmp.newFile().toPath()
     Files.write(proguardRules, listOf("wrongRuleExample"))
-    val proguardConfig = ProguardConfig(listOf(proguardRules), null, listOf(), emptyProguardOutputFiles)
+    val proguardConfig = ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRules)), null, listOf(), emptyProguardOutputFiles)
 
     val output = tmp.newFolder().toPath()
     val messages = mutableListOf<String>()
@@ -424,7 +484,8 @@ class R8ToolTest {
 
     val proguardRulesFile = tmp.newFile("proguard-rules.pro")
     proguardRulesFile.writeText("-keep class test.A")
-    val proguardConfig = ProguardConfig(listOf(proguardRulesFile.toPath()), null, listOf(), emptyProguardOutputFiles)
+    val proguardConfig =
+      ProguardConfig(listOf(KeepRuleFile.WithoutOrigin(proguardRulesFile.toPath())), null, listOf(), emptyProguardOutputFiles)
 
     val output = tmp.newFolder().toPath()
 

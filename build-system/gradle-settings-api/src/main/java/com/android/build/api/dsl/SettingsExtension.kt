@@ -129,4 +129,10 @@ interface SettingsExtension {
    * See [com.android.build.api.dsl.CommonExtension.buildToolsVersion] for more information
    */
   var buildToolsVersion: String
+
+  /** Set Lint options. */
+  val lint: Lint
+
+  /** Set Lint options. */
+  fun lint(action: Lint.() -> Unit)
 }

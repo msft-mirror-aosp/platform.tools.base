@@ -32,7 +32,7 @@ import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.build.gradle.internal.tasks.AarMetadataTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.core.ToolsRevisionUtils
+import com.android.builder.core.ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION
 import com.android.prefs.AndroidLocationsSingleton
 import com.android.repository.testframework.FakeProgressIndicator
 import com.android.sdklib.repository.AndroidSdkHandler
@@ -109,7 +109,7 @@ class CheckAarMetadataTaskTest {
                               :app is currently compiled against android-30.
 
                               Recommended action: Update this project to use a newer compileSdk
-                              of at least 31, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
+                              of at least 31, for example ${MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED}.
 
                               Note that updating a library or application's compileSdk (which
                               allows newer APIs to be used) can be done separately from updating
@@ -170,7 +170,113 @@ class CheckAarMetadataTaskTest {
                           :app is currently compiled against android-30.
 
                           Recommended action: Update this project to use a newer compileSdk
-                          of at least 31, for example ${ToolsRevisionUtils.MAX_RECOMMENDED_COMPILE_SDK_VERSION.apiLevel}.
+                          of at least 31, for example ${MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED}.
+
+                          Note that updating a library or application's compileSdk (which
+                          allows newer APIs to be used) can be done separately from updating
+                          targetSdk (which opts the app in to new runtime behavior) and
+                          minSdk (which determines which devices the app can be installed
+                          on).
+                """
+            .trimIndent()
+        )
+    }
+  }
+
+  @Test
+  fun testMinCompileSdkVersionWithMinor_aarFileDependency() {
+    // uses imaginary version of 35.1 to test minor which isn't max recommended (36.1)
+    project
+      .getSubproject("lib")
+      .buildFile
+      .appendText("android.defaultConfig.aarMetadata.minCompileSdk { version = release(35) { minorApiLevel = 1 } }")
+    project.executor().run(":lib:assembleDebug")
+    // Copy lib's .aar build output to the app's libs directory
+    FileUtils.copyFile(
+      project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"),
+      File(File(project.getSubproject("app").projectDir, "libs").also { it.mkdirs() }, "library.aar"),
+    )
+
+    // Set app's compileSdkVersion to 35.
+    project.getSubproject("app").buildFile
+    TestFileUtils.searchRegexAndReplace(project.getSubproject("app").buildFile, "compileSdkVersion = \\d+", "compileSdkVersion 35")
+
+    // Replace app's dependency on the library module with a dependency on the AAR file
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "project(':lib')", "files('libs/library.aar')")
+
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .isEqualTo(
+          """
+                    An issue was found when checking AAR metadata:
+
+                      1.  Dependency 'library.aar' requires libraries and applications that
+                          depend on it to compile against version 35.1 or later of the
+                          Android APIs.
+
+                          :app is currently compiled against android-35.
+
+                          Recommended action: Update this project to use a newer compileSdk
+                          of at least 35.1, for example ${MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED}.
+
+                          Note that updating a library or application's compileSdk (which
+                          allows newer APIs to be used) can be done separately from updating
+                          targetSdk (which opts the app in to new runtime behavior) and
+                          minSdk (which determines which devices the app can be installed
+                          on).
+                """
+            .trimIndent()
+        )
+    }
+  }
+
+  @Test
+  fun testMinCompileSdkVersionBeingMaxSupported_aarFileDependency() {
+    project
+      .getSubproject("lib")
+      .buildFile
+      .appendText(
+        "android.defaultConfig.aarMetadata.minCompileSdk { version = release(${MAX_RECOMMENDED_COMPILE_SDK_VERSION.androidApiLevel.majorVersion}) { ${
+            MAX_RECOMMENDED_COMPILE_SDK_VERSION.androidApiLevel.minorVersion.takeIf { it > 0 }.let { 
+          "minorApiLevel = $it"
+      }} } }"
+      )
+    project.executor().run(":lib:assembleDebug")
+    // Copy lib's .aar build output to the app's libs directory
+    FileUtils.copyFile(
+      project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar"),
+      File(File(project.getSubproject("app").projectDir, "libs").also { it.mkdirs() }, "library.aar"),
+    )
+
+    // Set app's compileSdkVersion to max.
+    project.getSubproject("app").buildFile
+    TestFileUtils.searchRegexAndReplace(project.getSubproject("app").buildFile, "compileSdkVersion = \\d+", "compileSdkVersion 35")
+
+    // Replace app's dependency on the library module with a dependency on the AAR file
+    TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "project(':lib')", "files('libs/library.aar')")
+
+    // Test that build fails with desired error message.
+    try {
+      project.executor().run(":app:assembleDebug")
+      Assert.fail("Expected build failure")
+    } catch (e: Exception) {
+      assertThat(Throwables.getRootCause(e).message)
+        .isEqualTo(
+          """
+                    An issue was found when checking AAR metadata:
+
+                      1.  Dependency 'library.aar' requires libraries and applications that
+                          depend on it to compile against version ${MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED} or later of the
+                          Android APIs.
+
+                          :app is currently compiled against android-35.
+
+                          Recommended action: Update this project to use a newer compileSdk
+                          of $MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED.
 
                           Note that updating a library or application's compileSdk (which
                           allows newer APIs to be used) can be done separately from updating
@@ -653,5 +759,14 @@ class CheckAarMetadataTaskTest {
 
     // Replace app's dependency on the library module with a dependency on the AAR file
     TestFileUtils.searchAndReplace(project.getSubproject("app").buildFile, "project(':lib')", "files('libs/library.aar')")
+  }
+
+  companion object {
+    private val MAX_RECOMMENDED_COMPILE_SDK_VERSION_FORMATTED =
+      listOfNotNull(
+          MAX_RECOMMENDED_COMPILE_SDK_VERSION.androidApiLevel.majorVersion,
+          MAX_RECOMMENDED_COMPILE_SDK_VERSION.androidApiLevel.minorVersion.takeIf { it > 0 },
+        )
+        .joinToString(separator = ".")
   }
 }

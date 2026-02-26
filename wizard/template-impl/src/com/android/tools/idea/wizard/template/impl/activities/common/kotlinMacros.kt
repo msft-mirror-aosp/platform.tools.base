@@ -18,14 +18,23 @@ package com.android.tools.idea.wizard.template.impl.activities.common
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.ModuleTemplateData
 import com.android.tools.idea.wizard.template.RecipeExecutor
-import com.android.tools.idea.wizard.template.common.AGP_VERSION_WITH_BUILT_IN_KOTLIN
+import com.android.tools.idea.wizard.template.TemplateKotlinSupport
 
 fun RecipeExecutor.addAllKotlinDependencies(data: ModuleTemplateData, revision: String = data.projectTemplateData.kotlinVersion) {
   val projectData = data.projectTemplateData
-  if (
-    !data.isNewModule && projectData.language == Language.Kotlin && data.projectTemplateData.agpVersion < AGP_VERSION_WITH_BUILT_IN_KOTLIN
-  ) {
-    addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
+  if (!data.isNewModule && projectData.language == Language.Kotlin) {
+    when (data.projectTemplateData.kotlinSupport) {
+      TemplateKotlinSupport.NO_KOTLIN -> {
+        /* Nothing to do */
+      }
+      TemplateKotlinSupport.LEGACY_KOTLIN_GRADLE_PLUGIN_BEFORE_AGP9 ->
+        addPlugin("org.jetbrains.kotlin.android", "org.jetbrains.kotlin:kotlin-gradle-plugin", revision)
+      TemplateKotlinSupport.EXPLICIT_BUILT_IN_KOTLIN ->
+        addPlugin("com.android.built-in-kotlin", "com.android.tools.build:gradle-kotlin", data.projectTemplateData.agpVersion.toString())
+      TemplateKotlinSupport.IMPLICIT_BUILT_IN_KOTLIN -> {
+        /* Also nothing to do */
+      }
+    }
   }
 }
 

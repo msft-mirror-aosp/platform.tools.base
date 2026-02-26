@@ -29,4 +29,5 @@ enum class SourceType(val folder: String) {
   JAVA_RESOURCES("resources"),
   BASELINE_PROFILES("baselineProfiles"),
   KEEP_RULES("keepRules"),
+  AAR_KEEP_RULES("aarKeepRules"),
 }

@@ -248,7 +248,6 @@ class BlockingDetector : JoinEffectDetector<BlockingDetector.Status>(statusLatti
         priority = 6,
         severity = Severity.ERROR,
         enabledByDefault = false,
-        androidSpecific = false,
         implementation = Impl,
       )
 

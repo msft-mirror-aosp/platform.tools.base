@@ -92,7 +92,6 @@ com.android.build.gradle.integration.application.InitWithThisTest
 com.android.build.gradle.integration.application.InjectedAbiSplitTest
 com.android.build.gradle.integration.application.InvalidNdkTest
 com.android.build.gradle.integration.application.InvalidResourceDirectoryTest
-com.android.build.gradle.integration.application.JacocoLibraryProjectTest
 com.android.build.gradle.integration.application.JacocoOnlySubprojectBuildScriptDependency
 com.android.build.gradle.integration.application.JacocoScopedArtifactsTest
 com.android.build.gradle.integration.application.JacocoTest
@@ -592,7 +591,6 @@ com.android.build.gradle.integration.sources.SourcesJarTest
 com.android.build.gradle.integration.testing.AndroidTestDependsOnKotlinProjectTest
 com.android.build.gradle.integration.testing.AndroidTestUtilTest
 com.android.build.gradle.integration.testing.DynamicFeatureUnitTestSanityTest
-com.android.build.gradle.integration.testing.JacocoVersionTest
 com.android.build.gradle.integration.testing.LibraryInstrumentationTestSigningTest
 com.android.build.gradle.integration.testing.SeparateTestAccessToTestedApks
 com.android.build.gradle.integration.testing.SeparateTestModuleTest

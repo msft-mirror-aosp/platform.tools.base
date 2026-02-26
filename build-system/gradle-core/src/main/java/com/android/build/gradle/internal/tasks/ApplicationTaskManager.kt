@@ -26,7 +26,6 @@ import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig
-import com.android.build.gradle.internal.coverage.JacocoConfigurations
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageCollectionTask
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportCreationConfigImpl
 import com.android.build.gradle.internal.coverage.tasks.CodeCoverageReportTask
@@ -46,6 +45,8 @@ import com.android.build.gradle.internal.variant.ComponentInfo
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.ExtractSupportedLocalesTask
 import com.android.build.gradle.tasks.GenerateLocaleConfigTask
+import com.android.build.gradle.tasks.TestReportTask
+import com.android.build.gradle.tasks.TestResultsCollectionTask
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskProvider
@@ -139,19 +140,27 @@ class ApplicationTaskManager(
         }
       createSoftwareComponent(variant, component.componentName, configType)
     }
+  }
 
-    val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, variant.global.testCoverage.jacocoVersion)
+  override fun registerTestAndCodeCoverageCollectionTasks(
+    variantInfo: ComponentInfo<ApplicationVariantBuilder, ApplicationCreationConfig>
+  ) {
+    super.registerTestAndCodeCoverageCollectionTasks(variantInfo)
+
+    taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
+
     taskFactory.register(
       CodeCoverageCollectionTask.AggregatedCoverageCollectionCreationAction(
-        jacocoAntConfiguration,
+        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
         CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
       )
     )
   }
 
-  override fun createReportAggregationTask() {
-    super.createReportAggregationTask()
+  override fun registerTestAndCodeCoverageReportTasks() {
+    super.registerTestAndCodeCoverageReportTasks()
     taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
+    taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
   }
 
   private fun createBundleTask(component: ComponentCreationConfig) {

@@ -126,7 +126,7 @@ maven_repository(
     visibility = ["//visibility:public"],
 )
 
-LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.3.20-dev-6126"
+LATEST_KOTLIN_VERSION_FOR_SYNC_BENCHMARKS = "2.4.0-dev-4131"
 
 maven_repository(
     name = "latest_kotlin_gradle_plugin_prebuilts_for_sync_benchmarks",
@@ -149,8 +149,8 @@ maven_repository(
 maven_repository(
     name = "compose_gradle_plugin",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.2.10",
+        "@maven//:org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-compose-compiler-plugin-embeddable_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -181,12 +181,15 @@ maven_repository(
 maven_repository(
     name = "kotlin_gradle_plugin_for_compose_prebuilts",
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.2.10",
-        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
-        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.2.10",
+        "@maven//:org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-annotation-processing-gradle_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.10",
+        "@maven//:org.jetbrains.kotlin.multiplatform.org.jetbrains.kotlin.multiplatform.gradle.plugin_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )

@@ -32,6 +32,7 @@ data class SourceProviderImpl(
   override val renderscriptDirectories: Collection<File>?,
   override val baselineProfileDirectories: Collection<File>?,
   override val keepRulesDirectories: Collection<File>?,
+  override val aarKeepRulesDirectories: Collection<File>?,
   override val resDirectories: Collection<File>?,
   override val assetsDirectories: Collection<File>?,
   override val jniLibsDirectories: Collection<File>,

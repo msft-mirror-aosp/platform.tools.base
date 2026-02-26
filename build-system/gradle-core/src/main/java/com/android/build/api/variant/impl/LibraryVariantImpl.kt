@@ -17,6 +17,7 @@ package com.android.build.api.variant.impl
 
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.component.analytics.AnalyticsEnabledLibraryVariant
+import com.android.build.api.component.impl.LibrarySourcesProviderImpl
 import com.android.build.api.component.impl.TestFixturesImpl
 import com.android.build.api.variant.AarMetadata
 import com.android.build.api.variant.AndroidVersion
@@ -31,24 +32,20 @@ import com.android.build.api.variant.TestedComponentPackaging
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.LibraryCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
-import com.android.build.gradle.internal.core.VariantSources
+import com.android.build.gradle.internal.core.LibraryVariantSources
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.publishing.VariantPublishingInfo
 import com.android.build.gradle.internal.scope.BuildFeatureValues
 import com.android.build.gradle.internal.scope.MutableTaskContainer
+import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.VariantServices
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_AGP_VERSION
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_EXTENSION
-import com.android.build.gradle.internal.tasks.AarMetadataTask.Companion.DEFAULT_MIN_COMPILE_SDK_VERSION
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationConfig
-import com.android.build.gradle.internal.utils.parseTargetHash
 import com.android.build.gradle.internal.utils.toImmutableList
 import com.android.build.gradle.internal.utils.toImmutableMap
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantPathHelper
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.core.BuilderConstants
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import javax.inject.Inject
@@ -64,7 +61,7 @@ constructor(
   buildFeatureValues: BuildFeatureValues,
   dslInfo: LibraryVariantDslInfo,
   variantDependencies: VariantDependencies,
-  variantSources: VariantSources,
+  variantSources: LibraryVariantSources,
   paths: VariantPathHelper,
   artifacts: ArtifactsImpl,
   variantData: BaseVariantData,
@@ -72,6 +69,7 @@ constructor(
   internalServices: VariantServices,
   taskCreationServices: TaskCreationServices,
   globalTaskCreationConfig: GlobalTaskCreationConfig,
+  dslServices: DslServices,
 ) :
   VariantImpl<LibraryVariantDslInfo>(
     variantBuilder,
@@ -96,6 +94,16 @@ constructor(
   HasTestSuitesCreationConfig,
   HasTestSuites,
   HasUnitTest {
+
+  override val sources by lazy {
+    LibrarySourcesImpl(
+        LibrarySourcesProviderImpl(this, variantSources),
+        internalServices,
+        multiFlavorSourceProvider = variantSources.multiFlavorSourceProvider,
+        variantSourceProvider = variantSources.variantSourceProvider,
+      )
+      .also { addUserExtraDirectories(it) }
+  }
 
   // ---------------------------------------------------------------------------------------------
   // PUBLIC API
@@ -126,17 +134,13 @@ constructor(
   override val renderscript: Renderscript? by lazy { renderscriptCreationConfig?.renderscript }
 
   override val aarMetadata: AarMetadata =
-    internalServices.newInstance(AarMetadata::class.java).also {
-      it.minCompileSdk.set(
-        if (services.projectOptions[BooleanOption.DEFAULT_MIN_COMPILE_SDK_IN_AAR_METADATA]) {
-          dslInfo.aarMetadata.minCompileSdk ?: parseTargetHash(global.compileSdkHashString).apiLevel ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-        } else {
-          dslInfo.aarMetadata.minCompileSdk ?: DEFAULT_MIN_COMPILE_SDK_VERSION
-        }
-      )
-      it.minCompileSdkExtension.set(dslInfo.aarMetadata.minCompileSdkExtension ?: DEFAULT_MIN_COMPILE_SDK_EXTENSION)
-      it.minAgpVersion.set(dslInfo.aarMetadata.minAgpVersion ?: DEFAULT_MIN_AGP_VERSION)
-    }
+    AarMetadataUtil.createAndInitialize(
+      dslServices,
+      services,
+      global,
+      dslInfo.aarMetadata.minCompileSdkVersion,
+      dslInfo.aarMetadata.minAgpVersion,
+    )
 
   override val isMinifyEnabled: Boolean
     get() = variantBuilder.isMinifyEnabled

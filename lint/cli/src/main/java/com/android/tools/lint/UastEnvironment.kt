@@ -85,6 +85,13 @@ interface UastEnvironment {
       /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
       @JvmStatic
       @JvmOverloads
+      fun create(enableKotlinScripting: Boolean = true): Configuration {
+        return FirUastEnvironment.Configuration.create(enableKotlinScripting)
+      }
+
+      /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
+      @Deprecated("No longer support K1 UAST", replaceWith = ReplaceWith("create()"))
+      @JvmStatic
       fun create(enableKotlinScripting: Boolean = true, useFirUast: Boolean = useFirUast()): Configuration {
         return if (useFirUast) FirUastEnvironment.Configuration.create(enableKotlinScripting)
         else Fe10UastEnvironment.Configuration.create(enableKotlinScripting)

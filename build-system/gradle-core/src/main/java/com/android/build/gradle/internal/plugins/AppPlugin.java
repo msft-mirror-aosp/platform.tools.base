@@ -59,7 +59,6 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.internal.plugins.software.SoftwareType;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -91,7 +90,6 @@ public class AppPlugin
     protected void pluginSpecificApply(@NonNull Project project) {
     }
 
-    @SoftwareType(name = "androidApp", modelPublicType = BaseAppModuleExtensionInternal.class)
     public BaseAppModuleExtensionInternal getAndroidApp() {
         try {
             return (BaseAppModuleExtensionInternal)

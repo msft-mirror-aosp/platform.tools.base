@@ -429,7 +429,7 @@ abstract class AndroidLintAnalysisTask : NonIncrementalTask() {
     this.fatalOnly.setDisallowChanges(fatalOnly)
     this.checkOnly.setDisallowChanges(lintOptions.checkOnly)
     this.lintTool.initialize(taskCreationServices, this)
-    this.projectInputs.initializeForStandalone(project, javaPluginExtension, lintOptions, LintMode.ANALYSIS)
+    this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, LintMode.ANALYSIS)
     this.variantInputs.initializeForStandalone(
       project,
       this,

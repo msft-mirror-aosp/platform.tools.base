@@ -18,7 +18,10 @@ package com.android.build.gradle.internal.utils
 
 import com.android.build.api.dsl.Optimization
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.builder.dexing.KeepRuleFile
+import java.io.File
 import org.gradle.api.artifacts.ArtifactCollection
+import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
 import org.gradle.api.file.FileCollection
 
@@ -35,10 +38,10 @@ fun getFilteredFiles(
   configurationFiles: FileCollection,
   logger: LoggerWrapper,
   libraryArtifactType: LibraryArtifactType,
-): FileCollection {
+): List<KeepRuleFile> {
   val matchedArtifacts = mutableSetOf<String>()
 
-  val ignoredArtifacts =
+  val ignoredArtifacts: Set<File> =
     libraryArtifacts.artifacts
       .asSequence()
       // Only external dependencies are considered to be ignored
@@ -56,6 +59,9 @@ fun getFilteredFiles(
       .map { it.file }
       .toSet()
 
+  val libraryArtifactOrigins: Map<File, ComponentIdentifier> =
+    libraryArtifacts.artifacts.associate { (it.file to it.id.componentIdentifier) }
+
   val unmatchedIgnoreList = ignoreList.filterNot { matchedArtifacts.contains(it) }
   if (unmatchedIgnoreList.isNotEmpty()) {
     val artifactType =
@@ -71,7 +77,21 @@ fun getFilteredFiles(
     )
   }
 
-  return configurationFiles.filter { !ignoredArtifacts.contains(it) }
+  return configurationFiles.files
+    .filter { !ignoredArtifacts.contains(it) }
+    .map {
+      when (val origin = libraryArtifactOrigins[it]) {
+        is ModuleComponentIdentifier ->
+          KeepRuleFile.MavenOrigin(
+            displayName = origin.displayName,
+            group = origin.group,
+            module = origin.module,
+            version = origin.version,
+            filePath = it.path,
+          )
+        else -> KeepRuleFile.WithoutOrigin(it.toPath())
+      }
+    }
 }
 
 private fun findMatchedArtifact(artifactId: ModuleComponentIdentifier, ignoreList: Set<String>): String? {

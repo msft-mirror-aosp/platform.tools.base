@@ -22,8 +22,6 @@ import com.android.build.gradle.internal.fusedlibrary.getDslServices
 import com.android.build.gradle.internal.services.Aapt2DaemonBuildService
 import com.android.build.gradle.internal.services.Aapt2ThreadPoolBuildService
 import com.android.build.gradle.internal.services.DslServices
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.SymbolTableBuildService
 import com.google.wireless.android.sdk.stats.GradleBuildProject
 import javax.inject.Inject
@@ -54,9 +52,6 @@ constructor(
     Aapt2ThreadPoolBuildService.RegistrationAction(project, projectOptions).execute()
     Aapt2DaemonBuildService.RegistrationAction(project, projectOptions).execute()
     SymbolTableBuildService.RegistrationAction(project).execute()
-
-    R8D8ThreadPoolBuildService.RegistrationAction(project, projectOptions).execute()
-    R8MaxParallelTasksBuildService.RegistrationAction(project, projectOptions).execute()
   }
 
   override fun configureExtension(project: Project) {}

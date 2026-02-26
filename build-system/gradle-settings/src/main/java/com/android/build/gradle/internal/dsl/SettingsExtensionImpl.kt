@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
 import com.android.build.api.dsl.Execution
+import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.MinSdkSpec
 import com.android.build.api.dsl.MinSdkVersion
 import com.android.build.api.dsl.SettingsExtension
@@ -177,6 +178,16 @@ internal open class SettingsExtensionImpl @Inject constructor(private val object
 
   override fun execution(action: Execution.() -> Unit) {
     action.invoke(execution)
+  }
+
+  override val lint: Lint = objectFactory.newInstance(SettingsLintImpl::class.java, objectFactory)
+
+  fun lint(action: Action<Lint>) {
+    action.execute(lint)
+  }
+
+  override fun lint(action: Lint.() -> Unit) {
+    action.invoke(lint)
   }
 
   override var ndkVersion: String = SdkConstants.NDK_VERSION

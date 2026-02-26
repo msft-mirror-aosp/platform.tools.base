@@ -100,6 +100,7 @@ public final class SdkConstants {
     public static final String AAR_FORMAT_VERSION_PROPERTY = "aarFormatVersion";
     public static final String AAR_METADATA_VERSION_PROPERTY = "aarMetadataVersion";
     public static final String MIN_COMPILE_SDK_PROPERTY = "minCompileSdk";
+    public static final String MIN_COMPILE_SDK_MINOR_PROPERTY = "minCompileMinorSdk";
     public static final String MIN_ANDROID_GRADLE_PLUGIN_VERSION_PROPERTY =
             "minAndroidGradlePluginVersion";
     public static final String FORCE_COMPILE_SDK_PREVIEW_PROPERTY = "forceCompileSdkPreview";
@@ -1322,6 +1323,9 @@ public final class SdkConstants {
     public static final String ATTR_MAX_SDK_VERSION = "maxSdkVersion";
     public static final String ATTR_TARGET_SDK_VERSION = "targetSdkVersion";
     public static final String ATTR_ICON = "icon";
+    public static final String ATTR_SUPPORTS_RTL = "supportsRtl";
+    public static final String ATTR_PARENT_ACTIVITY_NAME = "parentActivityName";
+    public static final String ATTR_UI_OPTIONS = "uiOptions";
     public static final String ATTR_RESOURCE = "resource";
     public static final String ATTR_ROUND_ICON = "roundIcon";
     public static final String ATTR_PACKAGE = "package";
@@ -2921,7 +2925,7 @@ public final class SdkConstants {
      * Studio product. It need not actually be the latest version of Gradle, but it will most likely
      * be fairly recent.
      */
-    public static final String GRADLE_LATEST_VERSION = "9.3.1";
+    public static final String GRADLE_LATEST_VERSION = "9.4.0-rc-1";
 
     /**
      * The minimum released version of the Android Gradle Plugin for which Studio will attempt a

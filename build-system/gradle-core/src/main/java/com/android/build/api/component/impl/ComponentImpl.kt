@@ -117,21 +117,22 @@ abstract class ComponentImpl<DslInfoT : ComponentDslInfo>(
     SourcesImpl(
         DefaultSourcesProviderImpl(this, variantSources),
         internalServices,
-        multiFlavorSourceProvider = variantSources.multiFlavorSourceProvider,
-        variantSourceProvider = variantSources.variantSourceProvider,
+        variantSources.multiFlavorSourceProvider,
+        variantSources.variantSourceProvider,
       )
-      .also { sourcesImpl ->
-        // add all source sets extra directories added by the user
-        variantSources.customSourceList.forEach { (_, srcEntries) ->
-          srcEntries.forEach { customSourceDirectory ->
-            sourcesImpl.extras.maybeCreate(customSourceDirectory.sourceTypeName).also {
-              (it as FlatSourceDirectoriesImpl).addStaticSource(
-                FileBasedDirectoryEntryImpl(customSourceDirectory.sourceTypeName, customSourceDirectory.directory)
-              )
-            }
-          }
+      .also { addUserExtraDirectories(it) }
+  }
+
+  protected fun addUserExtraDirectories(sourcesImpl: SourcesImpl) {
+    variantSources.customSourceList.forEach { (_, srcEntries) ->
+      srcEntries.forEach { customSourceDirectory ->
+        sourcesImpl.extras.maybeCreate(customSourceDirectory.sourceTypeName).also {
+          (it as FlatSourceDirectoriesImpl).addStaticSource(
+            FileBasedDirectoryEntryImpl(customSourceDirectory.sourceTypeName, customSourceDirectory.directory)
+          )
         }
       }
+    }
   }
 
   override val instrumentation: Instrumentation

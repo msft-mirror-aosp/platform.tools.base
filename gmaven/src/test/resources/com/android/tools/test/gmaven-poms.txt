@@ -812,6 +812,12 @@ com.android.tools.pixelprobe:pixelprobe
   dependencies:
     com.android.tools.chunkio:chunkio (runtime)
 
+com.android.tools.studio.leakcanary:leakcanary
+  pomName=com.android.tools.studio.leakcanary.leakcanary
+  description=Android Studio Profiler integration for LeakCanary
+  dependencies:
+    com.squareup.leakcanary:leakcanary-android (runtime)
+
 com.android.tools.utp:android-device-provider-ddmlib
   pomName=com.android.tools.utp.android-device-provider-ddmlib
   description=Library providing UTP plugins to talk to AGP

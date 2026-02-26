@@ -15,7 +15,6 @@ py_library(
     srcs = ["failure_retry.py"],
     deps = [
         ":gerrit",
-        ":runs_per_test",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:gce",
     ],
@@ -27,7 +26,6 @@ py_test(
     deps = [
         ":failure_retry",
         ":gerrit",
-        ":runs_per_test",
         "//tools/base/bazel/ci:fake_build_env",
         "//tools/base/bazel/ci:fake_gce",
         "//tools/base/bazel/ci:gce",
@@ -88,7 +86,6 @@ py_library(
     deps = [
         ":failure_retry",
         ":gerrit",
-        ":impacted_targets",
         ":runs_per_test",
         "//tools/base/bazel/ci:bazel",
     ],
@@ -126,7 +123,6 @@ py_test(
     srcs = ["runs_per_test_test.py"],
     deps = [
         ":gerrit",
-        ":impacted_targets",
         ":runs_per_test",
         "//tools/base/bazel/ci:bazel",
         "//tools/base/bazel/ci:fake_build_env",

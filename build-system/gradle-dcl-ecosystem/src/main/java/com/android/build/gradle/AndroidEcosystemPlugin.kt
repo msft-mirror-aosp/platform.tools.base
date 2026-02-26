@@ -16,15 +16,11 @@
 
 package com.android.build.gradle
 
-import com.android.build.gradle.internal.plugins.InternalAndroidEcosystemPlugin
 import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
 
 @Incubating
 class AndroidEcosystemPlugin : Plugin<Settings> {
-
-  override fun apply(target: Settings) {
-    target.plugins.apply(InternalAndroidEcosystemPlugin::class.java)
-  }
+  override fun apply(target: Settings) = Unit
 }

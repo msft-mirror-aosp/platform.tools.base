@@ -65,6 +65,9 @@ enum class AgpTestSuiteInputParameters(val propertyName: String) {
   /** Path to the testing APK file. */
   @Incubating TESTING_APK("com.android.agp.test.TESTING_APK"),
 
+  /** Path to the AAPT2 executable. */
+  @Incubating AAPT2_EXECUTABLE("com.android.agp.test.AAPT2_EXECUTABLE"),
+
   /** Path to the ADB executable. */
   @Incubating ADB_EXECUTABLE("com.android.agp.test.ADB_EXECUTABLE"),
 }

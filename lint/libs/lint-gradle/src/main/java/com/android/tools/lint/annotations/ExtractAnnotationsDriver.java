@@ -17,6 +17,7 @@
 package com.android.tools.lint.annotations;
 
 import static com.android.SdkConstants.DOT_KT;
+
 import static java.io.File.pathSeparator;
 import static java.io.File.pathSeparatorChar;
 
@@ -28,12 +29,17 @@ import com.android.tools.lint.UastEnvironment;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Project;
 import com.android.utils.SdkUtils;
+
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.intellij.mock.MockProject;
 import com.intellij.psi.PsiFile;
+
+import kotlin.io.FilesKt;
+import kotlin.text.Charsets;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -41,8 +47,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import kotlin.io.FilesKt;
-import kotlin.text.Charsets;
 
 /**
  * The extract annotations driver is a command line interface to extracting annotations from a
@@ -66,19 +70,23 @@ public class ExtractAnnotationsDriver {
     private static void usage(PrintStream output) {
         output.println("Usage: " + ExtractAnnotationsDriver.class.getSimpleName() + " <flags>");
         output.println(
-                " --sources <paths>       : Source directories or files to extract annotations from.");
+                " --sources <paths>       : Source directories or files to extract annotations"
+                    + " from.");
         output.println(
                 "                           Separate paths with "
                         + pathSeparator
                         + ", and you can use @ ");
         output.println(
-                "                           as a filename prefix to have the filenames fed from a file");
+                "                           as a filename prefix to have the filenames fed from a"
+                    + " file");
         output.println(
                 "--classpath <paths>      : Directories and .jar files to resolve symbols from");
         output.println(
-                "--output <zip path>      : The .zip file to write the extracted annotations to, if any");
+                "--output <zip path>      : The .zip file to write the extracted annotations to, if"
+                    + " any");
         output.println(
-                "--proguard <path>        : The proguard.cfg file to write the keep rules to, if any");
+                "--proguard <path>        : The proguard.cfg file to write the keep rules to, if"
+                    + " any");
         output.println();
         output.println("Optional flags:");
         output.println("--merge-zips <paths>     : Existing external annotation files to merge in");
@@ -90,21 +98,27 @@ public class ExtractAnnotationsDriver {
         output.println(
                 "--allow-errors           : Don't fail even if there are some compiler errors");
         output.println(
-                "--api-filter <api.txt>   : A framework API definition to restrict included APIs to");
+                "--api-filter <api.txt>   : A framework API definition to restrict included APIs"
+                    + " to");
         output.println(
-                "--hide-filtered          : If filtering out non-APIs, supply this flag to hide listing matches");
+                "--hide-filtered          : If filtering out non-APIs, supply this flag to hide"
+                    + " listing matches");
         output.println(
                 "--skip-class-retention   : Don't extract annotations that have class retention");
         output.println(
-                "--typedef-file <path>    : Write a packaging recipe description to the given file");
+                "--typedef-file <path>    : Write a packaging recipe description to the given"
+                    + " file");
         output.println(
                 "--source-roots <paths>   : Source directories to find classes.\n"
-                        + "                           If not specified the roots are derived from the sources above");
+                    + "                           If not specified the roots are derived from the"
+                    + " sources above");
         output.println(
                 "--no-sort                : Do not sort the output alphabetically, output the\n"
-                        + "                           extracted annotations in the order they are visited");
+                    + "                           extracted annotations in the order they are"
+                    + " visited");
         output.println(
-                "--strict-typedef-retention : Fail if encountering a typedef with incorrect retention");
+                "--strict-typedef-retention : Fail if encountering a typedef with incorrect"
+                    + " retention");
     }
 
     @SuppressWarnings("MethodMayBeStatic")
@@ -316,8 +330,7 @@ public class ExtractAnnotationsDriver {
         extractor.setListIgnored(listFiltered);
 
         UastEnvironment.Configuration config =
-                UastEnvironment.Configuration.create(
-                        /* enableKotlinScripting */ false, /* useFirUast */ useK2Uast);
+                UastEnvironment.Configuration.create(/* enableKotlinScripting */ false);
         if (sourceRoots == null) {
             sourceRoots = findSourceRoots(sources);
             if (sourceRoots == null) {

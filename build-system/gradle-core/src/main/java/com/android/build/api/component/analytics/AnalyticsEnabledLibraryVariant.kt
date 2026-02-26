@@ -20,6 +20,7 @@ import com.android.build.api.variant.AarMetadata
 import com.android.build.api.variant.AndroidTest
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.HostTest
+import com.android.build.api.variant.LibrarySources
 import com.android.build.api.variant.LibraryVariant
 import com.android.build.api.variant.Renderscript
 import com.android.build.api.variant.TestFixtures
@@ -126,5 +127,11 @@ constructor(override val delegate: LibraryVariant, stats: GradleBuildVariant.Bui
     get() {
       stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.CONSUMER_PROGUARD_FILES_VALUE
       return delegate.consumerProguardFiles
+    }
+
+  override val sources: LibrarySources
+    get() {
+      stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE
+      return objectFactory.newInstance(AnalyticsEnabledLibrarySources::class.java, delegate.sources, stats, objectFactory)
     }
 }

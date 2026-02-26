@@ -21,7 +21,9 @@ import com.android.build.api.dsl.BuildType
 import com.android.build.api.dsl.CommonExtension
 import com.android.build.api.dsl.ProductFlavor
 import com.android.build.api.variant.ComponentIdentity
+import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.core.LibraryVariantSources
 import com.android.build.gradle.internal.core.VariantSources
 import com.android.build.gradle.internal.core.dsl.AndroidTestComponentDslInfo
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo
@@ -282,6 +284,17 @@ private constructor(
   }
 
   fun createVariantSources(): VariantSources {
+    if (componentType == ComponentTypeImpl.LIBRARY) {
+      return LibraryVariantSources(
+        name,
+        componentType,
+        defaultSourceProvider,
+        buildTypeSourceProvider,
+        flavors.map { it.second }.toImmutableList(),
+        multiFlavorSourceProvider,
+        variantSourceProvider as DefaultAndroidLibrarySourceSet?,
+      )
+    }
     return VariantSources(
       name,
       componentType,

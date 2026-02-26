@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.BuiltInKotlinCreationConfig
 import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCreationConfig
+import com.android.build.gradle.internal.component.ComponentBasedMergeSourceSetFoldersCreationConfig
 import com.android.build.gradle.internal.component.ComponentCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
@@ -79,8 +80,6 @@ import com.android.build.gradle.internal.scope.Java8LangSupport
 import com.android.build.gradle.internal.scope.publishArtifactToConfiguration
 import com.android.build.gradle.internal.services.AndroidLocationsBuildService
 import com.android.build.gradle.internal.services.BuiltInKotlinServices
-import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
-import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.createKotlinCompilation
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.AndroidVariantTask
@@ -169,8 +168,6 @@ import com.android.build.gradle.tasks.ManifestProcessorTask
 import com.android.build.gradle.tasks.MapSourceSetPathsTask
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.MergeSourceSetFolders
-import com.android.build.gradle.tasks.MergeSourceSetFolders.MergeMlModelsSourceFoldersCreationAction
-import com.android.build.gradle.tasks.MergeSourceSetFolders.MergeShaderSourceFoldersCreationAction
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.ProcessApplicationManifest
 import com.android.build.gradle.tasks.ProcessManifestForBundleTask
@@ -511,12 +508,22 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   }
 
   fun createMergeAssetsTask(creationConfig: ComponentCreationConfig, includeDependencies: Boolean = true) {
-    taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(creationConfig, includeDependencies))
+    val mergeSourceSetFoldersCreationConfig =
+      ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.assets })
+    taskFactory.register(MergeSourceSetFolders.MergeAssetCreationAction(mergeSourceSetFoldersCreationConfig, includeDependencies))
   }
 
   fun createMergeJniLibFoldersTasks(creationConfig: ConsumableCreationConfig) {
     // merge the source folders together using the proper priority.
-    taskFactory.register(MergeSourceSetFolders.MergeJniLibFoldersCreationAction(creationConfig))
+    val mergeSourceSetFoldersCreationConfig =
+      ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig) { creationConfig.sources.jniLibs }
+    taskFactory.register(
+      MergeSourceSetFolders.GenericMergeCreationAction(
+        mergeSourceSetFoldersCreationConfig,
+        "JniLibFolders",
+        InternalArtifactType.MERGED_JNI_LIBS,
+      )
+    )
     taskFactory.register(MergeNativeLibsTask.CreationAction(creationConfig))
   }
 
@@ -545,7 +552,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   fun createMlkitTask(creationConfig: ComponentCreationConfig) {
     if (creationConfig.buildFeatures.mlModelBinding) {
-      taskFactory.register(MergeMlModelsSourceFoldersCreationAction(creationConfig))
+      val mergeSourceSetFoldersCreationConfig =
+        ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.mlModels })
+      taskFactory.register(
+        MergeSourceSetFolders.GenericMergeCreationAction(
+          mergeSourceSetFoldersCreationConfig,
+          "MlModels",
+          InternalArtifactType.MERGED_ML_MODELS,
+        )
+      )
       val generateMlModelClassTask = taskFactory.register(GenerateMlModelClass.CreationAction(creationConfig))
       creationConfig.taskContainer.sourceGenTask.dependsOn(generateMlModelClassTask)
     }
@@ -764,8 +779,15 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
   protected fun createShaderTask(creationConfig: ConsumableCreationConfig) {
     if (creationConfig.buildFeatures.shaders) {
       // merge the shader folders together using the proper priority.
-      taskFactory.register(MergeShaderSourceFoldersCreationAction(creationConfig))
-
+      val mergeSourceSetFoldersCreationConfig =
+        ComponentBasedMergeSourceSetFoldersCreationConfig(creationConfig, { creationConfig.sources.shaders })
+      taskFactory.register(
+        MergeSourceSetFolders.GenericMergeCreationAction(
+          mergeSourceSetFoldersCreationConfig,
+          "Shaders",
+          InternalArtifactType.MERGED_SHADERS,
+        )
+      )
       // compile the shaders
       val shaderCompileTask = taskFactory.register(ShaderCompile.CreationAction(creationConfig))
       creationConfig.taskContainer.assetGenTask.dependsOn(shaderCompileTask)
@@ -1138,7 +1160,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Register a test coverage report generation task to every managedDeviceCheck
     // task.
     if (creationConfig is TestComponentCreationConfig && creationConfig.codeCoverageEnabled) {
-      val jacocoAntConfiguration = JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getJacocoVersion(creationConfig))
+      val jacocoAntConfiguration =
+        JacocoConfigurations.getJacocoAntTaskConfiguration(project, JacocoTask.getAndroidTestJacocoVersion(creationConfig))
       val reportTask = taskFactory.register(JacocoReportTask.CreationActionManagedDeviceTest(creationConfig, jacocoAntConfiguration))
       creationConfig.mainVariant.taskContainer.coverageReportTask?.dependsOn(reportTask)
       // Run the report task after all tests are finished on all devices.
@@ -1219,7 +1242,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     // Resource Shrinking
     maybeCreateResourcesShrinkerTasks(creationConfig)
 
-    R8D8ThreadPoolBuildService.RegistrationAction(project, creationConfig.services.projectOptions).execute()
     // Code Shrinking
     // Since the shrinker (R8) also dexes the class files, if we have minifedEnabled we stop
     // the flow and don't set-up dexing.
@@ -1496,7 +1518,8 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
 
   private fun handleJacocoDependencies(creationConfig: ComponentCreationConfig) {
     if (creationConfig is ApkCreationConfig && creationConfig.packageJacocoRuntime) {
-      val jacocoAgentRuntimeDependency = JacocoConfigurations.getAgentRuntimeDependency(JacocoTask.getJacocoVersion(creationConfig))
+      val jacocoAgentRuntimeDependency =
+        JacocoConfigurations.getAgentRuntimeDependency(JacocoTask.getAndroidTestJacocoVersion(creationConfig))
       project.dependencies.add(creationConfig.variantDependencies.runtimeClasspath.name, jacocoAgentRuntimeDependency)
 
       // we need to force the same version of Jacoco we use for instrumentation
@@ -1715,8 +1738,6 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
     if (creationConfig.debuggable) {
       globalConfig.buildAnalyzerIssueReporter?.reportIssue(TaskCategoryIssue.MINIFICATION_ENABLED_IN_DEBUG_BUILD)
     }
-
-    R8MaxParallelTasksBuildService.RegistrationAction(project, creationConfig.services.projectOptions).execute()
 
     return taskFactory.register(R8Task.CreationAction(creationConfig, isTestApplication, addCompileRClass))
   }

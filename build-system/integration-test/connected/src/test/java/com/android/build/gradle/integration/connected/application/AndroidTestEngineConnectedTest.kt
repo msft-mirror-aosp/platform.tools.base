@@ -121,7 +121,7 @@ class AndroidTestEngineConnectedTest {
             //  automatically passed to the JUnit Engine by the AGP Test Suite task instead
             //  of being manually configured here via system properties.
             task.systemProperty("android-test.adb-path", adbPath.get())
-            task.systemProperty("android-test.aapt-path", aapt2Path.get())
+            task.systemProperty("android-test.aapt2-path", aapt2Path.get())
             task.systemProperty("android-test.device-serial", "emulator-5554")
             task.systemProperty("android-test.device-api-level", "33")
 
@@ -163,11 +163,7 @@ class AndroidTestEngineConnectedTest {
   fun runBasicAndroidTestUsingJUnitTestEngine() {
     val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
 
-    // TODO: Gradle doesn't report the correct package name of the ExampleInstrumentedTest
-    //   class. This is likely because Gradle assumes that test-method test descriptor's
-    //   parent is always test class descriptor (this is how the Jupiter test engine works).
-    //   Revisit our test hierarchy and make it compatible with Gradle's implementation.
-    result.assertOutputContains("UnknownClass.ExampleInstrumentedTest.exampleTestCase1 PASSED")
-    result.assertOutputContains("UnknownClass.ExampleInstrumentedTest.exampleTestCase2 PASSED")
+    result.assertOutputContains("com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED")
+    result.assertOutputContains("com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED")
   }
 }
