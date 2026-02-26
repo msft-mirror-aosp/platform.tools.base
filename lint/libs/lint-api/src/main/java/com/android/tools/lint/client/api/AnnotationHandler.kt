@@ -80,15 +80,19 @@ import com.intellij.psi.PsiType
 import com.intellij.psi.PsiTypeElement
 import com.intellij.psi.PsiTypeVisitor
 import com.intellij.psi.util.PsiTypesUtil
+import org.jetbrains.kotlin.analysis.api.analyze
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.asJava.elements.KtLightParameter
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtConstructorDelegationCall
 import org.jetbrains.kotlin.psi.KtDeclaration
+import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
@@ -882,8 +886,20 @@ internal class AnnotationHandler(private val driver: LintDriver, private val sca
 
     val resolved = node.resolve().toUElement() ?: return
 
-    // Field (or getter method, or object access).
-    if (resolved is UField || resolved is UMethod || resolved.sourcePsi is KtObjectDeclaration) {
+    fun isObjectInstanceFieldReference(): Boolean {
+      if (resolved !is UClass) return false
+      // If reference is Kotlin source, it might be an object reference.
+      // No need to do this for Java code, which explicitly references the class (MyObject)
+      // or the instance field (MyObject.INSTANCE).
+      val ktElement = node.sourcePsi as? KtElement ?: return false
+      analyze(ktElement) {
+        val symbol = ktElement.mainReference?.resolveToSymbol() ?: return false
+        return symbol is KaNamedClassSymbol && symbol.classKind.isObject
+      }
+    }
+
+    // Field (or getter method, or object instance field access).
+    if (resolved is UField || resolved is UMethod || isObjectInstanceFieldReference()) {
       val psi = resolved.javaPsi
       if (psi !is PsiModifierListOwner) return
       if (isOverloadedMethodCall(node)) return
