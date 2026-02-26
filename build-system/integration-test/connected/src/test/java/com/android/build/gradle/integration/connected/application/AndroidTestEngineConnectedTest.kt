@@ -38,9 +38,18 @@ class AndroidTestEngineConnectedTest {
   companion object {
     @ClassRule
     @JvmField
-    val emulatorRule =
+    val emulatorRule1 =
       if (TestUtils.runningFromBazel()) {
         Emulator(System.getProperty("EMULATOR_SCRIPT_PATH"), 5554)
+      } else {
+        object : ExternalResource() {}
+      }
+
+    @ClassRule
+    @JvmField
+    val emulatorRule2 =
+      if (TestUtils.runningFromBazel()) {
+        Emulator(System.getProperty("EMULATOR_SCRIPT_PATH"), 5556)
       } else {
         object : ExternalResource() {}
       }
@@ -122,8 +131,7 @@ class AndroidTestEngineConnectedTest {
             //  of being manually configured here via system properties.
             task.systemProperty("android-test.adb-path", adbPath.get())
             task.systemProperty("android-test.aapt2-path", aapt2Path.get())
-            task.systemProperty("android-test.device-serial", "emulator-5554")
-            task.systemProperty("android-test.device-api-level", "33")
+            task.systemProperty("android-test.device-serials", "emulator-5554,emulator-5556")
 
             task.inputs.files(apkArtifacts)
             val appApkLocation = apkArtifacts.get().asFile
@@ -163,7 +171,17 @@ class AndroidTestEngineConnectedTest {
   fun runBasicAndroidTestUsingJUnitTestEngine() {
     val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
 
-    result.assertOutputContains("com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED")
-    result.assertOutputContains("com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED")
+    result.assertOutputContains(
+      "Devices > emulator-5554 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED"
+    )
+    result.assertOutputContains(
+      "Devices > emulator-5554 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED"
+    )
+    result.assertOutputContains(
+      "Devices > emulator-5556 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED"
+    )
+    result.assertOutputContains(
+      "Devices > emulator-5556 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED"
+    )
   }
 }

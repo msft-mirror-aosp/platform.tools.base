@@ -27,7 +27,7 @@ enum class AgpTestSuiteInput(val key: String) {
   /** Alias for [AndroidTestConfigurationKeys.AAPT2_PATH]. */
   AAPT2_EXECUTABLE("com.android.agp.test.AAPT2_EXECUTABLE"),
 
-  /** Alias for [AndroidTestConfigurationKeys.DEVICE_SERIAL]. */
+  /** Alias for [AndroidTestConfigurationKeys.DEVICE_SERIALS]. */
   SERIAL_IDS("com.android.junit.engine.serial.ids"),
 
   /** Alias for [AndroidTestConfigurationKeys.TESTED_APKS]. */

@@ -19,7 +19,7 @@ package com.android.tools.androidtest.testengine
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT2_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ADB_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.APK_INSTALL_OPTIONS
-import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIAL
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIALS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTALL_TIMEOUT_MS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
@@ -52,8 +52,9 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
     get(ADB_PATH, AgpTestSuiteInput.ADB_EXECUTABLE)?.let { File(it) } ?: throw RuntimeException("$ADB_PATH configuration is required")
   val aapt2: File =
     get(AAPT2_PATH, AgpTestSuiteInput.AAPT2_EXECUTABLE)?.let { File(it) } ?: throw RuntimeException("$AAPT2_PATH configuration is required")
-  val deviceSerial: String =
-    get(DEVICE_SERIAL, AgpTestSuiteInput.SERIAL_IDS) ?: throw RuntimeException("$DEVICE_SERIAL configuration is required")
+  val deviceSerials: List<String> =
+    get(DEVICE_SERIALS, AgpTestSuiteInput.SERIAL_IDS)?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+      ?: throw RuntimeException("$DEVICE_SERIALS configuration is required")
   val installTimeoutMs: Long = get(INSTALL_TIMEOUT_MS)?.toLong() ?: 0L
 
   val testedApks: List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS))
