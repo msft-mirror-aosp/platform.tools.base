@@ -26,6 +26,7 @@ import java.io.File
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.name
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.sqrt
@@ -63,7 +64,7 @@ object ImageDiffUtil {
 
   /**
    * Asserts that the given image is similar to the golden one contained in the given file. If the golden image file does not exist, it is
-   * created and AssertionError is thrown unless [ignoreMissingGoldenFile] is true, in which case the method simply returns.
+   * created and [MissingGoldenFileException] is thrown unless [ignoreMissingGoldenFile] is true, in which case the method simply returns.
    */
   @Throws(IOException::class)
   @JvmStatic
@@ -86,7 +87,7 @@ object ImageDiffUtil {
       converted.writeImage("PNG", outFile)
       // This will copy the file to its designated location. Useful when running locally.
       converted.writeImage("PNG", goldenFile)
-      throw AssertionError("File did not exist, created here: $goldenFile and in undeclared outputs")
+      throw MissingGoldenFileException(goldenFile)
     }
     val goldenImage = goldenFile.readImage()
     assertImageSimilar(goldenFile.fileName.toString(), goldenImage, actual, maxPercentDifferent, maxSizeDifference)
@@ -196,4 +197,10 @@ object ImageDiffUtil {
     }
     g.dispose()
   }
+}
+
+data class MissingGoldenFileException(val file: Path) : AssertionError() {
+
+  override val message: String
+    get() = "Golden image ${file.name} didn't exist, created in ${file.parent} and in undeclared outputs"
 }
