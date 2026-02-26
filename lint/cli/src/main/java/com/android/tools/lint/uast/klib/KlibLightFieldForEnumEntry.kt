@@ -67,7 +67,7 @@ internal class KlibLightFieldForEnumEntry(
   private val _type: PsiType by lazyPub {
     enumEntrySymbolPointer.withSymbol(ktModule) { enumEntrySymbol ->
       enumEntrySymbol.returnType.asPsiType(this@KlibLightFieldForEnumEntry, allowErrorTypes = true, allowNonJvmPlatforms = true)
-        ?: nonExistentType()
+        ?: this@KlibLightFieldForEnumEntry.nonExistentType()
     }
   }
 

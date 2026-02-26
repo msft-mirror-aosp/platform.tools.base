@@ -1096,7 +1096,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.0-dev-4131",
-    "org.jetbrains.kotlin:jvm-abi-gen:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:jvm-abi-gen:2.3.10",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
@@ -1147,8 +1147,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler:1.9.23",
     "org.jetbrains.kotlin:kotlin-compiler:2.0.21",
     "org.jetbrains.kotlin:kotlin-compiler:2.1.20",
-    "org.jetbrains.kotlin:kotlin-compiler:2.2.20",  # Studio build
-    "org.jetbrains.kotlin:kotlin-compiler:2.3.10",
+    "org.jetbrains.kotlin:kotlin-compiler:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-compiler:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
@@ -1157,7 +1156,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.2.10",  # Used by AGP Compose tests
@@ -1252,7 +1251,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies (AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0)
