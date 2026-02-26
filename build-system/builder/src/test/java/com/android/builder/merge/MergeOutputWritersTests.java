@@ -24,11 +24,13 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.tools.build.apkzlib.zip.StoredEntry;
 import com.android.tools.build.apkzlib.zip.ZFile;
-import com.android.tools.build.apkzlib.zip.ZFileOptions;
 import com.android.utils.FileUtils;
+import com.android.zipflinger.BytesSource;
+import com.android.zipflinger.ZipArchive;
 import com.google.common.io.Files;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.util.zip.Deflater;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -177,7 +179,7 @@ public class MergeOutputWritersTests {
         File zipFile = new File(dir, "test.zip");
         try (ZFile zf = ZFile.openReadWrite(zipFile)) {}
 
-        MergeOutputWriter w = MergeOutputWriters.toZip(zipFile, new ZFileOptions());
+        MergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
         w.open();
         w.create("a", new ByteArrayInputStream(new byte[] {1, 2, 3}), true);
         w.create("b/c", new ByteArrayInputStream(new byte[] {4, 5}), false);
@@ -203,6 +205,31 @@ public class MergeOutputWritersTests {
     }
 
     @Test
+    public void zipWriterCreateFileFromSource() throws Exception {
+        File dir = temporaryFolder.newFolder();
+        File zipFile = new File(dir, "test.zip");
+
+        SourceMergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
+        w.open();
+        w.create("a", new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
+        w.create("b/c", new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        w.close();
+
+        try (ZFile zf = ZFile.openReadOnly(zipFile)) {
+            assertEquals(2, zf.entries().size());
+
+            StoredEntry aEntry = zf.get("a");
+            assertNotNull(aEntry);
+
+            StoredEntry cEntry = zf.get("b/c");
+            assertNotNull(cEntry);
+
+            assertArrayEquals(new byte[] { 1, 2, 3 }, aEntry.read());
+            assertArrayEquals(new byte[] { 4, 5 }, cEntry.read());
+        }
+    }
+
+    @Test
     public void zipWriterRemoveFile() throws Exception {
         File dir = temporaryFolder.newFolder();
         File zipFile = new File(dir, "test.zip");
@@ -212,7 +239,7 @@ public class MergeOutputWritersTests {
             zf.add("d e/f g", new ByteArrayInputStream(new byte[] { 3, 3, 3 }));
         }
 
-        MergeOutputWriter w = MergeOutputWriters.toZip(zipFile, new ZFileOptions());
+        MergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
         w.open();
         w.remove("a");
         w.remove("b/c");
@@ -235,7 +262,7 @@ public class MergeOutputWritersTests {
             zf.add("d e/f g", new ByteArrayInputStream(new byte[] { 29, 31 }));
         }
 
-        MergeOutputWriter w = MergeOutputWriters.toZip(zipFile, new ZFileOptions());
+        MergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
         w.open();
         w.replace("a", new ByteArrayInputStream(new byte[] {4, 9}), true);
         w.replace("b/c", new ByteArrayInputStream(new byte[] {16, 25}), false);
@@ -257,6 +284,26 @@ public class MergeOutputWritersTests {
             assertArrayEquals(new byte[] { 4, 9 }, aEntry.read());
             assertArrayEquals(new byte[] { 16, 25 }, cEntry.read());
             assertArrayEquals(new byte[] { 36, 49 }, fgEntry.read());
+        }
+    }
+
+    @Test
+    public void zipFlingerWriterCreateFileFromSource() throws Exception {
+        File dir = temporaryFolder.newFolder();
+        File zipFile = new File(dir, "test.zip");
+
+        SourceMergeOutputWriter w = MergeOutputWriters.toZipWithZipFlinger(zipFile);
+        w.open();
+        w.create("a", new BytesSource(new byte[] {1, 2, 3}, "a", Deflater.NO_COMPRESSION));
+        w.create("b/c", new BytesSource(new byte[] {4, 5}, "b/c", Deflater.DEFAULT_COMPRESSION));
+        w.close();
+
+        try (ZipArchive archive = new ZipArchive(zipFile.toPath())) {
+            assertEquals(2, archive.listEntries().size());
+            assertTrue(archive.listEntries().contains("a"));
+            assertTrue(archive.listEntries().contains("b/c"));
+            assertArrayEquals(new byte[] { 1, 2, 3 }, archive.getContent("a").array());
+            assertArrayEquals(new byte[] { 4, 5 }, archive.getContent("b/c").array());
         }
     }
 }

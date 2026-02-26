@@ -15,11 +15,14 @@
  */
 package com.android.builder.merge
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.tools.build.apkzlib.zip.ZFile
 import com.android.tools.build.apkzlib.zip.ZFileOptions
 import com.android.utils.FileUtils
+import com.android.zipflinger.Archive
+import com.android.zipflinger.BytesSource
+import com.android.zipflinger.Source
+import com.android.zipflinger.StableArchive
+import com.android.zipflinger.ZipArchive
 import com.google.common.base.Preconditions
 import com.google.common.io.ByteStreams
 import java.io.File
@@ -27,9 +30,11 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.io.UncheckedIOException
+import java.util.zip.Deflater
 
 /** Factory methods for [MergeOutputWriter]. */
 object MergeOutputWriters {
+
   /**
    * Creates a writer that writes files to a directory.
    *
@@ -131,16 +136,8 @@ object MergeOutputWriters {
       }
 
       override fun replace(path: String, data: InputStream, compress: Boolean) {
-        Preconditions.checkState(isOpen, "Writer closed")
-
-        val f = toFile(path)
-        FileUtils.mkdirs(f.parentFile)
-
-        try {
-          FileOutputStream(f).use { fos -> ByteStreams.copy(data, fos) }
-        } catch (e: IOException) {
-          throw UncheckedIOException(e)
-        }
+        // Create implementation overrides
+        create(path, data, compress)
       }
     }
   }
@@ -151,11 +148,12 @@ object MergeOutputWriters {
    * @param file the existing zip file
    * @return the writer
    */
-  @NonNull
-  fun toZip(@NonNull file: File, @NonNull zFileOptions: ZFileOptions): MergeOutputWriter {
+  @JvmStatic
+  @Deprecated("Use toZipWithZipFlinger instead")
+  fun toZip(file: File, zFileOptions: ZFileOptions): MergeOutputWriter {
     return object : MergeOutputWriter {
       /** The open zip file, `null` if not open. */
-      @Nullable private var zipFile: ZFile? = null
+      private var zipFile: ZFile? = null
 
       override fun open() {
         Preconditions.checkState(zipFile == null, "Writer already open")
@@ -210,6 +208,70 @@ object MergeOutputWriters {
         } catch (e: IOException) {
           throw UncheckedIOException(e)
         }
+      }
+    }
+  }
+
+  /**
+   * Creates a writer that writes files to a zip file using ZipFlinger.
+   *
+   * @param file the existing zip file
+   * @return the writer
+   */
+  @JvmStatic
+  fun toZipWithZipFlinger(file: File): SourceMergeOutputWriter {
+    return object : SourceMergeOutputWriter {
+      private var archive: Archive? = null
+
+      override fun open() {
+        Preconditions.checkState(archive == null, "Writer already open")
+        try {
+          // Use StableArchive to for deterministic ordering and timestamp removal.
+          archive = StableArchive(ZipArchive(file.toPath()))
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
+
+      @Throws(IOException::class)
+      override fun close() {
+        Preconditions.checkState(archive != null, "Writer not open")
+        archive!!.close()
+        archive = null
+      }
+
+      override fun remove(path: String) {
+        Preconditions.checkState(archive != null, "Writer not open")
+        try {
+          archive!!.delete(path)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
+
+      override fun create(path: String, data: InputStream, compress: Boolean) {
+        val source =
+          BytesSource(ByteStreams.toByteArray(data), path, if (compress) Deflater.DEFAULT_COMPRESSION else Deflater.NO_COMPRESSION)
+        create(path, source)
+      }
+
+      override fun create(path: String, source: Source) {
+        Preconditions.checkState(archive != null, "Writer not open")
+        try {
+          archive!!.add(source)
+        } catch (e: IOException) {
+          throw UncheckedIOException(e)
+        }
+      }
+
+      override fun replace(path: String, data: InputStream, compress: Boolean) {
+        remove(path)
+        create(path, data, compress)
+      }
+
+      override fun replace(path: String, source: Source) {
+        remove(path)
+        create(path, source)
       }
     }
   }
