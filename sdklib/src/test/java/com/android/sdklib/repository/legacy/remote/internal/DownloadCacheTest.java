@@ -167,8 +167,6 @@ public class DownloadCacheTest {
         NoDownloadCache d1 = new NoDownloadCache(mFileOp, DownloadCache.Strategy.ONLY_CACHE);
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml");
         assertThat(is1).isNull();
-        assertThat(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot())).isTrue();
-        assertThat(mFileOp.getWrittenFiles()).isEmpty();
 
         // HTTP-Client's behavior is to return a FNF instead of 404 so we'll try that first
         mFileOp.reset();
@@ -213,8 +211,6 @@ public class DownloadCacheTest {
         d1.registerResponse("http://www.example.com/download1.xml", 200, "Blah blah blah");
         InputStream is1 = d1.openCachedUrl("http://www.example.com/download1.xml");
         assertThat(is1).isNull();
-        assertThat(mFileOp.hasRecordedExistingFolder(d1.getCacheRoot())).isTrue();
-        assertThat(mFileOp.getWrittenFiles()).isEmpty();
 
         // HTTP-Client's behavior is to return a FNF instead of 404 so we'll try that first
         mFileOp.reset();
@@ -451,6 +447,23 @@ public class DownloadCacheTest {
         assertThat(mFileOp.hasRecordedExistingFolder(d5.getCacheRoot())).isTrue();
         // Cache isn't updated since nothing fresh was read.
         assertThat(mFileOp.getWrittenFiles()).isEmpty();
+    }
+
+    @Test
+    public void testCacheDirectoryCreatedLazilyOnFirstWrite() throws Exception {
+        // The cache directory must not be created at construction time. Creating it eagerly
+        // during construction (which runs in Gradle's configuration phase) causes Gradle's
+        // configuration cache to be invalidated on the next build because it detects the
+        // directory as a new file system entry.
+        mFileOp.reset();
+        NoDownloadCache cache = new NoDownloadCache(mFileOp, DownloadCache.Strategy.SERVE_CACHE);
+
+        assertThat(mFileOp.hasRecordedExistingFolder(cache.getCacheRoot())).isFalse();
+
+        cache.registerResponse("http://www.example.com/download1.xml", 200, "content");
+        cache.openCachedUrl("http://www.example.com/download1.xml");
+
+        assertThat(mFileOp.hasRecordedExistingFolder(cache.getCacheRoot())).isTrue();
     }
 
     @Nullable
