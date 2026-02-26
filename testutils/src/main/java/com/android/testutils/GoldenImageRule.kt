@@ -30,11 +30,13 @@ class GoldenImageRule(val goldenFileDir: String) : ExternalResource() {
   override fun after() {
     if (missingGoldenFiles.isNotEmpty()) {
       val names = missingGoldenFiles.joinToString(", ") { it.fileName.toString() }
-      val suffix = if (missingGoldenFiles.size > 1) "s" else ""
-      throw AssertionError("Golden image$suffix $names didn't exist, created in ${missingGoldenFiles[0].parent} and in undeclared outputs")
+      val pluralSuffix = if (missingGoldenFiles.size > 1) "s" else ""
+      val bazelNote = if (TestUtils.runningFromBazel()) " and in undeclared outputs" else ""
+      throw AssertionError("Golden image$pluralSuffix $names didn't exist, created in ${missingGoldenFiles[0].parent}$bazelNote")
     }
   }
 
+  @JvmOverloads
   fun assertImageSimilar(
     goldenFileName: String,
     actual: BufferedImage,
