@@ -377,4 +377,38 @@ class AndroidLintTextOutputTaskTest {
     assertThat((task as TaskForTest).testLogger.lifeCycles).contains("Foo")
     assertThat((task as TaskForTest).testLogger.errors).isEmpty()
   }
+
+  /**
+   * Regression test for b/468928427.
+   *
+   * Verifies that AGP correctly identifies and strictly suppresses Lint's textual success and baseline-filtered messages from bleeding into
+   * stdout. The payloads tested here are the exact strings reported by users that previously bypassed the string-matching filters due to
+   * case sensitivity and unexpected phrasing.
+   */
+  @Test
+  fun testEmptyReportsAndBaselinesAreSuppressed() {
+    val bugReportPayloads =
+      listOf(
+        "Lint found no errors or warnings",
+        "Lint found no new issues (and 6 warnings filtered by baseline lint-baseline.xml)",
+        "Lint found no new issues (and 18 errors and 507 warnings filtered by baseline lint-baseline.xml)",
+      )
+
+    for (payload in bugReportPayloads) {
+      task.textReportInputFile.set(temporaryFolder.newFile().also { it.writeText(payload) })
+      task.returnValueInputFile.set(temporaryFolder.newFile().also { it.writeText("0") })
+
+      task.outputStream.set(AndroidLintTextOutputTask.OutputStream.STDOUT)
+
+      task.fatalOnly.set(false)
+      task.android.set(true)
+      task.abortOnError.set(true)
+      task.hasBaseline.set(payload.contains("baseline"))
+
+      task.taskAction()
+
+      assertThat((task as TaskForTest).testLogger.lifeCycles).isEmpty()
+      assertThat((task as TaskForTest).testLogger.errors).isEmpty()
+    }
+  }
 }
