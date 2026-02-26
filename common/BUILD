@@ -83,7 +83,6 @@ maven_library(
     ],
     version = BASE_VERSION,
     visibility = ["//visibility:public"],
-    warn = "error",
     exports = [
         "//tools/base/annotations",
         "@maven//:com.google.guava.guava",
