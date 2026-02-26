@@ -27,7 +27,7 @@ unzip -j "$linux_zip" emulator/lib/*.proto
 rm -f "$linux_zip" rtc_service.proto
 git add .
 
-printf "Update emulator proto files from emu-main-dev build $build\n\nTest: existing\nBug: N/A\n" > commitmsg.tmp
+printf "Update emulator proto files from emu-main-dev build $build\n\nBug: N/A\nTest: existing\n" > commitmsg.tmp
 
 set +e
 
