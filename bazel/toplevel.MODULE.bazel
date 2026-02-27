@@ -30,6 +30,7 @@ crate.spec(package = "zip", default_features = False, features = ["deflate"], ve
 crate.spec(package = "libloading", version = "0.8.6")
 crate.spec(package = "log", version = "0.4.26")
 crate.spec(package = "env_logger", version = "0.11.6")
+crate.spec(package = "sha1", version = "0.10.6")
 
 crate.from_specs()
 use_repo(crate, "crates")
