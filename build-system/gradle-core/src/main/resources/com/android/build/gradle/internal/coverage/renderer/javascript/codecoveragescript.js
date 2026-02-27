@@ -1038,10 +1038,31 @@ const CoverageReportApp = {
     },
 
     updateTooltipsForOverflow() {
-        const cells = this.elements.coverageData.querySelectorAll('.sticky-name');
-
-        cells.forEach(cell => {
+        // Sticky name columns (Class/Package/Module names)
+        const nameCells = this.elements.coverageData.querySelectorAll('.sticky-name');
+        nameCells.forEach(cell => {
             const isOverflowing = cell.scrollWidth > cell.clientWidth;
+            if (!isOverflowing) {
+                cell.removeAttribute('title');
+            }
+        });
+
+        // Truncated context columns (Module/Package paths)
+        const pathCells = this.elements.coverageData.querySelectorAll('.truncate, .max-w-300');
+        pathCells.forEach(cell => {
+            // Check if any child block is overflowing
+            const blocks = cell.querySelectorAll('.truncate-block');
+            let isOverflowing = false;
+            
+            if (blocks.length > 0) {
+                blocks.forEach(block => {
+                    if (block.scrollWidth > block.clientWidth) {
+                        isOverflowing = true;
+                    }
+                });
+            } else if (cell.scrollWidth > cell.clientWidth) {
+                isOverflowing = true;
+            }
 
             if (!isOverflowing) {
                 cell.removeAttribute('title');
@@ -1086,14 +1107,13 @@ const CoverageReportApp = {
         topHeader.innerHTML = `<th class="${firstColClass}" data-sort-by="name">${mainHeaderTitle} ${sortIndicator('name')}</th>`;
         subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
 
-        if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes')) {
-            const contextTitle = (currentView === 'packages') ? 'Module' : 'Package';
-            topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-            subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">${contextTitle}</th>`;
-
+        if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Module</th>`;
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
+            } else if (currentView === 'packages') {
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
             }
         }
 
@@ -1179,11 +1199,21 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                    if (!this.state.selectedModule) {
+                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+                    }
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
-                    nameCell += `<td class="py-3 px-6">${item.moduleName || ''}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td>`;
+                    if (!this.state.selectedModule) {
+                        nameCell += `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                            <div class="flex flex-col" style="overflow: hidden; width: 100%;">
+                                <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
+                                <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
+                            </div>
+                        </td>`;
+                    }
                     break;
                 default: // modules
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.name}">${item.name}</td>`;
