@@ -24,7 +24,7 @@ import org.junit.Test
 
 class AppWithClassifierDepTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithClassifierDep").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithClassifierDep").create()
 
   @Test
   fun `test VariantDependencies model`() {

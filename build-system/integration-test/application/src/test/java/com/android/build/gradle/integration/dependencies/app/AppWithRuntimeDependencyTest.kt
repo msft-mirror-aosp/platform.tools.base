@@ -44,9 +44,7 @@ class AppWithRuntimeDependencyTest {
       ImmutableMap.of(),
     )
   private val mavenRepo = MavenRepoGenerator(listOf(MavenRepoGenerator.Library("com.example:aar:1", "aar", aar)))
-  @get:Rule
-  val project =
-    GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().withAdditionalMavenRepo(mavenRepo).create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").withAdditionalMavenRepo(mavenRepo).create()
 
   @Before
   fun setUp() {
