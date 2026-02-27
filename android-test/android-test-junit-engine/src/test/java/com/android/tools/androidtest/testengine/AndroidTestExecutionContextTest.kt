@@ -17,6 +17,7 @@
 package com.android.tools.androidtest.testengine
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import java.util.Optional
 import org.junit.Test
 import org.junit.platform.engine.ConfigurationParameters
@@ -56,5 +57,22 @@ class AndroidTestExecutionContextTest {
 
     val context = AndroidTestExecutionContext(request)
     assertThat(context.configuration.deviceSerials).containsExactly("serial1")
+  }
+
+  @Test
+  fun `AndroidTestConfiguration parses resultsDir`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.RESULTS_DIR)).thenReturn(Optional.of("/path/to/results"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.resultsDir).isEqualTo(File("/path/to/results"))
   }
 }

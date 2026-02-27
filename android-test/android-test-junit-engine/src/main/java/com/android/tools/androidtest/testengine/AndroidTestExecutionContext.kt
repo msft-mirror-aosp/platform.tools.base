@@ -23,6 +23,7 @@ import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEV
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTALL_TIMEOUT_MS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.RESULTS_DIR
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TESTED_APKS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TEST_APKS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TEST_UTIL_APKS
@@ -68,6 +69,8 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val instrumentationTargetPackageId: String =
     get(INSTRUMENTATION_TARGET_PACKAGE_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID)
       ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
+
+  val resultsDir: File? = get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR)?.let { File(it) }
 
   private fun resolveApks(value: String?): List<File> {
     return value?.split(",")?.flatMap { path ->

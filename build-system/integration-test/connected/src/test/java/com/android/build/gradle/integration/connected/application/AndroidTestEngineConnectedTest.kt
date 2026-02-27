@@ -171,17 +171,9 @@ class AndroidTestEngineConnectedTest {
   fun runBasicAndroidTestUsingJUnitTestEngine() {
     val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
 
-    result.assertOutputContains(
-      "Devices > emulator-5554 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED"
-    )
-    result.assertOutputContains(
-      "Devices > emulator-5554 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED"
-    )
-    result.assertOutputContains(
-      "Devices > emulator-5556 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase1 PASSED"
-    )
-    result.assertOutputContains(
-      "Devices > emulator-5556 > com.example.android > com.example.android.ExampleInstrumentedTest > exampleTestCase2 PASSED"
-    )
+    result.assertOutputContains("emulator-5554 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
+    result.assertOutputContains("emulator-5554 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
+    result.assertOutputContains("emulator-5556 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
+    result.assertOutputContains("emulator-5556 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
   }
 }

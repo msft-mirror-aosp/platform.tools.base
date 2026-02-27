@@ -50,4 +50,7 @@ object AndroidTestConfigurationKeys {
 
   /** The package ID of the instrumentation target. */
   const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
+
+  /** Path to the results directory. */
+  const val RESULTS_DIR = "android-test.results-dir"
 }

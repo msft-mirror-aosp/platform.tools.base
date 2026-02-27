@@ -16,6 +16,8 @@ maven_library(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/common:tools.common",
+        # ddmlib is used for generating JUnit XML results via XmlTestRunListener.
+        "//tools/base/ddmlib:tools.ddmlib",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.junit.platform.junit-platform-engine",

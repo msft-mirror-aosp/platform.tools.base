@@ -29,7 +29,7 @@ import org.mockito.kotlin.whenever
 class AndroidTestEngineDescriptorTest {
 
   @Test
-  fun `execute creates AndroidDevicesContainer`() {
+  fun `execute executes AndroidDeviceDescriptor for each serial`() {
     val uniqueId = UniqueId.forEngine("android-test-engine")
     val descriptor = AndroidTestEngineDescriptor(uniqueId)
 
@@ -42,11 +42,13 @@ class AndroidTestEngineDescriptorTest {
 
     descriptor.execute(context, dynamicTestExecutor)
 
-    val captor = argumentCaptor<AndroidDevicesContainer>()
-    verify(dynamicTestExecutor).execute(captor.capture())
+    val captor = argumentCaptor<AndroidDeviceDescriptor>()
+    verify(dynamicTestExecutor, times(2)).execute(captor.capture())
 
-    val container = captor.firstValue
-    assertThat(container.displayName).isEqualTo("Devices")
-    assertThat(container.parent.get()).isSameInstanceAs(descriptor)
+    val descriptors = captor.allValues
+    assertThat(descriptors[0].deviceSerial).isEqualTo("serial1")
+    assertThat(descriptors[0].parent.get()).isSameInstanceAs(descriptor)
+    assertThat(descriptors[1].deviceSerial).isEqualTo("serial2")
+    assertThat(descriptors[1].parent.get()).isSameInstanceAs(descriptor)
   }
 }

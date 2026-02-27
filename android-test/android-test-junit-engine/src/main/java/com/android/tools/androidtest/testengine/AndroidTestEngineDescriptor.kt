@@ -40,18 +40,12 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val config = context.configuration
 
-    val devicesUniqueId = uniqueId.append("container", "devices")
-    val devicesContainer = AndroidDevicesContainer(devicesUniqueId)
-    devicesContainer.setParent(this)
-    dynamicTestExecutor.execute(devicesContainer)
-
     config.deviceSerials.forEach { deviceSerial ->
-      val deviceUniqueId = devicesUniqueId.append("device", deviceSerial)
+      val deviceUniqueId = uniqueId.append("device", deviceSerial)
       val deviceDescriptor = AndroidDeviceDescriptor(deviceUniqueId, deviceSerial)
-      devicesContainer.addDevice(deviceDescriptor)
+      deviceDescriptor.setParent(this)
+      dynamicTestExecutor.execute(deviceDescriptor)
     }
-
-    devicesContainer.finish()
 
     return context
   }
