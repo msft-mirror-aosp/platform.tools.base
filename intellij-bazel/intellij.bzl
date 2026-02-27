@@ -341,15 +341,19 @@ def local_platform(name, target, spec):
 #       url: Where to download this platform from
 #       sha256: The file's sha256.
 #       top_level_dir: Optional in case the archive contains a top-level directory that contains all files in the archive.
+#       plugins: Optional list of plugins to be made available through @intellij//:PLUGIN_NAME.
 #       export_plugins: If true, all plugins in the IDE archive will be available through @intellij//:PLUGIN_NAME.
 #                      (Note that setting this to true will always download the IDE.)
 #
-def remote_platform(name, sha256, url, top_level_dir = None, export_plugins = False):
+def remote_platform(name, sha256, url, top_level_dir = None, export_plugins = False, plugins = []):
+    if plugins and export_plugins:
+        fail("Cannot set both plugins and export_plugins.")
     return struct(
         name = name,
         sha256 = sha256,
         url = url,
         top_level_dir = top_level_dir,
+        plugins = plugins,
         export_plugins = export_plugins,
     )
 
@@ -373,6 +377,8 @@ def setup_platforms(repos):
             if repo.export_plugins:
                 content += "load('" + "@" + repo.name + "//:spec.bzl" + "', " + _normalize(repo.name) + " = 'SPEC')\n"
                 targets.append((repo.name, "@" + repo.name + "//:" + repo.name, _normalize(repo.name) + ".plugin_jars.keys()"))
+            elif repo.plugins:
+                targets.append((repo.name, "@" + repo.name + "//:" + repo.name, str(repo.plugins)))
             else:
                 targets.append((repo.name, "@" + repo.name + "//:" + repo.name, "[]"))
         elif hasattr(repo, "target"):
