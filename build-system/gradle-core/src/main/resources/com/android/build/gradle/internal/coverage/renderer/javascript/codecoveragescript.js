@@ -311,9 +311,11 @@ const CoverageReportApp = {
 
             viewSegments: document.getElementById('view-segments'),
 
-            viewToggles: document.getElementById('view-toggles'),
             flatBreadcrumbs: document.getElementById('flat-breadcrumbs'),
-            flatViewControls: document.getElementById('flat-view-controls'),
+            groupByBtn: document.getElementById('group-by-btn'),
+            groupByText: document.getElementById('group-by-text'),
+            groupByDropdown: document.getElementById('group-by-dropdown'),
+            
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
             totalModules: document.getElementById('total-modules'),
@@ -380,7 +382,8 @@ const CoverageReportApp = {
             { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
             { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
             { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
-            { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown }
+            { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
+            { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
         ];
     },
 
@@ -399,7 +402,9 @@ const CoverageReportApp = {
             }
         });
 
-        this.elements.flatViewControls.addEventListener('click', this.handleViewToggle.bind(this));
+        if (this.elements.groupByDropdown) {
+            this.elements.groupByDropdown.addEventListener('click', this.handleGroupByChange.bind(this));
+        }
         this.elements.coverageData.addEventListener('click', this.handleRowClick.bind(this));
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
         this.elements.flatBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
@@ -423,7 +428,9 @@ const CoverageReportApp = {
                 if (filterType === 'class') this.elements.clsChipContainer.classList.remove('hidden');
 
                 this.elements.addFilterDropdown.classList.add('hidden');
+                this.handleHeaderFilterChange(filterType);
                 this.updateFilterButtons();
+                this.render();
             });
         }
 
@@ -444,6 +451,7 @@ const CoverageReportApp = {
                     if (filterType === 'package') this.elements.pkgChipContainer.classList.add('hidden');
                     if (filterType === 'class') this.elements.clsChipContainer.classList.add('hidden');
 
+                    this.handleHeaderFilterChange();
                     this.updateFilterButtons();
                     this.render();
                 }
@@ -472,7 +480,6 @@ const CoverageReportApp = {
 
                 // Update State and Render
                 this.state.viewMode = btn.dataset.value;
-                this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
                 this.resetSelection();
                 this.render();
             });
@@ -638,6 +645,35 @@ const CoverageReportApp = {
         // This is now handled by buildActionDropdown's onSelectionChange callback
     },
 
+    handleHeaderFilterChange(explicitType = null) {
+        if (this.state.viewMode !== 'flat') return;
+
+        if (explicitType) {
+            const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes' };
+            if (viewMap[explicitType]) {
+                this.state.currentView = viewMap[explicitType];
+            }
+        } else {
+            const { classes, packages, modules } = this.state.filters;
+            const activeChips = [];
+            if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
+            if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
+            if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
+
+            if (classes.length > 0 || activeChips.includes('class')) {
+                this.state.currentView = 'classes';
+            } else if (packages.length > 0 || activeChips.includes('package')) {
+                this.state.currentView = 'packages';
+            } else {
+                // Always fallback to modules if deeper hierarchies aren't active
+                this.state.currentView = 'modules';
+            }
+        }
+
+        // Reset drill-down context to avoid confusing states when grouping abruptly changes
+        this.resetSelection();
+    },
+
     updateDynamicFilters() {
         const { selectedModule, selectedPackage, filters } = this.state;
         let contextModules = this.fullReport.modules;
@@ -681,6 +717,7 @@ const CoverageReportApp = {
         UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, () => {
             filters.packages = [];
             filters.classes = [];
+            this.handleHeaderFilterChange('module');
             this.updateFilterButtons();
             this.render();
         });
@@ -694,11 +731,13 @@ const CoverageReportApp = {
 
         UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, () => {
             filters.classes = [];
+            this.handleHeaderFilterChange('package');
             this.updateFilterButtons();
             this.render();
         });
 
         UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, () => {
+            this.handleHeaderFilterChange('class');
             this.updateFilterButtons();
             this.render();
         });
@@ -726,23 +765,13 @@ const CoverageReportApp = {
         });
     },
 
-    handleViewToggle(e) {
-        const button = e.target.closest('.view-toggle');
-        if (!button) return;
-        this.state.currentView = button.dataset.view;
-        this.resetSelection();
-        this.render();
-    },
-
-    handleViewModeChange(e) {
+    handleGroupByChange(e) {
         e.preventDefault();
-        const target = e.target.closest('a');
-        if(!target) return;
+        const target = e.target.closest('.dropdown-item');
+        if (!target) return;
 
-        this.state.viewMode = target.dataset.value;
-        this.elements.viewModeText.textContent = target.textContent;
-        this.elements.viewModeDropdown.classList.add('hidden');
-        this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+        this.state.currentView = target.dataset.value;
+        this.elements.groupByDropdown.classList.add('hidden');
         this.resetSelection();
         this.render();
     },
@@ -833,7 +862,7 @@ const CoverageReportApp = {
 
     render() {
         this.updateDynamicFilters();
-        this.updateActiveTabs();
+        this.updateGroupByText();
         this.renderBreadcrumbs();
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
@@ -844,13 +873,18 @@ const CoverageReportApp = {
         this.updateTooltipsForOverflow();
     },
 
-    updateActiveTabs() {
-        document.querySelectorAll('.view-toggle').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        const activeButton = this.elements.flatViewControls.querySelector(`[data-view="${this.state.currentView}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
+    updateGroupByText() {
+        if (!this.elements.groupByText) return;
+        const viewMap = {
+            'modules': 'Modules',
+            'packages': 'Packages',
+            'classes': 'Classes'
+        };
+        this.elements.groupByText.textContent = viewMap[this.state.currentView] || 'Modules';
+        
+        // Hide Group By entirely in Tree mode
+        if (this.elements.groupByBtn) {
+            this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
         }
     },
 
@@ -1110,7 +1144,7 @@ const CoverageReportApp = {
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
 
             return `<tr class="${rowClasses}" data-id="${item.name}" data-parent-id="${parentId}">
-                <td class="py-3 px-6 sticky-name" title="${item.name}"><div class="flex items-center gap-2 cursor-pointer" style="padding-left: ${level * 1.5}rem;">${chevron}${nameContent}</div></td>
+                <td class="py-3 px-6 sticky-name" title="${item.name}"><div class="flex items-center gap-2 cursor-pointer pl-level-${level}">${chevron}${nameContent}</div></td>
                 ${coverageCells}
             </tr>`;
         };
