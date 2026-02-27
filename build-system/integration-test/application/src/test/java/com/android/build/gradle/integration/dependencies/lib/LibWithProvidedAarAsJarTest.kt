@@ -27,7 +27,7 @@ import org.junit.Test
 
 class LibWithProvidedAarAsJarTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithModules").create()
 
   @Before
   fun setUp() {
