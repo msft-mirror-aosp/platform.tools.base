@@ -50,7 +50,7 @@ public class AdbInstallerChannelManagerTest {
     public static final String CHOWN_DIR = "chown -R shell:shell " + Deployer.BASE_DIRECTORY;
     public static final String CHMOD_INSTALLER = "chmod +x " + AdbInstaller.INSTALLER_PATH;
 
-    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
     private FakeDevice device;
     private ILogger logger;
 

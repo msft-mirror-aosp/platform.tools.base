@@ -22,8 +22,9 @@ import static com.android.tools.deployer.ApkVerifierTracker.getSkipVerificationI
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
+import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
@@ -39,7 +40,9 @@ import com.google.common.collect.Sets;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +59,18 @@ public class ApkVerifierTrackerTest {
     private static final String FIRST_PACKAGE = "package 0";
     private static final String SECOND_PACKAGE = "package 1";
 
-    private FakeAdbServer fakeAdbServer;
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
+
+    private final FakeAdbServerProviderRule fakeAdbRule =
+            new FakeAdbServerProviderRule(
+                    provider -> {
+                        provider.installDeviceHandler(handler);
+                        return kotlin.Unit.INSTANCE;
+                    });
+
+    @Rule public final RuleChain chain = RuleChain.outerRule(fakeAdbRule)
+            .around(new UseAdbLibAndroidDebugBridgeRule(fakeAdbRule::getAdbSession));
+
     private AndroidDebugBridge bridge;
 
     private Set<IDevice> disabledDevices;
@@ -65,17 +78,7 @@ public class ApkVerifierTrackerTest {
 
     @Before
     public void before() throws Exception {
-        // Build the server and configure it to use the default ADB command handlers.
-        fakeAdbServer =
-                new FakeAdbServer.Builder()
-                        .installDefaultCommandHandlers()
-                        .addDeviceHandler(handler)
-                        .build();
-
-        // Start server execution.
-        fakeAdbServer.start();
-
-        // Start ADB with fake server and its port.
+        FakeAdbServer fakeAdbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
         AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
 
         FakeDevice oDevice = new FakeDevice("8.0", 26);
@@ -134,10 +137,6 @@ public class ApkVerifierTrackerTest {
 
     @After
     public void after() throws InterruptedException {
-        fakeAdbServer.stop();
-        boolean status = fakeAdbServer.awaitServerTermination(WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-        assertTrue(status);
-
         ApkVerifierTracker.clear();
         AndroidDebugBridge.terminate();
         AndroidDebugBridge.disableFakeAdbServerMode();
@@ -213,7 +212,10 @@ public class ApkVerifierTrackerTest {
     }
 
     private void waitUntilAdbHasAllDevices() throws Exception {
-        List<DeviceState> deviceStates = fakeAdbServer.getDeviceListCopy().get();
+        List<DeviceState> deviceStates = fakeAdbRule.getFakeAdb()
+                .getFakeAdbServer()
+                .getDeviceListCopy()
+                .get();
         for (DeviceState deviceState : deviceStates) {
             waitUntilAdbHasDevice(deviceState.getDeviceId());
         }

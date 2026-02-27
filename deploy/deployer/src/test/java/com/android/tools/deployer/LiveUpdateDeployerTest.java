@@ -41,7 +41,8 @@ import java.util.Set;
 @RunWith(ApiLevel.class)
 public class LiveUpdateDeployerTest {
 
-    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
+
     private FakeDevice device;
     private ILogger logger;
 
