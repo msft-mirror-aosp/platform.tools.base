@@ -2,6 +2,7 @@
 
 import dataclasses
 import enum
+import glob
 import json
 import logging
 import os
@@ -202,6 +203,17 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
     args.append(perfgate_data_path)
   logging.info('Running command: %s', args)
   subprocess.run(args, check=True)
+
+
+def rm_bazel_bin(build_env: bazel.BuildEnv, outputs: Iterable[str]) -> None:
+  """Removes the outputs in bazel-bin, if present."""
+  result = build_env.bazel_info('--config=ci', 'bazel-bin')
+  bin_path = pathlib.Path(result.stdout.decode('utf-8').strip())
+
+  for output in outputs:
+    output_path = bin_path / output
+    for path in glob.glob(str(output_path)):
+      os.remove(str(path))
 
 
 def copy_artifacts(
