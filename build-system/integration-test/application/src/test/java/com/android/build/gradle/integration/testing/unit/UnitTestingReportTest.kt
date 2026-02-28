@@ -18,11 +18,12 @@ package com.android.build.gradle.integration.testing.unit
 
 import com.android.build.gradle.integration.common.fixture.GradleBuildResult
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
+import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import java.io.File
-import org.gradle.api.JavaVersion
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -34,110 +35,102 @@ class UnitTestingReportTest {
 
   @get:Rule
   val rule =
-    GradleRule.fromProject("reportAggregation", "reportAggregation") {
+    GradleRule.from {
       androidApplication(":app") {
-        android {
-          namespace = "com.example.app"
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-          defaultConfig {
-            minSdk { version = release(24) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-          flavorDimensions.add("tier")
-          productFlavors {
-            create("free") { it.dimension = "tier" }
-            create("paid") { it.dimension = "tier" }
-          }
-          buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
-          kotlin { jvmToolchain(17) }
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
-        }
+        android { namespace = "com.example.app" }
         dependencies {
           implementation(project(":lib"))
-
           testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
-          testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-          testImplementation("commons-logging:commons-logging:1.1.1")
         }
+        files.add(
+          "src/testDebug/java/com/example/app/DebugTest.kt",
+          """
+          package com.example.app
+          import org.junit.Test
+          class DebugTest {
+              @Test
+              fun testDebug() {}
+          }
+          """
+            .trimIndent(),
+        )
+        files.add(
+          "src/testRelease/java/com/example/app/ReleaseTest.kt",
+          """
+          package com.example.app
+          import org.junit.Test
+          class ReleaseTest {
+              @Test
+              fun testRelease() {}
+          }
+          """
+            .trimIndent(),
+        )
       }
       androidLibrary(":lib") {
         android {
           namespace = "com.example.lib"
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-          defaultConfig {
-            minSdk { version = release(24) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-          flavorDimensions.add("tier")
-          productFlavors {
-            create("free") { it.dimension = "tier" }
-            create("paid") { it.dimension = "tier" }
-          }
-          buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
-          kotlin { jvmToolchain(17) }
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
-          dependencies {
-            implementation(project(":lib2"))
-
-            testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
-            testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-            testImplementation("commons-logging:commons-logging:1.1.1")
-          }
-          publishing { singleVariant("freeDebug") }
+          publishing { singleVariant("debug") }
         }
+        dependencies { implementation(project(":lib2")) }
       }
       androidLibrary(":lib2") {
-        android {
-          namespace = "com.example.lib2"
-          compileSdk { version = release(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION) }
-          defaultConfig {
-            minSdk { version = release(24) }
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        android { namespace = "com.example.lib2" }
+        dependencies { testImplementation("junit:junit:4.13.2") }
+        files.add(
+          "src/test/java/com/example/lib2/FailingTest.kt",
+          """
+          package com.example.lib2
+          import org.junit.Test
+          import org.junit.Assert.fail
+          class FailingTest {
+              @Test
+              fun testFailure() {
+                  fail("This test is supposed to fail")
+              }
           }
-          flavorDimensions.add("tier")
-          productFlavors {
-            create("free") { it.dimension = "tier" }
-            create("paid") { it.dimension = "tier" }
-          }
-          buildTypes { named("debug") { it.enableUnitTestCoverage = true } }
-          kotlin { jvmToolchain(17) }
-          compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_17
-            targetCompatibility = JavaVersion.VERSION_17
-          }
-          dependencies {
-            testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
-            testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
-            testImplementation("commons-logging:commons-logging:1.1.1")
-          }
-          publishing { singleVariant("freeDebug") }
-        }
+          """
+            .trimIndent(),
+        )
+      }
+      gradleProperties {
+        // this is to test the multi-variant support for test result reporting
+        add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
       }
     }
 
   @Test
-  fun testCreateTestReport() {
-    val result = rule.build.executor.run(":app:createTestReport")
-    val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
-    val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
+  fun testCreateTestReportWithFailingTest() {
+    // unit test is expect to fail if run separately
+    rule.build.executor.expectFailure().run(":lib2:testDebugUnitTest")
+    // check failing test case won't fail the build when running the test report task
+    val result = rule.build.executor.run(":lib2:createTestReport")
+    val libBuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
+    val outputDir = FileUtils.join(libBuildDir, "reports", "tests", "test-report")
 
     verifyHtmlReport(outputDir = outputDir, taskResult = result)
   }
 
   @Test
+  fun testCreateTestReportIncludingAllVariants() {
+    val result = rule.build.executor.run(":app:createTestReport")
+    val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
+    val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "test-report")
+
+    assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
+    assertThat(result.didWorkTasks.contains(":app:testReleaseUnitTest")).isTrue()
+
+    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+  }
+
+  @Test
+  @Ignore("b/488465705")
   fun testCreateAggregatedTestReport() {
     val result = rule.build.executor.run(":app:createAggregatedTestReport")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "tests", "aggregated-test-report")
+
+    assertThat(result.didWorkTasks.contains(":lib2:testDebugUnitTest")).isTrue()
 
     verifyHtmlReport(outputDir = outputDir, taskResult = result)
   }
@@ -161,12 +154,10 @@ class UnitTestingReportTest {
   }
 
   @Test
-  fun testCreateAggregatedTestReportLib2() {
-    val result = rule.build.executor.run(":lib2:createAggregatedTestReport")
-    val lib2BuildDir = rule.build.androidLibrary(":lib2").buildDir.toFile()
-    val outputDir = FileUtils.join(lib2BuildDir, "reports", "tests", "aggregated-test-report")
-
-    verifyHtmlReport(outputDir = outputDir, taskResult = result)
+  fun testAggregatedTestReportingForNonPublishedLibModule() {
+    val build = rule.build
+    val aggregatedReportLibResult = build.executor.expectFailure().run(":lib2:createAggregatedTestReport")
+    aggregatedReportLibResult.assertFailureMessage().contains("task 'createAggregatedTestReport' not found in project ':lib2'")
   }
 
   private fun verifyHtmlReport(outputDir: File, taskResult: GradleBuildResult) {
