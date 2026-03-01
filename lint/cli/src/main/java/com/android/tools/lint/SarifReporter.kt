@@ -566,16 +566,15 @@ constructor(client: LintCliClient, output: File) : Reporter(client, output) {
     }
     for (i in 0 until size) {
       while (offset < fileText.length) {
-        val ch = fileText[offset]
-        if (ch == '\n' || offset == fileText.length - 1) {
-          endOffset = offset
+        if (fileText[offset++] == '\n') {
           endLine++
-          if (ch == '\n') {
-            endColumn = 1
-          }
+          endColumn = 1
+          endOffset = offset
           break
         }
-        offset++
+        if (offset == fileText.length) {
+          endOffset = offset
+        }
         endColumn++
       }
     }

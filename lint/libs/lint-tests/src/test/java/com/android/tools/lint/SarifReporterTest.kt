@@ -378,9 +378,9 @@ class SarifReporterTest {
                                                 },
                                                 "contextRegion": {
                                                     "startLine": 2,
-                                                    "endLine": 7,
+                                                    "endLine": 5,
                                                     "snippet": {
-                                                        "text": "    <string name=\"first\">First</string>\n    <string name=\"second\">Second</string>\n    <string name=\"first\">Third</string>\n</resources"
+                                                        "text": "    <string name=\"first\">First</string>\n    <string name=\"second\">Second</string>\n    <string name=\"first\">Third</string>\n</resources>"
                                                     }
                                                 }
                                             }
@@ -412,14 +412,14 @@ class SarifReporterTest {
                                                     "startLine": 1,
                                                     "endLine": 5,
                                                     "snippet": {
-                                                        "text": "<resources>\n    <string name=\"first\">First</string>\n    <string name=\"second\">Second</string>"
+                                                        "text": "<resources>\n    <string name=\"first\">First</string>\n    <string name=\"second\">Second</string>\n    <string name=\"first\">Third</string>\n"
                                                     }
                                                 }
                                             }
                                         }
                                     ],
                                     "partialFingerprints": {
-                                        "sourceContext/v1": "6567b58f48151459"
+                                        "sourceContext/v1": "237897cbbb558659"
                                     }
                                 },
                                 {
@@ -450,9 +450,9 @@ class SarifReporterTest {
                                                 },
                                                 "contextRegion": {
                                                     "startLine": 2,
-                                                    "endLine": 7,
+                                                    "endLine": 5,
                                                     "snippet": {
-                                                        "text": "    package=\"test.pkg\">\n    <uses-sdk android:minSdkVersion=\"10\" />\n    <uses-sdk android:minSdkVersion=\"10\" />\n</manifest"
+                                                        "text": "    package=\"test.pkg\">\n    <uses-sdk android:minSdkVersion=\"10\" />\n    <uses-sdk android:minSdkVersion=\"10\" />\n</manifest>"
                                                     }
                                                 }
                                             }
@@ -482,16 +482,16 @@ class SarifReporterTest {
                                                 },
                                                 "contextRegion": {
                                                     "startLine": 1,
-                                                    "endLine": 6,
+                                                    "endLine": 5,
                                                     "snippet": {
-                                                        "text": "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    package=\"test.pkg\">\n    <uses-sdk android:minSdkVersion=\"10\" />\n    <uses-sdk android:minSdkVersion=\"10\" />"
+                                                        "text": "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    package=\"test.pkg\">\n    <uses-sdk android:minSdkVersion=\"10\" />\n    <uses-sdk android:minSdkVersion=\"10\" />\n</manifest>"
                                                     }
                                                 }
                                             }
                                         }
                                     ],
                                     "partialFingerprints": {
-                                        "sourceContext/v1": "7b9672069a5042f2"
+                                        "sourceContext/v1": "a364ceb594238cd1"
                                     }
                                 },
                                 {
@@ -676,9 +676,9 @@ class SarifReporterTest {
                                             },
                                             "contextRegion": {
                                                 "startLine": 1,
-                                                "endLine": 6,
+                                                "endLine": 5,
                                                 "snippet": {
-                                                    "text": "<resources>\n    <style name=\"Style2\">\n        <item name=\"android:textSize\">50dp</item>\n    </style>"
+                                                    "text": "<resources>\n    <style name=\"Style2\">\n        <item name=\"android:textSize\">50dp</item>\n    </style>\n</resources>"
                                                 }
                                             }
                                         }
@@ -715,7 +715,7 @@ class SarifReporterTest {
                                     }
                                 ],
                                 "partialFingerprints": {
-                                    "sourceContext/v1": "80f628e8def57407"
+                                    "sourceContext/v1": "2d30e48e2a03aef6"
                                 }
                             },
                             {
@@ -747,7 +747,7 @@ class SarifReporterTest {
                                                 "startLine": 3,
                                                 "endLine": 8,
                                                 "snippet": {
-                                                    "text": "              android:layout_height=\"match_parent\"\n              android:orientation=\"vertical\">\n    <EditText\n            android:id=\"@+id/usernameField\""
+                                                    "text": "              android:layout_height=\"match_parent\"\n              android:orientation=\"vertical\">\n    <EditText\n            android:id=\"@+id/usernameField\"\n            android:layout_width=\"match_parent\"\n"
                                                 }
                                             }
                                         }
@@ -806,7 +806,7 @@ class SarifReporterTest {
                                     }
                                 ],
                                 "partialFingerprints": {
-                                    "sourceContext/v1": "e66def4d268b2112"
+                                    "sourceContext/v1": "5513074bef51f1d0"
                                 }
                             }
                         ]
@@ -915,9 +915,9 @@ class SarifReporterTest {
                                             },
                                             "contextRegion": {
                                                 "startLine": 4,
-                                                "endLine": 9,
+                                                "endLine": 7,
                                                 "snippet": {
-                                                    "text": "        android:title=\"@string/action_settings\"\n        android:orderInCategory=\"100\"\n        app:showAsAction=\"never\" />\n</menu"
+                                                    "text": "        android:title=\"@string/action_settings\"\n        android:orderInCategory=\"100\"\n        app:showAsAction=\"never\" />\n</menu>"
                                                 }
                                             }
                                         }
@@ -965,7 +965,7 @@ class SarifReporterTest {
                                     }
                                 ],
                                 "partialFingerprints": {
-                                    "sourceContext/v1": "8d3c283830163750"
+                                    "sourceContext/v1": "e9209414ebf9fa29"
                                 }
                             }
                         ]
