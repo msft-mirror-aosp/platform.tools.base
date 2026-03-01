@@ -34,6 +34,13 @@ avd(
 )
 
 avd(
+    name = "avd_35",
+    image = "@system_image_android-35_default_x86_64//:x86_64-android-35-images",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+avd(
     name = "avd_34",
     image = "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
     target_compatible_with = ["@platforms//os:linux"],
