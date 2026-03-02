@@ -16961,6 +16961,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.annotation.annotation_1.9.0",
+    pom = "repository/androidx/annotation/annotation/1.9.0/annotation-1.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/annotation/annotation/1.9.0",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.7.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.annotation.annotation_1.9.1",
     pom = "repository/androidx/annotation/annotation/1.9.1/annotation-1.9.1.pom",
     repo_root_path = "repository",
@@ -17744,6 +17756,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.collection.collection_1.4.5",
+    pom = "repository/androidx/collection/collection/1.4.5/collection-1.4.5.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/collection/collection/1.4.5",
+    deps = [
+        "androidx.annotation.annotation_1.9.0",
+        "androidx.collection.collection-jvm_1.4.5",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.collection.collection_1.5.0",
     pom = "repository/androidx/collection/collection/1.5.0/collection-1.5.0.pom",
     repo_root_path = "repository",
@@ -17807,6 +17832,27 @@ maven_artifact(
         "androidx.compose.ui.ui-graphics-android_1.10.2",
         "androidx.compose.ui.ui-util-android_1.10.2",
         "androidx.compose.animation.animation-core-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.animation.animation-android_1.10.4",
+    pom = "repository/androidx/compose/animation/animation-android/1.10.4/animation-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/animation/animation-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.foundation.foundation-layout-android_1.10.4",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.ui.ui-geometry-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.collection.collection-jvm_1.5.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.compose.animation.animation-core-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -18245,6 +18291,25 @@ maven_artifact(
         "androidx.compose.ui.ui-unit-android_1.10.2",
         "androidx.compose.ui.ui-android_1.10.2",
         "androidx.compose.ui.ui-graphics-android_1.10.2",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.animation.animation-core-android_1.10.4",
+    pom = "repository/androidx/compose/animation/animation-core-android/1.10.4/animation-core-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/animation/animation-core-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
     ],
     visibility = ["//visibility:public"],
@@ -18859,6 +18924,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.animation.animation-core_1.10.4",
+    pom = "repository/androidx/compose/animation/animation-core/1.10.4/animation-core-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/animation/animation-core/1.10.4",
+    deps = [
+        "androidx.compose.animation.animation-core-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.animation.animation-core_1.5.0",
     pom = "repository/androidx/compose/animation/animation-core/1.5.0/animation-core-1.5.0.pom",
     repo_root_path = "repository",
@@ -19429,6 +19507,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.animation.animation_1.10.4",
+    pom = "repository/androidx/compose/animation/animation/1.10.4/animation-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/animation/animation/1.10.4",
+    deps = [
+        "androidx.compose.foundation.foundation-layout_1.10.4",
+        "androidx.compose.runtime.runtime_1.10.4",
+        "androidx.compose.ui.ui-geometry_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.animation.animation-android_1.10.4",
+        "androidx.compose.animation.animation-core_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.animation.animation_1.5.0",
     pom = "repository/androidx/compose/animation/animation/1.5.0/animation-1.5.0.pom",
     repo_root_path = "repository",
@@ -19790,6 +19884,28 @@ maven_artifact(
         "androidx.emoji2.emoji2_1.3.0",
         "androidx.core.core_1.13.1",
         "androidx.compose.runtime.runtime-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.foundation.foundation-android_1.10.4",
+    pom = "repository/androidx/compose/foundation/foundation-android/1.10.4/foundation-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/foundation/foundation-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.compose.animation.animation-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.foundation.foundation-layout-android_1.10.4",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.compose.ui.ui-text-android_1.10.4",
+        "androidx.emoji2.emoji2_1.3.0",
+        "androidx.core.core_1.13.1",
+        "androidx.compose.runtime.runtime-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -20275,6 +20391,26 @@ maven_artifact(
         "androidx.compose.ui.ui-util-android_1.10.2",
         "androidx.compose.ui.ui-android_1.10.2",
         "androidx.compose.runtime.runtime-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.foundation.foundation-layout-android_1.10.4",
+    pom = "repository/androidx/compose/foundation/foundation-layout-android/1.10.4/foundation-layout-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/foundation/foundation-layout-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.animation.animation-core_1.2.1",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "androidx.collection.collection-jvm_1.5.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.core.core_1.16.0",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.compose.runtime.runtime-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -20897,6 +21033,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.foundation.foundation-layout_1.10.4",
+    pom = "repository/androidx/compose/foundation/foundation-layout/1.10.4/foundation-layout-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/foundation/foundation-layout/1.10.4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.foundation.foundation-layout-android_1.10.4",
+        "androidx.compose.ui.ui_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.foundation.foundation-layout_1.5.0",
     pom = "repository/androidx/compose/foundation/foundation-layout/1.5.0/foundation-layout-1.5.0.pom",
     repo_root_path = "repository",
@@ -21277,6 +21426,22 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "androidx.compose.foundation.foundation-android_1.10.2",
         "androidx.compose.runtime.runtime_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.foundation.foundation_1.10.4",
+    pom = "repository/androidx/compose/foundation/foundation/1.10.4/foundation-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/foundation/foundation/1.10.4",
+    deps = [
+        "androidx.collection.collection_1.5.0",
+        "androidx.compose.animation.animation_1.10.4",
+        "androidx.compose.ui.ui_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.foundation.foundation-android_1.10.4",
+        "androidx.compose.runtime.runtime_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -21934,6 +22099,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material.material-android_1.10.4",
+    pom = "repository/androidx/compose/material/material-android/1.10.4/material-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.foundation.foundation-android_1.8.2",
+        "androidx.compose.ui.ui-text-android_1.8.2",
+        "androidx.savedstate.savedstate-android_1.3.2",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.8.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-util-android_1.8.2",
+        "androidx.compose.foundation.foundation-layout-android_1.8.2",
+        "androidx.lifecycle.lifecycle-viewmodel-android_2.8.7",
+        "androidx.compose.animation.animation-android_1.8.2",
+        "androidx.compose.animation.animation-core-android_1.8.2",
+        "androidx.compose.material.material-ripple-android_1.8.2",
+        "androidx.lifecycle.lifecycle-runtime-android_2.8.7",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material.material-android_1.7.0",
     pom = "repository/androidx/compose/material/material-android/1.7.0/material-android-1.7.0.pom",
     repo_root_path = "repository",
@@ -22417,6 +22607,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material.material-ripple-android_1.10.4",
+    pom = "repository/androidx/compose/material/material-ripple-android/1.10.4/material-ripple-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material-ripple-android/1.10.4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.compose.ui.ui-util-android_1.7.1",
+        "androidx.compose.foundation.foundation-android_1.7.1",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.animation.animation-android_1.7.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material.material-ripple-android_1.6.0",
     pom = "repository/androidx/compose/material/material-ripple-android/1.6.0/material-ripple-android-1.6.0.pom",
     repo_root_path = "repository",
@@ -22741,6 +22947,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material.material-ripple_1.10.4",
+    pom = "repository/androidx/compose/material/material-ripple/1.10.4/material-ripple-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material-ripple/1.10.4",
+    deps = [
+        "androidx.compose.foundation.foundation_1.7.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.material.material-ripple-android_1.10.4",
+        "androidx.compose.runtime.runtime_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material.material-ripple_1.5.0",
     pom = "repository/androidx/compose/material/material-ripple/1.5.0/material-ripple-1.5.0.pom",
     repo_root_path = "repository",
@@ -22941,6 +23161,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material.material_1.10.4",
+    pom = "repository/androidx/compose/material/material/1.10.4/material-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material/1.10.4",
+    deps = [
+        "androidx.compose.animation.animation-core_1.8.2",
+        "androidx.compose.foundation.foundation_1.8.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.material.material-ripple_1.8.2",
+        "androidx.compose.runtime.runtime_1.10.4",
+        "androidx.compose.ui.ui_1.8.2",
+        "androidx.compose.material.material-android_1.10.4",
+        "androidx.compose.ui.ui-text_1.8.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material.material_1.3.0",
     pom = "repository/androidx/compose/material/material/1.3.0/material-1.3.0.pom",
     repo_root_path = "repository",
@@ -23132,6 +23370,22 @@ maven_artifact(
         "androidx.collection.collection-jvm_1.5.0",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "androidx.compose.runtime.runtime-annotation-android_1.10.2",
+        "androidx.annotation.annotation-experimental_1.4.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.runtime.runtime-android_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-android/1.10.4/runtime-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-android/1.10.4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-android_1.9.0",
+        "androidx.collection.collection-jvm_1.5.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.compose.runtime.runtime-annotation-android_1.10.4",
         "androidx.annotation.annotation-experimental_1.4.1",
     ],
     visibility = ["//visibility:public"],
@@ -23508,6 +23762,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.runtime.runtime-annotation-android_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-annotation-android/1.10.4/runtime-annotation-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-annotation-android/1.10.4",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.runtime.runtime-annotation-android_1.9.0",
     pom = "repository/androidx/compose/runtime/runtime-annotation-android/1.9.0/runtime-annotation-android-1.9.0.pom",
     repo_root_path = "repository",
@@ -23556,6 +23821,17 @@ maven_artifact(
     pom = "repository/androidx/compose/runtime/runtime-annotation-jvm/1.10.2/runtime-annotation-jvm-1.10.2.pom",
     repo_root_path = "repository",
     repo_path = "androidx/compose/runtime/runtime-annotation-jvm/1.10.2",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.runtime.runtime-annotation-jvm_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-annotation-jvm/1.10.4/runtime-annotation-jvm-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-annotation-jvm/1.10.4",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
@@ -23614,6 +23890,18 @@ maven_artifact(
     repo_path = "androidx/compose/runtime/runtime-annotation/1.10.2",
     deps = [
         "androidx.compose.runtime.runtime-annotation-jvm_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.runtime.runtime-annotation_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-annotation/1.10.4/runtime-annotation-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-annotation/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime-annotation-jvm_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -23798,6 +24086,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.runtime.runtime-retain-android_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-retain-android/1.10.4/runtime-retain-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-retain-android/1.10.4",
+    deps = [
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.runtime.runtime-retain-desktop_1.10.2",
     pom = "repository/androidx/compose/runtime/runtime-retain-desktop/1.10.2/runtime-retain-desktop-1.10.2.pom",
     repo_root_path = "repository",
@@ -23844,6 +24146,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.runtime.runtime-retain_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-retain/1.10.4/runtime-retain-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-retain/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime-retain-android_1.10.4",
+        "androidx.compose.runtime.runtime_1.10.4",
+        "org.jetbrains.kotlinx.atomicfu_0.27.0",
+        "androidx.collection.collection_1.5.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.runtime.runtime-saveable-android_1.10.0",
     pom = "repository/androidx/compose/runtime/runtime-saveable-android/1.10.0/runtime-saveable-android-1.10.0.pom",
     repo_root_path = "repository",
@@ -23870,6 +24188,22 @@ maven_artifact(
         "androidx.collection.collection-jvm_1.5.0",
         "androidx.lifecycle.lifecycle-runtime-compose-android_2.9.4",
         "androidx.compose.runtime.runtime-android_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.runtime.runtime-saveable-android_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-saveable-android/1.10.4/runtime-saveable-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-saveable-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.savedstate.savedstate-compose-android_1.3.2",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.lifecycle.lifecycle-runtime-compose-android_2.9.4",
+        "androidx.compose.runtime.runtime-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -24407,6 +24741,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.runtime.runtime-saveable_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime-saveable/1.10.4/runtime-saveable-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-saveable/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.runtime.runtime-saveable-android_1.10.4",
+        "androidx.savedstate.savedstate-compose_1.3.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.runtime.runtime-saveable_1.5.0",
     pom = "repository/androidx/compose/runtime/runtime-saveable/1.5.0/runtime-saveable-1.5.0.pom",
     repo_root_path = "repository",
@@ -24833,6 +25181,22 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.runtime.runtime_1.10.4",
+    pom = "repository/androidx/compose/runtime/runtime/1.10.4/runtime-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.collection.collection_1.5.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlinx.atomicfu_0.27.0",
+        "androidx.compose.runtime.runtime-annotation_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.runtime.runtime_1.5.0",
     pom = "repository/androidx/compose/runtime/runtime/1.5.0/runtime-1.5.0.pom",
     repo_root_path = "repository",
@@ -25155,6 +25519,44 @@ maven_artifact(
         "androidx.savedstate.savedstate-ktx_1.3.1",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "androidx.compose.ui.ui-geometry-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-android/1.10.4/ui-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-android/1.10.4",
+    deps = [
+        "org.jspecify.jspecify_1.0.0",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
+        "androidx.compose.ui.ui-text-android_1.10.4",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.lifecycle.lifecycle-runtime-compose-android_2.9.2",
+        "androidx.savedstate.savedstate-compose-android_1.3.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.core.core_1.16.0",
+        "androidx.lifecycle.lifecycle-viewmodel-android_2.9.2",
+        "androidx.window.window_1.5.0",
+        "androidx.compose.runtime.runtime-retain-android_1.10.4",
+        "androidx.profileinstaller.profileinstaller_1.4.0",
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.autofill.autofill_1.0.0",
+        "androidx.compose.runtime.runtime-saveable-android_1.10.4",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-android_1.9.0",
+        "androidx.lifecycle.lifecycle-viewmodel-ktx_2.9.2",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.customview.customview-poolingcontainer_1.0.0",
+        "androidx.transition.transition_1.6.0",
+        "androidx.activity.activity-ktx_1.7.0",
+        "androidx.emoji2.emoji2_1.2.0",
+        "androidx.savedstate.savedstate-ktx_1.3.1",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.compose.ui.ui-geometry-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -25893,6 +26295,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-geometry-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-geometry-android/1.10.4/ui-geometry-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-geometry-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.8.1",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-geometry-android_1.5.0-beta01",
     pom = "repository/androidx/compose/ui/ui-geometry-android/1.5.0-beta01/ui-geometry-android-1.5.0-beta01.pom",
     repo_root_path = "repository",
@@ -26423,6 +26839,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-geometry_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-geometry/1.10.4/ui-geometry-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-geometry/1.10.4",
+    deps = [
+        "androidx.compose.ui.ui-geometry-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-geometry_1.5.0",
     pom = "repository/androidx/compose/ui/ui-geometry/1.5.0/ui-geometry-1.5.0.pom",
     repo_root_path = "repository",
@@ -26665,6 +27093,25 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "androidx.core.core_1.12.0",
         "androidx.compose.ui.ui-unit-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-graphics-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-graphics-android/1.10.4/ui-graphics-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-graphics-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.8.1",
+        "androidx.graphics.graphics-path_1.0.1",
+        "androidx.collection.collection-jvm_1.4.2",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.core.core_1.12.0",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -27303,6 +27750,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-graphics_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-graphics/1.10.4/ui-graphics-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-graphics/1.10.4",
+    deps = [
+        "androidx.annotation.annotation_1.7.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
+        "androidx.compose.ui.ui-unit_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-graphics_1.5.0",
     pom = "repository/androidx/compose/ui/ui-graphics/1.5.0/ui-graphics-1.5.0.pom",
     repo_root_path = "repository",
@@ -27596,6 +28057,32 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-test-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-test-android/1.10.4/ui-test-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-test-android/1.10.4",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-test-jvm_1.9.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.collection.collection-jvm_1.4.2",
+        "androidx.test.monitor_1.6.1",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.test.espresso.espresso-core_3.5.0",
+        "androidx.test.espresso.espresso-idling-resource_3.5.0",
+        "androidx.core.core-ktx_1.12.0",
+        "androidx.activity.activity-compose_1.3.0",
+        "androidx.compose.ui.ui-text-android_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-test-android_1.7.0",
     pom = "repository/androidx/compose/ui/ui-test-android/1.7.0/ui-test-android-1.7.0.pom",
     repo_root_path = "repository",
@@ -27775,6 +28262,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-test-junit4-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-test-junit4-android/1.10.4/ui-test-junit4-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-test-junit4-android/1.10.4",
+    deps = [
+        "androidx.activity.activity_1.2.1",
+        "androidx.test.core_1.5.0",
+        "androidx.test.monitor_1.6.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.test.ext.junit_1.1.5",
+        "androidx.compose.ui.ui-test-android_1.10.4",
+        "androidx.activity.activity-compose_1.3.0",
+        "androidx.compose.runtime.runtime-saveable-android_1.10.4",
+        "androidx.lifecycle.lifecycle-common-jvm_2.8.7",
+        "androidx.lifecycle.lifecycle-runtime-android_2.8.7",
+        "junit.junit_4.13.2",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-test-jvm_1.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-test-junit4-android_1.7.0",
     pom = "repository/androidx/compose/ui/ui-test-junit4-android/1.7.0/ui-test-junit4-android-1.7.0.pom",
     repo_root_path = "repository",
@@ -27932,6 +28443,19 @@ maven_artifact(
     deps = [
         "androidx.compose.ui.ui-test_1.10.0",
         "androidx.compose.ui.ui-test-junit4-android_1.10.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-test-junit4_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-test-junit4/1.10.4/ui-test-junit4-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-test-junit4/1.10.4",
+    deps = [
+        "androidx.compose.ui.ui-test_1.10.4",
+        "androidx.compose.ui.ui-test-junit4-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -28105,6 +28629,17 @@ maven_artifact(
     pom = "repository/androidx/compose/ui/ui-test-manifest/1.10.0/ui-test-manifest-1.10.0.pom",
     repo_root_path = "repository",
     repo_path = "androidx/compose/ui/ui-test-manifest/1.10.0",
+    deps = [
+        "androidx.activity.activity_1.2.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-test-manifest_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-test-manifest/1.10.4/ui-test-manifest-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-test-manifest/1.10.4",
     deps = [
         "androidx.activity.activity_1.2.1",
     ],
@@ -28305,6 +28840,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-test_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-test/1.10.4/ui-test-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-test/1.10.4",
+    deps = [
+        "androidx.compose.ui.ui-text_1.10.4",
+        "androidx.compose.runtime.runtime_1.10.4",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.compose.ui.ui_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-test-android_1.10.4",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-test_1.9.0",
+        "androidx.compose.ui.ui-unit_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-test_1.7.0",
     pom = "repository/androidx/compose/ui/ui-test/1.7.0/ui-test-1.7.0.pom",
     repo_root_path = "repository",
@@ -28437,6 +28990,28 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
         "androidx.compose.ui.ui-graphics-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-text-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-text-android/1.10.4/ui-text-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-text-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.core.core_1.7.0",
+        "androidx.emoji2.emoji2_1.4.0",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.runtime.runtime-saveable-android_1.10.4",
+        "androidx.collection.collection-jvm_1.5.0",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core_1.9.0",
+        "androidx.compose.ui.ui-graphics-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -29244,6 +29819,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-text_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-text/1.10.4/ui-text-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-text/1.10.4",
+    deps = [
+        "androidx.compose.ui.ui-graphics_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-text-android_1.10.4",
+        "androidx.compose.ui.ui-unit_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-text_1.5.0",
     pom = "repository/androidx/compose/ui/ui-text/1.5.0/ui-text-1.5.0.pom",
     repo_root_path = "repository",
@@ -29533,6 +30122,27 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-tooling-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling-android/1.10.4/ui-tooling-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling-android/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.ui.ui-tooling-data-android_1.10.4",
+        "androidx.savedstate.savedstate-ktx_1.2.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.animation.animation-android_1.10.4",
+        "androidx.lifecycle.lifecycle-common-jvm_2.8.7",
+        "androidx.compose.ui.ui-tooling-preview-android_1.10.4",
+        "androidx.activity.activity-compose_1.7.0",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.material.material_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-tooling-android_1.6.6",
     pom = "repository/androidx/compose/ui/ui-tooling-android/1.6.6/ui-tooling-android-1.6.6.pom",
     repo_root_path = "repository",
@@ -29725,6 +30335,21 @@ maven_artifact(
         "androidx.annotation.annotation-jvm_1.9.1",
         "androidx.compose.runtime.runtime-android_1.10.2",
         "androidx.compose.ui.ui-android_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-tooling-data-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling-data-android/1.10.4/ui-tooling-data-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling-data-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.runtime.runtime-android_1.10.4",
+        "androidx.compose.ui.ui-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -29958,6 +30583,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-tooling-data_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling-data/1.10.4/ui-tooling-data-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling-data/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime_1.10.4",
+        "androidx.compose.ui.ui_1.10.4",
+        "androidx.compose.ui.ui-tooling-data-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-tooling-data_1.6.6",
     pom = "repository/androidx/compose/ui/ui-tooling-data/1.6.6/ui-tooling-data-1.6.6.pom",
     repo_root_path = "repository",
@@ -30085,6 +30724,19 @@ maven_artifact(
     deps = [
         "androidx.annotation.annotation-jvm_1.9.1",
         "androidx.compose.runtime.runtime-android_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-tooling-preview-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling-preview-android/1.10.4/ui-tooling-preview-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling-preview-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-jvm_1.9.1",
+        "androidx.compose.runtime.runtime-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -30350,6 +31002,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-tooling-preview_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling-preview/1.10.4/ui-tooling-preview-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling-preview/1.10.4",
+    deps = [
+        "androidx.annotation.annotation_1.9.1",
+        "androidx.compose.runtime.runtime_1.10.4",
+        "androidx.compose.ui.ui-tooling-preview-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-tooling-preview_1.5.0",
     pom = "repository/androidx/compose/ui/ui-tooling-preview/1.5.0/ui-tooling-preview-1.5.0.pom",
     repo_root_path = "repository",
@@ -30497,6 +31163,22 @@ maven_artifact(
         "androidx.compose.ui.ui-tooling-data_1.10.2",
         "androidx.compose.ui.ui-tooling-android_1.10.2",
         "androidx.compose.ui.ui_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-tooling_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-tooling/1.10.4/ui-tooling-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-tooling/1.10.4",
+    deps = [
+        "androidx.compose.runtime.runtime_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-tooling-preview_1.10.4",
+        "androidx.compose.ui.ui-tooling-data_1.10.4",
+        "androidx.compose.ui.ui-tooling-android_1.10.4",
+        "androidx.compose.ui.ui_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -30733,6 +31415,24 @@ maven_artifact(
         "androidx.compose.ui.ui-geometry-android_1.10.2",
         "androidx.collection.collection-ktx_1.4.2",
         "androidx.compose.runtime.runtime-android_1.10.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-unit-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-unit-android/1.10.4/ui-unit-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-unit-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.annotation.annotation-jvm_1.8.1",
+        "androidx.collection.collection-jvm_1.4.2",
+        "androidx.compose.ui.ui-util-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-geometry-android_1.10.4",
+        "androidx.collection.collection-ktx_1.4.2",
+        "androidx.compose.runtime.runtime-android_1.10.4",
     ],
     visibility = ["//visibility:public"],
 )
@@ -31360,6 +32060,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui-unit_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-unit/1.10.4/ui-unit-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-unit/1.10.4",
+    deps = [
+        "androidx.annotation.annotation_1.8.1",
+        "androidx.compose.ui.ui-geometry_1.10.4",
+        "androidx.compose.ui.ui-unit-android_1.10.4",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui-unit_1.5.0",
     pom = "repository/androidx/compose/ui/ui-unit/1.5.0/ui-unit-1.5.0.pom",
     repo_root_path = "repository",
@@ -31627,6 +32341,20 @@ maven_artifact(
     deps = [
         "androidx.annotation.annotation-experimental_1.4.1",
         "androidx.compose.runtime.runtime-android_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.collection.collection-jvm_1.4.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-util-android_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-util-android/1.10.4/ui-util-android-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-util-android/1.10.4",
+    deps = [
+        "androidx.annotation.annotation-experimental_1.4.1",
+        "androidx.compose.runtime.runtime-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
         "androidx.collection.collection-jvm_1.4.3",
     ],
@@ -32075,6 +32803,18 @@ maven_artifact(
     repo_path = "androidx/compose/ui/ui-util/1.10.2",
     deps = [
         "androidx.compose.ui.ui-util-android_1.10.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.ui.ui-util_1.10.4",
+    pom = "repository/androidx/compose/ui/ui-util/1.10.4/ui-util-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui-util/1.10.4",
+    deps = [
+        "androidx.compose.ui.ui-util-android_1.10.4",
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
@@ -32715,6 +33455,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.ui.ui_1.10.4",
+    pom = "repository/androidx/compose/ui/ui/1.10.4/ui-1.10.4.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/ui/ui/1.10.4",
+    deps = [
+        "androidx.annotation.annotation_1.8.1",
+        "androidx.compose.runtime.runtime-retain_1.10.4",
+        "androidx.compose.runtime.runtime-saveable_1.10.4",
+        "androidx.compose.ui.ui-graphics_1.10.4",
+        "androidx.compose.ui.ui-text_1.10.4",
+        "androidx.compose.ui.ui-unit_1.10.4",
+        "androidx.compose.ui.ui-util_1.10.4",
+        "androidx.lifecycle.lifecycle-runtime-compose_2.8.7",
+        "androidx.savedstate.savedstate-compose_1.3.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "androidx.compose.ui.ui-android_1.10.4",
+        "androidx.compose.ui.ui-geometry_1.10.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.ui.ui_1.5.0",
     pom = "repository/androidx/compose/ui/ui/1.5.0/ui-1.5.0.pom",
     repo_root_path = "repository",
@@ -33123,6 +33885,14 @@ maven_artifact(
     pom = "repository/androidx/compose/compose-bom/2025.12.00/compose-bom-2025.12.00.pom",
     repo_root_path = "repository",
     repo_path = "androidx/compose/compose-bom/2025.12.00",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.compose-bom_2026.02.01",
+    pom = "repository/androidx/compose/compose-bom/2026.02.01/compose-bom-2026.02.01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/compose-bom/2026.02.01",
     visibility = ["//visibility:public"],
 )
 
