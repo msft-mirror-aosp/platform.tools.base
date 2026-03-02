@@ -23,7 +23,7 @@ import org.junit.Test
 
 class LocalJarsTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("localJars").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("localJars").create()
 
   @Test
   fun `test VariantDependencies model`() {
