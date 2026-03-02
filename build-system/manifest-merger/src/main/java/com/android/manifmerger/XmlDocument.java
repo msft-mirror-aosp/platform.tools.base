@@ -98,7 +98,7 @@ public class XmlDocument {
     }
 
     private final Element mRootElement;
-    // this is initialized lazily to avoid un-necessary early parsing.
+    // this is initialized lazily to avoid unnecessary early parsing.
     @NotNull private final AtomicReference<XmlElement> mRootNode = new AtomicReference<>(null);
     @NotNull
     private final SourceFile mSourceFile;
