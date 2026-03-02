@@ -332,7 +332,24 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         threshold.set(screenshotExtension.imageDifferenceThreshold)
         namespace.set(variant.namespace)
         layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-        layoutlibClassPath.setFrom(layoutlibJarConfig, sdkComponents.bootClasspath)
+        // Workaround: The layoutlib-standalone JAR may contain a stub version of Kotlin reflection
+        // inside to save space, but this can cause runtime UnsupportedOperationException or
+        // NoClassDefFoundError when Compose previews absolute or test execution tries to make
+        // legitimate reflective calls.
+        // As a fallback, bundle the application's actual configuration-matched `kotlin-reflect`.
+        // TODO(b/493100936): Remove this workaround once a fixed version of the renderer jar has been published.
+        val reflectFiles =
+          screenshotTestComponent.runtimeConfiguration.incoming
+            .artifactView { config ->
+              config.lenient(true)
+              config.componentFilter { id ->
+                id is org.gradle.api.artifacts.component.ModuleComponentIdentifier &&
+                  id.group == "org.jetbrains.kotlin" &&
+                  id.module == "kotlin-reflect"
+              }
+            }
+            .files
+        layoutlibClassPath.setFrom(reflectFiles, layoutlibJarConfig, sdkComponents.bootClasspath)
         referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest$capitalizedVariantName/reference"))
         previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/rendered"))
         diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/diffs"))
