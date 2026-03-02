@@ -758,26 +758,6 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
     display: none !important;
 }
 
-.action-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.375rem 0.75rem;
-    border: 1px solid var(--border-interactive);
-    border-radius: 0.375rem;
-    background-color: var(--bg-card);
-    font-weight: 500;
-    color: var(--text-dark);
-    transition: background-color 0.2s;
-}
-.action-btn:hover {
-    background-color: var(--bg-hover);
-}
-.action-btn svg {
-    width: 1rem;
-    height: 1rem;
-}
-
 /* --- SOURCE VIEW --- */
 
 #source-breadcrumbs {

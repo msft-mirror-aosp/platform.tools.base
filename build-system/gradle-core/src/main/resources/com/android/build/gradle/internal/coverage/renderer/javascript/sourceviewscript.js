@@ -132,16 +132,7 @@ const SourceViewApp = {
         const { packageName, sourceFileName } = this.classData;
         const { moduleName, testSuiteName } = this.context;
 
-        let html = `
-            <a href="#" class="action-btn" data-action="go-back">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-                <span>Back</span>
-            </a>`;
-
-        html += `<div class="flex items-center gap-2 text-sm">
-            <span class="breadcrumb-separator">/</span>
+        let html = `<div class="flex items-center gap-2 text-sm">
             <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
 
         if (moduleName) {
@@ -184,10 +175,6 @@ const SourceViewApp = {
         const { action, moduleName, packageName } = link.dataset;
 
         switch (action) {
-            case 'go-back':
-                App.showReportView();
-                break;
-
             case 'go-to-modules':
                 CoverageReportApp.resetSelection();
                 CoverageReportApp.state.currentView = 'modules';
