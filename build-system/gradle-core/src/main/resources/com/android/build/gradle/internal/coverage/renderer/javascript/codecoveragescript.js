@@ -419,6 +419,7 @@ const CoverageReportApp = {
         if (this.elements.addFilterList) {
             this.elements.addFilterList.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 const target = e.target.closest('.dropdown-item');
                 if (!target) return;
 
@@ -431,6 +432,22 @@ const CoverageReportApp = {
                 this.handleHeaderFilterChange(filterType);
                 this.updateFilterButtons();
                 this.render();
+
+                // Auto-open newly added dropdown
+                setTimeout(() => {
+                    if (filterType === 'module') {
+                        this.toggleDropdown(this.elements.moduleFilterDropdown);
+                        this.elements.moduleFilterDropdown.classList.remove('hidden');
+                    }
+                    if (filterType === 'package') {
+                        this.toggleDropdown(this.elements.packageFilterDropdown);
+                        this.elements.packageFilterDropdown.classList.remove('hidden');
+                    }
+                    if (filterType === 'class') {
+                        this.toggleDropdown(this.elements.classFilterDropdown);
+                        this.elements.classFilterDropdown.classList.remove('hidden');
+                    }
+                }, 0);
             });
         }
 
