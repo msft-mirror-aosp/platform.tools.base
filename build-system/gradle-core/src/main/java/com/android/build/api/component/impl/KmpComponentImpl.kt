@@ -27,7 +27,7 @@ import com.android.build.api.variant.AndroidVersion
 import com.android.build.api.variant.Component
 import com.android.build.api.variant.ComponentIdentity
 import com.android.build.api.variant.Instrumentation
-import com.android.build.api.variant.InternalSources
+import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.JavaCompilation
 import com.android.build.api.variant.ManifestFiles
 import com.android.build.api.variant.ScopedArtifacts
@@ -45,6 +45,7 @@ import com.android.build.api.variant.impl.ProviderBasedDirectoryEntryImpl
 import com.android.build.api.variant.impl.SourceType
 import com.android.build.api.variant.impl.SourcesImpl
 import com.android.build.api.variant.impl.initializeAaptOptionsFromDsl
+import com.android.build.gradle.internal.api.DefaultAndroidLibrarySourceSet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.features.AndroidResourcesCreationConfig
@@ -262,7 +263,7 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
     manifestFile: File,
     compilation: KotlinMultiplatformAndroidCompilation,
     buildFeatures: BuildFeatureValues,
-  ) : InternalSources {
+  ) : InternalLibrarySources {
 
     override val java =
       if (dslInfo.withJava) {
@@ -381,7 +382,16 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
     override val artProfile: File? = null
     override val sourceProviderNames: List<String> = emptyList()
     override val multiFlavorSourceProvider: DefaultAndroidSourceSet? = null
-    override val variantSourceProvider: DefaultAndroidSourceSet? = null
+    override val aarKeepRules: FlatSourceDirectoriesImpl =
+      KotlinMultiplatformFlatSourceDirectoriesImpl(
+        name = SourceType.AAR_KEEP_RULES.folder,
+        variantServices = variantServices,
+        variantDslFilters = PatternSet().also { filter -> filter.exclude("**/*.keep") },
+      )
+
+    override fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit) = action(aarKeepRules)
+
+    override val variantSourceProvider: DefaultAndroidLibrarySourceSet? = null
     override val manifests: ManifestFiles =
       ManifestFilesImpl(variantServices).also { sourceFilesImpl -> sourceFilesImpl.addSourceFile(manifestFile) }
   }

@@ -15,6 +15,7 @@
  */
 package com.android.build.api.component.analytics
 
+import com.android.build.api.component.impl.KmpComponentImpl
 import com.android.build.api.variant.DeviceTest
 import com.android.build.api.variant.DeviceTestBuilder
 import com.android.build.api.variant.KotlinMultiplatformAndroidVariant
@@ -82,5 +83,19 @@ class AnalyticsEnabledKotlinMultiplatformAndroidVariantTest {
       .isEqualTo(VariantPropertiesMethodType.ANDROID_TEST_VALUE)
     verify(delegate, times(1)).deviceTests
     verify(delegate, times(1)).androidTest
+  }
+
+  @Test
+  fun getSources() {
+    val sources = mock<KmpComponentImpl.KmpSourcesImpl>()
+    whenever(delegate.sources).thenReturn(sources)
+    val sourcesProxy = proxy.sources
+
+    Truth.assertThat(sourcesProxy).isInstanceOf(AnalyticsEnabledLibrarySources::class.java)
+    Truth.assertThat((sourcesProxy as AnalyticsEnabledLibrarySources).delegate).isEqualTo(sources)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessCount).isEqualTo(1)
+    Truth.assertThat(stats.variantApiAccess.variantPropertiesAccessList.first().type)
+      .isEqualTo(VariantPropertiesMethodType.COMPONENT_SOURCES_ACCESS_VALUE)
+    verify(delegate, times(1)).sources
   }
 }
