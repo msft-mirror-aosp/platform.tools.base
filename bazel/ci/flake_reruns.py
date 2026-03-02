@@ -37,16 +37,28 @@ def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
     build_env: The build environment.
   """
   known_flakes = _parse_known_flakes('studio-win')
-  rerun_flaky_tests(build_env, known_flakes)
+  # TODO: b/409370526 - Implement a more robust tag checking for disallowed
+  # targets.
+  disallowed_targets = [
+      # This target uses the network to get an emulator connection. Running
+      # it multiple times will cause quota issues.
+      '//tools/adt/idea/android/integration:BuildAndRunTest_windows',
+  ]
+  rerun_flaky_tests(build_env, known_flakes, disallowed_targets)
 
 
 def rerun_flaky_tests(
     build_env: bazel.BuildEnv,
     known_flakes: Iterator[Tuple[str, float]],
+    disallowed_targets: List[str] | None = None,
 ) -> None:
   """Runs tests again for recently failing targets."""
   flaky_tests_to_run = []
+  if disallowed_targets is None:
+    disallowed_targets = []
   for target, rate in known_flakes:
+    if target in disallowed_targets:
+      continue
     if rate > 0.01:
       flaky_tests_to_run.append(target)
   if not flaky_tests_to_run:
