@@ -392,6 +392,7 @@ _CLASS_JARS = [
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.savedstate:savedstate-ktx:1.2.1",
     "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.savedstate:savedstate-ktx:1.3.3",
     "androidx.slice:slice-builders:1.0.0",
     "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
@@ -1070,6 +1071,18 @@ _CLASS_JARS = [
     "org.jdeferred:jdeferred-android-aar:1.2.2",
     "org.jdeferred:jdeferred-android-aar:1.2.3",
     "org.jetbrains:annotations-java5:jar:24.0.0",
+    "org.jetbrains.compose.components:components-ui-tooling-preview:1.10.1",
+    "org.jetbrains.compose.components:components-ui-tooling-preview-android:1.10.1",
+    "org.jetbrains.compose.desktop:desktop:1.10.1",
+    "org.jetbrains.compose.material3:material3:1.9.0",
+    "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin:pom:1.10.1",
+    "org.jetbrains.compose.runtime:runtime:1.10.1",
+    "org.jetbrains.compose.ui:ui:1.10.1",
+    "org.jetbrains.compose.ui:ui-backhandler:1.9.1",
+    "org.jetbrains.compose.ui:ui-backhandler-android-debug:1.9.1",
+    "org.jetbrains.compose.ui:ui-desktop:1.10.1",
+    "org.jetbrains.compose.ui:ui-tooling:1.10.1",
+    "org.jetbrains.compose.ui:ui-tooling-preview:1.10.1",
     "org.jetbrains.dokka:dokka-base:1.4.32",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
     "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
@@ -1302,6 +1315,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0-dev-4131",
@@ -1358,6 +1372,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
+    "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
