@@ -363,13 +363,6 @@ java_jarjar(
     visibility = ["//visibility:public"],
 )
 
-java_jarjar(
-    name = "utp-core-proto-jarjar",
-    srcs = ["//prebuilts/tools/common/m2:utp-core-proto"],
-    rules = "jarjar_rules.txt",
-    visibility = ["//visibility:public"],
-)
-
 bool_flag(
     name = "studio-release",
     build_setting_default = False,
