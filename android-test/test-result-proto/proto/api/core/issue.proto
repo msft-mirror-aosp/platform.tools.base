@@ -1,0 +1,66 @@
+//
+// Copyright (C) 2022 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.testing.platform.proto.api.core;
+
+import "proto/api/core/label.proto";
+
+option java_package = 'com.google.testing.platform.proto.api.core';
+option java_outer_classname = 'IssueProto';
+
+// Describes an issue observed while running a test.
+//
+// Drivers and extensions can report issues encountered during the test. They
+// can be of informational value, or issues that might affect the test run
+// itself.
+message Issue {
+  // Severity of the issue.
+  enum Severity {
+    // Default unspecified severity.
+    // Do not use. For versioning only.
+    SEVERITY_UNSPECIFIED = 0;
+    // Non critical issue, providing users with some info about the test run.
+    INFO = 1;
+    // Non critical issue, providing users with some hints on improving their
+    // testing experience.
+    SUGGESTION = 2;
+    // Potentially critical issue.
+    WARNING = 3;
+    // Critical issue.
+    SEVERE = 4;
+  }
+
+  // The namespace of the component that produced this issue.
+  // E.g. UnifiedTestPlatForm, DataStagingPlugin.
+  Label namespace = 1;
+
+  // Severity of the issue.
+  Severity severity = 2;
+
+  // The issue code. Each extension is in its own namespace and has a unique
+  // issue code definition.
+  int32 code = 3;
+
+  // The name for the issue. This is a constant value that identifies the
+  // proximate cause of the issue. Issue reasons are unique within a particular
+  // namespace of issues. This should be at most 63 characters and match
+  // /[A-Z0-9_]+/ for consistency reasons.
+  string name = 4;
+
+  // An english human-readable message describing the issue.
+  string message = 5;
+}
