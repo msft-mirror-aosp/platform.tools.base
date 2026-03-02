@@ -240,7 +240,7 @@ header {
     margin-top: 0.125rem; /* Small gap between label and value */
 }
 
-.header-toolbar { padding: 0; border-top: 1px solid var(--border-color); background-color: var(--bg-body); }
+.header-toolbar { padding: 0; border-top: 1px solid var(--border-color); background-color: #ffffff; }
 .header-toolbar-inner {
     max-width: 1800px;
     margin: 0 auto;

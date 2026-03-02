@@ -20,8 +20,10 @@ const SourceViewApp = {
     context: {},
     state: {
         selectedVariants: [],
-        isLoading: false
+        isLoading: false,
+        scrollLock: false
     },
+    isSyncing: false,
 
     init() {
         this.cacheElements();
@@ -41,6 +43,7 @@ const SourceViewApp = {
             variantFiltersDropdown: document.getElementById('source-variant-filters-dropdown'),
             variantFilters: document.getElementById('source-variant-filters'),
             sourceViewContainer: document.getElementById('source-view-container'),
+            scrollLockSegments: document.getElementById('scroll-lock-segments'),
             loadingOverlay: this.createLoadingOverlay()
         };
     },
@@ -165,6 +168,38 @@ const SourceViewApp = {
         this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
         this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
+
+        if (this.elements.scrollLockSegments) {
+            this.elements.scrollLockSegments.addEventListener('click', (e) => {
+                const btn = e.target.closest('.segment-btn');
+                if (!btn) return;
+
+                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.state.scrollLock = (btn.dataset.value === 'on');
+            });
+        }
+
+        this.elements.sourceViewContainer.addEventListener('scroll', (e) => {
+            if (!this.state.scrollLock) return;
+            if (!e.target.classList.contains('code-container')) return;
+            if (this.isSyncing) return;
+
+            this.isSyncing = true;
+            const source = e.target;
+            const containers = this.elements.sourceViewContainer.querySelectorAll('.code-container');
+
+            requestAnimationFrame(() => {
+                containers.forEach(c => {
+                    if (c !== source) {
+                        c.scrollTop = source.scrollTop;
+                        c.scrollLeft = source.scrollLeft;
+                    }
+                });
+                this.isSyncing = false;
+            });
+        }, true);
     },
 
     handleBreadcrumbClick(e) {
