@@ -1,7 +1,7 @@
 import logging
 import pathlib
 import tempfile
-from typing import Iterator, Tuple
+from typing import Iterator, Tuple, List
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
@@ -24,25 +24,8 @@ def studio_linux_flake_reruns(build_env: bazel.BuildEnv) -> None:
   Args:
     build_env: The build environment.
   """
-  flags = [
-      '--config=dynamic',
-      '--bes_keywords=flake-reruns',
-      '--runs_per_test=100',
-      '-k',  # Continue even if test does not exist.
-  ]
   known_flakes = _parse_known_flakes('studio-linux')
-  flaky_tests_to_run = []
-  for target, rate in known_flakes:
-    if rate > 0.01:
-      flaky_tests_to_run.append(target)
-  if not flaky_tests_to_run:
-    logging.info('No flaky tests to run')
-    return
-
-  result = studio.run_tests(build_env, flags, flaky_tests_to_run)
-  if studio.is_build_successful(result):
-    return
-  raise studio.BazelTestError(exit_code=result.exit_code)
+  rerun_flaky_tests(build_env, known_flakes)
 
 
 def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
@@ -53,13 +36,15 @@ def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
   Args:
     build_env: The build environment.
   """
-  flags = [
-      '--config=dynamic',
-      '--bes_keywords=flake-reruns',
-      '--runs_per_test=100',
-      '-k',  # Continue even if test does not exist.
-  ]
   known_flakes = _parse_known_flakes('studio-win')
+  rerun_flaky_tests(build_env, known_flakes)
+
+
+def rerun_flaky_tests(
+    build_env: bazel.BuildEnv,
+    known_flakes: Iterator[Tuple[str, float]],
+) -> None:
+  """Runs tests again for recently failing targets."""
   flaky_tests_to_run = []
   for target, rate in known_flakes:
     if rate > 0.01:
@@ -68,10 +53,35 @@ def studio_win_flake_reruns(build_env: bazel.BuildEnv) -> None:
     logging.info('No flaky tests to run')
     return
 
+  runs_per_test = _determine_runs_per_test(flaky_tests_to_run)
+  flags = [
+      '--config=dynamic',
+      f'--runs_per_test={runs_per_test}'
+      '--bes_keywords=flake-reruns',
+      '-k',  # Continue even if test does not exist.
+  ]
   result = studio.run_tests(build_env, flags, flaky_tests_to_run)
   if studio.is_build_successful(result):
     return
   raise studio.BazelTestError(exit_code=result.exit_code)
+
+
+def _determine_runs_per_test(targets: List[str]) -> int:
+  """Returns the runs_per_test to use based on the flaky targets."""
+  num_targets = len(targets)
+  # Ideas for better heuristics:
+  # - Weight by how flaky the target is
+  # - Weight by how long the target takes to run (timeout, test size, etc)
+  # - Weight by how many shards the target uses
+  if num_targets > 50:
+    return 1
+  if num_targets > 20:
+    return 10
+  if num_targets > 10:
+    return 20
+  if num_targets > 5:
+    return 50
+  return 100
 
 
 def _parse_known_flakes(
