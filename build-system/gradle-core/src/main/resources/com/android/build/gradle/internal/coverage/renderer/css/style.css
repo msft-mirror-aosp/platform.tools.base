@@ -1036,3 +1036,10 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 .highlight-blink > td {
     animation: blink-shadow 1.5s ease-out;
 }
+
+/* Compact Mode */
+.table-compact td,
+.table-compact th {
+  padding: 0.25rem 0.5rem;
+}
+

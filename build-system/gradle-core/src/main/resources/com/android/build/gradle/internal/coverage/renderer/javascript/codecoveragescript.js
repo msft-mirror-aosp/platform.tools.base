@@ -246,6 +246,7 @@ const CoverageReportApp = {
         selectedModule: null,
         selectedPackage: null,
         filters: { modules: [], testSuite: 'Aggregated', packages: [], classes: [], variants: [], search: '' },
+        density: 'comfy',
         sort: { by: 'name', order: 'asc' },
     },
     elements: {},
@@ -310,12 +311,14 @@ const CoverageReportApp = {
             searchClearBtn: document.getElementById('search-clear-btn'),
 
             viewSegments: document.getElementById('view-segments'),
+            densitySegments: document.getElementById('density-segments'),
+            mainTable: document.querySelector('.table-container table'),
 
             flatBreadcrumbs: document.getElementById('flat-breadcrumbs'),
             groupByBtn: document.getElementById('group-by-btn'),
             groupByText: document.getElementById('group-by-text'),
             groupByDropdown: document.getElementById('group-by-dropdown'),
-            
+
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
             totalModules: document.getElementById('total-modules'),
@@ -519,6 +522,24 @@ const CoverageReportApp = {
             this.render();
             this.elements.searchInput.focus();
         });
+
+        // Density Segments (Comfy/Compact)
+        if (this.elements.densitySegments) {
+            this.elements.densitySegments.addEventListener('click', (e) => {
+                const btn = e.target.closest('.segment-btn');
+                if (!btn) return;
+
+                this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.state.density = btn.dataset.value;
+                if (this.state.density === 'compact') {
+                    this.elements.mainTable.classList.add('table-compact');
+                } else {
+                    this.elements.mainTable.classList.remove('table-compact');
+                }
+            });
+        }
     },
 
     handleVariantSelection(e) {
@@ -898,7 +919,7 @@ const CoverageReportApp = {
             'classes': 'Classes'
         };
         this.elements.groupByText.textContent = viewMap[this.state.currentView] || 'Modules';
-        
+
         // Hide Group By entirely in Tree mode
         if (this.elements.groupByBtn) {
             this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
@@ -945,7 +966,7 @@ const CoverageReportApp = {
             if (!item.testSuiteCoverages) return [];
 
             const suite = item.testSuiteCoverages.find(ts => ts.name === filters.testSuite);
-            
+
             return suite ? suite.variantCoverages : [];
         };
 
@@ -1070,7 +1091,7 @@ const CoverageReportApp = {
             // Check if any child block is overflowing
             const blocks = cell.querySelectorAll('.truncate-block');
             let isOverflowing = false;
-            
+
             if (blocks.length > 0) {
                 blocks.forEach(block => {
                     if (block.scrollWidth > block.clientWidth) {
