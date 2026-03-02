@@ -38,6 +38,12 @@ class CopyArtifactsError(errors.CIError):
     return f'Failed to copy artifact: {self.artifact}'
 
 
+@dataclasses.dataclass(frozen=True, kw_only=True)
+class LogsCollectorOptions():
+  """Options for controlling the logs collector after testing."""
+  zip_perfgate_data: bool = False
+
+
 class BuildType(enum.Enum):
   """Represents the type of build being run."""
   LOCAL      = 1
@@ -147,6 +153,7 @@ def run_tests(
     build_env: bazel.BuildEnv,
     flags: Sequence[str],
     targets: Sequence[str],
+    logs_collector_options: LogsCollectorOptions | None = None,
   ) -> BazelTestResult:
   """Runs the bazel test invocation."""
   result = run_bazel_test(build_env, flags, targets)
@@ -158,7 +165,7 @@ def run_tests(
   }:
     copy_bazel_logs(build_env)
 
-  collect_logs(build_env, result.bes_path)
+  collect_logs(build_env, result.bes_path, logs_collector_options)
 
   return result
 
@@ -179,7 +186,7 @@ def copy_bazel_logs(build_env: bazel.BuildEnv) -> None:
     shutil.copy2(path, dest_path / path.name)
 
 
-def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
+def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path, logs_collector_options: LogsCollectorOptions | None) -> None:
   """Runs the log collector."""
   build_type = BuildType.from_build_number(build_env.build_number)
   dist_path = pathlib.Path(build_env.dist_dir)
@@ -198,9 +205,13 @@ def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path) -> None:
       '-failed_tests',
       str(failed_tests_path)
   ]
-  if build_type == BuildType.POSTSUBMIT:
+  collect_perfgate_data = build_type == BuildType.POSTSUBMIT
+  if logs_collector_options:
+    collect_perfgate_data = logs_collector_options.zip_perfgate_data
+  if collect_perfgate_data:
     args.append('-perfzip')
     args.append(perfgate_data_path)
+
   logging.info('Running command: %s', args)
   subprocess.run(args, check=True)
 

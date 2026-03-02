@@ -1,7 +1,7 @@
 import logging
 import pathlib
 import tempfile
-from typing import Iterator, Tuple, List
+from typing import Iterator, List, Tuple
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import gce
@@ -56,11 +56,14 @@ def rerun_flaky_tests(
   runs_per_test = _determine_runs_per_test(flaky_tests_to_run)
   flags = [
       '--config=dynamic',
-      f'--runs_per_test={runs_per_test}'
+      f'--runs_per_test={runs_per_test}',
       '--bes_keywords=flake-reruns',
       '-k',  # Continue even if test does not exist.
   ]
-  result = studio.run_tests(build_env, flags, flaky_tests_to_run)
+  logs_collector_options = studio.LogsCollectorOptions(zip_perfgate_data=False)
+  result = studio.run_tests(
+      build_env, flags, flaky_tests_to_run, logs_collector_options
+  )
   if studio.is_build_successful(result):
     return
   raise studio.BazelTestError(exit_code=result.exit_code)
