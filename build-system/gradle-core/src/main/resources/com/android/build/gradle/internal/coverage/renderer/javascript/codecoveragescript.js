@@ -765,6 +765,13 @@ const CoverageReportApp = {
             filters.testSuite = testSuiteStateWrapper[0] || 'Aggregated';
             this.updateFilterButtons();
             this.render();
+
+            if (typeof SourceViewApp !== 'undefined' && SourceViewApp.classData) {
+                SourceViewApp.context.testSuiteName = filters.testSuite;
+                if (!document.getElementById('source-view').classList.contains('hidden-view')) {
+                    SourceViewApp.render();
+                }
+            }
         }, false, false);
 
         UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, () => {

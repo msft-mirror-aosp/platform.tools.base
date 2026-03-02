@@ -68,6 +68,11 @@ const SourceViewApp = {
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
+        // Reset selected variants if we are loading a new class
+        if (!this.classData || this.classData.sourceFileName !== classData.sourceFileName) {
+            this.state.selectedVariants = [];
+        }
+
         this.classData = classData;
         this.context = context;
         this.toggleLoading(true);
@@ -122,7 +127,9 @@ const SourceViewApp = {
 
     render() {
         const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
-        this.state.selectedVariants = [...availableVariants];
+        if (this.state.selectedVariants.length === 0) {
+            this.state.selectedVariants = [...availableVariants];
+        }
 
         this.renderBreadcrumbs();
         this.renderFilters(availableVariants);
@@ -337,6 +344,11 @@ const SourceViewApp = {
                 <div class="text-sm font-mono truncate">${method.name}</div>
             </div>`
         ).join('');
+
+        // Re-apply any existing search filter
+        if (this.elements.functionSearch.value.trim().length > 0) {
+            this.handleFunctionSearch({ target: this.elements.functionSearch });
+        }
     },
 
     renderAllVariantViews() {
