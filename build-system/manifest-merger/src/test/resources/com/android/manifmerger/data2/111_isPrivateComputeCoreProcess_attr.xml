@@ -1,0 +1,39 @@
+#
+# Test isPrivateComputeCoreProcess: test isPrivateComputeCoreProcess merges as expected
+#`
+
+@main
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.app">
+
+    <application>
+        <activity android:name="com.example.Main" android:isPrivateComputeCoreProcess="false" />
+    </application>
+</manifest>
+
+@lib1
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.lib1">
+<application>
+
+    <service android:name="service" android:isPrivateComputeCoreProcess="true" />
+</application>
+</manifest>
+
+@result
+
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.app" >
+
+    <application>
+        <activity
+            android:name="com.example.Main"
+            android:isPrivateComputeCoreProcess="false" />
+
+        <service
+            android:name="com.example.lib1.service"
+            android:isPrivateComputeCoreProcess="true" />
+    </application>
+
+</manifest>

@@ -170,6 +170,7 @@ public class ManifestMerger2Test {
                 "109f_dup_uses_sdk_feature_flag_node_validation.xml",
                 "109g_dup_uses_sdk_node_validation.xml",
                 "110_allow_component_access.xml",
+                "111_isPrivateComputeCoreProcess_attr.xml"
             };
 
     private static final Multimap<Predicate<String>, ManifestMerger2.Invoker.Feature>

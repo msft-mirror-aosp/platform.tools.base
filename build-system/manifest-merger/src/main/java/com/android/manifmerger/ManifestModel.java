@@ -286,15 +286,17 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         ACTION(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
 
         /**
-         * Activity (contained in application)
-         * <br>
-         * <b>See also : </b>
-         * {@link <a href=http://developer.android.com/guide/topics/manifest/activity-element.html>
-         *     Activity Xml documentation</a>}
+         * Activity (contained in application) <br>
+         * <b>See also : </b> {@link <a
+         * href=http://developer.android.com/guide/topics/manifest/activity-element.html>Activity
+         * Xml documentation</a>}
          */
-        ACTIVITY(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+        ACTIVITY(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel("parentActivityName").setIsPackageDependent(),
-                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent(),
+                AttributeModel.newModel("isPrivateComputeCoreProcess")),
 
         /**
          * Activity-alias (contained in application)
@@ -639,7 +641,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 DEFAULT_NAME_ATTRIBUTE_RESOLVER,
                 AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent(),
                 AttributeModel.newModel(SdkConstants.ATTR_FOREGROUND_SERVICE_TYPE)
-                        .setMergingPolicy(STRING_VALUE_MERGING_POLICY)),
+                        .setMergingPolicy(STRING_VALUE_MERGING_POLICY),
+                AttributeModel.newModel("isPrivateComputeCoreProcess")),
 
         /**
          * Supports-gl-texture (contained in manifest)
