@@ -155,13 +155,13 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
 
     private int readLength(InputStream input) throws IOException {
         byte[] lengthb = new byte[4];
-        input.read(lengthb);
+        ByteStreams.readFully(input, lengthb);
         return ByteBuffer.wrap(lengthb).order(ByteOrder.LITTLE_ENDIAN).getInt();
     }
 
     private String readString(InputStream input, int i) throws IOException {
         byte[] commandb = new byte[i];
-        input.read(commandb);
+        ByteStreams.readFully(input, commandb);
         return new String(commandb, Charsets.UTF_8);
     }
 
