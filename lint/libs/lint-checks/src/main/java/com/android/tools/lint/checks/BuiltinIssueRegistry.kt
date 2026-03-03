@@ -404,6 +404,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           RecyclerViewDetector.FIXED_POSITION,
           RegisterReceiverFlagDetector.RECEIVER_EXPORTED_FLAG,
           RegistrationDetector.ISSUE,
+          RelativeClassAttributeDetector.ISSUE,
           RelativeOverlapDetector.ISSUE,
           RemoteViewDetector.ISSUE,
           RequiredAttributeDetector.ISSUE,
