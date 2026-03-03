@@ -16,6 +16,6 @@
 
 package com.android.build.api.variant
 
-import org.gradle.api.internal.plugins.BuildModel
+import org.gradle.features.binding.BuildModel
 
 abstract class AndroidLibraryModuleModel : BuildModel

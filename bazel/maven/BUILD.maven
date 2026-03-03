@@ -11530,10 +11530,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_9.4.0-rc-1",
-    pom = "repository/org/gradle/gradle-tooling-api/9.4.0-rc-1/gradle-tooling-api-9.4.0-rc-1.pom",
+    name = "org.gradle.gradle-tooling-api_9.5.0-milestone-5",
+    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.4.0-rc-1",
+    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-5",
     deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
@@ -11544,7 +11544,7 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/9.4.0-rc-1/gradle-tooling-api-9.4.0-rc-1.jar"
+        "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
@@ -11552,9 +11552,12 @@ maven_import(
     original_deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/9.4.0-rc-1/gradle-tooling-api-9.4.0-rc-1.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.4.0-rc-1",
+    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-5",
+    deps_with_exclusions = [
+        "org.slf4j.slf4j-api",
+     ],
     visibility = ["//visibility:public"],
 )
 
@@ -15229,6 +15232,11 @@ maven_import(
     pom = "repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.pom",
     repo_root_path = "repository",
     repo_path = "org/slf4j/slf4j-api/2.0.17",
+    exclusions_for_parents = {
+        "org.gradle.gradle-tooling-api": [
+            "org.slf4j.slf4j-simple",
+        ],
+    },
     visibility = ["//visibility:public"],
 )
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.build.gradle.internal.dsl
 
-import org.gradle.api.Incubating
-import org.gradle.api.Plugin
-import org.gradle.api.initialization.Settings
-import org.gradle.features.annotations.RegistersProjectFeatures
+import javax.inject.Inject
+import org.gradle.api.Project
 
-@Incubating
-@RegistersProjectFeatures(
-  com.android.build.gradle.internal.plugins.AppPlugin::class,
-  com.android.build.gradle.internal.plugins.LibraryPlugin::class,
-)
-class AndroidEcosystemPlugin : Plugin<Settings> {
-  override fun apply(target: Settings) = Unit
+interface DeclarativeServices {
+  @get:Inject val project: Project
 }

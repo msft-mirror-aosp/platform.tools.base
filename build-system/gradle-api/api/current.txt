@@ -2585,7 +2585,7 @@ package com.android.build.api.variant {
     property @org.gradle.api.tasks.Input public abstract org.gradle.api.provider.Provider<java.lang.String> version;
   }
 
-  public abstract class AndroidApplicationModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidApplicationModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidApplicationModuleModel();
   }
 
@@ -2610,7 +2610,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.VariantSelector selector();
   }
 
-  public abstract class AndroidLibraryModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidLibraryModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidLibraryModuleModel();
   }
 

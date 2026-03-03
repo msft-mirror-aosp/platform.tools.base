@@ -1340,7 +1340,7 @@ com.android.build.gradle.internal.dsl.DataBindingOptions.isEnabledForTests: bool
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnable: void (boolean)
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabled: void (boolean)
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabledForTests: void (boolean)
-com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension implements com.android.build.api.dsl.ApplicationExtension, org.gradle.api.internal.plugins.Definition
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension implements com.android.build.api.dsl.ApplicationExtension, org.gradle.features.binding.Definition
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType extends com.android.build.gradle.internal.dsl.BuildType
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String, com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType, org.gradle.api.model.ObjectFactory)
@@ -1351,7 +1351,7 @@ com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory implements org
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory (com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType)
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.create: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String)
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.create: java.lang.Object (java.lang.String)
-com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension implements com.android.build.api.dsl.LibraryExtension, org.gradle.api.internal.plugins.Definition
+com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension implements com.android.build.api.dsl.LibraryExtension, org.gradle.features.binding.Definition
 com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavor extends com.android.build.gradle.internal.dsl.ProductFlavor
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.<init>: com.android.build.gradle.internal.dsl.DeclarativeProductFlavor (java.lang.String, com.android.build.gradle.internal.services.DslServices)
@@ -1361,6 +1361,8 @@ com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory implements
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory.<init>: com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory (com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory.create: com.android.build.gradle.internal.dsl.DeclarativeProductFlavor (java.lang.String)
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory.create: java.lang.Object (java.lang.String)
+com.android.build.gradle.internal.dsl.DeclarativeServices
+com.android.build.gradle.internal.dsl.DeclarativeServices.getProject: org.gradle.api.Project ()
 com.android.build.gradle.internal.dsl.DefaultAapt implements com.android.build.api.variant.Aapt2
 com.android.build.gradle.internal.dsl.DefaultAapt.<init>: com.android.build.gradle.internal.dsl.DefaultAapt (org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile>, org.gradle.api.provider.Provider<java.lang.String>)
 com.android.build.gradle.internal.dsl.DefaultAapt.getExecutable: org.gradle.api.provider.Provider<org.gradle.api.file.RegularFile> ()
