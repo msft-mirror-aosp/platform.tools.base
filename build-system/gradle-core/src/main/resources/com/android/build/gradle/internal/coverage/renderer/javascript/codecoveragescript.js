@@ -391,11 +391,6 @@ const CoverageReportApp = {
     },
 
     bindEvents() {
-        this.elements.searchInput.addEventListener('input', () => {
-            this.state.filters.search = this.elements.searchInput.value.trim().toLowerCase();
-            this.render();
-        });
-
         this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
             if (btn && dropdown) {
                 btn.addEventListener('click', (e) => {

@@ -37,6 +37,8 @@ const SourceViewApp = {
             functionList: document.getElementById('function-list'),
             functionSearch: document.getElementById('function-search'),
             functionSearchClearBtn: document.getElementById('function-search-clear-btn'),
+            srcSearchRevealBtn: document.getElementById('src-search-reveal-btn'),
+            srcSearchWrapper: document.getElementById('src-search-wrapper'),
             sourceBreadcrumbs: document.getElementById('source-breadcrumbs'),
             variantFilterBtn: document.getElementById('source-variant-filter-btn'),
             sourceVariantFilterText: document.getElementById('source-variant-filter-text'),
@@ -171,6 +173,15 @@ const SourceViewApp = {
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
         this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
 
+        if (this.elements.srcSearchRevealBtn) {
+            this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.elements.srcSearchRevealBtn.classList.add('hidden');
+                this.elements.srcSearchWrapper.classList.add('expanded');
+                this.elements.functionSearch.focus();
+            });
+        }
+
         if (this.elements.scrollLockSegments) {
             this.elements.scrollLockSegments.addEventListener('click', (e) => {
                 const btn = e.target.closest('.segment-btn');
@@ -243,6 +254,18 @@ const SourceViewApp = {
         document.addEventListener('click', (event) => {
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
+            }
+
+            // Search Input Collapse
+            if (this.elements.srcSearchWrapper && this.elements.srcSearchRevealBtn) {
+                if (!this.elements.srcSearchWrapper.contains(event.target) && !this.elements.srcSearchRevealBtn.contains(event.target)) {
+                    if (this.elements.functionSearch && this.elements.functionSearch.value === '') {
+                        this.elements.srcSearchWrapper.classList.remove('expanded');
+                        setTimeout(() => {
+                            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+                        }, 300);
+                    }
+                }
             }
         });
     },
