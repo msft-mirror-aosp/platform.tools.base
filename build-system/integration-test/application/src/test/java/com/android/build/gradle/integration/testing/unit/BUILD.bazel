@@ -61,6 +61,7 @@ gradle_integration_test(
     srcs = glob(
         [
             "**/*.java",
+            "**/*.kt",
         ],
     ),
     data = TEST_DATA,

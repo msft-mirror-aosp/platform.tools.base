@@ -31,9 +31,9 @@ class UnitTestingTestTaskAccess {
       androidComponents {
           onVariants(selector().all()) { variant ->
               variant.unitTest?.configureTestTask { testTask ->
-                  testTask.beforeTest { descriptor ->
-                      println("Running test: " + descriptor)
-                  }
+                  testTask.addTestListener([
+                      beforeTest: { descriptor -> println("Running test: " + descriptor) }
+                  ] as org.gradle.api.tasks.testing.TestListener)
               }
           }
       }
