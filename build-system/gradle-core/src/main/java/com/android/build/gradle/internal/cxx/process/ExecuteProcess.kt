@@ -233,6 +233,7 @@ fun ExecuteProcessCommand.execute(providers: ProviderFactory) {
           spec.parameters.logStderr.set(logStderr)
           spec.parameters.logStdout.set(logStdout)
           spec.parameters.logFullStdout.set(verbose)
+          spec.parameters.workingDirectory.set(workingDirectory)
         }
         .get()
 

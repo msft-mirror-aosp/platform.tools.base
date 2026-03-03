@@ -59,6 +59,19 @@ class ExecuteProcessTest {
   }
 
   @Test
+  fun `check working directory`() {
+    with(createWorkingContext()) {
+      val subdirectory = workingDir.resolve("subdir").also { it.mkdirs() }
+
+      val script = createCallbackShellScripts("pwd-script") { err.println("CWD: ${System.getProperty("user.dir")}") }
+
+      createCommand(script, "command").copy(useScript = true, workingDirectory = subdirectory).execute(providers())
+
+      assertStderr("CWD: ${subdirectory.canonicalPath}")
+    }
+  }
+
+  @Test
   fun `check problematic strings in arguments can round trip`() {
     checkRoundtrip(":")
     checkRoundtrip("=")
