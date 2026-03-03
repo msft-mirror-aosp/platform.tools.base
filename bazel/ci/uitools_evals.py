@@ -18,16 +18,15 @@ _FLAGS = [
     '--build_metadata=cinder_pipelines=studio-evals',
 ]
 
-def _get_generate_compose_preview_tests(build_env: bazel.BuildEnv) -> List[str]:
-  """Queries bazel for tests and filters them."""
-  query = [f'attr(tags, "generate_compose_preview", {" + ".join(_TARGETS)})']
+def _get_uitools_evals_tests(build_env: bazel.BuildEnv) -> List[str]:
+  """Queries bazel for uitools evals tests."""
+  query = [f'tests({" + ".join(_TARGETS)})']
   target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   return target_tests
 
 def uitools_evals(build_env: bazel.BuildEnv):
-  """Runs ui tools evals target."""
-  target_tests = _get_generate_compose_preview_tests(build_env)
-
+  """Runs uitools evals tests."""
+  target_tests = _get_uitools_evals_tests(build_env)
   test_result = studio.run_tests(build_env, _FLAGS, target_tests)
 
   if not studio.is_build_successful(test_result):
