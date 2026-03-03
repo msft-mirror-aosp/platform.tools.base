@@ -104,7 +104,7 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
       task.dependentModuleTestResults.from(
         creationConfig.variantDependencies.getArtifactFileCollection(
-          AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
           AndroidArtifacts.ArtifactScope.PROJECT,
           AndroidArtifacts.ArtifactType.TEST_RESULTS,
         )

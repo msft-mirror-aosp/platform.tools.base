@@ -177,7 +177,7 @@ class PublishingSpecs {
         api(SYMBOL_LIST_WITH_PACKAGE_NAME, ArtifactType.APP_SYMBOL_LIST_FOR_DATA_BINDING)
         api(MERGED_TEST_ONLY_NATIVE_LIBS, ArtifactType.MERGED_TEST_ONLY_NATIVE_LIBS)
         runtime(VARIANT_CODE_COVERAGE_DATA, ArtifactType.CODE_COVERAGE_DATA)
-        api(VARIANT_TEST_RESULTS, ArtifactType.TEST_RESULTS)
+        runtime(VARIANT_TEST_RESULTS, ArtifactType.TEST_RESULTS)
       }
 
       variantSpec(ComponentTypeImpl.OPTIONAL_APK) {
@@ -245,7 +245,7 @@ class PublishingSpecs {
         api(PREFAB_PACKAGE_CONFIGURATION, ArtifactType.PREFAB_PACKAGE_CONFIGURATION)
         api(PREFAB_PACKAGE, ArtifactType.PREFAB_PACKAGE)
         api(COMPILE_R_CLASS_JAR, ArtifactType.R_CLASS_JAR)
-        api(VARIANT_TEST_RESULTS, ArtifactType.TEST_RESULTS)
+        runtime(VARIANT_TEST_RESULTS, ArtifactType.TEST_RESULTS)
 
         // manifest is published to both to compare and detect provided-only library
         // dependencies.

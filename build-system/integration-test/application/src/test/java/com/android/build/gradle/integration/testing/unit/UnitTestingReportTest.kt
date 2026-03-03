@@ -23,7 +23,6 @@ import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import java.io.File
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -124,7 +123,6 @@ class UnitTestingReportTest {
   }
 
   @Test
-  @Ignore("b/488465705")
   fun testCreateAggregatedTestReport() {
     val result = rule.build.executor.run(":app:createAggregatedTestReport")
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
