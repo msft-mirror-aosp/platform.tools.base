@@ -41,11 +41,11 @@ object CodeCoverageReportOrchestrator {
 
   /**
    * Executes the full report generation workflow. The process involves:
-   * 1. Finding and parsing all JaCoCo XML reports from the input directories. If any XML file is
-   *    malformed or cannot be parsed, the build will fail.
+   * 1. Finding and parsing all JaCoCo XML reports from the input directories. If any XML file is malformed or cannot be parsed, the build
+   *    will fail.
    * 2. Populating builder objects with the aggregated coverage data.
-   * 3. Building the final, immutable CoverageReport model. If there was no coverage data,
-   *    a warning will be logged and further execution will be paused.
+   * 3. Building the final, immutable CoverageReport model. If there was no coverage data, a warning will be logged and further execution
+   *    will be paused.
    * 4. Serializing the main report model to data/report-data.js.
    * 5. Delegating the creation of detailed source file reports to [SourceFileReportOrchestrator].
    * 6. Copying all static HTML, CSS, and JS resources to the output directory.
@@ -54,14 +54,13 @@ object CodeCoverageReportOrchestrator {
    * @param htmlReportDir The output directory where the final HTML report will be written.
    * @param rootProjectName The display name of the root project.
    * @param rootProjectDir The root directory of the project, used to resolve relative source file paths.
+   * @return `true` if the report was generated successfully, `false` if no coverage data was found and report generation was skipped.
    * @throws GradleException if any of the input XML report files cannot be parsed.
-   * @return `true` if the report was generated successfully, `false` if no coverage data was
-   * found and report generation was skipped.
    */
-  fun orchestrate(inputDirectories: List<File>, htmlReportDir: DirectoryProperty, rootProjectName: String, rootProjectDir: File) : Boolean {
+  fun orchestrate(inputDirectories: List<File>, htmlReportDir: DirectoryProperty, rootProjectName: String, rootProjectDir: File): Boolean {
     val reportDir = htmlReportDir.get().asFile
 
-    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.FULL)
+    val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
     val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
     val formattedTimestamp = zonedDateTime.format(formatter)
 

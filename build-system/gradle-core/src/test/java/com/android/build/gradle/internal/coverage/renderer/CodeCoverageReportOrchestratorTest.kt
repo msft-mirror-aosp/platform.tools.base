@@ -118,7 +118,10 @@ class CodeCoverageReportOrchestratorTest {
     assertThat(moduleReport.testSuiteCoverages).hasSize(1)
     assertThat(moduleReport.testSuiteCoverages.first().name).isEqualTo("UnitTest")
     assertThat(report.numberOfTestsSuites).isEqualTo(1)
-    assertThat(report.timeStamp).isNotEmpty()
+
+    val timeStamp = report.timeStamp
+    assertThat(timeStamp).isNotEmpty()
+    assertThat(timeStamp).doesNotContain("Standard Time")
 
     val expectedLogicalPath = "src/main/java/com.example.myapp/MyClass.kt"
     val sourceFileReport = File(outputDir, "sourcefiles/$expectedLogicalPath.json.js")
