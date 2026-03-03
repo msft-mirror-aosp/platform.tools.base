@@ -140,7 +140,7 @@ const SourceViewApp = {
 
     renderBreadcrumbs() {
         const { packageName, sourceFileName } = this.classData;
-        const { moduleName, testSuiteName } = this.context;
+        const { moduleName } = this.context;
 
         let html = `<div class="flex items-center gap-2 text-sm">
             <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
@@ -154,11 +154,6 @@ const SourceViewApp = {
              html += `
                 <span class="breadcrumb-separator">/</span>
                 <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
-        }
-        if (testSuiteName !== "Aggregated") {
-             html += `
-                <span class="breadcrumb-separator">/</span>
-                <span class="text-gray-500">${testSuiteName}</span>`;
         }
 
         html += `
@@ -439,14 +434,10 @@ const SourceViewApp = {
             `;
         }).join('');
 
-        const headerTitle = this.context.testSuiteName
-            ? `${variantName} (${this.context.testSuiteName})`
-            : variantName;
-
         return `
             <div class="variant-code-view" data-variant="${variantName}">
                 <div class="variant-header">
-                    <div>${headerTitle}</div>
+                    <div>${variantName}</div>
                     <div class="flex items-baseline gap-2 mt-1">
                         <span class="font-bold ${colorClass}">${percent}%</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>
