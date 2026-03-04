@@ -139,11 +139,22 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
     logFile.get().asFile.delete()
 
+    val streamingFile = streamingOutputFile.get().asFile
+    streamingFile.parentFile.mkdirs()
+    if (streamingFile.exists()) {
+      streamingFile.delete()
+    }
+    streamingFile.createNewFile()
+
     val engineInputParameters: List<TestEngineInputProperty> =
       engineInputParameters.get().map { inputProperty ->
         TestEngineInputProperty(inputProperty.type.propertyName, inputProperty.value.get().asFile.absolutePath)
       }
 
+    doExecuteTests(engineInputParameters)
+  }
+
+  protected open fun doExecuteTests(engineInputParameters: List<TestEngineInputProperty>) {
     // only get the connected devices if the test requested an APK.
     if (engineInputParameters.any { inputParameter -> inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName }) {
       provisionDevicesAndExecute { onlineDeviceSerials -> executeTests(engineInputParameters, onlineDeviceSerials) }
@@ -296,14 +307,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
 
   class CreationAction(val creationConfig: TestSuiteCreationConfig, val testSuiteTarget: TestSuiteTargetCreationConfig) :
-    GlobalTaskCreationAction<TestSuiteTestTask>() {
+    GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
       get() = testSuiteTarget.testTaskName
 
-    override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
+    override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
-    override fun configure(task: TestSuiteTestTask) {
+    override fun configure(task: LegacyReportingTestSuiteTestTask) {
       super.configure(task)
       task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.outputs.upToDateWhen { false }
@@ -433,9 +444,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.testedVariantName.setDisallowChanges(creationConfig.testedVariant.name)
       task.testSuiteName.setDisallowChanges(creationConfig.name)
       task.testSuiteTarget.setDisallowChanges(testSuiteTarget.name)
+
+      // This Gradle property key is hard coded in Android Studio.
+      // We will remove it once Android Studio can consume test report using
+      // the tooling api.
+      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
+        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
+      )
     }
 
-    override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
+    override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
       creationConfig.testedVariant.artifacts
@@ -461,14 +479,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     private val creationConfig: DeviceTestCreationConfig,
     private val testData: TestData,
     private val connectedCheckSerials: Provider<List<String>>,
-  ) : GlobalTaskCreationAction<TestSuiteTestTask>() {
+  ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
       get() = creationConfig.computeTaskNameInternal("connected")
 
-    override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
+    override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
-    override fun configure(task: TestSuiteTestTask) {
+    override fun configure(task: LegacyReportingTestSuiteTestTask) {
       super.configure(task)
 
       val globalConfig = creationConfig.global
@@ -533,6 +551,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // AgpTestSuiteInputParameters if they are useful for other JUnit engines.
       task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
       task.engineInputProperties.put("android-test.uninstall-after-tests", "true")
+
+      // This Gradle property key is hard coded in Android Studio.
+      // We will remove it once Android Studio can consume test report using
+      // the tooling api.
+      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
+        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
+      )
+      task.engineInputProperties.put(
+        "android-test.listener.stream-base64-encoded-result",
+        task.legacyTestReportingRedirectionEnabled.map { it.toString() },
+      )
+
       task.engineInputProperties.disallowChanges()
 
       val variantName = creationConfig.mainVariant.name
@@ -594,7 +624,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
     }
 
-    override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
+    override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
       creationConfig.taskContainer.connectedTestTask = taskProvider
