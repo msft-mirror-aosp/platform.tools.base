@@ -70,6 +70,9 @@ class XMLReportAggregator(private val files: List<File>) {
         File(outputDir, fileName).outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
       }
     }
+
+    // Log the final location of the report
+    logger.quiet("Test report generated at: ${File(outputDir, "index.html").absolutePath}")
   }
 
   private class FunctionAdapter : JsonSerializer<Function> {
