@@ -323,8 +323,8 @@ const CoverageReportApp = {
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
             totalModules: document.getElementById('total-modules'),
+            totalPackages: document.getElementById('total-packages'),
             totalClasses: document.getElementById('total-classes'),
-            totalTests: document.getElementById('total-tests'),
         };
     },
 
@@ -346,9 +346,18 @@ const CoverageReportApp = {
     },
 
     populateGlobalStats() {
-        if (this.elements.totalTests) {
-            this.elements.totalTests.textContent = this.fullReport.numberOfTestsSuites || 0;
-        }
+        this.elements.totalModules.textContent = this.fullReport.modules.length;
+        let totalPackages = 0;
+        let totalClasses = 0;
+        this.fullReport.modules.forEach(module => {
+            const packages = module.packages || [];
+            totalPackages += packages.length;
+            packages.forEach(pkg => {
+                totalClasses += (pkg.classes || []).length;
+            });
+        });
+        this.elements.totalPackages.textContent = totalPackages;
+        this.elements.totalClasses.textContent = totalClasses;
     },
 
     populateFilters() {
@@ -908,7 +917,6 @@ const CoverageReportApp = {
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
-        this.updateHeaderStats(dataToRender);
         this.renderTable(dataToRender);
 
         this.updateTooltipsForOverflow();
@@ -1042,32 +1050,6 @@ const CoverageReportApp = {
 
         return flatData;
     },
-
-    updateHeaderStats(dataToRender) {
-        const { viewMode, currentView } = this.state;
-        let relevantClasses;
-        let moduleCount = 0;
-
-        if(viewMode === 'tree'){
-            relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
-            moduleCount = dataToRender.length;
-        } else {
-            if (currentView === 'classes') {
-                relevantClasses = dataToRender;
-                moduleCount = new Set(dataToRender.map(c => c.moduleName)).size;
-            } else if (currentView === 'packages') {
-                relevantClasses = dataToRender.flatMap(p => p.classes || []);
-                moduleCount = new Set(dataToRender.map(p => p.moduleName)).size;
-            } else {
-                relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
-                moduleCount = dataToRender.length;
-            }
-        }
-
-        this.elements.totalModules.textContent = moduleCount;
-        this.elements.totalClasses.textContent = relevantClasses.length;
-    },
-
 
     renderTable(dataToRender) {
         this.renderHeaders();
