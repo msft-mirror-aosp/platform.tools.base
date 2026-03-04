@@ -34,6 +34,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.ClassSource
 import org.junit.platform.engine.support.descriptor.MethodSource
 import org.junit.platform.launcher.TestIdentifier
@@ -60,9 +61,20 @@ class AndroidTestResultListenerTest {
     systemPropertyOverrides.close()
   }
 
+  private fun decodeEvents(output: String): List<TestResultEvent> {
+    return output
+      .trim()
+      .lines()
+      .filter { it.isNotEmpty() }
+      .map { line ->
+        val base64 =
+          line.substringAfter("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>").substringBefore("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
+        TestResultEvent.parseFrom(Base64.getDecoder().decode(base64))
+      }
+  }
+
   private fun decodeEvent(output: String): TestResultEvent {
-    val base64 = output.substringAfter("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>").substringBefore("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
-    return TestResultEvent.parseFrom(Base64.getDecoder().decode(base64))
+    return decodeEvents(output).last()
   }
 
   private fun mockTestIdentifier(isTest: Boolean = true, uniqueIdStr: String = "[engine:mock]"): TestIdentifier {
@@ -86,20 +98,52 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
-  fun testSuiteStarted_onContainerStarted() {
+  fun testSuiteStarted_onReportingEntryPublished() {
     val listener = AndroidTestResultListener()
     val testIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
     whenever(testIdentifier.isContainer).thenReturn(true)
 
     listener.executionStarted(testIdentifier)
+    assertThat(outputStream.toString()).isEmpty()
+
+    val reportEntry = mock<ReportEntry>()
+    whenever(reportEntry.keyValuePairs).thenReturn(mapOf(AndroidTestReportKeys.TEST_COUNT to "42"))
+    listener.reportingEntryPublished(testIdentifier, reportEntry)
 
     val event = decodeEvent(outputStream.toString())
     assertThat(event.hasTestSuiteStarted()).isTrue()
     assertThat(event.deviceId).isEqualTo("my-device")
+    val suiteMetaData = event.testSuiteStarted.testSuiteMetadata.unpack(TestSuiteResultProto.TestSuiteMetaData::class.java)
+    assertThat(suiteMetaData.scheduledTestCaseCount).isEqualTo(42)
   }
 
   @Test
-  fun testSuiteFinished_onContainerFinished() {
+  fun testSuiteStarted_onFirstTestStarted_ifNoReportingEntry() {
+    val listener = AndroidTestResultListener()
+    val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+    whenever(deviceIdentifier.isContainer).thenReturn(true)
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+
+    listener.executionStarted(deviceIdentifier)
+    assertThat(outputStream.toString()).isEmpty()
+
+    listener.executionStarted(testIdentifier)
+
+    val output = outputStream.toString()
+    val lines = output.trim().lines()
+    assertThat(lines).hasSize(2)
+
+    val event1 = decodeEvent(lines[0])
+    assertThat(event1.hasTestSuiteStarted()).isTrue()
+    val suiteMetaData = event1.testSuiteStarted.testSuiteMetadata.unpack(TestSuiteResultProto.TestSuiteMetaData::class.java)
+    assertThat(suiteMetaData.scheduledTestCaseCount).isEqualTo(0)
+
+    val event2 = decodeEvent(lines[1])
+    assertThat(event2.hasTestCaseStarted()).isTrue()
+  }
+
+  @Test
+  fun testSuiteFinished_onContainerFinished_emitsStartedIfNotEmitted() {
     val listener = AndroidTestResultListener()
     val testIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
     whenever(testIdentifier.isContainer).thenReturn(true)
@@ -108,11 +152,15 @@ class AndroidTestResultListenerTest {
     outputStream.reset()
     listener.executionFinished(testIdentifier, TestExecutionResult.successful())
 
-    val event = decodeEvent(outputStream.toString())
-    assertThat(event.hasTestSuiteFinished()).isTrue()
-    assertThat(event.deviceId).isEqualTo("my-device")
-    val suiteResult = event.testSuiteFinished.testSuiteResult.unpack(TestSuiteResultProto.TestSuiteResult::class.java)
-    assertThat(suiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+    val lines = outputStream.toString().trim().lines()
+    assertThat(lines).hasSize(2)
+
+    val event1 = decodeEvent(lines[0])
+    assertThat(event1.hasTestSuiteStarted()).isTrue()
+
+    val event2 = decodeEvent(lines[1])
+    assertThat(event2.hasTestSuiteFinished()).isTrue()
+    assertThat(event2.deviceId).isEqualTo("my-device")
   }
 
   @Test
@@ -310,6 +358,9 @@ class AndroidTestResultListenerTest {
       whenever(testIdentifier.isContainer).thenReturn(true)
 
       listener.executionStarted(testIdentifier)
+      val reportEntry = mock<ReportEntry>()
+      whenever(reportEntry.keyValuePairs).thenReturn(mapOf(AndroidTestReportKeys.TEST_COUNT to "10"))
+      listener.reportingEntryPublished(testIdentifier, reportEntry)
 
       val fileContent = tempFile.readText()
       assertThat(outputStream.toString()).isEmpty()

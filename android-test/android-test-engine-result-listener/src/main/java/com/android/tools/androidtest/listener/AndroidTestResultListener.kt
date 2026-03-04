@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
 import org.junit.platform.engine.TestExecutionResult
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.launcher.TestExecutionListener
 import org.junit.platform.launcher.TestIdentifier
 import org.junit.platform.launcher.TestPlan
@@ -50,6 +51,9 @@ class AndroidTestResultListener : TestExecutionListener {
 
   /** Tracks whether all tests have passed for each device serial. */
   private val perDeviceAllTestsPassed = ConcurrentHashMap<String, Boolean>()
+
+  /** Tracks whether TestSuiteStarted event has been emitted for each device serial. */
+  private val perDeviceTestSuiteStartedEmitted = ConcurrentHashMap<String, Boolean>()
 
   /** Properties loaded from the file specified by AGP environment variable. */
   private val configurationProperties: Properties by lazy {
@@ -82,23 +86,22 @@ class AndroidTestResultListener : TestExecutionListener {
     val deviceId = testIdentifier.getDeviceId() ?: ""
 
     // If the identifier is a container and has a device ID, it represents an AndroidDeviceDescriptor.
-    // We emit a TestSuiteStarted event for this specific device.
+    // We defer TestSuiteStarted until we receive the test count via reportingEntryPublished,
+    // or until the first test case starts.
     if (testIdentifier.isContainer && deviceId.isNotEmpty()) {
-      try {
-        val testSuiteMetaData = TestSuiteResultProto.TestSuiteMetaData.newBuilder().build()
-        val testSuiteStarted = TestResultEvent.TestSuiteStarted.newBuilder().setTestSuiteMetadata(Any.pack(testSuiteMetaData)).build()
-        val event = TestResultEvent.newBuilder().setTestSuiteStarted(testSuiteStarted).setDeviceId(deviceId).build()
-        printTestResultEvent(event)
-        perDeviceAllTestsPassed[deviceId] = true
-      } catch (t: Throwable) {
-        logger.log(Level.SEVERE, "failed to report testSuiteStarted for device $deviceId", t)
-      }
+      perDeviceAllTestsPassed[deviceId] = true
+      perDeviceTestSuiteStartedEmitted[deviceId] = false
       return
     }
 
     // Report individual test case start.
     if (!testIdentifier.isTest) return
     try {
+      // Ensure TestSuiteStarted is emitted before any TestCaseStarted.
+      if (deviceId.isNotEmpty()) {
+        emitTestSuiteStarted(deviceId, 0)
+      }
+
       val testCase = testIdentifier.toTestCaseProto()
       val testCaseStarted = TestResultEvent.TestCaseStarted.newBuilder().setTestCase(Any.pack(testCase)).build()
 
@@ -110,6 +113,30 @@ class AndroidTestResultListener : TestExecutionListener {
     }
   }
 
+  override fun reportingEntryPublished(testIdentifier: TestIdentifier, entry: ReportEntry) {
+    val deviceId = testIdentifier.getDeviceId() ?: ""
+    if (deviceId.isEmpty()) return
+
+    val testCount = entry.keyValuePairs[AndroidTestReportKeys.TEST_COUNT]?.toIntOrNull()
+    if (testCount != null) {
+      emitTestSuiteStarted(deviceId, testCount)
+    }
+  }
+
+  /** Emits a TestSuiteStarted event for the given [deviceId] with the specified [scheduledTestCount]. */
+  private fun emitTestSuiteStarted(deviceId: String, scheduledTestCount: Int) {
+    if (perDeviceTestSuiteStartedEmitted[deviceId] == true) return
+    try {
+      val testSuiteMetaData = TestSuiteResultProto.TestSuiteMetaData.newBuilder().setScheduledTestCaseCount(scheduledTestCount).build()
+      val testSuiteStarted = TestResultEvent.TestSuiteStarted.newBuilder().setTestSuiteMetadata(Any.pack(testSuiteMetaData)).build()
+      val event = TestResultEvent.newBuilder().setTestSuiteStarted(testSuiteStarted).setDeviceId(deviceId).build()
+      printTestResultEvent(event)
+      perDeviceTestSuiteStartedEmitted[deviceId] = true
+    } catch (t: Throwable) {
+      logger.log(Level.SEVERE, "failed to report testSuiteStarted for device $deviceId", t)
+    }
+  }
+
   override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
     val deviceId = testIdentifier.getDeviceId() ?: ""
 
@@ -117,6 +144,9 @@ class AndroidTestResultListener : TestExecutionListener {
     // We emit a TestSuiteFinished event for this specific device.
     if (testIdentifier.isContainer && deviceId.isNotEmpty()) {
       try {
+        // Ensure TestSuiteStarted was emitted.
+        emitTestSuiteStarted(deviceId, 0)
+
         val allTestsPassed = perDeviceAllTestsPassed.getOrDefault(deviceId, true)
         val testSuiteResult =
           TestSuiteResultProto.TestSuiteResult.newBuilder()

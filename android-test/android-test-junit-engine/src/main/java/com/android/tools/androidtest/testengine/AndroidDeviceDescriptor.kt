@@ -30,6 +30,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.hierarchical.Node
 
@@ -61,7 +62,7 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
 
     val resultsDir = config.resultsDir?.let { File(it, deviceSerial).also { it.mkdirs() } }
     val reporter = resultsDir?.let { SimpleXmlResultReporter(it, deviceSerial) }
-    val listener = Listener(reporter)
+    val listener = Listener(context, reporter)
 
     val instrumentationRunner =
       AmInstrumentationRunner(
@@ -123,12 +124,17 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
    * This listener implementation translates low-level instrumentation events (like `testStarted` and `testEnded`) into high-level JUnit
    * [TestDescriptor] operations and optionally reports them to a [SimpleXmlResultReporter].
    */
-  inner class Listener(private val reporter: SimpleXmlResultReporter?) : AmInstrumentationListener {
+  inner class Listener(private val context: AndroidTestExecutionContext, private val reporter: SimpleXmlResultReporter?) :
+    AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
 
     override fun instrumentationStarted(testCount: Int) {
       reporter?.testRunStarted("android-test", testCount)
+
+      // We publish a ReportEntry with the testCount so that it can be picked up by listeners.
+      val reportEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, reportEntry)
     }
 
     /** Called when a test case starts on the device. */
