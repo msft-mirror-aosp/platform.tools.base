@@ -4536,10 +4536,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "info.picocli.picocli_4.6.3",
-    pom = "repository/info/picocli/picocli/4.6.3/picocli-4.6.3.pom",
+    name = "info.picocli.picocli_4.7.4",
+    pom = "repository/info/picocli/picocli/4.7.4/picocli-4.7.4.pom",
     repo_root_path = "repository",
-    repo_path = "info/picocli/picocli/4.6.3",
+    repo_path = "info/picocli/picocli/4.7.4",
     visibility = ["//visibility:public"],
 )
 
@@ -4547,12 +4547,12 @@ maven_import(
     name = "info.picocli.picocli",
     classifiers = [],
     jars = [
-        "repository/info/picocli/picocli/4.6.3/picocli-4.6.3.jar"
+        "repository/info/picocli/picocli/4.7.4/picocli-4.7.4.jar"
     ],
     original_deps = [],
-    pom = "repository/info/picocli/picocli/4.6.3/picocli-4.6.3.pom",
+    pom = "repository/info/picocli/picocli/4.7.4/picocli-4.7.4.pom",
     repo_root_path = "repository",
-    repo_path = "info/picocli/picocli/4.6.3",
+    repo_path = "info/picocli/picocli/4.7.4",
     visibility = ["//visibility:public"],
 )
 
@@ -78664,10 +78664,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "info.picocli.picocli_4.7.4",
-    pom = "repository/info/picocli/picocli/4.7.4/picocli-4.7.4.pom",
+    name = "info.picocli.picocli_4.6.3",
+    pom = "repository/info/picocli/picocli/4.6.3/picocli-4.6.3.pom",
     repo_root_path = "repository",
-    repo_path = "info/picocli/picocli/4.7.4",
+    repo_path = "info/picocli/picocli/4.6.3",
     visibility = ["//visibility:public"],
 )
 
