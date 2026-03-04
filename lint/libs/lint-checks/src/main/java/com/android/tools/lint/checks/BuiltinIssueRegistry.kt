@@ -379,6 +379,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           PrivateApiDetector.DISCOURAGED_PRIVATE_API,
           PrivateApiDetector.PRIVATE_API,
           PrivateApiDetector.SOON_BLOCKED_PRIVATE_API,
+          PrivateComputeCoreDetector.ISSUE,
           PrivateKeyDetector.ISSUE,
           PrivateResourceDetector.ISSUE,
           ProguardAndroidTxtDetector.ISSUE,
