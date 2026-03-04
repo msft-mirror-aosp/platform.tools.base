@@ -846,6 +846,7 @@ DATA = [
     "com.google.auto.value:auto-value-annotations:1.7.4",
     "com.google.caliper:caliper:1.0-beta-3",
     "com.google.code.findbugs:jsr305:3.0.2",
+    "com.google.code.gson:gson:2.10.1",
     "com.google.code.gson:gson:2.2.4",
     "com.google.code.gson:gson:2.6.2",
     "com.google.crypto.tink:tink:1.18.0",  # Dependency for UTP.
@@ -877,6 +878,7 @@ DATA = [
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.8.21-1.0.11",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.20-RC-2.0.2",  # Used by AGP tests
+    "com.google.errorprone:error_prone_annotations:2.23.0",
     "com.google.errorprone:error_prone_annotations:2.33.0",
     "com.google.errorprone:error_prone_check_api:2.33.0",
     "com.google.errorprone:error_prone_core:2.33.0",
@@ -895,9 +897,11 @@ DATA = [
     "com.google.guava:guava:30.1-android",
     "com.google.guava:guava:31.1-jre",
     "com.google.guava:guava:32.1.2-jre",
+    "com.google.guava:guava:33.0.0-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "com.google.http-client:google-http-client-bom:pom:1.43.3",
     "com.google.http-client:google-http-client-bom:pom:1.45.0",
+    "com.google.j2objc:j2objc-annotations:2.8",
     "com.google.oauth-client:google-oauth-client-java6:1.34.1",
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
@@ -1022,6 +1026,12 @@ DATA = [
     "org.apache.lucene:lucene-highlighter:9.12.0",
     "org.apache.lucene:lucene-queryparser:9.12.0",
     # Lucene 10.3.0 - used by IntelliJ 25.3 and later.
+    "androidx.privacysandbox.tools:tools:1.0.0-alpha06",
+    "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha06",
+    "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha06",
+    "androidx.privacysandbox.tools:tools-core:1.0.0-alpha06",
+    "com.google.protobuf:protobuf-bom:pom:4.27.2",
+    "com.google.protobuf:protobuf-bom:pom:4.33.2",
     "org.apache.lucene:lucene-backward-codecs:10.3.0",
     "org.apache.lucene:lucene-highlighter:10.3.0",
     "org.apache.lucene:lucene-queryparser:10.3.0",
@@ -1355,6 +1365,7 @@ DATA = [
     "org.junit:junit-bom:pom:5.9.3",
     "org.junit.platform:junit-platform-console-standalone:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
+    "org.mockito:mockito-core:5.4.0",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm:9.8",
     "org.ow2.asm:asm:9.9",

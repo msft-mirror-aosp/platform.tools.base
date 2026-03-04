@@ -39808,6 +39808,23 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha06",
+    pom = "repository/androidx/privacysandbox/tools/tools-apigenerator/1.0.0-alpha06/tools-apigenerator-1.0.0-alpha06.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/tools/tools-apigenerator/1.0.0-alpha06",
+    deps = [
+        "androidx.privacysandbox.tools.tools_1.0.0-alpha06",
+        "androidx.privacysandbox.tools.tools-core_1.0.0-alpha06",
+        "com.squareup.kotlinpoet_1.14.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlinx.kotlinx-metadata-jvm_0.6.2",
+        "org.ow2.asm.asm_9.3",
+        "org.ow2.asm.asm-commons_9.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.privacysandbox.tools.tools-apigenerator_1.0.0-alpha13",
     pom = "repository/androidx/privacysandbox/tools/tools-apigenerator/1.0.0-alpha13/tools-apigenerator-1.0.0-alpha13.pom",
     repo_root_path = "repository",
@@ -39819,6 +39836,22 @@ maven_artifact(
         "org.ow2.asm.asm-commons_9.7",
         "com.squareup.kotlinpoet-jvm_2.1.0",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.privacysandbox.tools.tools-apipackager_1.0.0-alpha06",
+    pom = "repository/androidx/privacysandbox/tools/tools-apipackager/1.0.0-alpha06/tools-apipackager-1.0.0-alpha06.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/tools/tools-apipackager/1.0.0-alpha06",
+    deps = [
+        "androidx.privacysandbox.tools.tools_1.0.0-alpha06",
+        "androidx.privacysandbox.tools.tools-core_1.0.0-alpha06",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.22",
+        "org.ow2.asm.asm_9.3",
+        "org.ow2.asm.asm-commons_9.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -39849,6 +39882,21 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.privacysandbox.tools.tools-core_1.0.0-alpha06",
+    pom = "repository/androidx/privacysandbox/tools/tools-core/1.0.0-alpha06/tools-core-1.0.0-alpha06.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/tools/tools-core/1.0.0-alpha06",
+    deps = [
+        "androidx.privacysandbox.tools.tools_1.0.0-alpha06",
+        "com.google.guava.guava_31.1-jre",
+        "com.google.protobuf.protobuf-java_3.21.8",
+        "com.squareup.kotlinpoet_1.14.2",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.privacysandbox.tools.tools-core_1.0.0-alpha13",
     pom = "repository/androidx/privacysandbox/tools/tools-core/1.0.0-alpha13/tools-core-1.0.0-alpha13.pom",
     repo_root_path = "repository",
@@ -39859,6 +39907,18 @@ maven_artifact(
         "com.squareup.kotlinpoet-jvm_2.1.0",
         "androidx.privacysandbox.tools.tools-core-external-protobuf_1.0.0-alpha13",
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.privacysandbox.tools.tools_1.0.0-alpha06",
+    pom = "repository/androidx/privacysandbox/tools/tools/1.0.0-alpha06/tools-1.0.0-alpha06.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/privacysandbox/tools/tools/1.0.0-alpha06",
+    deps = [
+        "androidx.annotation.annotation_1.3.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.22",
     ],
     visibility = ["//visibility:public"],
 )
@@ -74932,6 +74992,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protobuf-bom_4.27.2",
+    pom = "repository/com/google/protobuf/protobuf-bom/4.27.2/protobuf-bom-4.27.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-bom/4.27.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.protobuf.protobuf-bom_4.28.2",
     pom = "repository/com/google/protobuf/protobuf-bom/4.28.2/protobuf-bom-4.28.2.pom",
     repo_root_path = "repository",
@@ -74944,6 +75012,14 @@ maven_artifact(
     pom = "repository/com/google/protobuf/protobuf-bom/4.28.3/protobuf-bom-4.28.3.pom",
     repo_root_path = "repository",
     repo_path = "com/google/protobuf/protobuf-bom/4.28.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.protobuf.protobuf-bom_4.33.2",
+    pom = "repository/com/google/protobuf/protobuf-bom/4.33.2/protobuf-bom-4.33.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protobuf-bom/4.33.2",
     visibility = ["//visibility:public"],
 )
 
@@ -76451,6 +76527,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.7.0",
         "org.jetbrains.kotlin.kotlin-reflect_1.7.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.squareup.kotlinpoet_1.14.2",
+    pom = "repository/com/squareup/kotlinpoet/1.14.2/kotlinpoet-1.14.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/squareup/kotlinpoet/1.14.2",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.21",
+        "org.jetbrains.kotlin.kotlin-reflect_1.8.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -93416,6 +93504,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-metadata-jvm_0.6.2",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-metadata-jvm/0.6.2/kotlinx-metadata-jvm-0.6.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-metadata-jvm/0.6.2",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.8.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.5.1",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.5.1/kotlinx-serialization-bom-1.5.1.pom",
     repo_root_path = "repository",
@@ -94312,6 +94411,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-analysis_9.3",
+    pom = "repository/org/ow2/asm/asm-analysis/9.3/asm-analysis-9.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-analysis/9.3",
+    parent = "org.ow2.ow2_1.5",
+    deps = [
+        "org.ow2.asm.asm-tree_9.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-analysis_9.6",
     pom = "repository/org/ow2/asm/asm-analysis/9.6/asm-analysis-9.6.pom",
     repo_root_path = "repository",
@@ -94481,6 +94592,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.ow2.asm.asm-commons_9.3",
+    pom = "repository/org/ow2/asm/asm-commons/9.3/asm-commons-9.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-commons/9.3",
+    parent = "org.ow2.ow2_1.5",
+    deps = [
+        "org.ow2.asm.asm_9.3",
+        "org.ow2.asm.asm-tree_9.3",
+        "org.ow2.asm.asm-analysis_9.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.ow2.asm.asm-commons_9.6",
     pom = "repository/org/ow2/asm/asm-commons/9.6/asm-commons-9.6.pom",
     repo_root_path = "repository",
@@ -94624,6 +94749,18 @@ maven_artifact(
     parent = "org.ow2.ow2_1.5",
     deps = [
         "org.ow2.asm.asm_9.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm-tree_9.3",
+    pom = "repository/org/ow2/asm/asm-tree/9.3/asm-tree-9.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm-tree/9.3",
+    parent = "org.ow2.ow2_1.5",
+    deps = [
+        "org.ow2.asm.asm_9.3",
     ],
     visibility = ["//visibility:public"],
 )
@@ -94903,6 +95040,15 @@ maven_artifact(
     pom = "repository/org/ow2/asm/asm/9.2/asm-9.2.pom",
     repo_root_path = "repository",
     repo_path = "org/ow2/asm/asm/9.2",
+    parent = "org.ow2.ow2_1.5",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.ow2.asm.asm_9.3",
+    pom = "repository/org/ow2/asm/asm/9.3/asm-9.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/ow2/asm/asm/9.3",
     parent = "org.ow2.ow2_1.5",
     visibility = ["//visibility:public"],
 )
