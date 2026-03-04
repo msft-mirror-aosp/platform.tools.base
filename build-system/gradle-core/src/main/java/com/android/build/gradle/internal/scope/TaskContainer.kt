@@ -58,7 +58,7 @@ interface TaskContainer {
   val installTask: TaskProvider<out DefaultTask>?
   val uninstallTask: TaskProvider<out DefaultTask>?
 
-  val connectedTestTask: TaskProvider<out DeviceProviderInstrumentTestTask>?
+  val connectedTestTask: TaskProvider<out DefaultTask>?
   val providerTestTaskList: List<TaskProvider<out DeviceProviderInstrumentTestTask>>
 
   var generateAnnotationsTask: TaskProvider<out ExtractAnnotations>?

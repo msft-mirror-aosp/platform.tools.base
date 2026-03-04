@@ -593,6 +593,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
+      creationConfig.taskContainer.connectedTestTask = taskProvider
+
       creationConfig.artifacts
         .setInitialProvider(taskProvider, TestSuiteTestTask::coverageDir)
         .withName("connected")
