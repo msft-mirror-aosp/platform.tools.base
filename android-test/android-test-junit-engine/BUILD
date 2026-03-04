@@ -1,3 +1,4 @@
+load("//tools/base/android-test:version.bzl", "ANDROID_TEST_ENGINE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 
@@ -12,7 +13,7 @@ maven_library(
     notice = "LICENSE",
     resource_strip_prefix = "tools/base/android-test/android-test-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = "0.1.0-dev",
+    version = ANDROID_TEST_ENGINE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/common:tools.common",

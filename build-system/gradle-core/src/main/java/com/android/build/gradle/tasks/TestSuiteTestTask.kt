@@ -491,8 +491,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
       task.testClassesDirs = creationConfig.services.fileCollection().also { it.from(classesDir) }
 
-      // TODO(b/476442048): Remove -dev suffix for release builds once the android-test-engine BUILD file is updated.
-      val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0-dev" else "0.1.0-dev"
+      val androidTestEngineVersion = if (Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")) "0.1.0-dev" else "0.1.0"
 
       task.classpath =
         creationConfig.services.fileCollection().also {
