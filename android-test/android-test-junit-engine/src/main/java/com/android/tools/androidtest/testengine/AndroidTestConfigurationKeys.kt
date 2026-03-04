@@ -16,7 +16,7 @@
 
 package com.android.tools.androidtest.testengine
 
-/** Configuration parameter keys for [AndroidTestEngine]. */
+/** Configuration parameter keys for Android Test Platform. */
 object AndroidTestConfigurationKeys {
   /** Path to the ADB executable. */
   const val ADB_PATH = "android-test.adb-path"
