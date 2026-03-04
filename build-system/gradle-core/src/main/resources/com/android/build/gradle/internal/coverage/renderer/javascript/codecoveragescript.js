@@ -43,6 +43,7 @@ const App = {
                 if (classObj) {
                     const context = {
                         moduleName: moduleName,
+                        packageName: packageName,
                         testSuiteName: CoverageReportApp.state.filters.testSuite
                     };
                     this.showSourceView(classObj, context);

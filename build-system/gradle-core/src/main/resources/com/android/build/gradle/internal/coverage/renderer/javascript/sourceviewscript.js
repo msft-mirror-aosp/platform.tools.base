@@ -70,13 +70,23 @@ const SourceViewApp = {
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
-        // Reset selected variants if we are loading a new class
-        if (!this.classData || this.classData.sourceFileName !== classData.sourceFileName) {
+        // Reset selected variants if we are loading a new class (check name and package)
+        if (!this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name) {
             this.state.selectedVariants = [];
         }
 
         this.classData = classData;
         this.context = context;
+
+        if (!classData?.variantSourceFilePaths) {
+            this.elements.sourceViewContainer.innerHTML = `
+                <div class="p-8 text-center text-red-600">
+                    <h3 class="text-lg font-bold">No Source Data</h3>
+                    <p>No source file paths found for ${classData?.name || 'this class'}.</p>
+                </div>`;
+            return;
+        }
+
         this.toggleLoading(true);
 
         const requiredPaths = [...new Set(classData.variantSourceFilePaths.map(v => v.path))];
@@ -141,7 +151,8 @@ const SourceViewApp = {
     },
 
     renderBreadcrumbs() {
-        const { packageName, sourceFileName } = this.classData;
+        const { sourceFileName } = this.classData;
+        const packageName = this.classData.packageName || this.context.packageName;
         const { moduleName } = this.context;
 
         let html = `<div class="flex items-center gap-2 text-sm">
