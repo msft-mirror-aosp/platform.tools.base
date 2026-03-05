@@ -16,302 +16,289 @@
 
 package com.android.build.gradle.internal.test.report
 
-import com.android.build.gradle.internal.LoggerWrapper
-import com.google.common.annotations.VisibleForTesting
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
-import com.google.gson.JsonSerializationContext
-import com.google.gson.JsonSerializer
+import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.lang.reflect.Type
-import javax.xml.stream.XMLInputFactory
-import javax.xml.stream.XMLStreamConstants
-import javax.xml.stream.XMLStreamException
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
-/**
- * Aggregates test results from multiple XML report streams.
- *
- * The `getReport()` method converts this internal map structure into the final list-based [RootReport] data model for serialization.
- */
-class XMLReportAggregator(private val files: List<File>) {
+// Helper to provide more context on test failures
+fun <T> List<T>.findOrThrow(predicate: (T) -> Boolean, message: () -> String): T {
+  return find(predicate) ?: throw NoSuchElementException(message())
+}
 
-  @VisibleForTesting fun getInputFiles(): List<File> = files
+class XMLReportAggregatorTest {
 
-  private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
-  // Global set of all unique variant names encountered.
-  private val rootReportBuilder = RootReportBuilder()
+  private lateinit var outputDir: File
+  private lateinit var inputDir1: File
+  private lateinit var inputDir2: File
 
-  /** Generates the final [RootReport] by processing all input files. */
-  fun generateReport(): RootReport {
-    getInputFiles().forEach { file -> processXmlForAggregation(file) }
-    return getReport()
+  @Before
+  fun setUp() {
+    outputDir = temporaryFolder.newFolder("output")
+    inputDir1 = temporaryFolder.newFolder("input1")
+    inputDir2 = temporaryFolder.newFolder("input2")
   }
 
-  /** Generates the RootReport and writes it to the specified output directory along with the necessary JSON, JS, and HTML resources. */
-  fun writeReport(outputDir: File) {
-    val finalReport = generateReport()
-    val gson = GsonBuilder().setPrettyPrinting().registerTypeAdapter(Function::class.java, FunctionAdapter()).create()
-    val jsonString = gson.toJson(finalReport)
-
-    if (!outputDir.exists()) {
-      outputDir.mkdirs()
-    }
-
-    File(outputDir, "data.js").writeText("const TEST_DATA_SOURCE = $jsonString")
-
-    val resources = listOf("index.html", "script.js", "styles.css")
-    resources.forEach { fileName ->
-      XMLReportAggregator::class.java.getResourceAsStream("/com/android/build/gradle/internal/test/report/renderer/$fileName")?.use {
-        inputStream ->
-        File(outputDir, fileName).outputStream().use { outputStream -> inputStream.copyTo(outputStream) }
-      }
-    }
+  private fun createXmlReport(directory: File, fileName: String, content: String) {
+    File(directory, fileName).writeText(content)
   }
 
-  private class FunctionAdapter : JsonSerializer<Function> {
-    override fun serialize(src: Function, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
-      val jsonObject = JsonObject()
-      jsonObject.addProperty("name", src.name)
-      src.results.forEach { (variant, result) ->
-        if (result.stackTrace == null) {
-          jsonObject.addProperty(variant, result.status)
-        } else {
-          val resultObj = JsonObject()
-          resultObj.addProperty("status", result.status)
-          resultObj.addProperty("stackTrace", result.stackTrace)
-          jsonObject.add(variant, resultObj)
-        }
-      }
-      return jsonObject
-    }
+  @Test
+  fun testGenerateReport_singlePassTest() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    val report = aggregator.generateReport()
+
+    assertThat(report.variants).containsExactly("debug")
+    assertThat(report.modules).hasSize(1)
+
+    val module = report.modules.first()
+    assertThat(module.name).isEqualTo(":app")
+    assertThat(module.testSuites).hasSize(1)
+
+    val testSuite = module.testSuites.first()
+    assertThat(testSuite.name).isEqualTo("unitTest")
+    assertThat(testSuite.packages).hasSize(1)
+
+    val pkg = testSuite.packages.first()
+    assertThat(pkg.name).isEqualTo("com.example.app")
+    assertThat(pkg.classes).hasSize(1)
+
+    val clazz = pkg.classes.first()
+    assertThat(clazz.name).isEqualTo("MyClassTest")
+    assertThat(clazz.functions).hasSize(1)
+
+    val function = clazz.functions.first()
+    assertThat(function.name).isEqualTo("testExample")
+    assertThat(function.results).hasSize(1)
+    assertThat(function.results["debug"]?.status).isEqualTo("pass")
   }
 
-  /**
-   * Processes all XML files in the given directory for aggregation.
-   *
-   * @param outputDir the directory containing XML report files
-   */
-  private fun processXmlForAggregation(outputDir: File) {
-    if (!outputDir.exists()) {
-      logger.warning("Test result output directory '${outputDir.absolutePath}' does not exist. Skipping aggregation for this directory.")
-      return
-    }
+  @Test
+  fun testGenerateReport_multipleVariantsAndStatuses() {
+    val xmlContent1 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="2" failures="1" errors="0" skipped="0" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testPass" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testFail" classname="com.example.app.MyClassTest" time="0.1">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report-1.xml", xmlContent1)
 
-    outputDir
-      .listFiles()
-      ?.filter {
-        it.isFile &&
-          // We only want files with the "xml" extension
-          it.extension == EXT_XML
-      }
-      ?.forEach { xmlFile ->
-        logger.verbose("Found XML file: ${xmlFile.name}")
-        try {
-          xmlFile.inputStream().use { inputStream -> processXmlStream(inputStream, xmlFile.name) }
-        } catch (e: IOException) {
-          logger.error(e, "Error reading file ${xmlFile.name}")
-        } catch (e: Exception) {
-          logger.error(e, "Error processing file ${xmlFile.name}")
-        }
-      }
+    val xmlContent2 =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyOtherTestSuite" tests="2" failures="0" errors="0" skipped="1" time="0.3">
+          <properties>
+              <property name="testedVariantName" value="release"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="otherTestSuite"/>
+          </properties>
+          <testcase name="testAnotherPass" classname="com.example.app.MyOtherClassTest" time="0.2"/>
+          <testcase name="testSkipped" classname="com.example.app.MyOtherClassTest" time="0.1">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "test-report-2.xml", xmlContent2)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2))
+    val report = aggregator.generateReport()
+
+    assertThat(report.variants).containsExactly("debug", "release").inOrder()
+    assertThat(report.modules).hasSize(1)
+
+    val appModule = report.modules.first()
+    assertThat(appModule.name).isEqualTo(":app")
+    assertThat(appModule.testSuites).hasSize(2)
+
+    val unitTestSuite = appModule.testSuites.findOrThrow({ it.name == "unitTest" }) { "unitTest not found" }
+    assertThat(unitTestSuite.packages).hasSize(1)
+    val unitTestPkg = unitTestSuite.packages.first()
+    assertThat(unitTestPkg.name).isEqualTo("com.example.app")
+    assertThat(unitTestPkg.classes).hasSize(1)
+    val unitTestClass = unitTestPkg.classes.first()
+    assertThat(unitTestClass.name).isEqualTo("MyClassTest")
+    assertThat(unitTestClass.functions).hasSize(2)
+    assertThat(unitTestClass.functions.find { it.name == "testPass" }?.results["debug"]?.status).isEqualTo("pass")
+    assertThat(unitTestClass.functions.find { it.name == "testFail" }?.results["debug"]?.status).isEqualTo("fail")
+    assertThat(unitTestClass.functions.find { it.name == "testFail" }?.results["debug"]?.stackTrace).contains("stacktrace here")
+
+    val otherTestSuite = appModule.testSuites.findOrThrow({ it.name == "otherTestSuite" }) { "otherTestSuite not found" }
+    assertThat(otherTestSuite.packages).hasSize(1)
+    val otherTestPkg = otherTestSuite.packages.first()
+    assertThat(otherTestPkg.name).isEqualTo("com.example.app")
+    assertThat(otherTestPkg.classes).hasSize(1)
+    val otherTestClass = otherTestPkg.classes.first()
+    assertThat(otherTestClass.name).isEqualTo("MyOtherClassTest")
+    assertThat(otherTestClass.functions).hasSize(2)
+    assertThat(otherTestClass.functions.find { it.name == "testAnotherPass" }?.results["release"]?.status).isEqualTo("pass")
+    assertThat(otherTestClass.functions.find { it.name == "testSkipped" }?.results["release"]?.status).isEqualTo("skipped")
   }
 
-  /**
-   * Parses a single XML stream and adds the results to the aggregated structure.
-   *
-   * @param inputStream the XML stream to parse
-   * @param streamName optional name for the stream (used for logging)
-   */
-  private fun processXmlStream(inputStream: InputStream, streamName: String? = null) {
-    var variantName: String? = null
-    val factory = XMLInputFactory.newInstance()
-    factory.setProperty(XMLInputFactory.IS_COALESCING, true)
-    // Security: Disable DTDs and external entities to prevent XXE attacks
-    try {
-      factory.setProperty(XMLInputFactory.SUPPORT_DTD, false)
-      factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
-    } catch (e: IllegalArgumentException) {
-      logger.error(e, "Could not set some security properties on XMLInputFactory: ${e.message}")
-    }
+  @Test
+  fun testWriteReport_outputFilesCreated() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    try {
-      inputStream.use { stream ->
-        val reader = factory.createXMLStreamReader(stream)
-        var modulePath: String? = null
-        var testSuiteName: String? = null
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    aggregator.writeReport(outputDir)
 
-        // Variables for the current test case being processed
-        var currentClassname: String? = null
-        var currentTestcaseName: String? = null
-        var currentStatus = STATUS_PASS // Default status
+    assertThat(File(outputDir, "data.js").exists()).isTrue()
+    assertThat(File(outputDir, "index.html").exists()).isTrue()
+    assertThat(File(outputDir, "script.js").exists()).isTrue()
+    assertThat(File(outputDir, "styles.css").exists()).isTrue()
 
-        // Buffer to accumulate text content (stack trace)
-        var failureBuffer: StringBuilder? = null
-
-        while (reader.hasNext()) {
-          when (reader.next()) {
-            XMLStreamConstants.START_ELEMENT -> {
-              when (reader.localName) {
-                TAG_PROPERTY -> {
-                  val name = reader.getAttributeValue(null, ATTR_NAME)
-                  val value = reader.getAttributeValue(null, ATTR_VALUE)
-                  if (name == KEY_MODULE_PATH) modulePath = value
-                  if (name == KEY_TEST_SUITE_NAME) testSuiteName = value
-                  if (name == KEY_TESTED_VARIANT_NAME) {
-                    rootReportBuilder.addVariant(value)
-                    variantName = value
-                  }
-                }
-                TAG_TESTCASE -> {
-                  currentClassname = reader.getAttributeValue(null, ATTR_CLASSNAME)
-                  currentTestcaseName = reader.getAttributeValue(null, ATTR_NAME)
-                  currentStatus = STATUS_PASS // Reset status for this new test
-                  failureBuffer = null // Reset failure buffer
-                }
-                TAG_SKIPPED -> {
-                  currentStatus = STATUS_SKIPPED
-                }
-                TAG_FAILURE,
-                TAG_ERROR -> {
-                  currentStatus = STATUS_FAIL
-                  // Initialize buffer to capture stack trace text
-                  failureBuffer = StringBuilder()
-                }
-              }
-            }
-            XMLStreamConstants.CHARACTERS -> {
-              // If we are inside a failure/error tag, append text to buffer
-              if (failureBuffer != null) {
-                failureBuffer.append(reader.text)
-              }
-            }
-            XMLStreamConstants.END_ELEMENT -> {
-              if (reader.localName == TAG_TESTCASE) {
-                if (
-                  modulePath != null &&
-                    testSuiteName != null &&
-                    currentClassname != null &&
-                    currentTestcaseName != null &&
-                    variantName != null
-                ) {
-
-                  // Extract and clean stack trace
-                  val stackTrace = failureBuffer?.toString()?.trim()?.takeIf { it.isNotEmpty() }
-
-                  addTestResult(
-                    modulePath,
-                    testSuiteName,
-                    currentClassname,
-                    currentTestcaseName,
-                    variantName,
-                    TestResults(currentStatus, stackTrace),
-                  )
-                }
-                // Clear testcase-specific data
-                currentClassname = null
-                currentTestcaseName = null
-                failureBuffer = null
-              }
-            }
-          }
-        }
-        reader.close()
-      }
-    } catch (e: XMLStreamException) {
-      val location = streamName ?: "stream"
-      logger.error(e, "Error parsing XML for variant '$variantName' in $location")
-    } catch (e: Exception) {
-      val location = streamName ?: "stream"
-      logger.error(e, "An unexpected error occurred for variant '$variantName' in $location")
-    }
+    val dataJsContent = File(outputDir, "data.js").readText()
+    assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = {")
+    assertThat(dataJsContent).contains("debug")
+    assertThat(dataJsContent).contains("testExample")
   }
 
-  /** Converts the internal aggregated structure into the final [RootReport] data model, ready for JSON serialization. */
-  private fun getReport(): RootReport {
-    return rootReportBuilder.build()
+  @Test
+  fun testProcessXmlStream_failureStackTrace() {
+    val xmlContent =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.FailureSuite" tests="1" failures="1" errors="0" skipped="0" time="0.5">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":lib"/>
+              <property name="testSuiteName" value="failedUnitTest"/>
+          </properties>
+          <testcase name="testFailure" classname="com.example.app.MyFailedClassTest" time="0.5">
+              <failure message="Expected exception: java.lang.RuntimeException">
+                  java.lang.RuntimeException: This is a test exception
+                  at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)
+              </failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "test-report.xml", xmlContent)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    val report = aggregator.generateReport()
+
+    val module = report.modules.first()
+    val testSuite = module.testSuites.first()
+    val pkg = testSuite.packages.first()
+    val clazz = pkg.classes.first()
+    val function = clazz.functions.first()
+
+    assertThat(function.name).isEqualTo("testFailure")
+    assertThat(function.results["debug"]?.status).isEqualTo("fail")
+    assertThat(function.results["debug"]?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
+    assertThat(function.results["debug"]?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
   }
 
-  private class RootReportBuilder {
-    private val variants = HashSet<String>()
-    private val moduleBuilders = mutableMapOf<String, ModuleBuilder>()
+  @Test
+  fun testProcessXmlForAggregation_nonExistentDirectory() {
+    val nonExistentDir = File(temporaryFolder.root, "nonExistent")
 
-    fun addVariant(variant: String) {
-      variants.add(variant)
-    }
-
-    fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
-
-    fun build() = RootReport(variants = variants.sorted(), modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name })
+    val aggregator = XMLReportAggregator(files = listOf(nonExistentDir))
+    // This should not throw an exception, but rather log a warning
+    val report = aggregator.generateReport()
+    assertThat(report.modules).isEmpty()
+    assertThat(report.variants).isEmpty()
   }
 
-  private class ModuleBuilder(val name: String) {
-    val testSuites = mutableMapOf<String, TestSuiteBuilder>()
+  @Test
+  fun testGenerateReport_variantSpecificTests() {
+    val stagingDebugXml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.mylibrary.AndroidTest" tests="2" failures="0" errors="0" skipped="0" time="0.5">
+          <properties>
+              <property name="testedVariantName" value="stagingDebug"/>
+              <property name="modulePath" value=":mylibrary"/>
+              <property name="testSuiteName" value="AndroidTest"/>
+          </properties>
+          <testcase name="useAppContext" classname="com.example.mylibrary.ExampleInstrumentedTest" time="0.3"/>
+          <testcase name="useAppContext" classname="com.example.mylibrary.StagingInstrumentedTest" time="0.2"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "staging-report.xml", stagingDebugXml)
 
-    fun getOrAddTestSuite(name: String) = testSuites.getOrPut(name) { TestSuiteBuilder(name) }
+    val trialDebugXml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.mylibrary.AndroidTest" tests="1" failures="0" errors="0" skipped="0" time="0.4">
+          <properties>
+              <property name="testedVariantName" value="trialDebug"/>
+              <property name="modulePath" value=":mylibrary"/>
+              <property name="testSuiteName" value="AndroidTest"/>
+          </properties>
+          <testcase name="useAppContext" classname="com.example.mylibrary.ExampleInstrumentedTest" time="0.4"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir2, "trial-report.xml", trialDebugXml)
 
-    fun build() = Module(name = name, testSuites = testSuites.values.map { it.build() }.sortedBy { it.name })
-  }
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2))
+    val report = aggregator.generateReport()
 
-  private class TestSuiteBuilder(val name: String) {
-    val packages = mutableMapOf<String, PackageBuilder>()
+    assertThat(report.variants).containsExactly("stagingDebug", "trialDebug").inOrder()
+    val myLibraryModule = report.modules.findOrThrow({ it.name == ":mylibrary" }) { ":mylibrary module not found" }
+    val androidTestSuite = myLibraryModule.testSuites.findOrThrow({ it.name == "AndroidTest" }) { "AndroidTest suite not found" }
+    val pkg = androidTestSuite.packages.findOrThrow({ it.name == "com.example.mylibrary" }) { "com.example.mylibrary package not found" }
 
-    fun getOrAddPackage(name: String) = packages.getOrPut(name) { PackageBuilder(name) }
+    // Verify ExampleInstrumentedTest (runs on both variants)
+    val exampleInstrumentedTest = pkg.classes.findOrThrow({ it.name == "ExampleInstrumentedTest" }) { "ExampleInstrumentedTest not found" }
+    val exampleFunc =
+      exampleInstrumentedTest.functions.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
+    assertThat(exampleFunc.results).hasSize(2)
+    assertThat(exampleFunc.results["stagingDebug"]?.status).isEqualTo("pass")
+    assertThat(exampleFunc.results["trialDebug"]?.status).isEqualTo("pass")
 
-    fun build() = TestSuite(name = name, packages = packages.values.map { it.build() }.sortedBy { it.name })
-  }
-
-  private class PackageBuilder(val name: String) {
-    val classes = mutableMapOf<String, ClassBuilder>()
-
-    fun getOrAddClass(name: String) = classes.getOrPut(name) { ClassBuilder(name) }
-
-    fun build() = Package(name = name, classes = classes.values.map { it.build() }.sortedBy { it.name })
-  }
-
-  private class ClassBuilder(val name: String) {
-    val functions = mutableMapOf<String, FunctionBuilder>()
-
-    fun getOrAddFunction(name: String) = functions.getOrPut(name) { FunctionBuilder(name) }
-
-    fun build() = ClassType(name = name, functions = functions.values.map { it.build() }.sortedBy { it.name })
-  }
-
-  private class FunctionBuilder(val name: String) {
-    val results = mutableMapOf<String, TestResults>()
-
-    fun addResult(variant: String, result: TestResults) {
-      results[variant] = result
-    }
-
-    fun build() = Function(name = name, results = results.toMap())
-  }
-
-  /** Safely adds a test result to the nested structure. */
-  private fun addTestResult(
-    modulePath: String,
-    testSuiteName: String,
-    classname: String,
-    testcaseName: String,
-    variantName: String,
-    result: TestResults,
-  ) {
-    try {
-      val packageName = classname.substringBeforeLast('.', "")
-      val className = classname.substringAfterLast('.')
-
-      rootReportBuilder
-        .getOrAddModule(modulePath)
-        .getOrAddTestSuite(testSuiteName)
-        .getOrAddPackage(packageName)
-        .getOrAddClass(className)
-        .getOrAddFunction(testcaseName)
-        .addResult(variantName, result)
-    } catch (e: Exception) {
-      logger.error(e, "Error processing test case: $classname.$testcaseName")
-    }
+    // Verify StagingInstrumentedTest (runs only on stagingDebug)
+    val stagingInstrumentedTest = pkg.classes.findOrThrow({ it.name == "StagingInstrumentedTest" }) { "StagingInstrumentedTest not found" }
+    val stagingFunc =
+      stagingInstrumentedTest.functions.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
+    assertThat(stagingFunc.results).hasSize(1)
+    assertThat(stagingFunc.results).containsKey("stagingDebug")
+    assertThat(stagingFunc.results["stagingDebug"]?.status).isEqualTo("pass")
+    assertThat(stagingFunc.results).doesNotContainKey("trialDebug")
   }
 }

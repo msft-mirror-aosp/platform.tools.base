@@ -45,6 +45,8 @@ import com.android.build.gradle.internal.dependency.FilterShrinkerRulesTransform
 import com.android.build.gradle.internal.dependency.GenericTransformParameters
 import com.android.build.gradle.internal.dependency.IdentityTransform
 import com.android.build.gradle.internal.dependency.JacocoTransform
+import com.android.build.gradle.internal.dependency.JavaResCompressionFromExplodedAarTransform
+import com.android.build.gradle.internal.dependency.JavaResCompressionTransform
 import com.android.build.gradle.internal.dependency.JetifyTransform
 import com.android.build.gradle.internal.dependency.LibrarySymbolTableTransform
 import com.android.build.gradle.internal.dependency.MockableJarTransform
@@ -63,6 +65,7 @@ import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.AarOrJarTypeToConsume
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType
 import com.android.build.gradle.internal.services.ProjectServices
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.factory.BootClasspathConfig
@@ -184,9 +187,10 @@ class DependencyConfigurator(private val project: Project, private val projectSe
 
     val namespacedSharedLibSupport = projectOptions[BooleanOption.CONSUME_DEPENDENCIES_AS_SHARED_LIBRARIES]
     val sharedLibSupport = projectOptions[BooleanOption.SUPPORT_OEM_TOKEN_LIBRARIES]
+    val javaResOptimizations = projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]
 
     val libraryCategory = project.objects.named(Category::class.java, Category.LIBRARY)
-    for (transformTarget in AarTransform.getTransformTargets(aarOrJarTypeToConsume, sharedLibSupport)) {
+    for (transformTarget in AarTransform.getTransformTargets(aarOrJarTypeToConsume, sharedLibSupport, javaResOptimizations)) {
       dependencies.registerTransform(AarTransform::class.java) { spec ->
         spec.from.attribute(ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifacts.ArtifactType.EXPLODED_AAR.type)
         spec.from.attribute(Category.CATEGORY_ATTRIBUTE, libraryCategory)
@@ -254,10 +258,14 @@ class DependencyConfigurator(private val project: Project, private val projectSe
     )
     // Transform to go from external jars to CLASSES and JAVA_RES artifacts. This returns the
     // same exact file but with different types, since a jar file can contain both.
-    for (classesOrResources in arrayOf(AndroidArtifacts.ArtifactType.CLASSES_JAR, AndroidArtifacts.ArtifactType.JAVA_RES)) {
-      registerTransform(IdentityTransform::class.java, aarOrJarTypeToConsume.jar, classesOrResources)
-    }
+    registerTransform(IdentityTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.CLASSES_JAR)
     registerTransform(ExtractJniTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JNI)
+    if (javaResOptimizations) {
+      registerTransform(JavaResCompressionTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JAVA_RES)
+      registerTransform(JavaResCompressionFromExplodedAarTransform::class.java, ArtifactType.EXPLODED_AAR, ArtifactType.JAVA_RES)
+    } else {
+      registerTransform(IdentityTransform::class.java, aarOrJarTypeToConsume.jar, AndroidArtifacts.ArtifactType.JAVA_RES)
+    }
     // The Kotlin Kapt plugin should query for PROCESSED_JAR, but it is currently querying for
     // JAR, so we need to have the workaround below to make it get PROCESSED_JAR. See
     // http://issuetracker.google.com/111009645.

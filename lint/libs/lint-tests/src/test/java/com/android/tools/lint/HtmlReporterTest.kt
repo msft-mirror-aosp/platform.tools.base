@@ -206,9 +206,9 @@ class HtmlReporterTest {
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Lint Report</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
- <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.blue-indigo.min.css" />
+ <link rel="stylesheet" href="https://www.gstatic.com/external_hosted/material_design_lite/mdl_css-blue-indigo-bundle.css" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
-<script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
+<script defer src="https://www.gstatic.com/external_hosted/material_design_lite/mdl_all_js_compiled.js"></script>
 <style>
 ${HtmlReporter.cssStyles}</style>
 <script language="javascript" type="text/javascript">
@@ -735,9 +735,9 @@ For more information, see <a href="https://developer.android.com/studio/write/li
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Lint Report</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
- <link rel="stylesheet" href="https://code.getmdl.io/1.2.1/material.blue-indigo.min.css" />
+ <link rel="stylesheet" href="https://www.gstatic.com/external_hosted/material_design_lite/mdl_css-blue-indigo-bundle.css" />
 <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto:300,400,500,700" type="text/css">
-<script defer src="https://code.getmdl.io/1.2.0/material.min.js"></script>
+<script defer src="https://www.gstatic.com/external_hosted/material_design_lite/mdl_all_js_compiled.js"></script>
 <style>
 ${HtmlReporter.cssStyles}</style>
 <script language="javascript" type="text/javascript">

@@ -19,6 +19,7 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /**
  * Extension for the Android Library Gradle Plugin.
@@ -30,7 +31,7 @@ import org.gradle.declarative.dsl.model.annotations.Configuring
 interface LibraryExtension : CommonExtension, TestedExtension {
 
   /** Aidl files to package in the aar. */
-  @get:Incubating val aidlPackagedList: MutableCollection<String>?
+  @get:HiddenInDefinition @get:Incubating val aidlPackagedList: MutableCollection<String>?
 
   /**
    * Specifies options for the Android Asset Packaging Tool (AAPT).
@@ -83,7 +84,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
   fun androidResources(action: LibraryAndroidResources.() -> Unit)
 
   /** A list of build features that can be enabled or disabled on the Android Project. */
-  override val buildFeatures: LibraryBuildFeatures
+  @get:HiddenInDefinition override val buildFeatures: LibraryBuildFeatures
 
   /** A list of build features that can be enabled or disabled on the Android Project. */
   fun buildFeatures(action: LibraryBuildFeatures.() -> Unit)
@@ -99,14 +100,14 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    *
    * @see BuildType
    */
-  override val buildTypes: NamedDomainObjectContainer<out LibraryBuildType>
+  @get:HiddenInDefinition override val buildTypes: NamedDomainObjectContainer<out LibraryBuildType>
 
   /**
    * Encapsulates all build type configurations for this project.
    *
    * For more information about the properties you can configure in this block, see [LibraryBuildType]
    */
-  fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit)
+  @HiddenInDefinition fun buildTypes(action: NamedDomainObjectContainer<LibraryBuildType>.() -> Unit)
 
   /**
    * Shortcut extension method to allow easy access to the predefined `debug` [LibraryBuildType]
@@ -274,7 +275,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  override val sourceSets: NamedDomainObjectContainer<out AndroidLibrarySourceSet>
+  @get:HiddenInDefinition override val sourceSets: NamedDomainObjectContainer<out AndroidLibrarySourceSet>
 
   /**
    * Encapsulates source set configurations for all variants.
@@ -282,14 +283,14 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    * Note that the Android plugin uses its own implementation of source sets. For more information about the properties you can configure in
    * this block, see [AndroidSourceSet].
    */
-  fun sourceSets(action: NamedDomainObjectContainer<AndroidLibrarySourceSet>.() -> Unit)
+  @HiddenInDefinition fun sourceSets(action: NamedDomainObjectContainer<AndroidLibrarySourceSet>.() -> Unit)
 
   /**
    * Specifies options for the lint tool.
    *
    * For more information about the properties you can configure in this block, see [Lint].
    */
-  override val lint: Lint
+  @get:HiddenInDefinition override val lint: Lint
 
   /**
    * Specifies options for the lint tool.
@@ -380,14 +381,14 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    *
    * @see [LibraryProductFlavor]
    */
-  override val productFlavors: NamedDomainObjectContainer<out LibraryProductFlavor>
+  @get:HiddenInDefinition override val productFlavors: NamedDomainObjectContainer<out LibraryProductFlavor>
 
   /**
    * Encapsulates all product flavors configurations for this project.
    *
    * For more information about the properties you can configure in this block, see [ProductFlavor]
    */
-  fun productFlavors(action: NamedDomainObjectContainer<LibraryProductFlavor>.() -> Unit)
+  @HiddenInDefinition fun productFlavors(action: NamedDomainObjectContainer<LibraryProductFlavor>.() -> Unit)
 
   /**
    * Specifies defaults for variant properties that the Android plugin applies to all build variants.
@@ -397,7 +398,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    *
    * For more information about the properties you can configure in this block, see [LibraryDefaultConfig].
    */
-  override val defaultConfig: LibraryDefaultConfig
+  @get:HiddenInDefinition override val defaultConfig: LibraryDefaultConfig
 
   /**
    * Specifies defaults for variant properties that the Android plugin applies to all build variants.
@@ -421,14 +422,14 @@ interface LibraryExtension : CommonExtension, TestedExtension {
    *
    * @see [ApkSigningConfig]
    */
-  override val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
+  @get:HiddenInDefinition override val signingConfigs: NamedDomainObjectContainer<out ApkSigningConfig>
 
   /**
    * Encapsulates signing configurations that you can apply to [BuildType] and [ProductFlavor] configurations.
    *
    * For more information about the properties you can configure in this block, see [ApkSigningConfig].
    */
-  fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
+  @HiddenInDefinition fun signingConfigs(action: NamedDomainObjectContainer<out ApkSigningConfig>.() -> Unit)
 
   /**
    * Specifies options for external native build using [CMake](https://cmake.org/) or
@@ -463,7 +464,7 @@ interface LibraryExtension : CommonExtension, TestedExtension {
   fun externalNativeBuild(action: ExternalNativeBuild.() -> Unit)
 
   /** container of Prefab options */
-  @get:Incubating val prefab: NamedDomainObjectContainer<Prefab>
+  @get:HiddenInDefinition @get:Incubating val prefab: NamedDomainObjectContainer<Prefab>
 
   /**
    * Customizes publishing build variant artifacts from library module to a Maven repository.

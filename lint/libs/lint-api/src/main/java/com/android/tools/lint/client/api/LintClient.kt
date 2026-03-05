@@ -390,6 +390,16 @@ abstract class LintClient {
   }
 
   /**
+   * Returns the list of source folders for aarKeepRules R8 files
+   *
+   * @param project the project to look up .keep file locations for
+   * @return a list of source folders to search for .keep files
+   */
+  open fun getAarKeepRulesSourceFolders(project: Project): List<File> {
+    return emptyList()
+  }
+
+  /**
    * Returns the list of Java libraries
    *
    * @param project the project to look up jar dependencies for

@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /** Shared properties between DSL objects [ProductFlavor] and [DefaultConfig] */
@@ -115,6 +116,7 @@ interface BaseFlavor : VariantDimension {
 
   @Deprecated("Replaced by testInstrumentationRunnerArguments property") fun testInstrumentationRunnerArgument(key: String, value: String)
 
+  @HiddenInDefinition
   @Deprecated("Replaced by testInstrumentationRunnerArguments property")
   fun setTestInstrumentationRunnerArguments(testInstrumentationRunnerArguments: MutableMap<String, String>): Any?
 
@@ -123,12 +125,12 @@ interface BaseFlavor : VariantDimension {
   /** See [instrumentation](http://developer.android.com/guide/topics/manifest/instrumentation-element.html). */
   var testHandleProfiling: Boolean?
 
-  @Deprecated("Replaced by testFunctionalTest property") fun setTestHandleProfiling(testHandleProfiling: Boolean): Any?
+  @HiddenInDefinition @Deprecated("Replaced by testFunctionalTest property") fun setTestHandleProfiling(testHandleProfiling: Boolean): Any?
 
   /** See [instrumentation](http://developer.android.com/guide/topics/manifest/instrumentation-element.html). */
   var testFunctionalTest: Boolean?
 
-  @Deprecated("Replaced by testFunctionalTest property") fun setTestFunctionalTest(testFunctionalTest: Boolean): Any?
+  @HiddenInDefinition @Deprecated("Replaced by testFunctionalTest property") fun setTestFunctionalTest(testFunctionalTest: Boolean): Any?
 
   /**
    * Specifies a list of [alternative resources](https://d.android.com/guide/topics/resources/providing-resources.html#AlternativeResources)

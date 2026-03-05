@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.manifmerger;
+package com.android.build.gradle.internal.dsl
 
-/**
- * List of other http://schemas.android.com/tools namespace instructions that can be present in a
- * manifest file.
- */
-public enum OtherOperationType {
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.variant.AndroidApplicationModuleModel
+import com.android.build.gradle.internal.DependenciesExtension
+import org.gradle.api.internal.plugins.Definition
 
-    // used to direct lint
-    ignore,
-
-    // used to direct lint
-    targetapi // deliberately lowercase because we do lowercase before valueOf call
-
+interface DeclarativeApplicationExtension : ApplicationExtension, Definition<AndroidApplicationModuleModel> {
+  fun dependenciesDcl(action: DependenciesExtension.() -> Unit)
 }

@@ -28,15 +28,12 @@ import com.android.build.gradle.internal.cxx.logging.logStructured
 import com.android.build.gradle.internal.cxx.model.CxxAbiModel
 import com.android.build.gradle.internal.cxx.model.logsFolder
 import com.android.build.gradle.internal.cxx.timing.time
-import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.ide.common.process.ProcessException
-import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.utils.cxx.os.bat
 import com.android.utils.cxx.os.quoteCommandLineArgument
-import com.android.utils.cxx.os.quoteExecutablePath
 import com.google.common.annotations.VisibleForTesting
 import java.io.File
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /** Describes the different types of process that can be spawned by the CXX build system. */
 enum class ExecuteProcessType(val logFilePrefix: String, val outputOptions: NativeBuildOutputOptions) {
@@ -73,7 +70,7 @@ data class ExecuteProcessResult(val stdout: File, val stderr: File)
 fun CxxAbiModel.executeProcess(
   processType: ExecuteProcessType,
   command: ExecuteProcessCommand,
-  ops: ExecOperations,
+  providers: ProviderFactory,
   logFileSuffix: String? = null,
   processStderr: ((File) -> Unit)? = null,
   processStdout: ((File) -> Unit)? = null,
@@ -95,7 +92,7 @@ fun CxxAbiModel.executeProcess(
 
   time("exec-${processType.logFilePrefix}") {
     infoln("$command")
-    final.execute(ops)
+    final.execute(providers)
   }
 
   // Post-process stdout if requested
@@ -210,7 +207,7 @@ data class ExecuteProcessCommand(
 
 /** Execute the command specified by this [ExecuteProcessCommand] */
 @VisibleForTesting
-fun ExecuteProcessCommand.execute(ops: ExecOperations) {
+fun ExecuteProcessCommand.execute(providers: ProviderFactory) {
   try {
     // Write the command to a file.
     commandFile.parentFile.mkdirs()
@@ -222,40 +219,31 @@ fun ExecuteProcessCommand.execute(ops: ExecOperations) {
     stderr.delete()
     stacktrace.delete()
 
-    // Execute the command file that was written
-    val process =
-      if (useScript) {
-        ProcessInfoBuilder().setExecutable(quoteExecutablePath(commandFile.absolutePath)).addEnvironments(environment).createProcess()
-      } else {
-        ProcessInfoBuilder()
-          .setExecutable(quoteExecutablePath(executable.absolutePath))
-          .addArgs(args)
-          .addEnvironments(environment)
-          .createProcess()
-      }
+    // Execute the process via ValueSource
+    val exitValue =
+      providers
+        .of(ExecuteProcessValueSource::class.java) { spec ->
+          spec.parameters.useScript.set(useScript)
+          spec.parameters.executable.set(executable.absolutePath)
+          spec.parameters.args.set(args)
+          spec.parameters.environment.set(environment)
+          spec.parameters.commandFile.set(commandFile.absolutePath)
+          spec.parameters.stderrFile.set(stderr)
+          spec.parameters.stdoutFile.set(stdout)
+          spec.parameters.logStderr.set(logStderr)
+          spec.parameters.logStdout.set(logStdout)
+          spec.parameters.logFullStdout.set(verbose)
+        }
+        .get()
 
-    // Execute the process
-    val result =
-      GradleProcessExecutor(ops::exec)
-        .execute(
-          process,
-          DefaultProcessOutputHandler(
-            stderrFile = stderr,
-            stdoutFile = stdout,
-            logPrefix = "",
-            logStderr = logStderr,
-            logStdout = logStdout,
-            logFullStdout = verbose,
-          ),
-        )
+    if (exitValue != 0) {
+      throw ProcessException(processErrorMessage)
+    }
 
     // Log the result
-    logResult(result.exitValue)
+    logResult(exitValue)
 
-    infoln("Received process result: ${result.exitValue}")
-
-    // Check result and maybe throw
-    result.rethrowFailure().assertNormalExitValue()
+    infoln("Received process result: $exitValue")
   } catch (e: Throwable) {
     // write the stack trace to the stacktrace.txt file
     try {

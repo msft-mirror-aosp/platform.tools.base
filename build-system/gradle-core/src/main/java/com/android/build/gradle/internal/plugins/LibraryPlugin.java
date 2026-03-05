@@ -36,11 +36,14 @@ import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
+import com.android.build.gradle.internal.dsl.LibraryExtensionWrapper;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.internal.dsl.decorator.DeclarativeDslDecorator;
 import com.android.build.gradle.internal.scope.DelayedActionsExecutor;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
@@ -62,6 +65,9 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
+import org.gradle.api.internal.plugins.BindsProjectType;
+import org.gradle.api.internal.plugins.ProjectTypeBinding;
+import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -72,6 +78,7 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 /** Gradle plugin class for 'library' projects. */
+@BindsProjectType(LibraryPlugin.Binding.class)
 public class LibraryPlugin
         extends BasePlugin<
                 LibraryExtension,
@@ -81,15 +88,22 @@ public class LibraryPlugin
                 LibraryCreationConfig,
                 LibraryVariant> {
 
-    public com.android.build.gradle.LibraryExtensionInternal getAndroidLibrary() {
-        try {
-            return ((com.android.build.gradle.LibraryExtensionInternal)
-                    Objects.requireNonNull(project).getExtensions().getByName("android"));
-        } catch (ClassCastException ex) {
-            throw new RuntimeException(
-                    "To use declarative gradle, you need to set"
-                            + " android.experimental.declarative=true in properties.gradle file",
-                    ex);
+    static class Binding implements ProjectTypeBinding {
+        public void bind(ProjectTypeBindingBuilder builder) {
+            Class<? extends DeclarativeLibraryExtension> wrapperClass =
+                    new DeclarativeDslDecorator().decorate(LibraryExtensionWrapper.class);
+            builder.bindProjectType(
+                            "androidLibrary",
+                            DeclarativeLibraryExtension.class,
+                            (context, definition, buildModel) -> {
+                                LibraryExtensionInternal extension =
+                                        (LibraryExtensionInternal)
+                                                Objects.requireNonNull(context.getProject())
+                                                        .getExtensions()
+                                                        .getByName("android");
+                                ((LibraryExtensionWrapper) definition).setDelegate(extension);
+                            })
+                    .withUnsafeDefinitionImplementationType(wrapperClass);
         }
     }
 

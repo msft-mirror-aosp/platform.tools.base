@@ -35,8 +35,8 @@ import com.android.build.gradle.tasks.cmakeMakefileChecks
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule
 import java.io.File
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 
 /**
  * Build with CMake and use [adaptNinjaToCxxBuild] to construct build system metadata. This should work with any version of CMake that can
@@ -49,9 +49,9 @@ internal class CMakeNinjaParserMetadataGenerator(abi: CxxAbiModel, @get:Internal
     cmakeMakefileChecks(abi.variant)
   }
 
-  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+  override fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel) {
     // Execute CMake
-    abi.executeProcess(processType = CONFIGURE_PROCESS, command = getProcessBuilder(abi), ops = ops)
+    abi.executeProcess(processType = CONFIGURE_PROCESS, command = getProcessBuilder(abi), providers = providers)
 
     // Build expected metadata
     val config =

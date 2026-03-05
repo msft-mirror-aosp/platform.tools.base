@@ -38,7 +38,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
-import org.mockito.Mockito
 import org.mockito.junit.MockitoJUnit
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
@@ -347,7 +346,4 @@ class AvdManagerTest {
           .toByteArray(),
       )
   }
-
-  // to fix "cannot be null" issues with argument matchers
-  private fun <T> any(type: Class<T>): T = Mockito.any(type)
 }

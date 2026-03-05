@@ -151,6 +151,8 @@ def studio_linux(build_env: bazel.BuildEnv) -> None:
     flags.append('--build_metadata=cinder_pipelines=component-owners')
 
   if build_type == studio.BuildType.PRESUBMIT:
+    # Reset artifacts, to avoid copying stale outputs from past builds.
+    reset_artifacts(build_env)
     result = presubmit.find_test_targets(
         build_env,
         _BASE_TARGETS,
@@ -244,6 +246,21 @@ def copy_agp_supported_versions(build_env: bazel.BuildEnv) -> None:
       workspace_path / 'tools/base/build-system/supported-versions.properties',
       dist_path / 'agp-supported-versions.properties',
   )
+
+
+def reset_artifacts(build_env: bazel.BuildEnv) -> None:
+  """Resets the artifacts directory.
+
+  This deletes artifacts in bazel-bin, to avoid accidentally copying stale
+  outputs from previous builds. Presubmit might not have built the output,
+  leading to the artifact being from a past build.
+
+  Args:
+    build_env: The build environment to use.
+  """
+  artifacts = _ARTIFACTS if build_env.is_studio_only_release else _ARTIFACTS + _AGP_ARTIFACTS
+  bazel_bin_outputs = [artifact[0] for artifact in artifacts]
+  studio.rm_bazel_bin(build_env, bazel_bin_outputs)
 
 
 def copy_artifacts(

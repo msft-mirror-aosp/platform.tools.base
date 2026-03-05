@@ -48,7 +48,7 @@ service Adb {
     // to establish a connection to this emulator.
     //
     // The following gRPC error codes can be returned:
-    // -  unimplemented (code 14) if the AdbService is not availab.e
+    // -  unimplemented (code 14) if the AdbService is not available.
     // -  aborted (code 10) if:
     //     - The private key file cannot be found.
     //     - The private key file cannot be read.
@@ -56,6 +56,7 @@ service Adb {
 
 
     // Forwards the incoming bytes to the running adb deamon.
+    // This RPC is not implemented and will return an unimplemented error.
     rpc forwardAdb(AdbPacket) returns(AdbPacket);
 }
 

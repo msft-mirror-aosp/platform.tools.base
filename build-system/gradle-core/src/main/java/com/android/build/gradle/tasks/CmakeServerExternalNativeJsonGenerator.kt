@@ -65,7 +65,7 @@ import java.io.File
 import java.io.IOException
 import java.io.PrintWriter
 import java.nio.charset.StandardCharsets
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /**
  * This strategy uses the Vanilla-CMake that supports Cmake server version 1.0 to configure the project and generate the android build JSON.
@@ -80,7 +80,7 @@ internal class CmakeServerExternalNativeJsonGenerator(abi: CxxAbiModel, variantB
   private val cmake
     get() = abi.variant.module.cmake!!
 
-  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+  override fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel) {
     executeProcessAndGetOutput(abi)
   }
 

@@ -164,7 +164,7 @@ class ${mainFragment} : BrowseSupportFragment() {
 
                 val bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
                                                 activity!!,
-                                                (itemViewHolder.view as ImageCardView).mainImageView,
+                                                (itemViewHolder.view as ImageCardView).mainImageView!!,
                                                 ${detailsActivity}.SHARED_ELEMENT_NAME)
                                         .toBundle()
                 startActivity(intent, bundle)
@@ -231,7 +231,7 @@ class ${mainFragment} : BrowseSupportFragment() {
             return Presenter.ViewHolder(view)
         }
 
-        override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any) {
+        override fun onBindViewHolder(viewHolder: Presenter.ViewHolder, item: Any?) {
             (viewHolder.view as TextView).text = item as String
         }
 

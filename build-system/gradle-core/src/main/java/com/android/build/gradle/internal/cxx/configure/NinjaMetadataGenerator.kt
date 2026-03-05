@@ -45,8 +45,8 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import com.google.wireless.android.sdk.stats.GradleNativeAndroidModule.NativeBuildSystemType.NINJA
 import java.io.File
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.Internal
-import org.gradle.process.ExecOperations
 
 /** This is the "custom" metadata generator. It consumes build.ninja produced by a user script or program. */
 internal class NinjaMetadataGenerator(abi: CxxAbiModel, @get:Internal override val variantBuilder: GradleBuildVariant.Builder?) :
@@ -58,7 +58,7 @@ internal class NinjaMetadataGenerator(abi: CxxAbiModel, @get:Internal override v
     variantBuilder?.nativeBuildSystemType = NINJA
   }
 
-  override fun executeProcess(ops: ExecOperations, abi: CxxAbiModel) {
+  override fun executeProcess(providers: ProviderFactory, abi: CxxAbiModel) {
 
     if (!abi.configurationArguments.any { it.contains(abi.name) }) {
       errorln(
@@ -86,7 +86,7 @@ internal class NinjaMetadataGenerator(abi: CxxAbiModel, @get:Internal override v
         abi.executeProcess(
           processType = ExecuteProcessType.CONFIGURE_PROCESS,
           command = getProcessBuilder(abi),
-          ops = ops,
+          providers = providers,
           processStderr = ::reportErrors,
           processStdout = ::reportErrors,
         )

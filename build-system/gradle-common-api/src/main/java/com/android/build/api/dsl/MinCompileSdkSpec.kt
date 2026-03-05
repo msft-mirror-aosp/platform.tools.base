@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
+
 /**
  * Specifies the minimum compileSdk this Gradle project imposes on projects that depend on it, both within the same build and when
  * publishing AARs.
@@ -26,17 +28,17 @@ package com.android.build.api.dsl
  */
 interface MinCompileSdkSpec {
   /** The min compile SDK version set for this project. */
-  var version: CompileSdkVersion?
+  @get:HiddenInDefinition @set:HiddenInDefinition var version: CompileSdkVersion?
 
   /**
    * To set min compile SDK version with a released API level, use this function to compute the [CompileSdkVersion] and assign it to
    * [MinCompileSdkSpec.version] property. You can also set minor API level and SDK extension level via [CompileSdkReleaseSpec] block.
    */
-  fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion
+  @HiddenInDefinition fun release(version: Int, action: (CompileSdkReleaseSpec.() -> Unit)): CompileSdkVersion
 
   /**
    * To set min compile SDK version with a released API level, use this function to compute the [CompileSdkVersion] and assign it to
    * [MinCompileSdkSpec.version] property.
    */
-  fun release(version: Int): CompileSdkVersion
+  @HiddenInDefinition fun release(version: Int): CompileSdkVersion
 }

@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
+
 /**
  * DSL object to configure the target SDK.
  *
@@ -45,22 +47,23 @@ package com.android.build.api.dsl
 interface TargetSdkSpec {
 
   /** The target SDK version. */
-  var version: TargetSdkVersion?
+  @get:HiddenInDefinition @set:HiddenInDefinition var version: TargetSdkVersion?
 
   /**
    * To set target SDK version with a released API level, use this function to compute the [TargetSdkVersion] and assign it to
    * [TargetSdkSpec.version] property.
    */
-  fun release(version: Int): TargetSdkVersion
+  @HiddenInDefinition fun release(version: Int): TargetSdkVersion
 
   /**
    * To set target SDK version with a preview API level, use this function to compute the [TargetSdkVersion] and assign it to
    * [TargetSdkSpec.version] property.
    */
-  fun preview(codeName: String): TargetSdkVersion
+  @HiddenInDefinition fun preview(codeName: String): TargetSdkVersion
 }
 
 /** DSL object to represent the target SDK. */
+@HiddenInDefinition
 interface TargetSdkVersion {
 
   /** The released API level for the target SDK. */

@@ -31,7 +31,7 @@ class UnitTestingAssembleTest {
   fun testAssembleTasks() {
     // android resources related tasks should not run but the rest should.
     var result = project.executor().run("assembleUnitTest")
-    Truth.assertThat(result.didWorkTasks).contains("compileDebugUnitTest")
+    Truth.assertThat(result.didWorkTasks).contains(":compileDebugUnitTestJavaWithJavac")
     Truth.assertThat(result.didWorkTasks).doesNotContain(":packageDebugUnitTestForUnitTest")
 
     TestFileUtils.appendToFile(
@@ -60,6 +60,6 @@ class UnitTestingAssembleTest {
     )
     val result = project.executor().expectFailure().run("assembleUnitTest")
     Truth.assertThat(result.failedTasks).isNotEmpty()
-    Truth.assertThat(result.failedTasks).containsExactly(":compileDebugUnitTestKotlin", ":compileReleaseUnitTestKotlin")
+    Truth.assertThat(result.failedTasks).containsExactly(":compileDebugUnitTestKotlin")
   }
 }

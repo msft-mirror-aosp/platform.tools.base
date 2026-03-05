@@ -94,6 +94,31 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           }
         }
     }
+
+    private val reflectionCache by lazy {
+      val classLoader = PreviewScreenshotGradlePlugin::class.java.classLoader
+      val artifactsImplClass = classLoader.loadClass(ARTIFACT_IMPL)
+      val analyticsEnabledArtifactsClass = classLoader.loadClass(ANALYTICS_ENABLED_ARTIFACTS)
+      val analyticsEnabledArtifactsGetDelegateMethod = analyticsEnabledArtifactsClass.getMethod("getDelegate")
+      val apkForLocalTestClass = classLoader.loadClass("${INTERNAL_ARTIFACT_TYPE}\$APK_FOR_LOCAL_TEST")
+      val artifactsImplGet = artifactsImplClass.getDeclaredMethod("get", Artifact.Single::class.java)
+      val apkForLocalTestInstance = apkForLocalTestClass.getField("INSTANCE").get(null)
+      ReflectionCache(
+        artifactsImplClass,
+        analyticsEnabledArtifactsClass,
+        analyticsEnabledArtifactsGetDelegateMethod,
+        artifactsImplGet,
+        apkForLocalTestInstance,
+      )
+    }
+
+    private data class ReflectionCache(
+      val artifactsImplClass: Class<*>,
+      val analyticsEnabledArtifactsClass: Class<*>,
+      val analyticsEnabledArtifactsGetDelegateMethod: java.lang.reflect.Method,
+      val artifactsImplGet: java.lang.reflect.Method,
+      val apkForLocalTestInstance: Any,
+    )
   }
 
   override fun apply(project: Project) {
@@ -113,35 +138,16 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         val requiredGradleVersion = GradleVersion.version("8.14")
 
         if (currentGradleVersion < requiredGradleVersion) {
-          error(
-            """
-                        Using JDK ${currentJdk.majorVersion} requires Gradle version ${requiredGradleVersion.version} or newer for screenshot tests.
-                        Current Gradle version is ${currentGradleVersion.version}.
-                        Please upgrade your project's Gradle version.
-                        """
-              .trimIndent()
-          )
+          error(jdkVersionError(currentJdk, currentGradleVersion, requiredGradleVersion))
         }
       }
 
       if (agpVersion < minAgpVersion || (agpVersion > maxAgpVersion && agpVersion.previewType != "dev")) {
-        error(
-          """
-                    Preview screenshot plugin requires Android Gradle plugin version ${minAgpVersion.toVersionString()} or higher, but less than ${maxAgpVersion.major + 1}.0.
-                    Current version is $agpVersion.
-                    """
-            .trimIndent()
-        )
+        error(agpVersionError(agpVersion))
       }
       val screenshotSourcesetEnabled = project.providers.gradleProperty(ST_SOURCE_SET_ENABLED).getOrNull()
       if (screenshotSourcesetEnabled?.toBoolean() != true) {
-        error(
-          """
-                    Please enable screenshotTest source set first to apply the screenshot test plugin.
-                    Add "$ST_SOURCE_SET_ENABLED=true" to gradle.properties
-                    """
-            .trimIndent()
-        )
+        error(screenshotSourceSetError)
       }
 
       val validationEngineVersionOverride = project.providers.gradleProperty(VALIDATION_ENGINE_VERSION_OVERRIDE).getOrNull()
@@ -151,12 +157,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           // test engine incompatible with the latest plugin version
           val validationEngineOverrideString = validationEngineVersionOverride
           if (validationEngineOverrideString < MIN_VALIDATION_ENGINE_VERSION && !validationEngineOverrideString.endsWith("-dev")) {
-            error(
-              """
-                        Preview screenshot plugin requires the screenshot validation engine version to be at least $MIN_VALIDATION_ENGINE_VERSION, $VALIDATION_ENGINE_VERSION_OVERRIDE cannot be set to $validationEngineOverrideString.
-                        """
-                .trimIndent()
-            )
+            error(validationEngineVersionError(validationEngineOverrideString))
           }
           validationEngineOverrideString
         } else SCREENSHOT_TEST_PLUGIN_VERSION
@@ -175,6 +176,9 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
       createLayoutlibResourcesConfiguration(project)
       maybeCreateScreenshotTestConfiguration(project, validationEngineVersion)
 
+      val layoutlibJarConfig = project.configurations.getByName(layoutlibJarConfigurationName)
+      val engineConfig = project.configurations.getByName(previewScreenshotTestEngineConfigurationName)
+
       val layoutlibDataFromMaven =
         LayoutlibDataFromMaven.create(project, LAYOUTLIB_VERSION, project.configurations.getByName(layoutlibResourcesConfigurationName))
 
@@ -191,30 +195,26 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
         }
 
       val buildDir = project.layout.buildDirectory
+      val commonExtension = project.extensions.getByType(CommonExtension::class.java)
+      val maxHeapSize = project.providers.gradleProperty(MAX_HEAP_SIZE_OVERRIDE).getOrNull()
 
       componentsExtension.beforeVariants {
-        val extension = project.extensions.getByType(CommonExtension::class.java)
-        val screenshotSourceSetEnabledInModule = extension.experimentalProperties[ST_SOURCE_SET_ENABLED]
+        val screenshotSourceSetEnabledInModule = commonExtension.experimentalProperties[ST_SOURCE_SET_ENABLED]
         if (screenshotSourceSetEnabledInModule?.toString()?.toBoolean() != true) {
-          error(
-            """
-                    Please enable screenshotTest source set in module first to apply the screenshot test plugin.
-                    Add "experimentalProperties["$ST_SOURCE_SET_ENABLED"] = true" to the android block of the module's build file: ${project.buildFile.toURI()}
-                    """
-              .trimIndent()
-          )
+          error(moduleSourceSetError(project))
         }
       }
 
       componentsExtension.onVariants { variant ->
         if (variant is HasHostTests && variant.debuggable) {
           val variantName = variant.name
+          val capitalizedVariantName = variantName.capitalized()
+          val variantPath = variant.computePathSegments()
           val screenshotTestComponent = variant.hostTests[HostTestBuilder.SCREENSHOT_TEST_TYPE] ?: return@onVariants
           variant.runtimeConfiguration.checkToolingPresent(screenshotTestComponent)
-          val maxHeapSize = project.providers.gradleProperty(MAX_HEAP_SIZE_OVERRIDE).getOrNull()
 
           val updateTask =
-            project.tasks.register("update${variantName.capitalized()}ScreenshotTest", PreviewScreenshotUpdateTask::class.java) { task ->
+            project.tasks.register("update${capitalizedVariantName}ScreenshotTest", PreviewScreenshotUpdateTask::class.java) { task ->
               task.description = "Update screenshots for the $variantName build."
               task.group = JavaBasePlugin.VERIFICATION_GROUP
               task.analyticsService.set(analyticsServiceProvider)
@@ -226,9 +226,8 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
               task.testLogging { it.showStandardStreams = true }
               task.isScanForTestClasses = false
               task.systemProperty("java.awt.headless", "true")
-              val engineClasspath = task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName)
               task.classpath.setFrom(
-                engineClasspath,
+                engineConfig,
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
                 task.classpath,
               )
@@ -238,11 +237,14 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           updateTask.configureTestEngineInput(
             project,
             variant,
+            variantPath,
+            capitalizedVariantName,
             screenshotTestComponent,
             componentsExtension.sdkComponents,
             layoutlibDataFromMaven,
             sdkDirectory,
             screenshotExtension,
+            layoutlibJarConfig,
             null,
             { testEngineInput },
           )
@@ -250,8 +252,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           updateAllTask.configure { it.dependsOn(updateTask) }
 
           val previewScreenshotTestTask =
-            project.tasks.register("validate${variantName.capitalized()}ScreenshotTest", PreviewScreenshotValidationTask::class.java) { task
-              ->
+            project.tasks.register("validate${capitalizedVariantName}ScreenshotTest", PreviewScreenshotValidationTask::class.java) { task ->
               task.analyticsService.set(analyticsServiceProvider)
               task.usesService(analyticsServiceProvider)
               task.description = "Run screenshot tests for the $variantName build."
@@ -273,12 +274,11 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
                 // Set html to true so that Gradle's error message contains clickable
                 // link to the html file.
                 it.html.required.set(true)
-                it.html.outputLocation.set(buildDir.dir("$PREVIEW_REPORTS/${variant.computePathSegments()}"))
+                it.html.outputLocation.set(buildDir.dir("$PREVIEW_REPORTS/$variantPath"))
               }
 
-              val engineClasspath = task.project.configurations.getByName(previewScreenshotTestEngineConfigurationName)
               task.classpath.setFrom(
-                engineClasspath,
+                engineConfig,
                 componentsExtension.sdkComponents.bootClasspath, // Needed for test discovery
                 task.classpath,
               )
@@ -289,11 +289,14 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
           previewScreenshotTestTask.configureTestEngineInput(
             project,
             variant,
+            variantPath,
+            capitalizedVariantName,
             screenshotTestComponent,
             componentsExtension.sdkComponents,
             layoutlibDataFromMaven,
             sdkDirectory,
             screenshotExtension,
+            layoutlibJarConfig,
             { reports.junitXml.outputLocation.get() },
             { testEngineInput },
           )
@@ -312,25 +315,27 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
   private fun <T : Task> TaskProvider<T>.configureTestEngineInput(
     project: Project,
     variant: Variant,
+    variantPath: String,
+    capitalizedVariantName: String,
     screenshotTestComponent: HostTest,
     sdkComponents: SdkComponents,
     layoutlibDataFromMaven: LayoutlibDataFromMaven,
     sdkDirectory: Provider<Directory>,
     screenshotExtension: ScreenshotTestOptionsImpl,
+    layoutlibJarConfig: Configuration,
     junitXmlOutputDirectoryProvider: (T.() -> Directory)?,
     getTestEngineInput: T.() -> PreviewScreenshotTestEngineInput,
   ) {
     val buildDir = project.layout.buildDirectory
-    val variantName = variant.name
     configure { task ->
       getTestEngineInput(task).apply {
         threshold.set(screenshotExtension.imageDifferenceThreshold)
         namespace.set(variant.namespace)
         layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)
-        layoutlibClassPath.setFrom(project.configurations.getByName(layoutlibJarConfigurationName), sdkComponents.bootClasspath)
-        referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest${variantName.capitalized()}/reference"))
-        previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/rendered"))
-        diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/${variant.computePathSegments()}/diffs"))
+        layoutlibClassPath.setFrom(layoutlibJarConfig, sdkComponents.bootClasspath)
+        referenceImageDir.set(project.layout.projectDirectory.dir("src/screenshotTest$capitalizedVariantName/reference"))
+        previewImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/rendered"))
+        diffImageOutputDir.set(buildDir.dir("$PREVIEW_OUTPUT/$variantPath/diffs"))
         if (junitXmlOutputDirectoryProvider != null) {
           junitXmlOutputDirectory.set(project.provider { junitXmlOutputDirectoryProvider(task) })
         }
@@ -369,25 +374,18 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
   }
 
   private fun getResourceApk(screenshotTestComponentArtifacts: Artifacts): Provider<RegularFile>? {
-    // Reflection to access gradle-core classes without explicit dependency.
-    val classLoader = this.javaClass.classLoader
-    val artifactsImplClass = classLoader.loadClass(ARTIFACT_IMPL)
-    val analyticsEnabledArtifactsClass = classLoader.loadClass(ANALYTICS_ENABLED_ARTIFACTS)
-    val analyticsEnabledArtifactsGetDelegateMethod = analyticsEnabledArtifactsClass.getMethod("getDelegate")
-    val apkForLocalTestClass = classLoader.loadClass("${INTERNAL_ARTIFACT_TYPE}\$APK_FOR_LOCAL_TEST")
-    val artifactsImplGet = artifactsImplClass.getDeclaredMethod("get", Artifact.Single::class.java)
-
+    val cache = reflectionCache
     val artifacts = screenshotTestComponentArtifacts
     val artifactImplObject =
       when {
-        artifactsImplClass.isInstance(artifacts) -> artifacts
-        analyticsEnabledArtifactsClass.isInstance(artifacts) -> analyticsEnabledArtifactsGetDelegateMethod(artifacts)
+        cache.artifactsImplClass.isInstance(artifacts) -> artifacts
+        cache.analyticsEnabledArtifactsClass.isInstance(artifacts) -> cache.analyticsEnabledArtifactsGetDelegateMethod.invoke(artifacts)
         else -> throw IllegalStateException("Unexpected artifact type ${artifacts.javaClass}")
       }
-    val instance = apkForLocalTestClass.getField("INSTANCE").get(null)
 
     // Invoking ArtifactsImpl::get(InternalArtifactType.APK_FOR_LOCAL_TEST) by reflection.
-    @Suppress("UNCHECKED_CAST") val resourceFileProvider = artifactsImplGet(artifactImplObject, instance) as? Provider<RegularFile>
+    @Suppress("UNCHECKED_CAST")
+    val resourceFileProvider = cache.artifactsImplGet.invoke(artifactImplObject, cache.apkForLocalTestInstance) as? Provider<RegularFile>
 
     return resourceFileProvider
   }
@@ -458,49 +456,40 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
    * code. They must also include androidx.compose.ui:ui-tooling in order to render the previews.
    */
   private fun Configuration.checkToolingPresent(screenshotTestComponent: HostTest) {
-    incoming.afterResolve {
+    incoming.afterResolve { resolvableDependencies ->
       val allDependencies =
-        it.resolutionResult.allDependencies
+        resolvableDependencies.resolutionResult.allDependencies
           .filterIsInstance<ResolvedDependencyResult>()
           .map { result -> result.selected.id }
           .filterIsInstance<ModuleComponentIdentifier>()
+          .map { identifier -> identifier.group to identifier.module }
+          .toSet()
 
-      for (previewDependency in PREVIEW_DEPENDENCIES) {
-        val isPreviewPresent =
-          allDependencies.any { identifier ->
-            identifier.group == previewDependency.group && identifier.module == previewDependency.previewModule
-          }
-
-        if (!isPreviewPresent) {
-          // if the preview library is not present, they cannot declare any
-          // previews, so no need to check for the presence of the tooling library
-          continue
+      val missingToolingDependencies =
+        PREVIEW_DEPENDENCIES.filter { previewDependency ->
+          val isPreviewPresent = allDependencies.contains(previewDependency.group to previewDependency.previewModule)
+          val isToolingPresent = allDependencies.contains(previewDependency.group to previewDependency.toolingModule)
+          isPreviewPresent && !isToolingPresent
         }
 
-        val isToolingPresent =
-          allDependencies.any { identifier ->
-            identifier.group == previewDependency.group && identifier.module == previewDependency.toolingModule
-          }
-        if (isToolingPresent) {
-          continue
-        }
-
+      if (missingToolingDependencies.isNotEmpty()) {
         screenshotTestComponent.runtimeConfiguration.incoming.afterResolve { resolvedScreenshotTestComponent ->
           val screenshotTestDependencies =
             resolvedScreenshotTestComponent.resolutionResult.allDependencies
               .filterIsInstance<ResolvedDependencyResult>()
               .map { result -> result.selected.id }
               .filterIsInstance<ModuleComponentIdentifier>()
+              .map { identifier -> identifier.group to identifier.module }
+              .toSet()
 
-          val isPresentInScreenshotTests =
-            screenshotTestDependencies.any { identifier ->
-              identifier.group == previewDependency.group && identifier.module == previewDependency.toolingModule
+          for (missingDependency in missingToolingDependencies) {
+            val isPresentInScreenshotTests = screenshotTestDependencies.contains(missingDependency.group to missingDependency.toolingModule)
+
+            if (!isPresentInScreenshotTests) {
+              val errorMessage =
+                "Missing required runtime dependency. Please add ${missingDependency.group}:${missingDependency.toolingModule} as a screenshotTestImplementation dependency."
+              throw IllegalStateException(errorMessage)
             }
-
-          if (!isPresentInScreenshotTests) {
-            val errorMessage =
-              "Missing required runtime dependency. Please add ${previewDependency.group}:${previewDependency.toolingModule} as a screenshotTestImplementation dependency."
-            throw IllegalStateException(errorMessage)
           }
         }
       }
@@ -510,6 +499,41 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
   private fun String.capitalized(): String {
     return replaceFirstChar { it.uppercase() }
   }
+
+  private fun jdkVersionError(currentJdk: JavaVersion, currentGradleVersion: GradleVersion, requiredGradleVersion: GradleVersion): String =
+    """
+    Using JDK ${currentJdk.majorVersion} requires Gradle version ${requiredGradleVersion.version} or newer for screenshot tests.
+    Current Gradle version is ${currentGradleVersion.version}.
+    Please upgrade your project's Gradle version.
+    """
+      .trimIndent()
+
+  private fun agpVersionError(currentAgpVersion: AndroidPluginVersion): String =
+    """
+    Preview screenshot plugin requires Android Gradle plugin version ${minAgpVersion.toVersionString()} or higher, but less than ${maxAgpVersion.major + 1}.0.
+    Current version is $currentAgpVersion.
+    """
+      .trimIndent()
+
+  private val screenshotSourceSetError =
+    """
+    Please enable screenshotTest source set first to apply the screenshot test plugin.
+    Add "$ST_SOURCE_SET_ENABLED=true" to gradle.properties
+    """
+      .trimIndent()
+
+  private fun validationEngineVersionError(version: String): String =
+    """
+    Preview screenshot plugin requires the screenshot validation engine version to be at least $MIN_VALIDATION_ENGINE_VERSION, $VALIDATION_ENGINE_VERSION_OVERRIDE cannot be set to $version.
+    """
+      .trimIndent()
+
+  private fun moduleSourceSetError(project: Project): String =
+    """
+    Please enable screenshotTest source set in module first to apply the screenshot test plugin.
+    Add "experimentalProperties["$ST_SOURCE_SET_ENABLED"] = true" to the android block of the module's build file: ${project.buildFile.toURI()}
+    """
+      .trimIndent()
 }
 
 private const val junitStandaloneLauncherConfigurationName = "_internal-junit-engine-standalone-launcher"

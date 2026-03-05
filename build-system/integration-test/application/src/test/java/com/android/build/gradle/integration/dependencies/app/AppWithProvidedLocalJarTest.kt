@@ -27,7 +27,7 @@ import org.junit.Test
 
 class AppWithProvidedLocalJarTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestProject("projectWithLocalDeps").create()
 
   @Before
   fun setUp() {

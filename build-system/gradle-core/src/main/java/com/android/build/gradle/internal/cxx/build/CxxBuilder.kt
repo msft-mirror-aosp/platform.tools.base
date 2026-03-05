@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.internal.cxx.build
 
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /** Represents a C/C++ build operation independent of a Gradle task. */
 interface CxxBuilder {
-  fun build(ops: ExecOperations)
+  fun build(providers: ProviderFactory)
 }

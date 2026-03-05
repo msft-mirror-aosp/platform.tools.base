@@ -202,5 +202,8 @@ object ImageDiffUtil {
 data class MissingGoldenFileException(val file: Path) : AssertionError() {
 
   override val message: String
-    get() = "Golden image ${file.name} didn't exist, created in ${file.parent} and in undeclared outputs"
+    get() {
+      val bazelNote = if (TestUtils.runningFromBazel()) " and in undeclared outputs" else ""
+      return "Golden image ${file.name} didn't exist, created in ${file.parent}$bazelNote"
+    }
 }

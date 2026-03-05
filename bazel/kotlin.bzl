@@ -55,7 +55,7 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
         args.add("-nowarn")
     elif warn == "error":
         args.add("-Werror")
-    args.add("-Xjvm-default=all-compatibility")
+    args.add("-jvm-default=enable")
     args.add("-no-stdlib")
 
     tools = []

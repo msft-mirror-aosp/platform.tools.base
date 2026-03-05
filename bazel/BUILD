@@ -364,6 +364,30 @@ java_jarjar(
 )
 
 java_jarjar(
+    name = "studio-grpc-testing",
+    srcs = [
+        "@maven//:io.grpc.grpc-testing",
+    ],
+    rules = "jarjar_rules.txt",
+    visibility = ["//visibility:public"],
+)
+
+java_jarjar(
+    name = "studio-netty",
+    srcs = [
+        "@maven//:io.netty.netty-transport-classes-epoll",
+        "@maven//:io.netty.netty-transport-classes-kqueue",
+        "@maven//:io.netty.netty-transport-native-epoll.linux-x86_64",
+        "@maven//:io.netty.netty-transport-native-kqueue.osx-aarch_64",
+        "@maven//:io.netty.netty-transport-native-kqueue.osx-x86_64",
+    ],
+    native_classloader = "io.netty.util.internal.NativeLibraryLoader",
+    rename_services = True,
+    rules = "jarjar_rules.txt",
+    visibility = ["//visibility:public"],
+)
+
+java_jarjar(
     name = "utp-core-proto-jarjar",
     srcs = ["//prebuilts/tools/common/m2:utp-core-proto"],
     rules = "jarjar_rules.txt",

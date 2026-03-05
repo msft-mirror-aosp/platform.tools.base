@@ -4,7 +4,7 @@ Maven artifacts downloaded and checked in for tests.
 These are not resolved together, but the union of all transitive dependencies
 """
 
-DATA = [
+_CLASS_JARS = [
     # Class JARs
     # keep sorted
     "android.arch.core:common:1.1.1",
@@ -53,6 +53,7 @@ DATA = [
     "androidx.cardview:cardview:1.0.0",
     "androidx.collection:collection:1.4.0",
     "androidx.collection:collection:1.5.0-alpha06",
+    "androidx.collection:collection-jvm:1.4.5",
     "androidx.collection:collection-ktx:1.4.0",  # Compose BOM 2024.04.01
     "androidx.collection:collection-ktx:1.4.2",
     "androidx.collection:collection-ktx:1.5.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -244,6 +245,7 @@ DATA = [
     "androidx.games:games-activity:4.0.0",
     "androidx.graphics:graphics-shapes-desktop:1.0.1",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.leanback:leanback:1.0.0",
+    "androidx.leanback:leanback:1.2.0",
     "androidx.legacy:legacy-support-v13:1.0.0",
     "androidx.legacy:legacy-support-v4:1.0.0",
     "androidx.lifecycle:lifecycle-common:2.8.7",
@@ -368,10 +370,14 @@ DATA = [
     "androidx.privacysandbox.sdkruntime:sdkruntime-client:1.0.0-alpha17",
     "androidx.privacysandbox.sdkruntime:sdkruntime-core:1.0.0-alpha17",
     "androidx.privacysandbox.sdkruntime:sdkruntime-provider:1.0.0-alpha17",
+    "androidx.privacysandbox.tools:tools:1.0.0-alpha06",
     "androidx.privacysandbox.tools:tools:1.0.0-alpha13",
     "androidx.privacysandbox.tools:tools-apicompiler:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha06",
     "androidx.privacysandbox.tools:tools-apigenerator:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha06",
     "androidx.privacysandbox.tools:tools-apipackager:1.0.0-alpha13",
+    "androidx.privacysandbox.tools:tools-core:1.0.0-alpha06",
     "androidx.privacysandbox.tools:tools-core:1.0.0-alpha13",
     "androidx.privacysandbox.ui:ui-client:1.0.0-alpha16",
     "androidx.privacysandbox.ui:ui-core:1.0.0-alpha16",
@@ -846,6 +852,7 @@ DATA = [
     "com.google.auto.value:auto-value-annotations:1.7.4",
     "com.google.caliper:caliper:1.0-beta-3",
     "com.google.code.findbugs:jsr305:3.0.2",
+    "com.google.code.gson:gson:2.10.1",
     "com.google.code.gson:gson:2.2.4",
     "com.google.code.gson:gson:2.6.2",
     "com.google.crypto.tink:tink:1.18.0",  # Dependency for UTP.
@@ -877,6 +884,7 @@ DATA = [
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.7.10-1.0.6",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:1.8.21-1.0.11",
     "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.20-RC-2.0.2",  # Used by AGP tests
+    "com.google.errorprone:error_prone_annotations:2.23.0",
     "com.google.errorprone:error_prone_annotations:2.33.0",
     "com.google.errorprone:error_prone_check_api:2.33.0",
     "com.google.errorprone:error_prone_core:2.33.0",
@@ -895,9 +903,11 @@ DATA = [
     "com.google.guava:guava:30.1-android",
     "com.google.guava:guava:31.1-jre",
     "com.google.guava:guava:32.1.2-jre",
+    "com.google.guava:guava:33.0.0-jre",
     "com.google.guava:guava:33.2.1-jre",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "com.google.http-client:google-http-client-bom:pom:1.43.3",
     "com.google.http-client:google-http-client-bom:pom:1.45.0",
+    "com.google.j2objc:j2objc-annotations:2.8",
     "com.google.oauth-client:google-oauth-client-java6:1.34.1",
     "com.google.oboe:oboe:1.6.1",
     "com.google.prefab:cli:jar:all:2.1.0",
@@ -907,7 +917,9 @@ DATA = [
     "com.google.protobuf:protobuf-bom:pom:3.22.3",
     "com.google.protobuf:protobuf-bom:pom:3.24.4",
     "com.google.protobuf:protobuf-bom:pom:3.25.5",
+    "com.google.protobuf:protobuf-bom:pom:4.27.2",
     "com.google.protobuf:protobuf-bom:pom:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protobuf-bom:pom:4.33.2",
     "com.google.protobuf:protobuf-java:3.19.3",
     "com.google.protobuf:protobuf-java:3.22.3",
     "com.google.protobuf:protobuf-java:3.24.4",
@@ -1017,14 +1029,12 @@ DATA = [
     "org.apache.commons:commons-compress:1.20",
     "org.apache.commons:commons-lang3:3.13.0",
     "org.apache.commons:commons-text:1.11.0",
-    # Lucene 9.12 - used by IntelliJ 25.2 and earlier.
-    "org.apache.lucene:lucene-backward-codecs:9.12.0",
-    "org.apache.lucene:lucene-highlighter:9.12.0",
-    "org.apache.lucene:lucene-queryparser:9.12.0",
-    # Lucene 10.3.0 - used by IntelliJ 25.3 and later.
     "org.apache.lucene:lucene-backward-codecs:10.3.0",
+    "org.apache.lucene:lucene-backward-codecs:9.12.0",
     "org.apache.lucene:lucene-highlighter:10.3.0",
+    "org.apache.lucene:lucene-highlighter:9.12.0",
     "org.apache.lucene:lucene-queryparser:10.3.0",
+    "org.apache.lucene:lucene-queryparser:9.12.0",
     "org.bouncycastle:bcprov-jdk16:1.46",
     "org.bouncycastle:bcprov-jdk18on:1.77",
     "org.brotli:dec:0.1.2",
@@ -1096,7 +1106,7 @@ DATA = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.0-dev-4131",
-    "org.jetbrains.kotlin:jvm-abi-gen:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:jvm-abi-gen:2.3.10",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.23",
@@ -1147,8 +1157,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler:1.9.23",
     "org.jetbrains.kotlin:kotlin-compiler:2.0.21",
     "org.jetbrains.kotlin:kotlin-compiler:2.1.20",
-    "org.jetbrains.kotlin:kotlin-compiler:2.2.20",  # Studio build
-    "org.jetbrains.kotlin:kotlin-compiler:2.3.10",
+    "org.jetbrains.kotlin:kotlin-compiler:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-compiler:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:1.8.10",
@@ -1157,7 +1166,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-compiler-embeddable:2.1.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.0.21",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
-    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-compose-compiler-plugin:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.1.0",
     "org.jetbrains.kotlin:kotlin-compose-compiler-plugin-embeddable:2.2.10",  # Used by AGP Compose tests
@@ -1252,7 +1261,7 @@ DATA = [
     "org.jetbrains.kotlin:kotlin-script-runtime:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10",
     "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.2.20",  # Studio build
+    "org.jetbrains.kotlin:kotlin-serialization-compiler-plugin:2.3.10",  # Studio build
     "org.jetbrains.kotlin:kotlin-stdlib:2.0.21",
     "org.jetbrains.kotlin:kotlin-stdlib:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.0",  # AGP dependencies (AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0)
@@ -1356,9 +1365,14 @@ DATA = [
     "org.junit:junit-bom:pom:5.9.3",
     "org.junit.platform:junit-platform-console-standalone:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
+    "org.mockito:mockito-core:4.3.1",
+    "org.mockito:mockito-core:5.4.0",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm:9.8",
     "org.ow2.asm:asm:9.9",
+    "org.ow2.asm:asm-bom:pom:9.6",
+    "org.ow2.asm:asm-bom:pom:9.7",
+    "org.ow2.asm:asm-bom:pom:9.8",
     "org.ow2.asm:asm-commons:9.6",
     "org.ow2.asm:asm-commons:9.8",
     "org.ow2.asm:asm-commons:9.9",
@@ -1381,11 +1395,12 @@ DATA = [
     "org.tukaani:xz:1.9",
     "org.xerial:sqlite-jdbc:3.21.0.1",
     "org.xerial:sqlite-jdbc:3.51.1.0",
-] + [
+]
+
+_SOURCE_JARS = [
     # Source JARs
     # keep sorted
     "androidx.arch.core:core-common:jar:sources:2.2.0",
-    "androidx.collection:collection-jvm:1.4.5",
     "androidx.collection:collection-jvm:jar:sources:1.4.0",
     "androidx.lifecycle:lifecycle-common-jvm:jar:sources:2.8.5",
     "androidx.lifecycle:lifecycle-runtime-desktop:jar:sources:2.8.5",
@@ -1418,11 +1433,8 @@ DATA = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:jar:sources:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:jar:sources:1.8.0-RC2",
-    "org.mockito:mockito-core:4.3.1",
-    "org.mockito:mockito-core:5.4.0",
-    "org.ow2.asm:asm-bom:pom:9.6",
-    "org.ow2.asm:asm-bom:pom:9.7",
-    "org.ow2.asm:asm-bom:pom:9.8",
     "org.robolectric:plugins-maven-dependency-resolver:jar:sources:4.8.2",
     "org.robolectric:robolectric:jar:sources:4.8.2",
 ]
+
+DATA = _CLASS_JARS + _SOURCE_JARS

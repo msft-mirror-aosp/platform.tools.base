@@ -33,6 +33,9 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.provider.ValueSource
+import org.gradle.api.provider.ValueSourceParameters
 import org.gradle.api.services.BuildService
 import org.gradle.api.services.BuildServiceParameters
 import org.gradle.process.ExecOperations
@@ -44,7 +47,9 @@ import org.gradle.process.ExecOperations
  * The scope of sharing is per-build. For this reason, we are making assumptions like cmake.exe and ninja.exe aren't modified during the
  * build.
  */
-abstract class NativeLocationsBuildService @Inject constructor(private val exec: ExecOperations) :
+abstract class NativeLocationsBuildService
+@Inject
+constructor(private val exec: ExecOperations, private val providerFactory: ProviderFactory) :
   BuildService<NativeLocationsBuildService.ServiceParameters> {
 
   private val androidLocationProvider
@@ -98,12 +103,24 @@ abstract class NativeLocationsBuildService @Inject constructor(private val exec:
   /** Execute given tool with "--version" argument and return stdout as a string. */
   private fun versionOf(tool: File): String {
     return toolVersions.computeIfAbsent(tool) {
+      providerFactory.of(CmakeVersionValueSource::class.java) { spec -> spec.parameters.tool.set(tool) }.get()
+    }
+  }
+
+  internal abstract class CmakeVersionValueSource : ValueSource<String, CmakeVersionValueSource.Parameters> {
+    interface Parameters : ValueSourceParameters {
+      val tool: Property<File>
+    }
+
+    @get:Inject abstract val execOperations: ExecOperations
+
+    override fun obtain(): String {
       val stdout = ByteArrayOutputStream()
-      exec.exec { spec ->
-        spec.commandLine("$tool", "--version")
+      execOperations.exec { spec ->
+        spec.commandLine(parameters.tool.get().absolutePath, "--version")
         spec.standardOutput = stdout
       }
-      "$stdout"
+      return "$stdout"
     }
   }
 

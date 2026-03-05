@@ -194,11 +194,15 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
 
   companion object {
 
-    fun getTransformTargets(aarOrJarTypeToConsume: AarOrJarTypeToConsume, sharedLibSupportEnabled: Boolean): List<ArtifactType> {
+    fun getTransformTargets(
+      aarOrJarTypeToConsume: AarOrJarTypeToConsume,
+      sharedLibSupportEnabled: Boolean,
+      javaResCompressionEnabled: Boolean,
+    ): List<ArtifactType> {
       return listOfNotNull(
         aarOrJarTypeToConsume.jar,
         SHARED_CLASSES,
-        JAVA_RES,
+        JAVA_RES.takeIf { !javaResCompressionEnabled },
         SHARED_JAVA_RES,
         MANIFEST,
         ANDROID_RES,
@@ -227,7 +231,7 @@ abstract class AarTransform : TransformAction<AarTransform.Parameters> {
   }
 }
 
-private fun getJars(extractedAarDir: File): List<File> {
+internal fun getJars(extractedAarDir: File): List<File> {
   val allJars = mutableListOf<File>()
 
   // Get classes.jar

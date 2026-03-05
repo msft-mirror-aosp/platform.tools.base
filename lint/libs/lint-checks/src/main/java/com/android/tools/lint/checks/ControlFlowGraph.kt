@@ -18,9 +18,9 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.detector.api.asCall
 import com.android.tools.lint.detector.api.callNeverReturns
 import com.android.tools.lint.detector.api.findCommonParent
-import com.android.tools.lint.detector.api.getPrimitiveType
 import com.android.tools.lint.detector.api.isJava
 import com.android.tools.lint.detector.api.isKotlin
+import com.android.tools.lint.detector.api.isMemberOfPrimitive
 import com.android.tools.lint.detector.api.isScopingFunction
 import com.intellij.psi.CommonClassNames.JAVA_LANG_EXCEPTION
 import com.intellij.psi.CommonClassNames.JAVA_LANG_RUNTIME_EXCEPTION
@@ -816,7 +816,7 @@ open class ControlFlowGraph<T : Any> private constructor() {
           "plusAssign",
           "minusAssign",
           "timesAssign" -> {
-            method.containingClass?.qualifiedName?.let(::getPrimitiveType) != null
+            method.isMemberOfPrimitive()
           }
           else -> false
         }

@@ -65,7 +65,7 @@ fun RecipeExecutor.androidTVActivityRecipe(
   val ktOrJavaExt = projectData.language.extension
   addAllKotlinDependencies(moduleData)
 
-  addDependency("com.android.support:leanback-v17:+")
+  addDependency("androidx.leanback:leanback:1.2.0")
   addDependency("com.github.bumptech.glide:glide:4.11.0")
 
   mergeXml(

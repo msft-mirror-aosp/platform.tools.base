@@ -24,8 +24,8 @@ object AndroidTestConfigurationKeys {
   /** Path to the AAPT2 executable. */
   const val AAPT2_PATH = "android-test.aapt2-path"
 
-  /** The serial number of the device to run tests on. */
-  const val DEVICE_SERIAL = "android-test.device-serial"
+  /** Comma-separated serial numbers of the devices to run tests on. */
+  const val DEVICE_SERIALS = "android-test.device-serials"
 
   /** Timeout in milliseconds for APK installation. */
   const val INSTALL_TIMEOUT_MS = "android-test.install-timeout-ms"
@@ -50,4 +50,7 @@ object AndroidTestConfigurationKeys {
 
   /** The package ID of the instrumentation target. */
   const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
+
+  /** Path to the results directory. */
+  const val RESULTS_DIR = "android-test.results-dir"
 }

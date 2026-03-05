@@ -19,8 +19,13 @@ package com.android.build.gradle
 import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
+import org.gradle.api.internal.plugins.software.RegistersSoftwareTypes
 
 @Incubating
+@RegistersSoftwareTypes(
+  com.android.build.gradle.internal.plugins.AppPlugin::class,
+  com.android.build.gradle.internal.plugins.LibraryPlugin::class,
+)
 class AndroidEcosystemPlugin : Plugin<Settings> {
   override fun apply(target: Settings) = Unit
 }

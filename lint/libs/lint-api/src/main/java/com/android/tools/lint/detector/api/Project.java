@@ -151,6 +151,7 @@ public class Project {
     protected List<File> javaSourceFolders;
     protected List<File> generatedSourceFolders;
     protected List<File> keepRulesFolders;
+    protected List<File> aarKeepRulesFolders;
     protected List<File> javaClassFolders;
     protected List<File> nonProvidedJavaLibraries;
     protected List<File> javaLibraries;
@@ -561,6 +562,20 @@ public class Project {
 
     return keepRulesFolders;
   }
+
+    /**
+     * Returns the list of source folders for aarKeepRules files
+     *
+     * @return a list of source folders to search for .keep files
+     */
+    @NonNull
+    public List<File> getAarKeepRulesSourceFolders() {
+        if (aarKeepRulesFolders == null) {
+            aarKeepRulesFolders = client.getAarKeepRulesSourceFolders(this);
+        }
+
+        return aarKeepRulesFolders;
+    }
 
     /**
      * Returns whether this Project is a test project. For example, this Project might just contain

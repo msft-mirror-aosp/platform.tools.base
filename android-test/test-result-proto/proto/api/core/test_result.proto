@@ -1,0 +1,55 @@
+//
+// Copyright (C) 2022 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.testing.platform.proto.api.core;
+
+import "proto/api/core/error.proto";
+import "proto/api/core/test_artifact.proto";
+import "proto/api/core/test_case.proto";
+import "proto/api/core/test_status.proto";
+
+option java_package = 'com.google.testing.platform.proto.api.core';
+option java_outer_classname = 'TestResultProto';
+
+// Test result encapsulates the result of a single test run.
+message TestResult {
+  // Test case for this test run
+  TestCase test_case = 1;
+
+  // Indicates the status of the test run and whether it passed, failed or was
+  // skipped etc.
+  TestStatus test_status = 2;
+
+  // Additional test details reported during the test run.
+  // It may contain multiple entries with the same key.
+  repeated TestDetailsEntry details = 5;
+
+  // An entry of the test details.
+  message TestDetailsEntry {
+    // A key of the test details entry.
+    string key = 1;
+
+    // A value for the key.
+    string value = 2;
+  }
+
+  // Optional, only applicable if the test_status is a FAILURE OR ERROR
+  Error error = 3;
+
+  // Screenshots, videos, and other data produced by this test run
+  repeated Artifact output_artifact = 4;
+}

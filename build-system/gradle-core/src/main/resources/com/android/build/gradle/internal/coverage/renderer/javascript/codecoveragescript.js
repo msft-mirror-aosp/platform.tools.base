@@ -43,6 +43,7 @@ const App = {
                 if (classObj) {
                     const context = {
                         moduleName: moduleName,
+                        packageName: packageName,
                         testSuiteName: CoverageReportApp.state.filters.testSuite
                     };
                     this.showSourceView(classObj, context);
@@ -82,13 +83,171 @@ const App = {
     }
 }
 
+/**
+ * UI Utilities
+ * Collection of helper functions for DOM manipulation and common UI patterns.
+ */
+const UIUtils = {
+    /**
+     * Builds a multi-select dropdown with "Select All" / "Clear" actions
+     * and a scrollable list of options.
+     */
+    buildActionDropdown(container, options, selectedStateArr, onSelectionChange, searchable = true, multiSelect = true) {
+        if (!container) return;
+
+        container.innerHTML = "";
+        container.style.padding = "0";
+        container.style.overflow = "hidden";
+
+        let searchInput = null;
+        if (searchable) {
+            const searchContainer = document.createElement("div");
+            searchContainer.className = "dropdown-search-zone";
+
+            searchInput = document.createElement("input");
+            searchInput.type = "text";
+            searchInput.className = "popover-search";
+            searchInput.placeholder = "Search...";
+
+            searchContainer.appendChild(searchInput);
+            container.appendChild(searchContainer);
+        }
+
+        if (multiSelect) {
+            const actionZone = document.createElement("div");
+            actionZone.className = "dropdown-action-zone";
+
+            const selectAllBtn = document.createElement("button");
+            selectAllBtn.className = "dropdown-action-btn";
+            selectAllBtn.textContent = "Select all";
+
+            const clearBtn = document.createElement("button");
+            clearBtn.className = "dropdown-action-btn";
+            clearBtn.textContent = "Clear";
+
+            actionZone.appendChild(selectAllBtn);
+            actionZone.appendChild(clearBtn);
+            container.appendChild(actionZone);
+
+            selectAllBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                selectedStateArr.length = 0;
+                options.forEach(o => {
+                    if (o.value !== "all") selectedStateArr.push(o.value);
+                });
+                Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = true);
+                onSelectionChange();
+            });
+
+            clearBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                selectedStateArr.length = 0;
+                Array.from(listZone.querySelectorAll("input[type='checkbox']")).forEach(cb => cb.checked = false);
+                onSelectionChange();
+            });
+        }
+
+        const listZone = document.createElement("div");
+        listZone.className = "dropdown-scroll-zone";
+        container.appendChild(listZone);
+
+        const renderList = () => {
+            listZone.innerHTML = "";
+
+            if (options.length === 0) {
+                listZone.innerHTML = `<div class="p-4 text-xs text-gray-400 text-center">No options available</div>`;
+                return;
+            }
+
+            options.forEach(opt => {
+                if (opt.value === "all") return;
+
+                const isChecked = selectedStateArr.includes(opt.value);
+
+                const item = document.createElement("label");
+                item.className = "popover-item";
+
+                if (multiSelect) {
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.className = "popover-checkbox";
+                    checkbox.checked = isChecked;
+                    item.appendChild(checkbox);
+
+                    item.addEventListener("change", (e) => {
+                        e.stopPropagation();
+                        if (checkbox.checked) {
+                            if (!selectedStateArr.includes(opt.value)) selectedStateArr.push(opt.value);
+                        } else {
+                            const idx = selectedStateArr.indexOf(opt.value);
+                            if (idx > -1) selectedStateArr.splice(idx, 1);
+                        }
+                        onSelectionChange();
+                    });
+                } else {
+                    const isSelected = (selectedStateArr.length === 0 && opt.value === 'Aggregated') ||
+                                     (selectedStateArr.length === 1 && selectedStateArr[0] === opt.value);
+
+                    if (isSelected) {
+                        item.classList.add('active-popover-item');
+                    }
+
+                    item.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectedStateArr.length = 0;
+                        selectedStateArr.push(opt.value);
+                        onSelectionChange();
+                        container.classList.add('hidden');
+                    });
+                }
+
+                const label = document.createElement("span");
+                label.textContent = opt.name;
+
+                item.appendChild(label);
+                listZone.appendChild(item);
+            });
+        };
+
+        renderList();
+
+        if (searchInput) {
+            searchInput.addEventListener("input", (e) => {
+                const term = e.target.value.toLowerCase();
+                const items = listZone.querySelectorAll(".popover-item");
+                items.forEach(item => {
+                    const label = item.querySelector("span").textContent.toLowerCase();
+                    item.style.display = label.includes(term) ? "flex" : "none";
+                });
+            });
+        }
+    },
+
+    getFilterLabel(prefix, selectedArr, totalCount) {
+        if (selectedArr.length === 0 || selectedArr.length === totalCount) return `${prefix}: All`;
+        if (selectedArr.length === 1) return `${prefix}: ${selectedArr[0]}`;
+        return `${prefix}: ${selectedArr.length} Selected`;
+    },
+
+    getCoverageClass(percentage) {
+        if (percentage === '--') return 'text-gray-500';
+        if (percentage >= 80) return 'text-green-600';
+        if (percentage >= 60) return 'text-yellow-600';
+        return 'text-red-600';
+    }
+};
+
 const CoverageReportApp = {
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'modules', // 'modules', 'packages', 'classes'
         selectedModule: null,
         selectedPackage: null,
-        filters: { module: 'all', testSuite: 'Aggregated', package: 'all', class: 'all', variants: [], search: '' },
+        filters: { modules: [], testSuite: 'Aggregated', packages: [], classes: [], variants: [], search: '' },
+        density: 'comfy',
         sort: { by: 'name', order: 'asc' },
     },
     elements: {},
@@ -117,50 +276,60 @@ const CoverageReportApp = {
             testSuiteFilterList: document.getElementById('testsuite-filter-list'),
             tsAllState: document.getElementById('ts-all-state'),
             tsSelectedState: document.getElementById('ts-selected-state'),
-            moduleFilterBtn: document.getElementById('module-filter-btn'),
-            moduleFilterText: document.getElementById('module-filter-text'),
-            moduleFilterDropdown: document.getElementById('module-filter-dropdown'),
-            moduleFilterList: document.getElementById('module-filter-list'),
-            packageFilterBtn: document.getElementById('package-filter-btn'),
-            packageFilterText: document.getElementById('package-filter-text'),
-            packageFilterDropdown: document.getElementById('package-filter-dropdown'),
-            packageFilterList: document.getElementById('package-filter-list'),
-            classFilterBtn: document.getElementById('class-filter-btn'),
-            classFilterText: document.getElementById('class-filter-text'),
-            classFilterDropdown: document.getElementById('class-filter-dropdown'),
-            classFilterList: document.getElementById('class-filter-list'),
-            variantFilterBtn: document.getElementById('variant-filter-btn'),
-            variantFilterText: document.getElementById('variant-filter-text'),
-            variantFilterDropdown: document.getElementById('variant-filter-dropdown'),
-            variantFilterList: document.getElementById('variant-filter-list'),
-            viewModeBtn: document.getElementById('view-mode-btn'),
-            viewModeText: document.getElementById('view-mode-text'),
-            viewModeDropdown: document.getElementById('view-mode-dropdown'),
-            viewModeList: document.getElementById('view-mode-list'),
+
+            // Chips containers
+            modChipContainer: document.getElementById('mod-chip-container'),
+            pkgChipContainer: document.getElementById('pkg-chip-container'),
+            clsChipContainer: document.getElementById('cls-chip-container'),
+
+            // Buttons & Dropdowns
+            moduleFilterBtn: document.getElementById('mod-filter-btn'),
+            moduleFilterText: document.getElementById('mod-filter-text'),
+            moduleFilterDropdown: document.getElementById('mod-dropdown'),
+            moduleFilterList: document.getElementById('mod-filter-list'),
+
+            packageFilterBtn: document.getElementById('pkg-filter-btn'),
+            packageFilterText: document.getElementById('pkg-filter-text'),
+            packageFilterDropdown: document.getElementById('pkg-dropdown'),
+            packageFilterList: document.getElementById('pkg-filter-list'),
+
+            classFilterBtn: document.getElementById('cls-filter-btn'),
+            classFilterText: document.getElementById('cls-filter-text'),
+            classFilterDropdown: document.getElementById('cls-dropdown'),
+            classFilterList: document.getElementById('cls-filter-list'),
+
+            variantFilterBtn: document.getElementById('var-filter-btn'),
+            variantFilterDropdown: document.getElementById('var-dropdown'),
+            variantFilterList: document.getElementById('var-filter-list'),
+
+            addFilterBtn: document.getElementById('add-filter-btn'),
+            addFilterDropdown: document.getElementById('add-filter-dropdown'),
+            addFilterList: document.getElementById('add-filter-list'),
+
+            searchRevealBtn: document.getElementById('search-reveal-btn'),
+            searchWrapper: document.getElementById('search-wrapper'),
             searchInput: document.getElementById('search-input'),
             searchClearBtn: document.getElementById('search-clear-btn'),
-            viewToggles: document.getElementById('view-toggles'),
+
+            viewSegments: document.getElementById('view-segments'),
+            densitySegments: document.getElementById('density-segments'),
+            mainTable: document.querySelector('.table-container table'),
+
             flatBreadcrumbs: document.getElementById('flat-breadcrumbs'),
-            flatViewControls: document.getElementById('flat-view-controls'),
+            groupByBtn: document.getElementById('group-by-btn'),
+            groupByText: document.getElementById('group-by-text'),
+            groupByDropdown: document.getElementById('group-by-dropdown'),
+
             tableHeaders: document.getElementById('table-headers'),
             coverageData: document.getElementById('coverage-data'),
             totalModules: document.getElementById('total-modules'),
+            totalPackages: document.getElementById('total-packages'),
             totalClasses: document.getElementById('total-classes'),
-            totalTests: document.getElementById('total-tests'),
         };
     },
 
     toggleDropdown(dropdownToToggle) {
-        const allDropdowns = [
-            this.elements.moduleFilterDropdown,
-            this.elements.testSuiteFilterDropdown,
-            this.elements.packageFilterDropdown,
-            this.elements.classFilterDropdown,
-            this.elements.variantFilterDropdown,
-            this.elements.viewModeDropdown
-        ];
-
-        allDropdowns.forEach(dropdown => {
+        this.getDropdownConfigs().forEach(({ dropdown }) => {
             if (dropdown && dropdown !== dropdownToToggle) {
                 dropdown.classList.add('hidden');
             }
@@ -177,9 +346,18 @@ const CoverageReportApp = {
     },
 
     populateGlobalStats() {
-        if (this.elements.totalTests) {
-            this.elements.totalTests.textContent = this.fullReport.numberOfTestsSuites || 0;
-        }
+        this.elements.totalModules.textContent = this.fullReport.modules.length;
+        let totalPackages = 0;
+        let totalClasses = 0;
+        this.fullReport.modules.forEach(module => {
+            const packages = module.packages || [];
+            totalPackages += packages.length;
+            packages.forEach(pkg => {
+                totalClasses += (pkg.classes || []).length;
+            });
+        });
+        this.elements.totalPackages.textContent = totalPackages;
+        this.elements.totalClasses.textContent = totalClasses;
     },
 
     populateFilters() {
@@ -196,60 +374,142 @@ const CoverageReportApp = {
             allVariants = this.fullReport.variantCoverages.map(v => v.name);
         }
 
-        this.state.filters.variants = [...allVariants];
+        if (this.state.filters.variants.length === 0 && allVariants.length > 0) {
+            this.state.filters.variants = [...allVariants];
+        }
 
-        const variantOptions = [{name: 'All', value: 'all'}, ...allVariants.map(v => ({name: v, value: v}))];
+        const variantOptions = allVariants.map(v => ({name: v, value: v}));
 
-        this.elements.variantFilterList.innerHTML = variantOptions.map(opt => `
-            <label class="flex items-center gap-2 cursor-pointer px-2 py-1.5 hover:bg-gray-100 rounded">
-                <input type="checkbox" class="variant-toggle w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" data-variant="${opt.value}" ${this.state.filters.variants.includes(opt.value) || (this.state.filters.variants.length === allVariants.length && opt.value === 'all') ? 'checked' : ''} />
-                <span class="text-sm text-gray-700">${opt.name}</span>
-            </label>
-        `).join('');
+        UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, () => {
+            this.updateVariantButtonText();
+            this.render();
+        }, false);
 
-        // View Mode
-        const viewOptions = [
-            {name: 'Flat', value: 'flat'},
-            {name: 'Tree', value: 'tree'},
-        ];
-        this.elements.viewModeList.innerHTML = viewOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
+        this.updateDynamicFilters();
     },
 
-    bindEvents() {
-        this.elements.searchInput.addEventListener('input', () => {
-            this.state.filters.search = this.elements.searchInput.value.trim().toLowerCase();
-            this.render();
-        });
-
-        const dropdownConfigs = [
+    getDropdownConfigs() {
+        return [
             { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
             { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
             { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
             { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
             { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
-            { btn: this.elements.viewModeBtn, dropdown: this.elements.viewModeDropdown }
+            { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
+            { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
         ];
+    },
 
-        dropdownConfigs.forEach(({ btn, dropdown }) => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                this.toggleDropdown(dropdown);
-            });
+    bindEvents() {
+        this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
+            if (btn && dropdown) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleDropdown(dropdown);
+                });
+            }
         });
 
-        this.elements.flatViewControls.addEventListener('click', this.handleViewToggle.bind(this));
+        if (this.elements.groupByDropdown) {
+            this.elements.groupByDropdown.addEventListener('click', this.handleGroupByChange.bind(this));
+        }
         this.elements.coverageData.addEventListener('click', this.handleRowClick.bind(this));
         this.elements.tableHeaders.addEventListener('click', this.handleHeaderClick.bind(this));
         this.elements.flatBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
 
         this.elements.testSuiteFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'testSuite'));
-        this.elements.moduleFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'module'));
-        this.elements.packageFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'package'));
-        this.elements.classFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'class'));
-        this.elements.variantFilterList.addEventListener('change', this.handleVariantSelection.bind(this));
-        this.elements.viewModeList.addEventListener('click', this.handleViewModeChange.bind(this));
+        if (this.elements.moduleFilterList) this.elements.moduleFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'module'));
+        if (this.elements.packageFilterList) this.elements.packageFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'package'));
+        if (this.elements.classFilterList) this.elements.classFilterList.addEventListener('click', this.handleFilterSelection.bind(this, 'class'));
+        if (this.elements.variantFilterList) this.elements.variantFilterList.addEventListener('change', this.handleVariantSelection.bind(this));
+
+        // Add Filter Logic
+        if (this.elements.addFilterList) {
+            this.elements.addFilterList.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const target = e.target.closest('.dropdown-item');
+                if (!target) return;
+
+                const filterType = target.dataset.filterType;
+                if (filterType === 'module') this.elements.modChipContainer.classList.remove('hidden');
+                if (filterType === 'package') this.elements.pkgChipContainer.classList.remove('hidden');
+                if (filterType === 'class') this.elements.clsChipContainer.classList.remove('hidden');
+
+                this.elements.addFilterDropdown.classList.add('hidden');
+                this.handleHeaderFilterChange(filterType);
+                this.updateFilterButtons();
+                this.render();
+
+                // Auto-open newly added dropdown
+                setTimeout(() => {
+                    if (filterType === 'module') {
+                        this.toggleDropdown(this.elements.moduleFilterDropdown);
+                        this.elements.moduleFilterDropdown.classList.remove('hidden');
+                    }
+                    if (filterType === 'package') {
+                        this.toggleDropdown(this.elements.packageFilterDropdown);
+                        this.elements.packageFilterDropdown.classList.remove('hidden');
+                    }
+                    if (filterType === 'class') {
+                        this.toggleDropdown(this.elements.classFilterDropdown);
+                        this.elements.classFilterDropdown.classList.remove('hidden');
+                    }
+                }, 0);
+            });
+        }
+
+        // Close Filter Logic
+        document.querySelectorAll('.chip-close').forEach(closeBtn => {
+            closeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent dropdown from opening
+                const filterType = closeBtn.dataset.filterClose;
+                if (filterType) {
+                    // Mapping data-filter-close values to state.filters array keys
+                    const filterKey = filterType === 'module' ? 'modules' :
+                                      filterType === 'package' ? 'packages' :
+                                      filterType === 'class' ? 'classes' : filterType;
+
+                    this.state.filters[filterKey] = [];
+
+                    if (filterType === 'module') this.elements.modChipContainer.classList.add('hidden');
+                    if (filterType === 'package') this.elements.pkgChipContainer.classList.add('hidden');
+                    if (filterType === 'class') this.elements.clsChipContainer.classList.add('hidden');
+
+                    this.handleHeaderFilterChange();
+                    this.updateFilterButtons();
+                    this.render();
+                }
+            });
+        });
+
+        // Search Reveal Logic
+        if (this.elements.searchRevealBtn) {
+            this.elements.searchRevealBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.elements.searchRevealBtn.classList.add('hidden');
+                this.elements.searchWrapper.classList.add('expanded');
+                this.elements.searchInput.focus();
+            });
+        }
+
+        // View Segments (Flat/Tree)
+        if (this.elements.viewSegments) {
+            this.elements.viewSegments.addEventListener('click', (e) => {
+                const btn = e.target.closest('.segment-btn');
+                if (!btn) return;
+
+                // Update UI Active State
+                this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Update State and Render
+                this.state.viewMode = btn.dataset.value;
+                this.resetSelection();
+                this.render();
+            });
+        }
+
         this.elements.searchInput.addEventListener('input', () => {
             const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
             this.state.filters.search = searchTerm;
@@ -267,56 +527,80 @@ const CoverageReportApp = {
             this.render();
             this.elements.searchInput.focus();
         });
+
+        // Density Segments (Comfy/Compact)
+        if (this.elements.densitySegments) {
+            this.elements.densitySegments.addEventListener('click', (e) => {
+                const btn = e.target.closest('.segment-btn');
+                if (!btn) return;
+
+                this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.state.density = btn.dataset.value;
+                if (this.state.density === 'compact') {
+                    this.elements.mainTable.classList.add('table-compact');
+                } else {
+                    this.elements.mainTable.classList.remove('table-compact');
+                }
+            });
+        }
     },
 
     handleVariantSelection(e) {
-        const checkbox = e.target;
-        const variant = checkbox.dataset.variant;
-        let allVariants = [];
-         if (this.fullReport.variantCoverages && this.fullReport.variantCoverages.length > 0) {
-            allVariants = this.fullReport.variantCoverages.map(v => v.name);
-        }
-
-        if (variant === 'all') {
-            this.state.filters.variants = checkbox.checked ? allVariants : [];
-            this.elements.variantFilterList.querySelectorAll('.variant-toggle').forEach(cb => {
-                cb.checked = checkbox.checked;
-            });
-        } else {
-            if (checkbox.checked) {
-                this.state.filters.variants.push(variant);
-            } else {
-                this.state.filters.variants = this.state.filters.variants.filter(v => v !== variant);
-            }
-
-            const allCheckbox = this.elements.variantFilterList.querySelector('[data-variant="all"]');
-            if(allCheckbox) allCheckbox.checked = this.state.filters.variants.length === allVariants.length;
-        }
-
-        this.updateVariantButtonText();
-        this.render();
+        // This is now handled by buildActionDropdown's onSelectionChange callback
     },
 
     updateFilterButtons() {
-        this.elements.moduleFilterText.textContent = this.state.filters.module === 'all'
-            ? 'All'
-            : this.state.filters.module;
+        let activeChipsCount = 0;
+        const { filters } = this.state;
 
-        this.elements.packageFilterText.textContent = this.state.filters.package === 'all'
-            ? 'All'
-            : this.state.filters.package;
+        const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
+            if (!textElement) return;
+            textElement.textContent = UIUtils.getFilterLabel(type.charAt(0).toUpperCase() + type.slice(1), stateArray, totalCount);
+            if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
+                chipContainer.classList.remove('hidden');
+                activeChipsCount++;
+                this.toggleAddFilterOption(type, false);
+            } else {
+                this.toggleAddFilterOption(type, true);
+            }
+        };
 
-        this.elements.classFilterText.textContent = this.state.filters.class === 'all'
-            ? 'All'
-            : this.state.filters.class;
+        updateChip('module', filters.modules, this.fullReport.modules.length, this.elements.moduleFilterText, this.elements.modChipContainer);
+        updateChip('package', filters.packages, this.allPackages.length, this.elements.packageFilterText, this.elements.pkgChipContainer);
+        updateChip('class', filters.classes, this.allClasses.length, this.elements.classFilterText, this.elements.clsChipContainer);
 
-        if (this.state.filters.testSuite === 'Aggregated') {
+        // Hide Add Filter button if all chips are visible
+        if (this.elements.addFilterBtn) {
+            if (activeChipsCount === 3) {
+                this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+            } else {
+                this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
+            }
+        }
+
+        if (filters.testSuite === 'Aggregated') {
             this.elements.tsAllState.classList.remove('hidden');
             this.elements.tsSelectedState.classList.add('hidden');
         } else {
             this.elements.tsAllState.classList.add('hidden');
             this.elements.tsSelectedState.classList.remove('hidden');
-            this.elements.testSuiteFilterText.textContent = this.state.filters.testSuite;
+            this.elements.testSuiteFilterText.textContent = filters.testSuite;
+        }
+    },
+
+    toggleAddFilterOption(type, show) {
+        if (!this.elements.addFilterList) return;
+        const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
+        if (option) {
+            if (show) {
+                option.classList.remove('hidden');
+                option.style.display = '';
+            } else {
+                option.classList.add('hidden');
+                option.style.display = 'none';
+            }
         }
     },
 
@@ -327,12 +611,14 @@ const CoverageReportApp = {
             allVariantsCount = this.fullReport.variantCoverages.length;
         }
 
-        if (selectedCount === allVariantsCount && allVariantsCount > 0) {
-            this.elements.variantFilterText.textContent = 'All';
-        } else if (selectedCount === 1) {
-            this.elements.variantFilterText.textContent = this.state.filters.variants[0];
-        } else {
-            this.elements.variantFilterText.textContent = `${selectedCount} Variants`;
+        if (this.elements.variantFilterBtn) {
+            if (selectedCount === allVariantsCount && allVariantsCount > 0) {
+                this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+            } else if (selectedCount === 1) {
+                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+            } else {
+                this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+            }
         }
     },
 
@@ -399,84 +685,143 @@ const CoverageReportApp = {
     },
 
     handleFilterSelection(filterType, e) {
-        e.preventDefault();
-        const target = e.target.closest('a');
-        if(!target) return;
+        // This is now handled by buildActionDropdown's onSelectionChange callback
+    },
 
-        const { value } = target.dataset;
+    handleHeaderFilterChange(explicitType = null) {
+        if (this.state.viewMode !== 'flat') return;
 
-        switch (filterType) {
-            case 'module':
-                this.state.filters.module = value;
-                this.state.filters.package = 'all';
-                this.state.filters.class = 'all';
-                break;
-            case 'package':
-                this.state.filters.package = value;
-                this.state.filters.class = 'all';
-                break;
-            case 'class':
-                this.state.filters.class = value;
-                break;
-            case 'testSuite':
-                 this.state.filters.testSuite = value;
-                 break;
-            default:
-                break;
-        }
-
-        this.updateFilterButtons();
-
-        let dropdownElementKey;
-        if (filterType === 'testSuite') {
-            dropdownElementKey = 'testSuiteFilterDropdown';
+        if (explicitType) {
+            const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes' };
+            if (viewMap[explicitType]) {
+                this.state.currentView = viewMap[explicitType];
+            }
         } else {
-            dropdownElementKey = `${filterType}FilterDropdown`;
+            const { classes, packages, modules } = this.state.filters;
+            const activeChips = [];
+            if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
+            if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
+            if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
+
+            if (classes.length > 0 || activeChips.includes('class')) {
+                this.state.currentView = 'classes';
+            } else if (packages.length > 0 || activeChips.includes('package')) {
+                this.state.currentView = 'packages';
+            } else {
+                // Always fallback to modules if deeper hierarchies aren't active
+                this.state.currentView = 'modules';
+            }
         }
 
-        if(this.elements[dropdownElementKey]) {
-            this.elements[dropdownElementKey].classList.add('hidden');
+        // Reset drill-down context to avoid confusing states when grouping abruptly changes
+        this.resetSelection();
+    },
+
+    updateDynamicFilters() {
+        const { selectedModule, selectedPackage, filters } = this.state;
+        let contextModules = this.fullReport.modules;
+
+        if (selectedModule) {
+            contextModules = contextModules.filter(m => m.name === selectedModule);
         }
 
-        this.render();
+        if (filters.modules.length > 0) {
+            contextModules = contextModules.filter(m => filters.modules.includes(m.name));
+        }
+
+        let basePackages = contextModules.flatMap(m => m.packages || []);
+        if (selectedPackage) {
+            basePackages = basePackages.filter(p => p.name === selectedPackage);
+        }
+
+        let filteredPackages = basePackages;
+        if (filters.packages.length > 0) {
+            filteredPackages = basePackages.filter(p => filters.packages.includes(p.name));
+        }
+
+        const moduleOptions = this.fullReport.modules.map(m => ({ name: m.name, value: m.name }));
+
+        const testSuiteOptions = [...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name)))]
+                .sort()
+                .map(name => ({ name: name === 'Aggregated' ? 'All' : name, value: name }));
+        const aggIndex = testSuiteOptions.findIndex(o => o.value === 'Aggregated');
+        if (aggIndex > -1) {
+            testSuiteOptions.unshift(testSuiteOptions.splice(aggIndex, 1)[0]);
+        }
+
+        const packageOptions = [...new Set(basePackages.map(p => p.name))]
+                .sort()
+                .map(name => ({ name, value: name }));
+
+        const classOptions = [...new Set(filteredPackages.flatMap(p => p.classes || []).map(c => c.name))]
+                .sort()
+                .map(name => ({ name, value: name }));
+
+        UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, () => {
+            filters.packages = [];
+            filters.classes = [];
+            this.handleHeaderFilterChange('module');
+            this.updateFilterButtons();
+            this.render();
+        });
+
+        const testSuiteStateWrapper = [filters.testSuite];
+        UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, testSuiteStateWrapper, () => {
+            filters.testSuite = testSuiteStateWrapper[0] || 'Aggregated';
+            this.updateFilterButtons();
+            this.render();
+
+            if (typeof SourceViewApp !== 'undefined' && SourceViewApp.classData) {
+                SourceViewApp.context.testSuiteName = filters.testSuite;
+                if (!document.getElementById('source-view').classList.contains('hidden-view')) {
+                    SourceViewApp.render();
+                }
+            }
+        }, false, false);
+
+        UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, () => {
+            filters.classes = [];
+            this.handleHeaderFilterChange('package');
+            this.updateFilterButtons();
+            this.render();
+        });
+
+        UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, () => {
+            this.handleHeaderFilterChange('class');
+            this.updateFilterButtons();
+            this.render();
+        });
     },
 
     closeDropdownOnClickOutside() {
-        const dropdownConfigs = [
-            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
-            { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
-            { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
-            { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
-            { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
-            { btn: this.elements.viewModeBtn, dropdown: this.elements.viewModeDropdown }
-        ];
-
         document.addEventListener('click', (event) => {
-            dropdownConfigs.forEach(({ btn, dropdown }) => {
+            this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
                 if (btn && dropdown && !btn.contains(event.target) && !dropdown.contains(event.target)) {
                     dropdown.classList.add('hidden');
                 }
             });
+
+            // Search Input Collapse
+            if (this.elements.searchWrapper && this.elements.searchRevealBtn) {
+                if (!this.elements.searchWrapper.contains(event.target) && !this.elements.searchRevealBtn.contains(event.target)) {
+                    if (this.elements.searchInput && this.elements.searchInput.value === '') {
+                        this.elements.searchWrapper.classList.remove('expanded');
+                        setTimeout(() => {
+                            this.elements.searchRevealBtn.classList.remove('hidden');
+                        }, 300);
+                    }
+                }
+            }
         });
     },
 
-    handleViewToggle(e) {
-        const button = e.target.closest('.view-toggle');
-        if (!button) return;
-        this.state.currentView = button.dataset.view;
-        this.resetSelection();
-        this.render();
-    },
-
-    handleViewModeChange(e) {
+    handleGroupByChange(e) {
         e.preventDefault();
-        const target = e.target.closest('a');
-        if(!target) return;
+        const target = e.target.closest('.dropdown-item');
+        if (!target) return;
 
-        this.state.viewMode = target.dataset.value;
-        this.elements.viewModeText.textContent = target.textContent;
-        this.elements.viewModeDropdown.classList.add('hidden');
-        this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+        this.state.currentView = target.dataset.value;
+        this.elements.groupByDropdown.classList.add('hidden');
         this.resetSelection();
         this.render();
     },
@@ -567,24 +912,28 @@ const CoverageReportApp = {
 
     render() {
         this.updateDynamicFilters();
-        this.updateActiveTabs();
+        this.updateGroupByText();
         this.renderBreadcrumbs();
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
-        this.updateHeaderStats(dataToRender);
         this.renderTable(dataToRender);
 
         this.updateTooltipsForOverflow();
     },
 
-    updateActiveTabs() {
-        document.querySelectorAll('.view-toggle').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        const activeButton = this.elements.flatViewControls.querySelector(`[data-view="${this.state.currentView}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
+    updateGroupByText() {
+        if (!this.elements.groupByText) return;
+        const viewMap = {
+            'modules': 'Modules',
+            'packages': 'Packages',
+            'classes': 'Classes'
+        };
+        this.elements.groupByText.textContent = viewMap[this.state.currentView] || 'Modules';
+
+        // Hide Group By entirely in Tree mode
+        if (this.elements.groupByBtn) {
+            this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
         }
     },
 
@@ -628,13 +977,12 @@ const CoverageReportApp = {
             if (!item.testSuiteCoverages) return [];
 
             const suite = item.testSuiteCoverages.find(ts => ts.name === filters.testSuite);
-            // If a suite is not found for a given item (e.g., a test didn't cover this class),
-            // return an empty array.
+
             return suite ? suite.variantCoverages : [];
         };
 
         const addEffectiveCoverage = (item, type, context = {}) => {
-            const newItem = { ...item, type, ...context, testSuiteName: this.state.filters.testSuite  };
+            const newItem = { ...item, type, ...context, testSuiteName: filters.testSuite };
             newItem.variantCoverages = getEffectiveCoverage(item);
             return newItem;
         };
@@ -653,21 +1001,21 @@ const CoverageReportApp = {
             hierarchicalData = this.filterHierarchicalData(hierarchicalData, filters.search);
         }
 
-        if (filters.module !== 'all') {
-            hierarchicalData = hierarchicalData.filter(m => m.name === filters.module);
+        if (filters.modules.length > 0) {
+            hierarchicalData = hierarchicalData.filter(m => filters.modules.includes(m.name));
         }
-        if (filters.package !== 'all') {
+        if (filters.packages.length > 0) {
             hierarchicalData = hierarchicalData.map(m => ({
                 ...m,
-                packages: m.packages.filter(p => p.name === filters.package)
+                packages: m.packages.filter(p => filters.packages.includes(p.name))
             })).filter(m => m.packages.length > 0);
         }
-        if (filters.class !== 'all') {
+        if (filters.classes.length > 0) {
             hierarchicalData = hierarchicalData.map(m => ({
                 ...m,
                 packages: m.packages.map(p => ({
                     ...p,
-                    classes: p.classes.filter(c => c.name === filters.class)
+                    classes: p.classes.filter(c => filters.classes.includes(c.name))
                 })).filter(p => p.classes.length > 0)
             })).filter(m => m.packages.length > 0);
         }
@@ -703,88 +1051,6 @@ const CoverageReportApp = {
         return flatData;
     },
 
-    updateHeaderStats(dataToRender) {
-        const { viewMode, currentView } = this.state;
-        let relevantClasses;
-        let moduleCount = 0;
-
-        if(viewMode === 'tree'){
-            relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
-            moduleCount = dataToRender.length;
-        } else {
-            if (currentView === 'classes') {
-                relevantClasses = dataToRender;
-                moduleCount = new Set(dataToRender.map(c => c.moduleName)).size;
-            } else if (currentView === 'packages') {
-                relevantClasses = dataToRender.flatMap(p => p.classes || []);
-                moduleCount = new Set(dataToRender.map(p => p.moduleName)).size;
-            } else {
-                relevantClasses = dataToRender.flatMap(m => (m.packages || []).flatMap(p => p.classes || []));
-                moduleCount = dataToRender.length;
-            }
-        }
-
-        this.elements.totalModules.textContent = moduleCount;
-        this.elements.totalClasses.textContent = relevantClasses.length;
-    },
-
-    updateDynamicFilters() {
-        const { selectedModule, selectedPackage } = this.state;
-        let contextModules = this.fullReport.modules;
-
-        if (selectedModule) {
-            contextModules = contextModules.filter(m => m.name === selectedModule);
-        }
-
-        let contextPackages = contextModules.flatMap(m => m.packages || []);
-        if (selectedPackage) {
-            contextPackages = contextPackages.filter(p => p.name === selectedPackage);
-        }
-
-        const moduleOptions = [
-            { name: 'All', value: 'all' },
-            ...contextModules.map(m => ({ name: m.name, value: m.name }))
-        ];
-
-        const testSuiteOptions = [
-            { name: 'All', value: 'Aggregated' },
-            ...[...new Set(contextModules.flatMap(m => (m.testSuiteCoverages || []).map(ts => ts.name))
-                .filter(name => name !== 'Aggregated'))]
-                .sort()
-                .map(name => ({ name, value: name }))
-        ];
-
-        const packageOptions = [
-            { name: 'All', value: 'all' },
-            ...[...new Set(contextPackages.map(p => p.name))]
-                .sort()
-                .map(name => ({ name, value: name }))
-        ];
-
-        const classOptions = [
-            { name: 'All', value: 'all' },
-            ...[...new Set(contextPackages.flatMap(p => p.classes || []).map(c => c.name))]
-                .sort()
-                .map(name => ({ name, value: name }))
-        ];
-
-        this.elements.moduleFilterList.innerHTML = moduleOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        this.elements.testSuiteFilterList.innerHTML = testSuiteOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        this.elements.packageFilterList.innerHTML = packageOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-
-        this.elements.classFilterList.innerHTML = classOptions.map(opt =>
-            `<a href="#" data-value="${opt.value}" class="dropdown-item">${opt.name}</a>`
-        ).join('');
-    },
-
     renderTable(dataToRender) {
         this.renderHeaders();
         if (this.state.viewMode === 'tree') {
@@ -795,22 +1061,36 @@ const CoverageReportApp = {
     },
 
     updateTooltipsForOverflow() {
-        const cells = this.elements.coverageData.querySelectorAll('.sticky-name');
-
-        cells.forEach(cell => {
+        // Sticky name columns (Class/Package/Module names)
+        const nameCells = this.elements.coverageData.querySelectorAll('.sticky-name');
+        nameCells.forEach(cell => {
             const isOverflowing = cell.scrollWidth > cell.clientWidth;
+            if (!isOverflowing) {
+                cell.removeAttribute('title');
+            }
+        });
+
+        // Truncated context columns (Module/Package paths)
+        const pathCells = this.elements.coverageData.querySelectorAll('.truncate, .max-w-300');
+        pathCells.forEach(cell => {
+            // Check if any child block is overflowing
+            const blocks = cell.querySelectorAll('.truncate-block');
+            let isOverflowing = false;
+
+            if (blocks.length > 0) {
+                blocks.forEach(block => {
+                    if (block.scrollWidth > block.clientWidth) {
+                        isOverflowing = true;
+                    }
+                });
+            } else if (cell.scrollWidth > cell.clientWidth) {
+                isOverflowing = true;
+            }
 
             if (!isOverflowing) {
                 cell.removeAttribute('title');
             }
         });
-    },
-
-    getCoverageClass(percentage) {
-        if (percentage === '--') return 'text-gray-500';
-        if (percentage >= 80) return 'text-green-600';
-        if (percentage >= 60) return 'text-yellow-600';
-        return 'text-red-600';
     },
 
     getCoverageValues(item, variantName) {
@@ -822,8 +1102,8 @@ const CoverageReportApp = {
                 instrRatio: `${found.instruction.covered}/${found.instruction.total}`,
                 branchPercent: found.branch.percent + '%',
                 branchRatio: `${found.branch.covered}/${found.branch.total}`,
-                instrColor: this.getCoverageClass(found.instruction.percent),
-                branchColor: this.getCoverageClass(found.branch.percent)
+                instrColor: UIUtils.getCoverageClass(found.instruction.percent),
+                branchColor: UIUtils.getCoverageClass(found.branch.percent)
             };
         }
 
@@ -832,8 +1112,8 @@ const CoverageReportApp = {
             instrRatio: '0/0',
             branchPercent: '--',
             branchRatio: '0/0',
-            instrColor: this.getCoverageClass('--'),
-            branchColor: this.getCoverageClass('--')
+            instrColor: UIUtils.getCoverageClass('--'),
+            branchColor: UIUtils.getCoverageClass('--')
         };
     },
 
@@ -850,14 +1130,13 @@ const CoverageReportApp = {
         topHeader.innerHTML = `<th class="${firstColClass}" data-sort-by="name">${mainHeaderTitle} ${sortIndicator('name')}</th>`;
         subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
 
-        if (viewMode === 'flat' && (currentView === 'packages' || currentView === 'classes')) {
-            const contextTitle = (currentView === 'packages') ? 'Module' : 'Package';
-            topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-            subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">${contextTitle}</th>`;
-
+        if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50"></th>`;
-                subHeader.innerHTML += `<th class="py-2 px-4 text-left text-xs font-medium text-gray-600">Module</th>`;
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
+            } else if (currentView === 'packages') {
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
             }
         }
 
@@ -908,7 +1187,7 @@ const CoverageReportApp = {
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
 
             return `<tr class="${rowClasses}" data-id="${item.name}" data-parent-id="${parentId}">
-                <td class="py-3 px-6 sticky-name" title="${item.name}"><div class="flex items-center gap-2 cursor-pointer" style="padding-left: ${level * 1.5}rem;">${chevron}${nameContent}</div></td>
+                <td class="py-3 px-6 sticky-name" title="${item.name}"><div class="flex items-center gap-2 cursor-pointer pl-level-${level}">${chevron}${nameContent}</div></td>
                 ${coverageCells}
             </tr>`;
         };
@@ -943,11 +1222,21 @@ const CoverageReportApp = {
             let nameCell;
             switch (this.state.currentView) {
                 case 'packages':
-                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td><td class="py-3 px-6">${item.moduleName}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
+                    if (!this.state.selectedModule) {
+                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+                    }
                     break;
                 case 'classes':
-                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td><td class="py-3 px-6">${item.packageName}</td>`;
-                    nameCell += `<td class="py-3 px-6">${item.moduleName || ''}</td>`;
+                    nameCell = `<td class="py-3 px-6 sticky-name" title="${item.name}"><a href="#" class="font-medium text-blue-700 hover:underline class-link" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}">${item.name}</a></td>`;
+                    if (!this.state.selectedModule) {
+                        nameCell += `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                            <div class="flex flex-col" style="overflow: hidden; width: 100%;">
+                                <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
+                                <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
+                            </div>
+                        </td>`;
+                    }
                     break;
                 default: // modules
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.name}">${item.name}</td>`;

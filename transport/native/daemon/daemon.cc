@@ -115,7 +115,7 @@ void CopyFileToPackageFolder(const string& package_name, const string& user,
 // By using run-as, connector is under the same uid as the agent, and thus it
 // can talk to the agent who is waiting for the client socket.
 void RunConnector(int app_pid, const string& package_name, const string& user,
-                  const string& daemon_address) {
+                  const string& daemon_address, int32_t attach_timeout_ms) {
   // Use connect() to create a client socket that can talk to the server.
   int fd;  // The client socket that's connected to daemon.
   if ((fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
@@ -135,7 +135,10 @@ void RunConnector(int app_pid, const string& package_name, const string& user,
   std::ostringstream connect_arg;
   connect_arg << "--" << kConnectCmdLineArg << "=" << app_pid;
   // Pass the fd as command line argument to connector.
-  connect_arg << ":" << kDaemonConnectRequest << ":" << fd;
+  // We append attach_timeout_ms (optional) so the connector process knows when
+  // to stop retrying.
+  connect_arg << ":" << kDaemonConnectRequest << ":" << fd << ":"
+              << attach_timeout_ms;
 
   int return_value = -1;
   if (DeviceInfo::is_user_build()) {
@@ -243,7 +246,8 @@ void Daemon::RunServer(const string& server_address) {
 bool Daemon::TryAttachAppAgent(int32_t app_pid, const string& app_name,
                                const string& package_name,
                                const string& agent_lib_file_name,
-                               const string& agent_config_path) {
+                               const string& agent_config_path,
+                               int32_t attach_timeout_ms) {
   assert(profiler::DeviceInfo::feature_level() >= profiler::DeviceInfo::O);
 
   string user = ActivityManager::Instance()->GetCurrentUser();
@@ -288,7 +292,9 @@ bool Daemon::TryAttachAppAgent(int32_t app_pid, const string& app_name,
         socket_name.append("@");
       }
       socket_name.append(config_->GetConfig().common().service_socket_name());
-      RunConnector(app_pid, package_name, user, socket_name);
+      // Spawns the connector process, passing along the timeout so it can fail
+      // fast if needed.
+      RunConnector(app_pid, package_name, user, socket_name, attach_timeout_ms);
       // RunConnector calls execl() at the end. It returns only if an error
       // has occurred.
       exit(EXIT_FAILURE);

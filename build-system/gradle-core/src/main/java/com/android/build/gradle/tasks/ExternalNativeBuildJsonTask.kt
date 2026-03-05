@@ -37,19 +37,19 @@ import javax.inject.Inject
 import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
-import org.gradle.process.ExecOperations
 import org.gradle.work.DisableCachingByDefault
 
 /** Task wrapper around [CxxMetadataGenerator]. */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.NATIVE, secondaryTaskCategories = [TaskCategory.METADATA])
-abstract class ExternalNativeBuildJsonTask @Inject constructor(@get:Internal val ops: ExecOperations) :
+abstract class ExternalNativeBuildJsonTask @Inject constructor(@get:Internal val providers: ProviderFactory) :
   UnsafeOutputsTask("C/C++ Configuration is always run.") {
 
   @get:Internal abstract val sdkComponents: Property<SdkComponentsBuildService>
@@ -73,7 +73,7 @@ abstract class ExternalNativeBuildJsonTask @Inject constructor(@get:Internal val
           abi = abi.rewriteWithLocations(nativeLocationsBuildService.get()),
           analyticsService = analyticsService.get(),
         )
-      generator.configure(ops, false)
+      generator.configure(providers, false)
     }
   }
 }

@@ -66,4 +66,22 @@ class LintVerbosityTest {
     TestFileUtils.searchAndReplace(project.buildFile, "abortOnError = false", "abortOnError true")
     project.executor().expectFailure().run("lintDebug").apply { assertErrorContains("Lint found errors in the project; aborting build.") }
   }
+
+  /**
+   * Integration test to verify that Lint's standard success and baseline-filtered reporting messages do not leak into stdout.
+   *
+   * Regression test for b/468928427. Note: The test project is dynamically patched to remove intentional lint errors so Lint generates a
+   * clean success report. `--rerun-tasks` is required to bypass UP-TO-DATE task caching, ensuring the task actually executes and doesn't
+   * replay cached console output.
+   */
+  @Test
+  fun testCommandLineQuietFlag() {
+    TestFileUtils.searchAndReplace(project.buildFile, "versionCode 010", "versionCode 10")
+
+    project.executor().withArgument("--quiet").withArgument("--rerun-tasks").run("lintDebug")
+
+    val stdout = project.buildResult.stdout
+    ScannerSubject.assertThat(stdout).doesNotContain("Lint found no errors or warnings")
+    ScannerSubject.assertThat(stdout).doesNotContain("Lint found no new issues")
+  }
 }

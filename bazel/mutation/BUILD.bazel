@@ -5,6 +5,7 @@ py_binary(
     name = "mutation",
     srcs = ["mutation.py"],
     deps = [
+        ":config",
         ":mutation_testing_py_proto",
         ":utils",
         "@com_google_protobuf//:protobuf_python",
@@ -18,6 +19,11 @@ py_library(
         ":utils/filter.py",
     ],
     visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "config",
+    srcs = ["config.py"],
 )
 
 proto_library(

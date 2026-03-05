@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.fixture.project.plugins.Andro
 import com.android.build.gradle.integration.common.output.AarMetadataSubject
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.AarMetadataTask
+import com.android.build.gradle.options.BooleanOption
 import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +43,25 @@ class KotlinMultiplatformAarMetadataTest {
         metadataVersion().isEqualTo("1.0")
         minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
         minAgpVersion().isEqualTo("1.0.0")
+        minCompileSdkExtension().isEqualTo("0")
+        coreLibraryDesugaringEnabled().isEqualTo("false")
+        desugarJdkLibId().isNull()
+      }
+    }
+  }
+
+  @Test
+  fun testBasicWithMinAgpAutoEncoding() {
+    rule.build.executor
+      .withFailOnWarning(false) // b/455891987
+      .with(BooleanOption.AUTO_ENCODE_MINIMUM_AGP_VERSION_IN_AAR_METADATA, true)
+      .run(":shared:assembleAndroidMain")
+    rule.build.kotlinMultiplatformLibrary(":shared").assertAar(AarSelector.NO_BUILD_TYPE) {
+      aarMetadata {
+        formatVersion().isEqualTo("1.0")
+        metadataVersion().isEqualTo("1.0")
+        minCompileSdk().isEqualTo(GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION.toString())
+        minAgpVersion().isEqualTo("8.9.1")
         minCompileSdkExtension().isEqualTo("0")
         coreLibraryDesugaringEnabled().isEqualTo("false")
         desugarJdkLibId().isNull()

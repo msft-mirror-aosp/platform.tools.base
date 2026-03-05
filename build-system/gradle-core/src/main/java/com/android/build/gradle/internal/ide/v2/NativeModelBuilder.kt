@@ -50,7 +50,6 @@ import com.android.builder.model.v2.models.ndk.NativeVariant
 import java.lang.RuntimeException
 import javax.inject.Inject
 import org.gradle.api.Project
-import org.gradle.process.ExecOperations
 import org.gradle.tooling.provider.model.ParameterizedToolingModelBuilder
 
 abstract class NativeModelBuilder
@@ -61,8 +60,6 @@ constructor(
   private val projectOptions: ProjectOptions,
   private val variantModel: VariantModel,
 ) : ParameterizedToolingModelBuilder<NativeModelBuilderParameter> {
-
-  @get:Inject protected abstract val ops: ExecOperations
 
   private val ideRefreshExternalNativeModel
     get() = projectOptions.get(BooleanOption.IDE_REFRESH_EXTERNAL_NATIVE_MODEL)
@@ -174,7 +171,7 @@ constructor(
       .filter { (variantName, abi) -> filter(variantName, abi.name) }
       .forEach { (variantName, abi) ->
         try {
-          createGenerator(abi).configure(ops, ideRefreshExternalNativeModel)
+          createGenerator(abi).configure(project.providers, ideRefreshExternalNativeModel)
           outcome.addSuccessfullyConfiguredVariantAbis("$variantName:${abi.name}")
         } catch (e: Throwable) {
           firstException = firstException ?: e

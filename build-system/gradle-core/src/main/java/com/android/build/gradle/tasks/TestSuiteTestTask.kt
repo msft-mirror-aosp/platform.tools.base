@@ -261,10 +261,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     try {
       super.executeTests()
     } finally {
-      val report = TestReport(ReportType.SINGLE_FLAVOR, this.xmlResultsDir.get().asFile, this.reports.html.outputLocation.get().asFile)
+      val xmlResultsDirFile = this.xmlResultsDir.get().asFile
+      val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
+
+      // When android.experimental.androidTest.builtin_test_platform=true, XMLs are in subdirectories.
+      // We need to aggregate all of them to get a complete HTML report.
+      val deviceDirs = xmlResultsDirFile.listFiles()?.filter { it.isDirectory } ?: listOf()
+      val resultDirs = if (deviceDirs.isNotEmpty()) deviceDirs else listOf(xmlResultsDirFile)
+
+      val report = TestReport(ReportType.SINGLE_FLAVOR, resultDirs, htmlOutputDirFile)
       report.generateReport()
 
-      val metadataDir = this.xmlResultsDir.get().asFile.also { it.mkdirs() }
+      val metadataDir = xmlResultsDirFile.also { it.mkdirs() }
       val metadataFile = File(metadataDir, TEST_SUITE_METADATA_FILE)
 
       val metadataContent =
@@ -559,7 +567,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val testTaskReports = task.reports
       // Set html to true so that Gradle's error message contains clickable link to the html file.
       testTaskReports.html.required.setDisallowChanges(true)
-      testTaskReports.junitXml.required.setDisallowChanges(true)
+      // We use our own per-device XML reporter in the android-test-engine to match the default
+      // test execution path behavior.
+      testTaskReports.junitXml.required.setDisallowChanges(false)
       testTaskReports.junitXml.outputLocation.setDisallowChanges(task.xmlResultsDir)
       testTaskReports.html.outputLocation.setDisallowChanges(
         creationConfig.services.projectInfo.getReportsDir().map { it.dir("${BuilderConstants.FD_ANDROID_TESTS}/$subFolder") }

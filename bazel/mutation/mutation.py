@@ -35,15 +35,11 @@ from typing import Optional, List, Tuple
 from tools.base.bazel.mutation.proto import mutation_pb2
 from google.protobuf import text_format
 from tools.base.bazel.mutation.utils import exclude_filter, filter
+from tools.base.bazel.mutation import config
 
 # Default paths for picking files
-DEFAULT_PATHS = ["tools/base/adblib", "tools/base/adblib-tools"]
-DEFAULT_IGNORE_PATHS = [
-    re.compile(r".*build-system/.*"),
-    re.compile(r"(?i).*/test/.*"),
-    re.compile(r"Test\.(kt|java)$"),
-    re.compile(r".*/(testSrc|testData)/.*"),
-]
+DEFAULT_PATHS = config.PATHS
+DEFAULT_IGNORE_PATHS = config.IGNORE_PATHS
 
 # Allowed file format for mutation
 ALLOWED_FILE_FORMAT = (".kt", ".java")

@@ -269,6 +269,7 @@ jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
 
 void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
                         const AgentConfig& agent_config) {
+  Log::V(Log::Tag::PROFILER, "Initializing profiler on agent.");
   JNIEnv* jni_env = GetThreadLocalJNI(vm);
   Agent::Instance().InitializeProfilers();
   // MemoryTrackingEnv needs to wait for the MemoryComponent in the agent,
@@ -307,6 +308,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
   Agent::Instance().RegisterCommandHandler(
       Command::CHECK_LEAKCANARY_PRESENT, [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling CHECK_LEAKCANARY_PRESENT command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         jclass support_class_raw = jni_env->FindClass(
             "com/android/tools/profiler/support/profilers/"
@@ -360,6 +363,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
   Agent::Instance().RegisterCommandHandler(
       Command::GET_LEAKCANARY_THRESHOLD, [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling GET_LEAKCANARY_THRESHOLD command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         jclass support_class_raw = jni_env->FindClass(
             "com/android/tools/profiler/support/profilers/"
@@ -526,6 +531,7 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
 void SetupPerfa(JavaVM* vm, jvmtiEnv* jvmti_env,
                 const AgentConfig& agent_config) {
+  Log::V(Log::Tag::PROFILER, "Setting up perfa agent.");
   if (agent_config.attach_method() == AgentConfig::INSTANT) {
     InitializeProfiler(vm, jvmti_env, agent_config);
   } else {

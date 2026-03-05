@@ -22,5 +22,4 @@ maven_library(
     resource_strip_prefix = "tools/base/annotations",
     version = BASE_VERSION,
     visibility = ["//visibility:public"],
-    warn = "error",
 )

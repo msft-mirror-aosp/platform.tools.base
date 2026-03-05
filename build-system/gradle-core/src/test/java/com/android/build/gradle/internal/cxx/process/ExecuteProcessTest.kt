@@ -29,14 +29,9 @@ import java.io.Serializable
 import java.lang.System.err
 import java.lang.management.ManagementFactory
 import java.nio.file.Paths
-import java.util.concurrent.TimeUnit.SECONDS
-import org.gradle.api.Action
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.internal.file.PathToFileResolver
-import org.gradle.process.ExecOperations
-import org.gradle.process.ExecResult
-import org.gradle.process.ExecSpec
-import org.gradle.process.JavaExecSpec
-import org.gradle.process.internal.DefaultExecSpec
+import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -57,7 +52,7 @@ class ExecuteProcessTest {
 
       val script = createCallbackShellScripts(scriptBase) { args -> err.println("stderr with args: ${args.joinToString(" ") { "'$it'" }}") }
 
-      createCommand(script, "command").copy(useScript = true).addArgs("arg1", "arg2", "arg3").execute(ops())
+      createCommand(script, "command").copy(useScript = true).addArgs("arg1", "arg2", "arg3").execute(providers())
 
       assertStderr("stderr with args: 'arg1' 'arg2' 'arg3'")
     }
@@ -133,7 +128,7 @@ class ExecuteProcessTest {
       val script = createCallbackShellScripts(scriptBase) { args -> err.println("stderr with args: ${args.joinToString(" ") { "'$it'" }}") }
 
       try {
-        createCommand(script, "command").copy(useScript = true).addArgs(value, "$value$value", "\"$value\"").execute(ops())
+        createCommand(script, "command").copy(useScript = true).addArgs(value, "$value$value", "\"$value\"").execute(providers())
       } catch (e: Exception) {
         if (e.message == expectedException) return
         throw (e)
@@ -155,7 +150,7 @@ class ExecuteProcessTest {
       val expectedException = (if (CURRENT_PLATFORM == PLATFORM_WINDOWS) windows else posix)?.replace("<command>", commandFile.path)
 
       try {
-        createCommand(script, commandName).copy(useScript = true).addArgs(value, "$value$value", "\"$value\"").execute(ops())
+        createCommand(script, commandName).copy(useScript = true).addArgs(value, "$value$value", "\"$value\"").execute(providers())
       } catch (e: Exception) {
         if (e.message == expectedException) return
         error("expected [$expectedException] but got [${e.message}]")
@@ -194,26 +189,8 @@ class ExecuteProcessTest {
   private fun WorkingContext.createCommand(script: File, commandFile: File) =
     createExecuteProcessCommand(script).copy(commandFile = commandFile, stdout = stdout, stderr = stderr)
 
-  /** Implementation of [ExecOperations] */
-  private fun WorkingContext.ops() =
-    object : ExecOperations {
-      override fun exec(setSpec: Action<in ExecSpec>): ExecResult {
-        val spec = DefaultExecSpec(TestPathToFileResolver(workingDir))
-        setSpec.execute(spec)
-        val proc = ProcessBuilder(spec.commandLine).directory(workingDir).redirectOutput(stdout).redirectError(stderr).start()
-
-        proc.waitFor(6, SECONDS)
-        return object : ExecResult {
-          override fun getExitValue() = proc.exitValue()
-
-          override fun assertNormalExitValue() = this
-
-          override fun rethrowFailure() = this
-        }
-      }
-
-      override fun javaexec(p0: Action<in JavaExecSpec>?) = error("notimpl")
-    }
+  /** Implementation of [ProviderFactory] */
+  private fun WorkingContext.providers(): ProviderFactory = ProjectBuilder.builder().withProjectDir(workingDir).build().providers
 
   /**
    * Write a pair of shell scripts to call back into the main(...) function on T.

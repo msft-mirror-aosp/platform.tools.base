@@ -1,5 +1,6 @@
 androidLibrary {
     namespace = "org.example.mylib"
+    compileSdk = 34
 
     buildFeatures {
         buildConfig = true
@@ -17,28 +18,28 @@ androidLibrary {
         buildConfigField("Integer", "MY_INT", "0")
     }
 
-    compileOptions {
-        encoding = "utf-8"
-//        sourceCompatibility = VERSION_17
-//        targetCompatibility = VERSION_17
-    }
+//    compileOptions {
+//        encoding = "utf-8"
+////        sourceCompatibility = VERSION_17
+////        targetCompatibility = VERSION_17
+//    }
 
-    buildTypes {
-        buildType("debug") {
-            isMinifyEnabled = false
-            dependencies {
-                implementation("com.google.guava:guava:33.3.1-jre")
-            }
-        }
-
-        buildType("release") {
-            isMinifyEnabled = true
-        }
-
-        buildType("benchmark") {
-            isMinifyEnabled = false
-        }
-    }
+//    buildTypes {
+//        buildType("debug") {
+//            isMinifyEnabled = false
+//            dependencies {
+//                implementation("com.google.guava:guava:33.3.1-jre")
+//            }
+//        }
+//
+//        buildType("release") {
+//            isMinifyEnabled = true
+//        }
+//
+//        buildType("benchmark") {
+//            isMinifyEnabled = false
+//        }
+//    }
 
 //    sourceSets {
 //        configure("main") {
@@ -57,6 +58,7 @@ androidLibrary {
     dependenciesDcl {
         implementation("org.apache.commons:commons-lang3:3.13.0")
         implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.24")
+        implementation("com.google.guava:guava:33.3.1-jre")
 
         testImplementation("junit:junit:4.13.2")
         androidTestImplementation("androidx.test:runner:1.4.0-alpha06")

@@ -27,8 +27,12 @@ import com.android.utils.ILogger
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Preconditions
 import java.io.File
+import java.net.URI
+import java.nio.file.FileSystems
+import java.nio.file.Files
 import java.util.zip.Deflater
 import java.util.zip.ZipFile
+import kotlin.io.path.readText
 import kotlin.streams.toList
 import org.gradle.api.JavaVersion
 
@@ -81,9 +85,10 @@ class JdkImageTransformDelegate(val systemModulesJar: File, val workDir: File, v
   @VisibleForTesting
   internal fun makeModuleJar(): File {
     val moduleInfoClass = makeModuleInfoClass()
+    val releaseTxtContents = jdkTools.getReleaseTxtContents()
 
     val moduleJar = workDir.resolve("module.jar")
-    createJar(moduleInfoClass, listOf(systemModulesJar), moduleJar)
+    createJar(moduleInfoClass, listOf(systemModulesJar), releaseTxtContents, moduleJar)
 
     return moduleJar
   }
@@ -132,6 +137,8 @@ class JdkTools(val javaHome: File, val processExecutor: ProcessExecutor, val log
     }
   }
 
+  private val javaVersion: JavaVersion by lazy { JavaVersion.toVersion(jlinkVersion) }
+
   fun compileModuleDescriptor(moduleInfoJava: File, systemModulesJar: File, outDir: File) {
     val classpathArgValue = systemModulesJar.absolutePath
     val javacExecutable = javaHome.resolve("bin").resolve("javac".optionalExe())
@@ -148,6 +155,22 @@ class JdkTools(val javaHome: File, val processExecutor: ProcessExecutor, val log
       }
 
     processExecutor.execute(pib.createProcess(), LoggedProcessOutputHandler(logger)).rethrowFailure().assertNormalExitValue()
+  }
+
+  /**
+   * Returns the contents of the [JDK_INTERNAL_RELEASE_DOT_TXT] file to support JDK 26+ (see b/486844145).
+   *
+   * This function returns `null` if the JDK version is less than 26, or if the file is no longer present in some future JDK version.
+   */
+  fun getReleaseTxtContents(): String? {
+    if (!javaVersion.isCompatibleWith(JavaVersion.VERSION_26)) return null
+
+    return FileSystems.newFileSystem(URI.create("jrt:/"), mapOf("java.home" to javaHome.path)).use {
+      val releaseTxtPath = it.getPath("/modules/java.base/$JDK_INTERNAL_RELEASE_DOT_TXT")
+      if (Files.exists(releaseTxtPath)) {
+        releaseTxtPath.readText()
+      } else null
+    }
   }
 
   fun createJmodFromModularJar(jmodFile: File, jlinkVersion: String, moduleJar: File) {
@@ -201,11 +224,12 @@ internal fun generateModuleDescriptor(moduleName: String, jars: List<File>): Str
 }
 
 @VisibleForTesting
-internal fun createJar(moduleInfoClass: File, inJars: List<File>, outputJar: File) {
+internal fun createJar(moduleInfoClass: File, inJars: List<File>, releaseTxtContents: String?, outputJar: File) {
   JarFlinger(outputJar.toPath(), null).use {
     it.setCompressionLevel(Deflater.NO_COMPRESSION)
     it.addFile(moduleInfoClass.name, moduleInfoClass.toPath())
     inJars.forEach { inJar -> it.addJar(inJar.toPath()) }
+    releaseTxtContents?.let { contents -> it.addEntry(JDK_INTERNAL_RELEASE_DOT_TXT, contents.toByteArray().inputStream()) }
   }
 }
 
@@ -222,3 +246,5 @@ private fun copyJrtFsJar(outDir: File, jdkTools: JdkTools) {
 internal fun String.optionalExe() = if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) this + ".exe" else this
 
 internal const val JRT_FS_JAR = "jrt-fs.jar"
+
+private const val JDK_INTERNAL_RELEASE_DOT_TXT = "jdk/internal/misc/resources/release.txt"

@@ -79,7 +79,12 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
     if (outputStream.get() != OutputStream.ABBREVIATED) {
       textReportInputFile.get().asFile.let { textReportFile ->
         val text = textReportFile.readText()
-        if (text.startsWith("No issues found") || text.contains("No errors or warnings") || text.contains("0 errors, 0 warnings")) {
+        if (
+          text.startsWith("No issues found") ||
+            text.contains("no errors or warnings", ignoreCase = true) ||
+            text.contains("0 errors, 0 warnings") ||
+            text.contains("no new issues", ignoreCase = true)
+        ) {
           return@let
         }
         when (outputStream.get()) {

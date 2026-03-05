@@ -208,10 +208,13 @@ public class DownloadCache {
 
     /**
      * Returns the directory to be used as a cache.
-     * Creates it if necessary.
      *
-     * @return An existing directory to use as a cache root dir,
-     *   or null in case of error in which case the cache will be disabled.
+     * <p>The directory is <em>not</em> created here. Creation is deferred to the first actual
+     * write (see {@link #downloadAndCache}). Creating it eagerly during construction triggers a
+     * Gradle configuration cache miss on the next build because Gradle detects the new directory
+     * as a file system change since the cache was stored.
+     *
+     * @return The directory to use as a cache root dir, or null if {@code androidFolder} is null.
      * @param androidFolder
      */
     @Nullable
@@ -219,12 +222,7 @@ public class DownloadCache {
         if (androidFolder == null) {
             return null;
         }
-
-        File cacheRoot = new File(androidFolder, SdkConstants.FD_CACHE);
-        if (!mFileOp.exists(cacheRoot)) {
-            mFileOp.mkdirs(cacheRoot);
-        }
-        return cacheRoot;
+        return new File(androidFolder, SdkConstants.FD_CACHE);
     }
 
     /**
@@ -657,6 +655,10 @@ public class DownloadCache {
                 return null;
             }
 
+            // Ensure the cache directory exists before writing. This is intentionally deferred
+            // from construction time to avoid creating the directory during Gradle's configuration
+            // phase, which would invalidate the Gradle configuration cache on the next build.
+            mFileOp.mkdirs(mCacheRoot);
             os = mFileOp.newFileOutputStream(cached);
 
             int n;

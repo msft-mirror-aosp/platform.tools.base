@@ -50,7 +50,7 @@ import org.w3c.dom.Node
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
-  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
+  @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) @get:Optional abstract val testResults: ListProperty<Directory>
 
   @get:InputFiles
   @get:Optional
@@ -84,7 +84,9 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
       }
     }
 
-    testResults.get().forEach { directory -> processXml(directory.asFile) }
+    if (testResults.isPresent) {
+      testResults.get().forEach { directory -> processXml(directory.asFile) }
+    }
 
     dependentModuleTestResults.asFileTree.forEach { xmlFile ->
       val targetFile = outputDir.resolve(xmlFile.name)
@@ -102,7 +104,7 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
 
       task.dependentModuleTestResults.from(
         creationConfig.variantDependencies.getArtifactFileCollection(
-          AndroidArtifacts.ConsumedConfigType.COMPILE_CLASSPATH,
+          AndroidArtifacts.ConsumedConfigType.RUNTIME_CLASSPATH,
           AndroidArtifacts.ArtifactScope.PROJECT,
           AndroidArtifacts.ArtifactType.TEST_RESULTS,
         )
@@ -144,7 +146,13 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
     override fun configure(task: TestResultsCollectionTask) {
       super.configure(task)
 
-      task.testResults.set(creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_RESULTS))
+      val unitTestResults = creationConfig.artifacts.get(InternalArtifactType.UNIT_TEST_RESULTS)
+      val connectedTestResults = creationConfig.artifacts.get(InternalArtifactType.ANDROID_TEST_RESULTS)
+      val testSuiteResults = creationConfig.artifacts.getAll(InternalMultipleArtifactType.TEST_SUITE_RESULTS)
+
+      task.testResults.set(testSuiteResults)
+      task.testResults.add(unitTestResults)
+      task.testResults.add(connectedTestResults)
     }
   }
 

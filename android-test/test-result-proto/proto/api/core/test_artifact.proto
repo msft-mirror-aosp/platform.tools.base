@@ -1,0 +1,84 @@
+//
+// Copyright (C) 2022 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.testing.platform.proto.api.core;
+
+import "google/protobuf/any.proto";
+import "proto/api/core/label.proto";
+import "proto/api/core/path.proto";
+
+option java_package = 'com.google.testing.platform.proto.api.core';
+option java_outer_classname = 'TestArtifactProto';
+
+// Artifact represents a file that must be transported between the remote and
+// the workstation. Paths mentioned in the artifact are always relative.
+message Artifact {
+  // Label is the label of the artifact being transferred. This is for debugging
+  // and information purposes only.
+  Label label = 1;
+
+  // SourcePath is a relative path from runners root dir to the file.
+  Path source_path = 2;
+
+  // DestinationPath specify the artifact location in a target environment, such
+  // as an Android device.
+  Path destination_path = 3;
+
+  // ArtifactType is the test runner's best effort attempt to identify what the
+  // contents of the file are or how the test runner intends to use it.
+  ArtifactType type = 4;
+
+  // CheckSum is used by the test runner to ensure that the file was properly
+  // transferred from the host to the lab machine.
+  string checksum = 5;
+
+  // Mime type of the artifact.
+  // e.g. text/plain, image/jpeg, text/html, android/logcat etc.
+  // Optional
+  string mime_type = 6;
+
+  // Handling instructions for the artifact. e.g.: in android_installable.proto,
+  // the AndroidInstallationHandling message.
+  google.protobuf.Any handling = 7;
+}
+
+// TODO(b/258307375): Deprecate platform-dependent enum values
+enum ArtifactType {
+  ARTIFACT_TYPE_UNSPECIFIED = 0;
+  // Any other executable that is not an apk or test data
+  EXECUTABLE = 1;
+  // Test, app or service apk
+  ANDROID_APK = 2;
+  // Any other test data artifact
+  TEST_DATA = 3;
+  // Android aab
+  ANDROID_APP_BUNDLE = 4;
+  // Android apks
+  ANDROID_APK_SET = 5;
+  // Data on the host containing the remote device, rather than on the device
+  // itself.
+  REMOTE_DATA = 6;
+}
+
+// Message to be sent via the event system when an artifact has been handled
+// (e.g.: installed or copied to the device). This makes it possible to have a
+// device provider pick and choose which artifacts it can install, and a plugin
+// can later read the events and determine which artifacts have yet to be
+// installed and do the rest of the work.
+message ArtifactHandled {
+  Artifact artifact = 1;
+}

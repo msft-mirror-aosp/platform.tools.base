@@ -349,6 +349,21 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
                 AttributeModel.newModel(SdkConstants.ATTR_EXTRACT_NATIVE_LIBS)
                         .setMergingPolicy(STRICT_MAIN_OR_OVERLAY_MERGING_POLICY)),
 
+        /*
+         * Allow Component Access represents the set of rules, declared in an application's
+         *  manifest via the
+         * {@code <allow-component-access>} tag, that defines which other applications (and their
+         * components) the application is permitted to associate with.
+         *
+         * Feature in development, documentation link not yet available.
+         */
+        ALLOW_COMPONENT_ACCESS(
+                MergeType.MERGE,
+                new AttributeBasedNodeKeyResolver(
+                        ANDROID_URI, SdkConstants.ATTR_ACCESS_DEFAULT_COMPONENTS),
+                AttributeModel.newModel(SdkConstants.ATTR_ACCESS_DEFAULT_COMPONENTS)
+                        .setMergingPolicy(OR_MERGING_POLICY)),
+
         /**
          * Category (contained in intent-filter, intent) <br>
          * <b>See also : </b> {@link <a
@@ -448,7 +463,10 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         NAV_GRAPH(MergeType.MERGE, DEFAULT_NO_KEY_NODE_RESOLVER),
 
         /** App enumeration tags declaration (contained in manifest) */
-        PACKAGE(MergeType.MERGE, DEFAULT_NAME_ATTRIBUTE_RESOLVER),
+        PACKAGE(
+                MergeType.MERGE,
+                DEFAULT_NAME_ATTRIBUTE_RESOLVER,
+                AttributeModel.newModel(SdkConstants.ATTR_CERT_DIGEST)),
 
         /**
          * Path-permission (contained in provider) <br>
@@ -565,7 +583,8 @@ public class ManifestModel implements DocumentModel<ManifestModel.NodeTypes> {
         PROVIDER(
                 MergeType.MERGE,
                 PROVIDER_KEY_RESOLVER,
-                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent()),
+                AttributeModel.newModel(SdkConstants.ATTR_NAME).setIsPackageDependent(),
+                AttributeModel.newModel(SdkConstants.ATTR_AUTHORITIES)),
 
         /**
          * Queries <br>

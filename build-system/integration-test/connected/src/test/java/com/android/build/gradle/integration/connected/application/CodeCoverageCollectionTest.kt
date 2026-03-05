@@ -188,6 +188,7 @@ class CodeCoverageCollectionTest {
             }
 
             dependencies {
+              implementation(project(":lib2"))
               testImplementation("junit:junit:4.13.2")
               testImplementation("org.mockito:mockito-core:5.12.0")
               testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
@@ -340,7 +341,7 @@ class CodeCoverageCollectionTest {
 
     val xmlReports = taskOutputDir.listFiles()
 
-    Truth.assertThat(xmlReports.size).isEqualTo(6)
+    Truth.assertThat(xmlReports.size).isEqualTo(9)
 
     // Check the contents of generated report for current (app) module and reports copied from
     // dependant modules (lib).

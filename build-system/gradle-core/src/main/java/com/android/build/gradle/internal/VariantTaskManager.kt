@@ -129,20 +129,23 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     checkMultidexDependency()
 
     registerTestAndCodeCoverageReportTasks()
+    val testResultsCollectionTasksMap: MutableMap<String, MutableList<TaskProvider<TestResultsCollectionTask>>> = mutableMapOf()
 
     // Create tasks for all variants (main, testFixtures and tests)
     for (variantInfo: ComponentInfo<VariantBuilderT, VariantT> in variants) {
-      createTasksForVariant(variantInfo)
+      val testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>> = mutableListOf()
+      createTasksForVariant(variantInfo, testResultsCollectionTasks)
 
       for (testSuite in variantInfo.variant.testSuites) {
         TestSuiteTaskManager(project, globalConfig).createTasks(testSuite)
       }
+      testResultsCollectionTasksMap[variantInfo.variant.name] = testResultsCollectionTasks
     }
     for (testFixturesComponent in testFixturesComponents) {
       testFixturesTaskManager.createTasks(testFixturesComponent)
     }
     for (testComponent in testComponents) {
-      createTasksForTest(testComponent)
+      createTasksForTest(testComponent, testResultsCollectionTasksMap)
     }
     createTopLevelTasks(componentType, variantModel)
   }
@@ -165,7 +168,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
    *
    * This creates tasks common to all variant types.
    */
-  private fun createTasksForVariant(componentInfo: ComponentInfo<VariantBuilderT, VariantT>) {
+  private fun createTasksForVariant(
+    componentInfo: ComponentInfo<VariantBuilderT, VariantT>,
+    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
+  ) {
     val variant = componentInfo.variant
     val componentType = variant.componentType
     val variantDependencies = variant.variantDependencies
@@ -191,7 +197,7 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     // they are listening too.
     variant.artifacts.listenerManager.executeActions()
 
-    registerTestAndCodeCoverageCollectionTasks(componentInfo)
+    registerTestAndCodeCoverageCollectionTasks(componentInfo, testResultsCollectionTasks)
   }
 
   open fun createTopLevelTasks(componentType: ComponentType, variantModel: VariantModel) {
@@ -249,7 +255,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   }
 
   /** Create tasks for the specified variant. */
-  private fun createTasksForTest(testVariant: TestComponentCreationConfig) {
+  private fun createTasksForTest(
+    testVariant: TestComponentCreationConfig,
+    testResultsCollectionTasksMap: MutableMap<String, MutableList<TaskProvider<TestResultsCollectionTask>>>,
+  ) {
     createAssembleTask(testVariant)
     val testedVariant = testVariant.mainVariant
     if (testedVariant.renderscriptCreationConfig?.renderscript?.supportModeEnabled?.get() == true) {
@@ -268,13 +277,13 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
         project.dependencies.add(variantDependencies.compileClasspath.name, multiDexInstrumentationDep)
         project.dependencies.add(variantDependencies.runtimeClasspath.name, multiDexInstrumentationDep)
       }
-      androidTestTaskManager.createTasks(testVariant as DeviceTestCreationConfig)
+      androidTestTaskManager.createTasks(testVariant as DeviceTestCreationConfig, testResultsCollectionTasksMap)
     } else if (testVariant.componentType.isForScreenshotPreview) {
       // SCREENSHOT_TEST
       screenshotTestTaskManager.createTasks(testVariant as HostTestCreationConfig)
     } else if (testVariant.componentType == ComponentTypeImpl.UNIT_TEST) {
       // UNIT_TEST
-      unitTestTaskManager.createTasks(testVariant as HostTestCreationConfig)
+      unitTestTaskManager.createTasks(testVariant as HostTestCreationConfig, testResultsCollectionTasksMap)
     }
   }
 
@@ -642,9 +651,11 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
   }
 
   /** Register test data collection tasks for test results and code coverage reporting */
-  protected open fun registerTestAndCodeCoverageCollectionTasks(variantInfo: ComponentInfo<VariantBuilderT, VariantT>) {
-    taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
-
+  protected open fun registerTestAndCodeCoverageCollectionTasks(
+    variantInfo: ComponentInfo<VariantBuilderT, VariantT>,
+    testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>> = mutableListOf(),
+  ) {
+    testResultsCollectionTasks.add(taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant)))
     taskFactory.register(
       CodeCoverageCollectionTask.CoverageCollectionCreationAction(
         CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),

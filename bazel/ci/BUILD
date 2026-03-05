@@ -148,6 +148,7 @@ py_library(
     deps = [
         ":bazel",
         ":errors",
+        ":flake_reruns",
         ":owners_checks",
         ":query_checks",
         ":studio_linux",
@@ -155,6 +156,16 @@ py_library(
         ":studio_nightly",
         ":studio_win",
         ":uitools_evals",
+    ],
+)
+
+py_library(
+    name = "flake_reruns",
+    srcs = ["flake_reruns.py"],
+    deps = [
+        ":bazel",
+        ":gce",
+        ":studio",
     ],
 )
 

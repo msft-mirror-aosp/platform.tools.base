@@ -171,6 +171,9 @@ message AttachAgent {
   // Package name may not easily be found for a given PID by the daemon.
   // It's easier to for the command issuer (host) to supply it.
   string package_name = 3;
+  // Optional timeout for the agent attachment process in milliseconds.
+  // If not specified or 0, a default timeout (e.g. 5 minutes) is used.
+  int32 attach_timeout_ms = 4;
 }
 
 message GetCpuCoreConfig {

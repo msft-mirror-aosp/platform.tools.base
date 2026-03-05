@@ -21,6 +21,20 @@ single_version_override(
 
 bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "rules_rust", version = "0.68.1")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.spec(package = "anyhow", features = ["std", "backtrace"], version = "1.0.98")
+crate.spec(package = "jni", version = "0.21.1")
+crate.spec(package = "zip", default_features = False, features = ["deflate"], version = "2.4.2")
+crate.spec(package = "libloading", version = "0.8.6")
+crate.spec(package = "log", version = "0.4.26")
+crate.spec(package = "env_logger", version = "0.11.6")
+crate.spec(package = "sha1", version = "0.10.6")
+
+crate.from_specs()
+use_repo(crate, "crates")
+
 bazel_dep(name = "rules_go", version = "0.52.0")
 bazel_dep(name = "rules_cc", version = "0.0.15")
 bazel_dep(name = "rules_python", version = "1.1.0")

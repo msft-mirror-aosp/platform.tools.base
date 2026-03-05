@@ -123,7 +123,8 @@ class Daemon {
   bool TryAttachAppAgent(int32_t app_pid, const std::string& app_name,
                          const std::string& package_name,
                          const std::string& agent_lib_file_name,
-                         const std::string& agent_config_path);
+                         const std::string& agent_config_path,
+                         int32_t attach_timeout_ms = 0);
 
   void SetHeartBeatTimestamp(int32_t app_pid, int64_t timestamp);
 

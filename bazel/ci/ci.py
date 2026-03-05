@@ -12,6 +12,7 @@ import uuid
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
+from tools.base.bazel.ci import flake_reruns
 from tools.base.bazel.ci import owners_checks
 from tools.base.bazel.ci import query_checks
 from tools.base.bazel.ci import studio_linux
@@ -154,8 +155,12 @@ def main():
       ci.run(studio_linux.studio_linux_large)
     case 'studio-linux_very_flaky':
       ci.run(studio_linux.studio_linux_very_flaky)
+    case 'studio-linux-flake-reruns':
+      ci.run(flake_reruns.studio_linux_flake_reruns)
     case 'studio-win':
       ci.run(studio_win.studio_win)
+    case 'studio-win-flake-reruns':
+      ci.run(flake_reruns.studio_win_flake_reruns)
     case 'studio-mac':
       ci.run(studio_mac.studio_mac)
     case 'studio-mac-arm':

@@ -3,6 +3,7 @@ package com.android.build.api.dsl
 import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.api.provider.SetProperty
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** DSL object for external library dependencies keep rules configurations. */
 @Incubating
@@ -27,7 +28,7 @@ interface KeepRules {
   @Incubating fun ignoreFromAllExternalDependencies(ignore: Boolean)
 
   /** Keep rules files set */
-  @get:Incubating val files: SetProperty<File>
+  @get:HiddenInDefinition @get:Incubating val files: SetProperty<File>
 
   /**
    * This flag will include default keep rules that enables shrinking, obfuscation, and optimization of bytecode when `optimization.enable`

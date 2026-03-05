@@ -1,0 +1,77 @@
+//
+// Copyright (C) 2022 The Android Open Source Project
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.testing.platform.proto.api.core;
+
+import "proto/api/core/label.proto";
+
+option java_package = 'com.google.testing.platform.proto.api.core';
+option java_outer_classname = 'ErrorDetailProto';
+
+// Contains the full error information, each nested error detail contains the
+// underlying cause/suppressed errors.
+// Consider the scenario of a fatal crash in UTP. All error details are
+// recorded inside the top-level ErrorDetail. Additionally the underlying cause
+// can be recorded in a nested ErrorDetail. This makes it easier for users of
+// this Api to find the root cause without having to parse log data or stack
+// traces.
+message ErrorDetail {
+  // Summary of the error thrown.
+  ErrorSummary summary = 1;
+
+  // The underlying error that caused this error.
+  // This is not required but recommend as it can give useful insight into the
+  // underlying issues that otherwise would be hard to surface to the user.
+  ErrorDetail cause = 2;
+
+  // Any underlying additional/suppressed errors that have caused this error.
+  repeated ErrorDetail suppressed = 3;
+}
+
+// Summary of the error.
+message ErrorSummary {
+  // The namespace of the component that produced this error.
+  // E.g. UnifiedTestPlatForm, DataStagingPlugin
+  Label namespace = 1;
+
+  // The Error code, each extension is in its own namespace and has a unique
+  // error code definition.
+  int32 error_code = 2;
+
+  // Name of the error.
+  // E.g. PLUGIN_FAILED, NO_TESTS_FOUND
+  string error_name = 3;
+
+  // The type of the error.
+  // Note that each namespace can have its own set of error classification types
+  // E.g. In UTP each error will be mapped to one of these three types
+  // 1. CONFIG - User has entered the wrong config
+  // 2. UNDERLYING_TOOL - Underlying tools have caused failures
+  // 3. INFRA - Infra of UTP has failed unexpectedly
+  string error_classification = 4;
+
+  // The error message.
+  // E.g. "Executing TestDataPlugin failed, look at logs."
+  string error_message = 5;
+
+  // Name of the Exception that threw this error.
+  // E.g. UTPPluginException, IllegalStateException
+  string class_name = 6;
+
+  // Serialized version of the stack trace at the point the error was thrown.
+  string stack_trace = 7;
+}

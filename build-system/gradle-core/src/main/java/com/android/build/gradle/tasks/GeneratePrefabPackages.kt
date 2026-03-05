@@ -60,7 +60,7 @@ import com.android.utils.cxx.CxxDiagnosticCode.PREFAB_SINGLE_STL_VIOLATION_LIBRA
 import com.android.utils.cxx.CxxDiagnosticCode.PREFAB_UNSUPPORTED_PLATFORM
 import java.io.File
 import kotlin.io.path.createTempDirectory
-import org.gradle.process.ExecOperations
+import org.gradle.api.provider.ProviderFactory
 
 /**
  * Invokes the Prefab CLI to generate CMake or ndk-build build system glue for connecting to Prefab packages. The Prefab packages may be an
@@ -70,7 +70,7 @@ import org.gradle.process.ExecOperations
  * ndk-build) glue will *not* have references to the temporary folder. Instead, the glue will have references to the header files and
  * libraries from the originating module.
  */
-fun createPrefabBuildSystemGlue(ops: ExecOperations, abi: CxxAbiModel) {
+fun createPrefabBuildSystemGlue(providers: ProviderFactory, abi: CxxAbiModel) {
 
   val buildSystem =
     when (abi.variant.module.buildSystem) {
@@ -98,7 +98,7 @@ fun createPrefabBuildSystemGlue(ops: ExecOperations, abi: CxxAbiModel) {
         .addArgs("--output", layout.cliStagedOutput.path)
         .addArgs(prefabPackages.map { it.packageFolder.path })
 
-    abi.executeProcess(processType = PREFAB_PROCESS, command = executeCommand, ops = ops, processStderr = ::reportErrors)
+    abi.executeProcess(processType = PREFAB_PROCESS, command = executeCommand, providers = providers, processStderr = ::reportErrors)
     // TODO it should be possible to avoid this translation phase by implementing
     //  com.google.prefab.api.BuildSystemProvider and passing its jar to the CLI
     //  via classpath.

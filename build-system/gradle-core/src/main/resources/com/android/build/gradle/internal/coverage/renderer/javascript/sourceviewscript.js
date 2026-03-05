@@ -20,8 +20,10 @@ const SourceViewApp = {
     context: {},
     state: {
         selectedVariants: [],
-        isLoading: false
+        isLoading: false,
+        scrollLock: false
     },
+    isSyncing: false,
 
     init() {
         this.cacheElements();
@@ -35,12 +37,15 @@ const SourceViewApp = {
             functionList: document.getElementById('function-list'),
             functionSearch: document.getElementById('function-search'),
             functionSearchClearBtn: document.getElementById('function-search-clear-btn'),
+            srcSearchRevealBtn: document.getElementById('src-search-reveal-btn'),
+            srcSearchWrapper: document.getElementById('src-search-wrapper'),
             sourceBreadcrumbs: document.getElementById('source-breadcrumbs'),
             variantFilterBtn: document.getElementById('source-variant-filter-btn'),
             sourceVariantFilterText: document.getElementById('source-variant-filter-text'),
             variantFiltersDropdown: document.getElementById('source-variant-filters-dropdown'),
             variantFilters: document.getElementById('source-variant-filters'),
             sourceViewContainer: document.getElementById('source-view-container'),
+            scrollLockSegments: document.getElementById('scroll-lock-segments'),
             loadingOverlay: this.createLoadingOverlay()
         };
     },
@@ -65,8 +70,23 @@ const SourceViewApp = {
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
+        // Reset selected variants if we are loading a new class (check name and package)
+        if (!this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name) {
+            this.state.selectedVariants = [];
+        }
+
         this.classData = classData;
         this.context = context;
+
+        if (!classData?.variantSourceFilePaths) {
+            this.elements.sourceViewContainer.innerHTML = `
+                <div class="p-8 text-center text-red-600">
+                    <h3 class="text-lg font-bold">No Source Data</h3>
+                    <p>No source file paths found for ${classData?.name || 'this class'}.</p>
+                </div>`;
+            return;
+        }
+
         this.toggleLoading(true);
 
         const requiredPaths = [...new Set(classData.variantSourceFilePaths.map(v => v.path))];
@@ -119,7 +139,9 @@ const SourceViewApp = {
 
     render() {
         const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
-        this.state.selectedVariants = [...availableVariants];
+        if (this.state.selectedVariants.length === 0) {
+            this.state.selectedVariants = [...availableVariants];
+        }
 
         this.renderBreadcrumbs();
         this.renderFilters(availableVariants);
@@ -129,19 +151,11 @@ const SourceViewApp = {
     },
 
     renderBreadcrumbs() {
-        const { packageName, sourceFileName } = this.classData;
-        const { moduleName, testSuiteName } = this.context;
+        const { sourceFileName } = this.classData;
+        const packageName = this.classData.packageName || this.context.packageName;
+        const { moduleName } = this.context;
 
-        let html = `
-            <a href="#" class="action-btn" data-action="go-back">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-                </svg>
-                <span>Back</span>
-            </a>`;
-
-        html += `<div class="flex items-center gap-2 text-sm">
-            <span class="breadcrumb-separator">/</span>
+        let html = `<div class="flex items-center gap-2 text-sm">
             <a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
 
         if (moduleName) {
@@ -154,11 +168,6 @@ const SourceViewApp = {
                 <span class="breadcrumb-separator">/</span>
                 <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
         }
-        if (testSuiteName !== "Aggregated") {
-             html += `
-                <span class="breadcrumb-separator">/</span>
-                <span class="text-gray-500">${testSuiteName}</span>`;
-        }
 
         html += `
             <span class="breadcrumb-separator">/</span>
@@ -170,11 +179,51 @@ const SourceViewApp = {
 
     bindEvents() {
         this.elements.variantFilterBtn.addEventListener('click', this.toggleVariantDropdown.bind(this));
-        this.elements.variantFilters.addEventListener('change', this.handleVariantToggle.bind(this));
         this.elements.functionSearch.addEventListener('input', this.handleFunctionSearch.bind(this));
         this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
         this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
+
+        if (this.elements.srcSearchRevealBtn) {
+            this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.elements.srcSearchRevealBtn.classList.add('hidden');
+                this.elements.srcSearchWrapper.classList.add('expanded');
+                this.elements.functionSearch.focus();
+            });
+        }
+
+        if (this.elements.scrollLockSegments) {
+            this.elements.scrollLockSegments.addEventListener('click', (e) => {
+                const btn = e.target.closest('.segment-btn');
+                if (!btn) return;
+
+                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.state.scrollLock = (btn.dataset.value === 'on');
+            });
+        }
+
+        this.elements.sourceViewContainer.addEventListener('scroll', (e) => {
+            if (!this.state.scrollLock) return;
+            if (!e.target.classList.contains('code-container')) return;
+            if (this.isSyncing) return;
+
+            this.isSyncing = true;
+            const source = e.target;
+            const containers = this.elements.sourceViewContainer.querySelectorAll('.code-container');
+
+            requestAnimationFrame(() => {
+                containers.forEach(c => {
+                    if (c !== source) {
+                        c.scrollTop = source.scrollTop;
+                        c.scrollLeft = source.scrollLeft;
+                    }
+                });
+                this.isSyncing = false;
+            });
+        }, true);
     },
 
     handleBreadcrumbClick(e) {
@@ -185,10 +234,6 @@ const SourceViewApp = {
         const { action, moduleName, packageName } = link.dataset;
 
         switch (action) {
-            case 'go-back':
-                App.showReportView();
-                break;
-
             case 'go-to-modules':
                 CoverageReportApp.resetSelection();
                 CoverageReportApp.state.currentView = 'modules';
@@ -221,32 +266,19 @@ const SourceViewApp = {
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
             }
-        });
-    },
 
-    handleVariantToggle(e) {
-        const checkbox = e.target;
-        const variant = checkbox.dataset.variant;
-        const available = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
-
-        if (variant === 'all') {
-            this.state.selectedVariants = checkbox.checked ? available : [];
-            this.elements.variantFilters.querySelectorAll('.variant-toggle').forEach(cb => {
-                cb.checked = checkbox.checked;
-            });
-        } else {
-            if (checkbox.checked) {
-                this.state.selectedVariants.push(variant);
-            } else {
-                this.state.selectedVariants = this.state.selectedVariants.filter(v => v !== variant);
+            // Search Input Collapse
+            if (this.elements.srcSearchWrapper && this.elements.srcSearchRevealBtn) {
+                if (!this.elements.srcSearchWrapper.contains(event.target) && !this.elements.srcSearchRevealBtn.contains(event.target)) {
+                    if (this.elements.functionSearch && this.elements.functionSearch.value === '') {
+                        this.elements.srcSearchWrapper.classList.remove('expanded');
+                        setTimeout(() => {
+                            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+                        }, 300);
+                    }
+                }
             }
-
-            const allCheckbox = this.elements.variantFilters.querySelector('[data-variant="all"]');
-            if(allCheckbox) allCheckbox.checked = this.state.selectedVariants.length === available.length;
-        }
-
-        this.renderAllVariantViews();
-        this.updateVariantButtonText();
+        });
     },
 
     updateVariantButtonText() {
@@ -319,14 +351,12 @@ const SourceViewApp = {
     },
 
     renderFilters(availableVariants) {
-        const variantOptions = [{name: 'All', value: 'all'}, ...availableVariants.map(v => ({name: v, value: v}))];
+        const variantOptions = availableVariants.map(v => ({name: v, value: v}));
 
-        this.elements.variantFilters.innerHTML = variantOptions.map(opt => `
-            <label class="flex items-center gap-2 cursor-pointer px-2 py-1 hover:bg-gray-100 rounded">
-                <input type="checkbox" class="variant-toggle w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500" data-variant="${opt.value}" ${this.state.selectedVariants.includes(opt.value) || (this.state.selectedVariants.length === availableVariants.length && opt.value === 'all') ? 'checked' : ''} />
-                <span class="text-sm text-gray-700">${opt.name}</span>
-            </label>
-        `).join('');
+        UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
+            this.renderAllVariantViews();
+            this.updateVariantButtonText();
+        }, false);
     },
 
     renderFunctionList() {
@@ -343,6 +373,11 @@ const SourceViewApp = {
                 <div class="text-sm font-mono truncate">${method.name}</div>
             </div>`
         ).join('');
+
+        // Re-apply any existing search filter
+        if (this.elements.functionSearch.value.trim().length > 0) {
+            this.handleFunctionSearch({ target: this.elements.functionSearch });
+        }
     },
 
     renderAllVariantViews() {
@@ -354,12 +389,6 @@ const SourceViewApp = {
         if (covered === 0 && total > 0) return 'cell-uncovered';
         if (covered === total) return 'cell-covered';
         return 'cell-partial';
-    },
-
-    getTextClass(percent) {
-        if (percent >=80) return 'text-green-600';
-        if (percent >= 60) return 'text-yellow-600';
-        return 'text-red-600';
     },
 
     /**
@@ -403,7 +432,7 @@ const SourceViewApp = {
         const percent = summaryStats ? summaryStats.instruction.percent : 0;
         const covered = summaryStats ? summaryStats.instruction.covered : 0;
         const total = summaryStats ? summaryStats.instruction.total : 0;
-        const colorClass = this.getTextClass(percent);
+        const colorClass = UIUtils.getCoverageClass(percent);
 
         const tbody = fileReport.linesCoverages.map(line => {
             const { lineNumber, lineText, variantCoverageDetails } = line;
@@ -439,14 +468,10 @@ const SourceViewApp = {
             `;
         }).join('');
 
-        const headerTitle = this.context.testSuiteName
-            ? `${variantName} (${this.context.testSuiteName})`
-            : variantName;
-
         return `
             <div class="variant-code-view" data-variant="${variantName}">
                 <div class="variant-header">
-                    <div>${headerTitle}</div>
+                    <div>${variantName}</div>
                     <div class="flex items-baseline gap-2 mt-1">
                         <span class="font-bold ${colorClass}">${percent}%</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>

@@ -57,6 +57,15 @@ final class HelperConfig {
     /** The broadcast action sent from Studio to the app to start listening for leaks. */
     static final String START_LISTENING_INTENT = "studio.leakcanary.START_LISTENING";
 
+    /** The broadcast action sent from Studio to request the retained visible threshold. */
+    static final String GET_THRESHOLD_INTENT = "studio.leakcanary.GET_THRESHOLD";
+
+    /** The broadcast action sent from the app containing the threshold result. */
+    static final String THRESHOLD_RESULT_INTENT = "studio.leakcanary.THRESHOLD_RESULT";
+
+    /** The key for the threshold extra in the result intent. */
+    static final String THRESHOLD_EXTRA = "threshold";
+
     /**
      * Suffix for the internal permission used to protect broadcast receivers on API < 33. The full
      * permission is usually "${applicationId}" + INTERNAL_PERMISSION_SUFFIX.
@@ -82,6 +91,7 @@ final class HelperConfig {
     static final String CLEAR_OBJECTS_WATCHED_BEFORE_METHOD = "clearObjectsWatchedBefore";
     static final String GC_TRIGGER_DEFAULT_CLASS = "leakcanary.GcTrigger$Default";
     static final String RUN_GC_METHOD = "runGc";
+    static final String GET_RETAINED_VISIBLE_THRESHOLD_METHOD = "getRetainedVisibleThreshold";
 
     /** Private constructor to prevent instantiation of this utility class. */
     private HelperConfig() {}

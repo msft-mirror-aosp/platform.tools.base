@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
+
 /** DSL object for per-variant NDK settings, such as the ABI filter. */
 interface Ndk {
   /** The module name */
@@ -25,7 +27,7 @@ interface Ndk {
   @Deprecated("Specify C/C++ flags in CMakeLists.txt or Application.mk") var cFlags: String?
 
   /** The LD Libs */
-  @Deprecated("Specify LD libs in CMakeLists.txt or Application.mk") val ldLibs: MutableList<String>?
+  @get:HiddenInDefinition @Deprecated("Specify LD libs in CMakeLists.txt or Application.mk") val ldLibs: MutableList<String>?
 
   /**
    * Specifies the Application Binary Interfaces (ABI) that Gradle should build outputs for and package with your APK.

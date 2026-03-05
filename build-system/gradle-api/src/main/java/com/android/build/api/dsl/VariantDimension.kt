@@ -19,6 +19,7 @@ package com.android.build.api.dsl
 import java.io.File
 import org.gradle.api.Incubating
 import org.gradle.declarative.dsl.model.annotations.Adding
+import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /**
  * Shared properties between DSL objects that contribute to a variant.
@@ -138,7 +139,9 @@ interface VariantDimension {
    */
   fun addManifestPlaceholders(manifestPlaceholders: Map<String, Any>)
 
-  @Deprecated("Use manifestPlaceholders property instead") fun setManifestPlaceholders(manifestPlaceholders: Map<String, Any>): Void?
+  @HiddenInDefinition
+  @Deprecated("Use manifestPlaceholders property instead")
+  fun setManifestPlaceholders(manifestPlaceholders: Map<String, Any>): Void?
 
   /** Options for configuring Java compilation. */
   val javaCompileOptions: JavaCompileOptions

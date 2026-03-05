@@ -72,7 +72,10 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
           handleListV2Protocol(device, input, output)
         }
 
-        "QUIT" -> handleQuitProtocol(socket)
+        "QUIT" -> {
+          handleQuitProtocol(input, socket)
+          break
+        }
         else -> {
           closeSocketWithUnknownCommand(socket, syncRequest)
           break
@@ -172,7 +175,10 @@ class SyncCommandHandler : DeviceCommandHandler("sync") {
     writeDentV2Entry(output, id = "DONE", fileState = null)
   }
 
-  private fun handleQuitProtocol(socket: Socket) {
+  private fun handleQuitProtocol(input: InputStream, socket: Socket) {
+    // QUIT command is followed by an int32 value of zero
+    val value = readInt32(input)
+    assert(value == 0)
     socket.shutdownOutput()
   }
 
