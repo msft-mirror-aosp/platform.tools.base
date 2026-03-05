@@ -42,8 +42,12 @@ import org.junit.platform.engine.support.hierarchical.Node
  *
  * @property deviceSerial The serial number of the target Android device.
  */
-class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
-  AbstractTestDescriptor(uniqueId, deviceSerial), Node<AndroidTestExecutionContext> {
+class AndroidDeviceDescriptor(
+  uniqueId: UniqueId,
+  val deviceSerial: String,
+  val deviceId: String = deviceSerial,
+  val deviceDisplayName: String = deviceId,
+) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
 
   private sealed class TestEvent {
     data class NewTest(val descriptor: AndroidDynamicTestDescriptor) : TestEvent()
@@ -60,8 +64,8 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
 
     val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs)
 
-    val resultsDir = config.resultsDir?.let { File(it, deviceSerial).also { it.mkdirs() } }
-    val reporter = resultsDir?.let { SimpleXmlResultReporter(it, deviceSerial) }
+    val resultsDir = config.resultsDir?.let { File(it, deviceId).also { it.mkdirs() } }
+    val reporter = resultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
     val listener = Listener(context, reporter)
 
     val instrumentationRunner =
@@ -133,8 +137,13 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
       reporter?.testRunStarted("android-test", testCount)
 
       // We publish a ReportEntry with the testCount so that it can be picked up by listeners.
-      val reportEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
-      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, reportEntry)
+      val testCountEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, testCountEntry)
+
+      // We publish a ReportEntry with the deviceDisplayName so that it can be used to determine the
+      // result directory name.
+      val displayNameEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName)
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, displayNameEntry)
     }
 
     /** Called when a test case starts on the device. */

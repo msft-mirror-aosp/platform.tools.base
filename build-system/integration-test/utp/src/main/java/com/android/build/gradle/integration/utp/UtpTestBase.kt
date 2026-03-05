@@ -439,15 +439,11 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     assertThat(project.resolve(testReportPath).resolveSibling("index.html")).exists()
     assertThat(project.resolve(testReportPath)).exists()
-
-    // TODO(b/476442048): Support test result proto validation for the built-in test platform.
-    //   For now, we skip these assertions because the new JUnit engine implementation does not
-    //   yet produce these artifacts in the expected locations.
-    if (runWithBuiltInPlatform) {
-      return
-    }
-
     assertThat(project.resolve(testResultPbPath)).exists()
+
+    val testSuiteResult = project.resolve(testResultPbPath).toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
 
   @Test

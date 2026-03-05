@@ -23,4 +23,10 @@ object AndroidTestResultListenerKeys {
 
   /** The file path to write streaming test results to. */
   const val STREAMING_RESULTS_FILE = "com.android.junit.engine.results.streaming.file"
+
+  /** The file path to write test results proto to. */
+  const val TEST_RESULTS_FILE = "com.android.junit.engine.results.file"
+
+  /** The directory path to write test results proto to. */
+  const val RESULTS_DIR = "com.android.junit.engine.results.dir"
 }

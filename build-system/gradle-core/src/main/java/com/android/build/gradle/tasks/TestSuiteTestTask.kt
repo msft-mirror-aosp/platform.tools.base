@@ -264,10 +264,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val xmlResultsDirFile = this.xmlResultsDir.get().asFile
       val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
 
-      // When android.experimental.androidTest.builtin_test_platform=true, XMLs are in subdirectories.
+      // When android.experimental.androidTest.builtin_test_platform=true, XMLs might be in the root
+      // results directory or in device-specific subdirectories (alongside other artifacts).
       // We need to aggregate all of them to get a complete HTML report.
-      val deviceDirs = xmlResultsDirFile.listFiles()?.filter { it.isDirectory } ?: listOf()
-      val resultDirs = if (deviceDirs.isNotEmpty()) deviceDirs else listOf(xmlResultsDirFile)
+      val resultDirs = mutableListOf(xmlResultsDirFile)
+      xmlResultsDirFile.listFiles()?.filter { it.isDirectory }?.let { resultDirs.addAll(it) }
 
       val report = TestReport(ReportType.SINGLE_FLAVOR, resultDirs, htmlOutputDirFile)
       report.generateReport()
@@ -500,6 +501,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           it.from(
             creationConfig.services.configurations.detachedConfiguration(
               creationConfig.services.dependencies.create("com.android.tools.androidtest:android-test-engine:$androidTestEngineVersion"),
+              creationConfig.services.dependencies.create(
+                "com.android.tools.androidtest:android-test-engine-result-listener:$androidTestEngineVersion"
+              ),
               creationConfig.services.dependencies.create("org.junit.platform:junit-platform-engine:1.12.0"),
               creationConfig.services.dependencies.create("org.junit.platform:junit-platform-launcher:1.12.0"),
             )

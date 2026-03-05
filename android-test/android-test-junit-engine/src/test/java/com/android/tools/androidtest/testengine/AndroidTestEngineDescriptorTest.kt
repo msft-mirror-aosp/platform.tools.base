@@ -17,6 +17,7 @@
 package com.android.tools.androidtest.testengine
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Test
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.hierarchical.Node
@@ -37,6 +38,7 @@ class AndroidTestEngineDescriptorTest {
     val configuration = mock<AndroidTestConfiguration>()
     whenever(context.configuration).thenReturn(configuration)
     whenever(configuration.deviceSerials).thenReturn(listOf("serial1", "serial2"))
+    whenever(configuration.adb).thenReturn(File("adb"))
 
     val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
 

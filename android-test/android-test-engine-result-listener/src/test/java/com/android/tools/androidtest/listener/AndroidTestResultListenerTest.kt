@@ -314,6 +314,62 @@ class AndroidTestResultListenerTest {
   }
 
   @Test
+  fun testSuiteFinished_writesResultsToProtoFile() {
+    val tempFile = File.createTempFile("test-results", ".pb")
+    systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.TEST_RESULTS_FILE, tempFile.absolutePath)
+    try {
+      val listener = AndroidTestResultListener()
+      val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:my-device]")
+      whenever(deviceIdentifier.isContainer).thenReturn(true)
+      val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:my-device]/[test:myTest]")
+      val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+      whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+      listener.executionStarted(deviceIdentifier)
+      listener.executionStarted(testIdentifier)
+      listener.executionFinished(testIdentifier, TestExecutionResult.successful())
+      listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+      assertThat(tempFile.exists()).isTrue()
+      val testSuiteResult = tempFile.inputStream().use { TestSuiteResultProto.TestSuiteResult.parseFrom(it) }
+      assertThat(testSuiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+      assertThat(testSuiteResult.testResultCount).isEqualTo(1)
+      assertThat(testSuiteResult.getTestResult(0).testCase.testMethod).isEqualTo("myMethod")
+    } finally {
+      tempFile.delete()
+    }
+  }
+
+  @Test
+  fun testSuiteFinished_writesResultsToResultsDir() {
+    val tempDir = File(System.getProperty("java.io.tmpdir"), "android-test-results-" + System.currentTimeMillis())
+    tempDir.mkdirs()
+    systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.RESULTS_DIR, tempDir.absolutePath)
+    try {
+      val listener = AndroidTestResultListener()
+      val deviceId = "my-device-123"
+      val deviceIdentifier = mockTestIdentifier(isTest = false, uniqueIdStr = "[engine:mock]/[device:$deviceId]")
+      whenever(deviceIdentifier.isContainer).thenReturn(true)
+      val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:mock]/[device:$deviceId]/[test:myTest]")
+      val methodSource = MethodSource.from("com.example.MyTest", "myMethod")
+      whenever(testIdentifier.source).thenReturn(Optional.of(methodSource))
+
+      listener.executionStarted(deviceIdentifier)
+      listener.executionStarted(testIdentifier)
+      listener.executionFinished(testIdentifier, TestExecutionResult.successful())
+      listener.executionFinished(deviceIdentifier, TestExecutionResult.successful())
+
+      val expectedFile = File(tempDir, deviceId).resolve("test-result.pb")
+      assertThat(expectedFile.exists()).isTrue()
+      val testSuiteResult = expectedFile.inputStream().use { TestSuiteResultProto.TestSuiteResult.parseFrom(it) }
+      assertThat(testSuiteResult.testStatus).isEqualTo(TestStatusProto.TestStatus.PASSED)
+      assertThat(testSuiteResult.testResultCount).isEqualTo(1)
+    } finally {
+      tempDir.deleteRecursively()
+    }
+  }
+
+  @Test
   fun printTestResultEvent_disabled() {
     systemPropertyOverrides.setProperty(AndroidTestResultListenerKeys.STREAM_BASE64_ENCODED_RESULT, "false")
     val listener = AndroidTestResultListener()

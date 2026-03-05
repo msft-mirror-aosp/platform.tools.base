@@ -55,6 +55,12 @@ class AndroidTestResultListener : TestExecutionListener {
   /** Tracks whether TestSuiteStarted event has been emitted for each device serial. */
   private val perDeviceTestSuiteStartedEmitted = ConcurrentHashMap<String, Boolean>()
 
+  /** Tracks device display name for each device serial. */
+  private val perDeviceDisplayName = ConcurrentHashMap<String, String>()
+
+  /** Tracks test results for each device serial. */
+  private val perDeviceTestResults = ConcurrentHashMap<String, MutableList<TestResultProto.TestResult>>()
+
   /** Properties loaded from the file specified by AGP environment variable. */
   private val configurationProperties: Properties by lazy {
     val properties = Properties()
@@ -121,6 +127,11 @@ class AndroidTestResultListener : TestExecutionListener {
     if (testCount != null) {
       emitTestSuiteStarted(deviceId, testCount)
     }
+
+    val displayName = entry.keyValuePairs[AndroidTestReportKeys.DEVICE_DISPLAY_NAME]
+    if (displayName != null) {
+      perDeviceDisplayName[deviceId] = displayName
+    }
   }
 
   /** Emits a TestSuiteStarted event for the given [deviceId] with the specified [scheduledTestCount]. */
@@ -148,10 +159,29 @@ class AndroidTestResultListener : TestExecutionListener {
         emitTestSuiteStarted(deviceId, 0)
 
         val allTestsPassed = perDeviceAllTestsPassed.getOrDefault(deviceId, true)
+        val testResults = perDeviceTestResults[deviceId] ?: emptyList<TestResultProto.TestResult>()
         val testSuiteResult =
           TestSuiteResultProto.TestSuiteResult.newBuilder()
             .setTestStatus(if (allTestsPassed) TestStatusProto.TestStatus.PASSED else TestStatusProto.TestStatus.FAILED)
+            .addAllTestResult(testResults)
             .build()
+
+        val resultsFilePath =
+          getProperty(AndroidTestResultListenerKeys.TEST_RESULTS_FILE)
+            ?: getProperty(AndroidTestResultListenerKeys.RESULTS_DIR)?.let { resultsDir ->
+              val dirName = perDeviceDisplayName[deviceId] ?: deviceId
+              File(resultsDir, dirName).resolve("test-result.pb").absolutePath
+            }
+
+        if (resultsFilePath != null) {
+          try {
+            val file = File(resultsFilePath)
+            file.parentFile?.mkdirs()
+            file.outputStream().use { testSuiteResult.writeTo(it) }
+          } catch (t: Throwable) {
+            logger.log(Level.SEVERE, "failed to write test results to $resultsFilePath", t)
+          }
+        }
 
         val testSuiteFinished = TestResultEvent.TestSuiteFinished.newBuilder().setTestSuiteResult(Any.pack(testSuiteResult)).build()
         val event = TestResultEvent.newBuilder().setTestSuiteFinished(testSuiteFinished).setDeviceId(deviceId).build()
@@ -186,6 +216,10 @@ class AndroidTestResultListener : TestExecutionListener {
             }
           }
           .build()
+
+      if (deviceId.isNotEmpty()) {
+        perDeviceTestResults.getOrPut(deviceId) { mutableListOf() }.add(testResult)
+      }
 
       val testCaseFinished = TestResultEvent.TestCaseFinished.newBuilder().setTestCaseResult(Any.pack(testResult)).build()
 
@@ -273,6 +307,11 @@ class AndroidTestResultListener : TestExecutionListener {
 
   /** Extracts the device ID from the [TestIdentifier.uniqueId] string. */
   private fun TestIdentifier.getDeviceId(): String? {
-    return uniqueId.substringAfter("[device:", "").substringBefore("]").takeIf { it.isNotEmpty() }
+    val devicePart = uniqueId.substringAfterLast("[device:", "")
+    return if (devicePart.isNotEmpty()) {
+      devicePart.substringBefore("]")
+    } else {
+      null
+    }
   }
 }

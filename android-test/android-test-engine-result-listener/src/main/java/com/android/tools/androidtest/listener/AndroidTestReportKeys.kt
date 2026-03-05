@@ -20,4 +20,7 @@ package com.android.tools.androidtest.listener
 object AndroidTestReportKeys {
   /** The report entry key for the test count. */
   const val TEST_COUNT = "android-test.test-count"
+
+  /** The report entry key for the device display name. */
+  const val DEVICE_DISPLAY_NAME = "android-test.device-display-name"
 }
