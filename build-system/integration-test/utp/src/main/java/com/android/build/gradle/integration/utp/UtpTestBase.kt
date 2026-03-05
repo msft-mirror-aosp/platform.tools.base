@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
@@ -65,7 +64,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   val rule =
     ruleBuilder.from {
       androidApplication {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin"
           installation { timeOutInMs = 30000 }
@@ -145,7 +143,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidLibrary {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.library"
           installation { timeOutInMs = 30000 }
@@ -186,7 +183,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidTest {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.testonly"
           targetProjectPath = ":app"
@@ -227,7 +223,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidFeature {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.feature"
           installation { timeOutInMs = 30000 }
@@ -317,11 +312,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
       androidApplication(":emptyAppProject") {}
 
-      gradleProperties {
-        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
-      }
+      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
     }
 
   val project: Path
@@ -332,7 +323,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       rule.build.executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withEnableInfoLogging(false)
-        .disableBuiltInKotlin()
         .configureGradleTaskExecutor()
 
   open fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
