@@ -64,10 +64,11 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "MyProject")
     val report = aggregator.generateReport()
 
-    assertThat(report.variants).containsExactly("debug")
+    assertThat(report.projectName).isEqualTo("MyProject")
+    assertThat(report.timestamp).isNotEmpty()
     assertThat(report.modules).hasSize(1)
 
     val module = report.modules.first()
@@ -130,9 +131,11 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir2, "test-report-2.xml", xmlContent2)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2))
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2), projectName = "MyMultiVariantProject")
     val report = aggregator.generateReport()
 
+    assertThat(report.projectName).isEqualTo("MyMultiVariantProject")
+    assertThat(report.timestamp).isNotEmpty()
     assertThat(report.variants).containsExactly("debug", "release").inOrder()
     assertThat(report.modules).hasSize(1)
 
@@ -181,7 +184,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "MyProject")
     aggregator.writeReport(outputDir)
 
     assertThat(File(outputDir, "data.js").exists()).isTrue()
@@ -191,6 +194,8 @@ class XMLReportAggregatorTest {
 
     val dataJsContent = File(outputDir, "data.js").readText()
     assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = {")
+    assertThat(dataJsContent).contains("\"projectName\": \"MyProject\"")
+    assertThat(dataJsContent).contains("\"timestamp\"")
     assertThat(dataJsContent).contains("debug")
     assertThat(dataJsContent).contains("testExample")
   }
@@ -217,14 +222,14 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir1, "test-report.xml", xmlContent)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1))
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "FailureProject")
     val report = aggregator.generateReport()
 
-    val module = report.modules.first()
-    val testSuite = module.testSuites.first()
-    val pkg = testSuite.packages.first()
-    val clazz = pkg.classes.first()
-    val function = clazz.functions.first()
+    val module = report.modules.findOrThrow({ it.name == ":lib" }) { ":lib module not found" }
+    val testSuite = module.testSuites.findOrThrow({ it.name == "failedUnitTest" }) { "failedUnitTest not found" }
+    val pkg = testSuite.packages.findOrThrow({ it.name == "com.example.app" }) { "com.example.app package not found" }
+    val clazz = pkg.classes.findOrThrow({ it.name == "MyFailedClassTest" }) { "MyFailedClassTest not found" }
+    val function = clazz.functions.findOrThrow({ it.name == "testFailure" }) { "testFailure function not found" }
 
     assertThat(function.name).isEqualTo("testFailure")
     assertThat(function.results["debug"]?.status).isEqualTo("fail")
@@ -236,7 +241,7 @@ class XMLReportAggregatorTest {
   fun testProcessXmlForAggregation_nonExistentDirectory() {
     val nonExistentDir = File(temporaryFolder.root, "nonExistent")
 
-    val aggregator = XMLReportAggregator(files = listOf(nonExistentDir))
+    val aggregator = XMLReportAggregator(files = listOf(nonExistentDir), projectName = "ProjectWithMissingFile")
     // This should not throw an exception, but rather log a warning
     val report = aggregator.generateReport()
     assertThat(report.modules).isEmpty()
@@ -276,7 +281,7 @@ class XMLReportAggregatorTest {
         .trimIndent()
     createXmlReport(inputDir2, "trial-report.xml", trialDebugXml)
 
-    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2))
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1, inputDir2), projectName = "VariantSpecificProject")
     val report = aggregator.generateReport()
 
     assertThat(report.variants).containsExactly("stagingDebug", "trialDebug").inOrder()

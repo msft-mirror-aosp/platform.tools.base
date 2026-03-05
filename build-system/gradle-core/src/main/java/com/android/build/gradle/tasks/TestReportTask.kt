@@ -41,6 +41,8 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
   @get:Input abstract val reportAggregationEnabled: Property<Boolean>
 
+  @get:Input abstract val rootProjectName: Property<String>
+
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
 
   @get:OutputDirectory abstract val testReport: DirectoryProperty
@@ -53,7 +55,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
     val testReport = testReport.get().asFile
 
-    XMLReportAggregator(inputDirectories).writeReport(testReport)
+    XMLReportAggregator(inputDirectories, rootProjectName.get()).writeReport(testReport)
   }
 
   class AggregatedTestReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
@@ -90,6 +92,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       if (isReportAggregationEnabled) {
         task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
       }
+      task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
     }
   }
 }

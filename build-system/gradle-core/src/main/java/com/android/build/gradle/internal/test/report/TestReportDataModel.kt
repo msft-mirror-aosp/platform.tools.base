@@ -25,7 +25,7 @@ package com.android.build.gradle.internal.test.report
  *   [Function.results] map.
  * @property modules A list of modules in the project (e.g., ":app", ":lib").
  */
-data class RootReport(val variants: List<String>, val modules: List<Module>)
+data class RootReport(val projectName: String, val timestamp: String, val variants: List<String>, val modules: List<Module>)
 
 /**
  * Represents a Gradle module in the test report.

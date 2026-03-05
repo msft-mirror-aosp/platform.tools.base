@@ -55,13 +55,17 @@ class TestReportDataModelTest {
     val pkg = Package(name = "com.example", classes = listOf(classType))
     val testSuite = TestSuite(name = "suite1", packages = listOf(pkg))
     val module = Module(name = ":app", testSuites = listOf(testSuite))
-    val rootReport = RootReport(variants = listOf("debug", "release"), modules = listOf(module))
+    val rootReport = RootReport("project", "Mar 4, 2026, 6:09PM", variants = listOf("debug", "release"), modules = listOf(module))
 
     val jsonString = gson.toJson(rootReport)
 
-    assertThat(jsonString).contains(""""variants":["debug","release"]""")
-    assertThat(jsonString).contains(""""name":":app"""")
-    assertThat(jsonString).contains(""""name":"test1"""")
-    assertThat(jsonString).contains(""""debug":{"status":"pass"}""")
+    val expectedJson =
+      """
+      {"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","variants":["debug","release"],"modules":[{"name":":app","testSuites":[{"name":"suite1","packages":[{"name":"com.example","classes":[{"name":"MyTest","functions":[{"name":"test1","results":{"debug":{"status":"pass"}}}]}]}]}]}]}
+      """
+        .trimIndent()
+        .replace(Regex("\\s"), "")
+
+    assertThat(jsonString.replace(Regex("\\s"), "")).isEqualTo(expectedJson)
   }
 }

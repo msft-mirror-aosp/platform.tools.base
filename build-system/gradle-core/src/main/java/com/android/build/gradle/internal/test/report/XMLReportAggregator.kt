@@ -27,6 +27,10 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.lang.reflect.Type
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants
 import javax.xml.stream.XMLStreamException
@@ -36,14 +40,14 @@ import javax.xml.stream.XMLStreamException
  *
  * The `getReport()` method converts this internal map structure into the final list-based [RootReport] data model for serialization.
  */
-class XMLReportAggregator(private val files: List<File>) {
+class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
   @VisibleForTesting fun getInputFiles(): List<File> = files
 
   private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
 
   // Global set of all unique variant names encountered.
-  private val rootReportBuilder = RootReportBuilder()
+  private val rootReportBuilder = RootReportBuilder(projectName)
 
   /** Generates the final [RootReport] by processing all input files. */
   fun generateReport(): RootReport {
@@ -238,7 +242,7 @@ class XMLReportAggregator(private val files: List<File>) {
     return rootReportBuilder.build()
   }
 
-  private class RootReportBuilder {
+  private class RootReportBuilder(private val projectName: String) {
     private val variants = HashSet<String>()
     private val moduleBuilders = mutableMapOf<String, ModuleBuilder>()
 
@@ -248,7 +252,17 @@ class XMLReportAggregator(private val files: List<File>) {
 
     fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
 
-    fun build() = RootReport(variants = variants.sorted(), modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name })
+    fun build(): RootReport {
+      val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+      val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
+      val formattedTimestamp = zonedDateTime.format(formatter)
+      return RootReport(
+        projectName,
+        formattedTimestamp,
+        variants = variants.sorted(),
+        modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name },
+      )
+    }
   }
 
   private class ModuleBuilder(val name: String) {
