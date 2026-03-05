@@ -61,6 +61,13 @@ class AndroidTestResultListener : TestExecutionListener {
   /** Tracks test results for each device serial. */
   private val perDeviceTestResults = ConcurrentHashMap<String, MutableList<TestResultProto.TestResult>>()
 
+  /**
+   * Tracks logcat file paths for each test. UniqueId -> LogcatPath.
+   *
+   * Paths are published via [reportingEntryPublished] and consumed in [executionFinished].
+   */
+  private val testLogcatFiles = ConcurrentHashMap<String, String>()
+
   /** Properties loaded from the file specified by AGP environment variable. */
   private val configurationProperties: Properties by lazy {
     val properties = Properties()
@@ -121,16 +128,20 @@ class AndroidTestResultListener : TestExecutionListener {
 
   override fun reportingEntryPublished(testIdentifier: TestIdentifier, entry: ReportEntry) {
     val deviceId = testIdentifier.getDeviceId() ?: ""
-    if (deviceId.isEmpty()) return
 
     val testCount = entry.keyValuePairs[AndroidTestReportKeys.TEST_COUNT]?.toIntOrNull()
-    if (testCount != null) {
+    if (testCount != null && deviceId.isNotEmpty()) {
       emitTestSuiteStarted(deviceId, testCount)
     }
 
     val displayName = entry.keyValuePairs[AndroidTestReportKeys.DEVICE_DISPLAY_NAME]
     if (displayName != null) {
       perDeviceDisplayName[deviceId] = displayName
+    }
+
+    val logcatPath = entry.keyValuePairs[AndroidTestReportKeys.LOGCAT_PATH]
+    if (logcatPath != null) {
+      testLogcatFiles[testIdentifier.uniqueId] = logcatPath
     }
   }
 
@@ -200,9 +211,10 @@ class AndroidTestResultListener : TestExecutionListener {
         perDeviceAllTestsPassed[deviceId] = false
       }
 
+      val testCaseProto = testIdentifier.toTestCaseProto()
       val testResult =
         TestResultProto.TestResult.newBuilder()
-          .setTestCase(testIdentifier.toTestCaseProto())
+          .setTestCase(testCaseProto)
           .setTestStatus(status)
           .apply {
             testExecutionResult.throwable.ifPresent { t ->
@@ -213,6 +225,16 @@ class AndroidTestResultListener : TestExecutionListener {
                   .setStackTrace(t.stackTraceToString())
                   .build()
               )
+            }
+            // Attach the logcat artifact if it was published for this test case.
+            // We remove it from the map to avoid memory leaks after it's been processed.
+            val logcatPath = testLogcatFiles.remove(testIdentifier.uniqueId)
+            if (logcatPath != null) {
+              addOutputArtifactBuilder().apply {
+                labelBuilder.label = "logcat"
+                labelBuilder.namespace = "android"
+                sourcePathBuilder.path = logcatPath
+              }
             }
           }
           .build()
@@ -305,7 +327,11 @@ class AndroidTestResultListener : TestExecutionListener {
     }
   }
 
-  /** Extracts the device ID from the [TestIdentifier.uniqueId] string. */
+  /**
+   * Extracts the device ID from the [TestIdentifier.uniqueId] string.
+   *
+   * Android Studio expects this to be the device serial ID.
+   */
   private fun TestIdentifier.getDeviceId(): String? {
     val devicePart = uniqueId.substringAfterLast("[device:", "")
     return if (devicePart.isNotEmpty()) {

@@ -43,14 +43,14 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   companion object {
     @ClassRule @JvmField val EMULATOR = getEmulator()
     private const val DEVICE_NAME = "emulator-5554 - 13"
-    private const val TEST_RESULT_XML = "build/outputs/androidTest-results/connected/debug/TEST-$DEVICE_NAME-_"
-    private const val LOGCAT =
-      "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
+    private const val TEST_OUTPUT_ROOT_DIR = "build/outputs/androidTest-results/connected/debug"
+    private const val DEVICE_OUTPUT_DIR = "$TEST_OUTPUT_ROOT_DIR/$DEVICE_NAME"
+    private const val LOGCAT = "$DEVICE_OUTPUT_DIR/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
     private const val LOGCAT_FOR_DYNAMIC_FEATURE =
-      "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
+      "$DEVICE_OUTPUT_DIR/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
     private const val TEST_REPORT = "build/reports/androidTests/connected/debug/com.example.android.kotlin.html"
     private const val TEST_REPORT_FOR_DYNAMIC_FEATURE = "build/reports/androidTests/connected/debug/com.example.android.kotlin.feature.html"
-    private const val TEST_RESULT_PB = "build/outputs/androidTest-results/connected/debug/$DEVICE_NAME/test-result.pb"
+    private const val TEST_RESULT_PB = "$DEVICE_OUTPUT_DIR/test-result.pb"
     private const val TEST_COV_XML = "build/reports/coverage/androidTest/debug/connected/report.xml"
     private const val ENABLE_UTP_TEST_REPORT_PROPERTY = "com.android.tools.utp.GradleAndroidProjectResolverExtension.enable"
     private const val TEST_ADDITIONAL_OUTPUT =
@@ -58,18 +58,24 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   }
 
   override fun selectModule(moduleName: String) {
-    testTaskName = ":${moduleName}:connectedAndroidTest"
-    testResultXmlPath = "${moduleName}/$TEST_RESULT_XML${moduleName}-.xml"
+    val moduleTestOutputRootDir = "$moduleName/$TEST_OUTPUT_ROOT_DIR"
+    testTaskName = ":$moduleName:connectedAndroidTest"
+    testResultXmlPath =
+      if (runWithBuiltInPlatform) {
+        "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
+      } else {
+        "$moduleTestOutputRootDir/TEST-$DEVICE_NAME-_$moduleName-.xml"
+      }
     if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
-      testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
-      testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
+      testReportPath = "$moduleName/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
+      testLogcatPath = "$moduleName/$LOGCAT_FOR_DYNAMIC_FEATURE"
     } else {
-      testReportPath = "${moduleName}/$TEST_REPORT"
-      testLogcatPath = "${moduleName}/$LOGCAT"
+      testReportPath = "$moduleName/$TEST_REPORT"
+      testLogcatPath = "$moduleName/$LOGCAT"
     }
-    testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
-    testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
-    testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
+    testResultPbPath = "$moduleName/$TEST_RESULT_PB"
+    testCoverageXmlPath = "$moduleName/$TEST_COV_XML"
+    testAdditionalOutputPath = "$moduleName/$TEST_ADDITIONAL_OUTPUT"
   }
 
   @Test

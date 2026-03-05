@@ -486,9 +486,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithLogcat() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     executor.run(testTaskName)

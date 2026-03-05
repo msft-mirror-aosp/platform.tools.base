@@ -428,4 +428,26 @@ class AndroidTestResultListenerTest {
       tempFile.delete()
     }
   }
+
+  @Test
+  fun reportingEntryPublished_withLogcatPath_isIncludedInTestResult() {
+    val listener = AndroidTestResultListener()
+    val testIdentifier = mockTestIdentifier(uniqueIdStr = "[engine:android-test-engine]/[device:my-device]/[test:myTest]")
+    val logcatPath = "/path/to/logcat.txt"
+    val reportEntry = ReportEntry.from(AndroidTestReportKeys.LOGCAT_PATH, logcatPath)
+
+    listener.reportingEntryPublished(testIdentifier, reportEntry)
+
+    outputStream.reset()
+    listener.executionFinished(testIdentifier, TestExecutionResult.successful())
+
+    val event = decodeEvent(outputStream.toString())
+    assertThat(event.hasTestCaseFinished()).isTrue()
+    val testResult = event.testCaseFinished.testCaseResult.unpack(TestResultProto.TestResult::class.java)
+    assertThat(testResult.outputArtifactCount).isEqualTo(1)
+    val artifact = testResult.getOutputArtifact(0)
+    assertThat(artifact.label.label).isEqualTo("logcat")
+    assertThat(artifact.label.namespace).isEqualTo("android")
+    assertThat(artifact.sourcePath.path).isEqualTo(logcatPath)
+  }
 }

@@ -29,4 +29,7 @@ object AndroidTestResultListenerKeys {
 
   /** The directory path to write test results proto to. */
   const val RESULTS_DIR = "com.android.junit.engine.results.dir"
+
+  /** Path to the ADB executable. */
+  const val ADB_PATH = "android-test.adb-path"
 }

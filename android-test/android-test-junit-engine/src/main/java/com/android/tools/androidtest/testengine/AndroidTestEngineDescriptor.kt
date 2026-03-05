@@ -44,12 +44,14 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
     config.deviceSerials.forEach { deviceSerial ->
       val androidVersion = getAndroidVersion(adbController, deviceSerial)
       val displayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      // Android Studio expects the device serial in the UniqueId to match results
+      // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
       val deviceDescriptor =
         AndroidDeviceDescriptor(
           uniqueId = deviceUniqueId,
           deviceSerial = deviceSerial,
-          deviceId = deviceSerial,
+          deviceId = displayName,
           deviceDisplayName = displayName,
         )
       deviceDescriptor.setParent(this)

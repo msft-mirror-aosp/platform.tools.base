@@ -49,8 +49,13 @@ class AndroidTestEngineDescriptorTest {
 
     val descriptors = captor.allValues
     assertThat(descriptors[0].deviceSerial).isEqualTo("serial1")
+    // Android Studio expects the device serial in the UniqueId to match results
+    // with its internal device model.
+    assertThat(descriptors[0].uniqueId.segments.last().value).isEqualTo("serial1")
     assertThat(descriptors[0].parent.get()).isSameInstanceAs(descriptor)
+
     assertThat(descriptors[1].deviceSerial).isEqualTo("serial2")
+    assertThat(descriptors[1].uniqueId.segments.last().value).isEqualTo("serial2")
     assertThat(descriptors[1].parent.get()).isSameInstanceAs(descriptor)
   }
 }
