@@ -1,3 +1,8 @@
+This is a copy of the ddmlib library for use
+in Android Studio. Since Android Studio primarily
+relies on adblib, much of the ddmlib
+implementation is redundant and can be removed.
+
 # DDMLib
 
 For developers, read [architecture.md](architecture.md).

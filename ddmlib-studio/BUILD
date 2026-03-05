@@ -2,14 +2,14 @@ load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
-load("//tools/base/bazel:proto.bzl", "android_java_proto_library", "java_proto_library")
+load("//tools/base/bazel:proto.bzl", "java_proto_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
 
 # managed by go/iml_to_build
 iml_module(
-    name = "studio.android.sdktools.ddmlib",
+    name = "studio.android.sdktools.ddmlib-studio",
     srcs = ["src/main/java"],
-    iml_files = ["android.sdktools.ddmlib.iml"],
+    iml_files = ["android.sdktools.ddmlib-studio.iml"],
     jvm_target = "8",
     lint_baseline = "lint_baseline.xml",
     test_data = ["//prebuilts/studio/sdk:platform-tools"],
@@ -49,7 +49,7 @@ kotlin_library(
         "src/main/java/com/android/ddmlib/**/*.kt",
     ]),
     lint_baseline = "lint_baseline_ddmlib_base.xml",
-    resource_strip_prefix = "tools/base/ddmlib",
+    resource_strip_prefix = "tools/base/ddmlib-studio",
     visibility = ["//visibility:public"],
     deps = [
         ":adb-server-proto",
@@ -107,7 +107,7 @@ java_library(
 
 java_library(
     name = "tools.ddmlib.resources",
-    resource_strip_prefix = "tools/base/ddmlib/src/main/proto/",
+    resource_strip_prefix = "tools/base/ddmlib-studio/src/main/proto/",
     resources = [
         "src/main/proto/app_processes.proto",
         "src/main/proto/instrumentation-data.proto",
@@ -223,8 +223,8 @@ java_proto_library(
 
 # managed by go/iml_to_build
 iml_module(
-    name = "studio.android.sdktools.ddmlib.integration.tests",
-    iml_files = ["android.sdktools.ddmlib.integration.tests.iml"],
+    name = "studio.android.sdktools.ddmlib-studio.integration.tests",
+    iml_files = ["android.sdktools.ddmlib-studio.integration.tests.iml"],
     tags = [
         "noci:studio-win",
     ],
@@ -239,11 +239,10 @@ iml_module(
         "//tools/base/testutils:studio.android.sdktools.testutils",
         "//tools/base/bazel/avd:studio.android.sdktools.base.bazel.avd",
         "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
         "@intellij//:intellij-sdk",
     ],
     test_srcs = ["src/integration/test/java"],
     visibility = ["//visibility:public"],
-    # do not sort: must match IML order
     deps = ["@intellij//:com.intellij.java"],
 )
