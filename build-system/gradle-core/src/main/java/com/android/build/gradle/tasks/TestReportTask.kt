@@ -65,6 +65,8 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
+      task.description =
+        "Generates an aggregated test results report for unit and instrumentation tests across the current module and its project dependencies."
       task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/aggregated-test-report"))
     }
   }
@@ -76,6 +78,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
+      task.description = "Generates a test results report for unit and instrumentation tests within the current module."
       task.testReport.set(task.project.layout.buildDirectory.dir("reports/tests/test-report"))
     }
   }

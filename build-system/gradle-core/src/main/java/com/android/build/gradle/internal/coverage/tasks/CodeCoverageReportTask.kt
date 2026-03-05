@@ -86,6 +86,12 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
         .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
         .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
     }
+
+    override fun configure(task: CodeCoverageReportTask) {
+      super.configure(task)
+      task.description =
+        "Generates an aggregated coverage report for unit and instrumentation tests across the current module and its project dependencies."
+    }
   }
 
   class CoverageReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
@@ -99,6 +105,11 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
       creationConfig.globalArtifacts
         .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
         .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
+    }
+
+    override fun configure(task: CodeCoverageReportTask) {
+      super.configure(task)
+      task.description = "Generates a coverage report for unit and instrumentation tests within the current module."
     }
   }
 
