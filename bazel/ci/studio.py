@@ -186,7 +186,7 @@ def copy_bazel_logs(build_env: bazel.BuildEnv) -> None:
     shutil.copy2(path, dest_path / path.name)
 
 
-def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path, logs_collector_options: LogsCollectorOptions | None) -> None:
+def collect_logs(build_env: bazel.BuildEnv, bes_path: pathlib.Path, logs_collector_options: LogsCollectorOptions | None = None) -> None:
   """Runs the log collector."""
   build_type = BuildType.from_build_number(build_env.build_number)
   dist_path = pathlib.Path(build_env.dist_dir)
