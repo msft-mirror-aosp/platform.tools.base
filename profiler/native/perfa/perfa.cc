@@ -451,13 +451,12 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
       });
 
   Agent::Instance().RegisterCommandHandler(
-      Command::START_LEAKCANARY_OBJECT_COUNT_TRACKING,
+      Command::SET_STUDIO_LEAKCANARY_MODE,
       [vm](const Command* command) -> void {
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
-                 "Could not get JNIEnv to start LeakCanary object count "
-                 "tracking.");
+                 "Could not get JNIEnv to set StudioLeakCanary mode.");
           return;
         }
 
@@ -481,9 +480,10 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
         }
 
         jmethodID method = jni_env->GetStaticMethodID(
-            manager_class, "startListeningForRetainedObjects", "()V");
+            manager_class, "startListeningForRetainedObjects", "(I)V");
         if (method != nullptr) {
-          jni_env->CallStaticVoidMethod(manager_class, method);
+          jint mode = command->set_studio_leakcanary_mode().mode();
+          jni_env->CallStaticVoidMethod(manager_class, method, mode);
         } else {
           Log::E(Log::Tag::PROFILER,
                  "LeakCanaryManager.startListeningForRetainedObjects method "
@@ -520,6 +520,36 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
           Log::E(Log::Tag::PROFILER,
                  "LeakCanaryManager.stopListeningForRetainedObjects method not "
                  "found.");
+          jni_env->ExceptionClear();
+        }
+      });
+
+  Agent::Instance().RegisterCommandHandler(
+      Command::FORCE_DUMP_LEAKCANARY_ON_DEVICE,
+      [vm](const Command* command) -> void {
+        JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to trigger on-device dump.");
+          return;
+        }
+
+        jclass manager_class = jni_env->FindClass(
+            "com/android/tools/profiler/support/profilers/LeakCanaryManager");
+        if (manager_class == nullptr) {
+          Log::E(Log::Tag::PROFILER, "LeakCanaryManager class not found.");
+          jni_env->ExceptionClear();
+          return;
+        }
+        ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
+
+        jmethodID method = jni_env->GetStaticMethodID(
+            manager_class, "triggerOnDeviceDump", "()V");
+        if (method != nullptr) {
+          jni_env->CallStaticVoidMethod(manager_class, method);
+        } else {
+          Log::E(Log::Tag::PROFILER,
+                 "LeakCanaryManager.triggerOnDeviceDump method not found.");
           jni_env->ExceptionClear();
         }
       });

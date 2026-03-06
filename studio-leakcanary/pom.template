@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.android.tools.studio.leakcanary</groupId>
   <artifactId>leakcanary</artifactId>
-  <version>1.0.0-alpha01</version>
+  <version>VERSION</version>
   <packaging>aar</packaging>
   <licenses>
     <license>

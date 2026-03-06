@@ -63,9 +63,10 @@ message Command {
     CHECK_LEAKCANARY_PRESENT = 803;
     SIGNAL_HEAP_DUMP_COMPLETE = 804;
     SEND_LEAKCANARY_ANALYSIS = 805;
-    START_LEAKCANARY_OBJECT_COUNT_TRACKING = 806;
+    SET_STUDIO_LEAKCANARY_MODE = 806;
     STOP_LEAKCANARY_OBJECT_COUNT_TRACKING = 807;
     GET_LEAKCANARY_THRESHOLD = 808;
+    FORCE_DUMP_LEAKCANARY_ON_DEVICE = 809;
 
     // Sample echo Command
     ECHO = 1000;
@@ -124,6 +125,7 @@ message Command {
     StartLeakCanaryTaskData start_leakcanary_task = 801;
     SignalHeapDumpCompleteData signal_heap_dump_complete = 804;
     SendLeakCanaryAnalysisData send_leakcanary_analysis = 805;
+    StudioLeakCanaryModeData set_studio_leakcanary_mode = 806;
 
     // Energy Profiler Prefix = 500
     // Deprecated. Do not use.
@@ -196,4 +198,8 @@ message StartLeakCanaryTaskData {
     ON_HOST = 1;
   }
   LeakCanaryMode mode = 1;
+}
+
+message StudioLeakCanaryModeData {
+  StartLeakCanaryTaskData.LeakCanaryMode mode = 1;
 }

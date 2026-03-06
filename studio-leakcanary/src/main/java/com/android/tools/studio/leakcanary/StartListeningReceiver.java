@@ -24,9 +24,10 @@ import android.util.Log;
 /**
  * Receives the broadcast when Android Studio starts listening for retained objects.
  *
- * <p>When Studio connects or the user opens the relevant tool, it sends this broadcast. Upon
- * receipt, we immediately report the current count of retained objects so that the UI in Studio can
- * be updated with the correct initial state.
+ * <p>When Studio connects or the user opens the relevant tool, it sends this broadcast containing
+ * the desired execution mode (ON_DEVICE vs ON_HOS). Upon receipt, this updates the
+ * StudioLeakCanaryManager's mode. If the mode is ON_HOST, we immediately report the current count
+ * of retained objects so that the UI in Studio can be updated with the correct initial state.
  */
 @SuppressWarnings("unused")
 public class StartListeningReceiver extends BroadcastReceiver {
@@ -34,9 +35,17 @@ public class StartListeningReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (HelperConfig.START_LISTENING_INTENT.equals(intent.getAction())) {
-            Log.d(HelperConfig.LOG_TAG, "Received start listening broadcast.");
-            // Send the current count immediately so Studio gets the initial state.
-            StudioLeakCanaryListener.sendCurrentCount();
+            int mode = intent.getIntExtra("leakcanary_mode", StudioLeakCanaryManager.MODE_ON_HOST);
+            Log.d(HelperConfig.LOG_TAG, "Received start listening broadcast with mode: " + mode);
+
+            StudioLeakCanaryManager manager = StudioLeakCanaryManager.getInstance();
+            manager.setMode(mode);
+
+            // Send the current count immediately so Studio gets the initial state, but only if we
+            // are in ON_HOST mode.
+            if (manager.getCurrentMode() == StudioLeakCanaryManager.MODE_ON_HOST) {
+                StudioLeakCanaryListener.sendCurrentCount();
+            }
         }
     }
 }
