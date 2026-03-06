@@ -25,6 +25,9 @@ import com.android.tools.deployer.devices.DeviceId;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;
 import com.android.tools.deployer.devices.FakeDeviceLibrary;
+
+import java.util.concurrent.TimeUnit;
+
 import org.junit.rules.RuleChain;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -71,6 +74,7 @@ public class FakeDeviceConnection implements TestRule {
                         base.evaluate();
                     } finally {
                         device.shutdown();
+                        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
                         AndroidDebugBridge.terminate();
                         AndroidDebugBridge.disableFakeAdbServerMode();
                     }

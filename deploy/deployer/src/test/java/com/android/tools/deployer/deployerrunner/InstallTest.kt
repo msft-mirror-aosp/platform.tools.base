@@ -32,6 +32,7 @@ import com.android.tools.deployer.Sites
 import com.android.tools.deployer.TestLogger
 import com.android.tools.deployer.rules.ApiLevel
 import com.android.utils.ILogger
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -1390,6 +1391,7 @@ class InstallTestTest : DeployRunnerTestBase() {
     // Make sure we have true negative.
     var response = installer.dump(listOf(packageName))
     Assert.assertEquals(DumpResponse.Status.ERROR_PACKAGE_NOT_FOUND, response.status)
+    AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS)
     AndroidDebugBridge.terminate()
 
     // Install our target APK.

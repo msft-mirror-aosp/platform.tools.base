@@ -54,12 +54,13 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
         super("");
     }
 
-    public void connect(@NonNull FakeDevice device, @NonNull FakeAdbServer server)
+    public DeviceState connect(@NonNull FakeDevice device, @NonNull FakeAdbServer server)
             throws ExecutionException, InterruptedException {
-        device.connectTo(server);
+        DeviceState deviceState = device.connectTo(server);
         synchronized (devices) {
             devices.add(device);
         }
+        return deviceState;
     }
 
     @Override
