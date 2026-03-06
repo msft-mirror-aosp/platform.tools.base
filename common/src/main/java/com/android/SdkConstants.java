@@ -2963,6 +2963,11 @@ public final class SdkConstants {
      */
     public static final String NDK_DEFAULT_VERSION = "28.2.13676358";
 
+    /**
+     * The minimum version of the Kotlin Gradle Plugin required for Kotlin Multiplatform projects.
+     */
+    public static final String MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = "2.0.0";
+
     /** use api or implementation */
     @Deprecated public static final String GRADLE_COMPILE_CONFIGURATION = "compile";
     /** use api or implementation */
