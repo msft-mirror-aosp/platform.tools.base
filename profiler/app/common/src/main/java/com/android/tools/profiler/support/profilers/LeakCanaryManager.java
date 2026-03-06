@@ -48,11 +48,16 @@ public class LeakCanaryManager {
 
     public static final String START_LISTENING_INTENT = "studio.leakcanary.START_LISTENING";
 
+    public static final String LEAKCANARY_MODE_EXTRA = "leakcanary_mode";
+
     public static final String GET_THRESHOLD_INTENT = "studio.leakcanary.GET_THRESHOLD";
 
     public static final String THRESHOLD_RESULT_INTENT = "studio.leakcanary.THRESHOLD_RESULT";
 
     public static final String THRESHOLD_EXTRA = "threshold";
+
+    public static final String FORCE_DUMP_ON_DEVICE_INTENT =
+            "studio.leakcanary.FORCE_DUMP_ON_DEVICE";
 
     private static final String LEAKCANARY_CLASS_NAME = "leakcanary.AppWatcher";
 
@@ -130,18 +135,10 @@ public class LeakCanaryManager {
                 };
 
         try {
-            IntentFilter filter = new IntentFilter(THRESHOLD_RESULT_INTENT);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                String permissionName =
-                        context.getPackageName() + ".permission.LEAK_CANARY_INTERNAL";
-                context.registerReceiver(receiver, filter, permissionName, null);
-            }
+            registerInternalReceiver(context, receiver, THRESHOLD_RESULT_INTENT);
 
             Intent intent = new Intent(GET_THRESHOLD_INTENT);
-            intent.setPackage(context.getPackageName());
-            context.sendBroadcast(intent);
+            sendBroadcastToApp(context, intent);
             Log.d(TAG, "Sent GET_THRESHOLD broadcast to check for LeakCanary presence.");
 
             // Wait for response with timeout
@@ -151,10 +148,14 @@ public class LeakCanaryManager {
             } else {
                 Log.d(TAG, "Successfully received LeakCanary threshold response.");
             }
-
-            context.unregisterReceiver(receiver);
         } catch (Exception e) {
             Log.e(TAG, "Failed to get LeakCanary threshold via broadcast.", e);
+        } finally {
+            try {
+                context.unregisterReceiver(receiver);
+            } catch (Exception e) {
+                Log.w(TAG, "Failed to unregister threshold receiver.", e);
+            }
         }
 
         int threshold = result.get();
@@ -182,22 +183,50 @@ public class LeakCanaryManager {
         try {
             Intent intent = new Intent(HEAP_DUMP_COMPLETE_INTENT);
             intent.putExtra(HEAP_DUMP_COMPLETE_EXTRA, heapDumpTimestamp);
-            intent.setPackage(context.getPackageName());
-            context.sendBroadcast(intent);
+            sendBroadcastToApp(context, intent);
             Log.d(TAG, "HEAP_DUMP_FINISHED broadcast sent successfully.");
         } catch (Exception e) {
             Log.e(TAG, "Failed to send HEAP_DUMP_FINISHED broadcast.", e);
         }
     }
 
-    /** Starts listening for retained object count updates from the app. */
+    /**
+     * Starts listening for retained object count updates from the app.
+     *
+     * @param mode The selected LeakCanary tracking mode (0 = ON_DEVICE, 1 = ON_HOST).
+     */
     @Keep
     @SuppressWarnings("unused")
-    public static void startListeningForRetainedObjects() {
-        // This prevents reinitialize of sObjectCountReceiver, if previous stop didn't happen
+    public static void startListeningForRetainedObjects(int mode) {
+        Log.d(TAG, "startListeningForRetainedObjects called with mode: " + mode);
+        Context context = getApplicationContext();
+        if (context == null) {
+            Log.w(TAG, "Cannot start listening: context is null.");
+            return;
+        }
+
+        if (mode == 0) { // ON_DEVICE mode
+            // If we switched from ON_HOST to ON_DEVICE, we should stop listening.
+            stopListeningForRetainedObjects();
+        } else {
+            boolean registered = registerObjectCountReceiver(context);
+            if (!registered) return; // Abort if we can't register the receiver
+        }
+
+        sendStartListeningBroadcast(context, mode);
+    }
+
+    /**
+     * Registers a BroadcastReceiver to listen for retained object count updates from the app.
+     *
+     * @param context The application context.
+     * @return true if the receiver was successfully registered (or already registered), false
+     *     otherwise.
+     */
+    private static boolean registerObjectCountReceiver(Context context) {
         if (sObjectCountReceiver != null) {
             Log.d(TAG, "Already listening for retained object count updates.");
-            return;
+            return true;
         }
 
         sObjectCountReceiver =
@@ -219,31 +248,54 @@ public class LeakCanaryManager {
                 };
 
         try {
-            Context context = getApplicationContext();
-            if (context == null) {
-                stopListeningForRetainedObjects();
-                return;
-            }
-            IntentFilter filter = new IntentFilter(OBJECT_COUNT_UPDATE_INTENT);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(
-                        sObjectCountReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
-            } else {
-                String permissionName =
-                        context.getPackageName() + ".permission.LEAK_CANARY_INTERNAL";
-                context.registerReceiver(sObjectCountReceiver, filter, permissionName, null);
-            }
+            registerInternalReceiver(context, sObjectCountReceiver, OBJECT_COUNT_UPDATE_INTENT);
             Log.d(TAG, "Started listening for retained object count updates.");
-
-            // Notify the library that Studio is listening, so it can send the current count
-            // immediately.
-            Intent intent = new Intent(START_LISTENING_INTENT);
-            intent.setPackage(context.getPackageName());
-            context.sendBroadcast(intent);
-            Log.d(TAG, "Sent START_LISTENING broadcast.");
+            return true;
         } catch (Exception e) {
             Log.e(TAG, "Failed to register receiver for object count updates.", e);
             stopListeningForRetainedObjects();
+            return false;
+        }
+    }
+
+    /**
+     * Broadcasts the START_LISTENING intent to the app to notify the LeakCanary library of the
+     * tracking mode. This is done AFTER ensuring the receiver is set up (if in ON_HOST mode) so it
+     * can catch the immediate count response.
+     *
+     * @param context The application context.
+     * @param mode The selected LeakCanary tracking mode (0 = ON_DEVICE, 1 = ON_HOST).
+     */
+    private static void sendStartListeningBroadcast(Context context, int mode) {
+        try {
+            Intent intent = new Intent(START_LISTENING_INTENT);
+            intent.putExtra(LEAKCANARY_MODE_EXTRA, mode);
+            sendBroadcastToApp(context, intent);
+            Log.d(TAG, "Sent START_LISTENING broadcast with mode: " + mode);
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to send START_LISTENING broadcast.", e);
+        }
+    }
+
+    /**
+     * Broadcasts the force dump signal to the app. Called from the profiler agent (perfa.cc) via
+     * JNI. This signals the ForceDumpReceiver to trigger LeakCanary.dumpHeap() on the device.
+     */
+    @Keep
+    @SuppressWarnings("unused")
+    public static void triggerOnDeviceDump() {
+        Context context = getApplicationContext();
+        if (context == null) {
+            Log.w(TAG, "Could not get application context to trigger on-device dump.");
+            return;
+        }
+
+        try {
+            Intent intent = new Intent(FORCE_DUMP_ON_DEVICE_INTENT);
+            sendBroadcastToApp(context, intent);
+            Log.d(TAG, "FORCE_DUMP_ON_DEVICE broadcast sent successfully.");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to send FORCE_DUMP_ON_DEVICE broadcast.", e);
         }
     }
 
@@ -251,6 +303,7 @@ public class LeakCanaryManager {
     @Keep
     @SuppressWarnings("unused")
     public static void stopListeningForRetainedObjects() {
+        Log.d(TAG, "stopListeningForRetainedObjects called.");
         if (sObjectCountReceiver == null) {
             Log.d(TAG, "Not listening for retained object count updates, nothing to stop.");
             return;
@@ -266,6 +319,22 @@ public class LeakCanaryManager {
             }
         }
         sObjectCountReceiver = null;
+    }
+
+    private static void registerInternalReceiver(
+            Context context, BroadcastReceiver receiver, String action) {
+        IntentFilter filter = new IntentFilter(action);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            String permissionName = context.getPackageName() + ".permission.LEAK_CANARY_INTERNAL";
+            context.registerReceiver(receiver, filter, permissionName, null);
+        }
+    }
+
+    private static void sendBroadcastToApp(Context context, Intent intent) {
+        intent.setPackage(context.getPackageName());
+        context.sendBroadcast(intent);
     }
 
     private static synchronized Context getApplicationContext() {

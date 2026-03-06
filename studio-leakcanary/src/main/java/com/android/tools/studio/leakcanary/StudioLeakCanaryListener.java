@@ -22,7 +22,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -50,14 +49,6 @@ public class StudioLeakCanaryListener {
     // Re-check in 5 seconds if objects are still retained.
     private static final long WAIT_FOR_OBJECT_THRESHOLD_MILLIS = 5000L;
     private static final long DEBOUNCE_DELAY_MILLIS = 100L;
-
-    // Reflection cache
-    private static volatile boolean reflectionInitializationAttempted = false;
-    private static volatile Object objectWatcherInstance;
-    private static volatile Method getRetainedObjectCountMethod;
-    private static volatile Method clearObjectsMethod;
-    private static volatile Object gcTriggerInstance;
-    private static volatile Method runGcMethod;
 
     private final Application application;
     private final HandlerThread handlerThread;
@@ -188,66 +179,19 @@ public class StudioLeakCanaryListener {
         }
     }
 
-    /**
-     * Initializes the reflection cache.
-     *
-     * <p>This is called lazily (instead of in the constructor) to: 1. Avoid slowing down app
-     * startup (the constructor runs on the main thread). 2. Perform initialization on the
-     * background thread (where methods like checkRetainedObjects run).
-     */
-    private static void ensureReflectionInitialized() {
-        if (reflectionInitializationAttempted) return;
-        synchronized (StudioLeakCanaryListener.class) {
-            if (reflectionInitializationAttempted) return;
-            try {
-                Class<?> appWatcherClass = Class.forName(HelperConfig.APP_WATCHER_CLASS);
-                Field appWatcherInstanceField =
-                        appWatcherClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
-                Object appWatcherInstance = appWatcherInstanceField.get(null);
+    private volatile boolean isEnabled = true;
 
-                Method getObjectWatcherMethod =
-                        appWatcherClass.getMethod(HelperConfig.GET_OBJECT_WATCHER_METHOD);
-                objectWatcherInstance = getObjectWatcherMethod.invoke(appWatcherInstance);
-
-                getRetainedObjectCountMethod =
-                        objectWatcherInstance
-                                .getClass()
-                                .getMethod(HelperConfig.GET_RETAINED_OBJECT_COUNT_METHOD);
-                clearObjectsMethod =
-                        objectWatcherInstance
-                                .getClass()
-                                .getMethod(
-                                        HelperConfig.CLEAR_OBJECTS_WATCHED_BEFORE_METHOD,
-                                        long.class);
-
-                Class<?> gcTriggerClass = Class.forName(HelperConfig.GC_TRIGGER_DEFAULT_CLASS);
-                Field instanceField = gcTriggerClass.getDeclaredField(HelperConfig.INSTANCE_FIELD);
-                gcTriggerInstance = instanceField.get(null);
-                runGcMethod = gcTriggerInstance.getClass().getMethod(HelperConfig.RUN_GC_METHOD);
-            } catch (ClassNotFoundException e) {
-                Log.w(
-                        HelperConfig.LOG_TAG,
-                        "LeakCanary classes not found. Reflection-based features will be"
-                                + " disabled.");
-            } catch (Throwable t) {
-                Log.e(
-                        HelperConfig.LOG_TAG,
-                        "Failed to initialize LeakCanary reflection cache. "
-                                + "LeakCanary version might be incompatible.",
-                        t);
-            } finally {
-                reflectionInitializationAttempted = true;
+    public static void setIsEnabled(boolean enabled) {
+        if (instance != null) {
+            instance.isEnabled = enabled;
+            if (!enabled) {
+                // Sleep: Cancel all pending checks.
+                instance.backgroundHandler.removeCallbacks(instance.checkRunnable);
+            } else {
+                // Wake up: Immediately perform a check to catch up on any objects
+                // that were retained while we were disabled.
+                instance.backgroundHandler.post(instance.checkRunnable);
             }
-        }
-    }
-
-    private void runGc() {
-        ensureReflectionInitialized();
-        if (gcTriggerInstance == null || runGcMethod == null) return;
-        try {
-            runGcMethod.invoke(gcTriggerInstance);
-        } catch (Throwable t) {
-            Log.e(HelperConfig.LOG_TAG, "Failed to run GC via reflection", t);
         }
     }
 
@@ -256,6 +200,8 @@ public class StudioLeakCanaryListener {
      * to avoid running GC too frequently during rapid object allocation/deallocation.
      */
     public void onObjectRetained() {
+        if (!isEnabled) return;
+
         // Cancel any existing check.
         // If we were waiting for a debounce, this resets the timer.
         backgroundHandler.removeCallbacks(checkRunnable);
@@ -266,12 +212,14 @@ public class StudioLeakCanaryListener {
 
     /** Checks for retained objects, runs GC, and reports the count to Studio. */
     private void checkRetainedObjects() {
+        if (!isEnabled) return;
+
         // 1. Get the count BEFORE GC
         int retainedReferenceCount = getRetainedObjectCount();
 
         // 2. Run GC if there are potential leaks
         if (retainedReferenceCount > 0) {
-            runGc();
+            LeakCanaryReflectionHelper.runGc();
             // 3. Get the count AFTER GC
             retainedReferenceCount = getRetainedObjectCount();
             Log.d(HelperConfig.LOG_TAG, "Retained objects after GC: " + retainedReferenceCount);
@@ -296,14 +244,7 @@ public class StudioLeakCanaryListener {
     }
 
     private int getRetainedObjectCount() {
-        ensureReflectionInitialized();
-        if (objectWatcherInstance == null || getRetainedObjectCountMethod == null) return 0;
-        try {
-            return (int) getRetainedObjectCountMethod.invoke(objectWatcherInstance);
-        } catch (Throwable t) {
-            Log.e(HelperConfig.LOG_TAG, "Failed to get retained object count via reflection", t);
-            return 0;
-        }
+        return LeakCanaryReflectionHelper.getRetainedObjectCount();
     }
 
     /** A simplified, non-debounced scheduler. Used to re-check after a delay. */
@@ -321,49 +262,39 @@ public class StudioLeakCanaryListener {
      *     before this time are considered "handled".
      */
     public static void onHeapDumpFinished(final long heapDumpTimestamp) {
+        final StudioLeakCanaryListener currentInstance = instance;
+        if (currentInstance == null || !currentInstance.isEnabled) return;
+
         Log.d(
                 HelperConfig.LOG_TAG,
                 "Heap dump finished event received. Clearing objects watched before "
                         + heapDumpTimestamp
                         + " (ms)");
 
-        ensureReflectionInitialized();
-        if (objectWatcherInstance != null && clearObjectsMethod != null) {
-            try {
-                clearObjectsMethod.invoke(objectWatcherInstance, heapDumpTimestamp);
-            } catch (Throwable t) {
-                Log.e(
-                        HelperConfig.LOG_TAG,
-                        "Failed to clear objects watched before timestamp via reflection",
-                        t);
-            }
-        }
+        LeakCanaryReflectionHelper.clearObjectsWatchedBefore(heapDumpTimestamp);
 
         // Force an immediate update to send "0" (or remaining count) to Studio
-        final StudioLeakCanaryListener currentInstance = instance;
-        if (currentInstance != null) {
-            currentInstance.backgroundHandler.post(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            int count = currentInstance.getRetainedObjectCount();
-                            // Update the last reported count to keep state consistent
-                            currentInstance.lastReportedCount = count;
-                            Intent intent = new Intent(HelperConfig.OBJECT_COUNT_UPDATE_INTENT);
-                            intent.putExtra(HelperConfig.OBJECT_COUNT_UPDATE_EXTRA, count);
-                            intent.setPackage(
-                                    currentInstance.application
-                                            .getPackageName()); // Security: Keep within app
-                            currentInstance.application.sendBroadcast(intent);
-                        }
-                    });
-        }
+        currentInstance.backgroundHandler.post(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        int count = currentInstance.getRetainedObjectCount();
+                        // Update the last reported count to keep state consistent
+                        currentInstance.lastReportedCount = count;
+                        Intent intent = new Intent(HelperConfig.OBJECT_COUNT_UPDATE_INTENT);
+                        intent.putExtra(HelperConfig.OBJECT_COUNT_UPDATE_EXTRA, count);
+                        intent.setPackage(
+                                currentInstance.application
+                                        .getPackageName()); // Security: Keep within app
+                        currentInstance.application.sendBroadcast(intent);
+                    }
+                });
     }
 
     /** Forces an immediate check for retained objects. Useful for debugging or manual triggers. */
     public static void triggerImmediateCheck() {
         final StudioLeakCanaryListener currentInstance = instance;
-        if (currentInstance != null) {
+        if (currentInstance != null && currentInstance.isEnabled) {
             currentInstance.backgroundHandler.post(currentInstance.checkRunnable);
         }
     }
@@ -371,7 +302,7 @@ public class StudioLeakCanaryListener {
     /** Called when Studio starts listening. We should send the current count immediately. */
     public static void sendCurrentCount() {
         final StudioLeakCanaryListener currentInstance = instance;
-        if (currentInstance != null) {
+        if (currentInstance != null && currentInstance.isEnabled) {
             currentInstance.backgroundHandler.post(
                     new Runnable() {
                         @Override

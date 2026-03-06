@@ -63,6 +63,9 @@ final class HelperConfig {
     /** The broadcast action sent from the app containing the threshold result. */
     static final String THRESHOLD_RESULT_INTENT = "studio.leakcanary.THRESHOLD_RESULT";
 
+    /** The broadcast action sent from Studio to trigger a force dump on device. */
+    static final String FORCE_DUMP_ON_DEVICE_INTENT = "studio.leakcanary.FORCE_DUMP_ON_DEVICE";
+
     /** The key for the threshold extra in the result intent. */
     static final String THRESHOLD_EXTRA = "threshold";
 
@@ -77,6 +80,7 @@ final class HelperConfig {
     static final String INSTANCE_FIELD = "INSTANCE";
     static final String GET_CONFIG_METHOD = "getConfig";
     static final String DUMP_HEAP_FIELD = "dumpHeap";
+    static final String DUMP_HEAP_METHOD = "dumpHeap";
     static final String ON_OBJECT_RETAINED_LISTENER_CLASS = "leakcanary.OnObjectRetainedListener";
     static final String APP_WATCHER_CLASS = "leakcanary.AppWatcher";
     static final String GET_OBJECT_WATCHER_METHOD = "getObjectWatcher";
@@ -92,6 +96,9 @@ final class HelperConfig {
     static final String GC_TRIGGER_DEFAULT_CLASS = "leakcanary.GcTrigger$Default";
     static final String RUN_GC_METHOD = "runGc";
     static final String GET_RETAINED_VISIBLE_THRESHOLD_METHOD = "getRetainedVisibleThreshold";
+
+    /** Default fallback value for the retained visible threshold. */
+    static final int DEFAULT_THRESHOLD = 5;
 
     /** Private constructor to prevent instantiation of this utility class. */
     private HelperConfig() {}
