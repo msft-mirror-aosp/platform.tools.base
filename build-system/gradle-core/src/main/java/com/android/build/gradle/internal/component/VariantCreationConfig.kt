@@ -30,4 +30,11 @@ interface VariantCreationConfig : ConsumableCreationConfig {
   val testSuites: List<TestSuiteCreationConfig>
 
   fun <T : Component> createUserVisibleVariantObject(stats: GradleBuildVariant.Builder?): T
+
+  /**
+   * Whether lint should be run on this variant.
+   *
+   * By default (`enableLint`=`true`), lint runs on all variants.
+   */
+  val enableLint: Boolean
 }

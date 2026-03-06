@@ -18,6 +18,8 @@
 
 package com.android.build.api.variant
 
+import org.gradle.api.Incubating
+
 /**
  * Model for variant components that only contains configuration-time properties that impacts the build flow.
  *
@@ -129,4 +131,11 @@ interface VariantBuilder : ComponentBuilder {
    * @param instance the object to associate to the AGP Variant object.
    */
   fun <T : Any> registerExtension(type: Class<out T>, instance: T)
+
+  /**
+   * Whether lint should be run on this variant.
+   *
+   * By default (`enableLint`=`true`), lint runs on all variants.
+   */
+  @get:Incubating @set:Incubating var enableLint: Boolean
 }

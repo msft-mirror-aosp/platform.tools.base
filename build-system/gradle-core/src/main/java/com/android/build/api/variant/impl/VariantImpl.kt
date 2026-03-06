@@ -232,6 +232,9 @@ abstract class VariantImpl<DslInfoT : VariantDslInfo>(
   override val experimentalProperties: MapProperty<String, Any> =
     internalServices.mapPropertyOf(String::class.java, Any::class.java, dslInfo.experimentalProperties, disallowUnsafeRead = false)
 
+  override val enableLint: Boolean
+    get() = variantBuilder.enableLint
+
   override val nestedComponents: List<ComponentImpl<*>>
     get() =
       mutableListOf<ComponentImpl<*>>().also { list ->

@@ -204,7 +204,12 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     val isNonKmpPerComponentLintAnalysis =
       androidTestProperties !is KmpComponentCreationConfig && androidTestProperties.services.projectOptions.get(LINT_ANALYSIS_PER_COMPONENT)
     val isPerComponentLintAnalysis = isKmpPerComponentLintAnalysis || isNonKmpPerComponentLintAnalysis
-    if (globalConfig.avoidTaskRegistration.not() && isPerComponentLintAnalysis && globalConfig.lintOptions.ignoreTestSources.not()) {
+    if (
+      globalConfig.avoidTaskRegistration.not() &&
+        isPerComponentLintAnalysis &&
+        globalConfig.lintOptions.ignoreTestSources.not() &&
+        androidTestProperties.mainVariant.enableLint
+    ) {
       taskFactory.register(AndroidLintAnalysisTask.PerComponentCreationAction(androidTestProperties, fatalOnly = false))
       taskFactory.register(
         LintModelWriterTask.PerComponentCreationAction(
