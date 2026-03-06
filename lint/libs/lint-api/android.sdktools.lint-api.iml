@@ -11,6 +11,7 @@
     <orderEntry type="library" name="studio-sdk" level="project" />
     <orderEntry type="library" name="studio-plugin-com.intellij.java" level="project" />
     <orderEntry type="library" name="studio-plugin-org.jetbrains.kotlin" level="project" />
+    <orderEntry type="library" name="studio-plugin-intellij.platform.uast" level="project" />
     <orderEntry type="module" module-name="android.sdktools.android-annotations" exported="" />
     <orderEntry type="module" module-name="android.sdktools.lint-model" exported="" />
     <orderEntry type="module" module-name="android.sdktools.common" />
@@ -18,5 +19,6 @@
     <orderEntry type="module" module-name="android.sdktools.sdk-common" exported="" />
     <orderEntry type="module" module-name="android.sdktools.layoutlib-api" exported="" />
     <orderEntry type="module" module-name="android.sdktools.manifest-merger" exported="" />
+    <orderEntry type="library" name="studio-plugin-intellij.java.uast" level="project" />
   </component>
 </module>
