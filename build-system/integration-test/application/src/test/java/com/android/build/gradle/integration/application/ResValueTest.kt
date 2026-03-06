@@ -16,17 +16,20 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.ResValue
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.utils.getBuildType
 import com.android.build.gradle.integration.common.utils.getProductFlavor
-import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.dsl.ClassField
 import com.android.builder.model.v2.models.AndroidDsl
 import com.android.testutils.truth.PathSubject
 import com.google.common.truth.Truth.assertAbout
 import com.google.common.truth.Truth.assertThat
 import java.lang.AssertionError
+import org.gradle.api.Project
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -36,7 +39,7 @@ class ResValueTest {
 
   @get:Rule
   val rule =
-    GradleRule.configure().disableBrokenNewDslOptOutChecks().from {
+    GradleRule.configure().from {
       androidApplication {
         android {
           defaultConfig {
@@ -66,8 +69,8 @@ class ResValueTest {
           }
           buildFeatures { resValues = true }
         }
+        pluginCallbacks += listOf(Callback::class.java)
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
   var _dslModel: AndroidDsl? = null
   val dslModel: AndroidDsl
@@ -77,25 +80,20 @@ class ResValueTest {
   val build: GradleBuild
     get() = _build ?: throw AssertionError("build unexpectedly null")
 
+  class Callback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.apply {
+        onVariants(selector().withBuildType("debug")) { variant ->
+          variant.resValues.put(variant.makeResValueKey("string", "VALUE_VARIANT"), ResValue("1000", "Value from the variant"))
+        }
+      }
+    }
+  }
+
   @Before
   fun setup() {
     _build =
       rule.build.also {
-        it.androidApplication(":app").apply {
-          files.update("build.gradle") {
-            append(
-              """
-
-              android.applicationVariants.all { variant ->
-                  if (variant.buildType.name == "debug") {
-                      variant.resValue("string", "VALUE_VARIANT", "1000")
-                  }
-              }
-              """
-                .trimIndent()
-            )
-          }
-        }
         it.executor.run(
           "clean",
           "generateFlavor1DebugResValue",
@@ -104,7 +102,7 @@ class ResValueTest {
           "generateFlavor2ReleaseResValue",
         )
 
-        _dslModel = it.modelBuilder.allowOptionWarning(BooleanOption.USE_NEW_DSL).fetchModels().container.getProject().androidDsl
+        _dslModel = it.modelBuilder.fetchModels().container.getProject().androidDsl
       }
   }
 
