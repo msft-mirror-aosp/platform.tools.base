@@ -106,6 +106,7 @@ class AndroidVersionUtilTest {
         mapOf(
           "ro.build.version.sdk" to "36",
           "ro.build.version.sdk_full" to "36.1",
+          "ro.build.version.preview_sdk" to "0",
           "ro.build.version.codename" to "Baklava",
           "build.version.extensions.r" to "15",
           "build.version.extensions.s" to "15",
@@ -133,6 +134,26 @@ class AndroidVersionUtilTest {
     assertStrictlyEqual(
       androidVersionFromDeviceProperties(mapOf("ro.build.version.sdk" to "33", "build.version.extensions.r" to "NaN")),
       AndroidVersion(33, null, null, true),
+    )
+  }
+
+  @Test
+  fun testFromProperties_beta() {
+    assertStrictlyEqual(
+      androidVersionFromDeviceProperties(
+        mapOf("ro.build.version.sdk" to "36.1", "ro.build.version.preview_sdk" to "3721", "ro.build.version.codename" to "CinnamonBun")
+      ),
+      AndroidVersion(37, 2, "CinnamonBun", null, true).withBetaNumber(1),
+    )
+  }
+
+  @Test
+  fun testFromProperties_canary() {
+    assertStrictlyEqual(
+      androidVersionFromDeviceProperties(
+        mapOf("ro.build.version.sdk" to "36.1", "ro.build.version.preview_sdk" to "20251201", "ro.build.version.codename" to "CANARY")
+      ),
+      AndroidVersion(36, 1, "CANARY", null, true).withCanaryNumber(20251201),
     )
   }
 }

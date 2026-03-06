@@ -18,6 +18,7 @@ package com.android.sdklib
 import com.android.SdkConstants.CODENAME_RELEASE
 
 private const val RO_BUILD_VERSION_SDK = "ro.build.version.sdk"
+private const val RO_BUILD_VERSION_PREVIEW_SDK = "ro.build.version.preview_sdk"
 private const val RO_BUILD_VERSION_SDK_FULL = "ro.build.version.sdk_full"
 private const val RO_BUILD_VERSION_CODENAME = "ro.build.version.codename"
 private const val BUILD_EXTENSION_PREFIX = "build.version.extensions."
@@ -27,6 +28,8 @@ object AndroidVersionUtil {
 
   @JvmStatic
   fun androidVersionFromDeviceProperties(properties: Map<String, String>): AndroidVersion? {
+    // We only want preview_sdk if it's a new-style canary or beta build.
+    val previewSdk = properties[RO_BUILD_VERSION_PREVIEW_SDK]?.toIntOrNull()?.takeIf { it > 1000 }
     val buildVersionSdk = properties[RO_BUILD_VERSION_SDK_FULL] ?: properties[RO_BUILD_VERSION_SDK] ?: return null
     val apiLevel = AndroidApiLevel.fromString(buildVersionSdk) ?: return null
     val extensions = properties.filter { it.key.startsWith(BUILD_EXTENSION_PREFIX) }
@@ -34,12 +37,21 @@ object AndroidVersionUtil {
     // However, for prereleases, we don't have a "build.version.extensions." property
     // corresponding to that release yet. Thus, we just use the extension level of the latest
     // release.
-    val extensionLevel = extensions.maxByOrNull { it.key }?.value?.toIntOrNull() ?: 0
+    val extensionLevel = extensions.maxByOrNull { it.key }?.value?.toIntOrNull()?.takeIf { it > 0 }
     val baseExtensionLevel = AndroidVersion.getBaseExtensionLevel(apiLevel)
     val codename = properties[RO_BUILD_VERSION_CODENAME]?.takeIf { it != CODENAME_RELEASE }
     // We consider preview releases to be base, since we don't necessarily know their base
     // extension level, and when they are released it should be at least the level we see now.
-    val isBase = codename != null || extensionLevel <= baseExtensionLevel
-    return AndroidVersion(apiLevel, codename, extensionLevel.takeIf { it > 0 }, isBase)
+    val isBase = codename != null || extensionLevel == null || extensionLevel <= baseExtensionLevel
+    return when {
+      previewSdk == null -> AndroidVersion(apiLevel, codename, extensionLevel, isBase)
+      previewSdk < 10000 -> {
+        val betaNumber = previewSdk % 10
+        val betaMinorVersion = (previewSdk / 10) % 10
+        val betaMajorVersion = previewSdk / 100
+        AndroidVersion(betaMajorVersion, betaMinorVersion, codename, extensionLevel, true).withBetaNumber(betaNumber)
+      }
+      else -> AndroidVersion(apiLevel, codename, extensionLevel, true).withCanaryNumber(previewSdk)
+    }
   }
 }
