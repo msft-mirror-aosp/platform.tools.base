@@ -15,10 +15,12 @@
  */
 package com.android.build.gradle.integration.application
 
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.integration.common.category.SmokeTests
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
@@ -49,8 +51,49 @@ class BasicTest {
     Truth.assertThat(result.getTask(":app:compileDebugRenderscript").executionState.toString()).isEqualTo("SKIPPED")
   }
 
+  class OutputsCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
+        variant.outputs.forEach { output ->
+          val baseName = variant.name
+          val currentVersion = output.versionCode.orNull ?: 12
+          println("Customizing $baseName / $currentVersion")
+          output.versionCode.set(13)
+          println("Done with $baseName / ${output.versionCode.get()}")
+        }
+      }
+    }
+  }
+
   @Test
   fun testOutputs() {
+    val build = rule.build { androidApplication(":app") { pluginCallbacks += OutputsCallback::class.java } }
+
+    val result = build.executor.run(":app:assembleRelease")
+
+    result.assertOutputContains("Customizing release / 12")
+    result.assertOutputContains("Done with release / 13")
+  }
+
+  class BasicTestCallback : LegacyApplicationCallback {
+    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+      // Override the versionCode of the release version
+      extension.applicationVariants.all { variant: ApplicationVariant ->
+        println(variant.name)
+        if (variant.buildType.name == "release") {
+          variant.outputs.all { output ->
+            output as ApkVariantOutput
+            println("Customizing ${output.name} / ${output.versionCodeOverride}")
+            output.setVersionCodeOverride(13)
+            println("Done with ${output.name} / ${output.versionCodeOverride}")
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun testLegacyOutputs() {
     val build =
       rule.build {
         androidApplication(":app") { pluginCallbacks += BasicTestCallback::class.java }
@@ -61,22 +104,5 @@ class BasicTest {
 
     result.assertOutputContains("Customizing release / 12")
     result.assertOutputContains("Done with release / 13")
-  }
-}
-
-class BasicTestCallback : LegacyApplicationCallback {
-  override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
-    // Override the versionCode of the release version
-    extension.applicationVariants.all { variant: ApplicationVariant ->
-      println(variant.name)
-      if (variant.buildType.name == "release") {
-        variant.outputs.all { output ->
-          output as ApkVariantOutput
-          println("Customizing ${output.name} / ${output.versionCodeOverride}")
-          output.setVersionCodeOverride(13)
-          println("Done with ${output.name} / ${output.versionCodeOverride}")
-        }
-      }
-    }
   }
 }
