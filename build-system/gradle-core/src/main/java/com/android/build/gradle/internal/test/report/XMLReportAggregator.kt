@@ -34,6 +34,7 @@ import java.time.format.FormatStyle
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants
 import javax.xml.stream.XMLStreamException
+import org.gradle.internal.logging.ConsoleRenderer
 
 /**
  * Aggregates test results from multiple XML report streams.
@@ -76,7 +77,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     }
 
     // Log the final location of the report
-    logger.quiet("Test report generated at: ${File(outputDir, "index.html").absolutePath}")
+    val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
+    logger.quiet("Test report generated at: $reportLocation")
   }
 
   private class FunctionAdapter : JsonSerializer<Function> {
