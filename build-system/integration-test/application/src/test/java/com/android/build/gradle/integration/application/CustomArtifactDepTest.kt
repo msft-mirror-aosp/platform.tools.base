@@ -13,7 +13,7 @@ import org.junit.Test
 /** Assemble tests for customArtifactDep. */
 class CustomArtifactDepTest {
 
-  @get:Rule var project = GradleTestProject.builder().fromTestProject("customArtifactDep").disableBuiltInKotlin().create()
+  @get:Rule var project = GradleTestProject.builder().fromTestProject("customArtifactDep").create()
 
   @Test
   @Throws(IOException::class)
