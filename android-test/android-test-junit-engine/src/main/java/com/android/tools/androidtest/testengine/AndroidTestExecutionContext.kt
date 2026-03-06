@@ -45,7 +45,23 @@ data class AndroidTestExecutionContext(val request: ExecutionRequest) : EngineEx
 class AndroidTestConfiguration(request: ExecutionRequest) {
   private val config = request.configurationParameters
 
-  private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null): String? {
+  private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null, deviceSerial: String? = null): String? {
+    if (deviceSerial != null) {
+      val deviceSpecificKey = "$key[$deviceSerial]"
+      val value =
+        config.get(deviceSpecificKey).orElse(null) ?: System.getProperty(deviceSpecificKey) ?: AgpTestSuiteInput.get(deviceSpecificKey)
+      if (value != null) {
+        return value
+      }
+
+      if (agpTestInput != null) {
+        val agpDeviceSpecificKey = "${agpTestInput.key}[$deviceSerial]"
+        val agpValue = AgpTestSuiteInput.get(agpDeviceSpecificKey)
+        if (agpValue != null) {
+          return agpValue
+        }
+      }
+    }
     return config.get(key).orElse(null) ?: System.getProperty(key) ?: agpTestInput?.get() ?: AgpTestSuiteInput.get(key)
   }
 
@@ -58,9 +74,9 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
       ?: throw RuntimeException("$DEVICE_SERIALS configuration is required")
   val installTimeoutMs: Long = get(INSTALL_TIMEOUT_MS)?.toLong() ?: 0L
 
-  val testedApks: List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS))
-  val testApks: List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TESTING_APK))
-  val testUtilApks: List<File> = resolveApks(get(TEST_UTIL_APKS))
+  val testedApks: List<File> by lazy { getTestedApks() }
+  val testApks: List<File> by lazy { getTestApks() }
+  val testUtilApks: List<File> by lazy { getTestUtilApks() }
   val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS)?.split(",")?.map { opt -> opt.trim() } ?: listOf()
   val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS)?.toBoolean() ?: true
 
@@ -72,14 +88,24 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
 
   val resultsDir: File? = get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR)?.let { File(it) }
 
+  fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
+
+  fun getTestApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TESTING_APK, deviceSerial))
+
+  fun getTestUtilApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_UTIL_APKS, deviceSerial = deviceSerial))
+
   private fun resolveApks(value: String?): List<File> {
-    return value?.split(",")?.flatMap { path ->
-      val file = File(path.trim())
-      if (file.isDirectory) {
-        file.walk().filter { f -> f.extension == "apk" }.toList()
-      } else {
-        listOf(file)
-      }
-    } ?: listOf()
+    return value
+      ?.split(',')
+      ?.map { it.trim() }
+      ?.filter { it.isNotEmpty() }
+      ?.flatMap { path ->
+        val file = File(path)
+        if (file.isDirectory) {
+          file.listFiles { f -> f.extension == "apk" }?.toList() ?: listOf()
+        } else {
+          listOf(file)
+        }
+      } ?: listOf()
   }
 }

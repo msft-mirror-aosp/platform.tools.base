@@ -766,9 +766,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -779,23 +776,29 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     assertThat(project.resolve(testReportPath)).exists()
     assertThat(project.resolve(testResultPbPath)).exists()
 
-    val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
-    assertThat(deviceInfo).isNotNull()
-    assertThat(deviceInfo?.name).isNotEmpty()
+    // TODO(b/476442048): Device info is not implemented yet in the built-in platform.
+    if (!runWithBuiltInPlatform) {
+      val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
+      assertThat(deviceInfo).isNotNull()
+      assertThat(deviceInfo?.name).isNotEmpty()
+    }
 
-    // Run the task again after clean. This time the task configuration is
-    // restored from the configuration cache. We expect no crashes.
-    executor.run("clean")
+    // TODO(b/476442048): Re-enable this check after TestSuiteTestTask configuration cache issue is resolved.
+    if (!runWithBuiltInPlatform) {
+      // Run the task again after clean. This time the task configuration is
+      // restored from the configuration cache. We expect no crashes.
+      executor.run("clean")
 
-    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
-    assertThat(project.resolve(testReportPath)).doesNotExist()
-    assertThat(project.resolve(testResultPbPath)).doesNotExist()
+      assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+      assertThat(project.resolve(testReportPath)).doesNotExist()
+      assertThat(project.resolve(testResultPbPath)).doesNotExist()
 
-    executor.run(testTaskName)
+      executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+      assertThat(project.resolve(testResultXmlPath)).exists()
+      assertThat(project.resolve(testReportPath)).exists()
+      assertThat(project.resolve(testResultPbPath)).exists()
+    }
   }
 
   @Test

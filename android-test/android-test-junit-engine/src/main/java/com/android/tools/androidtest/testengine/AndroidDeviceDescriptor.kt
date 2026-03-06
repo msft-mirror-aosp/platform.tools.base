@@ -26,6 +26,8 @@ import com.android.tools.androidtest.testengine.instrument.TestIdentifier
 import com.android.tools.androidtest.testengine.instrument.TestResult
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.TestDescriptor
@@ -48,6 +50,8 @@ class AndroidDeviceDescriptor(
   val deviceId: String = deviceSerial,
   val deviceDisplayName: String = deviceId,
 ) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
+
+  private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
 
   private sealed class TestEvent {
     data class NewTest(val descriptor: AndroidDynamicTestDescriptor) : TestEvent()
@@ -85,10 +89,10 @@ class AndroidDeviceDescriptor(
       AndroidTestRunner(
         adbApkInstaller,
         instrumentationRunner,
-        config.testedApks,
-        config.testApks,
+        config.getTestedApks(deviceSerial),
+        config.getTestApks(deviceSerial),
         config.apkInstallOptions,
-        config.testUtilApks,
+        config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
       )
 
@@ -102,6 +106,8 @@ class AndroidDeviceDescriptor(
           try {
             logcatCollector?.startCapture(deviceId)
             runner.run()
+          } catch (t: Throwable) {
+            logger.log(Level.SEVERE, "AndroidTestRunner failed on $deviceSerial", t)
           } finally {
             logcatCollector?.cleanup()
             listener.finish()
