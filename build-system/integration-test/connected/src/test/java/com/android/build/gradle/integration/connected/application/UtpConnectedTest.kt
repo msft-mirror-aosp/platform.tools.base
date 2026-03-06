@@ -140,9 +140,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     val benchmark: Benchmark =
       Benchmark.Builder("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled").setProject("Android Studio Gradle").build()
     val startTime: Long = System.currentTimeMillis()

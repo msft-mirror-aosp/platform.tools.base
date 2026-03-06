@@ -391,8 +391,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithTestFailures() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
 
@@ -449,8 +447,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestrator() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
 
@@ -500,8 +496,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestFromTestOnlyModule() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")
 
@@ -984,8 +978,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   /** Regression test for b/466374462. */
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")
 
