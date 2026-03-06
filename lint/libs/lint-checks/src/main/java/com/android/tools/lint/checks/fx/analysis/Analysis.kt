@@ -1086,41 +1086,31 @@ internal open class Analysis<FX : Any>(
             }
         }
 
+      fun Type<FX>.asCases() = if (this is Type.Union) cases else persistentSetOf(this)
+
       val (baseCases, indCases) = fixed
       val instBase = baseCases.joinedOver(typeLattice) { instType(rec, it) }
+      val instBaseCases = instBase.asCases()
       if (instBase == Type.None) return instantiationLattice.bottom
+      val instIndCases = indCases.joinedOver(typeLattice) { instType(rec, it) }.asCases()
 
-      val instIndCases =
-        when (val t = indCases.joinedOver(typeLattice) { instType(rec, it) }) {
-          is Type.Union -> t.cases
-          else -> persistentSetOf(t)
-        }
-
-      return when {
-        instIndCases.isEmpty() -> pure(instBase)
-        // When the instantiation is just renaming symbols, there's no need for a general
-        // fix-point computation
-        isPureRenaming() -> {
-          val instBaseCases =
-            when (instBase) {
-              is Type.Union -> instBase.cases as PersistentSet<Type.Sym<FX>>
-              else -> persistentSetOf(instBase as Type.Sym<FX>)
-            }
-          pure(Type.Sym.Fix(instBaseCases, instIndCases as PersistentSet<Type.Sym.Invoke<FX>>))
-        }
-        else -> {
-          fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
-            val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
-            val tN = typeLattice.widen(t0, t1)
-            val fxN = fxInstantiationLattice.widen(fx0, fx1)
-            return when {
-              t0 == tN && fx0 == fxN -> Result(tN, fxN)
-              else -> fix(tN, fxN)
-            }
-          }
-          fix(instBase, fxInstantiationLattice.bottom)
+      fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
+        val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
+        val tN = typeLattice.widen(t0, t1)
+        val fxN = fxInstantiationLattice.widen(fx0, fx1)
+        return when {
+          t0 == tN && fx0 == fxN -> Result(tN, fxN)
+          else -> fix(tN, fxN)
         }
       }
+
+      if (instIndCases.isEmpty()) return pure(instBase)
+
+      // When the instantiation is just renaming symbols, there's no need for a general
+      // fix-point computation
+      if (isPureRenaming()) return pure(Type.Sym.Fix(instBaseCases, instIndCases))
+
+      return fix(instBase, fxInstantiationLattice.bottom)
     }
 
   private operator fun ((Point<FX>) -> Ans<FX>).get(method: Type.MethodRef) = this(method) as SummAns<FX>
