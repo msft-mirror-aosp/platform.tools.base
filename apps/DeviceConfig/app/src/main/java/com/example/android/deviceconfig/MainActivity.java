@@ -16,15 +16,13 @@
 
 package com.example.android.deviceconfig;
 
-import android.os.Bundle;
-
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.opengl.GLSurfaceView;
+import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -184,6 +182,17 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         String extensions = "";
         String gpuInfo = "";
 
+        private String getStringWithFallback(GL10 gl, int gl10Key, int gles20Key) {
+            String result = gl != null ? gl.glGetString(gl10Key) : null;
+            if (result == null || result.trim().isEmpty()) {
+                result = android.opengl.GLES20.glGetString(gles20Key);
+            }
+            if (result == null || result.trim().isEmpty()) {
+                result = "UNKNOWN";
+            }
+            return result.trim();
+        }
+
         public void onDrawFrame(GL10 gl) {
         }
 
@@ -193,21 +202,21 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
         public void onSurfaceCreated(GL10 gl, EGLConfig config) {
             if (gpuInfo.isEmpty()) {
-                String vendor   = gl.glGetString(GL10.GL_VENDOR);
-                String renderer = gl.glGetString(GL10.GL_RENDERER);
-                String version  = gl.glGetString(GL10.GL_VERSION);
+                String vendor =
+                        getStringWithFallback(gl, GL10.GL_VENDOR, android.opengl.GLES20.GL_VENDOR);
+                String renderer =
+                        getStringWithFallback(
+                                gl, GL10.GL_RENDERER, android.opengl.GLES20.GL_RENDERER);
+                String version =
+                        getStringWithFallback(
+                                gl, GL10.GL_VERSION, android.opengl.GLES20.GL_VERSION);
 
-                if (vendor != null) gpuInfo += vendor;
-                gpuInfo += ", ";
-                if (renderer != null) gpuInfo += renderer;
-                gpuInfo += ", ";
-                if (version != null) gpuInfo += version;
+                gpuInfo = vendor + ", " + renderer + ", " + version;
             }
             if (extensions.isEmpty()) {
-                String extensions10 = gl.glGetString(GL10.GL_EXTENSIONS);
-                if (extensions10 != null) {
-                    extensions += extensions10;
-                }
+                extensions =
+                        getStringWithFallback(
+                                gl, GL10.GL_EXTENSIONS, android.opengl.GLES20.GL_EXTENSIONS);
             }
         }
     }

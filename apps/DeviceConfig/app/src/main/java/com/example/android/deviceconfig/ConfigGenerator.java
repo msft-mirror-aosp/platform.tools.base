@@ -16,6 +16,10 @@
 
 package com.example.android.deviceconfig;
 
+import static android.hardware.camera2.CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES;
+import static android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE;
+import static android.hardware.camera2.CameraCharacteristics.LENS_FACING;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -33,15 +37,15 @@ import android.hardware.camera2.CameraMetadata;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
-import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.ViewConfiguration;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -69,10 +73,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-
-import static android.hardware.camera2.CameraCharacteristics.CONTROL_AF_AVAILABLE_MODES;
-import static android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE;
-import static android.hardware.camera2.CameraCharacteristics.LENS_FACING;
 
 class ConfigGenerator {
     private Activity mCtx;
@@ -138,7 +138,7 @@ class ConfigGenerator {
     private static final String NODE_RAM = "ram";
     private static final String NODE_XDPI = "xdpi";
     private static final String NODE_DIMENSIONS = "dimensions";
-    private static final String NODE_ABI = "abi";
+    private static final String NODE_ABI = "abis";
     private static final String NODE_MECHANISM = "mechanism";
     private static final String NODE_MULTITOUCH = "multitouch";
     private static final String NODE_NAV = "nav";
@@ -367,7 +367,8 @@ class ConfigGenerator {
                 pixelDensityText = doc.createTextNode("560dpi");
                 break;
             default:
-                pixelDensityText = doc.createTextNode("TODO: unknown");
+                    pixelDensityText =
+                            doc.createTextNode("TODO uncommon " + metrics.densityDpi + "dpi");
             }
             pixelDensity.appendChild(pixelDensityText);
 
@@ -439,7 +440,7 @@ class ConfigGenerator {
                 mechanismText = doc.createTextNode("notouch");
                 break;
             default:
-                mechanismText = doc.createTextNode("TODO: typically \"finger\"");
+                    mechanismText = doc.createTextNode("finger");
             }
             mechanism.appendChild(mechanismText);
 
@@ -448,7 +449,7 @@ class ConfigGenerator {
 
             Element screenType = doc.createElement(PREFIX + NODE_SCREEN_TYPE);
             touch.appendChild(screenType);
-            screenType.appendChild(doc.createTextNode("TODO:typically \"capacitive\""));
+            screenType.appendChild(doc.createTextNode("capacitive"));
 
             Element networking = doc.createElement(PREFIX + NODE_NETWORKING);
             hardware.appendChild(networking);
@@ -508,6 +509,15 @@ class ConfigGenerator {
             if (packageMgr.hasSystemFeature(PackageManager.FEATURE_SENSOR_STEP_DETECTOR)) {
                 sensorsText.appendData("\nStepDetector");
             }
+            if (Build.VERSION.SDK_INT >= 23
+                    && packageMgr.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)) {
+                sensorsText.appendData("\nFingerprint");
+            }
+            // Potential Future use, not in xsd
+            // if (Build.VERSION.SDK_INT >= 29 &&
+            // packageMgr.hasSystemFeature(PackageManager.FEATURE_FACE)) {
+            //     sensorsText.appendData("\nFace");
+            // }
             sensorsText.appendData("\n");
 
             Element mic = doc.createElement(PREFIX + NODE_MIC);
@@ -580,6 +590,7 @@ class ConfigGenerator {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
                 long totalMemory = memInfo.totalMem;
                 long ramAmount = totalMemory / (1024 * 1024);
+                ramAmount = roundRamToCommonSize(ramAmount);
                 ram.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
                 ram.appendChild(doc.createTextNode(Long.toString(ramAmount)));
             } else {
@@ -629,26 +640,45 @@ class ConfigGenerator {
             buttonsText = doc.createTextNode(getButtonsType());
             buttons.appendChild(buttonsText);
 
-            long externalTotal;
+            long externalTotal = 0;
             long internalTotal;
-            StatFs internalStatFs = new StatFs( Environment.getRootDirectory().getAbsolutePath() );
-            StatFs externalStatFs = new StatFs( Environment.getExternalStorageDirectory().getAbsolutePath() );
+            // Use Data Directory for internal storage (where app data lives) instead of Root
+            // (system partition)
+            StatFs internalStatFs = new StatFs(Environment.getDataDirectory().getAbsolutePath());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
                 internalTotal = (internalStatFs.getBlockCountLong() * internalStatFs.getBlockSizeLong()) / (1024 * 1024);
-                externalTotal = (externalStatFs.getBlockCountLong() * externalStatFs.getBlockSizeLong()) / (1024 * 1024);
             } else {
                 internalTotal = ((long) internalStatFs.getBlockCount() * (long) internalStatFs.getBlockSize()) / (1024 * 1024);
-                externalTotal = ((long) externalStatFs.getBlockCount() * (long) externalStatFs.getBlockSize()) / (1024 * 1024);
+            }
+
+            // Only report external storage if it is physically removable (e.g. SD Card)
+            // If it is emulated (like on all modern Pixels), it is already part of the internal
+            // storage.
+            if (Environment.isExternalStorageRemovable()) {
+                StatFs externalStatFs =
+                        new StatFs(Environment.getExternalStorageDirectory().getAbsolutePath());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+                    externalTotal =
+                            (externalStatFs.getBlockCountLong() * externalStatFs.getBlockSizeLong())
+                                    / (1024 * 1024);
+                } else {
+                    externalTotal =
+                            ((long) externalStatFs.getBlockCount()
+                                            * (long) externalStatFs.getBlockSize())
+                                    / (1024 * 1024);
+                }
             }
 
             Element internalStorage = doc.createElement(PREFIX + NODE_INTERNAL_STORAGE);
             hardware.appendChild(internalStorage);
-            internalStorage.appendChild(doc.createTextNode(Long.toString(internalTotal)));
+            internalStorage.appendChild(
+                    doc.createTextNode(Long.toString(roundStorageToCommonSize(internalTotal))));
             internalStorage.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
 
             Element externalStorage = doc.createElement(PREFIX + NODE_REMOVABLE_STORAGE);
             hardware.appendChild(externalStorage);
-            externalStorage.appendChild(doc.createTextNode(Long.toString(externalTotal)));
+            externalStorage.appendChild(
+                    doc.createTextNode(Long.toString(roundStorageToCommonSize(externalTotal))));
             externalStorage.setAttribute(ATTR_UNIT, UNIT_MEBIBYTES);
 
             // Don't know CPU, GPU types
@@ -677,28 +707,42 @@ class ConfigGenerator {
             }
             if (cpuName != null) {
                 cpu.appendChild(doc.createTextNode(cpuName));
+            } else if (Build.VERSION.SDK_INT >= 31) {
+                cpu.appendChild(doc.createTextNode(Build.SOC_MANUFACTURER + " " + Build.SOC_MODEL));
             } else {
-                cpu.appendChild(doc.createTextNode("TODO"));
+                cpu.appendChild(doc.createTextNode("TODO " + Build.HARDWARE));
             }
 
             Element gpu = doc.createElement(PREFIX + NODE_GPU);
             hardware.appendChild(gpu);
-            gpu.appendChild(doc.createTextNode(mGpuInfo.isEmpty() ? "TODO" : mGpuInfo));
+            gpu.appendChild(doc.createTextNode(mGpuInfo));
 
-
-            Element abi = doc.createElement(PREFIX + NODE_ABI);
-            hardware.appendChild(abi);
-            Text abiText = doc.createTextNode("");
-            abi.appendChild(abiText);
             if (Build.VERSION.SDK_INT >= 21) {
                 for (String abiName : Build.SUPPORTED_ABIS) {
-                    abiText.appendData("\n" + abiName);
+                    Element abiNode = doc.createElement(PREFIX + NODE_ABI);
+                    hardware.appendChild(abiNode);
+                    abiNode.appendChild(doc.createTextNode(abiName));
                 }
-                abiText.appendData("\n");
             } else {
-                abiText.appendData("\n" + android.os.Build.CPU_ABI);
-                abiText.appendData("\n" + android.os.Build.CPU_ABI2);
-                abiText.appendData("\n");
+                Element abiNode1 = doc.createElement(PREFIX + NODE_ABI);
+                hardware.appendChild(abiNode1);
+                abiNode1.appendChild(doc.createTextNode(android.os.Build.CPU_ABI));
+                if (android.os.Build.CPU_ABI2 != null
+                        && !android.os.Build.CPU_ABI2.isEmpty()
+                        && !android.os.Build.CPU_ABI2.equals("unknown")) {
+                    Element abiNode2 = doc.createElement(PREFIX + NODE_ABI);
+                    hardware.appendChild(abiNode2);
+                    abiNode2.appendChild(doc.createTextNode(android.os.Build.CPU_ABI2));
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= 30
+                    && packageMgr.hasSystemFeature("android.hardware.sensor.hinge_angle")) {
+                Element hinge = doc.createElement(PREFIX + "hinge");
+                hardware.appendChild(hinge);
+                hinge.appendChild(
+                        doc.createComment(
+                                "TODO: device is foldable, configure hinge properties here"));
             }
 
             // Don't know about either the dock or plugged-in element
@@ -719,8 +763,9 @@ class ConfigGenerator {
 
             Element apiLevel = doc.createElement(PREFIX + NODE_API_LEVEL);
             software.appendChild(apiLevel);
-            apiLevel.appendChild(doc.createTextNode(Integer
-                    .toString(android.os.Build.VERSION.SDK_INT)));
+            apiLevel.appendChild(
+                    doc.createTextNode(
+                            Integer.toString(android.os.Build.VERSION.SDK_INT) + "-TODO"));
 
             Element liveWallpaperSupport = doc.createElement(PREFIX + NODE_LIVE_WALLPAPER_SUPPORT);
             software.appendChild(liveWallpaperSupport);
@@ -806,7 +851,10 @@ class ConfigGenerator {
             DOMSource source = new DOMSource(doc);
             String filename = String.format(Locale.US, "devices_%1$tm_%1$td_%1$ty.xml",
                                             Calendar.getInstance().getTime());
-            File dir = new File(mCtx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "deviceconfig");
+            File dir =
+                    new File(
+                            mCtx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
+                            "deviceconfig");
             dir.mkdirs();
             File outFile = new File(dir, filename);
             FileOutputStream out = new FileOutputStream(new File(dir, filename));
@@ -943,6 +991,30 @@ class ConfigGenerator {
         } else {
             return "soft";
         }
+    }
+
+    private long roundStorageToCommonSize(long mib) {
+        if (mib <= 0) return 0;
+        long gb = mib / 1024;
+        long[] commonGb = {4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048};
+        for (long common : commonGb) {
+            if (gb <= common) {
+                return common * 1024;
+            }
+        }
+        return gb * 1024;
+    }
+
+    private long roundRamToCommonSize(long mib) {
+        if (mib <= 0) return 0;
+        long gb = (mib + 512) / 1024;
+        long[] commonGb = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 64};
+        for (long common : commonGb) {
+            if (gb <= common) {
+                return common * 1024;
+            }
+        }
+        return gb * 1024;
     }
 
     private void error(String err, Throwable e) {
