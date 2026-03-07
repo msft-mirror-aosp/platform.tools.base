@@ -79351,6 +79351,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "commons-io.commons-io_2.15.1",
+    pom = "repository/commons-io/commons-io/2.15.1/commons-io-2.15.1.pom",
+    repo_root_path = "repository",
+    repo_path = "commons-io/commons-io/2.15.1",
+    parent = "org.apache.commons.commons-parent_65",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-io.commons-io_2.4",
     pom = "repository/commons-io/commons-io/2.4/commons-io-2.4.pom",
     repo_root_path = "repository",
@@ -83859,12 +83868,57 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+    pom = "repository/org/gradle/experimental/plugin-ecosystem/org.gradle.experimental.plugin-ecosystem.gradle.plugin/0.1.54/org.gradle.experimental.plugin-ecosystem.gradle.plugin-0.1.54.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/experimental/plugin-ecosystem/org.gradle.experimental.plugin-ecosystem.gradle.plugin/0.1.54",
+    deps = [
+        "org.gradle.experimental.plugin-plugin_0.1.54",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.experimental.plugin-common_0.1.54",
+    pom = "repository/org/gradle/experimental/plugin-common/0.1.54/plugin-common-0.1.54.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/experimental/plugin-common/0.1.54",
+    deps = [
+        "commons-io.commons-io_2.15.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.experimental.plugin-plugin_0.1.54",
+    pom = "repository/org/gradle/experimental/plugin-plugin/0.1.54/plugin-plugin-0.1.54.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/experimental/plugin-plugin/0.1.54",
+    deps = [
+        "org.gradle.experimental.plugin-common_0.1.54",
+        "org.gradle.toolchains.foojay-resolver_0.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.gradle.toolchains.foojay-resolver-convention.org.gradle.toolchains.foojay-resolver-convention.gradle.plugin_1.0.0",
     pom = "repository/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/1.0.0/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-1.0.0.pom",
     repo_root_path = "repository",
     repo_path = "org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/1.0.0",
     deps = [
         "org.gradle.toolchains.foojay-resolver_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.toolchains.foojay-resolver_0.8.0",
+    pom = "repository/org/gradle/toolchains/foojay-resolver/0.8.0/foojay-resolver-0.8.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/toolchains/foojay-resolver/0.8.0",
+    deps = [
+        "com.google.code.gson.gson_2.10.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97690,6 +97744,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.junit-bom_5.10.1",
+    pom = "repository/org/junit/junit-bom/5.10.1/junit-bom-5.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.10.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.junit-bom_5.10.2",
     pom = "repository/org/junit/junit-bom/5.10.2/junit-bom-5.10.2.pom",
     repo_root_path = "repository",
@@ -101563,6 +101625,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/apache/commons/commons-parent/64",
     parent = "org.apache.apache_30",
+)
+
+maven_artifact(
+    name = "org.apache.commons.commons-parent_65",
+    pom = "repository/org/apache/commons/commons-parent/65/commons-parent-65.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/commons/commons-parent/65",
+    parent = "org.apache.apache_31",
 )
 
 maven_artifact(

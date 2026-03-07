@@ -1062,6 +1062,7 @@ _CLASS_JARS = [
     "org.duckdb:duckdb_jdbc:1.3.0.0",
     "org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.21.1",
+    "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.54",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
     "org.gradle:gradle-tooling-api:9.2.1",
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
@@ -1391,6 +1392,7 @@ _CLASS_JARS = [
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
     "org.junit:junit-bom:pom:5.10.0",
+    "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
     "org.junit:junit-bom:pom:5.9.2",

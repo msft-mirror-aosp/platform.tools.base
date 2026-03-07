@@ -529,6 +529,15 @@ gradle_build(
 )
 
 maven_repository(
+    name = "declarative_gradle_runtime",
+    artifacts = [
+        "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+        "@maven//:org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
     name = "android_gradle_plugin_runtime_dependencies",
     # keep sorted
     artifacts = [
