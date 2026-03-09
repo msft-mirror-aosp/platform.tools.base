@@ -306,4 +306,108 @@ class XMLReportAggregatorTest {
     assertThat(stagingFunc.results["stagingDebug"]?.status).isEqualTo("pass")
     assertThat(stagingFunc.results).doesNotContainKey("trialDebug")
   }
+
+  @Test
+  fun testGenerateReport_summaryCalculations() {
+    val debugXml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyClassTest" tests="2" failures="1" errors="0" skipped="0" time="0.2">
+          <properties>
+              <property name="testedVariantName" value="debug"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testPass" classname="com.example.app.MyClassTest" time="0.1"/>
+          <testcase name="testFail" classname="com.example.app.MyClassTest" time="0.1">
+              <failure message="assertion failed">stacktrace here</failure>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "debug.xml", debugXml)
+
+    val releaseXml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyClassTest" tests="2" failures="0" errors="0" skipped="1" time="0.3">
+          <properties>
+              <property name="testedVariantName" value="release"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testAnotherPass" classname="com.example.app.MyClassTest" time="0.2"/>
+          <testcase name="testSkipped" classname="com.example.app.MyClassTest" time="0.1">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "release.xml", releaseXml)
+
+    val skippedOnlyXml =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyClassTest" tests="1" failures="0" errors="0" skipped="1" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="skippedOnly"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testSkippedOnly" classname="com.example.app.MyClassTest" time="0.1">
+              <skipped/>
+          </testcase>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "skippedOnly.xml", skippedOnlyXml)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "SummaryProject")
+    val report = aggregator.generateReport()
+
+    // 1. Check Root Summary
+    val rootSummary = report.summary
+    assertThat(rootSummary.total).isEqualTo(5)
+    assertThat(rootSummary.passed).isEqualTo(2)
+    assertThat(rootSummary.failed).isEqualTo(1)
+    assertThat(rootSummary.skipped).isEqualTo(2)
+
+    // passRate = passed / (passed + failed) = 2 / 3 = 66.666...
+    assertThat(rootSummary.passRate).isWithin(0.01).of(66.66)
+
+    // 2. Check Variant Summaries at Root
+    val debugSummary = rootSummary.variantSummaries["debug"]!!
+    assertThat(debugSummary.total).isEqualTo(2)
+    assertThat(debugSummary.passed).isEqualTo(1)
+    assertThat(debugSummary.failed).isEqualTo(1)
+    assertThat(debugSummary.skipped).isEqualTo(0)
+    assertThat(debugSummary.rate).isEqualTo(50.0)
+
+    val releaseSummary = rootSummary.variantSummaries["release"]!!
+    assertThat(releaseSummary.total).isEqualTo(2)
+    assertThat(releaseSummary.passed).isEqualTo(1)
+    assertThat(releaseSummary.failed).isEqualTo(0)
+    assertThat(releaseSummary.skipped).isEqualTo(1)
+    assertThat(releaseSummary.rate).isEqualTo(100.0)
+
+    val skippedOnlySummary = rootSummary.variantSummaries["skippedOnly"]!!
+    assertThat(skippedOnlySummary.total).isEqualTo(1)
+    assertThat(skippedOnlySummary.passed).isEqualTo(0)
+    assertThat(skippedOnlySummary.failed).isEqualTo(0)
+    assertThat(skippedOnlySummary.skipped).isEqualTo(1)
+    assertThat(skippedOnlySummary.rate).isEqualTo(0.0)
+
+    // 3. Check Aggregation up the chain (Module, TestSuite, Package, Class)
+    val appModule = report.modules.findOrThrow({ it.name == ":app" }) { ":app module not found" }
+    assertThat(appModule.summary.total).isEqualTo(5)
+
+    val unitTestSuite = appModule.testSuites.first()
+    assertThat(unitTestSuite.summary.total).isEqualTo(5)
+
+    val pkg = unitTestSuite.packages.first()
+    assertThat(pkg.summary.total).isEqualTo(5)
+
+    val clazz = pkg.classes.first()
+    assertThat(clazz.summary.total).isEqualTo(5)
+  }
 }
