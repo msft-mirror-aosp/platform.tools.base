@@ -21,8 +21,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-import java.lang.reflect.Method;
-
 /** Receives the broadcast when Android Studio requests the retained visible threshold. */
 @SuppressWarnings("unused")
 public class GetThresholdReceiver extends BroadcastReceiver {
@@ -31,35 +29,8 @@ public class GetThresholdReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (HelperConfig.GET_THRESHOLD_INTENT.equals(intent.getAction())) {
             Log.d(HelperConfig.LOG_TAG, "Received broadcast request for LeakCanary threshold.");
-            int threshold =
-                    5; // Default fallback value to indicate presence even if reflection fails.
-            try {
-                ClassLoader classLoader = context.getClassLoader();
-                Class<?> leakCanaryClass =
-                        Class.forName(HelperConfig.LEAK_CANARY_CLASS, false, classLoader);
-                java.lang.reflect.Field instanceField =
-                        leakCanaryClass.getField(HelperConfig.INSTANCE_FIELD);
-                Object leakCanaryInstance = instanceField.get(null);
-                Method getConfigMethod = leakCanaryClass.getMethod(HelperConfig.GET_CONFIG_METHOD);
-                Object config = getConfigMethod.invoke(leakCanaryInstance);
-                Method getThresholdMethod =
-                        config.getClass()
-                                .getMethod(HelperConfig.GET_RETAINED_VISIBLE_THRESHOLD_METHOD);
-                threshold = (int) getThresholdMethod.invoke(config);
-                Log.d(
-                        HelperConfig.LOG_TAG,
-                        "Successfully retrieved threshold via reflection: " + threshold);
-            } catch (Exception e) {
-                // If reflection fails (e.g. ProGuard, incompatible version), we log the error but
-                // still return
-                // a default non-zero value. This confirms that the Studio library itself is present
-                // and responding,
-                // which allows the Studio UI to enable the 'Start' button.
-                Log.e(
-                        HelperConfig.LOG_TAG,
-                        "Failed to get threshold via reflection. Returning default: " + threshold,
-                        e);
-            }
+
+            int threshold = LeakCanaryReflectionHelper.getRetainedVisibleThreshold();
 
             Intent resultIntent = new Intent(HelperConfig.THRESHOLD_RESULT_INTENT);
             resultIntent.putExtra(HelperConfig.THRESHOLD_EXTRA, threshold);

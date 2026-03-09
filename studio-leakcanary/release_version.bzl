@@ -1,3 +1,7 @@
+"""
+Holds the release version information for the studio-leakcanary library.
+"""
+
 # Copyright (C) 2026 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,5 +17,5 @@
 # limitations under the License.
 
 # This file is also loaded as a Java properties file from Gradle build files.
-STUDIO_LEAKCANARY_VERSION_RELEASE = "1.0.0-alpha01"
+STUDIO_LEAKCANARY_VERSION_RELEASE = "1.0.0-alpha02"
 STUDIO_LEAKCANARY_VERSION_DEV = "1.0.0-dev"
