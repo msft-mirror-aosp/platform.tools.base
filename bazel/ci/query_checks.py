@@ -84,3 +84,23 @@ def gradle_requires_cpu4_or_more(build_env: bazel.BuildEnv):
             ' and must have cpu:4 or greater\n'
         ) + '\n'.join(query_targets)
     )
+
+
+def check_large_machine_allowlist(build_env: bazel.BuildEnv):
+  """Targets using large machines are not allowed on presubmit."""
+  targets_not_on_presubmit = r'(attr(tags, "noci:studio-linux[,\]]", //...) intersect attr(tags, "noci:studio-win[,\]]", //...))'
+  perfgate_release_targets = r'attr(tags, "perfgate-release[,\]]", //...)'
+  query = r'attr(exec_properties, "[,{ ]label:machine-size=large[,}]", //...)'
+  query += f' except {targets_not_on_presubmit} except {perfgate_release_targets}'
+  result = build_env.bazel_query(query)
+  if not result.stdout:
+    return
+  query_targets = result.stdout.decode('utf8').splitlines()
+  raise BuildGraphException(
+        title='Large machines are not allowed on presubmit. Please consult with android-devtools-infra@',
+        go_link='',
+        body=(
+            'ERROR: The following targets are using large machines.\n'
+        ) + '\n'.join(query_targets)
+    )
+
