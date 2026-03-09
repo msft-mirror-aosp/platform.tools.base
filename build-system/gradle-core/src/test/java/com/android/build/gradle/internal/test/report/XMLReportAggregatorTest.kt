@@ -85,12 +85,12 @@ class XMLReportAggregatorTest {
 
     val clazz = pkg.classes.first()
     assertThat(clazz.name).isEqualTo("MyClassTest")
-    assertThat(clazz.functions).hasSize(1)
+    assertThat(clazz.testCases).hasSize(1)
 
-    val function = clazz.functions.first()
-    assertThat(function.name).isEqualTo("testExample")
-    assertThat(function.results).hasSize(1)
-    assertThat(function.results["debug"]?.status).isEqualTo("pass")
+    val testCase = clazz.testCases.first()
+    assertThat(testCase.name).isEqualTo("testExample")
+    assertThat(testCase.results).hasSize(1)
+    assertThat(testCase.results["debug"]?.status).isEqualTo("pass")
   }
 
   @Test
@@ -150,10 +150,10 @@ class XMLReportAggregatorTest {
     assertThat(unitTestPkg.classes).hasSize(1)
     val unitTestClass = unitTestPkg.classes.first()
     assertThat(unitTestClass.name).isEqualTo("MyClassTest")
-    assertThat(unitTestClass.functions).hasSize(2)
-    assertThat(unitTestClass.functions.find { it.name == "testPass" }?.results["debug"]?.status).isEqualTo("pass")
-    assertThat(unitTestClass.functions.find { it.name == "testFail" }?.results["debug"]?.status).isEqualTo("fail")
-    assertThat(unitTestClass.functions.find { it.name == "testFail" }?.results["debug"]?.stackTrace).contains("stacktrace here")
+    assertThat(unitTestClass.testCases).hasSize(2)
+    assertThat(unitTestClass.testCases.find { it.name == "testPass" }?.results["debug"]?.status).isEqualTo("pass")
+    assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.status).isEqualTo("fail")
+    assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.stackTrace).contains("stacktrace here")
 
     val otherTestSuite = appModule.testSuites.findOrThrow({ it.name == "otherTestSuite" }) { "otherTestSuite not found" }
     assertThat(otherTestSuite.packages).hasSize(1)
@@ -162,9 +162,9 @@ class XMLReportAggregatorTest {
     assertThat(otherTestPkg.classes).hasSize(1)
     val otherTestClass = otherTestPkg.classes.first()
     assertThat(otherTestClass.name).isEqualTo("MyOtherClassTest")
-    assertThat(otherTestClass.functions).hasSize(2)
-    assertThat(otherTestClass.functions.find { it.name == "testAnotherPass" }?.results["release"]?.status).isEqualTo("pass")
-    assertThat(otherTestClass.functions.find { it.name == "testSkipped" }?.results["release"]?.status).isEqualTo("skipped")
+    assertThat(otherTestClass.testCases).hasSize(2)
+    assertThat(otherTestClass.testCases.find { it.name == "testAnotherPass" }?.results["release"]?.status).isEqualTo("pass")
+    assertThat(otherTestClass.testCases.find { it.name == "testSkipped" }?.results["release"]?.status).isEqualTo("skipped")
   }
 
   @Test
@@ -229,12 +229,12 @@ class XMLReportAggregatorTest {
     val testSuite = module.testSuites.findOrThrow({ it.name == "failedUnitTest" }) { "failedUnitTest not found" }
     val pkg = testSuite.packages.findOrThrow({ it.name == "com.example.app" }) { "com.example.app package not found" }
     val clazz = pkg.classes.findOrThrow({ it.name == "MyFailedClassTest" }) { "MyFailedClassTest not found" }
-    val function = clazz.functions.findOrThrow({ it.name == "testFailure" }) { "testFailure function not found" }
+    val testCase = clazz.testCases.findOrThrow({ it.name == "testFailure" }) { "testFailure testcase not found" }
 
-    assertThat(function.name).isEqualTo("testFailure")
-    assertThat(function.results["debug"]?.status).isEqualTo("fail")
-    assertThat(function.results["debug"]?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
-    assertThat(function.results["debug"]?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
+    assertThat(testCase.name).isEqualTo("testFailure")
+    assertThat(testCase.results["debug"]?.status).isEqualTo("fail")
+    assertThat(testCase.results["debug"]?.stackTrace).contains("java.lang.RuntimeException: This is a test exception")
+    assertThat(testCase.results["debug"]?.stackTrace).contains("at com.example.app.MyFailedClassTest.testFailure(MyFailedClassTest.kt:10)")
   }
 
   @Test
@@ -291,20 +291,20 @@ class XMLReportAggregatorTest {
 
     // Verify ExampleInstrumentedTest (runs on both variants)
     val exampleInstrumentedTest = pkg.classes.findOrThrow({ it.name == "ExampleInstrumentedTest" }) { "ExampleInstrumentedTest not found" }
-    val exampleFunc =
-      exampleInstrumentedTest.functions.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
-    assertThat(exampleFunc.results).hasSize(2)
-    assertThat(exampleFunc.results["stagingDebug"]?.status).isEqualTo("pass")
-    assertThat(exampleFunc.results["trialDebug"]?.status).isEqualTo("pass")
+    val exampleTestCase =
+      exampleInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in ExampleInstrumentedTest not found" }
+    assertThat(exampleTestCase.results).hasSize(2)
+    assertThat(exampleTestCase.results["stagingDebug"]?.status).isEqualTo("pass")
+    assertThat(exampleTestCase.results["trialDebug"]?.status).isEqualTo("pass")
 
     // Verify StagingInstrumentedTest (runs only on stagingDebug)
     val stagingInstrumentedTest = pkg.classes.findOrThrow({ it.name == "StagingInstrumentedTest" }) { "StagingInstrumentedTest not found" }
-    val stagingFunc =
-      stagingInstrumentedTest.functions.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
-    assertThat(stagingFunc.results).hasSize(1)
-    assertThat(stagingFunc.results).containsKey("stagingDebug")
-    assertThat(stagingFunc.results["stagingDebug"]?.status).isEqualTo("pass")
-    assertThat(stagingFunc.results).doesNotContainKey("trialDebug")
+    val stagingTestCase =
+      stagingInstrumentedTest.testCases.findOrThrow({ it.name == "useAppContext" }) { "useAppContext in StagingInstrumentedTest not found" }
+    assertThat(stagingTestCase.results).hasSize(1)
+    assertThat(stagingTestCase.results).containsKey("stagingDebug")
+    assertThat(stagingTestCase.results["stagingDebug"]?.status).isEqualTo("pass")
+    assertThat(stagingTestCase.results).doesNotContainKey("trialDebug")
   }
 
   @Test

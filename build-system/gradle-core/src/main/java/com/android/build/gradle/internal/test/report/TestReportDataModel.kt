@@ -65,10 +65,10 @@ data class Package(val name: String, val classes: List<ClassType>, val summary: 
  * Represents a test class.
  *
  * @property name The simple name of the class (e.g., "ExampleUnitTest").
- * @property functions A list of test methods (functions) in this class.
+ * @property testCases A list of test methods (test cases) in this class.
  * @property summary The aggregated summary of all tests in this class.
  */
-data class ClassType(val name: String, val functions: List<Function>, val summary: TestSummary)
+data class ClassType(val name: String, val testCases: List<TestCase>, val summary: TestSummary)
 
 /**
  * Represents a single test function execution result.
@@ -81,11 +81,11 @@ data class TestResults(val status: String, val stackTrace: String? = null)
 /**
  * Represents a test method with results across multiple variants.
  *
- * @property name The name of the test function (e.g., "testAddition").
+ * @property name The name of the test case (e.g., "testAddition").
  * @property results A map where keys are variant names (matching [RootReport.variants]) and values are the [TestResults] for that variant.
  *   This allows aggregating results for the same test across different build variants.
  */
-data class Function(
+data class TestCase(
   val name: String,
   // Store TestResult objects instead of simple Strings
   val results: Map<String, TestResults> = emptyMap(),

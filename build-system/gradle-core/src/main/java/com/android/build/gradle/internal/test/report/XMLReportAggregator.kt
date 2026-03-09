@@ -62,7 +62,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     val gson =
       GsonBuilder()
         .setPrettyPrinting()
-        .registerTypeAdapter(Function::class.java, FunctionAdapter())
+        .registerTypeAdapter(TestCase::class.java, TestCaseAdapter())
         .registerTypeAdapter(TestSummary::class.java, TestSummaryAdapter())
         .create()
     val jsonString = gson.toJson(finalReport)
@@ -86,8 +86,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     logger.quiet("Test report generated at: $reportLocation")
   }
 
-  internal class FunctionAdapter : JsonSerializer<Function> {
-    override fun serialize(src: Function, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+  internal class TestCaseAdapter : JsonSerializer<TestCase> {
+    override fun serialize(src: TestCase, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
       val jsonObject = JsonObject()
       jsonObject.addProperty("name", src.name)
       src.results.forEach { (variant, result) ->
@@ -322,26 +322,26 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
   }
 
   private class ClassBuilder(val name: String) {
-    val functions = mutableMapOf<String, FunctionBuilder>()
+    val testCases = mutableMapOf<String, TestCaseBuilder>()
 
-    fun getOrAddFunction(name: String) = functions.getOrPut(name) { FunctionBuilder(name) }
+    fun getOrAddTestCase(name: String) = testCases.getOrPut(name) { TestCaseBuilder(name) }
 
     fun build(): ClassType {
-      val funcs = functions.values.map { it.build() }.sortedBy { it.name }
-      val allVariants = funcs.flatMap { it.results.keys }.toSet()
-      val summary = calculateSummaryFromFunctions(funcs, allVariants)
-      return ClassType(name = name, functions = funcs, summary = summary)
+      val testCasesList = testCases.values.map { it.build() }.sortedBy { it.name }
+      val allVariants = testCasesList.flatMap { it.results.keys }.toSet()
+      val summary = calculateSummaryFromTestCases(testCasesList, allVariants)
+      return ClassType(name = name, testCases = testCasesList, summary = summary)
     }
   }
 
-  private class FunctionBuilder(val name: String) {
+  private class TestCaseBuilder(val name: String) {
     val results = mutableMapOf<String, TestResults>()
 
     fun addResult(variant: String, result: TestResults) {
       results[variant] = result
     }
 
-    fun build() = Function(name = name, results = results.toMap())
+    fun build() = TestCase(name = name, results = results.toMap())
   }
 
   companion object {
@@ -389,12 +389,12 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     }
 
     /**
-     * Calculates a [TestSummary] from a list of [Function] test results.
+     * Calculates a [TestSummary] from a list of [TestCase] test results.
      *
      * @param functions The list of test functions.
      * @param variants The set of all variant names to include in the summary.
      */
-    private fun calculateSummaryFromFunctions(functions: List<Function>, variants: Set<String>): TestSummary {
+    private fun calculateSummaryFromTestCases(testCases: List<TestCase>, variants: Set<String>): TestSummary {
       var totalPassed = 0
       var totalFailed = 0
       var totalSkipped = 0
@@ -406,8 +406,8 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         var vSkipped = 0
         var vTotal = 0
 
-        functions.forEach { function ->
-          function.results[variant]?.let {
+        testCases.forEach { testCase ->
+          testCase.results[variant]?.let {
             when (it.status) {
               STATUS_PASS -> vPassed++
               STATUS_FAIL -> vFailed++
@@ -452,7 +452,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
         .getOrAddTestSuite(testSuiteName)
         .getOrAddPackage(packageName)
         .getOrAddClass(className)
-        .getOrAddFunction(testcaseName)
+        .getOrAddTestCase(testcaseName)
         .addResult(variantName, result)
     } catch (e: Exception) {
       logger.error(e, "Error processing test case: $classname.$testcaseName")
