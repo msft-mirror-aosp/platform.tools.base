@@ -20,7 +20,7 @@ _FLAGS = [
 
 def _get_uitools_evals_tests(build_env: bazel.BuildEnv) -> List[str]:
   """Queries bazel for uitools evals tests."""
-  query = [f'attr(tags, "uitools_evals", {" + ".join(_TARGETS)})']
+  query = [f'tests({" + ".join(_TARGETS)})']
   target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   return target_tests
 
