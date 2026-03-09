@@ -64,6 +64,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
+import java.util.jar.JarFile
+import java.util.logging.Level
+import java.util.logging.Logger
 import javax.imageio.ImageIO
 
 /** A renderer that can handle [RenderRequest]. */
@@ -74,7 +77,10 @@ class Renderer(
   classPath: List<String>,
   projectClassPath: List<String>,
   layoutlibPath: String,
+  resourceDirs: List<String> = emptyList(),
+  rClassJars: List<String> = emptyList(),
 ) : Closeable {
+  private val logger = Logger.getLogger(Renderer::class.java.name)
 
   private val project: Project = IJFramework.createProject()
   private val baseConfiguration: Configuration
@@ -86,12 +92,86 @@ class Renderer(
 
     val moduleClassLoaderManager = StandaloneModuleClassLoaderManager(classPath, projectClassPath)
 
-    val resourceIdManager = ApkResourceIdManager()
-    resourceApkPath?.let { resourceIdManager.loadApkResources(it) }
+    val apkIdManager = ApkResourceIdManager()
+    resourceApkPath?.let { apkIdManager.loadApkResources(it) }
 
-    val resourcesRepo =
+    val baseIdManager =
+      com.android.tools.res.ids.ResourceIdManagerBase(com.android.tools.res.ids.ResourceIdManagerModelModule.noNamespacingApp(true), true)
+
+    val resourceIdManager = StandaloneResourceIdManager(apkIdManager, baseIdManager)
+
+    val rClassPackages = mutableSetOf<String>()
+    // Load R classes from rClassJars into the ID manager
+    resourceIdManager.resetCompiledIds { parser ->
+      try {
+        val classLoader = this::class.java.classLoader
+        parser.parseUsingReflection(classLoader.loadClass("android.R"))
+        parser.parseUsingReflection(classLoader.loadClass("com.android.internal.R"))
+      } catch (e: Throwable) {
+        logger.log(Level.WARNING, "Could not load Android framework R classes", e)
+      }
+
+      for (path in rClassJars) {
+        val file = File(path)
+        if (file.isDirectory) {
+          file
+            .walk()
+            .filter { it.name == "R.class" }
+            .forEach { rClassFile ->
+              val relativePath = rClassFile.relativeTo(file).path
+              val className = relativePath.removeSuffix(".class").replace(File.separatorChar, '.')
+              val pkg = className.substringBeforeLast('.', "")
+              if (pkg.isNotEmpty()) rClassPackages.add(pkg)
+              try {
+                moduleClassLoaderManager.getShared(this::class.java.classLoader).use { ref ->
+                  val rClass = ref.classLoader.loadClass(className)
+                  parser.parseUsingReflection(rClass)
+                }
+              } catch (e: Exception) {
+                logger.log(Level.FINE, "Failed to load R class $className. Resource IDs for this package may not be resolved.", e)
+              } catch (e: LinkageError) {
+                logger.log(Level.FINE, "Linkage error while loading R class $className. This often indicates a classpath conflict.", e)
+              }
+            }
+        } else if (file.isFile) {
+          try {
+            JarFile(file).use { jar ->
+              for (entry in jar.entries()) {
+                if (entry.name.endsWith("/R.class") || entry.name == "R.class") {
+                  val className = entry.name.removeSuffix(".class").replace('/', '.')
+                  val pkg = className.substringBeforeLast('.', "")
+                  if (pkg.isNotEmpty()) rClassPackages.add(pkg)
+                  try {
+                    moduleClassLoaderManager.getShared(this::class.java.classLoader).use { ref ->
+                      val rClass = ref.classLoader.loadClass(className)
+                      parser.parseUsingReflection(rClass)
+                    }
+                  } catch (e: Exception) {
+                    logger.log(Level.FINE, "Failed to load R class $className from JAR $path.", e)
+                  } catch (e: LinkageError) {
+                    logger.log(Level.FINE, "Linkage error while loading R class $className from JAR $path.", e)
+                  }
+                }
+              }
+            }
+          } catch (e: Exception) {
+            logger.log(Level.FINE, "Failed to read JAR file $path during R-class scanning.", e)
+          } catch (e: LinkageError) {
+            logger.log(Level.FINE, "Linkage error while reading JAR file $path.", e)
+          }
+        }
+      }
+    }
+    val apkResourcesRepo =
       if (resourceApkPath != null) ApkResourceRepository(resourceApkPath, resourceIdManager::findById)
       else LocalResourceRepository.EmptyRepository<Path>(ResourceNamespace.RES_AUTO)
+
+    val resourcesRepo =
+      if (resourceDirs.isNotEmpty()) {
+        StandaloneResourceRepository(resourceDirs, apkResourcesRepo)
+      } else {
+        apkResourcesRepo
+      }
 
     val androidVersion = AndroidVersion(33)
     val androidTarget = StandaloneAndroidTarget(androidVersion)
@@ -140,7 +220,7 @@ class Renderer(
     )
 
     val environment = StandaloneEnvironmentContext(project, moduleClassLoaderManager, StandaloneFontCacheService(fontsPath))
-    val moduleDependencies = StandaloneModuleDependencies()
+    val moduleDependencies = StandaloneModuleDependencies(rClassPackages.toList())
     val moduleKey = ModuleKey()
 
     val configModule =

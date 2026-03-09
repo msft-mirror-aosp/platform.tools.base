@@ -59,6 +59,12 @@ interface PreviewScreenshotTestEngineInput {
 
   @get:InputFiles @get:Classpath val testRuntimeJars: ListProperty<RegularFile>
 
+  @get:InputFiles @get:Classpath val testRuntimeDependencies: ConfigurableFileCollection
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val testRuntimeResourceDirs: ConfigurableFileCollection
+
+  @get:InputFiles @get:PathSensitive(PathSensitivity.NONE) val testRuntimeRClassJars: ConfigurableFileCollection
+
   @get:InputFiles // Using InputFiles to allow nonexistent reference image directory.
   @get:PathSensitive(PathSensitivity.RELATIVE)
   @get:Optional
@@ -104,12 +110,10 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
   addProp("mainJars", mainProjectJars.get().joinToString(File.pathSeparator) { it.asFile.absolutePath })
 
   val testProjectJarSet = setOf(*testProjectJars.get().map { it.asFile.absolutePath }.toTypedArray())
+  val allTestRuntimeJars = testRuntimeJars.get().map { it.asFile } + testRuntimeDependencies.files
   addProp(
     "dependencyJars",
-    testRuntimeJars
-      .get()
-      .filterNot { it.asFile.absolutePath in testProjectJarSet }
-      .joinToString(File.pathSeparator) { it.asFile.absolutePath },
+    allTestRuntimeJars.filterNot { it.absolutePath in testProjectJarSet }.joinToString(File.pathSeparator) { it.absolutePath },
   )
 
   addProp("previewImageOutputDir", previewImageOutputDir.get().asFile.absolutePath)
@@ -128,7 +132,7 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
   )
   addProp(
     "Renderer.screenshotAllClassPath",
-    (testRuntimeClassDirs.get() + testRuntimeJars.get()).joinToString(File.pathSeparator) { it.asFile.absolutePath },
+    (testRuntimeClassDirs.get().map { it.asFile } + allTestRuntimeJars).joinToString(File.pathSeparator) { it.absolutePath },
   )
   addProp(
     "Renderer.screenshotProjectClassPath",
@@ -136,6 +140,11 @@ fun PreviewScreenshotTestEngineInput.saveToPropertiesFile(outputFile: File) {
   )
   addProp("Renderer.layoutlibDataDir", layoutlibDataDir.singleFile.absolutePath)
   addProp("Renderer.layoutlibClassPath", layoutlibClassPath.files.joinToString(File.pathSeparator) { it.absolutePath })
+  addProp("Renderer.testRuntimeResourceDirs", testRuntimeResourceDirs.files.joinToString(File.pathSeparator) { it.absolutePath })
+  addProp(
+    "Renderer.testRuntimeRClassJars",
+    testRuntimeRClassJars.files.joinToString(File.pathSeparator) { file: File -> file.absolutePath },
+  )
   addProp("TestOption.recordingModeEnabled", recordingModeEnabled.get().toString())
 
   if (junitXmlOutputDirectory.isPresent) {

@@ -21,7 +21,7 @@ import com.android.tools.module.ModuleDependencies
 import com.android.tools.module.ViewClass
 
 /** Stub version of [ModuleDependencies] for standalone rendering. */
-internal class StandaloneModuleDependencies : ModuleDependencies {
+internal class StandaloneModuleDependencies(private val resourcePackages: List<String> = emptyList()) : ModuleDependencies {
 
   /**
    * Not used in compose rendering.
@@ -33,10 +33,10 @@ internal class StandaloneModuleDependencies : ModuleDependencies {
   override fun dependsOnAndroidx(): Boolean = false
 
   /**
-   * This is used to know which R-classes to load for [ResourceIdManager]. In the standalone rendering we load resource ids from the apk,
-   * not from R-classes, so this is empty.
+   * This is used to know which R-classes to load for [ResourceIdManager]. In standalone rendering, we inject the list of package names
+   * scanned from the project classpath.
    */
-  override fun getResourcePackageNames(includeExternalLibraries: Boolean): List<String> = emptyList()
+  override fun getResourcePackageNames(includeExternalLibraries: Boolean): List<String> = resourcePackages
 
   /**
    * Not used in compose rendering. This is only used for creating a view from a superclass.

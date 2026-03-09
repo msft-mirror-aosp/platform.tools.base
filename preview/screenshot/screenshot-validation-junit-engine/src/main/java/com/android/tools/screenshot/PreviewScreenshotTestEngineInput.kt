@@ -43,6 +43,8 @@ object PreviewScreenshotTestEngineInput {
     val screenshotProjectClassPath: List<File> = getFilesFromSystemProperty("Renderer.screenshotProjectClassPath")
     val layoutlibDataDir: File = getFileFromSystemProperty("Renderer.layoutlibDataDir")
     val layoutlibClassPath: List<File> = getFilesFromSystemProperty("Renderer.layoutlibClassPath")
+    val testRuntimeResourceDirs: List<File> = getFilesFromSystemProperty("Renderer.testRuntimeResourceDirs")
+    val testRuntimeRClassJars: List<File> = getFilesFromSystemProperty("Renderer.testRuntimeRClassJars")
   }
 
   object ImageDifferInput {

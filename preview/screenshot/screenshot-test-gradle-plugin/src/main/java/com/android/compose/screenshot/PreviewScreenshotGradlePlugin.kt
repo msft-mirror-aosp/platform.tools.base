@@ -371,6 +371,70 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
       .forScope(ScopedArtifacts.Scope.PROJECT)
       .use(this)
       .toGet(ScopedArtifact.CLASSES, { getTestEngineInput(it).testProjectJars }, { getTestEngineInput(it).testProjectClassDirs })
+
+    val allRuntimeFiles =
+      screenshotTestComponent.runtimeConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.ANDROID_CLASSES)
+          }
+        }
+        .files
+
+    val allCompileFiles =
+      screenshotTestComponent.compileConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.ANDROID_CLASSES)
+          }
+        }
+        .files
+
+    val testRuntimeResources =
+      screenshotTestComponent.runtimeConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.ANDROID_RES)
+          }
+        }
+        .artifacts
+        .artifactFiles
+
+    val testCompileResources =
+      screenshotTestComponent.compileConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.ANDROID_RES)
+          }
+        }
+        .artifacts
+        .artifactFiles
+
+    val runtimeRClassJars =
+      screenshotTestComponent.runtimeConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.R_CLASS_JAR)
+          }
+        }
+        .artifacts
+        .artifactFiles
+
+    val compileRClassJars =
+      screenshotTestComponent.compileConfiguration.incoming
+        .artifactView { config ->
+          config.attributes {
+            it.attribute(org.gradle.api.artifacts.type.ArtifactTypeDefinition.ARTIFACT_TYPE_ATTRIBUTE, AndroidArtifactsKeys.R_CLASS_JAR)
+          }
+        }
+        .artifacts
+        .artifactFiles
+
+    configure { task ->
+      getTestEngineInput(task).testRuntimeDependencies.from(allRuntimeFiles, allCompileFiles, runtimeRClassJars, compileRClassJars)
+      getTestEngineInput(task).testRuntimeResourceDirs.from(testRuntimeResources, testCompileResources)
+      getTestEngineInput(task).testRuntimeRClassJars.from(runtimeRClassJars, compileRClassJars)
+    }
   }
 
   private fun getResourceApk(screenshotTestComponentArtifacts: Artifacts): Provider<RegularFile>? {

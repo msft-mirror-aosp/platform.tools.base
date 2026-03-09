@@ -31,6 +31,8 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /** [RenderModelModule] for standalone rendering. */
 class StandaloneRenderModelModule(
@@ -47,6 +49,8 @@ class StandaloneRenderModelModule(
 ) : RenderModelModule {
   private val assetFileOpener = StandaloneAssetFileOpener(resourceApkPath)
   override val assetRepository = AssetRepositoryBase(assetFileOpener)
+  private val logger = Logger.getLogger(StandaloneRenderModelModule::class.java.name)
+
   override val manifest: RenderModelManifest? = null
 
   override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
@@ -63,10 +67,68 @@ class StandaloneRenderModelModule(
       additionalProjectTransform: ClassTransform,
       additionalNonProjectTransform: ClassTransform,
       onNewModuleClassLoader: Runnable ->
-      if (privateClassLoader) {
-        environment.moduleClassLoaderManager.getPrivate(parent).also { onNewModuleClassLoader.run() }
-      } else {
-        environment.moduleClassLoaderManager.getShared(parent)
+      val classLoaderRef =
+        if (privateClassLoader) {
+          environment.moduleClassLoaderManager.getPrivate(parent).also { onNewModuleClassLoader.run() }
+        } else {
+          environment.moduleClassLoaderManager.getShared(parent)
+        }
+
+      initializeLibraryResourceIds(classLoaderRef.classLoader, dependencies.getResourcePackageNames(true), resourceIdManager)
+      classLoaderRef
+    }
+  }
+
+  /**
+   * Android library AARs ship with R.class files containing 0 for all IDs. In standard APK builds, AAPT2 and AGP recompile these into
+   * finalized R classes. In the standalone rendering environment, we must manually initialize these library R-classes with dynamic
+   * Layoutlib IDs before Compose reads them.
+   */
+  private fun initializeLibraryResourceIds(
+    classLoader: ClassLoader,
+    packages: List<String>,
+    resourceIdManager: com.android.tools.res.ids.ResourceIdManager,
+  ) {
+    packages.forEach { pkg ->
+      try {
+        val className = "$pkg.R"
+        val rClass =
+          try {
+            classLoader.loadClass(className)
+          } catch (e: ClassNotFoundException) {
+            return@forEach
+          }
+
+        for (innerClass in rClass.declaredClasses) {
+          val typeName = innerClass.simpleName
+          val type = com.android.resources.ResourceType.fromClassName(typeName) ?: continue
+          if (type == com.android.resources.ResourceType.STYLEABLE) continue
+
+          for (field in innerClass.declaredFields) {
+            if (field.type != Int::class.javaPrimitiveType && field.type != Int::class.java) continue
+            if (!java.lang.reflect.Modifier.isStatic(field.modifiers)) continue
+
+            try {
+              field.isAccessible = true
+              if (field.getInt(null) == 0) {
+                val dynamicId =
+                  resourceIdManager.getOrGenerateId(
+                    com.android.ide.common.rendering.api.ResourceReference(
+                      com.android.ide.common.rendering.api.ResourceNamespace.RES_AUTO,
+                      type,
+                      field.name,
+                    )
+                  )
+                field.setInt(null, dynamicId)
+              }
+            } catch (e: IllegalAccessException) {
+              logger.log(Level.FINE, "Failed to set dynamic ID for field ${field.name} in ${innerClass.name}", e)
+            }
+          }
+        }
+      } catch (e: Exception) {
+        // Log unexpected errors but continue with other packages
+        logger.log(Level.FINE, "Failed to initialize resource IDs for package $pkg", e)
       }
     }
   }

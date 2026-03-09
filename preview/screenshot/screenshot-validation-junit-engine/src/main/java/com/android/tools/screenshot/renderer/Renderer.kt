@@ -68,6 +68,8 @@ class Renderer : Closeable {
         List::class.java, // classPath
         List::class.java, // projectClassPath
         String::class.java, // layoutlibPath
+        List::class.java, // resourceDirs
+        List::class.java, // rClassJars
       )
 
     // Create an instance of the renderer by invoking the constructor.
@@ -79,6 +81,8 @@ class Renderer : Closeable {
         classPath.map { it.absolutePath },
         projectClassPath.map { it.absolutePath },
         layoutlibDataDir.absolutePath,
+        RendererInput.testRuntimeResourceDirs.map { it.absolutePath },
+        RendererInput.testRuntimeRClassJars.map { it.absolutePath },
       ) as Closeable
   }
 
