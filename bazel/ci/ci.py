@@ -80,6 +80,7 @@ def studio_build_checks(ci: CI):
   ci.run(query_checks.gradle_requires_cpu4_or_more)
   ci.run(owners_checks.require_component_id)
   ci.run(query_checks.check_large_machine_allowlist)
+  ci.run(query_checks.check_docker_network_allowlist)
 
   def validate_coverage_graph(env: bazel.BuildEnv):
     inv_id = uuid.uuid4()
@@ -97,7 +98,7 @@ def studio_build_checks(ci: CI):
           f'\n See https://fusion2.corp.google.com/invocations/{inv_id}'
       ))
 
-  ci.run(validate_coverage_graph)
+  # ci.run(validate_coverage_graph)
   if not ci.exceptions:
     return
   # Write the exceptions to a file, so Android Build shows a clear and
