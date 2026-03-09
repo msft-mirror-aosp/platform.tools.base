@@ -43,7 +43,6 @@ maven_repository(
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility",
         "//tools/base/adblib-tools:adblib.tools",
         "//tools/base/deploy/deployer:deployer.runner.maven",
-        "//tools/base/studio-leakcanary:studio-leakcanary",
     ],
     include_transitive_deps = False,
 )
