@@ -32,6 +32,7 @@ class LintReportAggregationTest {
       androidApplication(":app") {
         android {
           namespace = "com.example.app"
+          defaultConfig { minSdk = 24 }
           lint {
             checkDependencies = false
             abortOnError = false
@@ -56,7 +57,12 @@ class LintReportAggregationTest {
       androidLibrary(":lib") {
         android {
           namespace = "com.example.lib"
-          lint { enable += "AuthLeak" }
+          defaultConfig { minSdk = 21 }
+          lint {
+            abortOnError = false
+            enable += "AuthLeak"
+            textReport = true
+          }
         }
         files.add(
           "src/main/java/com/example/lib/Lib.java",
@@ -94,6 +100,54 @@ class LintReportAggregationTest {
   @Test
   fun testLintReportAggregationSeparation() {
     verifyLintReportAggregationSeparation()
+  }
+
+  @Test
+  fun testLintReportAggregationSeparationWithConditionallyReportedLintIssue() {
+    rule.build.androidLibrary(":lib").reconfigure {
+      android {
+        lint {
+          enable.clear()
+          enable += "NewApi"
+        }
+      }
+      files
+        .update("src/main/java/com/example/lib/Lib.java")
+        .replaceWith(
+          """
+          package com.example.lib;
+          import java.util.List;
+          public class Lib {
+              public void bar(List<String> list) {
+                  list.removeIf(s -> s.isEmpty());
+              }
+          }
+          """
+            .trimIndent()
+        )
+    }
+
+    // Run lint on both lib and app with report aggregation enabled
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":lib:lintDebug", ":app:lintDebug")
+
+    val libLocalReport = rule.build.directory.resolve("lib/build/reports/local-lint-results-debug.txt")
+    val appLocalReport = rule.build.directory.resolve("app/build/reports/local-lint-results-debug.txt")
+    val aggregatedReport = rule.build.directory.resolve("app/build/reports/aggregated-lint-results-debug.txt")
+
+    // Lib issue (NewApi) should be present in lib's local report
+    assertThat(libLocalReport).exists()
+    assertThat(libLocalReport).contains("NewApi")
+
+    // App's local report should NOT contain it (because it doesn't check dependencies)
+    assertThat(appLocalReport).exists()
+    assertThat(appLocalReport).doesNotContain("NewApi")
+    assertThat(appLocalReport).contains("SdCardPath")
+
+    // Aggregated report should NOT contain the issue from lib because it's "conditional"
+    // and the app's minSdk (24) satisfies the requirement for the lib's usage of API 24.
+    assertThat(aggregatedReport).exists()
+    assertThat(aggregatedReport).doesNotContain("NewApi")
+    assertThat(aggregatedReport).contains("SdCardPath")
   }
 
   @Test
