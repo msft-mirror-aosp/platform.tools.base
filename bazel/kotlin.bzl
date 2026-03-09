@@ -49,12 +49,14 @@ def kotlin_compile(ctx, name, srcs, deps, friend_jars, out, out_ijar, java_runti
     args.add("-api-version", "2.0")
     args.add("-language-version", "2.0")
     args.add("-module-name", name)
+    args.add("-Xsuppress-version-warnings")
 
     # Similar to https://github.com/bazelbuild/rules_kotlin/pull/390/commits/02a0d4ebd4052e104f99f0b04cb1a5963529ab6e
     if warn == "off":
         args.add("-nowarn")
     elif warn == "error":
         args.add("-Werror")
+        args.add("-Xrender-internal-diagnostic-names")
     args.add("-jvm-default=enable")
     args.add("-no-stdlib")
 
