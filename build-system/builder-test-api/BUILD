@@ -12,12 +12,12 @@ iml_module(
     test_deps = ["//tools/adt/idea/.idea/libraries:junit4"],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
-    exports = ["//tools/base/ddmlib:studio.android.sdktools.ddmlib"],
+    exports = ["//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio"],
     # do not sort: must match IML order
     deps = [
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
     ],
 )
 

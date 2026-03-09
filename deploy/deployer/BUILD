@@ -43,7 +43,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
         "//tools/base/apkparser:studio.android.sdktools.binary-resources",
         "//tools/base/deploy/deployer:deploy_java_proto",
         "//prebuilts/r8",

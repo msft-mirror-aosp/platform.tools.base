@@ -50,7 +50,7 @@ iml_module(
         "//tools/base/sdk-common/gradle:studio.android.sdktools.sdk-common.gradle",
         "//tools/adt/idea/.idea/libraries:kxml2",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
         "//tools/adt/idea/.idea/libraries:javax-inject",
         "//tools/adt/idea/.idea/libraries:aapt-proto",
         "//tools/adt/idea/.idea/libraries:studio-analytics-proto",
