@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.manifmerger;
+package com.android.manifmerger
 
-/**
- * Defines conversion routines for named types that can be converted into Xml name or Camel case
- * names.
- */
-public interface ConvertibleName {
+/** Defines conversion routines for named types that can be converted into Xml name or Camel case names. */
+interface ConvertibleName {
 
-    /**
-     * Returns a xml lower-hyphen separated name of itself.
-     */
-    String toXmlName();
+  /** Returns a xml lower-hyphen separated name of itself. */
+  fun toXmlName(): String
 
-    /**
-     * Returns a camel case version of itself.
-     */
-    String toCamelCaseName();
+  /** Returns a camel case version of itself. */
+  fun toCamelCaseName(): String
 }
