@@ -30,6 +30,9 @@ package com.android.build.gradle.internal.coverage.renderer.data
  * @property modules A list of all modules included in the report.
  * @property variantCoverages Aggregated coverage information for each variant, summarized across all modules and test suites.
  * @property numberOfTestsSuites The total count of test suites that contributed to this report.
+ * @property numberOfModules The total count of modules.
+ * @property numberOfPackages The total count of packages.
+ * @property numberOfClasses The total count of classes.
  */
 data class CoverageReport(
   val name: String,
@@ -37,6 +40,9 @@ data class CoverageReport(
   val modules: List<ModuleReport>,
   val variantCoverages: List<VariantCoverage>,
   val numberOfTestsSuites: Int,
+  val numberOfModules: Int,
+  val numberOfPackages: Int,
+  val numberOfClasses: Int,
 )
 
 /**

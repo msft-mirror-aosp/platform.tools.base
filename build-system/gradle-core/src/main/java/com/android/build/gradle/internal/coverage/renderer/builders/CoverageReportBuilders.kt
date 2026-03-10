@@ -57,12 +57,16 @@ class CoverageReportBuilder(private val name: String, private val timeStamp: Str
    * @return An immutable [CoverageReport] instance.
    */
   fun build(): CoverageReport {
+    val builtModules = moduleReportBuilders.values.map { it.build() }
     return CoverageReport(
       name = name,
       timeStamp = timeStamp,
-      modules = moduleReportBuilders.values.map { it.build() },
+      modules = builtModules,
       variantCoverages = aggregatedVariantCoverages.values.toList(),
       numberOfTestsSuites = allTestSuiteNames.size,
+      numberOfModules = builtModules.size,
+      numberOfPackages = builtModules.sumOf { it.packages.size },
+      numberOfClasses = builtModules.sumOf { module -> module.packages.sumOf { pkg -> pkg.classes.size } },
     )
   }
 }
