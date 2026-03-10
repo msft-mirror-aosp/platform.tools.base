@@ -173,7 +173,7 @@ def shade_resources(jar_file, rules_file, output, rename_services, native_classl
 
                     # Write new content to new file name
                     dst_archive.writestr(shaded_entry_name, "\n".join(shaded_lines))
-                elif native_library_prefix and entry_name.startswith("META-INF/native") and not entry.is_dir():
+                elif native_library_prefix and entry_name.startswith("META-INF/native/") and not entry.is_dir():
                     dir_name, base_name = os.path.split(entry_name)
 
                     # Calculate new native library name
