@@ -3600,9 +3600,11 @@ package com.android.build.api.variant {
 
   public interface VariantOutput extends com.android.build.api.variant.VariantOutputConfiguration {
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnabled();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getOutputFileName();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Integer> getVersionCode();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.String> getVersionName();
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enabled;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> outputFileName;
     property public abstract org.gradle.api.provider.Property<java.lang.Integer> versionCode;
     property public abstract org.gradle.api.provider.Property<java.lang.String> versionName;
   }

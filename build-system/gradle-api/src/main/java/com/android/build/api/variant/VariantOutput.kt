@@ -16,6 +16,7 @@
 
 package com.android.build.api.variant
 
+import org.gradle.api.Incubating
 import org.gradle.api.provider.Property
 
 /**
@@ -62,4 +63,11 @@ interface VariantOutput : VariantOutputConfiguration {
    */
   @Deprecated(level = DeprecationLevel.HIDDEN, message = "Replaced by enabled", replaceWith = ReplaceWith("enabled"))
   val enable: Property<Boolean>
+
+  /**
+   * The output file name for this Variant.
+   *
+   * It is safe to modify it once you need custom artifact name.
+   */
+  @get:Incubating val outputFileName: Property<String>
 }
