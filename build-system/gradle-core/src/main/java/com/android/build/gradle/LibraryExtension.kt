@@ -58,7 +58,7 @@ import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.declarative.dsl.model.annotations.Configuring
 
 @Incubating
-abstract open class LibraryExtensionInternal(
+abstract class LibraryExtensionInternal(
   dslServices: DslServices,
   bootClasspathConfig: BootClasspathConfig,
   buildOutputs: NamedDomainObjectContainer<BaseVariantOutput>,

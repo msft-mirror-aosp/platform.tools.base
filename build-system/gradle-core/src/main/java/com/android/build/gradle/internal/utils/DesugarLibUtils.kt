@@ -179,7 +179,7 @@ fun getDesugaredMethods(
 
   val desugaredMethodsFiles = services.fileCollection()
   val minSdk = minSdkVersion.getFeatureLevel()
-  if (coreLibDesugar && global.compileSdkHashString != null) {
+  if (coreLibDesugar) {
     val compileSdk = AndroidTargetHash.getPlatformVersion(global.compileSdkHashString)!!.featureLevel
     registerDesugarLibLintTransform(services, minSdk, compileSdk)
     desugaredMethodsFiles.from(getDesugarLibLintFromTransform(getDesugarLibConfiguration(services), minSdk, compileSdk))

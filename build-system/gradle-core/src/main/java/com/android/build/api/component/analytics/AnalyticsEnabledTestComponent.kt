@@ -20,7 +20,7 @@ import com.android.build.api.variant.TestComponent
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.model.ObjectFactory
 
-open abstract class AnalyticsEnabledTestComponent(
+abstract class AnalyticsEnabledTestComponent(
   override val delegate: TestComponent,
   stats: GradleBuildVariant.Builder,
   objectFactory: ObjectFactory,
