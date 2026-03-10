@@ -27,8 +27,8 @@ internal open class SettingsTargetSdkSpecImpl : TargetSdkSpec {
     return SettingsTargetSdkVersionImpl(apiLevel = version, codeName = null)
   }
 
-  override fun preview(version: String): TargetSdkVersion {
-    return SettingsTargetSdkVersionImpl(apiLevel = null, codeName = version)
+  override fun preview(codeName: String): TargetSdkVersion {
+    return SettingsTargetSdkVersionImpl(apiLevel = null, codeName = codeName)
   }
 }
 

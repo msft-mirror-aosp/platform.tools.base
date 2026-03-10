@@ -63,11 +63,11 @@ private constructor(
     isProvided: Boolean,
     variantName: String?,
     coordinatesSupplier: () -> MavenCoordinates,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary =
     DefaultLintModelAndroidLibrary(
       jarFiles = listOf(FileUtils.join(folder, SdkConstants.FD_JARS, SdkConstants.FN_CLASSES_JAR)) + localJavaLibraries,
-      identifier = identitySupplier(),
+      identifier = addressSupplier(),
       manifest = File(folder, SdkConstants.FN_ANDROID_MANIFEST_XML),
       folder = folder,
       resFolder = File(folder, SdkConstants.FD_RES),
@@ -91,13 +91,13 @@ private constructor(
     lintJar: File?,
     isProvided: Boolean,
     coordinatesSupplier: () -> MavenCoordinates,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary {
     val sourceSetKey =
       ProjectSourceSetKey(buildId = buildId, projectPath = projectPath, variantName = variantName, isTestFixtures = isTestFixtures)
     val mainKey = ProjectKey(buildId = buildId, projectPath = projectPath, variantName = variantName)
     if (mainKey in baseModuleModelFileMap || (sourceSetKey !in projectExplodedAarsMap && sourceSetKey in projectJarsMap)) {
-      return DefaultLintModelModuleLibrary(identifier = identitySupplier(), projectPath = projectPath, lintJar = null, provided = false)
+      return DefaultLintModelModuleLibrary(identifier = addressSupplier(), projectPath = projectPath, lintJar = null, provided = false)
     }
     val folder =
       projectExplodedAarsMap[sourceSetKey] ?: throw IllegalStateException("unable to find project exploded aar for $sourceSetKey")
@@ -114,7 +114,7 @@ private constructor(
       } ?: coordinatesSupplier().toMavenName()
     return DefaultLintModelAndroidLibrary(
       jarFiles = listOf(FileUtils.join(folder, SdkConstants.FD_JARS, SdkConstants.FN_CLASSES_JAR)) + (localJarCache[folder] ?: listOf()),
-      identifier = identitySupplier(),
+      identifier = addressSupplier(),
       manifest = File(folder, SdkConstants.FN_ANDROID_MANIFEST_XML),
       folder = folder,
       resFolder = File(folder, SdkConstants.FD_RES),
@@ -134,10 +134,10 @@ private constructor(
     jarFile: File,
     isProvided: Boolean,
     coordinatesSupplier: () -> MavenCoordinates,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary =
     DefaultLintModelJavaLibrary(
-      identifier = identitySupplier(),
+      identifier = addressSupplier(),
       jarFiles = listOf(jarFile),
       resolvedCoordinates = coordinatesSupplier().toMavenName(),
       provided = isProvided,
@@ -149,12 +149,12 @@ private constructor(
     buildId: String,
     variantName: String?,
     isTestFixtures: Boolean,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary {
     val sourceSetKey = ProjectSourceSetKey(buildId, projectPath, variantName, isTestFixtures)
     val mainKey = ProjectKey(buildId, projectPath, variantName)
     if (mainKey in baseModuleModelFileMap) {
-      return DefaultLintModelModuleLibrary(identifier = identitySupplier(), projectPath = projectPath, lintJar = null, provided = false)
+      return DefaultLintModelModuleLibrary(identifier = addressSupplier(), projectPath = projectPath, lintJar = null, provided = false)
     }
     val jar = getProjectJar(sourceSetKey)
     val resolvedCoordinates: LintModelMavenName =
@@ -168,7 +168,7 @@ private constructor(
         )
       } ?: LintModelMavenName.NONE
     return DefaultLintModelJavaLibrary(
-      identifier = identitySupplier(),
+      identifier = addressSupplier(),
       jarFiles = listOf(jar),
       resolvedCoordinates = resolvedCoordinates,
       provided = false,

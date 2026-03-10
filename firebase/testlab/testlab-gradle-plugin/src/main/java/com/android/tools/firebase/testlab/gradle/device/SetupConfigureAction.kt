@@ -26,15 +26,15 @@ import org.gradle.api.model.ObjectFactory
 open class SetupConfigureAction @Inject constructor(private val objectFactory: ObjectFactory, private val project: Project) :
   DeviceSetupConfigureAction<ManagedDevice, DeviceSetupInput> {
 
-  override fun configureTaskInput(deviceDsl: ManagedDevice): DeviceSetupInput {
+  override fun configureTaskInput(deviceDSL: ManagedDevice): DeviceSetupInput {
     return objectFactory.newInstance(DeviceSetupInput::class.java).apply {
-      deviceName.set(deviceDsl.name)
+      deviceName.set(deviceDSL.name)
       deviceName.disallowChanges()
 
-      device.set(deviceDsl.device)
+      device.set(deviceDSL.device)
       device.disallowChanges()
 
-      apiLevel.set(deviceDsl.apiLevel)
+      apiLevel.set(deviceDSL.apiLevel)
       apiLevel.disallowChanges()
 
       buildService.set(TestLabBuildService.RegistrationAction.getBuildService(project))

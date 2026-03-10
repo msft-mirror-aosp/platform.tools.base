@@ -91,18 +91,18 @@ internal class CheckDependenciesLintModelArtifactHandler(
     lintJar: File?,
     isProvided: Boolean,
     coordinatesSupplier: () -> MavenCoordinates,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary =
-    DefaultLintModelModuleLibrary(identifier = identitySupplier(), projectPath = projectPath, lintJar = lintJar, provided = isProvided)
+    DefaultLintModelModuleLibrary(identifier = addressSupplier(), projectPath = projectPath, lintJar = lintJar, provided = isProvided)
 
   override fun handleJavaLibrary(
     jarFile: File,
     isProvided: Boolean,
     coordinatesSupplier: () -> MavenCoordinates,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary =
     DefaultLintModelJavaLibrary(
-      identifier = identitySupplier(),
+      identifier = addressSupplier(),
       jarFiles = listOf(jarFile),
       resolvedCoordinates = coordinatesSupplier().toMavenName(),
       provided = isProvided,
@@ -114,7 +114,7 @@ internal class CheckDependenciesLintModelArtifactHandler(
     buildId: String,
     variantName: String?,
     isTestFixtures: Boolean,
-    identitySupplier: () -> String,
+    addressSupplier: () -> String,
   ): LintModelLibrary {
     val sourceSetKey = ProjectSourceSetKey(buildId, projectPath, variantName, isTestFixtures)
     val mainKey = ProjectKey(buildId, projectPath, variantName)
@@ -122,7 +122,7 @@ internal class CheckDependenciesLintModelArtifactHandler(
       (mainKey.buildId == thisProject.buildId && mainKey.projectPath == thisProject.projectPath) ||
         projectDependencyLintModels.contains(mainKey)
     if (hasLintModel) {
-      return DefaultLintModelModuleLibrary(identifier = identitySupplier(), projectPath = projectPath, lintJar = null, provided = false)
+      return DefaultLintModelModuleLibrary(identifier = addressSupplier(), projectPath = projectPath, lintJar = null, provided = false)
     } else {
       // Fallback for java or java-library project dependencies that do not apply the
       // standalone android lint plugin, treat them as external.
@@ -136,7 +136,7 @@ internal class CheckDependenciesLintModelArtifactHandler(
       }
       val jar = compileProjectJars[sourceSetKey] ?: runtimeProjectJars[sourceSetKey] ?: errorJarNotFound(sourceSetKey)
       return DefaultLintModelJavaLibrary(
-        identifier = identitySupplier(),
+        identifier = addressSupplier(),
         jarFiles = listOf(jar),
         resolvedCoordinates = LintModelMavenName.NONE,
         provided = false,

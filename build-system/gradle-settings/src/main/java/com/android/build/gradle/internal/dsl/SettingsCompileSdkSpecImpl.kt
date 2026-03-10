@@ -53,8 +53,8 @@ internal open class SettingsCompileSdkSpecImpl @Inject constructor(private val o
     )
   }
 
-  override fun preview(version: String): CompileSdkVersion {
-    return SettingsCompileSdkVersionImpl(codeName = version)
+  override fun preview(codeName: String): CompileSdkVersion {
+    return SettingsCompileSdkVersionImpl(codeName = codeName)
   }
 
   override fun addon(vendor: String, name: String, version: Int): CompileSdkVersion {

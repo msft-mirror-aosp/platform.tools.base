@@ -149,8 +149,8 @@ constructor(
   }
 
   @Synchronized
-  override fun runTestTaskConfigurationActions(testTaskProvider: TaskProvider<out Test>) {
-    testTaskConfigActions.forEach { testTaskProvider.configure { testTask -> it(testTask) } }
+  override fun runTestTaskConfigurationActions(testTask: TaskProvider<out Test>) {
+    testTaskConfigActions.forEach { action -> testTask.configure { task -> action(task) } }
   }
 
   /**

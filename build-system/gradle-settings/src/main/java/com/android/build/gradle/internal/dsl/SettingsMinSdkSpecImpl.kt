@@ -27,8 +27,8 @@ internal open class SettingsMinSdkSpecImpl : MinSdkSpec {
     return SettingsMinSdkVersionImpl(apiLevel = version, codeName = null)
   }
 
-  override fun preview(version: String): MinSdkVersion {
-    return SettingsMinSdkVersionImpl(apiLevel = null, codeName = version)
+  override fun preview(codeName: String): MinSdkVersion {
+    return SettingsMinSdkVersionImpl(apiLevel = null, codeName = codeName)
   }
 }
 
