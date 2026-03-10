@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.manifmerger;
+package com.android.manifmerger
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import java.io.File;
+import java.io.File
 
-/**
- * An Object that provides a manifest.
- */
-public interface ManifestProvider {
+/** An Object that provides a manifest. */
+interface ManifestProvider {
 
-    /**
-     * Returns the location of the manifest.
-     */
-    @NotNull
-    File getManifest();
+  /** Returns the location of the manifest. */
+  fun getManifest(): File
 
-    /**
-     * Returns a user friendly name.
-     */
-    @Nullable
-    String getName();
+  /** Returns a user friendly name. */
+  fun getName(): String?
 }
