@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.CompileSdkVersion
 import com.google.common.truth.ComparableSubject
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -76,7 +77,7 @@ internal class SettingsExtensionImplTest {
         }
       assertThat(version?.minorApiLevel).isEqualTo(0)
     }
-    testCompileValues(compileSdk = 33, compileSdkExtension = 18)
+    testCompileValues(compileSdk = 33, minorApiLevel = 0, compileSdkExtension = 18)
   }
 
   @Test
@@ -113,6 +114,27 @@ internal class SettingsExtensionImplTest {
 
     settings.compileSdk { version = addon("foo", "bar", 41) }
     testCompileValues(addOnVendor = "foo", addOnName = "bar", addOnVersion = 41)
+  }
+
+  @Test
+  fun testCompileSdkCanary() {
+    settings.compileSdk { version = canary("20250617") }
+    testCompileValues(canaryDate = "20250617")
+  }
+
+  @Test
+  fun testCompileSdkBeta() {
+    settings.compileSdk { version = beta(36) { betaVersion = 1 } }
+    testCompileValues(compileSdk = 36, betaVersion = 1)
+
+    settings.compileSdk {
+      version =
+        beta(36) {
+          minorApiLevel = 2
+          betaVersion = 3
+        }
+    }
+    testCompileValues(compileSdk = 36, minorApiLevel = 2, betaVersion = 3)
   }
 
   @Test
@@ -301,17 +323,29 @@ internal class SettingsExtensionImplTest {
 
   private fun testCompileValues(
     compileSdk: Int? = null,
+    minorApiLevel: Int? = null,
     compileSdkExtension: Int? = null,
     compileSdkPreview: String? = null,
+    canaryDate: String? = null,
+    betaVersion: Int? = null,
     addOnVendor: String? = null,
     addOnName: String? = null,
     addOnVersion: Int? = null,
   ) {
+    var version: CompileSdkVersion? = null
+    settings.compileSdk { version = this.version }
+
     assertWithMessage("compileSdk").that(settings.compileSdk).compareTo(compileSdk)
+
+    assertWithMessage("minorApiLevel").that(version?.minorApiLevel).compareTo(minorApiLevel)
 
     assertWithMessage("compileSdkExtension").that(settings.compileSdkExtension).compareTo(compileSdkExtension)
 
     assertWithMessage("compileSdkPreview").that(settings.compileSdkPreview).compareTo(compileSdkPreview)
+
+    assertWithMessage("canaryDate").that(version?.canaryDate).compareTo(canaryDate)
+
+    assertWithMessage("betaVersion").that(version?.betaVersion).compareTo(betaVersion)
 
     assertWithMessage("addOnVendor").that(settings.addOnVendor).compareTo(addOnVendor)
     assertWithMessage("addOnName").that(settings.addOnName).compareTo(addOnName)

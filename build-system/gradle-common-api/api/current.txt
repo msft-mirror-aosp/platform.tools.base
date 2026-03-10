@@ -1,6 +1,15 @@
 // Signature format: 4.0
 package com.android.build.api.dsl {
 
+  public interface CompileSdkBetaSpec {
+    method @InaccessibleFromKotlin public Integer? getBetaVersion();
+    method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
+    method @InaccessibleFromKotlin public void setBetaVersion(Integer?);
+    method @InaccessibleFromKotlin public void setMinorApiLevel(Integer?);
+    property public abstract Integer? betaVersion;
+    property public abstract Integer? minorApiLevel;
+  }
+
   public interface CompileSdkReleaseSpec {
     method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
     method @InaccessibleFromKotlin public Integer? getSdkExtension();
@@ -12,6 +21,8 @@ package com.android.build.api.dsl {
 
   public interface CompileSdkSpec {
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion addon(String vendor, String name, int version);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion beta(int version, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.CompileSdkBetaSpec,kotlin.Unit> action);
+    method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion canary(String date);
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion? getVersion();
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion preview(String codeName);
     method @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.CompileSdkVersion release(int version);
@@ -23,12 +34,16 @@ package com.android.build.api.dsl {
   @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public interface CompileSdkVersion {
     method @InaccessibleFromKotlin public String? getAddonName();
     method @InaccessibleFromKotlin public Integer? getApiLevel();
+    method @InaccessibleFromKotlin public Integer? getBetaVersion();
+    method @InaccessibleFromKotlin public String? getCanaryDate();
     method @InaccessibleFromKotlin public String? getCodeName();
     method @InaccessibleFromKotlin public Integer? getMinorApiLevel();
     method @InaccessibleFromKotlin public Integer? getSdkExtension();
     method @InaccessibleFromKotlin public String? getVendorName();
     property public abstract String? addonName;
     property public abstract Integer? apiLevel;
+    property public abstract Integer? betaVersion;
+    property public abstract String? canaryDate;
     property public abstract String? codeName;
     property public abstract Integer? minorApiLevel;
     property public abstract Integer? sdkExtension;

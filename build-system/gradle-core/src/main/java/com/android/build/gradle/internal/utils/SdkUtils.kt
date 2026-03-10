@@ -34,9 +34,23 @@ internal fun parseTargetHash(targetHash: String): CompileSdkVersionImpl {
     )
   }
 
+  val betaMatcher = BETA_PATTERN.matcher(targetHash)
+  if (betaMatcher.matches()) {
+    return CompileSdkVersionImpl(
+      apiLevel = betaMatcher.group(1).toInt(),
+      minorApiLevel = betaMatcher.group(2)?.toIntOrNull(),
+      betaVersion = betaMatcher.group(3).toInt(),
+    )
+  }
+
+  val canaryMatcher = CANARY_PATTERN.matcher(targetHash)
+  if (canaryMatcher.matches()) {
+    return CompileSdkVersionImpl(canaryDate = canaryMatcher.group(1))
+  }
+
   val previewMatcher = FULL_PREVIEW_PATTERN.matcher(targetHash)
   if (previewMatcher.matches()) {
-    return CompileSdkVersionImpl(codeName = previewMatcher.group(1))
+    return CompileSdkVersionImpl(_codeName = previewMatcher.group(1))
   }
 
   val addonMatcher = ADDON_PATTERN.matcher(targetHash)
@@ -55,6 +69,8 @@ internal fun parseTargetHash(targetHash: String): CompileSdkVersionImpl {
                     - android-36.2
                     - android-31-ext2
                     - android-36.2-ext2
+                    - android-canary-20250617
+                    - android-36.0-beta1
                     - android-T
                     - vendorName:addonName:31
                     """
@@ -96,5 +112,7 @@ fun <T> updateIfChanged(oldValue: T?, newValue: T?, setter: (T?) -> Unit) {
 }
 
 private val API_PATTERN = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?(-ext(\\d+))?")
+private val BETA_PATTERN = Pattern.compile("android-(\\d+)(?:\\.(\\d+))?-beta(\\d+)")
+private val CANARY_PATTERN = Pattern.compile("android-canary-(\\d+)")
 private val FULL_PREVIEW_PATTERN = Pattern.compile("android-([A-Z]\\w*)")
 private val ADDON_PATTERN = Pattern.compile("([^:]+):([^:]+):(\\d+)")

@@ -112,6 +112,39 @@ class KotlinDslTest {
   }
 
   @Test
+  fun testCompileSdkCanary() {
+    android.compileSdk {
+      version = canary("20250617")
+      assertThat(version?.canaryDate).isEqualTo("20250617")
+      assertThat(version?.codeName).isEqualTo("canary-20250617")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-canary-20250617")
+  }
+
+  @Test
+  fun testCompileSdkBeta() {
+    android.compileSdk {
+      version = beta(36) { betaVersion = 1 }
+      assertThat(version?.apiLevel).isEqualTo(36)
+      assertThat(version?.betaVersion).isEqualTo(1)
+      assertThat(version?.codeName).isEqualTo("36.0-beta1")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-36.0-beta1")
+
+    android.compileSdk {
+      version =
+        beta(36) {
+          minorApiLevel = 2
+          betaVersion = 3
+        }
+      assertThat(version?.minorApiLevel).isEqualTo(2)
+      assertThat(version?.betaVersion).isEqualTo(3)
+      assertThat(version?.codeName).isEqualTo("36.2-beta3")
+    }
+    assertThat(android.compileSdkHash).isEqualTo("android-36.2-beta3")
+  }
+
+  @Test
   fun testCompileSdkPreview() {
     android.compileSdk = 28
     assertThat(android.compileSdkPreview).isNull()
@@ -155,6 +188,8 @@ class KotlinDslTest {
         - android-36.2
         - android-31-ext2
         - android-36.2-ext2
+        - android-canary-20250617
+        - android-36.0-beta1
         - android-T
         - vendorName:addonName:31
         """

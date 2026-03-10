@@ -151,7 +151,9 @@ internal class CompileSdkDelegate(
           apiLevel = version?.apiLevel,
           minorApiLevel = version?.minorApiLevel,
           sdkExtension = version?.sdkExtension,
-          codeName = version?.codeName,
+          _codeName = version?.codeName,
+          canaryDate = version?.canaryDate,
+          betaVersion = version?.betaVersion,
           addonName = version?.addonName,
           vendorName = version?.vendorName,
         )
@@ -204,8 +206,9 @@ internal class CompileSdkDelegate(
     if (compileData.isAddon()) {
       compileSdk { version = addon(vendor = compileData.vendorName!!, name = compileData.addonName!!, version = compileData.apiLevel!!) }
     } else {
-      if (compileData.codeName != null) {
-        compileSdk { version = preview(compileData.codeName) }
+      val codeName = compileData.codeName
+      if (codeName != null) {
+        compileSdk { version = preview(codeName) }
       } else {
         compileData.apiLevel?.let { apiLevel ->
           compileSdk {

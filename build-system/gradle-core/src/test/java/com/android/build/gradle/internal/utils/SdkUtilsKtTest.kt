@@ -83,12 +83,12 @@ internal class SdkUtilsKtTest {
 
   @Test
   fun `preview target`() {
-    Truth.assertThat(parseTargetHash("android-R")).isEqualTo(CompileSdkVersionImpl(codeName = "R"))
+    Truth.assertThat(parseTargetHash("android-R")).isEqualTo(CompileSdkVersionImpl(_codeName = "R"))
 
-    Truth.assertThat(parseTargetHash("android-Rv2")).isEqualTo(CompileSdkVersionImpl(codeName = "Rv2"))
+    Truth.assertThat(parseTargetHash("android-Rv2")).isEqualTo(CompileSdkVersionImpl(_codeName = "Rv2"))
 
     // Test that underscores are allowed in code names
-    Truth.assertThat(parseTargetHash("android-O_MR1")).isEqualTo(CompileSdkVersionImpl(codeName = "O_MR1"))
+    Truth.assertThat(parseTargetHash("android-O_MR1")).isEqualTo(CompileSdkVersionImpl(_codeName = "O_MR1"))
 
     Truth.assertThat(validatePreviewTargetValue("android-Rv2")).isNull()
 
@@ -96,6 +96,20 @@ internal class SdkUtilsKtTest {
 
     // Test that underscores are allowed in code names
     Truth.assertThat(validatePreviewTargetValue("O_MR1")).isEqualTo("O_MR1")
+  }
+
+  @Test
+  fun `canary target`() {
+    Truth.assertThat(parseTargetHash("android-canary-20250617")).isEqualTo(CompileSdkVersionImpl(canaryDate = "20250617"))
+  }
+
+  @Test
+  fun `beta target`() {
+    Truth.assertThat(parseTargetHash("android-36-beta1")).isEqualTo(CompileSdkVersionImpl(apiLevel = 36, betaVersion = 1))
+    Truth.assertThat(parseTargetHash("android-36.0-beta1"))
+      .isEqualTo(CompileSdkVersionImpl(apiLevel = 36, minorApiLevel = 0, betaVersion = 1))
+    Truth.assertThat(parseTargetHash("android-36.2-beta3"))
+      .isEqualTo(CompileSdkVersionImpl(apiLevel = 36, minorApiLevel = 2, betaVersion = 3))
   }
 
   @Test
@@ -123,6 +137,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -145,6 +161,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -162,6 +180,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -179,6 +199,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -196,6 +218,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -213,6 +237,8 @@ internal class SdkUtilsKtTest {
       - android-36.2
       - android-31-ext2
       - android-36.2-ext2
+      - android-canary-20250617
+      - android-36.0-beta1
       - android-T
       - vendorName:addonName:31
       """
@@ -231,6 +257,9 @@ internal class SdkUtilsKtTest {
     Truth.assertThat(CompileSdkVersionImpl(addonName = "addon", vendorName = "vendor").toHash()).isNull()
     Truth.assertThat(CompileSdkVersionImpl(35, addonName = "addon", vendorName = "vendor").toHash()).isEqualTo("vendor:addon:35")
     Truth.assertThat(CompileSdkVersionImpl(35, addonName = "addonName").toHash()).isEqualTo("android-35")
-    Truth.assertThat(CompileSdkVersionImpl(codeName = "codeName").toHash()).isEqualTo("android-codeName")
+    Truth.assertThat(CompileSdkVersionImpl(_codeName = "codeName").toHash()).isEqualTo("android-codeName")
+    Truth.assertThat(CompileSdkVersionImpl(canaryDate = "20250617").toHash()).isEqualTo("android-canary-20250617")
+    Truth.assertThat(CompileSdkVersionImpl(36, betaVersion = 1).toHash()).isEqualTo("android-36.0-beta1")
+    Truth.assertThat(CompileSdkVersionImpl(36, minorApiLevel = 2, betaVersion = 3).toHash()).isEqualTo("android-36.2-beta3")
   }
 }

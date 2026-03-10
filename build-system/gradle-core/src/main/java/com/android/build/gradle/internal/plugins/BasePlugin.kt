@@ -730,7 +730,9 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
               apiLevel = it.apiLevel,
               minorApiLevel = it.minorApiLevel,
               sdkExtension = it.sdkExtension,
-              codeName = it.codeName,
+              _codeName = it.codeName,
+              canaryDate = it.canaryDate,
+              betaVersion = it.betaVersion,
               addonName = it.addonName,
               vendorName = it.vendorName,
             )

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.CompileSdkBetaSpec
 import com.android.build.api.dsl.CompileSdkReleaseSpec
 import com.android.build.api.dsl.CompileSdkSpec
 import com.android.build.api.dsl.CompileSdkVersion
@@ -59,7 +60,23 @@ abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: Ds
 
   override fun preview(codeName: String): CompileSdkVersion {
     val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
-    return CompileSdkVersionImpl(apiLevel = apiLevel, codeName = codeName)
+    return CompileSdkVersionImpl(apiLevel = apiLevel, _codeName = codeName)
+  }
+
+  override fun canary(date: String): CompileSdkVersion {
+    return CompileSdkVersionImpl(canaryDate = date)
+  }
+
+  override fun beta(version: Int, action: (com.android.build.api.dsl.CompileSdkBetaSpec.() -> Unit)): CompileSdkVersion {
+    val betaSpec = dslService.newDecoratedInstance(CompileSdkBetaSpecImpl::class.java, dslService)
+    action.invoke(betaSpec)
+    return CompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
+  }
+
+  fun beta(version: Int, action: Action<com.android.build.api.dsl.CompileSdkBetaSpec>): CompileSdkVersion {
+    val betaSpec = dslService.newDecoratedInstance(CompileSdkBetaSpecImpl::class.java, dslService)
+    action.execute(betaSpec)
+    return CompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
   }
 
   override fun addon(vendor: String, name: String, version: Int): CompileSdkVersion {
@@ -71,10 +88,21 @@ internal data class CompileSdkVersionImpl(
   override val apiLevel: Int? = null,
   override val minorApiLevel: Int? = null,
   override val sdkExtension: Int? = null,
-  override val codeName: String? = null,
+  private val _codeName: String? = null,
+  override val canaryDate: String? = null,
+  override val betaVersion: Int? = null,
   override val addonName: String? = null,
   override val vendorName: String? = null,
 ) : CompileSdkVersion, Serializable {
+  override val codeName: String?
+    get() =
+      _codeName
+        ?: canaryDate?.let { "canary-$it" }
+        ?: betaVersion?.let {
+          val minor = minorApiLevel ?: 0
+          "$apiLevel.$minor-beta$it"
+        }
+
   fun isAddon() = vendorName != null && addonName != null
 
   // Converts to the string representation of the Android version
@@ -100,3 +128,5 @@ internal data class CompileSdkVersionImpl(
 }
 
 abstract class CompileSdkReleaseSpecImpl @Inject constructor(dslService: DslServices) : CompileSdkReleaseSpec
+
+abstract class CompileSdkBetaSpecImpl @Inject constructor(dslService: DslServices) : CompileSdkBetaSpec

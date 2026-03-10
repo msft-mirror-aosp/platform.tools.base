@@ -78,6 +78,23 @@ interface CompileSdkSpec {
   @HiddenInDefinition fun preview(codeName: String): CompileSdkVersion
 
   /**
+   * To set compile SDK version with a canary version, use this function to compute the [CompileSdkVersion] and assign it to
+   * [CompileSdkSpec.version] property.
+   *
+   * @param date a string representing the date (e.g., "20250617").
+   */
+  @HiddenInDefinition fun canary(date: String): CompileSdkVersion
+
+  /**
+   * To set compile SDK version with a beta version, use this function to compute the [CompileSdkVersion] and assign it to
+   * [CompileSdkSpec.version] property.
+   *
+   * @param version the major API level.
+   * @param action a lambda for further configuration of minor API level and beta version.
+   */
+  @HiddenInDefinition fun beta(version: Int, action: (CompileSdkBetaSpec.() -> Unit)): CompileSdkVersion
+
+  /**
    * Specify an SDK add-on to compile your project against.
    *
    * This can be set on all Gradle projects with [com.android.build.api.dsl.SettingsExtension.compileSdkAddon]
@@ -106,6 +123,12 @@ interface CompileSdkVersion {
    * The preview API to compile your project against. Once the preview APIs are finalized, they will be allocated a stable integer value.
    */
   val codeName: String?
+
+  /** The canary version's date. */
+  val canaryDate: String?
+
+  /** The beta version of the SDK. */
+  val betaVersion: Int?
 
   /** The add-on name of the SDK to compile your project against. */
   val addonName: String?
