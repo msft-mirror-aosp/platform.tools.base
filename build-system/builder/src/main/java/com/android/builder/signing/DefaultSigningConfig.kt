@@ -46,12 +46,16 @@ abstract class DefaultSigningConfig constructor(private val mName: String) : Sig
   abstract override var keyPassword: String?
   abstract override var storeType: String?
 
+  @get:Deprecated("Deprecated in superclass")
+  @set:Deprecated("Deprecated in superclass")
   override var isV1SigningEnabled = true
     set(value) {
       enableV1Signing = value
       field = value
     }
 
+  @get:Deprecated("Deprecated in superclass")
+  @set:Deprecated("Deprecated in superclass")
   override var isV2SigningEnabled = true
     set(value) {
       enableV2Signing = value

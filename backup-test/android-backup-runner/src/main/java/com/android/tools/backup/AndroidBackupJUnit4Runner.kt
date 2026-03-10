@@ -40,6 +40,7 @@ class AndroidBackupJUnit4Runner(private val testClass: Class<*>?) : BlockJUnit4C
     return myTestMethods
   }
 
+  @Deprecated("Deprecated in superclass")
   override fun validateInstanceMethods(errors: List<Throwable>) {
     super.validatePublicVoidNoArgMethods(BeforeBackup::class.java, false, errors)
     super.validatePublicVoidNoArgMethods(BeforeRestore::class.java, false, errors)

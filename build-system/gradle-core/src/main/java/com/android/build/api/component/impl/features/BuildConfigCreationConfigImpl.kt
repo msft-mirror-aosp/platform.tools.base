@@ -42,6 +42,7 @@ class BuildConfigCreationConfigImpl(
     internalServices.mapPropertyOf(String::class.java, BuildConfigField::class.java, dslInfo.getBuildConfigFields())
   }
 
+  @Deprecated("Deprecated in superclass")
   override val dslBuildConfigFields: Map<String, BuildConfigField<out Serializable>>
     get() = dslInfo.getBuildConfigFields()
 

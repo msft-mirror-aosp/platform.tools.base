@@ -117,6 +117,7 @@ class ArtifactsImpl(
     addStaticProvider(getArtifactContainer(type), type, artifact)
   }
 
+  @Deprecated("Deprecated in superclass")
   override fun <FileTypeT : FileSystemLocation> add(type: MultipleArtifact<FileTypeT>, artifact: FileTypeT) {
 
     addStaticProvider(getArtifactContainer(type), type, artifact)

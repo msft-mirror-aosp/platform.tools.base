@@ -35,6 +35,7 @@ class RenderscriptCreationConfigImpl(
       it.optimLevel.set(dslInfo.renderscriptOptimLevel)
     }
   }
+  @Deprecated("Deprecated in superclass")
   override val dslRenderscriptNdkModeEnabled: Boolean
     get() = dslInfo.renderscriptNdkModeEnabled
 }
