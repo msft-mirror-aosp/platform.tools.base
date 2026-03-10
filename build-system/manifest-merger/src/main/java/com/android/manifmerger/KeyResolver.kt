@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package com.android.manifmerger;
+package com.android.manifmerger
 
-import com.android.annotations.Nullable;
+/** Facility to identify an element from its key. */
+interface KeyResolver<T> {
 
-/**
- * Facility to identify an element from its key.
- */
-public interface KeyResolver<T> {
+  /**
+   * Returns an element identified with the passed key.
+   *
+   * @param key key to resolve.
+   * @return the element identified by the passed key or null if there is no key of that name.
+   */
+  fun resolve(key: String): T?
 
-    /**
-     * Returns an element identified with the passed key.
-     * @param key key to resolve.
-     * @return the element identified by the passed key or null if there is no key of that name.
-     */
-    @Nullable
-    T resolve(String key);
-
-    Iterable<String> getKeys();
+  fun getKeys(): Iterable<String>
 }
