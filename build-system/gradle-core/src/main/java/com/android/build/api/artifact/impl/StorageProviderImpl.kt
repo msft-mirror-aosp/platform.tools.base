@@ -18,7 +18,6 @@ package com.android.build.api.artifact.impl
 
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
-import kotlin.RuntimeException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.FileSystemLocationProperty
@@ -40,7 +39,6 @@ class StorageProviderImpl {
     return when (artifactKind) {
       ArtifactKind.FILE -> fileStorage
       ArtifactKind.DIRECTORY -> directory
-      else -> throw RuntimeException("Cannot handle $this")
     }
       as TypedStorageProvider<T>
   }
@@ -65,7 +63,6 @@ class TypedStorageProvider<T : FileSystemLocation>(private val propertyAllocator
             when (artifactType.kind) {
               ArtifactKind.FILE -> objects.fileProperty() as FileSystemLocationProperty<T>
               ArtifactKind.DIRECTORY -> objects.directoryProperty() as FileSystemLocationProperty<T>
-              else -> throw RuntimeException("Cannot handle $this")
             }
           },
         )

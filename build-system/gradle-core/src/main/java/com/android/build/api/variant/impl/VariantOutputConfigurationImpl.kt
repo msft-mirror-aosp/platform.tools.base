@@ -59,7 +59,6 @@ fun VariantOutputConfiguration.dirName(): String {
     OutputType.UNIVERSAL -> outputType.name.lowercase(Locale.US)
     OutputType.SINGLE -> ""
     OutputType.ONE_OF_MANY -> filters.map(FilterConfiguration::identifier).joinToString(File.separator)
-    else -> throw RuntimeException("Unhandled OutputType $this")
   }
 }
 
@@ -71,7 +70,6 @@ fun VariantOutputConfiguration.fullName(component: ComponentCreationConfig): Str
       val filterName = filters.getFilterName()
       return component.paths.computeFullNameWithSplits(filterName)
     }
-    else -> throw RuntimeException("Unhandled OutputType $this")
   }
 }
 

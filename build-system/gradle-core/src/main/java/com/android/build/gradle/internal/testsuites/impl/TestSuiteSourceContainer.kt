@@ -83,9 +83,6 @@ class TestSuiteSourceContainer(
       TestSuiteSourceType.TEST_APK -> {
         ApkTestSuiteTaskManager().createTasks(this, source as TestApkTestSuiteSourceSet, taskFactory, creationConfig)
       }
-      else -> {
-        throw RuntimeException("Unhandled test suite source set $source of type ${source.type}")
-      }
     }
   }
 

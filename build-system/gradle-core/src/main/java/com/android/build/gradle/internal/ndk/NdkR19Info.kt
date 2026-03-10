@@ -41,7 +41,6 @@ open class NdkR19Info(val root: File) : DefaultNdkInfo(root) {
       NativeBuildSystem.NDK_BUILD -> Stl.SYSTEM
       // Ninja generating script decides its own STL.
       NativeBuildSystem.NINJA -> Stl.UNKNOWN
-      else -> error("$buildSystem")
     }
 
   override fun getStlSharedObjectFile(stl: Stl, abi: String): File {

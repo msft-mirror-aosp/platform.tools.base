@@ -223,7 +223,6 @@ fun CxxModuleModel.determineUsedStlFromArguments(arguments: List<CommandLineArgu
     CMAKE -> determineUsedStlForCmake(arguments)
     NDK_BUILD -> determineUsedStlForNdkBuild(arguments)
     NINJA -> Stl.UNKNOWN
-    else -> error("$buildSystem")
   }
 }
 
@@ -233,7 +232,6 @@ fun CxxModuleModel.determineUsedStl(arguments: List<String>): Stl {
     CMAKE -> determineUsedStlForCmake(arguments.toCmakeArguments())
     NDK_BUILD -> determineUsedStlForNdkBuild(arguments.toNdkBuildArguments())
     NINJA -> Stl.UNKNOWN
-    else -> error("$buildSystem")
   }
 }
 

@@ -75,7 +75,6 @@ fun PrefabPublicationType.writePublicationFile(publication: PrefabPublication) {
     when (this) {
       Configuration -> publication.copyWithLibraryInformationAdded()
       HeaderOnly -> publication.copyAsHeaderOnly()
-      else -> error("$this")
     }
   writeJsonFileIfDifferent(file, patched)
 }

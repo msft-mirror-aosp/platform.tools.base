@@ -277,7 +277,6 @@ fun abiOf(buildSystem: NativeBuildSystem, commands: Configuration): String {
       val arguments = commands.toNdkBuildArguments()
       arguments.getNdkBuildProperty(APP_ABI) ?: ""
     }
-    else -> error("$buildSystem")
   }
 }
 
@@ -327,6 +326,5 @@ fun buildTypeOf(buildSystem: NativeBuildSystem, commands: Configuration): String
       val arguments = commands.toNdkBuildArguments()
       return arguments.getNdkBuildProperty(NDK_DEBUG)?.let { if (it == "1") "Debug" else "Release" } ?: ""
     }
-    else -> error("$buildSystem")
   }
 }
