@@ -23,6 +23,7 @@ import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.ZipUtils;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 import com.android.zipflinger.BytesSource;

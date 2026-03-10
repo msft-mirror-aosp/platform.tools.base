@@ -20,20 +20,24 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.MultiReceiver;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
+
+import org.jetbrains.annotations.NotNull;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.jetbrains.annotations.NotNull;
 
 public abstract class WearComponent extends AppComponent {
 
     public static class ShellCommand {
         public static final String GET_WEAR_DEBUG_SURFACE_VERSION =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation version";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " version";
         public static final String DEBUG_SURFACE_SET_DEBUG_APP =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation set-debug-app --es package"; // + package name
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " set-debug-app --es package"; // + package name
 
         public static final String AM_SET_DEBUG_APP = "am set-debug-app -w";
     }
@@ -94,19 +98,18 @@ public abstract class WearComponent extends AppComponent {
         }
     }
 
-    protected void setUpAmDebugApp(@NonNull IDevice device) throws DeployerException {
+    protected void setUpAmDebugApp(@NonNull IDevice device) throws ModelException {
         DebugCommandReceiver amReceiver = new DebugCommandReceiver();
         runShellCommand(
                 String.format("%s '%s'", ShellCommand.AM_SET_DEBUG_APP, appId), amReceiver, device);
         if (amReceiver.hasException()) {
-            throw DeployerException.componentActivationException(
-                    "Activity Manager failed to set up the app for debugging.");
+            throw new ModelException("Activity Manager failed to set up the app for debugging.");
         }
     }
 
     // Set up the app for debugging in the DebugSurface so that timeouts of SysUi and WCS can be
     // increased accordingly (see go/wear-service-debug-timeout).
-    protected void setUpDebugSurfaceDebugApp(@NonNull IDevice device) throws DeployerException {
+    protected void setUpDebugSurfaceDebugApp(@NonNull IDevice device) throws ModelException {
         CommandResultReceiver surfaceReceiver = new CommandResultReceiver();
         runShellCommand(
                 String.format("%s '%s'", ShellCommand.DEBUG_SURFACE_SET_DEBUG_APP, appId),
@@ -122,13 +125,13 @@ public abstract class WearComponent extends AppComponent {
             @NonNull IShellOutputReceiver receiver,
             @NonNull ILogger logger,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         logger.info("$ adb shell " + command);
         CommandResultReceiver resultReceiver = new CommandResultReceiver();
         MultiReceiver multiReceiver = new MultiReceiver(resultReceiver, receiver);
         runShellCommand(command, multiReceiver, device);
         if (resultReceiver.getResultCode() != CommandResultReceiver.SUCCESS_CODE) {
-            throw DeployerException.componentActivationException(
+            throw new ModelException(
                     String.format("Invalid Success code `%d`", resultReceiver.getResultCode()));
         }
     }

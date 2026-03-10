@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.android.tools.deployer;
+package com.android.tools.deployer.model;
 
-import static com.android.tools.deployer.ApkTestUtils.assertApkEntryEquals;
+import static com.android.tools.deployer.model.ApkTestUtils.assertApkEntryEquals;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -24,9 +24,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.android.testutils.TestUtils;
-import com.android.tools.deployer.model.Apk;
-import com.android.tools.deployer.model.ApkEntry;
-import com.android.tools.deployer.model.ApkParser;
 import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
@@ -47,6 +44,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.zip.ZipEntry;
@@ -60,6 +58,7 @@ public class ApkParserTest {
     public void testCentralDirectoryParse() throws IOException {
         Path file = TestUtils.resolveWorkspacePath(BASE + "base.apk.remotecd");
         byte[] fileContent = Files.readAllBytes(file);
+        @SuppressWarnings("VisibleForTests")
         Map<String, ZipUtils.ZipEntry> entries = ZipUtils.readZipEntries(fileContent);
         assertEquals(1007, entries.size());
         long manifestCrc = entries.get("AndroidManifest.xml").crc;
@@ -215,7 +214,7 @@ public class ApkParserTest {
             s.setLevel(ZipOutputStream.STORED);
             for (int i = 0; i < numFiles; i++) {
                 long id = fileId++;
-                String name = String.format("file%06d", id);
+                String name = String.format(Locale.US, "file%06d", id);
                 ZipEntry entry = new ZipEntry(name);
                 byte[] bytes = new byte[sizePerFile];
                 random.nextBytes(bytes);
@@ -300,8 +299,9 @@ public class ApkParserTest {
         assertFalse(service.isolatedProcess);
         assertTrue(
                 service.hasPermission("com.google.android.wearable.permission.BIND_TILE_PROVIDER"));
-        assertTrue(service.hasAction(
-                "android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"));
+        assertTrue(
+                service.hasAction(
+                        "android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST"));
         assertTrue(service.getIntentFilters().get(0).getCategories().isEmpty());
 
         assertEquals(1, apk.activities.size());
@@ -309,10 +309,11 @@ public class ApkParserTest {
         assertEquals("com.example.parser.test.MyActivity", activity.getQualifiedName());
         assertTrue(activity.hasPermission("android.permission.CAMERA"));
         assertTrue(activity.hasAction("android.intent.action.MAIN"));
-        assertTrue(activity.getIntentFilters()
-                           .get(0)
-                           .getCategories()
-                           .contains("android.intent.category.APP_BROWSER"));
+        assertTrue(
+                activity.getIntentFilters()
+                        .get(0)
+                        .getCategories()
+                        .contains("android.intent.category.APP_BROWSER"));
     }
 
     @Test
@@ -330,6 +331,7 @@ public class ApkParserTest {
     }
 
     @Test
+    @SuppressWarnings("NoNioFilesCopy")
     public void testApkInJarFile() throws IOException, ApkParserException {
         Path srcFile = TestUtils.resolveWorkspacePath(BASE + "parserTest/app.apk");
         Path jarFile = Files.createTempFile("container", ".jar");

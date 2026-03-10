@@ -19,9 +19,10 @@ package com.android.tools.deployer.model.component;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
+
 import java.util.Locale;
 
 public class Complication extends WearComponent {
@@ -29,12 +30,15 @@ public class Complication extends WearComponent {
     public static class ShellCommand {
 
         public static String REMOVE_ALL_INSTANCES_FROM_CURRENT_WF =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation unset-complication --ecn component ";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " unset-complication --ecn component ";
         // + component name
 
         // More context go/wear-surface-debug
         static final String ADD_COMPLICATION_TO_WATCH_FACE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation set-complication --ecn component '%s' --ecn watchface '%s' --ei slot %d --ei type %d";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " set-complication --ecn component '%s' --ecn watchface '%s' --ei slot %d"
+                        + " --ei type %d";
     }
 
     public Complication(
@@ -50,7 +54,7 @@ public class Complication extends WearComponent {
             @NonNull Mode activationMode,
             @NonNull IShellOutputReceiver receiver,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         ComplicationParams params = ComplicationParams.parse(extraFlags);
         logger.info(
                 "Activating WatchFace '%s' %s",
@@ -100,7 +104,8 @@ public class Complication extends WearComponent {
     private static class ComplicationParams {
 
         static String INCORRECT_FORMAT_ERROR =
-                "Incorrect extra flags for Complication `%s`. Expected format `WATCH_FACE_APP_ID WATCH_FACE_FQ_NAME SLOT_NUM COMPLICATION_TYPE`";
+                "Incorrect extra flags for Complication `%s`. Expected format `WATCH_FACE_APP_ID"
+                        + " WATCH_FACE_FQ_NAME SLOT_NUM COMPLICATION_TYPE`";
 
         final String watchFaceAppId;
 
@@ -121,7 +126,7 @@ public class Complication extends WearComponent {
             this.type = type;
         }
 
-        static ComplicationParams parse(String rawParams) throws DeployerException {
+        static ComplicationParams parse(String rawParams) throws ModelException {
             try {
                 String[] params = rawParams.split("\\s+");
                 String watchfaceAppId = params[0];
@@ -130,7 +135,7 @@ public class Complication extends WearComponent {
                 ComplicationType type = ComplicationType.valueOf(params[3].toUpperCase(Locale.US));
                 return new ComplicationParams(watchfaceAppId, watchface, slot, type);
             } catch (Exception e) {
-                throw DeployerException.componentActivationException(
+                throw new ModelException(
                         String.format(INCORRECT_FORMAT_ERROR, rawParams) + ". " + e.getMessage());
             }
         }

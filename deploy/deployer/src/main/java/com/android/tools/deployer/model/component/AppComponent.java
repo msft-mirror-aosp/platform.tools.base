@@ -17,15 +17,12 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
-import java.io.IOException;
+
 import java.util.concurrent.TimeUnit;
 
 public abstract class AppComponent {
@@ -58,21 +55,17 @@ public abstract class AppComponent {
             Mode activationMode,
             @NonNull IShellOutputReceiver receiver,
             @NonNull IDevice device)
-            throws DeployerException;
+            throws ModelException;
 
     protected void runShellCommand(
             @NonNull String command,
             @NonNull IShellOutputReceiver receiver,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         try {
             device.executeShellCommand(command, receiver, SHELL_TIMEOUT, SHELL_TIMEUNIT);
-        }
-        catch (TimeoutException
-                | AdbCommandRejectedException
-                | ShellCommandUnresponsiveException
-                | IOException e) {
-            throw DeployerException.componentActivationException(e.getMessage());
+        } catch (Exception e) {
+            throw new ModelException(e.getMessage());
         }
     }
 

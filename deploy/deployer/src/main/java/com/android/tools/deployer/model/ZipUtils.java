@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.tools.deployer;
+package com.android.tools.deployer.model;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Functions;
 import com.google.common.io.BaseEncoding;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -48,7 +49,6 @@ public class ZipUtils {
         // for delta-push to work.
         public final long approx_end;
 
-
         // Array with all attributes of an entry in the Local File Header. Used for deltaPushing.
         public final byte[] localFileHeader;
 
@@ -64,8 +64,7 @@ public class ZipUtils {
     @VisibleForTesting
     public static Map<String, ZipEntry> readZipEntries(byte[] buf) {
         ByteBuffer buffer = ByteBuffer.wrap(buf);
-        return readZipEntries(buffer)
-                .stream()
+        return readZipEntries(buffer).stream()
                 .collect(Collectors.toMap(e -> e.name, Functions.identity()));
     }
 
@@ -132,7 +131,8 @@ public class ZipUtils {
             throw new IllegalStateException(
                     "MessageDigest:" + DIGEST_ALGORITHM + " unavailable.", e);
         }
-        // TODO: Parse the block and hash the top level signature instead of hashing the entire block.
+        // TODO: Parse the block and hash the top level signature instead of hashing the entire
+        // block.
         messageDigest.update(buffer);
         byte[] digestBytes = messageDigest.digest();
         return BaseEncoding.base16().lowerCase().encode(digestBytes);

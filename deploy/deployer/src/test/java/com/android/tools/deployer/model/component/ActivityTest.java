@@ -25,25 +25,30 @@ import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
-import com.android.tools.deployer.DeployerException;
-import com.android.tools.deployer.TestLogger;
+import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.manifest.parser.ManifestInfo;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 public class ActivityTest {
 
     @Test
     public void testFlags()
-            throws DeployerException, ShellCommandUnresponsiveException,
-                    AdbCommandRejectedException, IOException, TimeoutException {
+            throws ModelException,
+                    ShellCommandUnresponsiveException,
+                    AdbCommandRejectedException,
+                    IOException,
+                    TimeoutException {
         IDevice device = Mockito.mock(IDevice.class);
         ManifestActivityInfo info =
                 new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
@@ -56,7 +61,9 @@ public class ActivityTest {
         activity.activate(" --user 123", AppComponent.Mode.DEBUG, new NullOutputReceiver(), device);
 
         String expectedCommand =
-                "am start -n com.example.myApp/com.example.myApp.MainActivity -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -D --user 123";
+                "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
+                    + " android.intent.action.MAIN -c android.intent.category.LAUNCHER -D --user"
+                    + " 123";
 
         Mockito.verify(device, Mockito.times(1))
                 .executeShellCommand(
@@ -85,7 +92,9 @@ public class ActivityTest {
             activity.activate("", AppComponent.Mode.RUN, new NullOutputReceiver(), device);
 
             String expectedCommand =
-                    "am start -n com.example.myApp/com.example.tv_app.MainActivity -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER";
+                    "am start -n com.example.myApp/com.example.tv_app.MainActivity -a"
+                            + " android.intent.action.MAIN -c"
+                            + " android.intent.category.LEANBACK_LAUNCHER";
 
             Mockito.verify(device, Mockito.times(1))
                     .executeShellCommand(

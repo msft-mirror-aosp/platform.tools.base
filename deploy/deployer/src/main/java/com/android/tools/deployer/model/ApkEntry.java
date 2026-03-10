@@ -15,7 +15,6 @@
  */
 package com.android.tools.deployer.model;
 
-import com.android.tools.deployer.ZipUtils;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.Serializable;
 

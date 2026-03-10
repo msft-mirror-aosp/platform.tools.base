@@ -18,7 +18,7 @@ package com.android.tools.deployer.model.component;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
 
@@ -26,13 +26,16 @@ public class WatchFace extends WearComponent {
 
     public static class ShellCommand {
         public static final String SHOW_WATCH_FACE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SYSUI --es operation show-watchface";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SYSUI --es operation"
+                        + " show-watchface";
 
         public static final String SET_WATCH_FACE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation set-watchface --ecn component "; // + componentName
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " set-watchface --ecn component "; // + componentName
 
         public static final String UNSET_WATCH_FACE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation unset-watchface";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " unset-watchface";
     }
 
     public WatchFace(
@@ -46,7 +49,7 @@ public class WatchFace extends WearComponent {
             @NonNull Mode activationMode,
             @NonNull IShellOutputReceiver receiver,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         validate(extraFlags);
         logger.info("Activating WatchFace '%s' %s",
                     info.getQualifiedName(),
@@ -61,11 +64,12 @@ public class WatchFace extends WearComponent {
         runStartCommand(command, receiver, logger, device);
     }
 
-    private void validate(String extraFlags) throws DeployerException {
+    private void validate(String extraFlags) throws ModelException {
         if (!extraFlags.isEmpty()) {
-            throw DeployerException.componentActivationException(
-                    String.format("Extra flags are not supported by Watch Face. Detected flags `%s`",
-                                  extraFlags));
+            throw new ModelException(
+                    String.format(
+                            "Extra flags are not supported by Watch Face. Detected flags `%s`",
+                            extraFlags));
         }
     }
 

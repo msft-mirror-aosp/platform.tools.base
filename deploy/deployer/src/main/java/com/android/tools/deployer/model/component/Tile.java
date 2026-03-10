@@ -18,7 +18,7 @@ package com.android.tools.deployer.model.component;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
 
@@ -26,13 +26,16 @@ public class Tile extends WearComponent {
 
     public static class ShellCommand {
         public static String SET_TILE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation 'add-tile' --ecn component "; // + component name
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " 'add-tile' --ecn component "; // + component name
 
         public static String UNSET_TILE =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation remove-tile --ecn component "; // + component name
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " remove-tile --ecn component "; // + component name
 
         public static String SHOW_TILE_COMMAND =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SYSUI --es operation show-tile --ei index "; // + index
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SYSUI --es operation"
+                        + " show-tile --ei index "; // + index
     }
 
     public Tile(@NonNull ManifestServiceInfo info, @NonNull String appId, @NonNull ILogger logger) {
@@ -45,7 +48,7 @@ public class Tile extends WearComponent {
             @NonNull Mode activationMode,
             @NonNull IShellOutputReceiver addTileReceiver,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         validate(extraFlags);
         logger.info("Activating Tile '%s' %s",
                     info.getQualifiedName(),
@@ -59,11 +62,12 @@ public class Tile extends WearComponent {
         runStartCommand(command, addTileReceiver, logger, device);
     }
 
-    private void validate(String extraFlags) throws DeployerException {
+    private void validate(String extraFlags) throws ModelException {
         if (!extraFlags.isEmpty()) {
-            throw DeployerException.componentActivationException(
-                    String.format("Extra flags are not supported by Tile. Detected flags `%s`",
-                                  extraFlags));
+            throw new ModelException(
+                    String.format(
+                            "Extra flags are not supported by Tile. Detected flags `%s`",
+                            extraFlags));
         }
     }
 

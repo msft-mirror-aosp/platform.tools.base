@@ -16,7 +16,6 @@
 package com.android.tools.deployer.model;
 
 import com.android.annotations.NonNull;
-import com.android.tools.deployer.ZipUtils;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.tools.manifest.parser.components.ManifestReceiverInfo;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;

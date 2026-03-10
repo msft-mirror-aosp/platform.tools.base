@@ -21,15 +21,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.NullOutputReceiver;
-import com.android.tools.deployer.TestLogger;
+import com.android.tools.deployer.model.TestLogger;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
-import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
+
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
+
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class ComplicationTest {
 
@@ -51,7 +53,11 @@ public class ComplicationTest {
                 device);
 
         String expectedCommand =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation set-complication --ecn component 'com.example.myApp/com.example.services.Complication' --ecn watchface 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1 --ei type 4";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                    + " set-complication --ecn component"
+                    + " 'com.example.myApp/com.example.services.Complication' --ecn watchface"
+                    + " 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1"
+                    + " --ei type 4";
         Mockito.verify(device, Mockito.times(1))
                 .executeShellCommand(
                         eq(expectedCommand),
@@ -88,7 +94,11 @@ public class ComplicationTest {
                         eq(TimeUnit.SECONDS));
 
         String expectedCommand =
-                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation set-complication --ecn component 'com.example.myApp/com.example.services.Complication' --ecn watchface 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1 --ei type 4";
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                    + " set-complication --ecn component"
+                    + " 'com.example.myApp/com.example.services.Complication' --ecn watchface"
+                    + " 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1"
+                    + " --ei type 4";
 
         inOrderDevice
                 .verify(device)

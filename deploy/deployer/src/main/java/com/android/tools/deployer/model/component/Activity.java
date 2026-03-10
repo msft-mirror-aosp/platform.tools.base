@@ -19,10 +19,11 @@ package com.android.tools.deployer.model.component;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.manifest.parser.components.IntentFilter;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.utils.ILogger;
+
 import java.util.Optional;
 
 public class Activity extends AppComponent {
@@ -42,7 +43,7 @@ public class Activity extends AppComponent {
             @NonNull Mode activationMode,
             @NonNull IShellOutputReceiver receiver,
             @NonNull IDevice device)
-            throws DeployerException {
+            throws ModelException {
         extraFlags = extraFlags.trim();
         logger.info(
                 "Activating Activity '%s' %s on device %s",

@@ -19,12 +19,15 @@ import static org.junit.Assert.*;
 
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.FileDiff;
+
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Test;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.junit.Test;
 
 public class ApkDifferTest {
   @Test

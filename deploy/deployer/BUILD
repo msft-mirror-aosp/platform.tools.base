@@ -68,16 +68,40 @@ java_library(
 )
 
 kotlin_library(
+    name = "tools.deployer.model",
+    srcs = glob([
+        "src/main/java/com/android/tools/deployer/model/*.java",
+        "src/main/java/com/android/tools/deployer/model/*.kt",
+        "src/main/java/com/android/tools/deployer/model/component/*.java",
+    ]),
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "//tools/base/sdk-common:tools.sdk-common",
+        "//tools/base/tracer:tools.tracer",
+        "@maven//:com.google.guava.guava",
+        "@maven//:org.jetbrains.annotations",
+    ],
+)
+
+kotlin_library(
     name = "tools.deployer",
     srcs = glob([
-        "src/main/**/*.java",
-        "src/main/**/*.kt",
+        "src/main/java/com/android/tools/deployer/*.java",
+        "src/main/java/com/android/tools/deployer/*.kt",
+        "src/main/java/com/android/tools/deployer/tasks/*.java",
     ]),
     # Embed android installer in the jar (x86, x86_64, arm7, arm64)
     resources = ["//tools/base/deploy/installer:android-installer"],
     visibility = ["//visibility:public"],
+    exports = [":tools.deployer.model"],
     deps = [
         ":java_version",
+        ":tools.deployer.model",
         "//prebuilts/r8",
         "//tools/base/adblib",
         "//tools/base/adblib-tools:adblib.tools",
@@ -197,20 +221,46 @@ filegroup(
 )
 
 coverage_java_test(
+    name = "tools.deployer.model.tests",
+    size = "medium",
+    srcs = glob(
+        [
+            "src/test/java/com/android/tools/deployer/model/*.java",
+            "src/test/java/com/android/tools/deployer/model/component/*.java",
+        ],
+    ),
+    data = glob(["src/test/resource/**"]),
+    jvm_flags = ["-Dtest.suite.jar=tools.deployer.model.tests.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":tools.deployer.model",
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.guava.guava",
+        "@maven//:junit.junit",
+        "@maven//:org.mockito.mockito-core",
+    ],
+)
+
+coverage_java_test(
     name = "deployer.tests",
     # Deployer Runner tests needs to spin up fake devices and communicate with it
     # The large number of tests there makes it not possible to finish within
     # in medium test size timeout.
     size = "large",
-    srcs = glob([
-        "src/test/java/com/android/tools/deployer/*.java",
-        "src/test/java/com/android/tools/deployer/devices/*.java",
-        "src/test/java/com/android/tools/deployer/devices/shell/*.java",
-        "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
-        "src/test/java/com/android/tools/deployer/model/component/*.java",
-        "src/test/java/com/android/tools/deployer/rules/*.java",
-        "src/test/java/com/android/tools/deployer/tasks/*.java",
-    ]) + [
+    srcs = glob(
+        [
+            "src/test/java/com/android/tools/deployer/*.java",
+            "src/test/java/com/android/tools/deployer/devices/*.java",
+            "src/test/java/com/android/tools/deployer/devices/shell/*.java",
+            "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
+            "src/test/java/com/android/tools/deployer/rules/*.java",
+            "src/test/java/com/android/tools/deployer/tasks/*.java",
+        ],
+    ) + [
         "//tools/base/deploy/sites:Sites.java",
     ],
     data = glob(["src/test/resource/**"]) + select({
@@ -233,6 +283,7 @@ coverage_java_test(
     deps = [
         ":java_version",
         ":tools.deployer",
+        ":tools.deployer.model",
         "//prebuilts/r8",
         "//tools/base/adblib",
         "//tools/base/adblib:adblib.tests.testlib",
