@@ -211,15 +211,15 @@ class JdkTools(val javaHome: File, val processExecutor: ProcessExecutor, val log
 @VisibleForTesting
 internal fun generateModuleDescriptor(moduleName: String, jars: List<File>): String {
   val stringBuilder = StringBuilder()
-  stringBuilder.appendln("module $moduleName {")
+  stringBuilder.appendLine("module $moduleName {")
   val packageNameRegex = Regex("(.*)/[^/]*.class")
   jars
     .asSequence()
     .flatMap { jar -> ZipFile(jar).use { it.stream().map { zipEntry -> zipEntry.name }.toList() }.asSequence() }
     .mapNotNull { packageNameRegex.find(it)?.groupValues?.get(1)?.replace("/", ".") }
     .toSortedSet()
-    .forEach { stringBuilder.appendln("    exports $it;") }
-  stringBuilder.appendln("}")
+    .forEach { stringBuilder.appendLine("    exports $it;") }
+  stringBuilder.appendLine("}")
   return stringBuilder.toString()
 }
 

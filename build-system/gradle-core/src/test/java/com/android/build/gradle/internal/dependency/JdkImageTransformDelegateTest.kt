@@ -145,7 +145,6 @@ class JdkImageTransformDelegateTest {
 
         """
           .trimIndent()
-          .replace("\n", System.lineSeparator())
       )
   }
 

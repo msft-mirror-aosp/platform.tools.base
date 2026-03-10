@@ -206,13 +206,13 @@ private fun compileTable(pathData: ResourcePathData, outputDirectory: File, opti
             val javaType = if (group.type == AaptResourceType.STYLEABLE) "int[]" else "int"
             group.entries.forEach { entry ->
               val visibility = getVisibility(entry.value.values, group.type)
-              builder.appendln("${visibility.getName()} $javaType ${group.type.tagName} ${entry.key}")
+              builder.appendLine("${visibility.getName()} $javaType ${group.type.tagName} ${entry.key}")
               if (group.type == AaptResourceType.STYLEABLE) {
                 // We also need to write down styleable children (entries)
                 group.getStyleable(entry).entries.forEach {
                   val childPackage = if (!it.name.pck.isNullOrEmpty()) "_${it.name.pck}" else ""
                   // styleables and their children are always public
-                  builder.appendln("public int styleable ${entry.key}${childPackage}_${it.name.entry}")
+                  builder.appendLine("public int styleable ${entry.key}${childPackage}_${it.name.entry}")
                 }
               }
             }
@@ -306,8 +306,8 @@ private fun compileXml(pathData: ResourcePathData, outputDirectory: File, option
 
     if (options.partialRFile != null) {
       val builder = StringBuilder()
-      builder.appendln("default int ${pathData.type.tagName} ${pathData.name}")
-      fileToProcess.exportedSymbols.forEach { id -> builder.appendln("default int id ${id.name.entry}") }
+      builder.appendLine("default int ${pathData.type.tagName} ${pathData.name}")
+      fileToProcess.exportedSymbols.forEach { id -> builder.appendLine("default int id ${id.name.entry}") }
       FileUtils.writeToFile(options.partialRFile, builder.toString())
     }
   }

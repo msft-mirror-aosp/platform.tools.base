@@ -84,12 +84,12 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.writeText
 
 fun isProguardRule(name: String): Boolean {
-  val lowerCaseName = name.toLowerCase(Locale.US)
+  val lowerCaseName = name.lowercase(Locale.US)
   return lowerCaseName.startsWith("$PROGUARD_RULES_FOLDER/") || lowerCaseName.startsWith("/$PROGUARD_RULES_FOLDER/")
 }
 
 fun isToolsConfigurationFile(name: String): Boolean {
-  val lowerCaseName = name.toLowerCase(Locale.US)
+  val lowerCaseName = name.lowercase(Locale.US)
   return lowerCaseName.startsWith("$TOOLS_CONFIGURATION_FOLDER/") || lowerCaseName.startsWith("/$TOOLS_CONFIGURATION_FOLDER/")
 }
 
@@ -683,6 +683,7 @@ private class ResourceOnlyProvider(val originalProvider: ArchiveResourceProvider
 
   override fun getProgramResources(consumer: Consumer<ProgramResource>?) {}
 
+  @Deprecated("Deprecated in superclass")
   override fun getDataResourceProvider() =
     object : DataResourceProvider {
       override fun accept(visitor: DataResourceProvider.Visitor?) {

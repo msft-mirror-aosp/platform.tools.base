@@ -68,7 +68,7 @@ fun extractPathData(file: File, sourcePath: String = file.absolutePath): Resourc
     }
   val configDescription = parse(config)
 
-  return ResourcePathData(source, extension.toLowerCase(), resName, type, config, file, configDescription)
+  return ResourcePathData(source, extension.lowercase(), resName, type, config, file, configDescription)
 }
 
 /**
