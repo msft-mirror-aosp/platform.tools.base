@@ -85,7 +85,7 @@ object CodeCoverageReportOrchestrator {
 
     val coverageReport = coverageBuilder.build()
 
-    val gson = GsonBuilder().setPrettyPrinting().create()
+    val gson = GsonBuilder().create()
     val dataDir = reportDir.resolve("data")
     dataDir.mkdirs()
     val reportDataJsFile = dataDir.resolve("report-data.js")
