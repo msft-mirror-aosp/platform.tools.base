@@ -208,12 +208,21 @@ const SourceViewApp = {
         this.elements.sourceViewContainer.addEventListener('scroll', (e) => {
             if (!this.state.scrollLock) return;
             if (!e.target.classList.contains('code-container')) return;
-            if (this.isSyncing) return;
 
-            this.isSyncing = true;
+            // If another container is already the leader, ignore this event to prevent feedback loops.
+            if (this.scrollLeader && this.scrollLeader !== e.target) return;
+
+            // Establish the leader and set a timeout to release leadership after inactivity.
+            this.scrollLeader = e.target;
+            if (this.scrollLeaderTimer) clearTimeout(this.scrollLeaderTimer);
+            this.scrollLeaderTimer = setTimeout(() => {
+                this.scrollLeader = null;
+            }, 100);
+
             const source = e.target;
             const containers = this.elements.sourceViewContainer.querySelectorAll('.code-container');
 
+            // Sync all other containers to the leader's position.
             requestAnimationFrame(() => {
                 containers.forEach(c => {
                     if (c !== source) {
@@ -221,7 +230,6 @@ const SourceViewApp = {
                         c.scrollLeft = source.scrollLeft;
                     }
                 });
-                this.isSyncing = false;
             });
         }, true);
     },
@@ -326,24 +334,39 @@ const SourceViewApp = {
         const methodData = this.classData.methods.find(m => m.name === methodName);
 
         if (methodData && methodData.variantLineNumbers) {
-            methodData.variantLineNumbers.forEach(mapping => {
-                if (this.state.selectedVariants.includes(mapping.variantName)) {
-                    const variantContainer = this.elements.sourceViewContainer.querySelector(`.variant-code-view[data-variant="${mapping.variantName}"]`);
-                    if (variantContainer) {
-                        const codeContainer = variantContainer.querySelector('.code-container');
-                        const row = variantContainer.querySelector(`tr[data-line-number="${mapping.lineNumber}"]`);
-                        if (row && codeContainer) {
-                            const newScrollTop = row.offsetTop - (codeContainer.clientHeight / 2) + (row.clientHeight / 2);
-                            codeContainer.scrollTo({
-                                top: newScrollTop,
-                                behavior: 'smooth'
-                            });
+            const selectedVariantMappings = methodData.variantLineNumbers.filter(m => this.state.selectedVariants.includes(m.variantName));
 
-                            row.classList.remove('highlight-blink');
-                            void row.offsetWidth; // Trigger reflow
-                            row.classList.add('highlight-blink');
-                            setTimeout(() => row.classList.remove('highlight-blink'), 1500);
-                        }
+            // If scroll lock is on, we only initiate a smooth scroll for the first variant.
+            // Our improved sync listener will ensure all others follow smoothly in lock-step.
+            const variantsToScroll = this.state.scrollLock
+                ? selectedVariantMappings.slice(0, 1)
+                : selectedVariantMappings;
+
+            variantsToScroll.forEach(mapping => {
+                const variantContainer = this.elements.sourceViewContainer.querySelector(`.variant-code-view[data-variant="${mapping.variantName}"]`);
+                if (variantContainer) {
+                    const codeContainer = variantContainer.querySelector('.code-container');
+                    const row = variantContainer.querySelector(`tr[data-line-number="${mapping.lineNumber}"]`);
+                    if (row && codeContainer) {
+                        const newScrollTop = row.offsetTop - (codeContainer.clientHeight / 2) + (row.clientHeight / 2);
+                        codeContainer.scrollTo({
+                            top: newScrollTop,
+                            behavior: 'smooth'
+                        });
+                    }
+                }
+            });
+
+            // Highlight the line in all relevant variants regardless of scroll lock state
+            selectedVariantMappings.forEach(mapping => {
+                const variantContainer = this.elements.sourceViewContainer.querySelector(`.variant-code-view[data-variant="${mapping.variantName}"]`);
+                if (variantContainer) {
+                    const row = variantContainer.querySelector(`tr[data-line-number="${mapping.lineNumber}"]`);
+                    if (row) {
+                        row.classList.remove('highlight-blink');
+                        void row.offsetWidth; // Trigger reflow
+                        row.classList.add('highlight-blink');
+                        setTimeout(() => row.classList.remove('highlight-blink'), 1500);
                     }
                 }
             });
