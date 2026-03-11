@@ -361,8 +361,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     val baselineFile = projectInputs.lintOptions.baseline.orNull?.asFile
     if (baselineFile != null) {
       val isUpdating = lintMode.get() == LintMode.UPDATE_BASELINE
-      val treatAsEmptyIfMissing = missingBaselineIsEmptyBaseline.get() ||
-        (projectInputs.lintOptions.defaultBaseline.get() && !isUpdating)
+      val treatAsEmptyIfMissing = missingBaselineIsEmptyBaseline.get() || (projectInputs.lintOptions.defaultBaseline.get() && !isUpdating)
       if (baselineFile.exists() || isUpdating || treatAsEmptyIfMissing) {
         arguments.add("--baseline", baselineFile.absolutePath)
       }
@@ -398,11 +397,12 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     if (projectInputs.lintOptions.checkDependencies.isPresent) {
-      arguments += if (projectInputs.lintOptions.checkDependencies.get()) {
-        "--check-dependencies"
-      } else {
-        "--no-check-dependencies"
-      }
+      arguments +=
+        if (projectInputs.lintOptions.checkDependencies.get()) {
+          "--check-dependencies"
+        } else {
+          "--no-check-dependencies"
+        }
     }
 
     return Collections.unmodifiableList(arguments)
