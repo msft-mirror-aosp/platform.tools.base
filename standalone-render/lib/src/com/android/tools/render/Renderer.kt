@@ -170,6 +170,7 @@ class Renderer(
         namespace,
         environment,
         resourceIdManager,
+        resourceApkPath,
       )
 
     renderService = RenderService {

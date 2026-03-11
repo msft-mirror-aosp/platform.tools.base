@@ -23,7 +23,6 @@ import com.android.tools.render.environment.StandaloneEnvironmentContext
 import com.android.tools.rendering.api.RenderModelManifest
 import com.android.tools.rendering.api.RenderModelModule
 import com.android.tools.rendering.classloading.ClassTransform
-import com.android.tools.res.AssetFileOpener
 import com.android.tools.res.AssetRepositoryBase
 import com.android.tools.res.ResourceRepositoryManager
 import com.android.tools.res.ids.ResourceIdManager
@@ -32,8 +31,6 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.CheckedDisposable
 import com.intellij.openapi.util.Disposer
-import java.io.FileInputStream
-import java.io.InputStream
 
 /** [RenderModelModule] for standalone rendering. */
 class StandaloneRenderModelModule(
@@ -46,24 +43,19 @@ class StandaloneRenderModelModule(
   override val resourcePackage: String,
   override val environment: StandaloneEnvironmentContext,
   override val resourceIdManager: ResourceIdManager,
+  private val resourceApkPath: String? = null,
 ) : RenderModelModule {
-  override val assetRepository =
-    AssetRepositoryBase(
-      object : AssetFileOpener {
-        private fun getInputStream(path: String): InputStream {
-          return FileInputStream(path)
-        }
-
-        override fun openAssetFile(path: String): InputStream = getInputStream(path)
-
-        override fun openNonAssetFile(path: String): InputStream = getInputStream(path)
-      }
-    )
+  private val assetFileOpener = StandaloneAssetFileOpener(resourceApkPath)
+  override val assetRepository = AssetRepositoryBase(assetFileOpener)
   override val manifest: RenderModelManifest? = null
 
   override val parentDisposable: CheckedDisposable = Disposer.newCheckedDisposable()
   override val isDisposed: Boolean
     get() = parentDisposable.isDisposed
+
+  init {
+    Disposer.register(parentDisposable, assetFileOpener)
+  }
 
   override fun getClassLoaderProvider(privateClassLoader: Boolean): RenderModelModule.ClassLoaderProvider {
     return RenderModelModule.ClassLoaderProvider {

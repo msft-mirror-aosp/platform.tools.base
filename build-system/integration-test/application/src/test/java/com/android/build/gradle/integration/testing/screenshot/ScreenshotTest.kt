@@ -1042,6 +1042,66 @@ class ScreenshotTest {
     }
   }
 
+  @Test
+  fun runPreviewScreenshotTestWithAssets() {
+    val build =
+      rule.build {
+        androidApplication(":appWithAssets") {
+          setupProject(addEmptyJarToClassPath = false)
+          files {
+            add("src/main/assets/test_asset.txt", "Asset loading integration content")
+            add(
+              "src/main/java/com/AssetComposable.kt",
+              // language=kotlin
+              """
+              package pkg.name
+              import androidx.compose.material.Text
+              import androidx.compose.runtime.Composable
+              import androidx.compose.ui.platform.LocalContext
+
+              @Composable
+              fun AssetComposable() {
+                  val context = LocalContext.current
+                  // Verify asset loading does not crash standalone-render
+                  context.assets.open("test_asset.txt").use { it.readAllBytes() }
+                  Text("Asset Loaded")
+              }
+              """
+                .trimIndent(),
+            )
+            add(
+              "src/screenshotTest/java/com/AssetTest.kt",
+              // language=kotlin
+              """
+              package pkg.name
+              import androidx.compose.ui.tooling.preview.Preview
+              import androidx.compose.runtime.Composable
+              import com.android.tools.screenshot.PreviewTest
+
+              class AssetTest {
+                  @PreviewTest
+                  @Preview
+                  @Composable
+                  fun assetTest() {
+                      AssetComposable()
+                  }
+              }
+              """
+                .trimIndent(),
+            )
+          }
+        }
+      }
+
+    val updateResult = updateReferenceImage(projectName = "appWithAssets")
+    updateResult.assertOutputDoesNotContain("ScreenshotError")
+    updateResult.assertOutputDoesNotContain("File not found")
+
+    val validateResult = build.sstExecutor().run(":appWithAssets:validateDebugScreenshotTest")
+    validateResult.assertOutputDoesNotContain("ScreenshotError")
+    validateResult.assertOutputDoesNotContain("File not found")
+  }
+
   class CheckMemoryUsage : TestExecutionListener {
     override fun executionFinished(testIdentifier: TestIdentifier, testExecutionResult: TestExecutionResult) {
       MemoryPrinter.printMemoryUsage()
