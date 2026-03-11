@@ -58,6 +58,9 @@ class AndroidTestResultListener : TestExecutionListener {
   /** Tracks device display name for each device serial. */
   private val perDeviceDisplayName = ConcurrentHashMap<String, String>()
 
+  /** Tracks device info file path for each device serial. */
+  private val perDeviceDeviceInfoPath = ConcurrentHashMap<String, String>()
+
   /** Tracks test results for each device serial. */
   private val perDeviceTestResults = ConcurrentHashMap<String, MutableList<TestResultProto.TestResult>>()
 
@@ -139,6 +142,11 @@ class AndroidTestResultListener : TestExecutionListener {
       perDeviceDisplayName[deviceId] = displayName
     }
 
+    val deviceInfoPath = entry.keyValuePairs[AndroidTestReportKeys.DEVICE_INFO_PATH]
+    if (deviceInfoPath != null) {
+      perDeviceDeviceInfoPath[deviceId] = deviceInfoPath
+    }
+
     val logcatPath = entry.keyValuePairs[AndroidTestReportKeys.LOGCAT_PATH]
     if (logcatPath != null) {
       testLogcatFiles[testIdentifier.uniqueId] = logcatPath
@@ -175,6 +183,15 @@ class AndroidTestResultListener : TestExecutionListener {
           TestSuiteResultProto.TestSuiteResult.newBuilder()
             .setTestStatus(if (allTestsPassed) TestStatusProto.TestStatus.PASSED else TestStatusProto.TestStatus.FAILED)
             .addAllTestResult(testResults)
+            .apply {
+              perDeviceDeviceInfoPath[deviceId]?.let { path ->
+                addOutputArtifactBuilder().apply {
+                  labelBuilder.label = "device-info"
+                  labelBuilder.namespace = "android"
+                  sourcePathBuilder.path = path
+                }
+              }
+            }
             .build()
 
         val resultsFilePath =

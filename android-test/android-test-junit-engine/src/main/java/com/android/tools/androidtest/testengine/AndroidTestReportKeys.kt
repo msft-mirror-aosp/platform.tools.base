@@ -26,4 +26,7 @@ object AndroidTestReportKeys {
 
   /** The report entry key for the logcat path. */
   const val LOGCAT_PATH = "android-test.logcat-path"
+
+  /** The report entry key for the device info path. */
+  const val DEVICE_INFO_PATH = "android-test.device-info-path"
 }

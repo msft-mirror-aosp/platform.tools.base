@@ -74,7 +74,20 @@ class AndroidDeviceDescriptor(
     val reporter = baseResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
     val logcatCollector = deviceResultsDir?.let { LogcatCollector(it, config.adb.absolutePath) }
 
-    val listener = Listener(context, reporter, logcatCollector)
+    val deviceInfoFile =
+      deviceResultsDir?.let { dir ->
+        val file = File(dir, "device-info.pb")
+        try {
+          val deviceInfo = AndroidTestDeviceInfoCollector(AdbController(config.adb), deviceSerial).collect()
+          file.outputStream().use { deviceInfo.writeTo(it) }
+          file
+        } catch (t: Throwable) {
+          logger.log(Level.SEVERE, "failed to collect device info for $deviceSerial", t)
+          null
+        }
+      }
+
+    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile)
 
     val instrumentationRunner =
       AmInstrumentationRunner(
@@ -144,6 +157,7 @@ class AndroidDeviceDescriptor(
     private val context: AndroidTestExecutionContext,
     private val reporter: SimpleXmlResultReporter?,
     private val logcatCollector: LogcatCollector?,
+    private val deviceInfoFile: File?,
   ) : AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
@@ -159,6 +173,11 @@ class AndroidDeviceDescriptor(
       // result directory name.
       val displayNameEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName)
       context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, displayNameEntry)
+
+      deviceInfoFile?.let {
+        val deviceInfoEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_INFO_PATH, it.absolutePath)
+        context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, deviceInfoEntry)
+      }
     }
 
     /** Called when a test case starts on the device. */

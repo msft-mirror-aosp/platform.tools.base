@@ -19,6 +19,8 @@ maven_library(
         "//tools/base/common:tools.common",
         # ddmlib is used for generating JUnit XML results via XmlTestRunListener.
         "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/android-test/test-result-proto",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.junit.platform.junit-platform-engine",
@@ -37,7 +39,9 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":android-test-engine",
+        "//tools/base/android-test/test-result-proto",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

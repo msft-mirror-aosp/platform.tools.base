@@ -363,9 +363,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
   private fun getDeviceInfo(testResultPb: File): AndroidTestDeviceInfo? {
     val testSuiteResult = testResultPb.inputStream().use { TestSuiteResult.parseFrom(it) }
-    return testSuiteResult.testResultList
-      .asSequence()
-      .flatMap { testResult -> testResult.outputArtifactList }
+    return (testSuiteResult.testResultList.asSequence().flatMap { it.outputArtifactList } + testSuiteResult.outputArtifactList.asSequence())
       .filter { artifact -> artifact.label.label == "device-info" && artifact.label.namespace == "android" }
       .map { artifact -> File(artifact.sourcePath.path).inputStream().use { AndroidTestDeviceInfo.parseFrom(it) } }
       .firstOrNull()
@@ -776,12 +774,9 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     assertThat(project.resolve(testReportPath)).exists()
     assertThat(project.resolve(testResultPbPath)).exists()
 
-    // TODO(b/476442048): Device info is not implemented yet in the built-in platform.
-    if (!runWithBuiltInPlatform) {
-      val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
-      assertThat(deviceInfo).isNotNull()
-      assertThat(deviceInfo?.name).isNotEmpty()
-    }
+    val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
+    assertThat(deviceInfo).isNotNull()
+    assertThat(deviceInfo?.name).isNotEmpty()
 
     // TODO(b/476442048): Re-enable this check after TestSuiteTestTask configuration cache issue is resolved.
     if (!runWithBuiltInPlatform) {
