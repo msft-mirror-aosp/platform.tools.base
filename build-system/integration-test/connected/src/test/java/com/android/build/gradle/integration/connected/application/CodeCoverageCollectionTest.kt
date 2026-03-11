@@ -545,10 +545,12 @@ class CodeCoverageCollectionTest {
 
   class CodeCoverageCollectionTaskCallback : GenericCallback {
     override fun handleProject(project: Project) {
-      project.tasks.withType(org.gradle.api.tasks.testing.Test::class.java).configureEach { task ->
+      project.tasks.withType(com.android.build.gradle.tasks.factory.AndroidUnitTest::class.java).configureEach { task ->
         task.doLast {
-          val output = project.fileTree("${project.buildDir}/outputs/unit_test_code_coverage") { fileTree -> fileTree.include("**/*.exec") }
-          output.files.forEach { file -> file.writeText("CORRUPTED") }
+          val coverageFile = task.jacocoCoverageOutputFile.orNull?.asFile
+          if (coverageFile?.exists() == true) {
+            coverageFile.writeText("CORRUPTED")
+          }
         }
       }
     }
