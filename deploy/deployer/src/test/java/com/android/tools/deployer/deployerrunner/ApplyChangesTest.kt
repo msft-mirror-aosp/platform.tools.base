@@ -17,7 +17,6 @@ package com.android.tools.deployer.deployerrunner
 
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestUtils
-import com.android.tools.deployer.AdbInstallerTest
 import com.android.tools.deployer.DeployerException
 import com.android.tools.deployer.DeployerRunner
 import com.android.tools.deployer.DeployerTestUtils

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.deployerrunner;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -22,6 +22,11 @@ import static org.junit.Assert.assertTrue;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.fakeadbserver.FakeAdbServer;
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.DeployerRunner;
+import com.android.tools.deployer.DeployerTestUtils;
+import com.android.tools.deployer.DeploymentCacheDatabase;
+import com.android.tools.deployer.SqlApkFileDatabase;
+import com.android.tools.deployer.UIService;
 import com.android.tools.deployer.devices.DeviceId;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.devices.FakeDeviceHandler;

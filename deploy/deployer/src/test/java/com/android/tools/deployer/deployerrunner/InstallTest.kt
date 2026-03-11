@@ -22,7 +22,6 @@ import com.android.testutils.TestUtils
 import com.android.tools.deploy.proto.Deploy.DumpResponse
 import com.android.tools.deployer.AdbClient
 import com.android.tools.deployer.AdbInstaller
-import com.android.tools.deployer.AdbInstallerTest
 import com.android.tools.deployer.DeployMetric
 import com.android.tools.deployer.DeployerException
 import com.android.tools.deployer.DeployerRunner

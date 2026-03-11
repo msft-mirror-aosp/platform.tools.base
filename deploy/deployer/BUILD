@@ -14,6 +14,7 @@ iml_module(
     iml_files = ["android.sdktools.deployer.iml"],
     lint_baseline = "lint_baseline.xml",
     tags = ["noci:studio-win"],
+    test_class = "com.android.tools.deployer.deployerrunner.DeployerTestSuite",
     test_data = glob(["src/test/resource/**"]) + select({
         "@platforms//os:windows": [],
         "//conditions:default": [
@@ -249,6 +250,40 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+java_library(
+    name = "deployer.runner.testlib",
+    testonly = True,
+    srcs = glob(
+        [
+            "src/test/java/com/android/tools/deployer/*.java",
+            "src/test/java/com/android/tools/deployer/devices/**/*.java",
+            "src/test/java/com/android/tools/deployer/rules/**/*.java",
+        ],
+        exclude = [
+            "src/test/java/com/android/tools/deployer/*Test.java",
+        ],
+    ) + [
+        "//tools/base/deploy/sites:Sites.java",
+    ],
+    deps = [
+        ":tools.deployer",
+        "//tools/base/adblib",
+        "//tools/base/adblib:adblib.tests.testlib",
+        "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
+        "//tools/base/bazel:studio-grpc",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/installer/tests:fake_device_proto",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "//tools/base/testutils:tools.testutils",
+        "//tools/base/tracer:tools.tracer",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
 coverage_java_test(
     name = "tools.deployer.model.tests",
     size = "medium",
@@ -336,6 +371,49 @@ coverage_java_test(
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.mockito.mockito-core",
+    ],
+)
+
+kotlin_test(
+    name = "deployer.runner.tests",
+    size = "large",
+    srcs = glob(
+        [
+            "src/test/java/com/android/tools/deployer/deployerrunner/*.java",
+            "src/test/java/com/android/tools/deployer/deployerrunner/*.kt",
+        ],
+        exclude = ["src/test/java/com/android/tools/deployer/deployerrunner/DeployerTestSuite.java"],
+    ),
+    data = glob(["src/test/resource/**"]) + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "//tools/base/deploy/installer:test-installer",
+            "//tools/base/deploy/installer/tests:artifacts",
+        ],
+    }) + ["//tools/base/tracer:trace_agent"],
+    jvm_flags = [
+        "-Dtest.suite.jar=deployer.runner.tests.jar",
+        "-Ddashboards.enabled=true",
+        "-javaagent:$(location //tools/base/tracer:trace_agent)=$(location //tools/base/deploy/deployer:src/test/resource/deployer.profile)",
+    ],
+    tags = [
+        "no_rbe_windows",
+        "noci:studio-win",
+    ],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":deployer.runner.testlib",
+        ":java_version",
+        ":tools.deployer",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/fakeadbserver:tools.fakeadbserver",
+        "//tools/base/perf-logger:studio.perf-logger_testlib",
+        "//tools/base/testutils:tools.testutils",
+        "//tools/base/tracer:tools.tracer",
         "@maven//:org.mockito.mockito-core",
     ],
 )

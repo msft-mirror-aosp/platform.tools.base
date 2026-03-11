@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.deployerrunner;
 
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.testutils.AssumeUtil;
+import com.android.tools.deployer.AdbClient;
+import com.android.tools.deployer.AdbInstaller;
+import com.android.tools.deployer.DeployMetric;
+import com.android.tools.deployer.Deployer;
+import com.android.tools.deployer.DeployerTestUtils;
+import com.android.tools.deployer.TestLogger;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
@@ -26,7 +32,6 @@ import com.android.utils.ILogger;
 
 import com.google.common.collect.ImmutableList;
 
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;

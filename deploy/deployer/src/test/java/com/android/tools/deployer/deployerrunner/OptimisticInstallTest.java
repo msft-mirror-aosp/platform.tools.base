@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.deployerrunner;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -21,17 +21,19 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.testutils.AssumeUtil;
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.DeployMetric;
+import com.android.tools.deployer.DeployerRunner;
+import com.android.tools.deployer.DeployerTestUtils;
+import com.android.tools.deployer.DeploymentCacheDatabase;
+import com.android.tools.deployer.SqlApkFileDatabase;
+import com.android.tools.deployer.UIService;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
 import com.android.utils.FileUtils;
+
 import com.google.common.base.Charsets;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -40,6 +42,13 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
 
 @RunWith(ApiLevel.class)
 public class OptimisticInstallTest {
