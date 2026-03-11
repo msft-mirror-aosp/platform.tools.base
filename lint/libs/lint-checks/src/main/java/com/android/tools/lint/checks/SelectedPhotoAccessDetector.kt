@@ -32,15 +32,18 @@ import com.android.tools.lint.detector.api.XmlScanner
 import com.android.utils.iterator
 
 /**
+ * Reports `<uses-permission>` elements in the app's merged manifest if the following conditions hold:
+ * - targetSdk >= 33
+ * - the element is requesting `READ_MEDIA_IMAGES` or `READ_MEDIA_VIDEO`
+ * - there is not a `<uses-permission>` element that requests `READ_MEDIA_VISUAL_USER_SELECTED`
+ *
  * On Android 14 devices, apps requesting READ_MEDIA_IMAGES and/or READ_MEDIA_VIDEO should request READ_MEDIA_VISUAL_USER_SELECTED to better
  * support selected photos access. The READ_MEDIA_VISUAL_USER_SELECTED permission must be declared (but not requested) to allow apps to
  * better control the UX of photos selection. The potential issue is apps adding this new permission without changing their UX and
  * permission logic to accommodate this behavior change.
  */
 class SelectedPhotoAccessDetector : Detector(), XmlScanner {
-
   companion object {
-
     @JvmField
     val ISSUE =
       Issue.create(
@@ -48,12 +51,12 @@ class SelectedPhotoAccessDetector : Detector(), XmlScanner {
           briefDescription = "Behavior change when requesting photo library access",
           explanation =
             """
-                  Selected Photo Access is a new ability for users to share partial access to their photo library \
-                  when apps request access to their device storage on Android 14+.
+            Selected Photo Access is a new ability for users to share partial access to their photo library \
+            when apps request access to their device storage on Android 14+.
 
-                  Instead of letting the system manage the selection lifecycle, we recommend you adapt \
-                  your app to handle partial access to the photo library.
-                  """,
+            Instead of letting the system manage the selection lifecycle, we recommend you adapt \
+            your app to handle partial access to the photo library.
+            """,
           category = Category.CORRECTNESS,
           priority = 5,
           severity = Severity.WARNING,
