@@ -16,7 +16,6 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.internal.ClientImpl;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -91,7 +90,7 @@ public interface Client {
      */
     void kill();
 
-    /** Returns whether this {@link ClientImpl} has a valid connection to the application VM. */
+    /** Returns whether this Client has a valid connection to the application VM. */
     boolean isValid();
 
     ///////////////////////// DEBUGGER METHODS ////////////////////////////////////////////

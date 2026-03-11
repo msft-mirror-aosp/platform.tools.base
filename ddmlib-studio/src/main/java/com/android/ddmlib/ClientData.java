@@ -21,7 +21,6 @@ import static com.android.ddmlib.Log.LogLevel.INFO;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.HeapSegment.HeapSegmentElement;
-import com.android.ddmlib.internal.ClientImpl;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -37,7 +36,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-/** Contains the data of a {@link ClientImpl}. */
+/** Contains the data of a Client. */
 public class ClientData {
     /* This is a place to stash data associated with a Client, such as thread
      * states or heap data.  ClientData maps 1:1 to Client, but it's a little
@@ -74,16 +73,15 @@ public class ClientData {
         /**
          * Allocation tracking status: unknown.
          *
-         * <p>This happens right after a {@link ClientImpl} is discovered by the {@link
-         * AndroidDebugBridge}, and before the {@link ClientImpl} answered the query regarding its
-         * allocation tracking status.
+         * <p>This happens right after a Client is discovered by the {@link AndroidDebugBridge}, and
+         * before the Client answered the query regarding its allocation tracking status.
          *
-         * @see ClientImpl#requestAllocationStatus()
+         * @see Client#requestAllocationStatus()
          */
         UNKNOWN,
-        /** Allocation tracking status: the {@link ClientImpl} is not tracking allocations. */
+        /** Allocation tracking status: the Client is not tracking allocations. */
         OFF,
-        /** Allocation tracking status: the {@link ClientImpl} is tracking allocations. */
+        /** Allocation tracking status: the Client is tracking allocations. */
         ON
     }
 
@@ -91,18 +89,17 @@ public class ClientData {
         /**
          * Method profiling status: unknown.
          *
-         * <p>This happens right after a {@link ClientImpl} is discovered by the {@link
-         * AndroidDebugBridge}, and before the {@link ClientImpl} answered the query regarding its
-         * method profiling status.
+         * <p>This happens right after a Client is discovered by the {@link AndroidDebugBridge}, and
+         * before the Client answered the query regarding its method profiling status.
          *
-         * @see ClientImpl#requestMethodProfilingStatus()
+         * @see Client#requestMethodProfilingStatus()
          */
         UNKNOWN,
-        /** Method profiling status: the {@link ClientImpl} is not profiling method calls. */
+        /** Method profiling status: the Client is not profiling method calls. */
         OFF,
-        /** Method profiling status: the {@link ClientImpl} is tracing method calls. */
+        /** Method profiling status: the Client is tracing method calls. */
         TRACER_ON,
-        /** Method profiling status: the {@link ClientImpl} is being profiled via sampling. */
+        /** Method profiling status: the Client is being profiled via sampling. */
         SAMPLER_ON
     }
 
@@ -114,9 +111,11 @@ public class ClientData {
 
     /**
      * String for feature enabling direct streaming of method profiling data
+     *
      * @see #hasFeature(String)
      */
-    public static final String FEATURE_PROFILING_STREAMING = "method-trace-profiling-streaming"; //$NON-NLS-1$
+    public static final String FEATURE_PROFILING_STREAMING =
+            "method-trace-profiling-streaming"; //$NON-NLS-1$
 
     /**
      * String for feature enabling sampling profiler.
@@ -705,7 +704,7 @@ public class ClientData {
      * Returns the list of threads as {@link ThreadInfo} objects.
      *
      * <p>The list is empty until a thread update was requested with {@link
-     * ClientImpl#requestThreadUpdate()}.
+     * Client#requestThreadUpdate()}.
      */
     public synchronized ThreadInfo[] getThreads() {
         Collection<ThreadInfo> threads = mThreadMap.values();
@@ -724,14 +723,14 @@ public class ClientData {
     /**
      * Returns the list of {@link NativeAllocationInfo}.
      *
-     * @see ClientImpl#requestNativeHeapInformation()
+     * @see Client#requestNativeHeapInformation()
      */
     public synchronized List<NativeAllocationInfo> getNativeAllocationList() {
         return Collections.unmodifiableList(mNativeAllocationList);
     }
 
     /**
-     * adds a new {@link NativeAllocationInfo} to the {@link ClientImpl}
+     * adds a new {@link NativeAllocationInfo} to the Client
      *
      * @param allocInfo The {@link NativeAllocationInfo} to add.
      */
@@ -747,7 +746,7 @@ public class ClientData {
     /**
      * Returns the total native memory.
      *
-     * @see ClientImpl#requestNativeHeapInformation()
+     * @see Client#requestNativeHeapInformation()
      */
     public synchronized int getTotalNativeMemory() {
         return mNativeTotalMemory;
@@ -775,7 +774,7 @@ public class ClientData {
     /**
      * Returns the allocation tracking status.
      *
-     * @see ClientImpl#requestAllocationStatus()
+     * @see Client#requestAllocationStatus()
      */
     public synchronized AllocationTrackingStatus getAllocationStatus() {
         return mAllocationStatus;
@@ -788,7 +787,7 @@ public class ClientData {
     /**
      * Returns the raw data for tracked allocations.
      *
-     * @see ClientImpl#requestAllocationDetails()
+     * @see Client#requestAllocationDetails()
      */
     public synchronized byte[] getAllocationsData() {
         return mAllocationsData;
@@ -802,7 +801,7 @@ public class ClientData {
     /**
      * Returns the list of tracked allocations.
      *
-     * @see ClientImpl#requestAllocationDetails()
+     * @see Client#requestAllocationDetails()
      */
     @Nullable
     public synchronized AllocationInfo[] getAllocations() {
@@ -817,7 +816,7 @@ public class ClientData {
     }
 
     /**
-     * Returns true if the {@link ClientImpl} supports the given <var>feature</var>
+     * Returns true if the Client supports the given <var>feature</var>
      *
      * @param feature The feature to test.
      * @return true if the feature is supported
@@ -856,7 +855,7 @@ public class ClientData {
     /**
      * Returns the method profiling status.
      *
-     * @see ClientImpl#requestMethodProfilingStatus()
+     * @see Client#requestMethodProfilingStatus()
      */
     public synchronized MethodProfilingStatus getMethodProfilingStatus() {
         return mProfilingStatus;

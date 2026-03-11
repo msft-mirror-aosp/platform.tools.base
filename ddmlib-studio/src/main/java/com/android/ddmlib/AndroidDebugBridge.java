@@ -19,8 +19,6 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ddmlib.clientmanager.ClientManager;
-import com.android.ddmlib.internal.ClientImpl;
-import com.android.ddmlib.internal.DefaultJdwpProcessorFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -57,9 +55,7 @@ public class AndroidDebugBridge {
     /** Default timeout used when starting the ADB server */
     public static final int DEFAULT_START_ADB_TIMEOUT_MILLIS = 20_000;
 
-    private static JdwpTracerFactory sJdwpTracerFactory = new DefaultJdwpTracerFactory();
 
-    private static JdwpProcessorFactory sJdwpProcessorFactory = new DefaultJdwpProcessorFactory();
 
     /**
      * Classes which implement this interface provide a method that deals with {@link
@@ -136,8 +132,7 @@ public class AndroidDebugBridge {
     }
 
     /**
-     * Classes which implement this interface provide methods that deal with {@link ClientImpl}
-     * changes.
+     * Classes which implement this interface provide methods that deal with {@link Client} changes.
      */
     public interface IClientChangeListener {
         /**
@@ -147,10 +142,10 @@ public class AndroidDebugBridge {
          *
          * @param client the updated client.
          * @param changeMask the bit mask describing the changed properties. It can contain any of
-         *     the following values: {@link ClientImpl#CHANGE_INFO}, {@link
-         *     ClientImpl#CHANGE_DEBUGGER_STATUS}, {@link ClientImpl#CHANGE_THREAD_MODE}, {@link
-         *     ClientImpl#CHANGE_THREAD_DATA}, {@link ClientImpl#CHANGE_HEAP_MODE}, {@link
-         *     ClientImpl#CHANGE_HEAP_DATA}, {@link ClientImpl#CHANGE_NATIVE_HEAP_DATA}
+         *     the following values: {@link Client#CHANGE_INFO}, {@link
+         *     Client#CHANGE_DEBUGGER_STATUS}, {@link Client#CHANGE_THREAD_MODE}, {@link
+         *     Client#CHANGE_THREAD_DATA}, {@link Client#CHANGE_HEAP_MODE}, {@link
+         *     Client#CHANGE_HEAP_DATA}, {@link Client#CHANGE_NATIVE_HEAP_DATA}
          */
         void clientChanged(@NonNull Client client, int changeMask);
     }
@@ -286,7 +281,7 @@ public class AndroidDebugBridge {
 
     /**
      * Returns whether the ddmlib is setup to support monitoring and interacting with {@link
-     * ClientImpl}s running on the {@link IDevice}s.
+     * Client}s running on the {@link IDevice}s.
      */
     public static boolean getClientSupport() {
         delegateIsUsed = true;
@@ -487,7 +482,7 @@ public class AndroidDebugBridge {
 
     /**
      * Adds the listener to the collection of listeners who will be notified when a {@link IDevice}
-     * is connected, disconnected, or when its properties or its {@link ClientImpl} list changed, by
+     * is connected, disconnected, or when its properties or its {@link Client} list changed, by
      * sending it one of the messages defined in the {@link IDeviceChangeListener} interface.
      *
      * @param listener The listener which should be notified.
@@ -500,7 +495,7 @@ public class AndroidDebugBridge {
 
     /**
      * Removes the listener from the collection of listeners who will be notified when a {@link
-     * IDevice} is connected, disconnected, or when its properties or its {@link ClientImpl} list
+     * IDevice} is connected, disconnected, or when its properties or its {@link Client} list
      * changed.
      *
      * @param listener The listener which should no longer be notified.
@@ -518,8 +513,8 @@ public class AndroidDebugBridge {
     }
 
     /**
-     * Adds the listener to the collection of listeners who will be notified when a {@link
-     * ClientImpl} property changed, by sending it one of the messages defined in the {@link
+     * Adds the listener to the collection of listeners who will be notified when a {@link Client}
+     * property changed, by sending it one of the messages defined in the {@link
      * IClientChangeListener} interface.
      *
      * @param listener The listener which should be notified.
@@ -532,7 +527,7 @@ public class AndroidDebugBridge {
 
     /**
      * Removes the listener from the collection of listeners who will be notified when a {@link
-     * ClientImpl} property changes.
+     * Client} property changes.
      *
      * @param listener The listener which should no longer be notified.
      */
@@ -689,7 +684,7 @@ public class AndroidDebugBridge {
     }
 
     /**
-     * Notify the listener of a modified {@link ClientImpl}.
+     * Notify the listener of a modified {@link Client}.
      *
      * <p>The notification of the listeners is done in a synchronized block. It is important to
      * expect the listeners to potentially access various methods of {@link IDevice} as well as
@@ -726,23 +721,5 @@ public class AndroidDebugBridge {
             throws TimeoutException, AdbCommandRejectedException, IOException {
         delegateIsUsed = true;
         return delegate.queryFeatures(adbFeaturesRequest);
-    }
-
-    public static void setJdwpTracerFactory(@NonNull JdwpTracerFactory factory) {
-        sJdwpTracerFactory = factory;
-    }
-
-    @NonNull
-    public static DDMLibJdwpTracer newJdwpTracer() {
-        return sJdwpTracerFactory.newJwpTracer();
-    }
-
-    public static void setJdwpProcessorFactory(@NonNull JdwpProcessorFactory factory) {
-        sJdwpProcessorFactory = factory;
-    }
-
-    @NonNull
-    public static JdwpProcessor newProcessor() {
-        return sJdwpProcessorFactory.newProcessor();
     }
 }

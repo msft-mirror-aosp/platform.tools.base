@@ -18,8 +18,9 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.clientmanager.ClientManager;
 import com.android.ddmlib.idevicemanager.IDeviceManagerFactory;
-import com.android.ddmlib.internal.ClientImpl;
+
 import com.google.common.collect.ImmutableMap;
+
 import java.util.Map;
 
 /**
@@ -53,7 +54,7 @@ public class AdbInitOptions {
      *
      * <p>Note that client support does not prevent debugging of applications running on devices. It
      * lets debuggers connect to <code>ddmlib</code> which acts as a proxy between the debuggers and
-     * the applications to debug. See {@link ClientImpl#getDebuggerListenPort()}.
+     * the applications to debug. See {@link Client#getDebuggerListenPort()}.
      */
     public final boolean clientSupport;
 

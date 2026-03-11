@@ -16,9 +16,8 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.internal.ProfileableClientImpl;
 
-/** Contains the data of a {@link ProfileableClientImpl}. */
+/** Contains the data of a ProfileableClient. */
 public class ProfileableClientData {
     // the client's process ID
     private final int mPid;

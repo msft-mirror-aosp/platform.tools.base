@@ -15,13 +15,12 @@
  */
 package com.android.ddmlib;
 
-import static com.android.ddmlib.internal.jdwp.chunkhandler.ChunkHandler.type;
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public abstract class DebugViewDumpHandler {
+
     /** Enable/Disable tracing of OpenGL calls. */
     public static final int CHUNK_VUGL = type("VUGL");
 
@@ -68,5 +67,17 @@ public abstract class DebugViewDumpHandler {
     /** Utility function to copy a String out of a ByteBuffer. */
     public static String getString(ByteBuffer buf, int len) {
         return ByteBufferUtil.getString(buf, len);
+    }
+
+    public static int type(String typeName) {
+        int val = 0;
+        if (typeName.length() != 4) {
+            return 0;
+        }
+        for (int i = 0; i < 4; i++) {
+            val <<= 8;
+            val |= (byte) typeName.charAt(i);
+        }
+        return val;
     }
 }
