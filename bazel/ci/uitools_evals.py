@@ -27,7 +27,11 @@ def _get_uitools_evals_tests(build_env: bazel.BuildEnv) -> List[str]:
 def uitools_evals(build_env: bazel.BuildEnv):
   """Runs uitools evals tests."""
   target_tests = _get_uitools_evals_tests(build_env)
-  test_result = studio.run_tests(build_env, _FLAGS, target_tests)
+  flags = _FLAGS + [
+      f'--test_env=AB_BUILD_ID={build_env.build_number}',
+      f'--test_env=AB_BUILD_BRANCH={build_env.branch}',
+  ]
+  test_result = studio.run_tests(build_env, flags, target_tests)
 
   if not studio.is_build_successful(test_result):
     studio.copy_bazel_logs(build_env)
