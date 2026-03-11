@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.SdkConstants
 import com.android.Version
 import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.artifact.SingleArtifact
@@ -55,7 +56,6 @@ import com.android.builder.testing.api.DeviceConfigProvider
 import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
 import java.io.File
-import java.io.FileWriter
 import java.util.Locale
 import java.util.Properties
 import kotlin.collections.asIterable
@@ -108,8 +108,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
    */
   @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val apkBundle: ConfigurableFileCollection
 
+  /** Comma-separated list of paths to utility APKs to be installed before testing. */
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testUtilApks: ConfigurableFileCollection
+
   /** The module name within the bundle that contains the tests. */
   @get:Input @get:Optional abstract val bundleModuleName: Property<String>
+
+  /** The execution mode for the test suite. */
+  @get:Input @get:Optional abstract val executionMode: Property<String>
 
   @get:OutputFile abstract val engineInputPropertiesFiles: RegularFileProperty
 
@@ -237,6 +243,19 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           buildTools.adbExecutable().get().asFile.absolutePath,
         ),
       )
+
+    if (!testUtilApks.isEmpty) {
+      standardInputs.add(
+        TestEngineInputProperty(
+          AgpTestSuiteInputParameters.TEST_UTIL_APKS.propertyName,
+          testUtilApks.joinToString(separator = ",") { it.absolutePath },
+        )
+      )
+    }
+
+    if (executionMode.isPresent) {
+      standardInputs.add(TestEngineInputProperty(AgpTestSuiteInputParameters.ANDROID_TEST_EXECUTION_MODE.propertyName, executionMode.get()))
+    }
 
     if (!sourceFolders.isEmpty) {
       standardInputs.add(
@@ -387,6 +406,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       }
 
       task.androidDeviceSerials.setDisallowChanges(task.project.providers.environmentVariable("ANDROID_SERIAL"))
+
+      task.executionMode.setDisallowChanges(creationConfig.global.androidTestOptions.execution)
+
+      val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
+      if (androidTestUtil != null) {
+        task.testUtilApks.from(androidTestUtil)
+      }
 
       val localDevices = creationConfig.global.androidTestOptions.managedDevices.localDevices
       testSuiteTarget.targetDevices.forEach { task.managedDevices.add(localDevices.getByName(it) as ManagedVirtualDevice) }
@@ -557,6 +583,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.androidDeviceSerials.setDisallowChanges(connectedCheckSerials.map { it.joinToString(",") })
 
+      task.executionMode.setDisallowChanges(globalConfig.androidTestOptions.execution)
+
+      val androidTestUtil = task.project.configurations.findByName(SdkConstants.GRADLE_ANDROID_TEST_UTIL_CONFIGURATION)
+      if (androidTestUtil != null) {
+        task.testUtilApks.from(androidTestUtil)
+      }
+
       val classesDir = task.project.layout.buildDirectory.file(task.name)
       UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
       task.testClassesDirs = creationConfig.services.fileCollection().also { it.from(classesDir) }
@@ -601,6 +634,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // These are the AndroidTestEngine specific parameters. Consider making it a part of official
       // AgpTestSuiteInputParameters if they are useful for other JUnit engines.
       task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
+      task.engineInputProperties.put(
+        "android-test.instrumentation-args",
+        testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
+      )
       task.engineInputProperties.put("android-test.uninstall-after-tests", "true")
 
       if (testData is BundleTestDataImpl) {
@@ -729,7 +766,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           testEngineInputProperty ->
           properties.put(testEngineInputProperty.name, testEngineInputProperty.value)
         }
-        FileWriter(into).use { properties.store(it, "Input properties for test engine") }
+        into.writer(Charsets.UTF_8).use { properties.store(it, "Input properties for test engine") }
       }
     }
   }

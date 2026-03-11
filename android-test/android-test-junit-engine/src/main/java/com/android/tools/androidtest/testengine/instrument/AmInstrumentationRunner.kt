@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,6 +41,8 @@ class AmInstrumentationRunner(
   private val deviceSerial: String,
   private val instrumentationRunnerClass: String,
   private val instrumentationTargetPackageId: String,
+  private val executionMode: String? = null,
+  private val instrumentationArgs: Map<String, String> = emptyMap(),
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
   private val logger: Logger = Logger.getLogger(AmInstrumentationRunner::class.java.name),
   private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
@@ -54,7 +56,12 @@ class AmInstrumentationRunner(
    */
   fun runAmInstrumentCommand() {
     val command = getAmInstrumentCmd()
-    logger.info("Running instrumentation: adb ${command.joinToString(" ")}")
+    val shellIdx = command.indexOf("shell")
+    val adbPath = command.first()
+    val adbArgs = command.subList(1, shellIdx)
+    val shellCommand = command.subList(shellIdx + 1, command.size)
+
+    logger.info("Running instrumentation: $adbPath ${adbArgs.joinToString(" ")} shell \"${shellCommand.joinToString(" ")}\"")
     val process = processBuilder(command).start()
     val parser = AmInstrumentationParser(listeners = listeners)
     val handler =
@@ -74,17 +81,12 @@ class AmInstrumentationRunner(
   }
 
   private fun getAmInstrumentCmd(): List<String> {
-    return listOf(
-      adb.absolutePath,
-      "-s",
-      deviceSerial,
-      "shell",
-      "am",
-      "instrument",
-      "-r", // Outputs results in raw format
-      "-w", // Forces am instrument to wait until the instrumentation terminates before
-      // terminating itself.
-      "${instrumentationTargetPackageId}/${instrumentationRunnerClass}",
-    )
+    return AmInstrumentCommandBuilder()
+      .setAdbPath(adb.absolutePath)
+      .setDeviceSerial(deviceSerial)
+      .setInstrumentationRunner(instrumentationTargetPackageId, instrumentationRunnerClass)
+      .setExecutionMode(executionMode)
+      .addInstrumentationArgs(instrumentationArgs)
+      .build()
   }
 }

@@ -18,9 +18,11 @@ package com.android.tools.androidtest.testengine
 
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.AAPT2_PATH
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ADB_PATH
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.APK_INSTALL_OPTIONS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.DEVICE_SERIALS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTALL_TIMEOUT_MS
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.RESULTS_DIR
@@ -79,6 +81,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val testUtilApks: List<File> by lazy { getTestUtilApks() }
   val apkInstallOptions: List<String> = get(APK_INSTALL_OPTIONS)?.split(",")?.map { opt -> opt.trim() } ?: listOf()
   val uninstallApksAfterTests: Boolean = get(UNINSTALL_AFTER_TESTS)?.toBoolean() ?: true
+  val executionMode: String? = get(ANDROID_TEST_EXECUTION_MODE, AgpTestSuiteInput.ANDROID_TEST_EXECUTION_MODE)
 
   val instrumentationRunnerClass: String =
     get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")
@@ -86,13 +89,23 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
     get(INSTRUMENTATION_TARGET_PACKAGE_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID)
       ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
 
+  val instrumentationArgs: Map<String, String> =
+    get(INSTRUMENTATION_ARGS)
+      ?.split(",")
+      ?.mapNotNull { arg ->
+        val parts = arg.split("=", limit = 2)
+        if (parts.size == 2) parts[0].trim() to parts[1].trim() else null
+      }
+      ?.toMap() ?: emptyMap()
+
   val resultsDir: File? = get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR)?.let { File(it) }
 
   fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
 
   fun getTestApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_APKS, AgpTestSuiteInput.TESTING_APK, deviceSerial))
 
-  fun getTestUtilApks(deviceSerial: String? = null): List<File> = resolveApks(get(TEST_UTIL_APKS, deviceSerial = deviceSerial))
+  fun getTestUtilApks(deviceSerial: String? = null): List<File> =
+    resolveApks(get(TEST_UTIL_APKS, AgpTestSuiteInput.TEST_UTIL_APKS, deviceSerial))
 
   private fun resolveApks(value: String?): List<File> {
     return value

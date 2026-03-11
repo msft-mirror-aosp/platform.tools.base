@@ -51,6 +51,12 @@ object AndroidTestConfigurationKeys {
   /** The package ID of the instrumentation target. */
   const val INSTRUMENTATION_TARGET_PACKAGE_ID = "android-test.instrumentation-target-package-id"
 
+  /** Comma-separated list of extra instrumentation arguments in key=value format. */
+  const val INSTRUMENTATION_ARGS = "android-test.instrumentation-args"
+
   /** Path to the results directory. */
   const val RESULTS_DIR = "android-test.results-dir"
+
+  /** The execution mode for the test suite. */
+  const val ANDROID_TEST_EXECUTION_MODE = "android-test.execution-mode"
 }

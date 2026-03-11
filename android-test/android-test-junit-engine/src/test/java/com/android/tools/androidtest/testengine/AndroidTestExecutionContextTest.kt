@@ -96,4 +96,62 @@ class AndroidTestExecutionContextTest {
     assertThat(context.configuration.getTestedApks("serial2")).containsExactly(File("/path/to/generic.apk"))
     assertThat(context.configuration.getTestedApks()).containsExactly(File("/path/to/generic.apk"))
   }
+
+  @Test
+  fun `AndroidTestConfiguration parses executionMode`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE))
+      .thenReturn(Optional.of("ANDROIDX_TEST_ORCHESTRATOR"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.executionMode).isEqualTo("ANDROIDX_TEST_ORCHESTRATOR")
+  }
+
+  @Test
+  fun `AndroidTestConfiguration resolves device-specific testUtilApks`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1,serial2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_UTIL_APKS)).thenReturn(Optional.of("/path/to/generic_util.apk"))
+    whenever(configParams.get("${AndroidTestConfigurationKeys.TEST_UTIL_APKS}[serial1]"))
+      .thenReturn(Optional.of("/path/to/serial1_util.apk"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.getTestUtilApks("serial1")).containsExactly(File("/path/to/serial1_util.apk"))
+    assertThat(context.configuration.getTestUtilApks("serial2")).containsExactly(File("/path/to/generic_util.apk"))
+    assertThat(context.configuration.getTestUtilApks()).containsExactly(File("/path/to/generic_util.apk"))
+  }
+
+  @Test
+  fun `AndroidTestConfiguration parses instrumentationArgs`() {
+    val configParams = mock<ConfigurationParameters>()
+    whenever(configParams.get(AndroidTestConfigurationKeys.ADB_PATH)).thenReturn(Optional.of("/path/to/adb"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.AAPT2_PATH)).thenReturn(Optional.of("/path/to/aapt2"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS))
+      .thenReturn(Optional.of("clearPackageData=true,useTestStorageService=false"))
+
+    val request = mock<ExecutionRequest>()
+    whenever(request.configurationParameters).thenReturn(configParams)
+
+    val context = AndroidTestExecutionContext(request)
+    assertThat(context.configuration.instrumentationArgs).containsExactly("clearPackageData", "true", "useTestStorageService", "false")
+  }
 }

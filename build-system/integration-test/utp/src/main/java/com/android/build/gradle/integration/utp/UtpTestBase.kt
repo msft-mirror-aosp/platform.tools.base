@@ -445,7 +445,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestrator() {
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure { enableAndroidTestOrchestrator() }
@@ -799,9 +798,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }

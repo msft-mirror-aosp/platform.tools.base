@@ -95,6 +95,8 @@ class AndroidDeviceDescriptor(
         deviceSerial,
         config.instrumentationRunnerClass,
         config.instrumentationTargetPackageId,
+        config.executionMode,
+        config.instrumentationArgs,
         setOf(listener),
       )
 
