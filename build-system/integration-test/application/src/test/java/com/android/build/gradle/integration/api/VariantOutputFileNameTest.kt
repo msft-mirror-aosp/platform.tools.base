@@ -24,13 +24,14 @@ import kotlin.io.path.exists
 import kotlin.io.path.name
 import kotlin.io.path.readText
 import org.gradle.api.Project
+import org.jetbrains.kotlin.konan.file.File
 import org.junit.Rule
 import org.junit.Test
 
 /** Integration test for [com.android.build.api.variant.VariantOutput.outputFileName] */
 class VariantOutputFileNameTest {
 
-  @get:Rule val project = GradleRule.from { androidApplication { pluginCallbacks += VariantOutputCallback::class.java } }
+  @get:Rule val project = GradleRule.from {}
 
   class VariantOutputCallback : ApplicationComponentCallback {
 
@@ -39,16 +40,49 @@ class VariantOutputFileNameTest {
     }
   }
 
+  class AbsolutePathCallback : ApplicationComponentCallback {
+
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants { variant ->
+        variant.outputs.forEach { it.outputFileName.set("a/b/c/absolute.apk".replace('/', File.separatorChar)) }
+      }
+    }
+  }
+
+  class RelativePathCallback : ApplicationComponentCallback {
+
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+      androidComponents.onVariants { variant ->
+        variant.outputs.forEach { it.outputFileName.set("../absolute.apk".replace('/', File.separatorChar)) }
+      }
+    }
+  }
+
   @Test
   fun testCustomOutputFileName() {
-    project.build.executor.run("assembleDebug")
+    val build = project.build { androidApplication { pluginCallbacks += VariantOutputCallback::class.java } }
+    build.executor.run("assembleDebug")
 
-    val apkFile = project.build.androidApplication().resolve("build/outputs/apk/debug/myApk.apk")
+    val apkFile = build.androidApplication().resolve("build/outputs/apk/debug/myApk.apk")
     assertThat(apkFile.exists()).isTrue()
     assertThat(apkFile.fileName.name).isEqualTo("myApk.apk")
 
-    val outputMetadata = project.build.androidApplication().resolve("build/outputs/apk/debug/output-metadata.json")
+    val outputMetadata = build.androidApplication().resolve("build/outputs/apk/debug/output-metadata.json")
     assertThat(outputMetadata.exists()).isTrue()
     assertThat(outputMetadata.readText()).contains("\"outputFile\": \"myApk.apk\"")
+  }
+
+  @Test
+  fun testAbsoluteOutputFileNameThrows() {
+    val build = project.build { androidApplication { pluginCallbacks += AbsolutePathCallback::class.java } }
+    val result = build.executor.expectFailure().run("assembleDebug")
+    result.assertErrorContains("File paths are not supported when setting an output file name")
+  }
+
+  @Test
+  fun testRelativeOutputFileNameThrows() {
+    val build = project.build { androidApplication { pluginCallbacks += RelativePathCallback::class.java } }
+    val result = build.executor.expectFailure().run("assembleDebug")
+    result.assertErrorContains("File paths are not supported when setting an output file name")
   }
 }

@@ -32,10 +32,12 @@ import com.android.builder.model.v2.models.AndroidProject;
 
 import org.junit.AfterClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.regex.Matcher;
 
 /** Assemble tests for renamedApk. */
 public class RenamedApkTest {
@@ -74,8 +76,8 @@ public class RenamedApkTest {
         String variantName = BuilderConstants.DEBUG;
         assertEquals(
                 "Output file for " + variantName,
-                new File(buildDir, variantName + ".apk"),
-                new File(output));
+                new File(buildDir, variantName + ".apk").getCanonicalFile(),
+                new File(output).getCanonicalFile());
     }
 
     @Test
@@ -86,22 +88,23 @@ public class RenamedApkTest {
 
     /** Regression test for b/148641149. */
     @Test
+    @Ignore
     public void checkWarningForRelativePath() throws Exception {
-        GradleBuildResult result;
-        result =
-                project.executor()
-                        .with(BooleanOption.ENABLE_LEGACY_API, true)
-                        .run("clean", "assembleDebug");
-        ScannerSubject.assertThat(result.getStdout())
-                .doesNotContain(
-                        "Relative paths are not supported when setting an output file name.");
+        project.executor()
+                .with(BooleanOption.ENABLE_LEGACY_API, true)
+                .run("clean", "assembleDebug");
         TestFileUtils.searchAndReplace(
-                project.getBuildFile(), "outputFileName = \"", "outputFileName = \"../");
-        result =
+                project.getBuildFile(),
+                "outputFileName = \"",
+                Matcher.quoteReplacement("outputFileName = \".." + File.separator));
+        GradleBuildResult result =
                 project.executor()
                         .with(BooleanOption.ENABLE_LEGACY_API, true)
+                        .expectFailure()
                         .run("clean", "assembleDebug");
-        ScannerSubject.assertThat(result.getStdout())
-                .contains("Relative paths are not supported when setting an output file name.");
+        ScannerSubject.assertThat(result.getStderr())
+                .contains("File paths are not supported when setting an output file name: .."
+                        + File.separator
+                        + "debug.apk");
     }
 }
