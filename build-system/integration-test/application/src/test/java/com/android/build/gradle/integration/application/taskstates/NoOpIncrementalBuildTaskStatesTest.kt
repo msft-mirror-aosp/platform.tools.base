@@ -94,6 +94,8 @@ class NoOpIncrementalBuildTaskStatesTest {
             ),
         SKIPPED to
           setOf(
+            ":app:compileDebugKotlin",
+            ":app:compileDebugUnitTestKotlin",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
             ":app:processDebugJavaRes",
@@ -103,7 +105,7 @@ class NoOpIncrementalBuildTaskStatesTest {
       )
   }
 
-  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.disableBuiltInKotlin().build()
+  @get:Rule var project = EmptyActivityProjectBuilder().also { it.withUnitTest = true }.build()
 
   @Before
   fun setUp() {

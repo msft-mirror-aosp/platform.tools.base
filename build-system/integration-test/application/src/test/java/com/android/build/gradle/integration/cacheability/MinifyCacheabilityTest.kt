@@ -99,7 +99,14 @@ class MinifyCacheabilityTest {
           ":writeMinifiedSigningConfigVersions",
           /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask] */
         ),
-      SKIPPED to setOf(":assembleMinified", ":mergeMinifiedNativeDebugMetadata", ":mergeMinifiedNativeLibs", ":stripMinifiedDebugSymbols"),
+      SKIPPED to
+        setOf(
+          ":assembleMinified",
+          ":compileMinifiedKotlin",
+          ":mergeMinifiedNativeDebugMetadata",
+          ":mergeMinifiedNativeLibs",
+          ":stripMinifiedDebugSymbols",
+        ),
       FAILED to setOf(),
     )
 
@@ -111,7 +118,7 @@ class MinifyCacheabilityTest {
 
   private fun setUpTestProject(projectName: String): GradleTestProject {
 
-    return GradleTestProject.builder().withName(projectName).fromTestProject("minify").disableBuiltInKotlin().create()
+    return GradleTestProject.builder().withName(projectName).fromTestProject("minify").create()
   }
 
   @Before

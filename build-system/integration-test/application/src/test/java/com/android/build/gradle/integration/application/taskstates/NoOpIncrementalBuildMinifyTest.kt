@@ -144,7 +144,11 @@ class NoOpIncrementalBuildMinifyTest {
           ),
         SKIPPED to
           setOf(
+            ":compileDebugAndroidTestKotlin",
+            ":compileDebugKotlin",
             ":compileDebugUnitTestJavaWithJavac",
+            ":compileDebugUnitTestKotlin",
+            ":compileReleaseKotlin",
             ":extractReleaseNativeSymbolTables",
             ":lint",
             ":mergeDebugAndroidTestNativeLibs",
@@ -173,8 +177,7 @@ class NoOpIncrementalBuildMinifyTest {
       )
   }
 
-  @get:Rule
-  val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
 
   @Before
   fun setUp() {

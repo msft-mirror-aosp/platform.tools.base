@@ -219,15 +219,18 @@ class DynamicFeaturesCacheabilityTest {
         SKIPPED to
           setOf(
             ":app:assembleDebug",
+            ":app:compileDebugKotlin",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
             ":app:processDebugJavaRes",
             ":app:stripDebugDebugSymbols",
             ":feature1:assembleDebug",
+            ":feature1:compileDebugKotlin",
             ":feature1:mergeDebugNativeLibs",
             ":feature1:processDebugJavaRes",
             ":feature1:stripDebugDebugSymbols",
             ":feature2:assembleDebug",
+            ":feature2:compileDebugKotlin",
             ":feature2:mergeDebugNativeLibs",
             ":feature2:processDebugJavaRes",
             ":feature2:stripDebugDebugSymbols",
@@ -243,7 +246,7 @@ class DynamicFeaturesCacheabilityTest {
   @get:Rule val projectCopy2 = setUpTestProject("projectCopy2")
 
   private fun setUpTestProject(projectName: String): GradleTestProject {
-    return GradleTestProject.builder().withName(projectName).fromTestProject("dynamicApp").disableBuiltInKotlin().create()
+    return GradleTestProject.builder().withName(projectName).fromTestProject("dynamicApp").create()
   }
 
   @Before
