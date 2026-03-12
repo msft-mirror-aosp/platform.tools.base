@@ -11,6 +11,8 @@ _ARTIFACTS = [
     ('tools/adt/idea/studio/android-studio.linux.zip', 'artifacts'),
     ('tools/adt/idea/studio/android-studio.win.zip', 'artifacts'),
     ('tools/adt/idea/studio/android-studio.mac.zip', 'artifacts'),
+    ('tools/vendor/google/android/android', 'artifacts'),
+    ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
 ]
 
 
@@ -23,6 +25,8 @@ def studio_mac(build_env: bazel.BuildEnv) -> None:
       build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   )
   targets = test_targets + [
+      '//tools/vendor/google/android:android',
+      '//tools/vendor/google/android:android-cli.zip',
       '//tools/vendor/google/skia:skiaparser',
       '//tools/vendor/google/skia:skia_test_support',
       '//tools/base/profiler/native/trace_processor_daemon',
