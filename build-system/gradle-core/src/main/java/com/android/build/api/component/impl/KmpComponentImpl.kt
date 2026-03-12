@@ -382,11 +382,11 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
     override val artProfile: File? = null
     override val sourceProviderNames: List<String> = emptyList()
     override val multiFlavorSourceProvider: DefaultAndroidSourceSet? = null
-    override val aarKeepRules: FlatSourceDirectoriesImpl =
+    override val aarKeepRules =
       KotlinMultiplatformFlatSourceDirectoriesImpl(
         name = SourceType.AAR_KEEP_RULES.folder,
         variantServices = variantServices,
-        variantDslFilters = PatternSet().also { filter -> filter.exclude("**/*.keep") },
+        variantDslFilters = PatternSet().also { filter -> filter.include("**/*.keep") },
       )
 
     override fun aarKeepRules(action: (FlatSourceDirectoriesImpl) -> Unit) = action(aarKeepRules)
@@ -465,6 +465,16 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
         androidKotlinCompilation.allKotlinSourceSets.flatMap { sourceSet ->
           sourceSet.kotlin.srcDirs.map { srcDir ->
             FileBasedDirectoryEntryImpl(name = sourceSet.name, directory = File(srcDir.parentFile, SourceType.KEEP_RULES.folder))
+          }
+        }
+      }
+    )
+
+    sources.aarKeepRules.addStaticSources(
+      services.provider {
+        androidKotlinCompilation.allKotlinSourceSets.flatMap { sourceSet ->
+          sourceSet.kotlin.srcDirs.map { srcDir ->
+            FileBasedDirectoryEntryImpl(name = sourceSet.name, directory = File(srcDir.parentFile, SourceType.AAR_KEEP_RULES.folder))
           }
         }
       }

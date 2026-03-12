@@ -158,6 +158,39 @@ class KotlinMultiplatformAndroidMinificationTest {
   }
 
   @Test
+  fun testProguardRulesFromAarKeepRulesSourcesInKmpLib() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/aarKeepRules/rules.keep"),
+      """
+      -keep public class com.example.kmpfirstlib.KmpAndroidFirstLibClass {
+          java.lang.String callCommonLibClass();
+          java.lang.String callAndroidLibClass();
+       }
+
+       -keep public class com.example.kmpfirstlib.KmpAndroidFirstLibJavaClass {
+          java.lang.String callCommonLibClass();
+          java.lang.String callAndroidLibClass();
+       }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":kmpFirstLib:assemble")
+
+    project.getSubproject("kmpFirstLib").assertAar(AarSelector.NO_BUILD_TYPE) {
+      mainJar {
+        classes()
+          .containsExactly(
+            "com/example/kmpfirstlib/KmpAndroidActivity",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+            "com/example/kmpfirstlib/KmpAndroidFirstLibJavaClass",
+          )
+        resources().containsExactly("kmp_resource.txt")
+      }
+    }
+  }
+
+  @Test
   fun testProguardRulesInApp() {
     FileUtils.writeToFile(
       project.getSubproject("app").file("proguard-rules.pro"),
