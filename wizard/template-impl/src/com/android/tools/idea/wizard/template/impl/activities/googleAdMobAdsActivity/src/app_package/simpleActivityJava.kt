@@ -78,7 +78,7 @@ import androidx.annotation.NonNull;
           id = "ad_view",)};
         AdRequest adRequest = new AdRequest.Builder()
                 .setRequestAgent("android_studio:ad_template").build();
-        adView.loadInterstitialAd(adRequest);
+        adView.loadAd(adRequest);
     """
       AdFormat.Interstitial ->
         """
