@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_import", "java_library")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_test")
 load("//tools/base/bazel:jvm_import.bzl", "jvm_import")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BUILD_VERSION")
 
@@ -72,6 +72,7 @@ kotlin_library(
     srcs = glob([
         "src/main/java/com/android/tools/deployer/model/*.java",
         "src/main/java/com/android/tools/deployer/model/*.kt",
+        "src/main/java/com/android/tools/deployer/model/activate/*.kt",
         "src/main/java/com/android/tools/deployer/model/component/*.java",
     ]),
     visibility = ["//visibility:public"],
@@ -81,7 +82,6 @@ kotlin_library(
         "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/manifest-parser:tools.manifest-parser",
-        "//tools/base/sdk-common:tools.sdk-common",
         "//tools/base/tracer:tools.tracer",
         "@maven//:com.google.guava.guava",
         "@maven//:org.jetbrains.annotations",
@@ -121,6 +121,34 @@ kotlin_library(
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.xerial.sqlite-jdbc",
+    ],
+)
+
+# TODO:
+#
+# The run.cli related rules are just going to be temporary. It represent how we *might* integrate
+# into other headless caller of deployer. It will be remove shorty when the integration actually
+# happen.
+kotlin_library(
+    name = "run.cli-lib",
+    srcs = ["src/main/java/com/android/tools/deployer/cli/CliActivator.kt"],
+    deps = [
+        ":tools.deployer.model",
+        "//tools/base/adblib",
+        "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/common:tools.common",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+java_binary(
+    name = "run.cli",
+    data = glob(["src/test/resource/**"]),
+    main_class = "com.android.tools.deployer.cli.CliActivator",
+    runtime_deps = [
+        ":run.cli-lib",
     ],
 )
 
@@ -199,6 +227,7 @@ maven_library(
         "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.xerial.sqlite-jdbc",
     ],
 )
@@ -308,6 +337,25 @@ coverage_java_test(
         "@maven//:org.jetbrains.annotations",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
+    ],
+)
+
+kotlin_test(
+    name = "deployer.kotlin_tests",
+    srcs = [
+        "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
+        "src/test/java/com/android/tools/deployer/TestLogger.java",
+    ],
+    data = glob(["src/test/resource/**"]),
+    jvm_flags = ["-Dtest.suite.jar=deployer.kotlin_tests.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":tools.deployer",
+        ":tools.deployer.model",
+        "//tools/base/common:tools.common",
+        "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.guava.guava",
+        "@maven//:junit.junit",
     ],
 )
 

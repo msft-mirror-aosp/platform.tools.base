@@ -15,7 +15,6 @@
  */
 package com.android.tools.deployer
 
-import com.android.tools.deployer.model.App
 import java.nio.file.Path
 import org.junit.Assert
 import org.junit.Test
@@ -25,7 +24,7 @@ const val BASE = "tools/base/deploy/deployer/src/test/resource/apks/"
 class DeployStrategyReaderTest {
   @Test
   fun abiFilter() {
-    val app = App.fromStrategy(Path.of(BASE + "arch_filter.json"), TestLogger())
+    val app = DeployStrategyReader.fromStrategy(Path.of(BASE + "arch_filter.json"), TestLogger())
     Assert.assertEquals("com.example.simpleapp", app.appId)
     val strategies = app.allStrategies
     Assert.assertEquals(3, strategies.size)

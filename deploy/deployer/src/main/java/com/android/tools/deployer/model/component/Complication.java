@@ -15,11 +15,13 @@
  */
 package com.android.tools.deployer.model.component;
 
-
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
@@ -77,6 +79,27 @@ public class Complication extends WearComponent {
                 AppComponent.getFQEscapedName(param.watchFaceAppId, param.watchFaceName),
                 param.slot,
                 param.type.getTypeValue());
+    }
+
+    @Override
+    public ActivationCommands getActivationCommands(
+            @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
+        ComplicationParams params = ComplicationParams.parse(extraFlags);
+        if (activationMode.equals(Mode.DEBUG)) {
+            return new ActivationCommands(
+                    getSetUpAmDebugAppActivationCommand(),
+                    getSetUpDebugSurfaceDebugAppActivationCommand(),
+                    getAddComplicationActivationCommand(params));
+        } else {
+            return new ActivationCommands(getAddComplicationActivationCommand(params));
+        }
+    }
+
+    private ActivationCommand getAddComplicationActivationCommand(ComplicationParams params) {
+        return new ActivationCommand(
+                getAddComplicationCommand(params),
+                "Adding Complication for " + appId,
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 
     public enum ComplicationType {

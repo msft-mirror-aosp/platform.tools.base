@@ -21,10 +21,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.NullOutputReceiver;
+import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
+import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -34,6 +39,58 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class ComplicationTest {
+
+    @Test
+    public void testGetActivationCommands() throws ModelException {
+        ManifestAppComponentInfo info =
+                new ManifestAppComponentInfo(new XmlNode(), "com.example.myApp") {
+                    @Override
+                    public String getQualifiedName() {
+                        return "com.example.services.Complication";
+                    }
+                };
+        Complication complication = new Complication(info, "com.example.myApp", new TestLogger());
+        String flags = "debug.app.watchface com.example.WatchFaces$InnerWatchFace 1 LONG_TEXT";
+
+        // Test RUN mode
+        ActivationCommands runCommands =
+                complication.getActivationCommands(flags, AppComponent.Mode.RUN);
+        Assert.assertEquals(1, runCommands.size());
+        String expectedComplicationCommand =
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                    + " set-complication --ecn component"
+                    + " 'com.example.myApp/com.example.services.Complication' --ecn watchface"
+                    + " 'debug.app.watchface/com.example.WatchFaces\\$InnerWatchFace' --ei slot 1"
+                    + " --ei type 4";
+        Assert.assertEquals(expectedComplicationCommand, runCommands.get(0).getCommand());
+        Assert.assertEquals(
+                "Adding Complication for com.example.myApp", runCommands.get(0).getStatus());
+        Assert.assertTrue(runCommands.get(0).getChecker() instanceof BroadcastResultChecker);
+
+        // Test DEBUG mode
+        ActivationCommands debugCommands =
+                complication.getActivationCommands(flags, AppComponent.Mode.DEBUG);
+        Assert.assertEquals(3, debugCommands.size());
+        Assert.assertEquals(
+                "am set-debug-app -w 'com.example.myApp'", debugCommands.get(0).getCommand());
+        Assert.assertEquals(
+                "Setting debug app for com.example.myApp", debugCommands.get(0).getStatus());
+        Assert.assertTrue(debugCommands.get(0).getChecker() instanceof AmDebugAppResultChecker);
+
+        Assert.assertEquals(
+                "am broadcast -a com.google.android.wearable.app.DEBUG_SURFACE --es operation"
+                        + " set-debug-app --es package 'com.example.myApp'",
+                debugCommands.get(1).getCommand());
+        Assert.assertEquals(
+                "Setting debug app in Debug Surface for com.example.myApp",
+                debugCommands.get(1).getStatus());
+        Assert.assertTrue(debugCommands.get(1).getChecker() instanceof BroadcastResultChecker);
+
+        Assert.assertEquals(expectedComplicationCommand, debugCommands.get(2).getCommand());
+        Assert.assertEquals(
+                "Adding Complication for com.example.myApp", debugCommands.get(2).getStatus());
+        Assert.assertTrue(debugCommands.get(2).getChecker() instanceof BroadcastResultChecker);
+    }
 
     @Test
     public void testCommandSendToDevice() throws Exception {

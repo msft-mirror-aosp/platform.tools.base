@@ -20,15 +20,16 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommands;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
 import java.util.concurrent.TimeUnit;
 
 public abstract class AppComponent {
-    @NonNull protected final String appId;
+    @NonNull public final String appId;
 
-    @NonNull protected final ManifestAppComponentInfo info;
+    @NonNull public final ManifestAppComponentInfo info;
 
     @NonNull protected final ILogger logger;
 
@@ -36,6 +37,22 @@ public abstract class AppComponent {
     private final long SHELL_TIMEOUT = 15;
 
     private final TimeUnit SHELL_TIMEUNIT = TimeUnit.SECONDS;
+
+    /**
+     * IMPORTANT! ---------- The model API will be completely implementation free. It will provide
+     * information about the APK, services it has and what sort of ADB command needs to activate
+     * each service.
+     *
+     * <p>This mean each component should not directly address ddmlib objects anymore!
+     *
+     * <p>We are going to perform this migration step-wise by removing activate() and then replace
+     * it with calls to getActivationCommands. If the caller wants to error handle differently per
+     * individual command, they cal also call getXXXCommands(). For example, the previous
+     * setUpWatchFace() would now have a getSetUpWatchFaceCommand() so we can customize which error
+     * goes where.
+     */
+    public abstract ActivationCommands getActivationCommands(
+            @NonNull String extraFlags, Mode activationMode) throws ModelException;
 
     protected String getFQEscapedName() {
         return getFQEscapedName(appId, info.getQualifiedName());
@@ -79,4 +96,5 @@ public abstract class AppComponent {
         RUN,
         DEBUG
     }
+
 }

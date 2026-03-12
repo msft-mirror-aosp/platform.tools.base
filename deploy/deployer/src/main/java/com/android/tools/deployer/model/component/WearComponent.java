@@ -21,6 +21,9 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.MultiReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.AmDebugAppResultChecker;
+import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestAppComponentInfo;
 import com.android.utils.ILogger;
 
@@ -75,9 +78,11 @@ public abstract class WearComponent extends AppComponent {
             @NonNull ILogger logger) {
         super(appId, info, logger);
     }
+
     public static class DebugCommandReceiver extends MultiLineReceiver {
         private final @NotNull Pattern exceptionPattern = Pattern.compile("(Exception)");
         private boolean exceptionStatus = false;
+
         public boolean hasException() {
             return exceptionStatus;
         }
@@ -118,6 +123,20 @@ public abstract class WearComponent extends AppComponent {
         if (surfaceReceiver.resultCode != CommandResultReceiver.SUCCESS_CODE) {
             this.logger.warning("Warning: Debug Surface failed to set the debug app.");
         }
+    }
+
+    protected ActivationCommand getSetUpAmDebugAppActivationCommand() {
+        return new ActivationCommand(
+                String.format("%s '%s'", ShellCommand.AM_SET_DEBUG_APP, appId),
+                "Setting debug app for " + appId,
+                new AmDebugAppResultChecker(null, msg -> logger.warning(msg)));
+    }
+
+    protected ActivationCommand getSetUpDebugSurfaceDebugAppActivationCommand() {
+        return new ActivationCommand(
+                String.format("%s '%s'", ShellCommand.DEBUG_SURFACE_SET_DEBUG_APP, appId),
+                "Setting debug app in Debug Surface for " + appId,
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 
     protected void runStartCommand(

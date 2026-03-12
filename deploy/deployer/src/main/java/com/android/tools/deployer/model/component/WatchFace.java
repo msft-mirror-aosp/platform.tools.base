@@ -19,6 +19,9 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
 
@@ -51,9 +54,9 @@ public class WatchFace extends WearComponent {
             @NonNull IDevice device)
             throws ModelException {
         validate(extraFlags);
-        logger.info("Activating WatchFace '%s' %s",
-                    info.getQualifiedName(),
-                    activationMode.equals(Mode.DEBUG) ? "for debug" : "");
+        logger.info(
+                "Activating WatchFace '%s' %s",
+                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
 
         if (activationMode.equals(Mode.DEBUG)) {
             setUpAmDebugApp(device);
@@ -76,5 +79,24 @@ public class WatchFace extends WearComponent {
     @NonNull
     private String getStartWatchFaceCommand() {
         return ShellCommand.SET_WATCH_FACE + getFQEscapedName();
+    }
+
+    @Override
+    public ActivationCommands getActivationCommands(
+            @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
+        validate(extraFlags);
+        if (activationMode.equals(Mode.DEBUG)) {
+            return new ActivationCommands(
+                    getSetUpAmDebugAppActivationCommand(), getStartWatchFaceActivationCommand());
+        } else {
+            return new ActivationCommands(getStartWatchFaceActivationCommand());
+        }
+    }
+
+    private ActivationCommand getStartWatchFaceActivationCommand() {
+        return new ActivationCommand(
+                getStartWatchFaceCommand(),
+                "Setting Watch Face for " + appId,
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 }

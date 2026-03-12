@@ -27,6 +27,10 @@ import com.android.ddmlib.TimeoutException;
 import com.android.testutils.TestUtils;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.TestLogger;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommandResultChecker;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.AmStartResultChecker;
 import com.android.tools.manifest.parser.ManifestInfo;
 import com.android.tools.manifest.parser.XmlNode;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
@@ -41,6 +45,45 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
 public class ActivityTest {
+
+    @Test
+    public void testGetActivationCommands() throws ModelException {
+        ManifestActivityInfo info =
+                new ManifestActivityInfo(new XmlNode(), "com.example.myApp") {
+                    @Override
+                    public String getQualifiedName() {
+                        return "com.example.myApp.MainActivity";
+                    }
+                };
+        Activity activity = new Activity(info, "com.example.myApp", new TestLogger());
+
+        // Test RUN mode
+        ActivationCommands runCommands = activity.getActivationCommands("", AppComponent.Mode.RUN);
+        Assert.assertEquals(1, runCommands.size());
+        ActivationCommand runCommand = runCommands.get(0);
+        Assert.assertEquals(
+                "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
+                        + " android.intent.action.MAIN -c android.intent.category.LAUNCHER",
+                runCommand.getCommand());
+        Assert.assertEquals("Launching Activity for com.example.myApp", runCommand.getStatus());
+        Assert.assertTrue(runCommand.getChecker() instanceof AmStartResultChecker);
+        Assert.assertEquals(
+                ActivationCommandResultChecker.Status.SUCCESS, runCommand.getChecker().check());
+
+        // Test DEBUG mode
+        ActivationCommands debugCommands =
+                activity.getActivationCommands("", AppComponent.Mode.DEBUG);
+        Assert.assertEquals(1, debugCommands.size());
+        ActivationCommand debugCommand = debugCommands.get(0);
+        Assert.assertEquals(
+                "am start -n com.example.myApp/com.example.myApp.MainActivity -a"
+                        + " android.intent.action.MAIN -c android.intent.category.LAUNCHER -D",
+                debugCommand.getCommand());
+        Assert.assertEquals("Launching Activity for com.example.myApp", debugCommand.getStatus());
+        Assert.assertTrue(debugCommand.getChecker() instanceof AmStartResultChecker);
+        Assert.assertEquals(
+                ActivationCommandResultChecker.Status.SUCCESS, debugCommand.getChecker().check());
+    }
 
     @Test
     public void testFlags()

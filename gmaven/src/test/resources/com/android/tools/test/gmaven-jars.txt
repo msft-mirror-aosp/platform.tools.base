@@ -229,7 +229,9 @@ com/android/tools/apkdeployer/apkdeployer
   com/android/tools/deploy/
   com/android/tools/deploy/proto/
   com/android/tools/deployer/
+  com/android/tools/deployer/cli/
   com/android/tools/deployer/model/
+  com/android/tools/deployer/model/activate/
   com/android/tools/deployer/model/component/
   com/android/tools/deployer/tasks/
   com/android/tools/idea/

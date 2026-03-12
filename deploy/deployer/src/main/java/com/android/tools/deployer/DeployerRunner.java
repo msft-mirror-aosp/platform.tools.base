@@ -305,7 +305,7 @@ public class DeployerRunner {
             throws DeployerException {
         try {
             Path path = Paths.get(strategyJson);
-            return App.fromStrategy(path, logger);
+            return DeployStrategyReader.fromStrategy(path, logger);
         } catch (ApkParserException e) {
             throw DeployerException.parseFailed(e.getMessage());
         }

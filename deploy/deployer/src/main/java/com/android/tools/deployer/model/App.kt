@@ -15,13 +15,15 @@
  */
 package com.android.tools.deployer.model
 
-import com.android.ide.common.build.GenericBuiltArtifactsLoader.loadFromFile
-import com.android.ide.common.build.GenericFilterConfiguration
+import com.android.tools.deployer.model.component.Activity
 import com.android.tools.deployer.model.component.ApkParserException
+import com.android.tools.deployer.model.component.AppComponent
+import com.android.tools.deployer.model.component.Complication
+import com.android.tools.deployer.model.component.ComponentType
+import com.android.tools.deployer.model.component.Tile
+import com.android.tools.deployer.model.component.WatchFace
 import com.android.utils.ILogger
 import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.stream.Collectors
 
 class App(
   appIdInput: String?,
@@ -76,6 +78,14 @@ class App(
 
     @JvmStatic
     @Throws(ApkParserException::class)
+    fun fromPaths(paths: List<Path>): App {
+      val apks = convert(paths)
+      val appId = if (apks.isNotEmpty()) apks[0].packageName else null
+      return fromApks(appId, apks)
+    }
+
+    @JvmStatic
+    @Throws(ApkParserException::class)
     fun fromPaths(appId: String?, paths: List<Path>, baselineProfiles: List<BaselineProfile>): App {
       return App(appId, convert(paths).map { PackageManagerApk(it) }, baselineProfiles)
     }
@@ -107,24 +117,6 @@ class App(
       return fromPaths(appId, listOf(path))
     }
 
-    @JvmStatic
-    @Throws(ApkParserException::class)
-    fun fromStrategy(path: Path, logger: ILogger): App {
-      val artifacts = checkNotNull(loadFromFile(path.toFile(), logger))
-      val applicationId = artifacts.applicationId
-      val strategies =
-        artifacts.elements.map { artifact ->
-          val apkPath: Path = Paths.get(artifact.outputFile)
-          val apk = ApkParser.parse(apkPath.toAbsolutePath().toString())
-          val filters =
-            artifact.filters
-              .stream()
-              .collect(Collectors.toMap(GenericFilterConfiguration::filterType, GenericFilterConfiguration::identifier))
-          PackageManagerApk(apk, filters)
-        }
-      return App(applicationId, strategies)
-    }
-
     @Throws(ApkParserException::class)
     private fun convert(paths: List<Path>): List<Apk> {
       val apks: MutableList<Apk> = ArrayList()
@@ -133,5 +125,41 @@ class App(
       }
       return apks
     }
+  }
+
+  fun getMatchingComponents(type: ComponentType, logger: ILogger): List<AppComponent> {
+    val components = mutableListOf<AppComponent>()
+    for (apk in getApks()) {
+      when (type) {
+        ComponentType.ACTIVITY -> {
+          for (info in apk.activities) {
+            components.add(Activity(info, appId, logger))
+          }
+        }
+        ComponentType.WATCH_FACE -> {
+          for (info in apk.services) {
+            if (info.hasAction("android.service.wallpaper.WallpaperService")) {
+              components.add(WatchFace(info, appId, logger))
+            }
+          }
+        }
+        ComponentType.TILE -> {
+          for (info in apk.services) {
+            if (info.hasAction("androidx.wear.tiles.action.BIND_TILE_PROVIDER")) {
+              components.add(Tile(info, appId, logger))
+            }
+          }
+        }
+        ComponentType.COMPLICATION -> {
+          for (info in apk.services) {
+            if (info.hasAction("android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST")) {
+              components.add(Complication(info, appId, logger))
+            }
+          }
+        }
+        else -> {}
+      }
+    }
+    return components
   }
 }

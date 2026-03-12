@@ -20,6 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.AmStartResultChecker;
 import com.android.tools.manifest.parser.components.IntentFilter;
 import com.android.tools.manifest.parser.components.ManifestActivityInfo;
 import com.android.utils.ILogger;
@@ -116,5 +119,23 @@ public class Activity extends AppComponent {
             }
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    public ActivationCommands getActivationCommands(
+            @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
+        extraFlags = extraFlags.trim();
+        if (activationMode.equals(Mode.DEBUG)
+                && !extraFlags.contains(Flag.ENABLE_DEBUGGING.string)) {
+            extraFlags = "-D" + (extraFlags.isEmpty() ? "" : (" " + extraFlags));
+        }
+        return new ActivationCommands(getStartActivityActivationCommand(extraFlags));
+    }
+
+    private ActivationCommand getStartActivityActivationCommand(String extraFlags) {
+        return new ActivationCommand(
+                getStartActivityCommand(extraFlags),
+                "Launching Activity for " + appId,
+                new AmStartResultChecker(msg -> logger.warning(msg), msg -> logger.warning(msg)));
     }
 }

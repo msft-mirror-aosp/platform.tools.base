@@ -19,6 +19,9 @@ import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
+import com.android.tools.deployer.model.activate.ActivationCommand;
+import com.android.tools.deployer.model.activate.ActivationCommands;
+import com.android.tools.deployer.model.activate.BroadcastResultChecker;
 import com.android.tools.manifest.parser.components.ManifestServiceInfo;
 import com.android.utils.ILogger;
 
@@ -50,9 +53,9 @@ public class Tile extends WearComponent {
             @NonNull IDevice device)
             throws ModelException {
         validate(extraFlags);
-        logger.info("Activating Tile '%s' %s",
-                    info.getQualifiedName(),
-                    activationMode.equals(Mode.DEBUG) ? "for debug" : "");
+        logger.info(
+                "Activating Tile '%s' %s",
+                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
 
         if (activationMode.equals(Mode.DEBUG)) {
             setUpAmDebugApp(device);
@@ -74,5 +77,26 @@ public class Tile extends WearComponent {
     @NonNull
     private String getStartTileCommand() {
         return ShellCommand.SET_TILE + getFQEscapedName();
+    }
+
+    @Override
+    public ActivationCommands getActivationCommands(
+            @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
+        validate(extraFlags);
+        if (activationMode.equals(Mode.DEBUG)) {
+            return new ActivationCommands(
+                    getSetUpAmDebugAppActivationCommand(),
+                    getSetUpDebugSurfaceDebugAppActivationCommand(),
+                    getStartTileActivationCommand());
+        } else {
+            return new ActivationCommands(getStartTileActivationCommand());
+        }
+    }
+
+    private ActivationCommand getStartTileActivationCommand() {
+        return new ActivationCommand(
+                getStartTileCommand(),
+                "Setting Tile for " + appId,
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 }
