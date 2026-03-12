@@ -198,7 +198,6 @@ AUTOMATIC_TEST_DATA = TEST_DATA + OLD_SDKS + [
     "//tools/base/build-system/integration-test:test-projects/renderscript",
     "//tools/base/build-system/integration-test:test-projects/renderscriptInLib",
     "//tools/base/build-system/integration-test:test-projects/renderscriptMultiSrc",
-    "//tools/base/build-system/integration-test:test-projects/splitAwareSeparateTestModule",
 ]
 
 # These sources need to compiled together as there are inter-dependencies. Avoid adding more.
