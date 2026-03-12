@@ -780,7 +780,10 @@ single_gradle_integration_test_per_source(
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
     ],
-    data = TEST_DATA,
+    data = TEST_DATA + [
+        "//prebuilts/studio/jdk:jdk21",
+        "//prebuilts/studio/jdk/jbr25:jdk_runtime_files",
+    ],
     maven_repo_zips = [
         "//tools/base/build-system:android_gradle_plugin",
         "//tools/base/preview/screenshot:preview_screenshot_maven_repo_all",

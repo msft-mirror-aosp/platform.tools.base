@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.testing.screenshot
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.options.BooleanOption
+import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
 import com.google.common.truth.Truth.assertThat
 import kotlin.io.path.readText
@@ -157,9 +158,27 @@ class ScreenshotEdgeCaseTest {
   fun runScreenshotTestWithEmptyPreview() {
     val build =
       rule.build {
-        androidApplication { files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").searchAndReplace("SimpleComposable()", "") }
+        gradleProperties {
+          add("org.gradle.java.installations.auto-detect", "false")
+          add(
+            "org.gradle.java.installations.paths",
+            listOf(
+              TestUtils.getJava17Jdk().toString().replace("\\", "/"),
+              TestUtils.getJava25Jdk().toString().replace("\\", "/")
+            ).joinToString(",")
+          )
+        }
+        androidApplication {
+          files.update("src/screenshotTest/java/com/TopLevelPreviewTest.kt").searchAndReplace("SimpleComposable()", "")
+          kotlin { jvmToolchain(25) }
+        }
       }
     build.updateReferenceImage()
-    build.sstExecutor().run(":app:validateDebugScreenshotTest")
+    val result = build.sstExecutor().run(":app:validateDebugScreenshotTest")
+
+    // Assert that JDK warnings for native access and Unsafe memory access are successfully suppressed
+    result.assertErrorDoesNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
+    result.assertErrorDoesNotContain("WARNING: A restricted method in java.lang.System has been called")
+    result.assertErrorDoesNotContain("WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a future error")
   }
 }
