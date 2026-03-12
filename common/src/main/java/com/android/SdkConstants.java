@@ -2948,7 +2948,7 @@ public final class SdkConstants {
      * The minimum released version of the Android Gradle Plugin that the next version of Studio
      * will support.
      */
-    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.1.0";
+    public static final String GRADLE_PLUGIN_NEXT_MINIMUM_VERSION = "7.4.0";
 
     /**
      * A version of the Android Gradle Plugin that this version of Studio and associated tools (e.g.
