@@ -194,7 +194,6 @@ AUTOMATIC_TEST_DATA = TEST_DATA + OLD_SDKS + [
     "//tools/base/build-system/integration-test:test-projects/emptySplit",
     "//tools/base/build-system/integration-test:test-projects/flavorlibWithFailedTests",
     "//tools/base/build-system/integration-test:test-projects/mavenLocal",
-    "//tools/base/build-system/integration-test:test-projects/noPreDex",
     "//tools/base/build-system/integration-test:test-projects/packagingOptions",
     "//tools/base/build-system/integration-test:test-projects/renderscript",
     "//tools/base/build-system/integration-test:test-projects/renderscriptInLib",
