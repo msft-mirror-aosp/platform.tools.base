@@ -126,6 +126,38 @@ class KotlinMultiplatformAndroidMinificationTest {
   }
 
   @Test
+  fun testKeepRulesPatternSet() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/keepRules/rules.keep"),
+      """
+      -keep public class com.example.kmpfirstlib.KmpAndroidFirstLibClass {
+          java.lang.String callCommonLibClass();
+          java.lang.String callAndroidLibClass();
+       }
+      """
+        .trimIndent(),
+    )
+
+    // this will be ignored
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/keepRules/rules.txt"),
+      """
+      -keep public class com.example.kmpfirstlib.KmpAndroidFirstLibJavaClass {
+         java.lang.String callCommonLibClass();
+         java.lang.String callAndroidLibClass();
+      }
+      """
+        .trimIndent(),
+    )
+
+    executor().run(":app:assembleDebug")
+
+    project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+      mainDex().containsAtLeast("com/example/kmpfirstlib/KmpAndroidActivity", "com/example/kmpfirstlib/KmpAndroidFirstLibClass")
+    }
+  }
+
+  @Test
   fun testProguardRulesInApp() {
     FileUtils.writeToFile(
       project.getSubproject("app").file("proguard-rules.pro"),
@@ -170,6 +202,34 @@ class KotlinMultiplatformAndroidMinificationTest {
     )
 
     executor().run(":app:assembleDebug")
+
+    project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
+      mainDex()
+        .containsExactly(
+          "com/example/kmpfirstlib/KmpAndroidActivity",
+          "com/example/kmpfirstlib/KmpAndroidFirstLibClass",
+          "com/example/kmpfirstlib/KmpCommonFirstLibClass",
+          "com/example/kmpsecondlib/KmpAndroidSecondLibClass",
+          "com/example/kmplibraryplugin/KmpLibraryPluginAndroidClass",
+          "com/example/kmplibraryplugin/KmpLibraryPluginCommonClass",
+        )
+    }
+  }
+
+  @Test
+  fun testConsumerProguardRulesFromKmpLibInKeepRulesSourceSet() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/androidMain/keepRules/rules.keep"),
+      """
+      -keep public class com.example.kmpfirstlib.KmpAndroidFirstLibClass {
+          java.lang.String callCommonLibClass();
+          java.lang.String callKmpSecondLibClass();
+       }
+      """
+        .trimIndent(),
+    )
+
+    executor().run("clean", ":app:assembleDebug")
 
     project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
       mainDex()

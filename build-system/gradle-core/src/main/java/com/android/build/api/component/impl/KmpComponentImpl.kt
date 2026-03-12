@@ -316,7 +316,7 @@ abstract class KmpComponentImpl<DslInfoT : KmpComponentDslInfo>(
       KotlinMultiplatformFlatSourceDirectoriesImpl(
         name = SourceType.KEEP_RULES.folder,
         variantServices = variantServices,
-        variantDslFilters = PatternSet(),
+        variantDslFilters = PatternSet().also { filter -> filter.include("**/*.keep") },
       )
 
     override val jniLibs =
