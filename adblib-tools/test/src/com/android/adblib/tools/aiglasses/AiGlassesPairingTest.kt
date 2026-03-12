@@ -29,6 +29,8 @@ import com.android.sdklib.AndroidApiLevel
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.collect
 import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Rule
@@ -160,24 +162,92 @@ class AiGlassesPairingTest {
   fun checkCompanionAppInForeground_returnsTrueIfAppInForeground() = runBlockingWithTimeout {
     val device = createConnectedDevice()
     registerDumpsysResponse(
-      "dumpsys window windows",
+      "dumpsys window displays",
       "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
     )
 
     val result = AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
 
     assertEquals(true, result)
-    assertEquals(listOf("dumpsys window windows"), executedDumpsysCommands)
+    assertEquals(listOf("dumpsys window displays"), executedDumpsysCommands)
   }
 
   @Test
   fun checkCompanionAppInForeground_returnsFalseIfAppNotInForeground() = runBlockingWithTimeout {
     val device = createConnectedDevice()
-    registerDumpsysResponse("dumpsys window windows", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  mResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
 
     val result = AiGlassesPairing(fakeAdbRule.adbSession).run { device.checkCompanionAppInForeground() }
 
     assertEquals(false, result)
+  }
+
+  @Test
+  fun checkCompanionAppInForeground_fallsBackToActivityActivities() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse(
+      "dumpsys activity activities",
+      "  ResumedActivity: ActivityRecord{... com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    val result = pairing.run { device.checkCompanionAppInForeground() }
+
+    assertEquals(true, result)
+    assertEquals(listOf("dumpsys window displays", "dumpsys activity activities"), executedDumpsysCommands)
+  }
+
+  @Test
+  fun pairToGlasses_waitsForForegroundAndStartsPairing() = runBlockingWithTimeout {
+    val device = createConnectedDevice()
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    // Initial state: not in foreground
+    registerDumpsysResponse("dumpsys window displays", "  mCurrentFocus=Window{12345 u0 com.another.app/MainActivity}\n")
+    registerDumpsysResponse("dumpsys activity activities", "  ResumedActivity: ActivityRecord{... com.another.app/MainActivity}\n")
+
+    // Commands emitted by pairToGlasses
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
+    )
+
+    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
+    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
+    registerBroadcastResponse("pm grant com.google.android.glasses.core android.permission.ACCESS_FINE_LOCATION", "")
+    registerBroadcastResponse("monkey -p com.google.android.glasses.companion -c android.intent.category.LAUNCHER 1", "")
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+    try {
+      flow.collect {
+        states.add(it)
+        if (it == "IDLE") {
+          throw Exception("Stop test")
+        }
+      }
+    } catch (e: Exception) {
+      if (e.message != "Stop test") {
+        throw e
+      }
+    }
+
+    assertEquals(listOf(AiGlassesPairing.AWAITING_FOREGROUND, "POLLING", "IDLE"), states)
   }
 
   @Test
@@ -212,7 +282,7 @@ class AiGlassesPairingTest {
         fail("Expected DeviceConnectionException")
       } catch (e: DeviceConnectionException) {
         assertEquals("device1", e.serialNumber)
-        assertEquals("dumpsys window windows", e.command)
+        assertEquals("dumpsys window displays", e.command)
       }
     }
   }
@@ -240,6 +310,22 @@ class AiGlassesPairingTest {
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
       0,
       FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "dumpsys", dumpsysResponses, executedDumpsysCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "pm", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "pm", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "monkey", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "monkey", broadcastResponses, executedCommands),
     )
     return deviceServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
   }

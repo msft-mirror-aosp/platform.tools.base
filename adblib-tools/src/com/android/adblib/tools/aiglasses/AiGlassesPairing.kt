@@ -124,25 +124,22 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   private suspend fun ConnectedDevice.checkAppInForeground(pkg: String): Boolean {
-    val command = "dumpsys window windows"
-    val regex = "mCurrentFocus=.*$pkg".toRegex()
+    val commands = listOf("dumpsys window displays", "dumpsys activity activities")
+    val focusKeywords =
+      listOf("mCurrentFocus", "mFocusedApp", "mResumedActivity", "mFocusedWindow", "topActivity", "topResumedActivity", "ResumedActivity")
 
-    return runCatchingIoException(command) {
-      shell
-        .executeAsLines(it)
-        .mapNotNull { element ->
-          when (element) {
-            is ShellCommandOutputElement.StdoutLine -> element.contents
-            is ShellCommandOutputElement.StderrLine -> {
-              if (element.contents.isNotBlank()) {
-                logger.warn("checkAppInForeground error output: ${element.contents}")
-              }
-              null
-            }
-            else -> null
+    return commands.any { command ->
+      runCatchingIoException(command) {
+        shell.executeAsLines(it).any { element ->
+          if (element is ShellCommandOutputElement.StdoutLine) {
+            val line = element.contents
+            val containsFocusKeyword = focusKeywords.any { keyword -> line.contains("$keyword=") || line.contains("$keyword:") }
+            containsFocusKeyword && line.contains(pkg)
+          } else {
+            false
           }
         }
-        .any { line -> regex.containsMatchIn(line) }
+      }
     }
   }
 
@@ -303,6 +300,22 @@ class AiGlassesPairing(val session: AdbSession) {
   }
 
   /**
+   * Polls until the companion app is in the foreground or the [POLLING_TIMEOUT] expires.
+   *
+   * @return true if the companion app is in the foreground, false if the timeout expires.
+   */
+  private suspend fun ConnectedDevice.waitForCompanionAppInForeground(): Boolean {
+    val start = TimeSource.Monotonic.markNow()
+    while (start.elapsedNow() < POLLING_TIMEOUT) {
+      if (checkCompanionAppInForeground()) {
+        return true
+      }
+      delay(POLLING_INTERVAL)
+    }
+    return false
+  }
+
+  /**
    * Polls the pairing state until it returns a non-null value or the [POLLING_TIMEOUT] expires.
    *
    * @return The pairing state, or null if the timeout expires. Possible states include: "IDLE", "WORKER_STARTED", "WORKER_BONDING",
@@ -338,6 +351,16 @@ class AiGlassesPairing(val session: AdbSession) {
         grantPermission(CORE_PKG, "android.permission.ACCESS_FINE_LOCATION")
 
         launchCompanionApp()
+
+        // Wait for the app to appear in the foreground
+        emit(AWAITING_FOREGROUND)
+        if (!waitForCompanionAppInForeground()) {
+          emit("POLLING_FAILED")
+          return@flow
+        }
+
+        // Wait 3 seconds once it is in the foreground
+        delay(3.seconds)
 
         emit("POLLING")
         while (true) {
@@ -388,7 +411,7 @@ class AiGlassesPairing(val session: AdbSession) {
     private val POLLING_INTERVAL = 2.seconds
 
     // Max time to retry polling if it fails (returns null) continuously
-    private val POLLING_TIMEOUT = 30.seconds
+    internal var POLLING_TIMEOUT = 30.seconds
 
     // All possible terminal states for the pairing process
     val TERMINAL_STATES =
@@ -402,6 +425,8 @@ class AiGlassesPairing(val session: AdbSession) {
         "WORKER_GLASSES_CORE_CONNECTION_FAILED",
         "WORKER_CANCELLED",
       )
+
+    const val AWAITING_FOREGROUND = "AWAITING_FOREGROUND"
   }
 }
 
