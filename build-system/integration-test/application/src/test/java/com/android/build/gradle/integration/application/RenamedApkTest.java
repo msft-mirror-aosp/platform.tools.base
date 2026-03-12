@@ -39,7 +39,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.regex.Matcher;
 
-/** Assemble tests for renamedApk. */
+/* This test can be removed for AGP 10, it has been replaced by [RenamedApkTest2]. */
 public class RenamedApkTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
