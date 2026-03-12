@@ -22,7 +22,7 @@ package com.android.build.gradle.internal.test.report
  * The root of the test report data model.
  *
  * @property variants A list of all variant names included in this report (e.g., "debug", "release"). These are used as keys in the
- *   [Function.results] map.
+ *   [TestCase.results] map.
  * @property modules A list of modules in the project (e.g., ":app", ":lib").
  * @property summary The aggregated summary of all tests in this report.
  */
@@ -38,37 +38,36 @@ data class RootReport(
  * Represents a Gradle module in the test report.
  *
  * @property name The path of the module (e.g., ":app").
- * @property testSuites A list of test suites within this module (e.g., "testDebugUnitTest").
+ * @property testSuiteSummaries Summaries of the test suites within this module.
+ * @property packages A list of Java/Kotlin packages containing tests.
  * @property summary The aggregated summary of all tests in this module.
  */
-data class Module(val name: String, val testSuites: List<TestSuite>, val summary: TestSummary)
-
-/**
- * Represents a test suite, typically corresponding to a specific test task or type.
- *
- * @property name The name of the test suite (e.g., "common" or "UnitTest").
- * @property packages A list of Java/Kotlin packages containing tests.
- * @property summary The aggregated summary of all tests in this test suite.
- */
-data class TestSuite(val name: String, val packages: List<Package>, val summary: TestSummary)
+data class Module(val name: String, val testSuiteSummaries: List<TestSuiteSummary>, val packages: List<Package>, val summary: TestSummary)
 
 /**
  * Represents a Java/Kotlin package containing test classes.
  *
  * @property name The package name (e.g., "com.example.mytapp").
+ * @property testSuiteSummaries Summaries of the test suites within this package.
  * @property classes A list of test classes within this package.
  * @property summary The aggregated summary of all tests in this package.
  */
-data class Package(val name: String, val classes: List<ClassType>, val summary: TestSummary)
+data class Package(val name: String, val testSuiteSummaries: List<TestSuiteSummary>, val classes: List<ClassType>, val summary: TestSummary)
 
 /**
  * Represents a test class.
  *
  * @property name The simple name of the class (e.g., "ExampleUnitTest").
+ * @property testSuiteSummaries Summaries of the test suites within this class.
  * @property testCases A list of test methods (test cases) in this class.
  * @property summary The aggregated summary of all tests in this class.
  */
-data class ClassType(val name: String, val testCases: List<TestCase>, val summary: TestSummary)
+data class ClassType(
+  val name: String,
+  val testSuiteSummaries: List<TestSuiteSummary>,
+  val testCases: List<TestCase>,
+  val summary: TestSummary,
+)
 
 /**
  * Represents a single test function execution result.
@@ -90,6 +89,14 @@ data class TestCase(
   // Store TestResult objects instead of simple Strings
   val results: Map<String, TestResults> = emptyMap(),
 )
+
+/**
+ * Represents a summary of a test suite.
+ *
+ * @property name The name of the test suite (e.g., "UnitTest", "AndroidTest").
+ * @property summary The aggregated summary of all tests in this test suite.
+ */
+data class TestSuiteSummary(val name: String, val summary: TestSummary)
 
 /**
  * Represents a summary of test results.

@@ -73,13 +73,10 @@ class XMLReportAggregatorTest {
 
     val module = report.modules.first()
     assertThat(module.name).isEqualTo(":app")
-    assertThat(module.testSuites).hasSize(1)
+    assertThat(module.testSuiteSummaries).hasSize(1)
+    assertThat(module.packages).hasSize(1)
 
-    val testSuite = module.testSuites.first()
-    assertThat(testSuite.name).isEqualTo("unitTest")
-    assertThat(testSuite.packages).hasSize(1)
-
-    val pkg = testSuite.packages.first()
+    val pkg = module.packages.first()
     assertThat(pkg.name).isEqualTo("com.example.app")
     assertThat(pkg.classes).hasSize(1)
 
@@ -141,27 +138,20 @@ class XMLReportAggregatorTest {
 
     val appModule = report.modules.first()
     assertThat(appModule.name).isEqualTo(":app")
-    assertThat(appModule.testSuites).hasSize(2)
+    assertThat(appModule.testSuiteSummaries).hasSize(2)
+    assertThat(appModule.packages).hasSize(1)
 
-    val unitTestSuite = appModule.testSuites.findOrThrow({ it.name == "unitTest" }) { "unitTest not found" }
-    assertThat(unitTestSuite.packages).hasSize(1)
-    val unitTestPkg = unitTestSuite.packages.first()
-    assertThat(unitTestPkg.name).isEqualTo("com.example.app")
-    assertThat(unitTestPkg.classes).hasSize(1)
-    val unitTestClass = unitTestPkg.classes.first()
-    assertThat(unitTestClass.name).isEqualTo("MyClassTest")
+    val pkg = appModule.packages.first()
+    assertThat(pkg.name).isEqualTo("com.example.app")
+    assertThat(pkg.classes).hasSize(2)
+
+    val unitTestClass = pkg.classes.findOrThrow({ it.name == "MyClassTest" }) { "MyClassTest not found" }
     assertThat(unitTestClass.testCases).hasSize(2)
     assertThat(unitTestClass.testCases.find { it.name == "testPass" }?.results["debug"]?.status).isEqualTo("pass")
     assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.status).isEqualTo("fail")
     assertThat(unitTestClass.testCases.find { it.name == "testFail" }?.results["debug"]?.stackTrace).contains("stacktrace here")
 
-    val otherTestSuite = appModule.testSuites.findOrThrow({ it.name == "otherTestSuite" }) { "otherTestSuite not found" }
-    assertThat(otherTestSuite.packages).hasSize(1)
-    val otherTestPkg = otherTestSuite.packages.first()
-    assertThat(otherTestPkg.name).isEqualTo("com.example.app")
-    assertThat(otherTestPkg.classes).hasSize(1)
-    val otherTestClass = otherTestPkg.classes.first()
-    assertThat(otherTestClass.name).isEqualTo("MyOtherClassTest")
+    val otherTestClass = pkg.classes.findOrThrow({ it.name == "MyOtherClassTest" }) { "MyOtherClassTest not found" }
     assertThat(otherTestClass.testCases).hasSize(2)
     assertThat(otherTestClass.testCases.find { it.name == "testAnotherPass" }?.results["release"]?.status).isEqualTo("pass")
     assertThat(otherTestClass.testCases.find { it.name == "testSkipped" }?.results["release"]?.status).isEqualTo("skipped")
@@ -226,8 +216,8 @@ class XMLReportAggregatorTest {
     val report = aggregator.generateReport()
 
     val module = report.modules.findOrThrow({ it.name == ":lib" }) { ":lib module not found" }
-    val testSuite = module.testSuites.findOrThrow({ it.name == "failedUnitTest" }) { "failedUnitTest not found" }
-    val pkg = testSuite.packages.findOrThrow({ it.name == "com.example.app" }) { "com.example.app package not found" }
+
+    val pkg = module.packages.findOrThrow({ it.name == "com.example.app" }) { "com.example.app package not found" }
     val clazz = pkg.classes.findOrThrow({ it.name == "MyFailedClassTest" }) { "MyFailedClassTest not found" }
     val testCase = clazz.testCases.findOrThrow({ it.name == "testFailure" }) { "testFailure testcase not found" }
 
@@ -286,8 +276,7 @@ class XMLReportAggregatorTest {
 
     assertThat(report.variants).containsExactly("stagingDebug", "trialDebug").inOrder()
     val myLibraryModule = report.modules.findOrThrow({ it.name == ":mylibrary" }) { ":mylibrary module not found" }
-    val androidTestSuite = myLibraryModule.testSuites.findOrThrow({ it.name == "AndroidTest" }) { "AndroidTest suite not found" }
-    val pkg = androidTestSuite.packages.findOrThrow({ it.name == "com.example.mylibrary" }) { "com.example.mylibrary package not found" }
+    val pkg = myLibraryModule.packages.findOrThrow({ it.name == "com.example.mylibrary" }) { "com.example.mylibrary package not found" }
 
     // Verify ExampleInstrumentedTest (runs on both variants)
     val exampleInstrumentedTest = pkg.classes.findOrThrow({ it.name == "ExampleInstrumentedTest" }) { "ExampleInstrumentedTest not found" }
@@ -397,17 +386,17 @@ class XMLReportAggregatorTest {
     assertThat(skippedOnlySummary.skipped).isEqualTo(1)
     assertThat(skippedOnlySummary.rate).isEqualTo(0.0)
 
-    // 3. Check Aggregation up the chain (Module, TestSuite, Package, Class)
+    // 3. Check Aggregation up the chain (Module, Package, Class, TestSuiteSummary)
     val appModule = report.modules.findOrThrow({ it.name == ":app" }) { ":app module not found" }
     assertThat(appModule.summary.total).isEqualTo(5)
+    assertThat(appModule.testSuiteSummaries.first().summary.total).isEqualTo(5)
 
-    val unitTestSuite = appModule.testSuites.first()
-    assertThat(unitTestSuite.summary.total).isEqualTo(5)
-
-    val pkg = unitTestSuite.packages.first()
+    val pkg = appModule.packages.first()
     assertThat(pkg.summary.total).isEqualTo(5)
+    assertThat(pkg.testSuiteSummaries.first().summary.total).isEqualTo(5)
 
     val clazz = pkg.classes.first()
     assertThat(clazz.summary.total).isEqualTo(5)
+    assertThat(clazz.testSuiteSummaries.first().summary.total).isEqualTo(5)
   }
 }
