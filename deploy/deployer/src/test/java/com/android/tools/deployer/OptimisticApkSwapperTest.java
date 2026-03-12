@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.android.ddmlib.IDevice;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
+import com.android.tools.deployer.model.ZipUtils;
 import com.android.zipflinger.BytesSource;
 import com.android.zipflinger.ZipArchive;
 import com.android.zipflinger.ZipInfo;

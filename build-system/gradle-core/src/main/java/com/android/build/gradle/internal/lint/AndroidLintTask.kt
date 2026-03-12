@@ -202,7 +202,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       parameters.lintFixBuildService.set(lintFixBuildService)
       parameters.returnValueOutputFile.set(returnValueOutputFile)
       parameters.lintMode.set(lintMode)
-      parameters.hasBaseline.set(projectInputs.lintOptions.baseline.orNull != null)
+      parameters.hasBaseline.set(projectInputs.lintOptions.baseline.isPresent)
       parameters.useK2Uast.set(uastInputs.useK2Uast)
     }
     if (
@@ -358,11 +358,23 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     if (printStackTrace.get()) {
       arguments += "--stacktrace"
     }
+    val baselineFile = projectInputs.lintOptions.baseline.orNull?.asFile
+    if (baselineFile != null) {
+      val isUpdating = lintMode.get() == LintMode.UPDATE_BASELINE
+      val treatAsEmptyIfMissing = missingBaselineIsEmptyBaseline.get() ||
+        (projectInputs.lintOptions.defaultBaseline.get() && !isUpdating)
+      if (baselineFile.exists() || isUpdating || treatAsEmptyIfMissing) {
+        arguments.add("--baseline", baselineFile.absolutePath)
+      }
+    }
     arguments += lintTool.initializeLintCacheDir()
     if (systemPropertyInputs.lintBaselinesContinue.orNull == VALUE_TRUE) {
       arguments += "--continue-after-baseline-created"
     }
-    if (missingBaselineIsEmptyBaseline.get()) {
+    if (
+      missingBaselineIsEmptyBaseline.get() ||
+        (projectInputs.lintOptions.defaultBaseline.get() && lintMode.get() != LintMode.UPDATE_BASELINE)
+    ) {
       arguments += "--missing-baseline-is-empty-baseline"
     }
     if (baselineOmitLineNumbers.get()) {
@@ -632,8 +644,10 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       task.outputs.upToDateWhen {
         // Workaround for b/193244776
         // Ensure the task runs if inputBaselineFile is set and the file doesn't exist,
-        // unless missingBaselineIsEmptyBaseline is true.
-        task.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true || task.missingBaselineIsEmptyBaseline.get()
+        // unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.
+        task.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true ||
+          task.missingBaselineIsEmptyBaseline.get() ||
+          task.projectInputs.lintOptions.defaultBaseline.get()
       }
       val hasDynamicFeatures = creationConfig.global.hasDynamicFeatures
       val isLintAnalysisPerComponent =
@@ -967,9 +981,11 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.lintTool.initialize(taskCreationServices, this)
     this.projectInputs.initializeForStandalone(project, taskCreationServices.projectOptions, javaPluginExtension, lintOptions, lintMode)
     // Workaround for b/193244776 - Ensure the task runs if a baseline file is set and the file
-    // doesn't exist, unless missingBaselineIsEmptyBaseline is true.
+    // doesn't exist, unless missingBaselineIsEmptyBaseline is true or the default baseline convention is used.
     this.outputs.upToDateWhen {
-      this.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true || this.missingBaselineIsEmptyBaseline.get()
+      this.projectInputs.lintOptions.baseline.orNull?.asFile?.exists() ?: true ||
+        this.missingBaselineIsEmptyBaseline.get() ||
+        this.projectInputs.lintOptions.defaultBaseline.get()
     }
     this.lintRuleJars.fromDisallowChanges(customLintChecksConfig)
     this.partialResults.fromDisallowChanges(partialResults)

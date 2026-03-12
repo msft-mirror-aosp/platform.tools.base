@@ -73,6 +73,9 @@ message AndroidTarget {
 
     // Whether java compilation is enabled.
     optional bool with_java = 15;
+
+    // The prefix to be used by Android Studio for editor features to avoid resource name collisions
+    optional string resource_prefix = 16;
 }
 
 // Sources included in a kotlin multiplatform sourceSet.

@@ -86,6 +86,7 @@ import com.android.build.gradle.internal.tasks.AndroidVariantTask
 import com.android.build.gradle.internal.tasks.CheckAarMetadataTask
 import com.android.build.gradle.internal.tasks.CheckDuplicateClassesTask
 import com.android.build.gradle.internal.tasks.ClassesClasspathUtils
+import com.android.build.gradle.internal.tasks.CompressJavaResTask
 import com.android.build.gradle.internal.tasks.D8BundleMainDexListTask
 import com.android.build.gradle.internal.tasks.DeviceSerialTestTask
 import com.android.build.gradle.internal.tasks.DexArchiveBuilderTask
@@ -757,7 +758,12 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
           creationConfig.taskContainer.processJavaResourcesTask = task
         }
       }
-    taskFactory.register(ProcessJavaResTask.CreationAction(taskConfig))
+
+    if (creationConfig.services.projectOptions[BooleanOption.ENABLE_JAVA_RESOURCE_OPTIMIZATIONS]) {
+      taskFactory.register(CompressJavaResTask.CreationAction(taskConfig))
+    } else {
+      taskFactory.register(ProcessJavaResTask.CreationAction(taskConfig))
+    }
   }
 
   /**

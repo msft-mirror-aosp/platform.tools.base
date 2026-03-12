@@ -80,6 +80,7 @@ kotlin_test(
     visibility = [
         "//tools/base/adblib-ddmlibcompatibility:__subpackages__",
         "//tools/base/adblib-tools:__subpackages__",
+        "//tools/base/deploy/deployer:__subpackages__",
     ],
     deps = [
         ":adblib",

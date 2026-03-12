@@ -16,6 +16,7 @@
 package com.android.tools.deployer;
 
 import static com.android.tools.deployer.ApkTestUtils.assertApkEntryEquals;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -25,15 +26,18 @@ import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.idea.protobuf.ByteString;
+
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.Mockito;
 
 public class ApplicationDumperTest {
 

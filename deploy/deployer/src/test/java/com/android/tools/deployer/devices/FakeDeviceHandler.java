@@ -54,12 +54,13 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
         super("");
     }
 
-    public void connect(@NonNull FakeDevice device, @NonNull FakeAdbServer server)
+    public DeviceState connect(@NonNull FakeDevice device, @NonNull FakeAdbServer server)
             throws ExecutionException, InterruptedException {
-        device.connectTo(server);
+        DeviceState deviceState = device.connectTo(server);
         synchronized (devices) {
             devices.add(device);
         }
+        return deviceState;
     }
 
     @Override
@@ -126,29 +127,63 @@ public class FakeDeviceHandler extends DeviceCommandHandler {
         OutputStream output = socket.getOutputStream();
         CommandHandler.writeOkay(output);
         InputStream input = socket.getInputStream();
-        String command = readString(input, 4);
-        int length = readLength(input);
-        String file = readString(input, length);
-
-        switch (command) {
-            case "SEND":
-                int ix = file.lastIndexOf(',');
-                String name = file.substring(0, ix);
-                String mode = file.substring(ix + 1);
-                ByteArrayDataOutput data = ByteStreams.newDataOutput();
-                String chunkId = readString(input, 4);
-                while (chunkId.equals("DATA")) {
-                    int chunk = readLength(input);
-                    byte[] bytes = new byte[chunk];
-                    ByteStreams.readFully(input, bytes);
-                    data.write(bytes);
-                    chunkId = readString(input, 4);
-                }
-                int modtime = readLength(input);
-                device.writeFile(name, data.toByteArray(), mode);
-                CommandHandler.writeOkay(output);
-                output.write(new byte[] {0, 0, 0, 0});
+        boolean stopSyncHandling = false;
+        while (!stopSyncHandling) {
+            String command;
+            try {
+                command = readString(input, 4);
+            } catch (java.io.EOFException e) {
+                // ddmlib does not send "QUIT" while adblib implementation does.
+                break;
+            }
+            switch (command) {
+                case "SEND":
+                    int length = readLength(input);
+                    String file = readString(input, length);
+                    int ix = file.lastIndexOf(',');
+                    String name = file.substring(0, ix);
+                    String mode = file.substring(ix + 1);
+                    ByteArrayDataOutput data = ByteStreams.newDataOutput();
+                    boolean done = false;
+                    while (!done) {
+                        String chunkId = readString(input, 4);
+                        switch (chunkId) {
+                            case "DATA":
+                                int chunk = readLength(input);
+                                byte[] bytes = new byte[chunk];
+                                ByteStreams.readFully(input, bytes);
+                                data.write(bytes);
+                                break;
+                            case "DONE":
+                                readLength(input); // modtime
+                                device.writeFile(name, data.toByteArray(), mode);
+                                CommandHandler.writeOkay(output);
+                                output.write(new byte[]{0, 0, 0, 0});
+                                done = true;
+                                break;
+                            default:
+                                stopSyncHandling = true;
+                                done = true;
+                                CommandHandler.writeFailResponse(output,
+                                                                 "Unexpected sync send chunk: "
+                                                                 + chunkId);
+                                break;
+                        }
+                    }
+                    break;
+                case "QUIT":
+                    // Quit command is followed by int32 value of zero
+                    int value = readLength(input);
+                    assert value == 0;
+                    stopSyncHandling = true;
+                    break;
+                default:
+                    // Unrecognized or not implemented command
+                    throw new UnsupportedOperationException("Not implemented sync command: " + command);
+            }
         }
+
+        socket.shutdownOutput();
 
         return true;
     }

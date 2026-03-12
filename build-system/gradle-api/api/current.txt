@@ -1569,8 +1569,11 @@ package com.android.build.api.dsl {
 
   public interface LibraryAndroidResources extends com.android.build.api.dsl.AndroidResources {
     method @InaccessibleFromKotlin public boolean getEnable();
+    method @InaccessibleFromKotlin public String getResourcePrefix();
     method @InaccessibleFromKotlin public void setEnable(boolean);
+    method @InaccessibleFromKotlin public void setResourcePrefix(String);
     property public abstract boolean enable;
+    property public abstract String resourcePrefix;
   }
 
   public interface LibraryBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.LibraryVariantDimension {
@@ -2585,7 +2588,7 @@ package com.android.build.api.variant {
     property @org.gradle.api.tasks.Input public abstract org.gradle.api.provider.Provider<java.lang.String> version;
   }
 
-  public abstract class AndroidApplicationModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidApplicationModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidApplicationModuleModel();
   }
 
@@ -2610,7 +2613,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.VariantSelector selector();
   }
 
-  public abstract class AndroidLibraryModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidLibraryModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidLibraryModuleModel();
   }
 
@@ -3597,9 +3600,11 @@ package com.android.build.api.variant {
 
   public interface VariantOutput extends com.android.build.api.variant.VariantOutputConfiguration {
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Boolean> getEnabled();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Property<java.lang.String> getOutputFileName();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.Integer> getVersionCode();
     method @InaccessibleFromKotlin public org.gradle.api.provider.Property<java.lang.String> getVersionName();
     property public abstract org.gradle.api.provider.Property<java.lang.Boolean> enabled;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Property<java.lang.String> outputFileName;
     property public abstract org.gradle.api.provider.Property<java.lang.Integer> versionCode;
     property public abstract org.gradle.api.provider.Property<java.lang.String> versionName;
   }

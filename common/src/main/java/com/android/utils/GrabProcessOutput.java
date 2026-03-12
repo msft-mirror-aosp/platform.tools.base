@@ -18,6 +18,7 @@ package com.android.utils;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.google.common.io.Closeables;
 
 import java.io.BufferedReader;
@@ -195,6 +196,17 @@ public class GrabProcessOutput {
             return 0;
         }
 
+        int exitCode;
+        if (timeout == null) {
+            // get the return code from the process
+            exitCode = process.waitFor();
+        } else {
+            if (!process.waitFor(timeout, timeoutUnit)) {
+                throw new TimeoutException();
+            }
+            exitCode = process.exitValue();
+        }
+
         // it looks like on windows process#waitFor() can return
         // before the thread have filled the arrays, so we wait for both threads and the
         // process itself.
@@ -211,15 +223,6 @@ public class GrabProcessOutput {
             }
         }
 
-        if (timeout == null) {
-            // get the return code from the process
-            return process.waitFor();
-        }
-
-        if (!process.waitFor(timeout, timeoutUnit)) {
-            throw new TimeoutException();
-        }
-
-        return process.exitValue();
+        return exitCode;
     }
 }

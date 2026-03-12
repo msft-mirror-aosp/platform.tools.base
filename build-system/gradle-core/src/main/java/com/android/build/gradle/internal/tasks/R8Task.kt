@@ -621,7 +621,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     val projectDir = projectLayout.projectDirectory.asFile
     proFiles.keys.sorted().forEach { directory ->
       val relativeDirectoryPath = directory.relativeTo(projectDir).path
-      val files = proFiles[directory]!!.map { it.relativeTo(directory).path }.joinToString(", ")
+      val files = proFiles[directory]!!.map { it.relativeTo(directory).path }.sorted().joinToString(", ")
       message.append("- $relativeDirectoryPath has $files\n")
     }
 

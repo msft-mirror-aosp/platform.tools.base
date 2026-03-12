@@ -9,8 +9,8 @@ iml_module(
     resources = ["src/test/resources"],
     # do not sort: must match IML order
     test_deps = [
-        "//tools/base/testutils:studio.android.sdktools.testutils",
         "//prebuilts/tools/common/m2:junit-4.12",
+        "//tools/base/testutils:studio.android.sdktools.testutils",
     ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
@@ -18,7 +18,7 @@ iml_module(
     deps = [
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/common:studio.android.sdktools.common",
-        "//tools/base/apkparser:studio.android.sdktools.binary-resources",
+        "//tools/adt/idea/.idea/libraries:libbinary-resources",
     ],
 )
 

@@ -14,7 +14,7 @@
     <orderEntry type="module" module-name="android.sdktools.adblib" />
     <orderEntry type="module" module-name="android.sdktools.adblib.tools" />
     <orderEntry type="module" module-name="android.sdktools.device-provisioner" />
-    <orderEntry type="module" module-name="android.sdktools.ddmlib" />
+    <orderEntry type="module" module-name="android.sdktools.ddmlib-studio" />
     <orderEntry type="module" module-name="android.sdktools.sdklib" />
     <orderEntry type="library" scope="TEST" name="junit4" level="project" />
     <orderEntry type="module" module-name="android.sdktools.fakeadbserver" scope="TEST" />

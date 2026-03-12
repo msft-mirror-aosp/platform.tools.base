@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension;
+import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.LibraryExtensionWrapper;
@@ -65,11 +66,11 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.internal.plugins.BindsProjectType;
-import org.gradle.api.internal.plugins.ProjectTypeBinding;
-import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
+import org.gradle.features.annotations.BindsProjectType;
+import org.gradle.features.binding.ProjectTypeBinding;
+import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
@@ -96,14 +97,19 @@ public class LibraryPlugin
                             "androidLibrary",
                             DeclarativeLibraryExtension.class,
                             (context, definition, buildModel) -> {
+                                DeclarativeServices services =
+                                        context.getObjectFactory()
+                                                .newInstance(DeclarativeServices.class);
                                 LibraryExtensionInternal extension =
                                         (LibraryExtensionInternal)
-                                                Objects.requireNonNull(context.getProject())
+                                                Objects.requireNonNull(services)
+                                                        .getProject()
                                                         .getExtensions()
                                                         .getByName("android");
                                 ((LibraryExtensionWrapper) definition).setDelegate(extension);
                             })
-                    .withUnsafeDefinitionImplementationType(wrapperClass);
+                    .withUnsafeDefinitionImplementationType(wrapperClass)
+                    .withUnsafeApplyAction();
         }
     }
 

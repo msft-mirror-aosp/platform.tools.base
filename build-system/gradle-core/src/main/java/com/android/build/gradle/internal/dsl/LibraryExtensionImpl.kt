@@ -108,6 +108,13 @@ constructor(
       dslServices.projectOptions[BooleanOption.BUILD_FEATURE_ANDROID_RESOURCES],
     )
 
+  // Delegate to the property in androidResources to maintain backward compatibility
+  override var resourcePrefix: String?
+    get() = androidResources.resourcePrefix.ifEmpty { null }
+    set(value) {
+      androidResources.resourcePrefix = value ?: ""
+    }
+
   override fun androidResources(action: LibraryAndroidResources.() -> Unit) {
     action.invoke(androidResources)
   }

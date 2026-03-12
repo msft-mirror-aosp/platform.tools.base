@@ -32,13 +32,22 @@ class TestSuiteTestTaskTest {
   @Test
   fun testSerializer() {
     val outputFile = folder.newFile()
+    val testedApksProp = AgpTestSuiteInputParameters.TESTED_APKS.propertyName
     TestSuiteTestTask.AgpTestSuiteInputsSerializer.serialize(
-      engineInputParameters = listOf(TestEngineInputProperty(AgpTestSuiteInputParameters.TESTED_APKS.propertyName, "some/random/location")),
+      engineInputParameters =
+        listOf(
+          TestEngineInputProperty(testedApksProp, "universal.apk"),
+          TestEngineInputProperty("$testedApksProp[serial1]", "device1.apk"),
+          TestEngineInputProperty("$testedApksProp[serial2]", "device2.apk"),
+        ),
       engineInputProperties = mapOf("foo" to "fooValue"),
       outputFile,
     )
     assertThat(outputFile.exists()).isTrue()
     val serializedInputs = Properties().also { it.load(FileReader(outputFile)) }
-    assertThat(serializedInputs).hasSize(2)
+    assertThat(serializedInputs).hasSize(4)
+    assertThat(serializedInputs.getProperty(testedApksProp)).isEqualTo("universal.apk")
+    assertThat(serializedInputs.getProperty("$testedApksProp[serial1]")).isEqualTo("device1.apk")
+    assertThat(serializedInputs.getProperty("$testedApksProp[serial2]")).isEqualTo("device2.apk")
   }
 }

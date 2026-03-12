@@ -16,10 +16,8 @@
 
 package com.android.tools.androidtest.testengine
 
-import com.android.utils.GrabProcessOutput
 import java.io.File
 import java.time.Duration
-import java.util.concurrent.TimeUnit
 import java.util.logging.Logger
 
 /**
@@ -42,12 +40,14 @@ class AdbApkInstaller(
   private val deviceSerial: String,
   private val installTimeoutMs: Long,
   private val logger: Logger = Logger.getLogger(AdbApkInstaller::class.java.name),
-  private val processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
+  processBuilder: (command: List<String>) -> ProcessBuilder = { ProcessBuilder(it) },
 ) {
+
+  private val adbController = AdbController(adb, processBuilder)
 
   /** The API level of the target device. */
   val deviceApiLevel: Int by lazy {
-    val result = runAdbShellCommand(listOf("getprop", "ro.build.version.sdk"))
+    val result = adbController.runAdbShellCommand(deviceSerial, listOf("getprop", "ro.build.version.sdk"))
     if (result.exitCode == 0) {
       result.output.trim().toIntOrNull() ?: throw RuntimeException("Failed to parse device API level for $deviceSerial: '${result.output}'")
     } else {
@@ -103,7 +103,7 @@ class AdbApkInstaller(
    */
   private val userId: String? by lazy {
     if (deviceApiLevel < MinFeatureApiLevel.USER_ID.apiLevel) return@lazy null
-    val result = runAdbShellCommand(listOf("am", "get-current-user"))
+    val result = adbController.runAdbShellCommand(deviceSerial, listOf("am", "get-current-user"))
     if (result.exitCode != 0) {
       logger.warning("Failed to get current user ID from device $deviceSerial.")
       return@lazy null
@@ -125,10 +125,10 @@ class AdbApkInstaller(
    */
   fun preInstallationSetup(instrumentationTargetPackageId: String) {
     if (deviceApiLevel >= MinFeatureApiLevel.DISABLE_VERIFIER.apiLevel) {
-      runAdbShellCommand(listOf("settings", "put", "global", "verifier_verify_adb_installs", "0"))
+      adbController.runAdbShellCommand(deviceSerial, listOf("settings", "put", "global", "verifier_verify_adb_installs", "0"))
     }
     if (deviceApiLevel >= MinFeatureApiLevel.SET_DEBUG_APP.apiLevel) {
-      val result = runAdbShellCommand(listOf("am", "set-debug-app", instrumentationTargetPackageId))
+      val result = adbController.runAdbShellCommand(deviceSerial, listOf("am", "set-debug-app", instrumentationTargetPackageId))
       if (result.exitCode != 0) {
         logger.warning(
           "Failed to set debug app '$instrumentationTargetPackageId'. " + "Output: ${result.output} \n Error Output: ${result.errorOutput}"
@@ -150,7 +150,7 @@ class AdbApkInstaller(
     val installCmd = getInstallCmd(options, useMultipleInstall = false)
     val fullCommand = installCmd + apk.absolutePath
     logger.info("Installing with command: adb ${fullCommand.joinToString(" ")}")
-    val result = runAdbCommand(fullCommand, timeout)
+    val result = adbController.runAdbCommand(deviceSerial, fullCommand, timeout)
     if (result.exitCode != 0) {
       throw RuntimeException("Failed to install APK $apk: ${result.output} ${result.errorOutput}")
     }
@@ -187,7 +187,7 @@ class AdbApkInstaller(
     val installCmd = getInstallCmd(options, useMultipleInstall = true)
     val fullCommand = installCmd + apks.map { it.absolutePath }
     logger.info("Installing split-apk with command: adb ${fullCommand.joinToString(" ")}")
-    val result = runAdbCommand(fullCommand, timeout)
+    val result = adbController.runAdbCommand(deviceSerial, fullCommand, timeout)
     if (result.exitCode != 0) {
       throw RuntimeException("Failed to install APKs ${apks.joinToString()}: " + "${result.output} ${result.errorOutput}")
     }
@@ -216,7 +216,7 @@ class AdbApkInstaller(
   /** Uninstalls the specified package from the device using `adb uninstall`. */
   private fun uninstallPackage(packageName: String) {
     logger.info("Uninstalling $packageName from device $deviceSerial.")
-    val result = runAdbCommand(listOf("uninstall", packageName))
+    val result = adbController.runAdbCommand(deviceSerial, listOf("uninstall", packageName))
     if (result.exitCode != 0) {
       logger.warning("Failed to uninstall package $packageName. " + "Output: ${result.output} \n Error Output: ${result.errorOutput}")
     }
@@ -228,59 +228,11 @@ class AdbApkInstaller(
    * Currently, this clears the debug app setting set by [preInstallationSetup].
    */
   fun postTestCleanup() {
-    runAdbShellCommand(listOf("am", "clear-debug-app")).let { result ->
+    adbController.runAdbShellCommand(deviceSerial, listOf("am", "clear-debug-app")).let { result ->
       if (result.exitCode != 0) {
         logger.info("Failed to execute clear-debug-app command. " + "It may not be supported on this device.")
       }
     }
-  }
-
-  /**
-   * Executes an external command and captures its output.
-   *
-   * @param command The command and its arguments to execute.
-   * @param timeout An optional timeout for the process. If `null`, waits indefinitely.
-   * @return A [CommandResult] with the process exit code, stdout, and stderr.
-   */
-  private fun runCommand(command: List<String>, timeout: Duration?): CommandResult {
-    val process = processBuilder(command).start()
-    val outputLines = mutableListOf<String>()
-    val errorLines = mutableListOf<String>()
-
-    val handler =
-      object : GrabProcessOutput.IProcessOutput {
-        override fun out(line: String?) {
-          line?.let { outputLines.add(it) }
-        }
-
-        override fun err(line: String?) {
-          line?.let { errorLines.add(it) }
-        }
-      }
-
-    GrabProcessOutput.grabProcessOutput(
-      process,
-      GrabProcessOutput.Wait.WAIT_FOR_READERS,
-      handler,
-      timeout?.toMillis(),
-      TimeUnit.MILLISECONDS,
-    )
-
-    return CommandResult(process.exitValue(), outputLines.joinToString("\n"), errorLines.joinToString("\n"))
-  }
-
-  /** Encapsulates the result of a command execution. */
-  private data class CommandResult(val exitCode: Int, val output: String, val errorOutput: String)
-
-  /** Constructs and runs an adb command targeting the specified device. */
-  private fun runAdbCommand(args: List<String>, timeout: Duration? = null): CommandResult {
-    val command = listOf(adb.absolutePath, "-s", deviceSerial) + args
-    return runCommand(command, timeout)
-  }
-
-  /** Constructs and runs an `adb shell` command. */
-  private fun runAdbShellCommand(args: List<String>, timeout: Duration? = null): CommandResult {
-    return runAdbCommand(listOf("shell") + args, timeout)
   }
 
   /** Constructs the base `adb install` or `adb install-multiple` command list based on the given options. */
@@ -306,7 +258,7 @@ class AdbApkInstaller(
 
   /** Parses an APK file using AAPT2 to find its package name. */
   private fun getPackageNameFromApk(apkPath: String): String? {
-    val result = runCommand(listOf(aapt2.absolutePath, "dump", "badging", apkPath), null)
+    val result = adbController.runCommand(listOf(aapt2.absolutePath, "dump", "badging", apkPath), null)
     return result.output.lineSequence().mapNotNull { line -> packageNameRegex.find(line)?.groupValues?.get(1) }.firstOrNull()
   }
 
@@ -326,6 +278,6 @@ class AdbApkInstaller(
       }
     logger.info("Running force AOT compilation ($compileMode) for $packageName")
     val command = listOf("cmd", "package", "compile", "-m", compileMode, "-f", packageName)
-    runAdbShellCommand(command)
+    adbController.runAdbShellCommand(deviceSerial, command)
   }
 }

@@ -20,7 +20,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
-        "//tools/base/ddmlib:studio.android.sdktools.ddmlib",
+        "//tools/base/ddmlib-studio:studio.android.sdktools.ddmlib-studio",
     ],
 )
 

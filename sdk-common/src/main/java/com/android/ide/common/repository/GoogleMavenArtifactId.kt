@@ -297,7 +297,10 @@ enum class GoogleMavenArtifactId(val mavenGroupId: String, val mavenArtifactId: 
   // Core-Ktx
   ANDROIDX_CORE_KTX("androidx.core", "core-ktx"),
   // Room-Ktx
-  ANDROIDX_ROOM_KTX("androidx.room", "room-ktx");
+  ANDROIDX_ROOM_KTX("androidx.room", "room-ktx"),
+
+  // Profilers
+  LEAKCANARY("com.android.tools.studio.leakcanary", "leakcanary");
 
   override val groupId = mavenGroupId
   override val artifactId = mavenArtifactId

@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.variant.AndroidApplicationModuleModel
 import com.android.build.gradle.internal.DependenciesExtension
-import org.gradle.api.internal.plugins.Definition
+import org.gradle.features.binding.Definition
 
 interface DeclarativeApplicationExtension : ApplicationExtension, Definition<AndroidApplicationModuleModel> {
   fun dependenciesDcl(action: DependenciesExtension.() -> Unit)

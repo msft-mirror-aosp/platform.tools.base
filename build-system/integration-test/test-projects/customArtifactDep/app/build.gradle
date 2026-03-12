@@ -4,6 +4,7 @@ android {
     namespace = "com.example.android.multiproject"
     compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
+    enableKotlin = false
 }
 
 dependencies {

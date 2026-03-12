@@ -174,7 +174,7 @@ public class FakeDevice {
         return file;
     }
 
-    public void connectTo(FakeAdbServer server) throws ExecutionException, InterruptedException {
+    public DeviceState connectTo(FakeAdbServer server) throws ExecutionException, InterruptedException {
         deviceState =
                 server.connectDevice(
                                 serial,
@@ -197,6 +197,7 @@ public class FakeDevice {
                     p.application.packageName,
                     false);
         }
+        return deviceState;
     }
 
     public boolean isDevice(DeviceState state) {

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.multiplatform
 
+import com.android.SdkConstants
 import com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget
 import com.android.build.api.dsl.KotlinMultiplatformAndroidCompilation
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
@@ -93,12 +94,12 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
         getKotlinPluginVersionFromPlugin(project.plugins.findPlugin(KOTLIN_MPP_PLUGIN_ID)!!)?.let { (Version.parse(it)) }
 
       kotlinPluginVersion?.let { version ->
-        if (version < MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION) {
+        if (version < Version.parse(SdkConstants.MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION)) {
           throw RuntimeException(
             "The version of the applied kotlin multiplatform plugin " +
               "`$it` is less than the minimum supported version by the " +
               "android plugin. Upgrade your kotlin version to at least " +
-              "`$MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION` " +
+              "`${SdkConstants.MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION}` " +
               "in order to enable the android target."
           )
         }
@@ -273,9 +274,5 @@ internal class KotlinMultiplatformAndroidHandlerImpl(
           }
         }
       }
-  }
-
-  companion object {
-    private val MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = Version.parse("2.0.0")
   }
 }

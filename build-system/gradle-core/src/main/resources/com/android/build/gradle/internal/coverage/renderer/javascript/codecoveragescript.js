@@ -346,18 +346,9 @@ const CoverageReportApp = {
     },
 
     populateGlobalStats() {
-        this.elements.totalModules.textContent = this.fullReport.modules.length;
-        let totalPackages = 0;
-        let totalClasses = 0;
-        this.fullReport.modules.forEach(module => {
-            const packages = module.packages || [];
-            totalPackages += packages.length;
-            packages.forEach(pkg => {
-                totalClasses += (pkg.classes || []).length;
-            });
-        });
-        this.elements.totalPackages.textContent = totalPackages;
-        this.elements.totalClasses.textContent = totalClasses;
+        this.elements.totalModules.textContent = this.fullReport.numberOfModules || 0;
+        this.elements.totalPackages.textContent = this.fullReport.numberOfPackages || 0;
+        this.elements.totalClasses.textContent = this.fullReport.numberOfClasses || 0;
     },
 
     populateFilters() {

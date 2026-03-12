@@ -17,6 +17,7 @@
 package com.android.tools.androidtest.testengine
 
 import com.google.common.truth.Truth.assertThat
+import java.io.File
 import org.junit.Test
 import org.junit.platform.engine.UniqueId
 import org.junit.platform.engine.support.hierarchical.Node
@@ -37,6 +38,7 @@ class AndroidTestEngineDescriptorTest {
     val configuration = mock<AndroidTestConfiguration>()
     whenever(context.configuration).thenReturn(configuration)
     whenever(configuration.deviceSerials).thenReturn(listOf("serial1", "serial2"))
+    whenever(configuration.adb).thenReturn(File("adb"))
 
     val dynamicTestExecutor = mock<Node.DynamicTestExecutor>()
 
@@ -47,8 +49,13 @@ class AndroidTestEngineDescriptorTest {
 
     val descriptors = captor.allValues
     assertThat(descriptors[0].deviceSerial).isEqualTo("serial1")
+    // Android Studio expects the device serial in the UniqueId to match results
+    // with its internal device model.
+    assertThat(descriptors[0].uniqueId.segments.last().value).isEqualTo("serial1")
     assertThat(descriptors[0].parent.get()).isSameInstanceAs(descriptor)
+
     assertThat(descriptors[1].deviceSerial).isEqualTo("serial2")
+    assertThat(descriptors[1].uniqueId.segments.last().value).isEqualTo("serial2")
     assertThat(descriptors[1].parent.get()).isSameInstanceAs(descriptor)
   }
 }

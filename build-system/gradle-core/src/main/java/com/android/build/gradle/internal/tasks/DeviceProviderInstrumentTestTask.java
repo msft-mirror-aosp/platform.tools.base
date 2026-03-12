@@ -211,9 +211,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         @Internal
         public abstract Property<String> getTestSuiteTarget();
 
-        @Internal
-        public abstract DirectoryProperty getXmlResultsDirectory();
-
         TestRunner createTestRunner(
                 WorkerExecutor workerExecutor,
                 ObjectFactory objectFactory,
@@ -287,6 +284,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                 getDeviceProviderFactory(),
                 getBuddyApks().getFiles(),
                 getResultsDir().get().getAsFile(),
+                getXmlResultsDirectory(),
                 getAdditionalTestOutputEnabled().get(),
                 getAdditionalTestOutputDir().get().getAsFile(),
                 getCoverageDirectory().get().getAsFile(),
@@ -312,6 +310,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
             DeviceProviderFactory deviceProviderFactory,
             Set<File> buddyApkFiles,
             File resultsOutputDir,
+            DirectoryProperty xmlResultsDirectory,
             Boolean useAdditionalTargetOutputDir,
             File additionalTestOutputDirFiles,
             File coverageDir,
@@ -405,7 +404,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         if (enableTestReportAggregation) {
             TestReportAggregationUtils.processTestReportAggregation(
                     resultsOutputDir,
-                    testRunnerFactory.getXmlResultsDirectory(),
+                    xmlResultsDirectory,
                     testRunnerFactory.getModulePath().get(),
                     testRunnerFactory.getTestedVariantName().get(),
                     testRunnerFactory.getTestSuiteName().get(),
@@ -562,6 +561,10 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @Override
     @OutputDirectory
     public abstract DirectoryProperty getResultsDir();
+
+    @Optional
+    @OutputDirectory
+    public abstract DirectoryProperty getXmlResultsDirectory();
 
     @Optional
     @OutputDirectory
@@ -798,7 +801,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
                         .getArtifacts()
                         .setInitialProvider(
                                 taskProvider,
-                                task -> task.getTestRunnerFactory().getXmlResultsDirectory())
+                                DeviceProviderInstrumentTestTask::getXmlResultsDirectory)
                         .on(InternalArtifactType.ANDROID_TEST_RESULTS.INSTANCE);
             }
         }

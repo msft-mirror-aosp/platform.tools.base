@@ -27,23 +27,28 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.lang.reflect.Type
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants
 import javax.xml.stream.XMLStreamException
+import org.gradle.internal.logging.ConsoleRenderer
 
 /**
  * Aggregates test results from multiple XML report streams.
  *
  * The `getReport()` method converts this internal map structure into the final list-based [RootReport] data model for serialization.
  */
-class XMLReportAggregator(private val files: List<File>) {
+class XMLReportAggregator(private val files: List<File>, projectName: String) {
 
   @VisibleForTesting fun getInputFiles(): List<File> = files
 
   private val logger = LoggerWrapper.getLogger(XMLReportAggregator::class.java)
 
   // Global set of all unique variant names encountered.
-  private val rootReportBuilder = RootReportBuilder()
+  private val rootReportBuilder = RootReportBuilder(projectName)
 
   /** Generates the final [RootReport] by processing all input files. */
   fun generateReport(): RootReport {
@@ -54,7 +59,12 @@ class XMLReportAggregator(private val files: List<File>) {
   /** Generates the RootReport and writes it to the specified output directory along with the necessary JSON, JS, and HTML resources. */
   fun writeReport(outputDir: File) {
     val finalReport = generateReport()
-    val gson = GsonBuilder().setPrettyPrinting().registerTypeAdapter(Function::class.java, FunctionAdapter()).create()
+    val gson =
+      GsonBuilder()
+        .setPrettyPrinting()
+        .registerTypeAdapter(TestCase::class.java, TestCaseAdapter())
+        .registerTypeAdapter(TestSummary::class.java, TestSummaryAdapter())
+        .create()
     val jsonString = gson.toJson(finalReport)
 
     if (!outputDir.exists()) {
@@ -72,11 +82,12 @@ class XMLReportAggregator(private val files: List<File>) {
     }
 
     // Log the final location of the report
-    logger.quiet("Test report generated at: ${File(outputDir, "index.html").absolutePath}")
+    val reportLocation = ConsoleRenderer().asClickableFileUrl(File(outputDir, "index.html"))
+    logger.quiet("Test report generated at: $reportLocation")
   }
 
-  private class FunctionAdapter : JsonSerializer<Function> {
-    override fun serialize(src: Function, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+  internal class TestCaseAdapter : JsonSerializer<TestCase> {
+    override fun serialize(src: TestCase, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
       val jsonObject = JsonObject()
       jsonObject.addProperty("name", src.name)
       src.results.forEach { (variant, result) ->
@@ -89,6 +100,19 @@ class XMLReportAggregator(private val files: List<File>) {
           jsonObject.add(variant, resultObj)
         }
       }
+      return jsonObject
+    }
+  }
+
+  internal class TestSummaryAdapter : JsonSerializer<TestSummary> {
+    override fun serialize(src: TestSummary, typeOfSrc: Type, context: JsonSerializationContext): JsonElement {
+      val jsonObject = JsonObject()
+      jsonObject.addProperty("total", src.total)
+      jsonObject.addProperty("passed", src.passed)
+      jsonObject.addProperty("failed", src.failed)
+      jsonObject.addProperty("skipped", src.skipped)
+      jsonObject.addProperty("passRate", src.passRate)
+      src.variantSummaries.forEach { (variant, summary) -> jsonObject.add(variant, context.serialize(summary)) }
       return jsonObject
     }
   }
@@ -238,7 +262,7 @@ class XMLReportAggregator(private val files: List<File>) {
     return rootReportBuilder.build()
   }
 
-  private class RootReportBuilder {
+  private class RootReportBuilder(private val projectName: String) {
     private val variants = HashSet<String>()
     private val moduleBuilders = mutableMapOf<String, ModuleBuilder>()
 
@@ -248,7 +272,14 @@ class XMLReportAggregator(private val files: List<File>) {
 
     fun getOrAddModule(name: String) = moduleBuilders.getOrPut(name) { ModuleBuilder(name) }
 
-    fun build() = RootReport(variants = variants.sorted(), modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name })
+    fun build(): RootReport {
+      val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
+      val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
+      val formattedTimestamp = zonedDateTime.format(formatter)
+      val modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name }
+      val summary = calculateSummaryFromChildren(modules.map { it.summary }, variants)
+      return RootReport(projectName, formattedTimestamp, variants = variants.sorted(), modules = modules, summary = summary)
+    }
   }
 
   private class ModuleBuilder(val name: String) {
@@ -256,7 +287,12 @@ class XMLReportAggregator(private val files: List<File>) {
 
     fun getOrAddTestSuite(name: String) = testSuites.getOrPut(name) { TestSuiteBuilder(name) }
 
-    fun build() = Module(name = name, testSuites = testSuites.values.map { it.build() }.sortedBy { it.name })
+    fun build(): Module {
+      val suites = testSuites.values.map { it.build() }.sortedBy { it.name }
+      val allVariants = suites.flatMap { it.summary.variantSummaries.keys }.toSet()
+      val summary = calculateSummaryFromChildren(suites.map { it.summary }, allVariants)
+      return Module(name = name, testSuites = suites, summary = summary)
+    }
   }
 
   private class TestSuiteBuilder(val name: String) {
@@ -264,7 +300,12 @@ class XMLReportAggregator(private val files: List<File>) {
 
     fun getOrAddPackage(name: String) = packages.getOrPut(name) { PackageBuilder(name) }
 
-    fun build() = TestSuite(name = name, packages = packages.values.map { it.build() }.sortedBy { it.name })
+    fun build(): TestSuite {
+      val pkgs = packages.values.map { it.build() }.sortedBy { it.name }
+      val allVariants = pkgs.flatMap { it.summary.variantSummaries.keys }.toSet()
+      val summary = calculateSummaryFromChildren(pkgs.map { it.summary }, allVariants)
+      return TestSuite(name = name, packages = pkgs, summary = summary)
+    }
   }
 
   private class PackageBuilder(val name: String) {
@@ -272,25 +313,125 @@ class XMLReportAggregator(private val files: List<File>) {
 
     fun getOrAddClass(name: String) = classes.getOrPut(name) { ClassBuilder(name) }
 
-    fun build() = Package(name = name, classes = classes.values.map { it.build() }.sortedBy { it.name })
+    fun build(): Package {
+      val clzs = classes.values.map { it.build() }.sortedBy { it.name }
+      val allVariants = clzs.flatMap { it.summary.variantSummaries.keys }.toSet()
+      val summary = calculateSummaryFromChildren(clzs.map { it.summary }, allVariants)
+      return Package(name = name, classes = clzs, summary = summary)
+    }
   }
 
   private class ClassBuilder(val name: String) {
-    val functions = mutableMapOf<String, FunctionBuilder>()
+    val testCases = mutableMapOf<String, TestCaseBuilder>()
 
-    fun getOrAddFunction(name: String) = functions.getOrPut(name) { FunctionBuilder(name) }
+    fun getOrAddTestCase(name: String) = testCases.getOrPut(name) { TestCaseBuilder(name) }
 
-    fun build() = ClassType(name = name, functions = functions.values.map { it.build() }.sortedBy { it.name })
+    fun build(): ClassType {
+      val testCasesList = testCases.values.map { it.build() }.sortedBy { it.name }
+      val allVariants = testCasesList.flatMap { it.results.keys }.toSet()
+      val summary = calculateSummaryFromTestCases(testCasesList, allVariants)
+      return ClassType(name = name, testCases = testCasesList, summary = summary)
+    }
   }
 
-  private class FunctionBuilder(val name: String) {
+  private class TestCaseBuilder(val name: String) {
     val results = mutableMapOf<String, TestResults>()
 
     fun addResult(variant: String, result: TestResults) {
       results[variant] = result
     }
 
-    fun build() = Function(name = name, results = results.toMap())
+    fun build() = TestCase(name = name, results = results.toMap())
+  }
+
+  companion object {
+    /**
+     * Calculates a combined [TestSummary] from a list of child summaries.
+     *
+     * @param summaries The summaries of child nodes.
+     * @param variants The set of all variant names to include in the summary.
+     */
+    private fun calculateSummaryFromChildren(summaries: List<TestSummary>, variants: Set<String>): TestSummary {
+      var totalPassed = 0
+      var totalFailed = 0
+      var totalSkipped = 0
+      val variantSummaries = mutableMapOf<String, VariantSummary>()
+
+      variants.forEach { variant ->
+        var vPassed = 0
+        var vFailed = 0
+        var vSkipped = 0
+        var vTotal = 0
+
+        summaries.forEach { summary ->
+          summary.variantSummaries[variant]?.let {
+            vPassed += it.passed
+            vFailed += it.failed
+            vSkipped += it.skipped
+            vTotal += it.total
+          }
+        }
+
+        val vRelevant = vPassed + vFailed
+        val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
+        variantSummaries[variant] = VariantSummary(vPassed, vFailed, vSkipped, vTotal, vRate)
+
+        totalPassed += vPassed
+        totalFailed += vFailed
+        totalSkipped += vSkipped
+      }
+
+      val total = totalPassed + totalFailed + totalSkipped
+      val relevantTotal = totalPassed + totalFailed
+      val passRate = if (relevantTotal > 0) (totalPassed.toDouble() / relevantTotal) * 100.0 else if (total > 0) 0.0 else 100.0
+
+      return TestSummary(total, totalPassed, totalFailed, totalSkipped, passRate, variantSummaries)
+    }
+
+    /**
+     * Calculates a [TestSummary] from a list of [TestCase] test results.
+     *
+     * @param functions The list of test functions.
+     * @param variants The set of all variant names to include in the summary.
+     */
+    private fun calculateSummaryFromTestCases(testCases: List<TestCase>, variants: Set<String>): TestSummary {
+      var totalPassed = 0
+      var totalFailed = 0
+      var totalSkipped = 0
+      val variantSummaries = mutableMapOf<String, VariantSummary>()
+
+      variants.forEach { variant ->
+        var vPassed = 0
+        var vFailed = 0
+        var vSkipped = 0
+        var vTotal = 0
+
+        testCases.forEach { testCase ->
+          testCase.results[variant]?.let {
+            when (it.status) {
+              STATUS_PASS -> vPassed++
+              STATUS_FAIL -> vFailed++
+              STATUS_SKIPPED -> vSkipped++
+            }
+            vTotal++
+          }
+        }
+
+        val vRelevant = vPassed + vFailed
+        val vRate = if (vRelevant > 0) (vPassed.toDouble() / vRelevant) * 100.0 else if (vTotal > 0) 0.0 else 100.0
+        variantSummaries[variant] = VariantSummary(vPassed, vFailed, vSkipped, vTotal, vRate)
+
+        totalPassed += vPassed
+        totalFailed += vFailed
+        totalSkipped += vSkipped
+      }
+
+      val total = totalPassed + totalFailed + totalSkipped
+      val relevantTotal = totalPassed + totalFailed
+      val passRate = if (relevantTotal > 0) (totalPassed.toDouble() / relevantTotal) * 100.0 else if (total > 0) 0.0 else 100.0
+
+      return TestSummary(total, totalPassed, totalFailed, totalSkipped, passRate, variantSummaries)
+    }
   }
 
   /** Safely adds a test result to the nested structure. */
@@ -311,7 +452,7 @@ class XMLReportAggregator(private val files: List<File>) {
         .getOrAddTestSuite(testSuiteName)
         .getOrAddPackage(packageName)
         .getOrAddClass(className)
-        .getOrAddFunction(testcaseName)
+        .getOrAddTestCase(testcaseName)
         .addResult(variantName, result)
     } catch (e: Exception) {
       logger.error(e, "Error processing test case: $classname.$testcaseName")

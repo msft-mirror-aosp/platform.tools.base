@@ -24,4 +24,6 @@ abstract class LibraryAndroidResourcesImpl @Inject constructor(dslServices: DslS
   LibraryAndroidResources, AaptOptions(dslServices) {
 
   override var enable: Boolean = defaultEnable
+
+  override var resourcePrefix: String = ""
 }

@@ -126,9 +126,7 @@ public class GmavenZipTest {
                     "com/android/tools/utp/utp-common",
                     "com/android/tools/utp/utp-common:sources",
                     "com/android/zipflinger",
-                    "com/android/zipflinger:sources",
-                    "com/android/tools/studio/leakcanary/leakcanary",
-                    "com/android/tools/studio/leakcanary/leakcanary:sources");
+                    "com/android/zipflinger:sources");
 
     private static class PomInfo implements Comparable<PomInfo> {
 

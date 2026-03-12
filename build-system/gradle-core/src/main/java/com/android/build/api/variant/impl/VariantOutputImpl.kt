@@ -36,7 +36,7 @@ data class VariantOutputImpl(
   // private APG APIs.
   @get:Input val baseName: String,
   @get:Input val fullName: String,
-  @get:Input val outputFileName: Property<String>,
+  @get:Input override val outputFileName: Property<String>,
 ) : VariantOutput, VariantOutputConfiguration {
 
   @get:Internal override val enable = enabled

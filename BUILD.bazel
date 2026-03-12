@@ -139,7 +139,10 @@ maven_repository(
 
 AGP_TEST_ARTIFACTS = [
     "//tools/analytics-library/testing:tools.analytics-testing",  # TODO: Only required for AGP tests
+    "//tools/base/android-test/android-test-engine-result-listener:android-test-engine-result-listener",  # For android test with JUnit Platform
+    "//tools/base/android-test/android-test-engine-result-listener:test_result_event_proto",  # For android test with JUnit Platform
     "//tools/base/android-test/android-test-junit-engine:android-test-engine",  # For android test with JUnit Platform
+    "//tools/base/android-test/test-result-proto:test-result-proto",  # For android test with JUnit Platform
     "//tools/base/apkparser/analyzer:tools.analyzer.maven",  # TODO(b/143864616): Only required for tests
     "//tools/base/apkparser:tools.binary-resources",  # TODO(b/143864616): Only required for tests
     "//tools/base/emulator/proto",  # Used for UTP

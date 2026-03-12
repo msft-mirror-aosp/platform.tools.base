@@ -210,6 +210,7 @@ public class DeployerRunnerDeviceSelectorTest {
         fakeAdbServer.stop();
         boolean status = fakeAdbServer.awaitServerTermination(WAIT_TIME_MS, TimeUnit.MILLISECONDS);
         assertTrue(status);
+        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
         AndroidDebugBridge.terminate();
         AndroidDebugBridge.disableFakeAdbServerMode();
     }

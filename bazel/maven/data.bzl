@@ -52,6 +52,7 @@ _CLASS_JARS = [
     "androidx.car.app:app:1.4.0",
     "androidx.cardview:cardview:1.0.0",
     "androidx.collection:collection:1.4.0",
+    "androidx.collection:collection:1.4.5",
     "androidx.collection:collection:1.5.0-alpha06",
     "androidx.collection:collection-jvm:1.4.5",
     "androidx.collection:collection-ktx:1.4.0",  # Compose BOM 2024.04.01
@@ -64,6 +65,7 @@ _CLASS_JARS = [
     "androidx.compose.animation:animation:1.7.0-beta05",
     "androidx.compose.animation:animation:1.8.0-alpha06",
     "androidx.compose.animation:animation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.animation:animation-core:1.10.4",
     "androidx.compose.animation:animation-core:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.animation:animation-core-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.animation:animation-graphics:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -82,7 +84,9 @@ _CLASS_JARS = [
     "androidx.compose:compose-bom:pom:2024.09.00",
     "androidx.compose:compose-bom:pom:2025.02.00",
     "androidx.compose:compose-bom:pom:2025.12.00",
+    "androidx.compose:compose-bom:pom:2026.02.01",
     "androidx.compose.foundation:foundation:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.foundation:foundation:1.10.4",
     "androidx.compose.foundation:foundation:1.3.0",
     "androidx.compose.foundation:foundation:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -90,9 +94,11 @@ _CLASS_JARS = [
     "androidx.compose.foundation:foundation:1.8.0-alpha06",
     "androidx.compose.foundation:foundation:1.8.2",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.foundation:foundation-android:1.5.0-beta01",  # Necessary for Compose for TV.
+    "androidx.compose.foundation:foundation-layout:1.10.4",
     "androidx.compose.foundation:foundation-layout:1.3.1",  # Dependency of architecture-samples
     "androidx.compose.foundation:foundation-layout:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material:1.10.4",
     "androidx.compose.material:material:1.3.0",  # Needed by //tools/base/build-system/integration-test/...
     "androidx.compose.material:material:1.4.3",  # Necessary for Compose for TV.
     "androidx.compose.material:material:1.5.0-alpha04",
@@ -109,6 +115,7 @@ _CLASS_JARS = [
     "androidx.compose.material:material-icons-extended:1.3.0",
     "androidx.compose.material:material-icons-extended:1.7.0",
     "androidx.compose.material:material-ripple:1.10.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.material:material-ripple:1.10.4",
     "androidx.compose.material:material-ripple:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-ripple:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-ripple-jvmstubs:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -122,15 +129,18 @@ _CLASS_JARS = [
     "androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0",  # Compose Navigation UI template: Compose BOM 2025.12.00
     "androidx.compose.material3:material3-desktop:1.3.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.runtime:runtime:1.10.4",
     "androidx.compose.runtime:runtime:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime:1.8.0-alpha06",  # XR template
     "androidx.compose.runtime:runtime-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime-livedata:1.3.0",
+    "androidx.compose.runtime:runtime-saveable:1.10.4",
     "androidx.compose.runtime:runtime-saveable:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.runtime:runtime-saveable:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.runtime:runtime-saveable-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui:1.10.4",
     "androidx.compose.ui:ui:1.3.0",
     "androidx.compose.ui:ui:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui:1.7.0",  # Compose BOM 2024.09.00
@@ -138,11 +148,13 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-graphics:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-graphics:1.10.4",
     "androidx.compose.ui:ui-graphics:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-graphics-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-graphics-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-test-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-junit4:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-test-junit4:1.10.4",
     "androidx.compose.ui:ui-test-junit4:1.2.0",
     "androidx.compose.ui:ui-test-junit4:1.3.0",
     "androidx.compose.ui:ui-test-junit4:1.3.3",  # Dependency of architecture-samples
@@ -154,6 +166,7 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-test-junit4:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-test-junit4-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-test-manifest:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-test-manifest:1.10.4",
     "androidx.compose.ui:ui-test-manifest:1.3.0",
     "androidx.compose.ui:ui-test-manifest:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-test-manifest:1.5.0-beta01",  # Necessary for Compose for TV.
@@ -163,9 +176,11 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-test-manifest:1.8.0-alpha06",  # XR template
     "androidx.compose.ui:ui-test-manifest:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-text:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-text:1.10.4",
     "androidx.compose.ui:ui-text:1.3.3",  # Dependency of architecture-samples
     "androidx.compose.ui:ui-text-google-fonts:1.7.0",
     "androidx.compose.ui:ui-tooling:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-tooling:1.10.4",
     "androidx.compose.ui:ui-tooling:1.2.0",  # Still needed from //tools/data-binding/compilationTests
     "androidx.compose.ui:ui-tooling:1.3.0",  # Still needed from //tools/base/build-system/integration-tests
     "androidx.compose.ui:ui-tooling:1.3.3",  # Dependency of architecture-samples
@@ -182,12 +197,14 @@ _CLASS_JARS = [
     "androidx.compose.ui:ui-tooling-data-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-tooling-preview:1.10.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.compose.ui:ui-tooling-preview:1.10.4",
     "androidx.compose.ui:ui-tooling-preview:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-preview:1.6.5",
     "androidx.compose.ui:ui-tooling-preview:1.8.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.ui:ui-tooling-preview-android:1.5.0-beta01",  # Necessary for Compose for TV.
     "androidx.compose.ui:ui-tooling-preview-desktop:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.ui:ui-unit-android:1.5.0-beta01",  # Necessary for Compose for TV.
+    "androidx.compose.ui:ui-util:1.10.4",
     "androidx.compose.ui:ui-util:1.3.3",  # Dependency of architecture-samples
     "androidx.concurrent:concurrent-futures-ktx:1.2.0",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.constraintlayout:constraintlayout:1.1.3",
@@ -392,6 +409,7 @@ _CLASS_JARS = [
     "androidx.room:room-testing:2.5.0-rc01",  # Dependency of architecture-samples
     "androidx.savedstate:savedstate-ktx:1.2.1",
     "androidx.savedstate:savedstate-ktx:1.3.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.savedstate:savedstate-ktx:1.3.3",
     "androidx.slice:slice-builders:1.0.0",
     "androidx.sqlite:sqlite:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-bundled:2.5.0-beta01",  # Database Inspector
@@ -1044,6 +1062,7 @@ _CLASS_JARS = [
     "org.duckdb:duckdb_jdbc:1.3.0.0",
     "org.eclipse.lsp4j:org.eclipse.lsp4j:0.21.1",
     "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.21.1",
+    "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.54",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
     "org.gradle:gradle-tooling-api:9.2.1",
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
@@ -1070,6 +1089,18 @@ _CLASS_JARS = [
     "org.jdeferred:jdeferred-android-aar:1.2.2",
     "org.jdeferred:jdeferred-android-aar:1.2.3",
     "org.jetbrains:annotations-java5:jar:24.0.0",
+    "org.jetbrains.compose.components:components-ui-tooling-preview:1.10.1",
+    "org.jetbrains.compose.components:components-ui-tooling-preview-android:1.10.1",
+    "org.jetbrains.compose.desktop:desktop:1.10.1",
+    "org.jetbrains.compose.material3:material3:1.9.0",
+    "org.jetbrains.compose:org.jetbrains.compose.gradle.plugin:pom:1.10.1",
+    "org.jetbrains.compose.runtime:runtime:1.10.1",
+    "org.jetbrains.compose.ui:ui:1.10.1",
+    "org.jetbrains.compose.ui:ui-backhandler:1.9.1",
+    "org.jetbrains.compose.ui:ui-backhandler-android-debug:1.9.1",
+    "org.jetbrains.compose.ui:ui-desktop:1.10.1",
+    "org.jetbrains.compose.ui:ui-tooling:1.10.1",
+    "org.jetbrains.compose.ui:ui-tooling-preview:1.10.1",
     "org.jetbrains.dokka:dokka-base:1.4.32",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
     "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
@@ -1088,7 +1119,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.0-dev-4131",
+    "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:2.4.0-dev-5614",
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.20-RC",  # Used by AGP tests
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:1.6.10",
@@ -1105,7 +1136,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.0",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.0-dev-4131",
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.4.0-dev-5614",
     "org.jetbrains.kotlin:jvm-abi-gen:2.3.10",  # Studio build
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.8.10",  # Dependency of architecture-samples
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:1.9.22",
@@ -1113,7 +1144,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.1.20",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.10",
     "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.0-dev-4131",
+    "org.jetbrains.kotlin.kapt:org.jetbrains.kotlin.kapt.gradle.plugin:pom:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.41",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.3.72",
     "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.4.32",
@@ -1142,14 +1173,14 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-bom:pom:1.8.22",
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.10",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.0.21",  # Kotlin templates
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.0",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.1.20",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.10",  # Used by AGP privacy-sandbox tests
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.10",
     "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-compiler:1.7.20",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.10",
     "org.jetbrains.kotlin:kotlin-compiler:1.8.21",
@@ -1189,7 +1220,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.10",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle70:1.7.20",
     "org.jetbrains.kotlin:kotlin-gradle-plugin:jar:gradle71:1.7.20",
@@ -1268,7 +1299,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-stdlib:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.20",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.22",
     "org.jetbrains.kotlin:kotlin-stdlib-common:1.9.23",
@@ -1282,7 +1313,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.0",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-stdlib-common:pom:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.32",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.21",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.2.0",
@@ -1302,9 +1333,10 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.0.0",  # Compose/Kotlin 2.0.0 templates
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.0",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.2.20",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.10",
     "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0-dev-4131",
+    "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.0-dev-5614",
     "org.jetbrains.kotlin:kotlin-test:1.9.24",
     "org.jetbrains.kotlin:kotlin-test:2.0.21",
     "org.jetbrains.kotlin:kotlin-test:2.1.20",
@@ -1324,7 +1356,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.2.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.10",  # Used by AGP Compose tests
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.3.20-RC",  # Used by AGP tests
-    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.0-dev-4131",
+    "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.0-dev-5614",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.3.20-RC",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
     "org.jetbrains.kotlinx:atomicfu:0.29.0",
@@ -1358,7 +1390,9 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
+    "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
     "org.junit:junit-bom:pom:5.10.0",
+    "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
     "org.junit:junit-bom:pom:5.11.0-M2",
     "org.junit:junit-bom:pom:5.9.2",

@@ -1,9 +1,13 @@
 """Implements checks on the build graph using 'bazel query'."""
 
 import dataclasses
+import logging
 
 from tools.base.bazel.ci import bazel
 from tools.base.bazel.ci import errors
+
+# A query matching targets opted out of presubmit (studio-win and studio-linux).
+_QUERY_TARGETS_PRESUBMIT_OPT_OUT = r'(attr(tags, "noci:studio-linux[,\]]", //...) intersect attr(tags, "noci:studio-win[,\]]", //...))'
 
 
 @dataclasses.dataclass(frozen=True,kw_only=True)
@@ -83,4 +87,45 @@ def gradle_requires_cpu4_or_more(build_env: bazel.BuildEnv):
             'ERROR: The follow targets depend on //tools/base/build-system:gradle-distrib'
             ' and must have cpu:4 or greater\n'
         ) + '\n'.join(query_targets)
+    )
+
+
+def check_large_machine_allowlist(build_env: bazel.BuildEnv):
+  """Targets using large machines are not allowed on presubmit."""
+  perfgate_release_targets = r'attr(tags, "perfgate-release[,\]]", //...)'
+  query = r'attr(exec_properties, "[,{ ]label:machine-size=large[,}]", //...)'
+  query += f' except {_QUERY_TARGETS_PRESUBMIT_OPT_OUT} except {perfgate_release_targets}'
+  result = build_env.bazel_query(query)
+  if not result.stdout:
+    return
+  query_targets = result.stdout.decode('utf8').splitlines()
+  raise BuildGraphException(
+        title='Large machines are not allowed on presubmit. Please consult with android-devtools-infra@',
+        go_link='',
+        body=(
+            'ERROR: The following targets are using large machines.\n'
+        ) + '\n'.join(query_targets)
+    )
+
+
+def check_docker_network_allowlist(build_env: bazel.BuildEnv):
+  """Targets using docker network are not allowed on presubmit."""
+  query = r'attr(exec_properties, "[,{ ]dockerNetwork=standard[,}]", //...)'
+  query += f' except {_QUERY_TARGETS_PRESUBMIT_OPT_OUT}'
+  result = build_env.bazel_query(query)
+  if not result.stdout:
+    return
+  targets = result.stdout.decode('utf8').splitlines()
+  with open('tools/base/bazel/ci/data/allowlist-docker-network.txt', encoding='utf8') as f:
+    allowlist_targets = f.read().splitlines()
+
+  targets = list(set(targets) - set(allowlist_targets))
+  if not targets:
+    return
+  raise BuildGraphException(
+        title='Relying on network access is discouraged. Please consult with android-devtools-infra@',
+        go_link='',
+        body=(
+            'ERROR: The follow targets set dockerNetwork=standard.\n'
+        ) + '\n'.join(targets)
     )

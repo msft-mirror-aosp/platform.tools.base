@@ -61,8 +61,7 @@ class LanguageLevelTest : AbstractCheckTest() {
       )
   }
 
-  // TODO(b/484859403)
-  fun ignore_testJavaInvalid() {
+  fun testJavaInvalid() {
     // Regression test for b/283693337
     lint()
       .files(

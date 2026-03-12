@@ -17,8 +17,8 @@ package com.android.tools.idea.wizard.template.impl.activities.composeActivityMa
 
 internal fun createHomeIconXml(): String {
   return """<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="24dp"
-    android:height="24dp"
+    android:width="48dp"
+    android:height="48dp"
     android:viewportWidth="960"
     android:viewportHeight="960">
   <path

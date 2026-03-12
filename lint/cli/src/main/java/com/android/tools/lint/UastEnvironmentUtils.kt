@@ -44,7 +44,6 @@ import com.intellij.openapi.extensions.impl.ExtensionsAreaImpl
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.impl.CoreProgressManager
-import com.intellij.openapi.roots.LanguageLevelProjectExtension
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.KeyedExtensionCollector
 import com.intellij.openapi.util.registry.Registry
@@ -156,11 +155,6 @@ internal fun configureProjectEnvironment(project: MockProject, config: UastEnvir
   project.registerService(ExternalAnnotationsManager::class.java, LintExternalAnnotationsManager::class.java)
   project.registerService(InferredAnnotationsManager::class.java, LintInferredAnnotationsManager::class.java)
 
-  // Java language level.
-  val javaLanguageLevel = config.javaLanguageLevel
-  if (javaLanguageLevel != null) {
-    LanguageLevelProjectExtension.getInstance(project).languageLevel = javaLanguageLevel
-  }
   // Used by Java RecordAugmentProvider
   project.registerService(TreeAspect::class.java)
   project.registerService(PomModel::class.java, PomModelImpl::class.java)

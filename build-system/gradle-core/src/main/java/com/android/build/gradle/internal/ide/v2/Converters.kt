@@ -47,6 +47,7 @@ import com.android.builder.model.v2.ide.CodeShrinker
 import com.android.builder.model.v2.ide.JavaCompileOptions
 import com.android.builder.model.v2.ide.SourceProvider
 import com.android.builder.model.v2.ide.TestInfo
+import java.io.File
 
 // Converts DSL items into v2 model instances
 
@@ -269,7 +270,7 @@ internal fun AndroidResources.convert(): AaptOptions {
 
 internal fun Installation.convert() = InstallationImpl(timeOutInMs = timeOutInMs, installOptions = installOptions.toImmutableList())
 
-internal fun Lint.convert() =
+internal fun Lint.convert(projectDirectory: File? = null, useBaselineConvention: Boolean = false) =
   LintOptionsImpl(
     disable = disable.toSet(),
     enable = enable.toSet(),
@@ -302,7 +303,7 @@ internal fun Lint.convert() =
     ignoreTestFixturesSources = ignoreTestFixturesSources,
     checkGeneratedSources = checkGeneratedSources,
     checkDependencies = checkDependencies,
-    baseline = baseline,
+    baseline = baseline ?: if (useBaselineConvention) projectDirectory?.resolve("lint-baseline.xml") else null,
     targetSdk = targetSdk?.let { DefaultApiVersion(it).convert() } ?: targetSdkPreview?.let { DefaultApiVersion(it).convert() },
   )
 

@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.cxx.process
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.utils.cxx.os.quoteExecutablePath
+import java.io.File
 import javax.inject.Inject
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -39,6 +40,7 @@ abstract class ExecuteProcessValueSource : ValueSource<Int, ExecuteProcessValueS
     val logStderr: Property<Boolean>
     val logStdout: Property<Boolean>
     val logFullStdout: Property<Boolean>
+    val workingDirectory: Property<File>
   }
 
   @get:Inject abstract val execOperations: ExecOperations
@@ -49,12 +51,14 @@ abstract class ExecuteProcessValueSource : ValueSource<Int, ExecuteProcessValueS
         ProcessInfoBuilder()
           .setExecutable(quoteExecutablePath(parameters.commandFile.get()))
           .addEnvironments(parameters.environment.get())
+          .setDirectory(parameters.workingDirectory.get())
           .createProcess()
       } else {
         ProcessInfoBuilder()
           .setExecutable(quoteExecutablePath(parameters.executable.get()))
           .addArgs(parameters.args.get())
           .addEnvironments(parameters.environment.get())
+          .setDirectory(parameters.workingDirectory.get())
           .createProcess()
       }
 

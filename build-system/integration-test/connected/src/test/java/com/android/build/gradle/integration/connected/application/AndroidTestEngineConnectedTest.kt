@@ -66,7 +66,9 @@ class AndroidTestEngineConnectedTest {
               inputs.add(AgpTestSuiteInputParameters.TESTED_APKS)
               inputs.add(AgpTestSuiteInputParameters.ADB_EXECUTABLE)
               includeEngines.add("android-test-engine")
+              addInputProperty("android-test.listener.stream-base64-encoded-result", "true")
               enginesDependencies.add("com.android.tools.androidtest:android-test-engine:+")
+              enginesDependencies.add("com.android.tools.androidtest:android-test-engine-result-listener:+")
               enginesDependencies.add("org.junit.platform:junit-platform-engine:+")
               enginesDependencies.add("org.junit.platform:junit-platform-launcher:+")
             }
@@ -171,9 +173,20 @@ class AndroidTestEngineConnectedTest {
   fun runBasicAndroidTestUsingJUnitTestEngine() {
     val result = executor.run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
 
-    result.assertOutputContains("emulator-5554 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
-    result.assertOutputContains("emulator-5554 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
-    result.assertOutputContains("emulator-5556 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
-    result.assertOutputContains("emulator-5556 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
+    result.assertOutputContains("emulator-5554 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
+    result.assertOutputContains("emulator-5554 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
+    result.assertOutputContains("emulator-5556 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase1 PASSED")
+    result.assertOutputContains("emulator-5556 - 13 > com.example.android.ExampleInstrumentedTest.exampleTestCase2 PASSED")
+  }
+
+  @Test
+  fun verifyTestResultListenerOutput() {
+    val result =
+      executor
+        .withArgument("-Pcom.android.tools.utp.GradleAndroidProjectResolverExtension.enable=true")
+        .run(":app:testMyAndroidTestSuiteT1DebugTestSuite")
+
+    result.assertOutputContains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
+    result.assertOutputContains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
   }
 }

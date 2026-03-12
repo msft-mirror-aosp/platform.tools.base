@@ -675,11 +675,9 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
 
                 You can include test sources in the unused resource check by setting \
                 the system property \
-                $INCLUDE_TESTS_PROPERTY \
-                =true, and to \
+                `$INCLUDE_TESTS_PROPERTY=true`, and to \
                 exclude them (usually for performance reasons), use \
-                $EXCLUDE_TESTS_PROPERTY \
-                =true.
+                `$EXCLUDE_TESTS_PROPERTY=true`.
                 """
 
     /** Unused resources (other than ids). */
@@ -692,7 +690,7 @@ class UnusedResourceDetector : ResourceXmlDetector(), SourceCodeScanner, BinaryR
             """
                 Unused resources make applications larger and slow down builds.
 
-                $EXCLUDING_TESTS_EXPLANATION,
+                $EXCLUDING_TESTS_EXPLANATION
                 """,
           category = Category.PERFORMANCE,
           priority = 3,

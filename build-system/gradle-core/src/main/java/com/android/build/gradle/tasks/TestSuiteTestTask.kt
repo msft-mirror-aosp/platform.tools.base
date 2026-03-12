@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.BuildToolsExecutableInput
 import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
+import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
@@ -38,6 +39,8 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask.DeviceProviderFactory
 import com.android.build.gradle.internal.tasks.GlobalTask
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
+import com.android.build.gradle.internal.tasks.getApkFiles
+import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
@@ -45,11 +48,17 @@ import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.BuilderConstants
+import com.android.builder.testing.api.DeviceConfigProvider
+import com.android.builder.testing.api.DeviceConfigProviderImpl
 import com.android.builder.testing.api.DeviceException
 import java.io.File
 import java.io.FileWriter
 import java.util.Locale
 import java.util.Properties
+import kotlin.collections.asIterable
+import kotlin.collections.joinToString
+import kotlin.collections.plus
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
@@ -88,6 +97,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val sourceFolders: ListProperty<Directory>
 
   @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val binaryFolders: ListProperty<Directory>
+
+  /**
+   * The app bundle file used for dynamic feature testing.
+   *
+   * For dynamic features, we need to extract a set of APKs (base + feature + other splits) that are compatible with the target device. This
+   * extraction happens at execution time because the set of APKs depends on the connected device's configuration.
+   */
+  @get:InputFiles @get:Optional @get:PathSensitive(PathSensitivity.RELATIVE) abstract val apkBundle: ConfigurableFileCollection
+
+  /** The module name within the bundle that contains the tests. */
+  @get:Input @get:Optional abstract val bundleModuleName: Property<String>
 
   @get:OutputFile abstract val engineInputPropertiesFiles: RegularFileProperty
 
@@ -139,61 +159,71 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
     logFile.get().asFile.delete()
 
+    val streamingFile = streamingOutputFile.get().asFile
+    streamingFile.parentFile.mkdirs()
+    if (streamingFile.exists()) {
+      streamingFile.delete()
+    }
+    streamingFile.createNewFile()
+
     val engineInputParameters: List<TestEngineInputProperty> =
       engineInputParameters.get().map { inputProperty ->
         TestEngineInputProperty(inputProperty.type.propertyName, inputProperty.value.get().asFile.absolutePath)
       }
 
+    doExecuteTests(engineInputParameters)
+  }
+
+  protected open fun doExecuteTests(engineInputParameters: List<TestEngineInputProperty>) {
     // only get the connected devices if the test requested an APK.
     if (engineInputParameters.any { inputParameter -> inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName }) {
-      provisionDevicesAndExecute { onlineDeviceSerials -> executeTests(engineInputParameters, onlineDeviceSerials) }
+      provisionDevicesAndExecute { onlineDevices -> executeTests(engineInputParameters, onlineDevices) }
     } else {
       executeTests(engineInputParameters)
     }
   }
 
-  private fun provisionDevicesAndExecute(executeTestFunc: (onlineDeviceSerials: String) -> Unit) {
-    provisionConnectedDevicesAndExecute { connectedDeviceSerials ->
-      provisionManagedDevicesAndExecute { managedDeviceSerials ->
-        val onlineDeviceSerials = (connectedDeviceSerials + managedDeviceSerials).joinToString(",")
-        executeTestFunc(onlineDeviceSerials)
-      }
+  private fun provisionDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
+    provisionConnectedDevicesAndExecute { connectedDevices ->
+      provisionManagedDevicesAndExecute { managedDevices -> onDevicesReady(connectedDevices + managedDevices) }
     }
   }
 
-  private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
+  private fun provisionConnectedDevicesAndExecute(onDevicesReady: (onlineDevices: List<DeviceTestTarget>) -> Unit) {
     val deviceProvider = deviceProviderFactory.getDeviceProvider(buildTools.adbExecutable(), androidDeviceSerials.orNull)
     try {
       deviceProvider.use {
-        val onlineDeviceSerials = deviceProvider.devices.map { it.serialNumber }
-        onDevicesReady(onlineDeviceSerials)
+        val targets =
+          deviceProvider.devices.map { connector -> DeviceTestTarget(connector.serialNumber, DeviceConfigProviderImpl(connector)) }
+        onDevicesReady(targets)
       }
     } catch (_: DeviceException) {
       onDevicesReady(listOf())
     }
   }
 
-  private fun provisionManagedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit) {
+  private fun provisionManagedDevicesAndExecute(onDevicesReady: (onlineDeviceSerials: List<DeviceTestTarget>) -> Unit) {
     provisionManagedDevicesAndExecute(managedDevices.get().asIterable().iterator(), mutableListOf(), onDevicesReady)
   }
 
   private fun provisionManagedDevicesAndExecute(
     iterator: Iterator<ManagedVirtualDevice>,
-    onlineDeviceSerials: MutableList<String>,
-    onDevicesReady: (onlineDeviceSerials: List<String>) -> Unit,
+    onlineDevices: MutableList<DeviceTestTarget>,
+    onDevicesReady: (onlineDeviceSerials: List<DeviceTestTarget>) -> Unit,
   ) {
     if (!iterator.hasNext()) {
-      onDevicesReady(onlineDeviceSerials)
+      onDevicesReady(onlineDevices)
       return
     }
-    val avdName = computeAvdName(iterator.next())
+    val device = iterator.next()
+    val avdName = computeAvdName(device)
     avdService.get().runWithAvd(avdName) { onlineDeviceSerial ->
-      onlineDeviceSerials += onlineDeviceSerial
-      provisionManagedDevicesAndExecute(iterator, onlineDeviceSerials, onDevicesReady)
+      onlineDevices.add(DeviceTestTarget(onlineDeviceSerial, DslDeviceConfigProvider(device)))
+      provisionManagedDevicesAndExecute(iterator, onlineDevices, onDevicesReady)
     }
   }
 
-  private fun executeTests(engineInputParameters: List<TestEngineInputProperty>, onlineDeviceSerials: String? = null) {
+  private fun executeTests(engineInputParameters: List<TestEngineInputProperty>, onlineDevices: List<DeviceTestTarget> = listOf()) {
     val standardInputs =
       mutableListOf(
         TestEngineInputProperty(TestEngineInputProperty.LOGGING_FILE, providerToPath(logFile)),
@@ -224,8 +254,19 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
     }
 
-    if (onlineDeviceSerials != null) {
+    if (onlineDevices.isNotEmpty()) {
+      val onlineDeviceSerials = onlineDevices.joinToString(",") { it.serialNumber }
       standardInputs.add(TestEngineInputProperty(TestEngineInputProperty.SERIAL_IDS, onlineDeviceSerials))
+
+      if (!apkBundle.isEmpty) {
+        onlineDevices.forEach { target ->
+          val extractedApks = getApkFiles(apkBundle.singleFile.toPath(), target.deviceConfigProvider, bundleModuleName.orNull)
+          val apksString = extractedApks.joinToString(",") { it.toAbsolutePath().toString() }
+          standardInputs.add(
+            TestEngineInputProperty("${AgpTestSuiteInputParameters.TESTED_APKS.propertyName}[${target.serialNumber}]", apksString)
+          )
+        }
+      }
     }
 
     // Configures java.util.logging to redirect all output from the test execution process
@@ -264,10 +305,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val xmlResultsDirFile = this.xmlResultsDir.get().asFile
       val htmlOutputDirFile = this.reports.html.outputLocation.get().asFile
 
-      // When android.experimental.androidTest.builtin_test_platform=true, XMLs are in subdirectories.
+      // When android.experimental.androidTest.builtin_test_platform=true, XMLs might be in the root
+      // results directory or in device-specific subdirectories (alongside other artifacts).
       // We need to aggregate all of them to get a complete HTML report.
-      val deviceDirs = xmlResultsDirFile.listFiles()?.filter { it.isDirectory } ?: listOf()
-      val resultDirs = if (deviceDirs.isNotEmpty()) deviceDirs else listOf(xmlResultsDirFile)
+      val resultDirs = mutableListOf(xmlResultsDirFile)
+      xmlResultsDirFile.listFiles()?.filter { it.isDirectory }?.let { resultDirs.addAll(it) }
 
       val report = TestReport(ReportType.SINGLE_FLAVOR, resultDirs, htmlOutputDirFile)
       report.generateReport()
@@ -295,14 +337,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
   private fun providerToPath(value: Provider<out FileSystemLocation>): String = value.get().asFile.absolutePath
 
   class CreationAction(val creationConfig: TestSuiteCreationConfig, val testSuiteTarget: TestSuiteTargetCreationConfig) :
-    GlobalTaskCreationAction<TestSuiteTestTask>() {
+    GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
       get() = testSuiteTarget.testTaskName
 
-    override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
+    override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
-    override fun configure(task: TestSuiteTestTask) {
+    override fun configure(task: LegacyReportingTestSuiteTestTask) {
       super.configure(task)
       task.group = JavaBasePlugin.VERIFICATION_GROUP
       task.outputs.upToDateWhen { false }
@@ -432,9 +474,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.testedVariantName.setDisallowChanges(creationConfig.testedVariant.name)
       task.testSuiteName.setDisallowChanges(creationConfig.name)
       task.testSuiteTarget.setDisallowChanges(testSuiteTarget.name)
+
+      // This Gradle property key is hard coded in Android Studio.
+      // We will remove it once Android Studio can consume test report using
+      // the tooling api.
+      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
+        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
+      )
     }
 
-    override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
+    override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
 
       creationConfig.testedVariant.artifacts
@@ -460,14 +509,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     private val creationConfig: DeviceTestCreationConfig,
     private val testData: TestData,
     private val connectedCheckSerials: Provider<List<String>>,
-  ) : GlobalTaskCreationAction<TestSuiteTestTask>() {
+  ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
 
     override val name: String
       get() = creationConfig.computeTaskNameInternal("connected")
 
-    override val type: Class<TestSuiteTestTask> = TestSuiteTestTask::class.java
+    override val type: Class<LegacyReportingTestSuiteTestTask> = LegacyReportingTestSuiteTestTask::class.java
 
-    override fun configure(task: TestSuiteTestTask) {
+    override fun configure(task: LegacyReportingTestSuiteTestTask) {
       super.configure(task)
 
       val globalConfig = creationConfig.global
@@ -491,8 +540,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
       task.testClassesDirs = creationConfig.services.fileCollection().also { it.from(classesDir) }
 
-      // TODO(b/476442048): Remove -dev suffix for release builds once the android-test-engine BUILD file is updated.
-      val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0-dev" else "0.1.0-dev"
+      val androidTestEngineVersion = if (Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")) "0.1.0-dev" else "0.1.0"
 
       task.classpath =
         creationConfig.services.fileCollection().also {
@@ -501,6 +549,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           it.from(
             creationConfig.services.configurations.detachedConfiguration(
               creationConfig.services.dependencies.create("com.android.tools.androidtest:android-test-engine:$androidTestEngineVersion"),
+              creationConfig.services.dependencies.create(
+                "com.android.tools.androidtest:android-test-engine-result-listener:$androidTestEngineVersion"
+              ),
               creationConfig.services.dependencies.create("org.junit.platform:junit-platform-engine:1.12.0"),
               creationConfig.services.dependencies.create("org.junit.platform:junit-platform-launcher:1.12.0"),
             )
@@ -530,6 +581,23 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // AgpTestSuiteInputParameters if they are useful for other JUnit engines.
       task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
       task.engineInputProperties.put("android-test.uninstall-after-tests", "true")
+
+      if (testData is BundleTestDataImpl) {
+        task.apkBundle.from(testData.apkBundle)
+        task.bundleModuleName.setDisallowChanges(testData.moduleName)
+      }
+
+      // This Gradle property key is hard coded in Android Studio.
+      // We will remove it once Android Studio can consume test report using
+      // the tooling api.
+      task.legacyTestReportingRedirectionEnabled.setDisallowChanges(
+        task.project.providers.gradleProperty(LegacyReportingTestSuiteTestTask.ENABLE_UTP_REPORTING_PROPERTY).orNull?.toBoolean() ?: false
+      )
+      task.engineInputProperties.put(
+        "android-test.listener.stream-base64-encoded-result",
+        task.legacyTestReportingRedirectionEnabled.map { it.toString() },
+      )
+
       task.engineInputProperties.disallowChanges()
 
       val variantName = creationConfig.mainVariant.name
@@ -591,8 +659,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.environment(DEFAULT_ENV_VARIABLE, task.engineInputPropertiesFiles.get().asFile.absolutePath)
     }
 
-    override fun handleProvider(taskProvider: TaskProvider<TestSuiteTestTask>) {
+    override fun handleProvider(taskProvider: TaskProvider<LegacyReportingTestSuiteTestTask>) {
       super.handleProvider(taskProvider)
+
+      creationConfig.taskContainer.connectedTestTask = taskProvider
 
       creationConfig.artifacts
         .setInitialProvider(taskProvider, TestSuiteTestTask::coverageDir)
@@ -605,6 +675,30 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     @get:Input val type: AgpTestSuiteInputParameters,
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val value: Provider<out FileSystemLocation>,
   )
+
+  /** Encapsulates a target device for test execution, pairing its serial number with its configuration characteristics. */
+  class DeviceTestTarget(val serialNumber: String, val deviceConfigProvider: DeviceConfigProvider)
+
+  /**
+   * Implementation of [DeviceConfigProvider] that resolves device characteristics directly from the [ManagedVirtualDevice] DSL. This
+   * ensures that for Gradle Managed Devices, we use the configured settings (e.g., API level, ABIs) as the source of truth rather than
+   * querying the device at runtime.
+   */
+  class DslDeviceConfigProvider(val device: ManagedVirtualDevice) : DeviceConfigProvider {
+    override fun getConfigFor(abi: String?): String = requireNotNull(abi)
+
+    override fun getDensity(): Int = -1
+
+    override fun getLanguage(): String? = null
+
+    override fun getRegion(): String? = null
+
+    override fun getAbis(): MutableList<String> = mutableListOf(device.testedAbi ?: computeAbiFromArchitecture(device))
+
+    override fun getApiCodeName(): String? = device.sdkPreview
+
+    override fun getApiLevel(): Int = device.sdkVersion
+  }
 
   class AgpTestSuiteInputsSerializer {
     companion object {

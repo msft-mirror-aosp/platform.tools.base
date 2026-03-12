@@ -22,8 +22,10 @@ import static com.android.tools.deployer.ApkVerifierTracker.getSkipVerificationI
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule;
+import com.android.adblib.testingutils.FakeAdbServerProviderRule;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
@@ -39,7 +41,9 @@ import com.google.common.collect.Sets;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.RuleChain;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,8 +60,19 @@ public class ApkVerifierTrackerTest {
     private static final String FIRST_PACKAGE = "package 0";
     private static final String SECOND_PACKAGE = "package 1";
 
-    private FakeAdbServer fakeAdbServer;
     private final FakeDeviceHandler handler = new FakeDeviceHandler();
+
+    private final FakeAdbServerProviderRule fakeAdbRule =
+            new FakeAdbServerProviderRule(
+                    provider -> {
+                        provider.installDeviceHandler(handler);
+                        return kotlin.Unit.INSTANCE;
+                    });
+
+    @Rule public final RuleChain chain = RuleChain.outerRule(fakeAdbRule)
+            .around(new UseAdbLibAndroidDebugBridgeRule(fakeAdbRule::getAdbSession));
+
+    private FakeAdbServer fakeAdbServer;
     private AndroidDebugBridge bridge;
 
     private Set<IDevice> disabledDevices;
@@ -65,17 +80,7 @@ public class ApkVerifierTrackerTest {
 
     @Before
     public void before() throws Exception {
-        // Build the server and configure it to use the default ADB command handlers.
-        fakeAdbServer =
-                new FakeAdbServer.Builder()
-                        .installDefaultCommandHandlers()
-                        .addDeviceHandler(handler)
-                        .build();
-
-        // Start server execution.
-        fakeAdbServer.start();
-
-        // Start ADB with fake server and its port.
+        fakeAdbServer = fakeAdbRule.getFakeAdb().getFakeAdbServer();
         AndroidDebugBridge.enableFakeAdbServerMode(fakeAdbServer.getPort());
 
         FakeDevice oDevice = new FakeDevice("8.0", 26);
@@ -103,17 +108,13 @@ public class ApkVerifierTrackerTest {
         // Wait for ADB.
         waitFor(() -> bridge.isConnected());
 
-        for (FakeDevice device : fakeDevices) {
-            handler.connect(device, fakeAdbServer);
+        List<DeviceState> deviceStates = new ArrayList<>();
+        for (FakeDevice fakeDevice : fakeDevices) {
+            deviceStates.add(connectAndWaitForDevice(fakeDevice));
         }
 
-        // Wait until all our devices are recognized by FakeAdb.
-        waitFor(() -> fakeAdbServer.getDeviceListCopy().get().size() == fakeDevices.size());
-
-        List<DeviceState> deviceStates = fakeAdbServer.getDeviceListCopy().get();
         Map<FakeDevice, IDevice> devicesMap = new HashMap<>();
-        // Wait until all devices are recognized by ADB/ddmlib.
-        waitUntilAdbHasAllDevices();
+
         // Map FakeDevices to their corresponding IDevices.
         for (FakeDevice device : fakeDevices) {
             DeviceState state =
@@ -134,11 +135,8 @@ public class ApkVerifierTrackerTest {
 
     @After
     public void after() throws InterruptedException {
-        fakeAdbServer.stop();
-        boolean status = fakeAdbServer.awaitServerTermination(WAIT_TIME_MS, TimeUnit.MILLISECONDS);
-        assertTrue(status);
-
         ApkVerifierTracker.clear();
+        AndroidDebugBridge.disconnectBridge(10, TimeUnit.SECONDS);
         AndroidDebugBridge.terminate();
         AndroidDebugBridge.disableFakeAdbServerMode();
     }
@@ -212,22 +210,14 @@ public class ApkVerifierTrackerTest {
         }
     }
 
-    private void waitUntilAdbHasAllDevices() throws Exception {
-        List<DeviceState> deviceStates = fakeAdbServer.getDeviceListCopy().get();
-        for (DeviceState deviceState : deviceStates) {
-            waitUntilAdbHasDevice(deviceState.getDeviceId());
-        }
-    }
-
-    private static void waitUntilAdbHasDevice(@NonNull String deviceId) throws Exception {
+    private DeviceState connectAndWaitForDevice(FakeDevice fakeDevice) throws Exception {
         CountDownLatch countDownLatch = new CountDownLatch(1);
+
         AndroidDebugBridge.IDeviceChangeListener deviceChangeListener =
                 new AndroidDebugBridge.IDeviceChangeListener() {
                     @Override
                     public void deviceConnected(@NonNull IDevice device) {
-                        if (deviceId.equals(device.getSerialNumber())) {
-                            countDownLatch.countDown();
-                        }
+                        countDownLatch.countDown();
                     }
 
                     @Override
@@ -236,19 +226,18 @@ public class ApkVerifierTrackerTest {
                     @Override
                     public void deviceChanged(@NonNull IDevice device, int changeMask) {}
                 };
+        AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
 
+        DeviceState deviceState;
         try {
-            AndroidDebugBridge.addDeviceChangeListener(deviceChangeListener);
-            for (IDevice device : AndroidDebugBridge.getBridge().getDevices()) {
-                if (deviceId.equals(device.getSerialNumber())) {
-                    // Device is already connected
-                    return;
-                }
+            deviceState = handler.connect(fakeDevice, fakeAdbServer);
+            // Wait until the device is recognized by ADB.
+            if (!countDownLatch.await(WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                fail("Timeout waiting for the device to connect");
             }
-            // Wait for device to get connected
-            countDownLatch.await();
         } finally {
             AndroidDebugBridge.removeDeviceChangeListener(deviceChangeListener);
         }
+        return deviceState;
     }
 }

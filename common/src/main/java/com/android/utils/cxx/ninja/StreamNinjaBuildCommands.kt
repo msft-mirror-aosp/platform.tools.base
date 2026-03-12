@@ -55,6 +55,7 @@ fun streamNinjaBuildCommands(file: File, progress: ProgressCallback? = null, act
   val state = EvaluationState()
 
   streamNinjaStatements(file, progress) { node ->
+    @Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
     when (node) {
       is NinjaStatement.Assignment -> state.assignPropertyValue(node.name, node.value.toString())
       is NinjaStatement.RuleDef -> state.assignRule(node.name, node)

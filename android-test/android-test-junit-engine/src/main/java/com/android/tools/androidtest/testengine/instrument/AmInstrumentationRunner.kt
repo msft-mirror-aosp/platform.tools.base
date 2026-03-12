@@ -54,6 +54,7 @@ class AmInstrumentationRunner(
    */
   fun runAmInstrumentCommand() {
     val command = getAmInstrumentCmd()
+    logger.info("Running instrumentation: adb ${command.joinToString(" ")}")
     val process = processBuilder(command).start()
     val parser = AmInstrumentationParser(listeners = listeners)
     val handler =

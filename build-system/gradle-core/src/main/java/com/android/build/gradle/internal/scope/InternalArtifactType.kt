@@ -161,6 +161,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // local java resources
   object JAVA_RES : InternalArtifactType<Directory>(DIRECTORY), Replaceable
 
+  object JAVA_RES_COMPRESSED_JAR : InternalArtifactType<RegularFile>(FILE), Replaceable
+
   // merged java resources
   object MERGED_JAVA_RES : InternalArtifactType<RegularFile>(FILE), Replaceable, Transformable
 

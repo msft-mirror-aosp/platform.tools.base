@@ -2928,7 +2928,7 @@ public final class SdkConstants {
      * Studio product. It need not actually be the latest version of Gradle, but it will most likely
      * be fairly recent.
      */
-    public static final String GRADLE_LATEST_VERSION = "9.4.0-rc-1";
+    public static final String GRADLE_LATEST_VERSION = "9.5.0-milestone-5";
 
     /**
      * The minimum released version of the Android Gradle Plugin for which Studio will attempt a
@@ -2962,6 +2962,11 @@ public final class SdkConstants {
      * build.gradle then this is the version that will be used.
      */
     public static final String NDK_DEFAULT_VERSION = "28.2.13676358";
+
+    /**
+     * The minimum version of the Kotlin Gradle Plugin required for Kotlin Multiplatform projects.
+     */
+    public static final String MINIMUM_SUPPORTED_KOTLIN_MULTIPLATFORM_VERSION = "2.0.0";
 
     /** use api or implementation */
     @Deprecated public static final String GRADLE_COMPILE_CONFIGURATION = "compile";

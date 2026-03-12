@@ -19,9 +19,9 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.4.0-rc-1"
+GRADLE_VERSION = "9.5.0-milestone-5"
 
-GRADLE_BASE_VERSION = "9.4.0"
+GRADLE_BASE_VERSION = "9.5.0"
 
 filegroup(
     name = "gradle-distrib",
@@ -46,9 +46,15 @@ maven_repository(
     name = "gradle-runtime-maven",
     # keep sorted
     artifacts = [
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.0",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.3.10",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "gradle-distrib-9.5.0-milestone-5",
+    srcs = ["//tools/external/gradle:gradle-distrib-9.5.0-milestone-5"],
     visibility = ["//visibility:public"],
 )
 
@@ -523,6 +529,15 @@ gradle_build(
 )
 
 maven_repository(
+    name = "declarative_gradle_runtime",
+    artifacts = [
+        "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+        "@maven//:org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_repository(
     name = "android_gradle_plugin_runtime_dependencies",
     # keep sorted
     artifacts = [
@@ -534,6 +549,7 @@ maven_repository(
         "//tools/analytics-library/shared:tools.analytics-shared",
         "//tools/analytics-library/tracker:tools.analytics-tracker",
         "//tools/apkzlib",
+        "//tools/base/android-test/android-test-engine-result-listener:android-test-engine-result-listener",
         "//tools/base/android-test/android-test-junit-engine:android-test-engine",
         "//tools/base/annotations:annotations",
         "//tools/base/build-system:tools.apksig",

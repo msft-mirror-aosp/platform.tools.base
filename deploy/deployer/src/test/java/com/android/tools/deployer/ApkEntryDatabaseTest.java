@@ -20,15 +20,18 @@ import static com.android.tools.deployer.ApkTestUtils.*;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
+
 import com.google.common.collect.ImmutableList;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
 import java.io.File;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 
 public class ApkEntryDatabaseTest {
 

@@ -39,14 +39,34 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
    */
   override fun execute(context: AndroidTestExecutionContext, dynamicTestExecutor: Node.DynamicTestExecutor): AndroidTestExecutionContext {
     val config = context.configuration
+    val adbController = AdbController(config.adb)
 
     config.deviceSerials.forEach { deviceSerial ->
+      val androidVersion = getAndroidVersion(adbController, deviceSerial)
+      val displayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      // Android Studio expects the device serial in the UniqueId to match results
+      // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
-      val deviceDescriptor = AndroidDeviceDescriptor(deviceUniqueId, deviceSerial)
+      val deviceDescriptor =
+        AndroidDeviceDescriptor(
+          uniqueId = deviceUniqueId,
+          deviceSerial = deviceSerial,
+          deviceId = displayName,
+          deviceDisplayName = displayName,
+        )
       deviceDescriptor.setParent(this)
       dynamicTestExecutor.execute(deviceDescriptor)
     }
 
     return context
+  }
+
+  private fun getAndroidVersion(adbController: AdbController, serial: String): String {
+    return try {
+      val result = adbController.runAdbShellCommand(serial, listOf("getprop", "ro.build.version.release"))
+      if (result.exitCode == 0) result.output.trim() else ""
+    } catch (t: Throwable) {
+      ""
+    }
   }
 }

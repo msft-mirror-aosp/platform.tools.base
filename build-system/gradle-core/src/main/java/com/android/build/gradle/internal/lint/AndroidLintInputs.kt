@@ -349,11 +349,13 @@ abstract class ProjectInputs {
     initializeFromProject(creationConfig.services.projectInfo, lintMode)
     projectType.setDisallowChanges(creationConfig.componentType.toLintModelModuleType())
 
-    if (creationConfig.services.projectOptions[BooleanOption.LINT_REPORT_AGGREGATION]) {
-      lintOptions.initialize(globalConfig.lintOptions, lintMode, checkDependenciesOverride)
-    } else {
-      lintOptions.initialize(globalConfig.lintOptions, lintMode)
-    }
+    lintOptions.initialize(
+      globalConfig.lintOptions,
+      lintMode,
+      creationConfig.services.projectInfo.projectDirectory,
+      creationConfig.services.projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
+      checkDependenciesOverride,
+    )
 
     resourcePrefix.setDisallowChanges(globalConfig.resourcePrefix)
 
@@ -376,11 +378,13 @@ abstract class ProjectInputs {
   ) {
     initializeFromProject(ProjectInfo(project), lintMode)
     projectType.setDisallowChanges(LintModelModuleType.JAVA_LIBRARY)
-    if (projectOptions[BooleanOption.LINT_REPORT_AGGREGATION]) {
-      lintOptions.initialize(dslLintOptions, lintMode, checkDependenciesOverride)
-    } else {
-      lintOptions.initialize(dslLintOptions, lintMode)
-    }
+    lintOptions.initialize(
+      dslLintOptions,
+      lintMode,
+      project.layout.projectDirectory,
+      projectOptions[BooleanOption.LINT_DEFAULT_BASELINE_CONVENTION],
+      checkDependenciesOverride,
+    )
 
     resourcePrefix.setDisallowChanges("")
     dynamicFeatures.setDisallowChanges(setOf())
@@ -488,8 +492,15 @@ abstract class LintOptionsInput {
   @get:Input abstract val severityOverrides: MapProperty<String, LintModelSeverity>
   @get:Input abstract val ignoreTestSources: Property<Boolean>
   @get:Input abstract val ignoreTestFixturesSources: Property<Boolean>
+  @get:Input @get:Optional abstract val defaultBaseline: Property<Boolean>
 
-  fun initialize(lintOptions: Lint, lintMode: LintMode, checkDependenciesOverrideForAggregateReporting: Boolean? = null) {
+  fun initialize(
+    lintOptions: Lint,
+    lintMode: LintMode,
+    projectDirectory: Directory,
+    useBaselineConvention: Boolean = false,
+    checkDependenciesOverrideForAggregateReporting: Boolean? = null,
+  ) {
     disable.setDisallowChanges(lintOptions.disable)
     enable.setDisallowChanges(lintOptions.enable)
     checkOnly.setDisallowChanges(lintOptions.checkOnly)
@@ -509,7 +520,16 @@ abstract class LintOptionsInput {
     lintConfig.disallowChanges()
     // The baseline file does not affect analysis, but otherwise it is an input.
     if (lintMode != LintMode.ANALYSIS) {
-      lintOptions.baseline?.let { baseline.set(it) }
+      val dslBaseline = lintOptions.baseline
+      if (dslBaseline != null) {
+        baseline.set(dslBaseline)
+        defaultBaseline.setDisallowChanges(false)
+      } else if (useBaselineConvention) {
+        baseline.set(projectDirectory.file("lint-baseline.xml"))
+        defaultBaseline.setDisallowChanges(true)
+      } else {
+        defaultBaseline.setDisallowChanges(false)
+      }
     }
     baseline.disallowChanges()
     severityOverrides.setDisallowChanges((lintOptions as LintImpl).severityOverridesMap)

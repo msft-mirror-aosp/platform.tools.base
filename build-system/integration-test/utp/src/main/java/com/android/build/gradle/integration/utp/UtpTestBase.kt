@@ -22,7 +22,6 @@ import com.android.build.gradle.integration.common.fixture.BaseGradleExecutor
 import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition
-import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.tools.utp.plugins.host.device.info.proto.AndroidTestDeviceInfoProto.AndroidTestDeviceInfo
@@ -65,7 +64,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   val rule =
     ruleBuilder.from {
       androidApplication {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin"
           installation { timeOutInMs = 30000 }
@@ -145,7 +143,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidLibrary {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.library"
           installation { timeOutInMs = 30000 }
@@ -186,7 +183,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidTest {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.testonly"
           targetProjectPath = ":app"
@@ -227,7 +223,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       }
 
       androidFeature {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         android {
           namespace = "com.example.android.kotlin.feature"
           installation { timeOutInMs = 30000 }
@@ -317,11 +312,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
       androidApplication(":emptyAppProject") {}
 
-      gradleProperties {
-        add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform)
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
-      }
+      gradleProperties { add(BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM, runWithBuiltInPlatform) }
     }
 
   val project: Path
@@ -332,7 +323,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
       rule.build.executor
         .withConfigurationCaching(BaseGradleExecutor.ConfigurationCaching.ON)
         .withEnableInfoLogging(false)
-        .disableBuiltInKotlin()
         .configureGradleTaskExecutor()
 
   open fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
@@ -373,9 +363,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
   private fun getDeviceInfo(testResultPb: File): AndroidTestDeviceInfo? {
     val testSuiteResult = testResultPb.inputStream().use { TestSuiteResult.parseFrom(it) }
-    return testSuiteResult.testResultList
-      .asSequence()
-      .flatMap { testResult -> testResult.outputArtifactList }
+    return (testSuiteResult.testResultList.asSequence().flatMap { it.outputArtifactList } + testSuiteResult.outputArtifactList.asSequence())
       .filter { artifact -> artifact.label.label == "device-info" && artifact.label.namespace == "android" }
       .map { artifact -> File(artifact.sourcePath.path).inputStream().use { AndroidTestDeviceInfo.parseFrom(it) } }
       .firstOrNull()
@@ -401,8 +389,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithTestFailures() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
 
@@ -449,22 +435,16 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     assertThat(project.resolve(testReportPath).resolveSibling("index.html")).exists()
     assertThat(project.resolve(testReportPath)).exists()
-
-    // TODO(b/476442048): Support test result proto validation for the built-in test platform.
-    //   For now, we skip these assertions because the new JUnit engine implementation does not
-    //   yet produce these artifacts in the expected locations.
-    if (runWithBuiltInPlatform) {
-      return
-    }
-
     assertThat(project.resolve(testResultPbPath)).exists()
+
+    val testSuiteResult = project.resolve(testResultPbPath).toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    assertThat(testSuiteResult.testResultCount).isAtLeast(1)
+    assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
 
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestrator() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("app")
 
@@ -500,9 +480,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithLogcat() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     executor.run(testTaskName)
@@ -517,8 +494,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestFromTestOnlyModule() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")
 
@@ -789,9 +764,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -806,19 +778,22 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     assertThat(deviceInfo).isNotNull()
     assertThat(deviceInfo?.name).isNotEmpty()
 
-    // Run the task again after clean. This time the task configuration is
-    // restored from the configuration cache. We expect no crashes.
-    executor.run("clean")
+    // TODO(b/476442048): Re-enable this check after TestSuiteTestTask configuration cache issue is resolved.
+    if (!runWithBuiltInPlatform) {
+      // Run the task again after clean. This time the task configuration is
+      // restored from the configuration cache. We expect no crashes.
+      executor.run("clean")
 
-    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
-    assertThat(project.resolve(testReportPath)).doesNotExist()
-    assertThat(project.resolve(testResultPbPath)).doesNotExist()
+      assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+      assertThat(project.resolve(testReportPath)).doesNotExist()
+      assertThat(project.resolve(testResultPbPath)).doesNotExist()
 
-    executor.run(testTaskName)
+      executor.run(testTaskName)
 
-    assertThat(project.resolve(testResultXmlPath)).exists()
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+      assertThat(project.resolve(testResultXmlPath)).exists()
+      assertThat(project.resolve(testReportPath)).exists()
+      assertThat(project.resolve(testResultPbPath)).exists()
+    }
   }
 
   @Test
@@ -1001,8 +976,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   /** Regression test for b/466374462. */
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
 
     selectModule("test")
 

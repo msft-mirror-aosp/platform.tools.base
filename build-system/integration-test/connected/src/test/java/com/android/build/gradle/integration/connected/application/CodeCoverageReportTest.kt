@@ -21,7 +21,6 @@ import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.connected.utils.getEmulator
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.truth.PathSubject
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
@@ -68,6 +67,7 @@ class CodeCoverageReportTest {
               it.enableUnitTestCoverage = true
               it.enableAndroidTestCoverage = true
             }
+            named("release") { it.enableUnitTestCoverage = true }
           }
           kotlin { jvmToolchain(17) }
           compileOptions {
@@ -89,6 +89,21 @@ class CodeCoverageReportTest {
           androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
           androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
         }
+        files.add(
+          "src/testRelease/java/com/example/app/ReleaseTest.kt",
+          """
+          package com.example.app
+          import org.junit.Test
+          import org.junit.Assert.*
+          class ReleaseTest {
+              @Test
+              fun referenceProductionKotlinCode() {
+                  assertEquals("AppKotlinClass", AppKotlinClass().name)
+              }
+          }
+          """
+            .trimIndent(),
+        )
       }
       androidLibrary(":lib") {
         android {
@@ -165,6 +180,10 @@ class CodeCoverageReportTest {
           kotlin { jvmToolchain(17) }
         }
       }
+      gradleProperties {
+        // this is to test the multi-variant support for coverage reporting
+        add(BooleanOption.ONLY_ENABLE_UNIT_TEST_BY_DEFAULT_FOR_THE_TESTED_BUILD_TYPE, false)
+      }
     }
 
   private val gson = Gson()
@@ -175,6 +194,9 @@ class CodeCoverageReportTest {
 
     val appBuildDir = rule.build.androidApplication(":app").buildDir.toFile()
     val outputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
+
+    assertThat(result.didWorkTasks.contains(":app:testDebugUnitTest")).isTrue()
+    assertThat(result.didWorkTasks.contains(":app:testReleaseUnitTest")).isTrue()
 
     verifyHtmlReport(
       outputDir = outputDir,
@@ -194,13 +216,7 @@ class CodeCoverageReportTest {
 
     val taskOutputDir = FileUtils.join(appBuildDir, "reports", "code_coverage_html_report", "global")
 
-    PathSubject.assertThat(taskOutputDir).exists()
-    PathSubject.assertThat(taskOutputDir).isDirectory()
-
-    val indexFile = FileUtils.join(taskOutputDir, "index.html")
-
-    PathSubject.assertThat(indexFile).exists()
-    PathSubject.assertThat(indexFile).isFile()
+    verifyIndexFileExists(taskOutputDir)
   }
 
   @Test
@@ -239,13 +255,7 @@ class CodeCoverageReportTest {
 
     val taskOutputDir = FileUtils.join(libBuildDir, "reports", "aggregated_code_coverage_html_report", "global")
 
-    PathSubject.assertThat(taskOutputDir).exists()
-    PathSubject.assertThat(taskOutputDir).isDirectory()
-
-    val indexFile = FileUtils.join(taskOutputDir, "index.html")
-
-    PathSubject.assertThat(indexFile).exists()
-    PathSubject.assertThat(indexFile).isFile()
+    verifyIndexFileExists(taskOutputDir)
   }
 
   @Test
@@ -257,6 +267,7 @@ class CodeCoverageReportTest {
           it.enableUnitTestCoverage = false
           it.enableAndroidTestCoverage = false
         }
+        named("release") { it.enableUnitTestCoverage = false }
       }
     }
 
@@ -275,6 +286,16 @@ class CodeCoverageReportTest {
     result.assertOutputContains("Report aggregation feature is disabled. Task execution is skipped.")
     result.assertOutputDoesNotContain("View coverage report at")
     assertThat(result.didWorkTasks).doesNotContain(":app:collectDebugCoverage")
+  }
+
+  private fun verifyIndexFileExists(taskOutputDir: File) {
+    assertThat(taskOutputDir).exists()
+    assertThat(taskOutputDir).isDirectory()
+
+    val indexFile = FileUtils.join(taskOutputDir, "index.html")
+
+    assertThat(indexFile).exists()
+    assertThat(indexFile).isFile()
   }
 
   private fun verifyHtmlReport(

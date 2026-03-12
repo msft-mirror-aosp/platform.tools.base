@@ -19,6 +19,8 @@ package com.android.build.gradle.internal.dependency
 import com.android.SdkConstants
 import com.android.build.gradle.internal.tasks.MergeJavaResourceTask
 import com.android.zipflinger.Entry
+import com.android.zipflinger.Sources
+import com.android.zipflinger.StableArchive
 import com.android.zipflinger.ZipArchive
 import com.android.zipflinger.ZipSource
 import java.io.File
@@ -28,6 +30,21 @@ import java.util.zip.Deflater
 sealed interface UncompressedJavaRes {
 
   fun compressToJar(outputFile: File): File
+
+  class FileTree(val fileTree: org.gradle.api.file.FileTree) : UncompressedJavaRes {
+
+    override fun compressToJar(outputFile: File): File {
+      outputFile.delete()
+      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
+        fileTree.visit { details ->
+          if (!details.isDirectory) {
+            compressedJavaResJar.add(Sources.from(details.file, details.relativePath.pathString, Deflater.DEFAULT_COMPRESSION))
+          }
+        }
+      }
+      return outputFile
+    }
+  }
 
   class Jar(val jar: File) : UncompressedJavaRes {
 
@@ -41,7 +58,8 @@ sealed interface UncompressedJavaRes {
     }
 
     override fun compressToJar(outputFile: File): File {
-      ZipArchive(outputFile.toPath()).use { compressedJavaResJar ->
+      outputFile.delete()
+      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
         entries.values.forEach { entry ->
           if (!entry.isDirectory && MergeJavaResourceTask.Companion.predicate.test(entry.name)) {
             source.select(entry.name, entry.name, Deflater.DEFAULT_COMPRESSION, 0L)
@@ -56,7 +74,8 @@ sealed interface UncompressedJavaRes {
   class MultipleJars(val jars: List<File>) : UncompressedJavaRes {
 
     override fun compressToJar(outputFile: File): File {
-      ZipArchive(outputFile.toPath()).use { compressedJavaResJar ->
+      outputFile.delete()
+      StableArchive(ZipArchive(outputFile.toPath())).use { compressedJavaResJar ->
         val addedEntries = mutableSetOf<String>()
         jars.forEach { jar ->
           val source = ZipSource(jar.toPath())

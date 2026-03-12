@@ -46,7 +46,8 @@ class SystemImageManagerTest {
     assertNull(img.addonVendor)
     assertEquals(sdkRoot.resolve("platforms/android-13/images/"), img.location)
     assertEquals("default", img.tag.id)
-    assertEquals(2, img.skins.size)
+    // We don't read skins from platforms anymore (even old platforms that include system images)
+    assertEquals(0, img.skins.size)
   }
 
   @Test

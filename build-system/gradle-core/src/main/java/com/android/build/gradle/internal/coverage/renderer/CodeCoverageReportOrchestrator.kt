@@ -85,13 +85,15 @@ object CodeCoverageReportOrchestrator {
 
     val coverageReport = coverageBuilder.build()
 
-    val gson = GsonBuilder().setPrettyPrinting().create()
-    val jsonString = gson.toJson(coverageReport)
+    val gson = GsonBuilder().create()
     val dataDir = reportDir.resolve("data")
     dataDir.mkdirs()
     val reportDataJsFile = dataDir.resolve("report-data.js")
-    val jsContent = "const fullReport = $jsonString;"
-    reportDataJsFile.writeText(jsContent)
+    reportDataJsFile.bufferedWriter().use { writer ->
+      writer.write("const fullReport = ")
+      gson.toJson(coverageReport, writer)
+      writer.write(";")
+    }
 
     val sourceFilesDir = reportDir.resolve("sourcefiles")
     SourceFileReportOrchestrator.orchestrate(sourceFileReportsBuilder, rootProjectDir, sourceFilesDir)

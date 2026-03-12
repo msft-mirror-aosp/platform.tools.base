@@ -16,7 +16,6 @@
 package com.android.tools.deployer.model;
 
 import com.android.SdkConstants;
-import com.android.tools.deployer.ZipUtils;
 import com.android.tools.deployer.model.component.ApkParserException;
 import com.android.tools.manifest.parser.ManifestInfo;
 import com.android.tools.tracer.Trace;

@@ -147,9 +147,14 @@ class BootClasspathConfigImpl(
     val versionedSdkLoader = versionedSdkLoaderService.versionedSdkLoader
 
     property.addAll(filteredBootClasspath)
-    if (isJava8Compatible()) {
-      property.add(versionedSdkLoader.flatMap(SdkComponentsBuildService.VersionedSdkLoader::coreLambdaStubsProvider))
-    }
+
+    property.addAll(
+      project.provider {
+        if (isJava8Compatible()) {
+          listOfNotNull(versionedSdkLoader.flatMap(SdkComponentsBuildService.VersionedSdkLoader::coreLambdaStubsProvider).orNull)
+        } else emptyList()
+      }
+    )
 
     // prevent further changes
     property.disallowChanges()

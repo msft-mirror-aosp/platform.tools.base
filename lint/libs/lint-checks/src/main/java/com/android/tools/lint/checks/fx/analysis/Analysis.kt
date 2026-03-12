@@ -58,6 +58,7 @@ import com.android.tools.lint.checks.fx.utils.forM
 import com.android.tools.lint.checks.fx.utils.joinedOver
 import com.android.tools.lint.checks.fx.utils.lastM
 import com.android.tools.lint.checks.fx.utils.mapM
+import com.android.tools.lint.checks.fx.utils.partitionToPersistentSets
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
@@ -1086,41 +1087,65 @@ internal open class Analysis<FX : Any>(
             }
         }
 
+      fun Type<FX>.asCases() = if (this is Type.Union) cases else persistentSetOf(this)
+
       val (baseCases, indCases) = fixed
       val instBase = baseCases.joinedOver(typeLattice) { instType(rec, it) }
+      val instBaseCases = instBase.asCases()
       if (instBase == Type.None) return instantiationLattice.bottom
+      val instIndCases = indCases.joinedOver(typeLattice) { instType(rec, it) }.asCases()
 
-      val instIndCases =
-        when (val t = indCases.joinedOver(typeLattice) { instType(rec, it) }) {
-          is Type.Union -> t.cases
-          else -> persistentSetOf(t)
-        }
-
-      return when {
-        instIndCases.isEmpty() -> pure(instBase)
-        // When the instantiation is just renaming symbols, there's no need for a general
-        // fix-point computation
-        isPureRenaming() -> {
-          val instBaseCases =
-            when (instBase) {
-              is Type.Union -> instBase.cases as PersistentSet<Type.Sym<FX>>
-              else -> persistentSetOf(instBase as Type.Sym<FX>)
-            }
-          pure(Type.Sym.Fix(instBaseCases, instIndCases as PersistentSet<Type.Sym.Invoke<FX>>))
-        }
-        else -> {
-          fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
-            val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
-            val tN = typeLattice.widen(t0, t1)
-            val fxN = fxInstantiationLattice.widen(fx0, fx1)
-            return when {
-              t0 == tN && fx0 == fxN -> Result(tN, fxN)
-              else -> fix(tN, fxN)
-            }
-          }
-          fix(instBase, fxInstantiationLattice.bottom)
+      fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
+        val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
+        val tN = typeLattice.widen(t0, t1)
+        val fxN = fxInstantiationLattice.widen(fx0, fx1)
+        return when {
+          t0 == tN && fx0 == fxN -> Result(tN, fxN)
+          else -> fix(tN, fxN)
         }
       }
+
+      fun Type<FX>.maybeGrowingSymbol(): Boolean =
+        when (this) {
+          is Type.Sym.Param,
+          is Type.Sym.Rec,
+          is Type.WildCard,
+          is Type.Sym.This,
+          is Type.MethodRef,
+          is Type.SpecializedMethodRef -> false
+          is Type.Union -> cases.any { it.maybeGrowingSymbol() }
+          is Type.Application -> args.any { it.maybeGrowingSymbol() }
+          is Type.Ellipsis -> element.maybeGrowingSymbol()
+          is Type.Lambda -> body.value.maybeGrowingSymbol() || body.effect.invocations?.any { it.maybeGrowingSymbol() } == true
+          is Type.Sym.Fix,
+          is Type.Sym.Invoke -> true
+        }
+
+      if (instIndCases.isEmpty()) return pure(instBase)
+
+      // When the instantiation is just renaming symbols, there's no need for a general
+      // fix-point computation
+      if (isPureRenaming()) return pure(Type.Sym.Fix(instBaseCases, instIndCases))
+
+      // When instantiation doesn't produce new symbols, skip the general fix-point over all
+      // base cases. Instead, only exercise concrete base cases for concrete new types and
+      // effects.
+      val (otherBaseCases, newConcreteBaseCases) = instBaseCases.partitionToPersistentSets { it is Type.Sym || it in baseCases }
+      if (
+        otherBaseCases.all { it in baseCases || !it.maybeGrowingSymbol() } &&
+          instIndCases.all { it in indCases || !it.maybeGrowingSymbol() }
+      ) {
+        val (tN, fxN) = fix(Type.Union(newConcreteBaseCases), fxInstantiationLattice.bottom)
+        val fullInstType =
+          when (tN) {
+            is Type.Sym.Fix -> Type.Sym.Fix(tN.baseCases + otherBaseCases, tN.inductiveCases)
+            is Type.Union -> Type.Union(tN.cases + otherBaseCases)
+            else -> Type.Union(otherBaseCases + tN)
+          }
+        return Result(fullInstType, fxN)
+      }
+
+      return fix(instBase, fxInstantiationLattice.bottom)
     }
 
   private operator fun ((Point<FX>) -> Ans<FX>).get(method: Type.MethodRef) = this(method) as SummAns<FX>

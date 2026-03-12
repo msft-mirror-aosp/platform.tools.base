@@ -1,3 +1,4 @@
+load("//tools/base/android-test:version.bzl", "ANDROID_TEST_ENGINE_VERSION")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 
@@ -12,12 +13,14 @@ maven_library(
     notice = "LICENSE",
     resource_strip_prefix = "tools/base/android-test/android-test-junit-engine/src/main/resources/",
     resources = glob(["src/main/resources/**"]),
-    version = "0.1.0-dev",
+    version = ANDROID_TEST_ENGINE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/common:tools.common",
         # ddmlib is used for generating JUnit XML results via XmlTestRunListener.
         "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/android-test/test-result-proto",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib-jdk8",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.junit.platform.junit-platform-engine",
@@ -36,7 +39,9 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":android-test-engine",
+        "//tools/base/android-test/test-result-proto",
         "//tools/base/testutils:tools.testutils",
+        "@maven//:com.google.protobuf.protobuf-java",
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",

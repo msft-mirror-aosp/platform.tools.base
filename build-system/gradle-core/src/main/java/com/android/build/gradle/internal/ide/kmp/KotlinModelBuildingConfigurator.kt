@@ -129,6 +129,7 @@ object KotlinModelBuildingConfigurator {
         .setBuildId(project.gradle.rootProject.projectDir.convert())
         .setBuildDir(project.layout.buildDirectory.get().asFile.convert())
         .setBuildToolsVersion(mainVariant.global.buildToolsRevision.toString())
+        .setResourcePrefix(mainVariant.global.resourcePrefix)
         .setGroupId(project.group.toString())
         .addAllBootClasspath(mainVariant.global.filteredBootClasspath.get().map { it.asFile.convert() })
         .setTestInfo(

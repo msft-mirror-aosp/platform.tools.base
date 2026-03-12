@@ -26,10 +26,13 @@ import com.android.tools.androidtest.testengine.instrument.TestIdentifier
 import com.android.tools.androidtest.testengine.instrument.TestResult
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.runBlocking
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.UniqueId
+import org.junit.platform.engine.reporting.ReportEntry
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.hierarchical.Node
 
@@ -41,8 +44,14 @@ import org.junit.platform.engine.support.hierarchical.Node
  *
  * @property deviceSerial The serial number of the target Android device.
  */
-class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
-  AbstractTestDescriptor(uniqueId, deviceSerial), Node<AndroidTestExecutionContext> {
+class AndroidDeviceDescriptor(
+  uniqueId: UniqueId,
+  val deviceSerial: String,
+  val deviceId: String = deviceSerial,
+  val deviceDisplayName: String = deviceId,
+) : AbstractTestDescriptor(uniqueId, deviceDisplayName), Node<AndroidTestExecutionContext> {
+
+  private val logger = Logger.getLogger(AndroidDeviceDescriptor::class.java.name)
 
   private sealed class TestEvent {
     data class NewTest(val descriptor: AndroidDynamicTestDescriptor) : TestEvent()
@@ -59,9 +68,26 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
 
     val adbApkInstaller = AdbApkInstaller(config.adb, config.aapt2, deviceSerial, config.installTimeoutMs)
 
-    val resultsDir = config.resultsDir?.let { File(it, deviceSerial).also { it.mkdirs() } }
-    val reporter = resultsDir?.let { SimpleXmlResultReporter(it, deviceSerial) }
-    val listener = Listener(reporter)
+    val baseResultsDir = config.resultsDir?.also { it.mkdirs() }
+    val deviceResultsDir = baseResultsDir?.let { dir -> File(dir, deviceId).also { it.mkdirs() } }
+
+    val reporter = baseResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
+    val logcatCollector = deviceResultsDir?.let { LogcatCollector(it, config.adb.absolutePath) }
+
+    val deviceInfoFile =
+      deviceResultsDir?.let { dir ->
+        val file = File(dir, "device-info.pb")
+        try {
+          val deviceInfo = AndroidTestDeviceInfoCollector(AdbController(config.adb), deviceSerial).collect()
+          file.outputStream().use { deviceInfo.writeTo(it) }
+          file
+        } catch (t: Throwable) {
+          logger.log(Level.SEVERE, "failed to collect device info for $deviceSerial", t)
+          null
+        }
+      }
+
+    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile)
 
     val instrumentationRunner =
       AmInstrumentationRunner(
@@ -76,10 +102,10 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
       AndroidTestRunner(
         adbApkInstaller,
         instrumentationRunner,
-        config.testedApks,
-        config.testApks,
+        config.getTestedApks(deviceSerial),
+        config.getTestApks(deviceSerial),
         config.apkInstallOptions,
-        config.testUtilApks,
+        config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
       )
 
@@ -91,8 +117,12 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
       Thread(
         {
           try {
+            logcatCollector?.startCapture(deviceId)
             runner.run()
+          } catch (t: Throwable) {
+            logger.log(Level.SEVERE, "AndroidTestRunner failed on $deviceSerial", t)
           } finally {
+            logcatCollector?.cleanup()
             listener.finish()
             // Close the channel once the instrumentation process finishes to signal that no
             // more tests will be discovered.
@@ -123,12 +153,31 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
    * This listener implementation translates low-level instrumentation events (like `testStarted` and `testEnded`) into high-level JUnit
    * [TestDescriptor] operations and optionally reports them to a [SimpleXmlResultReporter].
    */
-  inner class Listener(private val reporter: SimpleXmlResultReporter?) : AmInstrumentationListener {
+  inner class Listener(
+    private val context: AndroidTestExecutionContext,
+    private val reporter: SimpleXmlResultReporter?,
+    private val logcatCollector: LogcatCollector?,
+    private val deviceInfoFile: File?,
+  ) : AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
 
     override fun instrumentationStarted(testCount: Int) {
       reporter?.testRunStarted("android-test", testCount)
+
+      // We publish a ReportEntry with the testCount so that it can be picked up by listeners.
+      val testCountEntry = ReportEntry.from(AndroidTestReportKeys.TEST_COUNT, testCount.toString())
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, testCountEntry)
+
+      // We publish a ReportEntry with the deviceDisplayName so that it can be used to determine the
+      // result directory name.
+      val displayNameEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_DISPLAY_NAME, this@AndroidDeviceDescriptor.deviceDisplayName)
+      context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, displayNameEntry)
+
+      deviceInfoFile?.let {
+        val deviceInfoEntry = ReportEntry.from(AndroidTestReportKeys.DEVICE_INFO_PATH, it.absolutePath)
+        context.request.engineExecutionListener.reportingEntryPublished(this@AndroidDeviceDescriptor, deviceInfoEntry)
+      }
     }
 
     /** Called when a test case starts on the device. */
@@ -159,7 +208,16 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
 
-      testDescriptors[testIdentifier]?.resultDeferred?.complete(testResult)
+      val testDescriptor = testDescriptors[testIdentifier]
+      if (testDescriptor != null) {
+        val testName = "$packageName.${testIdentifier.testClass}.${testIdentifier.testMethod}"
+        val logcatPath = logcatCollector?.getLogcatPath(deviceId, testName)
+        if (logcatPath != null) {
+          val reportEntry = ReportEntry.from(AndroidTestReportKeys.LOGCAT_PATH, logcatPath)
+          context.request.engineExecutionListener.reportingEntryPublished(testDescriptor, reportEntry)
+        }
+        testDescriptor.resultDeferred.complete(testResult)
+      }
     }
 
     /** Handles instrumentation failures by completing all pending test results exceptionally. */
@@ -198,7 +256,7 @@ class AndroidDeviceDescriptor(uniqueId: UniqueId, val deviceSerial: String) :
   }
 
   /** A simple XML result reporter that uses ddmlib's [XmlTestRunListener] to generate JUnit XML files. */
-  inner class SimpleXmlResultReporter(private val reportDir: File, private val deviceName: String) : XmlTestRunListener() {
+  inner class SimpleXmlResultReporter(reportDir: File, private val deviceName: String) : XmlTestRunListener() {
     init {
       setReportDir(reportDir)
     }

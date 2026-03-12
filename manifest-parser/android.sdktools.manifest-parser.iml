@@ -11,8 +11,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="android.sdktools.android-annotations" />
     <orderEntry type="module" module-name="android.sdktools.common" />
-    <orderEntry type="module" module-name="android.sdktools.binary-resources" />
-    <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
+    <orderEntry type="library" name="libbinary-resources" level="project" />
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
@@ -24,5 +23,6 @@
         </SOURCES>
       </library>
     </orderEntry>
+    <orderEntry type="module" module-name="android.sdktools.testutils" scope="TEST" />
   </component>
 </module>

@@ -119,6 +119,7 @@ _ARTIFACTS = [
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
+    ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]

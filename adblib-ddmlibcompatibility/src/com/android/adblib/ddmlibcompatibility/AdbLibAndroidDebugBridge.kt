@@ -237,6 +237,8 @@ class AdbLibAndroidDebugBridge(
 
         // Success, store static instance
         currentAndroidDebugBridge = newBridgeInstance
+        // Start the underlying services.
+        startIDeviceManager(newBridgeInstance)
         newBridgeInstance
       }
 
@@ -298,6 +300,10 @@ class AdbLibAndroidDebugBridge(
 
         // Success, store static instance
         currentAndroidDebugBridge = newBridgeInstance
+        newBridgeInstance?.let {
+          // Start the underlying services.
+          startIDeviceManager(it)
+        }
         newBridgeInstance
       }
 
@@ -363,10 +369,6 @@ class AdbLibAndroidDebugBridge(
     }
 
     started = true
-
-    // Start the underlying services.
-    startIDeviceManager(bridgeInstance)
-
     return true
   }
 
@@ -742,6 +744,10 @@ class AdbLibAndroidDebugBridge(
     return knownRemoteAddress ?: InetSocketAddress(InetAddress.getLoopbackAddress(), sAdbServerPort ?: 0)
   }
 
+  /**
+   * This will hook adblib device tracking into sending events to the current `AndroidDebugBridge`, and so it's important that this call is
+   * made only after `currentAndroidDebugBridge` has been correctly updated.
+   */
   private fun startIDeviceManager(bridgeInstance: AndroidDebugBridge) {
     assert(lock.isHeldByCurrentThread)
 

@@ -17,6 +17,8 @@ package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
+import com.android.tools.deployer.model.ZipUtils;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

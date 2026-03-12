@@ -136,24 +136,14 @@ public class SystemImageManager {
     @NonNull
     private Multimap<LocalPackage, SystemImage> buildImageMap() {
         Multimap<LocalPackage, SystemImage> result = HashMultimap.create();
-        Map<AndroidVersion, Path> platformSkins = Maps.newHashMap();
         Collection<? extends LocalPackage> packages =
                 mRepoManager.getPackages().getLocalPackages().values();
-        for (LocalPackage p : packages) {
-            if (p.getTypeDetails() instanceof DetailsTypes.PlatformDetailsType) {
-                Path skinDir = p.getLocation().resolve(SdkConstants.FD_SKINS);
-                if (CancellableFileIo.exists(skinDir)) {
-                    platformSkins.put(((DetailsTypes.PlatformDetailsType) p.getTypeDetails())
-                            .getAndroidVersion(), skinDir);
-                }
-            }
-        }
         for (LocalPackage p : packages) {
             TypeDetails typeDetails = p.getTypeDetails();
             if (typeDetails instanceof DetailsTypes.SysImgDetailsType ||
                     typeDetails instanceof DetailsTypes.PlatformDetailsType ||
                     typeDetails instanceof DetailsTypes.AddonDetailsType) {
-                collectImages(p.getLocation(), p, platformSkins, result);
+                collectImages(p.getLocation(), p, result);
             }
         }
         return result;
@@ -162,7 +152,6 @@ public class SystemImageManager {
     private void collectImages(
             Path dir,
             LocalPackage p,
-            Map<AndroidVersion, Path> platformSkins,
             Multimap<LocalPackage, SystemImage> collector) {
         try {
             CancellableFileIo.walkFileTree(
@@ -191,7 +180,7 @@ public class SystemImageManager {
                             // string on each call
                             if (file.toString().endsWith(SYS_IMG_NAME)
                                     && file.getFileName().toString().equals(SYS_IMG_NAME)) {
-                                collector.put(p, createSysImg(p, file.getParent(), platformSkins));
+                                collector.put(p, createSysImg(p, file.getParent()));
                             }
                             return FileVisitResult.CONTINUE;
                         }
@@ -200,8 +189,7 @@ public class SystemImageManager {
         }
     }
 
-    private SystemImage createSysImg(
-            LocalPackage p, Path dir, Map<AndroidVersion, Path> platformSkins) {
+    private SystemImage createSysImg(LocalPackage p, Path dir) {
         String containingDir = dir.getFileName().toString();
         List<String> abis, translatedAbis;
         TypeDetails details = p.getTypeDetails();
@@ -233,11 +221,8 @@ public class SystemImageManager {
         }
 
         Path skinDir = dir.resolve(SdkConstants.FD_SKINS);
-        if (CancellableFileIo.notExists(skinDir) && version != null) {
-            skinDir = platformSkins.get(version);
-        }
         List<Path> skins;
-        if (skinDir != null) {
+        if (CancellableFileIo.exists(skinDir)) {
             skins = PackageParserUtils.parseSkinFolder(skinDir);
         } else {
             skins = ImmutableList.of();

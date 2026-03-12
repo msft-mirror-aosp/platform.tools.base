@@ -31,6 +31,7 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
@@ -47,7 +48,7 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
 
   @get:OutputDirectory abstract val htmlReportDir: DirectoryProperty
 
-  @get:Internal abstract val rootProjectName: Property<String>
+  @get:Input abstract val rootProjectName: Property<String>
 
   @get:Internal abstract val rootProjectDir: RegularFileProperty
 
@@ -85,6 +86,12 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
         .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
         .on(InternalArtifactType.AGGREGATED_CODE_COVERAGE_HTML_REPORT)
     }
+
+    override fun configure(task: CodeCoverageReportTask) {
+      super.configure(task)
+      task.description =
+        "Generates an aggregated coverage report for unit and instrumentation tests across the current module and its project dependencies."
+    }
   }
 
   class CoverageReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
@@ -98,6 +105,11 @@ abstract class CodeCoverageReportTask : NonIncrementalGlobalTask() {
       creationConfig.globalArtifacts
         .setInitialProvider(taskProvider, CodeCoverageReportTask::htmlReportDir)
         .on(InternalArtifactType.CODE_COVERAGE_HTML_REPORT)
+    }
+
+    override fun configure(task: CodeCoverageReportTask) {
+      super.configure(task)
+      task.description = "Generates a coverage report for unit and instrumentation tests within the current module."
     }
   }
 
