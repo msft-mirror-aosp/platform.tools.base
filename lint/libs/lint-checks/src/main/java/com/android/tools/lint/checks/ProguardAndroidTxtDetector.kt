@@ -69,7 +69,7 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
             " temporarily use `-dontoptimize` in a custom keep rule file while fixing breakages.",
         category = Category.PERFORMANCE,
         priority = 2,
-        severity = Severity.WARNING,
+        severity = Severity.ERROR,
         implementation = Implementation(ProguardAndroidTxtDetector::class.java, Scope.GRADLE_SCOPE),
         moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
         androidSpecific = true,

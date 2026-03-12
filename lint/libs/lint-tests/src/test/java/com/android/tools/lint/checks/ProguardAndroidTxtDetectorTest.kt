@@ -46,10 +46,10 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            build.gradle:6: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
+            build.gradle:6: Error: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 1 warnings
+            1 errors, 0 warnings
         """
       )
       .expectFixDiffs(
@@ -87,19 +87,19 @@ class ProguardAndroidTxtDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            build.gradle:6: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
+            build.gradle:6: Error: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFiles(getDefaultProguardFile('proguard-android.txt'), 'custom.pro')
                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            build.gradle:7: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
+            build.gradle:7: Error: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFiles('custom.pro', getDefaultProguardFile('proguard-android.txt'))
                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            build.gradle:8: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
+            build.gradle:8: Error: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFile getDefaultProguardFile('proguard-android.txt')
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            build.gradle:9: Warning: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
+            build.gradle:9: Error: Avoid getDefaultProguardFile('proguard-android.txt') [ProguardAndroidTxtUsage]
                   proguardFile getDefaultProguardFile("proguard-android.txt") // test unneeded templating
                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-            0 errors, 4 warnings
+            4 errors, 0 warnings
         """
       )
       .expectFixDiffs(
