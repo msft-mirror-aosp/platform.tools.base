@@ -34,7 +34,7 @@ import java.io.File
 
 val firebaseAiLogicActivityTemplate
   get() = template {
-    name = "Gemini API Starter with Firebase"
+    name = "Gemini API Starter"
     description = "Creates a starter app for using the Gemini API via Firebase"
     minApi = 23
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
