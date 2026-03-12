@@ -56,6 +56,23 @@ enum class Language(val string: String, val extension: String) {
   }
 }
 
+enum class DslLanguage(val extension: String) {
+  KTS("gradle.kts"),
+  GROOVY("gradle");
+
+  val buildFileName: String
+    get() = "build.$extension"
+
+  val settingsFileName: String
+    get() = "settings.$extension"
+
+  val isKts: Boolean
+    get() = this == KTS
+
+  val isGroovy: Boolean
+    get() = this == GROOVY
+}
+
 // We define a new enum here instead of reusing existing ones because it should be available
 // both from intellij.android.core and wizardTemplate modules.
 enum class BytecodeLevel(val description: String, val versionString: String) {
