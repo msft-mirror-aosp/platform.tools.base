@@ -2397,8 +2397,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "        mavenCentral()\n" +
             "    }\n" +
             "    dependencies {\n" +
-            "        classpath 'com.android.tools.build:gradle:7.0.0'\n" +
-            "        classpath 'com.android.tools.build:gradle:7.0.+'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.0'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.+'\n" +
             "        classpath 'com.android.tools.build:gradle:7.+'\n" +
             "    }\n" +
             "}\n"
@@ -2409,8 +2409,8 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.0.0 is available: 7.5.0. (There is also a newer version of 7.0.𝑥 available, if upgrading to 7.5.0 is difficult: 7.0.1) [AndroidGradlePluginVersion]
-                classpath 'com.android.tools.build:gradle:7.0.0'
+        build.gradle:7: Warning: A newer version of com.android.tools.build:gradle than 7.4.0 is available: 7.5.0. (There is also a newer version of 7.4.𝑥 available, if upgrading to 7.5.0 is difficult: 7.4.1) [AndroidGradlePluginVersion]
+                classpath 'com.android.tools.build:gradle:7.4.0'
                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 1 warnings
         """
@@ -2418,13 +2418,13 @@ class GradleDetectorTest : AbstractCheckTest() {
       .expectFixDiffs(
         // Make sure we put the safe fix first (patch-update only)
         """
-        Autofix for build.gradle line 7: Replace with 7.0.1:
+        Autofix for build.gradle line 7: Replace with 7.4.1:
         @@ -7 +7 @@
-        -        classpath 'com.android.tools.build:gradle:7.0.0'
-        +        classpath 'com.android.tools.build:gradle:7.0.1'
+        -        classpath 'com.android.tools.build:gradle:7.4.0'
+        +        classpath 'com.android.tools.build:gradle:7.4.1'
         Fix for build.gradle line 7: Replace with 7.5.0:
         @@ -7 +7 @@
-        -        classpath 'com.android.tools.build:gradle:7.0.0'
+        -        classpath 'com.android.tools.build:gradle:7.4.0'
         +        classpath 'com.android.tools.build:gradle:7.5.0'
         """
       )
@@ -4859,11 +4859,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         " [GradlePluginVersion]\n" +
         "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:8: Warning: A newer version of com.android.tools.build:gradle than 7.0.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
-        "        classpath 'com.android.tools.build:gradle:7.0.1'\n" +
+        "build.gradle:8: Warning: A newer version of com.android.tools.build:gradle than 7.4.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
+        "        classpath 'com.android.tools.build:gradle:7.4.1'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 7.1.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.1.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.1.0) [AndroidGradlePluginVersion]\n" +
-        "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
+        "build.gradle:9: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.4.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.4.1) [AndroidGradlePluginVersion]\n" +
+        "        classpath 'com.android.tools.build:gradle:7.4.0-alpha04'\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
 
@@ -4878,8 +4878,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
-            "        classpath 'com.android.tools.build:gradle:7.0.1'\n" +
-            "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.1'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.0-alpha04'\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4905,11 +4905,11 @@ class GradleDetectorTest : AbstractCheckTest() {
         " [GradlePluginVersion]\n" +
         "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
         "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle.kts:8: Warning: A newer version of com.android.tools.build:gradle than 7.0.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
-        "        classpath(\"com.android.tools.build:gradle:7.0.1\")\n" +
+        "build.gradle.kts:8: Warning: A newer version of com.android.tools.build:gradle than 7.4.1 is available: 7.5.0 [AndroidGradlePluginVersion]\n" +
+        "        classpath(\"com.android.tools.build:gradle:7.4.1\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 7.1.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.1.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.1.0) [AndroidGradlePluginVersion]\n" +
-        "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
+        "build.gradle.kts:9: Warning: A newer version of com.android.tools.build:gradle than 7.4.0-alpha04 is available: 7.5.0. (There is also a newer version of 7.4.\uD835\uDC65 available, if upgrading to 7.5.0 is difficult: 7.4.1) [AndroidGradlePluginVersion]\n" +
+        "        classpath(\"com.android.tools.build:gradle:7.4.0-alpha04\")\n" +
         "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
         "1 errors, 2 warnings\n"
 
@@ -4924,8 +4924,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:7.0.1\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.4.1\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.4.0-alpha04\")\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -4965,8 +4965,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath 'com.android.tools.build:gradle:1.0.0-rc8'\n" +
-            "        classpath 'com.android.tools.build:gradle:7.0.0'\n" +
-            "        classpath 'com.android.tools.build:gradle:7.1.0-alpha04'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.0'\n" +
+            "        classpath 'com.android.tools.build:gradle:7.4.0-alpha04'\n" +
             "    }\n" +
             "}\n" +
             "\n" +
@@ -5008,8 +5008,8 @@ class GradleDetectorTest : AbstractCheckTest() {
             "    }\n" +
             "    dependencies {\n" +
             "        classpath(\"com.android.tools.build:gradle:1.0.0-rc8\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:7.0.0\")\n" +
-            "        classpath(\"com.android.tools.build:gradle:7.1.0-alpha04\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.4.0\")\n" +
+            "        classpath(\"com.android.tools.build:gradle:7.4.0-alpha04\")\n" +
             "    }\n" +
             "}\n" +
             "\n" +
