@@ -120,6 +120,7 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
       task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
       task.disallowGlobalOptions = creationConfig.services.projectOptions.get(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED)
       task.consumerProguardFiles.from(optimizationCreationConfig.consumerProguardFiles)
+      creationConfig.sources.keepRules { task.consumerProguardFiles.from(it.getAsFileTrees()) }
       task.consumerProguardFiles.disallowChanges()
       val inputFiles =
         creationConfig.services.fileCollection(task.consumerProguardFiles, creationConfig.artifacts.get(GENERATED_PROGUARD_FILE))

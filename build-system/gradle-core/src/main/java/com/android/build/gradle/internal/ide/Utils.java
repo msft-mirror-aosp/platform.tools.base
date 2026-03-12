@@ -207,4 +207,20 @@ public class Utils {
                         });
         return Streams.stream(fileCollection).collect(Collectors.toList());
     }
+
+    @NonNull
+    /*
+     * Returns list of files from keepRules source set
+     */
+    public static List<File> getConsumerKeepRules(@NonNull ComponentCreationConfig component) {
+        ConfigurableFileCollection fileCollection = component.getServices().fileCollection();
+        component
+                .getSources()
+                .keepRules(
+                        keepRules -> {
+                            fileCollection.from(keepRules.getAsFileTrees$gradle_core());
+                            return Unit.INSTANCE;
+                        });
+        return Streams.stream(fileCollection).filter(File::isFile).collect(Collectors.toList());
+    }
 }

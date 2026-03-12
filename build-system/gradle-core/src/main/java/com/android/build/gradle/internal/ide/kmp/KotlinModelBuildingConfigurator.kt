@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.HostTestCreationConfig
 import com.android.build.gradle.internal.component.KmpComponentCreationConfig
 import com.android.build.gradle.internal.component.KmpCreationConfig
+import com.android.build.gradle.internal.ide.Utils.getConsumerKeepRules
 import com.android.build.gradle.internal.ide.Utils.getGeneratedAssetsFolders
 import com.android.build.gradle.internal.ide.proto.convert
 import com.android.build.gradle.internal.ide.proto.setIfNotNull
@@ -178,6 +179,7 @@ object KotlinModelBuildingConfigurator {
       .addAllGeneratedAssetFolders(getGeneratedAssetsFolders(this).map { it.convert() })
       .addAllProguardFiles(optimizationCreationConfig.proguardFiles.get().map { it.asFile.convert() })
       .addAllConsumerProguardFiles(optimizationCreationConfig.consumerProguardFiles.get().map { it.asFile.convert() })
+      .addAllConsumerProguardFiles(getConsumerKeepRules(this).map { it.convert() })
       .setMinificationEnabled(optimizationCreationConfig.minifiedEnabled)
       .build()
 

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.r8
 
+import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
@@ -165,6 +166,19 @@ class GradualR8KeepRulesSourceSetTest {
     build.executor.run(":app:assembleRelease")
     build.androidApplication().assertApk(ApkSelector.RELEASE) {
       classes().subPackage("com/example/androidlib").containsExactly("ClassInAndroidLib")
+    }
+  }
+
+  @Test
+  fun `test lib r8 put keep files in AAR`() {
+    val build =
+      rule.build {
+        androidLibrary(":androidLib") {}
+          .files { add("src/main/keepRules/my.keep", "-keep class com.example.androidlib.ClassInAndroidLib { *; }") }
+      }
+    build.executor.run(":androidLib:assembleRelease")
+    build.androidLibrary(":androidLib").assertAar(AarSelector.RELEASE) {
+      this.textFile("proguard.txt").contains("-keep class com.example.androidlib.ClassInAndroidLib { *; }")
     }
   }
 
