@@ -37,9 +37,13 @@ import com.android.ide.common.r8.ConsumerRuleGlobalGuardian
 import com.android.utils.FileUtils
 import java.io.File
 import java.util.function.Consumer
+import javax.inject.Inject
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Input
@@ -60,7 +64,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
-abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
+abstract class ExportConsumerProguardFilesTask @Inject constructor(@get:Internal val projectLayout: ProjectLayout) : NonIncrementalTask() {
 
   @get:Input
   var isBaseModule: Boolean = false
@@ -78,7 +82,7 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val inputFiles: ConfigurableFileCollection
 
-  @get:Optional @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val keepRulesDirectories: ConfigurableFileCollection
+  @get:Internal abstract val keepRulesDirectories: ListProperty<Directory>
 
   @get:Input @get:Optional abstract val ignoreFromInKeepRules: SetProperty<String>
 
@@ -93,6 +97,8 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
   @get:OutputDirectory abstract val outputDir: DirectoryProperty
 
   public override fun doTaskAction() {
+    checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
+
     // We check consumer files for default files or global options unless it's a base feature,
     // which can include both of those
     if (!isBaseModule) {
@@ -101,7 +107,7 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
       }
     }
 
-    val input = inputFiles + keepRulesDirectories.filter(File::isFile)
+    val input = inputFiles
 
     val filteredProguardFiles: List<KeepRuleFile> =
       if (isDynamicFeature) {
@@ -150,12 +156,16 @@ abstract class ExportConsumerProguardFilesTask : NonIncrementalTask() {
       task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
       task.disallowGlobalOptions = creationConfig.services.projectOptions[BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED]
 
+      creationConfig.sources.keepRules {
+        task.keepRulesDirectories.set(it.all)
+        task.inputFiles.from(it.getAsFileTrees())
+      }
+      task.keepRulesDirectories.disallowChanges()
+
       task.inputFiles.apply {
         from(task.consumerProguardFiles)
         from(creationConfig.artifacts.get(InternalArtifactType.GENERATED_PROGUARD_FILE))
       }
-      creationConfig.sources.keepRules { task.keepRulesDirectories.from(it.getAsFileTrees()) }
-      task.keepRulesDirectories.disallowChanges()
 
       if (creationConfig.componentType.isDynamicFeature) {
         task.libraryKeepRules =

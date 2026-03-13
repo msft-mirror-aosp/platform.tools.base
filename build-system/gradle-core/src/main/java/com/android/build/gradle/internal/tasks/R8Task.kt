@@ -65,7 +65,6 @@ import java.nio.file.Path
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemLocation
 import org.gradle.api.file.ProjectLayout
@@ -471,11 +470,11 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     val keepRulesTree =
       when {
         componentType.orNull?.isAar == true -> {
-          checkKeepRulesDirectories(aarKeepRulesDirectories)
+          checkAarKeepRulesDirectories(aarKeepRulesDirectories, projectLayout.projectDirectory.asFile)
           aarKeepRulesFiles.asFileTree
         }
         else -> {
-          checkKeepRulesDirectories(keepRulesDirectories)
+          checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
           keepRulesFiles.asFileTree
         }
       }
@@ -599,33 +598,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
     val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
     if (packages.contains("**")) return PartialShrinkingIncludeAll
     return PartialShrinkingConfig(packages)
-  }
-
-  private fun checkKeepRulesDirectories(directories: ListProperty<Directory>) {
-    val banList = setOf("pro", "pgcfg")
-    val proFiles = mutableMapOf<File, MutableList<File>>()
-    directories.orNull?.forEach { directory ->
-      directory
-        .takeIf { it.asFile.exists() }
-        ?.asFileTree
-        ?.forEach { file ->
-          if (file.isFile && file.extension in banList) {
-            proFiles.getOrPut(directory.asFile) { mutableListOf() }.add(file)
-          }
-        }
-    }
-
-    if (proFiles.isEmpty()) return
-
-    val message = StringBuffer("Use .keep extensions for keepRules source folders. To fix, rename files from list to .keep:\n")
-    val projectDir = projectLayout.projectDirectory.asFile
-    proFiles.keys.sorted().forEach { directory ->
-      val relativeDirectoryPath = directory.relativeTo(projectDir).path
-      val files = proFiles[directory]!!.map { it.relativeTo(directory).path }.sorted().joinToString(", ")
-      message.append("- $relativeDirectoryPath has $files\n")
-    }
-
-    throw RuntimeException(message.toString())
   }
 
   companion object {

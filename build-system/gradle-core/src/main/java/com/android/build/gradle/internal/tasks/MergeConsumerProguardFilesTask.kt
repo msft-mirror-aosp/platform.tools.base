@@ -30,8 +30,12 @@ import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.errors.EvalIssueException
 import java.io.File
 import java.io.IOException
+import javax.inject.Inject
 import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.ProjectLayout
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import org.gradle.work.DisableCachingByDefault
@@ -43,7 +47,7 @@ import org.gradle.work.DisableCachingByDefault
  */
 @DisableCachingByDefault(because = SIMPLE_MERGING_TASK)
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.OPTIMIZATION)
-abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
+abstract class MergeConsumerProguardFilesTask @Inject constructor(@get:Internal val projectLayout: ProjectLayout) : MergeFileTask() {
 
   @get:Input
   var isDynamicFeature = false
@@ -61,11 +65,15 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
 
   @get:Internal("only for task execution") abstract val buildDirectory: DirectoryProperty
 
+  @get:Internal abstract val keepRulesDirectories: ListProperty<Directory>
+
   @get:Input abstract val failOnMissingProguardFiles: Property<Boolean>
 
   @Throws(IOException::class)
   public override fun doTaskAction() {
     val consumerProguardFiles = consumerProguardFiles.files
+
+    checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
 
     consumerProguardFiles.forEach { file: File ->
       if (file.isFile) {
@@ -120,7 +128,11 @@ abstract class MergeConsumerProguardFilesTask : MergeFileTask() {
       task.isDynamicFeature = creationConfig.componentType.isDynamicFeature
       task.disallowGlobalOptions = creationConfig.services.projectOptions.get(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED)
       task.consumerProguardFiles.from(optimizationCreationConfig.consumerProguardFiles)
-      creationConfig.sources.keepRules { task.consumerProguardFiles.from(it.getAsFileTrees()) }
+      creationConfig.sources.keepRules {
+        task.consumerProguardFiles.from(it.getAsFileTrees())
+        task.keepRulesDirectories.set(it.all)
+      }
+      task.keepRulesDirectories.disallowChanges()
       task.consumerProguardFiles.disallowChanges()
       val inputFiles =
         creationConfig.services.fileCollection(task.consumerProguardFiles, creationConfig.artifacts.get(GENERATED_PROGUARD_FILE))

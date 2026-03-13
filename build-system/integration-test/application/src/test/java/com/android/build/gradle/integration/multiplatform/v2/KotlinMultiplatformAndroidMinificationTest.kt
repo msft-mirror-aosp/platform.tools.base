@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.project.AarSelector
 import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.utils.FileUtils
+import java.io.File
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -155,6 +156,30 @@ class KotlinMultiplatformAndroidMinificationTest {
     project.getSubproject("app").assertApk(ApkSelector.DEBUG) {
       mainDex().containsAtLeast("com/example/kmpfirstlib/KmpAndroidActivity", "com/example/kmpfirstlib/KmpAndroidFirstLibClass")
     }
+  }
+
+  @Test
+  fun testKeepRulesProError() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/keepRules/rules.pro"),
+      "-keep class com.example.app.HelloWorld { *; }",
+    )
+
+    val result = project.executor().expectFailure().run(":kmpFirstLib:assemble")
+    result.assertErrorContains("Use .keep extensions for keepRules source folders.")
+    result.assertErrorContains("- src${File.separatorChar}commonMain${File.separatorChar}keepRules has rules.pro")
+  }
+
+  @Test
+  fun testAarKeepRulesProError() {
+    FileUtils.writeToFile(
+      project.getSubproject("kmpFirstLib").file("src/commonMain/aarKeepRules/rules.pro"),
+      "-keep class com.example.app.HelloWorld { *; }",
+    )
+
+    val result = project.executor().expectFailure().run(":kmpFirstLib:assemble")
+    result.assertErrorContains("Use .keep extensions for aarKeepRules source folders.")
+    result.assertErrorContains("- src${File.separatorChar}commonMain${File.separatorChar}aarKeepRules has rules.pro")
   }
 
   @Test
