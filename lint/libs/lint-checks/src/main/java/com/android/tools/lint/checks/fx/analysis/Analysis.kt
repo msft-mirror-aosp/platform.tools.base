@@ -41,7 +41,6 @@ import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.TypeBounds
-import com.android.tools.lint.checks.fx.result.TypeEffectConstraintLattice
 import com.android.tools.lint.checks.fx.result.at
 import com.android.tools.lint.checks.fx.result.errorSetLattice
 import com.android.tools.lint.checks.fx.result.isExtension
@@ -178,10 +177,20 @@ internal open class Analysis<FX : Any>(
   protected open val <T> Lattice<T>.unsureResult: Result<Type<FX>, T>
     get() = emptyResult
 
-  private val typeEffectConstraintLattice = TypeEffectConstraintLattice(concreteEffect)
-  private val typeLattice = typeEffectConstraintLattice.typeLattice
-  private val effectLattice = typeEffectConstraintLattice.effectLattice
-  private val constraintLattice = typeEffectConstraintLattice.constraintLattice
+  private val constraintLattice = Constraint.domain(concreteEffect)
+
+  private val effectLattice =
+    Lattice.product(
+      ::Effect,
+      Effect<FX>::concrete,
+      Effect<FX>::invocations,
+      Effect<FX>::constraint,
+      concreteEffect,
+      possibilityLattice(),
+      constraintLattice,
+    )
+
+  private val typeLattice = Type.latticeOf(effectLattice)
 
   private val fxInstantiationLattice =
     Lattice.product(::Instantiation, Instantiation<FX>::result, Instantiation<FX>::errors, effectLattice, possibilityLattice())

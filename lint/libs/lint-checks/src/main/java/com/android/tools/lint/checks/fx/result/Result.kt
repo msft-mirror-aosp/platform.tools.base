@@ -32,7 +32,9 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.intersect
 import kotlinx.collections.immutable.persistentSetOf
+import kotlinx.collections.immutable.plus
 
 sealed interface Instantiable<out FX>
 
@@ -253,6 +255,61 @@ sealed interface Type<out FX> {
     val ULong = Application<Nothing>(ClassId.of<ULong>())
     val Any = Application<Nothing>(ClassId.of<java.lang.Object>())
     val KPropertySome = Application<Nothing>(ClassId.of<KProperty<*>>(), listOf(WildCard))
+
+    fun <FX> latticeOf(effectLattice: Lattice<Effect<FX>>): Lattice<Type<FX>> =
+      object : Lattice<Type<FX>> {
+        override val bottom = None
+        override val top = WildCard
+
+        // Inconsequential for now
+        override fun meetOf(first: Type<FX>, second: Type<FX>) =
+          when {
+            top precedes first -> second
+            top precedes second -> first
+            first precedes bottom || second precedes bottom -> bottom
+            first == second -> first
+            second is Union -> meetUnion(first, second)
+            first is Union -> meetUnion(second, first)
+            else -> bottom
+          }
+
+        private fun meetUnion(first: Type<FX>, second: Union<FX>): Type<FX> =
+          when (first) {
+            is Union -> Union(first.cases intersect second.cases)
+            else -> if (first in second.cases) first else bottom
+          }
+
+        override fun joinOf(first: Type<FX>, second: Type<FX>): Type<FX> =
+          when {
+            first is WildCard || second is WildCard -> WildCard
+            first is Union && second is Union -> Union(first.cases + second.cases)
+            first is Union -> Union(first.cases + second)
+            second is Union -> Union(second.cases + first)
+            first is Lambda && second is Lambda && first.intf != null && first.intf == second.intf && first.params == second.params -> {
+              val (bodyType1, bodyFx1) = first.body
+              val (bodyType2, bodyFx2) = second.body
+              first.copy(body = Result(joinOf(bodyType1, bodyType2), effectLattice.joinOf(bodyFx1, bodyFx2)))
+            }
+
+            else -> Union(persistentSetOf(first, second))
+          }
+
+        override fun precede(first: Type<FX>, second: Type<FX>) =
+          when {
+            second == top -> true
+            first == top -> false
+            first == bottom -> true
+            second == bottom -> false
+            first == second -> true
+            second is Union ->
+              when (first) {
+                is Union -> second.cases.containsAll(first.cases)
+                else -> first in second.cases
+              }
+
+            else -> false
+          }
+      }
   }
 }
 
@@ -273,7 +330,7 @@ fun Type<*>.erased(): ClassId? =
 data class Effect<out FX>(
   val concrete: FX,
   val invocations: UnboundedSet<Type.Sym<FX>> = unboundedSetOf(),
-  val constraint: Constraint<FX> = Constraint.Companion.MostPermissive,
+  val constraint: Constraint<FX> = Constraint.MostPermissive,
 ) {
   override fun toString(): String {
     val fx =

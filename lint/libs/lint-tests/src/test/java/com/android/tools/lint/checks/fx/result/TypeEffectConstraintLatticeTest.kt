@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package com.android.tools.lint.checks.fx.result
 
 import com.android.tools.lint.checks.fx.result.Type.Sym
 import com.android.tools.lint.checks.fx.result.Type.Sym.Invoke
+import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.LatticeTest
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
@@ -27,17 +28,25 @@ import org.junit.Test
 
 private typealias IntsFx = UnboundedSet<Int>
 
-private val UnitTypeEffectConstraintLattice = TypeEffectConstraintLattice(possibilityLattice<Int>())
+private val concreteEffectLattice = possibilityLattice<Int>()
+private val constraintLattice = Constraint.domain(concreteEffectLattice)
+private val effectLattice =
+  Lattice.product(
+    ::Effect,
+    Effect<IntsFx>::concrete,
+    Effect<IntsFx>::invocations,
+    Effect<IntsFx>::constraint,
+    concreteEffectLattice,
+    possibilityLattice(),
+    constraintLattice,
+  )
 
 class TypeLatticeTest :
-  LatticeTest<Type<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.typeLattice,
-    poolInits = listOf(Type.Int, Type.Boolean, Sym.Param("x"), Sym.Param("x")["f", Sym.Param("y")]),
-  )
+  LatticeTest<Type<IntsFx>>(lattice = Type.latticeOf(effectLattice), poolInits = listOf(Type.Int, Type.Boolean, x, x["f", y]))
 
 class EffectLatticeTest :
   LatticeTest<Effect<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.effectLattice,
+    lattice = effectLattice,
     poolInits =
       listOf(
         Effect(persistentSetOf(1, 2, 3), persistentSetOf(x["f", Type.Int])),
@@ -48,7 +57,7 @@ class EffectLatticeTest :
 
 class ConstraintLatticeTest :
   LatticeTest<Constraint<IntsFx>>(
-    lattice = UnitTypeEffectConstraintLattice.constraintLattice,
+    lattice = constraintLattice,
     poolInits =
       listOf(
         Constraint(persistentMapOf(x["f"] to persistentSetOf(1, 2, 3)), persistentMapOf(x["f"] to persistentSetOf(y["g"]))),
