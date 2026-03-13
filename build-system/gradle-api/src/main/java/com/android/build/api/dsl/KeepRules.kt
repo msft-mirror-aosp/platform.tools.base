@@ -6,7 +6,6 @@ import org.gradle.api.provider.SetProperty
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 
 /** DSL object for external library dependencies keep rules configurations. */
-@Incubating
 interface KeepRules {
 
   @Incubating
@@ -18,7 +17,7 @@ interface KeepRules {
    * "groupId:artifactId:version") or in the format of "groupId:artifactId" in which case dependencies are ignored as long as they match
    * groupId & artifactId.
    */
-  @Incubating fun ignoreFrom(vararg ids: String)
+  fun ignoreFrom(vararg ids: String)
 
   @Incubating
   @Deprecated("Renamed to ignoreFromAllExternalDependencies", replaceWith = ReplaceWith("ignoreFromAllExternalDependencies"))
@@ -39,5 +38,5 @@ interface KeepRules {
    *
    * It's the equivalent of using `getDefaultProguardFile("proguard-android-optimize.txt")`
    */
-  @get:Incubating @set:Incubating var includeDefault: Boolean
+  var includeDefault: Boolean
 }

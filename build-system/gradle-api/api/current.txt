@@ -552,12 +552,12 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.ApplicationVariantDimension {
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.Optimization getOptimization();
+    method @InaccessibleFromKotlin public com.android.build.api.dsl.Optimization getOptimization();
     method @InaccessibleFromKotlin public Boolean? isCrunchPngs();
     method @InaccessibleFromKotlin public boolean isDebuggable();
     method @InaccessibleFromKotlin public boolean isDefault();
     method @InaccessibleFromKotlin public boolean isProfileable();
-    method @org.gradle.api.Incubating public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
+    method public void optimization(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setCrunchPngs(Boolean?);
     method @InaccessibleFromKotlin public void setDebuggable(boolean);
     method @InaccessibleFromKotlin public void setDefault(boolean);
@@ -566,7 +566,7 @@ package com.android.build.api.dsl {
     property public abstract boolean isDebuggable;
     property public abstract boolean isDefault;
     property public abstract boolean isProfileable;
-    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Optimization optimization;
+    property public abstract com.android.build.api.dsl.Optimization optimization;
   }
 
   public interface ApplicationDefaultConfig extends com.android.build.api.dsl.ApplicationBaseFlavor com.android.build.api.dsl.DefaultConfig {
@@ -1402,16 +1402,16 @@ package com.android.build.api.dsl {
     property public abstract Boolean? useLegacyPackaging;
   }
 
-  @org.gradle.api.Incubating public interface KeepRules {
+  public interface KeepRules {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.io.File> getFiles();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getIncludeDefault();
+    method @InaccessibleFromKotlin public boolean getIncludeDefault();
     method @Deprecated @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
     method @Deprecated @org.gradle.api.Incubating public void ignoreExternalDependencies(java.lang.String... ids);
-    method @org.gradle.api.Incubating public void ignoreFrom(java.lang.String... ids);
+    method public void ignoreFrom(java.lang.String... ids);
     method @org.gradle.api.Incubating public void ignoreFromAllExternalDependencies(boolean ignore);
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setIncludeDefault(boolean);
+    method @InaccessibleFromKotlin public void setIncludeDefault(boolean);
     property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.io.File> files;
-    property @org.gradle.api.Incubating public abstract boolean includeDefault;
+    property public abstract boolean includeDefault;
   }
 
   @org.gradle.api.Incubating public interface KmpOptimization {
@@ -1935,13 +1935,13 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> targets;
   }
 
-  @org.gradle.api.Incubating public interface Optimization {
+  public interface Optimization {
     method @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public boolean getEnable();
+    method @InaccessibleFromKotlin public boolean getEnable();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
     method @org.gradle.api.Incubating public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setEnable(boolean);
-    property @org.gradle.api.Incubating public abstract boolean enable;
+    method @InaccessibleFromKotlin public void setEnable(boolean);
+    property public abstract boolean enable;
     property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;
   }
 

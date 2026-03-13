@@ -24,7 +24,6 @@ import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
  * DSL object for configurations aimed for optimizing build process(e.g. speed, correctness). This DSL object is applicable to buildTypes
  * and productFlavors.
  */
-@Incubating
 interface Optimization {
 
   /** Configure keep rules inherited from external library dependencies */
@@ -41,7 +40,7 @@ interface Optimization {
    *
    * Flavours merge this property with "or" rule. That means having this enable=true sticks.
    */
-  @get:Incubating @set:Incubating var enable: Boolean
+  var enable: Boolean
 
   /**
    * Specifies what packages are included for optimization. Those may be local code packages and external libraries packages. You can

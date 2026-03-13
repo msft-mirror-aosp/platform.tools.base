@@ -39,7 +39,6 @@ import java.io.File
 import java.io.Serializable
 import javax.inject.Inject
 import org.gradle.api.Action
-import org.gradle.api.Incubating
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
@@ -111,15 +110,12 @@ constructor(
 
   abstract override var isJniDebuggable: Boolean
 
-  @get:Incubating
   override val optimization: Optimization = dslServices.newDecoratedInstance(OptimizationImpl::class.java, dslServices, objectFactory)
 
-  @Incubating
   override fun optimization(action: Optimization.() -> Unit) {
     action(optimization)
   }
 
-  @Incubating
   fun optimization(action: Action<Optimization>) {
     action.execute(optimization)
   }

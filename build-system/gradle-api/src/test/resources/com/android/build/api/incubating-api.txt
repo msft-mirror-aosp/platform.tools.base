@@ -120,10 +120,8 @@ https://issuetracker.google.com/328748602
   * com.android.build.api.dsl.BundleAbi.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleAbi.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748603
-  * com.android.build.api.dsl.KeepRules
   * com.android.build.api.dsl.KeepRules.ignoreAllExternalDependencies: void (boolean)
   * com.android.build.api.dsl.KeepRules.ignoreExternalDependencies: void (java.lang.String[])
-  * com.android.build.api.dsl.KeepRules.ignoreFrom: void (java.lang.String[])
   * com.android.build.api.dsl.KeepRules.ignoreFromAllExternalDependencies: void (boolean)
 https://issuetracker.google.com/328748652
   * com.android.build.api.dsl.ApplicationAndroidResources.getGenerateLocaleConfig: boolean ()
@@ -150,7 +148,6 @@ https://issuetracker.google.com/328748711
   * com.android.build.api.dsl.BundleDensity.getEnableSplit: java.lang.Boolean ()
   * com.android.build.api.dsl.BundleDensity.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748714
-  * com.android.build.api.dsl.Optimization
   * com.android.build.api.dsl.Optimization.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
   * com.android.build.api.dsl.Optimization.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules, kotlin.Unit>)
   * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
@@ -628,12 +625,8 @@ https://issuetracker.google.com/398918561
   * com.android.build.api.dsl.ManagedVirtualDevice.getTestedAbi: java.lang.String ()
   * com.android.build.api.dsl.ManagedVirtualDevice.setTestedAbi: void (java.lang.String)
 https://issuetracker.google.com/422422985
-  * com.android.build.api.dsl.ApplicationBuildType.getOptimization: com.android.build.api.dsl.Optimization ()
-  * com.android.build.api.dsl.ApplicationBuildType.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
   * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
-  * com.android.build.api.dsl.Optimization.getEnable: boolean ()
   * com.android.build.api.dsl.Optimization.getPackageScope: org.gradle.api.provider.SetProperty<java.lang.String> ()
-  * com.android.build.api.dsl.Optimization.setEnable: void (boolean)
 https://issuetracker.google.com/438803230
   * com.android.build.api.variant.CanProduceConsumerProguardFiles
   * com.android.build.api.variant.CanProduceConsumerProguardFiles.getConsumerProguardFiles: org.gradle.api.provider.ListProperty<org.gradle.api.file.RegularFile> ()
@@ -677,9 +670,6 @@ https://issuetracker.google.com/476099690
   * com.android.build.api.dsl.AndroidSourceSet.getKeepRules: com.android.build.api.dsl.AndroidSourceDirectorySet ()
   * com.android.build.api.dsl.AndroidSourceSet.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AndroidSourceDirectorySet, kotlin.Unit>)
   * com.android.build.api.variant.Sources.getKeepRules: com.android.build.api.variant.SourceDirectories$Flat ()
-https://issuetracker.google.com/477630142
-  * com.android.build.api.dsl.KeepRules.getIncludeDefault: boolean ()
-  * com.android.build.api.dsl.KeepRules.setIncludeDefault: void (boolean)
 https://issuetracker.google.com/480062612
   * com.android.build.api.variant.VariantOutput.getOutputFileName: org.gradle.api.provider.Property<java.lang.String> ()
 https://issuetracker.google.com/481403863

@@ -16,8 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.api.Incubating
-
 /**
  * Build types define certain properties that Gradle uses when building and packaging your app, and are typically configured for different
  * stages of your development lifecycle.
@@ -59,7 +57,7 @@ interface ApplicationBuildType : BuildType, ApplicationVariantDimension {
   var isProfileable: Boolean
 
   /** Application build type is preferable place to define optimization block */
-  @get:Incubating @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override val optimization: Optimization
+  @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override val optimization: Optimization
 
-  @Incubating @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override fun optimization(action: Optimization.() -> Unit)
+  @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override fun optimization(action: Optimization.() -> Unit)
 }
