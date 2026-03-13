@@ -508,23 +508,6 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // Serialized Lint Model for a variant's test fixtures component
   object TEST_FIXTURES_LINT_MODEL : InternalArtifactType<Directory>(DIRECTORY)
 
-  // Lint reports
-  object LINT_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object LINT_HTML_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object LINT_XML_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object LINT_SARIF_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object AGGREGATED_LINT_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object AGGREGATED_LINT_HTML_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object AGGREGATED_LINT_XML_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
-  object AGGREGATED_LINT_SARIF_REPORT : InternalArtifactType<RegularFile>(FILE, Category.REPORTS)
-
   // Intermediate lint reports to be read and printed to stdout or stderr
   object LINT_INTERMEDIATE_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE)
 

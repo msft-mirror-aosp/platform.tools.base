@@ -124,4 +124,28 @@ sealed class SingleArtifact<T : FileSystemLocation>(
 
   /** Points to the Version control information when VCS tagging is enabled (which is by default in release builds) */
   object VERSION_CONTROL_INFO_FILE : SingleArtifact<RegularFile>(FILE, fileName = "version-control-info.textproto")
+
+  /** The text lint report file */
+  @Incubating object LINT_TEXT_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The HTML lint report file */
+  @Incubating object LINT_HTML_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The XML lint report file */
+  @Incubating object LINT_XML_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The SARIF lint report file */
+  @Incubating object LINT_SARIF_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The aggregated text lint report file */
+  @Incubating object AGGREGATED_LINT_TEXT_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The aggregated HTML lint report file */
+  @Incubating object AGGREGATED_LINT_HTML_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The aggregated XML lint report file */
+  @Incubating object AGGREGATED_LINT_XML_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
+
+  /** The aggregated SARIF lint report file */
+  @Incubating object AGGREGATED_LINT_SARIF_REPORT : SingleArtifact<RegularFile>(FILE, Category.REPORTS)
 }

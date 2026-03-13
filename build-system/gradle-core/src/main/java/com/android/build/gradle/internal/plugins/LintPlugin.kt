@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.Lint
 import com.android.build.api.dsl.SettingsExtension
@@ -52,7 +53,6 @@ import com.android.build.gradle.internal.profile.NoOpAnalyticsService
 import com.android.build.gradle.internal.projectIsolationActive
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.publishing.getAttributes
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_REPORT_LINT_MODEL
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType.LINT_VITAL_REPORT_LINT_MODEL
@@ -275,10 +275,10 @@ abstract class LintPlugin : Plugin<Project> {
             null,
             projectServices.projectInfo.buildDirectory.dir("reports"),
             "lint-results",
-            InternalArtifactType.LINT_TEXT_REPORT,
-            InternalArtifactType.LINT_HTML_REPORT,
-            InternalArtifactType.LINT_XML_REPORT,
-            InternalArtifactType.LINT_SARIF_REPORT,
+            SingleArtifact.LINT_TEXT_REPORT,
+            SingleArtifact.LINT_HTML_REPORT,
+            SingleArtifact.LINT_XML_REPORT,
+            SingleArtifact.LINT_SARIF_REPORT,
           )
         }
 

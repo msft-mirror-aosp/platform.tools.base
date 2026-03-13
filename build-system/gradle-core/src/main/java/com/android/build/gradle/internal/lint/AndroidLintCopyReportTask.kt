@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.internal.lint
 
+import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.dsl.Lint
 import com.android.build.gradle.internal.caching.DisabledCachingReason.COPY_TASK
 import com.android.build.gradle.internal.component.ComponentCreationConfig
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.services.getBuildService
 import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.UnsafeOutputsTask
@@ -106,25 +106,25 @@ abstract class AndroidLintCopyReportTask :
   internal fun registerInputs(artifacts: ArtifactsImpl, lintOptions: Lint) {
     val textOutput = lintOptions.textOutput
     if (lintOptions.textReport && textOutput != null && textOutput.path != "stdout" && textOutput.path != "stderr") {
-      textReportInput.set(artifacts.get(InternalArtifactType.LINT_TEXT_REPORT))
+      textReportInput.set(artifacts.get(SingleArtifact.LINT_TEXT_REPORT))
       textReportOutput.set(textOutput)
     }
     textReportInput.disallowChanges()
     textReportOutput.disallowChanges()
     if (lintOptions.htmlReport && lintOptions.htmlOutput != null) {
-      htmlReportInput.set(artifacts.get(InternalArtifactType.LINT_HTML_REPORT))
+      htmlReportInput.set(artifacts.get(SingleArtifact.LINT_HTML_REPORT))
       htmlReportOutput.set(lintOptions.htmlOutput)
     }
     htmlReportInput.disallowChanges()
     htmlReportOutput.disallowChanges()
     if (lintOptions.xmlReport && lintOptions.xmlOutput != null) {
-      xmlReportInput.set(artifacts.get(InternalArtifactType.LINT_XML_REPORT))
+      xmlReportInput.set(artifacts.get(SingleArtifact.LINT_XML_REPORT))
       xmlReportOutput.set(lintOptions.xmlOutput)
     }
     xmlReportInput.disallowChanges()
     xmlReportOutput.disallowChanges()
     if (lintOptions.sarifReport && lintOptions.sarifOutput != null) {
-      sarifReportInput.set(artifacts.get(InternalArtifactType.LINT_SARIF_REPORT))
+      sarifReportInput.set(artifacts.get(SingleArtifact.LINT_SARIF_REPORT))
       sarifReportOutput.set(lintOptions.sarifOutput)
     }
     sarifReportInput.disallowChanges()

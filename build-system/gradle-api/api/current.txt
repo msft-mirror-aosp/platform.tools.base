@@ -191,6 +191,22 @@ package com.android.build.api.artifact {
     field public static final com.android.build.api.artifact.SingleArtifact.AAR INSTANCE;
   }
 
+  @org.gradle.api.Incubating public static final class SingleArtifact.AGGREGATED_LINT_HTML_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.AGGREGATED_LINT_HTML_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.AGGREGATED_LINT_SARIF_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.AGGREGATED_LINT_SARIF_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.AGGREGATED_LINT_TEXT_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.AGGREGATED_LINT_TEXT_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.AGGREGATED_LINT_XML_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.AGGREGATED_LINT_XML_REPORT INSTANCE;
+  }
+
   public static final class SingleArtifact.APK extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.Directory> implements com.android.build.api.artifact.Artifact.ContainsMany com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.SingleArtifact.APK INSTANCE;
   }
@@ -205,6 +221,22 @@ package com.android.build.api.artifact {
 
   public static final class SingleArtifact.BUNDLE extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Transformable {
     field public static final com.android.build.api.artifact.SingleArtifact.BUNDLE INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.LINT_HTML_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.LINT_HTML_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.LINT_SARIF_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.LINT_SARIF_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.LINT_TEXT_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.LINT_TEXT_REPORT INSTANCE;
+  }
+
+  @org.gradle.api.Incubating public static final class SingleArtifact.LINT_XML_REPORT extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> {
+    field public static final com.android.build.api.artifact.SingleArtifact.LINT_XML_REPORT INSTANCE;
   }
 
   public static final class SingleArtifact.MERGED_MANIFEST extends com.android.build.api.artifact.SingleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
