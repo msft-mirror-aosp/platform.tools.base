@@ -379,11 +379,9 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       ),
       case<_, Type.MethodRef>(methodRefEncoder),
       case<_, Type.SpecializedMethodRef<FX>>(Encoder.product(Type<FX>::SpecializedMethodRef, recTypeEncoder, methodRefEncoder)),
-      case<_, Type.Sym.Rec>(Encoder.const(Type.Sym.Rec)),
       case<_, Type.Sym.Param>(Encoder.internedString.adapt(Type.Sym.Param::name, Type.Sym<Nothing>::Param)),
       case<_, Type.Sym.This>(classIdEncoder.adapt(Type.Sym.This::site, Type.Sym<Nothing>::This)),
       case<_, Type.Sym.Invoke<FX>>(invokeEncoder),
-      case<_, Type.Sym.Fix<FX>>(Encoder.product(Type.Sym<FX>::Fix, Encoder.set(typeEncoder), Encoder.set(typeEncoder))),
     )
   }
 

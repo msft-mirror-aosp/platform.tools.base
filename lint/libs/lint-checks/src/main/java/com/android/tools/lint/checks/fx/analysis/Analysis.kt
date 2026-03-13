@@ -48,7 +48,6 @@ import com.android.tools.lint.checks.fx.result.isExtension
 import com.android.tools.lint.checks.fx.result.isFinal
 import com.android.tools.lint.checks.fx.result.isStatic
 import com.android.tools.lint.checks.fx.result.renderAbbrev
-import com.android.tools.lint.checks.fx.result.widen
 import com.android.tools.lint.checks.fx.utils.DependentMonotone
 import com.android.tools.lint.checks.fx.utils.EffectfulComputation
 import com.android.tools.lint.checks.fx.utils.Lattice
@@ -59,7 +58,6 @@ import com.android.tools.lint.checks.fx.utils.forM
 import com.android.tools.lint.checks.fx.utils.joinedOver
 import com.android.tools.lint.checks.fx.utils.lastM
 import com.android.tools.lint.checks.fx.utils.mapM
-import com.android.tools.lint.checks.fx.utils.partitionToPersistentSets
 import com.android.tools.lint.checks.fx.utils.possibilityLattice
 import com.android.tools.lint.checks.fx.utils.pure
 import com.android.tools.lint.checks.fx.utils.unionedWith
@@ -943,7 +941,6 @@ internal open class Analysis<FX : Any>(
       is Type.Sym,
       is Type.WildCard -> notFound(Module.MethodLookupException.NotFound(methodName))
       is Type.Ellipsis -> throw IllegalArgumentException("Unexpected invocation $receiver.$methodName($args)")
-      is Type.Sym.Rec -> throw IllegalStateException("Unbound recursive variable $receiver")
     }
 
   /** Instantiate [method]'s summaries at [args] */
@@ -1027,33 +1024,22 @@ internal open class Analysis<FX : Any>(
       is Type.SpecializedMethodRef -> Type.SpecializedMethodRef(instType(rec, type.receiver), type.ref)
       is Type.Sym.Param -> varAt(type.name) ?: type
       is Type.Sym.This -> receiver(type.site) ?: type
-      is Type.Sym.Invoke ->
-        invokeVirtual(
-            rec,
-            typeLattice.widen(instType(rec, type.receiver)),
-            type.method,
-            type.args.map { typeLattice.widen(instType(rec, it)) },
-          )
-          .value
+      is Type.Sym.Invoke -> invokeVirtual(rec, instType(rec, type.receiver), type.method, type.args.map { instType(rec, it) }).value
       is Type.Union -> type.cases.joinedOver(typeLattice) { instType(rec, it) }
-      is Type.WildCard,
-      is Type.Sym.Rec -> type
+      is Type.WildCard -> type
       is Type.Ellipsis -> Type.Ellipsis(instType(rec, type.element))
-      is Type.Sym.Fix -> instFix(rec, type).value
     }
 
   /** Substitute and normalize effect [fx] under environment */
   private fun Env<FX>.instEffect(rec: (Point<FX>) -> Ans<FX>, fx: Type.Sym<FX>): Instantiation<FX> =
     when (fx) {
       is Type.Sym.Invoke -> {
-        val receiver = typeLattice.widen(instType(rec, fx.receiver))
-        val args = fx.args.map { typeLattice.widen(instType(rec, it)) }
+        val receiver = instType(rec, fx.receiver)
+        val args = fx.args.map { instType(rec, it) }
         invokeVirtual(rec, receiver, fx.method, args).effect
       }
-      is Type.Sym.Rec -> fxInstantiationLattice.bottom // TODO confirm OK??
       is Type.Sym.This,
       is Type.Sym.Param -> throw IllegalStateException("Unexpected symbolic effect representation: $fx")
-      is Type.Sym.Fix -> instFix(rec, fx).effect
     }
 
   /** Instantiate symbolic effects in the constraint, possibly discovering violations */
@@ -1074,99 +1060,6 @@ internal open class Analysis<FX : Any>(
         } ?: return top to newFails
       val symbolicInst: Constraint<FX> = bottom /* TODO */
       return (concreteInst join symbolicInst) to newFails
-    }
-
-  /** Instantiate inductive type [fixed] under environment */
-  private fun Env<FX>.instFix(rec: (Point<FX>) -> Ans<FX>, fixed: Type.Sym.Fix<FX>): InstAns<FX> =
-    with(fxInstantiationLattice) {
-      fun Type<FX>.substAndInvoke(base: Type<FX>): InstAns<FX> =
-        when (this) {
-          is Type.Sym.Rec -> pure(base)
-          is Type.Sym.Param,
-          is Type.Sym.This -> pure(this)
-          is Type.Sym.Invoke -> {
-            val (substReceivers, recvFx) = receiver.substAndInvoke(base)
-            val substArgs = args.map { it.substAndInvoke(base) }
-            val args = substArgs.map { it.value }
-            val argsFx = substArgs.fold(bottom) { fx, arg -> fx join arg.effect }
-            val (res, invFx) = invokeVirtual(rec, typeLattice.widen(substReceivers), method, args.map(typeLattice::widen))
-            Result(res, recvFx join argsFx join invFx)
-          }
-          is Type.Application,
-          is Type.Ellipsis,
-          is Type.WildCard,
-          is Type.MethodRef -> pure(this)
-          is Type.Union -> cases.joinedOver(instantiationLattice) { it.substAndInvoke(base) }
-          is Type.Lambda -> pure(this)
-          is Type.SpecializedMethodRef -> {
-            val (t, fx) = receiver.substAndInvoke(base)
-            Result(copy(receiver = t), fx)
-          }
-          is Type.Sym.Fix ->
-            with(instantiationLattice) {
-              baseCases.joinedOver { it.substAndInvoke(base) } join inductiveCases.joinedOver { it.substAndInvoke(base) }
-            }
-        }
-
-      fun Type<FX>.asCases() = if (this is Type.Union) cases else persistentSetOf(this)
-
-      val (baseCases, indCases) = fixed
-      val instBase = baseCases.joinedOver(typeLattice) { instType(rec, it) }
-      val instBaseCases = instBase.asCases()
-      if (instBase == Type.None) return instantiationLattice.bottom
-      val instIndCases = indCases.joinedOver(typeLattice) { instType(rec, it) }.asCases()
-
-      fun fix(t0: Type<FX>, fx0: Instantiation<FX>): InstAns<FX> {
-        val (t1, fx1) = instIndCases.joinedOver(instantiationLattice) { it.substAndInvoke(t0) }
-        val tN = typeLattice.widen(t0, t1)
-        val fxN = fxInstantiationLattice.widen(fx0, fx1)
-        return when {
-          t0 == tN && fx0 == fxN -> Result(tN, fxN)
-          else -> fix(tN, fxN)
-        }
-      }
-
-      fun Type<FX>.maybeGrowingSymbol(): Boolean =
-        when (this) {
-          is Type.Sym.Param,
-          is Type.Sym.Rec,
-          is Type.WildCard,
-          is Type.Sym.This,
-          is Type.MethodRef,
-          is Type.SpecializedMethodRef -> false
-          is Type.Union -> cases.any { it.maybeGrowingSymbol() }
-          is Type.Application -> args.any { it.maybeGrowingSymbol() }
-          is Type.Ellipsis -> element.maybeGrowingSymbol()
-          is Type.Lambda -> body.value.maybeGrowingSymbol() || body.effect.invocations?.any { it.maybeGrowingSymbol() } == true
-          is Type.Sym.Fix,
-          is Type.Sym.Invoke -> true
-        }
-
-      if (instIndCases.isEmpty()) return pure(instBase)
-
-      // When the instantiation is just renaming symbols, there's no need for a general
-      // fix-point computation
-      if (isPureRenaming()) return pure(Type.Sym.Fix(instBaseCases, instIndCases))
-
-      // When instantiation doesn't produce new symbols, skip the general fix-point over all
-      // base cases. Instead, only exercise concrete base cases for concrete new types and
-      // effects.
-      val (otherBaseCases, newConcreteBaseCases) = instBaseCases.partitionToPersistentSets { it is Type.Sym || it in baseCases }
-      if (
-        otherBaseCases.all { it in baseCases || !it.maybeGrowingSymbol() } &&
-          instIndCases.all { it in indCases || !it.maybeGrowingSymbol() }
-      ) {
-        val (tN, fxN) = fix(Type.Union(newConcreteBaseCases), fxInstantiationLattice.bottom)
-        val fullInstType =
-          when (tN) {
-            is Type.Sym.Fix -> Type.Sym.Fix(tN.baseCases + otherBaseCases, tN.inductiveCases)
-            is Type.Union -> Type.Union(tN.cases + otherBaseCases)
-            else -> Type.Union(otherBaseCases + tN)
-          }
-        return Result(fullInstType, fxN)
-      }
-
-      return fix(instBase, fxInstantiationLattice.bottom)
     }
 
   private operator fun ((Point<FX>) -> Ans<FX>).get(method: Type.MethodRef) = this(method) as SummAns<FX>

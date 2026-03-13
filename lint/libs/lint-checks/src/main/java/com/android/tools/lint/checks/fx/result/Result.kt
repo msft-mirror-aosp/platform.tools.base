@@ -18,8 +18,6 @@ package com.android.tools.lint.checks.fx.result
 import com.android.tools.lint.checks.fx.utils.InterningPool
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.UnboundedSet
-import com.android.tools.lint.checks.fx.utils.map
-import com.android.tools.lint.checks.fx.utils.partitionToPersistentSets
 import com.android.tools.lint.checks.fx.utils.unboundedSetOf
 import com.intellij.psi.PsiMethod
 import kotlin.reflect.KClass
@@ -159,10 +157,6 @@ sealed interface Type<out FX> {
   }
 
   sealed interface Sym<out FX> : Type<FX> {
-    data object Rec : Sym<Nothing> {
-      override fun toString() = "\uD835\uDEC2"
-    }
-
     class Param(name: String) : Sym<Nothing> {
       val name = InterningPool.string(name)
 
@@ -205,71 +199,6 @@ sealed interface Type<out FX> {
       }
     }
 
-    data class Fix<out FX>
-    internal constructor(
-      val baseCases: PersistentSet<Type<FX>>,
-      val inductiveCases: PersistentSet<Type<FX>>, // that refer to 1+ `Rec`
-    ) : Sym<FX> {
-      init {
-        if (inductiveCases.isEmpty()) throw TrivialInduction(baseCases)
-      }
-
-      class TrivialInduction(val cases: PersistentSet<Type<*>>) : Exception()
-
-      val cases: Sequence<Type<FX>>
-        get() = baseCases.asSequence() + inductiveCases.asSequence()
-
-      override fun toString() = "(μ\uD835\uDEC2. ${cases.joinToString(" ∪ ")})"
-
-      companion object {
-        operator fun <FX> invoke(cases: Collection<Type<FX>>): Fix<FX> {
-          val (indCases, baseCases) = cases.partitionToPersistentSets { it.hasFreeRec() }
-          return Fix(baseCases, indCases.remove(Rec))
-        }
-
-        internal fun <FX> Type<FX>.hasFreeRec(): Boolean =
-          when (this) {
-            is Application -> args.any { it.hasFreeRec() }
-            is Lambda -> body.value.hasFreeRec() || body.effect.invocations?.any { it.hasFreeRec() } == true
-            is Union -> cases.any { it.hasFreeRec() }
-            is SpecializedMethodRef -> receiver.hasFreeRec()
-            is Rec -> true
-            is Invoke -> receiver.hasFreeRec() || args.any { it.hasFreeRec() }
-            is Ellipsis<*> -> element.hasFreeRec()
-            is Param,
-            is This,
-            is Fix,
-            is MethodRef,
-            is WildCard -> false
-          }
-
-        private fun <FX> Sym<FX>.substSym(base: PersistentSet<Sym<FX>>): PersistentSet<Sym<FX>> =
-          when (this) {
-            is Rec -> base
-            is Param,
-            is This -> persistentSetOf(this)
-            is Invoke -> {
-              val substReceivers = receiver.substSym(base)
-              val substArgs = args.map { it.subst(base) }
-              substReceivers.map { copy(receiver = it, args = substArgs) }
-            }
-            is Fix -> throw IllegalStateException("Nested inductive set not expected")
-          }
-
-        private fun <FX> Type<FX>.subst(base: PersistentSet<Sym<FX>>): Type<FX> =
-          when (this) {
-            is Application,
-            is Ellipsis,
-            is WildCard,
-            is MethodRef -> this
-            is Union -> Union(cases.map { it.subst(base) })
-            is Lambda -> Lambda(params, body.copy(value = body.value.subst(base)), intf)
-            is SpecializedMethodRef -> copy(receiver = receiver.subst(base))
-            is Sym -> Union(substSym(base))
-          }
-      }
-    }
-
     companion object {
       internal val <FX> Sym<FX>.chain: Pair<String, List<MethodId>>
         get() =
@@ -277,8 +206,6 @@ sealed interface Type<out FX> {
             is Param -> name to listOf()
             is This -> toString() to listOf()
             is Invoke -> receiver.chain.let { (x, ms) -> x to ms + method }
-            is Rec,
-            is Fix -> throw java.lang.IllegalStateException()
           }
     }
   }

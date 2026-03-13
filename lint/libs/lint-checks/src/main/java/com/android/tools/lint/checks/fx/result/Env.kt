@@ -84,8 +84,6 @@ internal data class Env<out FX>(
   // TODO hack
   internal fun innermostExtensionReceiver(): Type<FX>? = vars.entries.findLast { (x, _) -> x.isExtensionReceiverName() }?.value
 
-  fun isPureRenaming() = vars.all { (_, t) -> t is Type.Sym } && virtualReceivers.all { (_, t) -> t is Type.Sym }
-
   private fun Type<FX>.widenedByBound(): Type<FX> {
     val b =
       when (this) {
@@ -235,9 +233,7 @@ private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rh
         is Type.SpecializedMethodRef,
         is Type.Sym.Invoke,
         is Type.Union,
-        is Type.WildCard,
-        is Type.Sym.Rec,
-        is Type.Sym.Fix -> if (typeLattice.precede(rhs, lhs)) this else throw IllegalStateException("Cannot unify: $lhs with $rhs")
+        is Type.WildCard -> if (typeLattice.precede(rhs, lhs)) this else throw IllegalStateException("Cannot unify: $lhs with $rhs")
       }
   }
 
