@@ -191,6 +191,13 @@ interface Lint {
    */
   var textReport: Boolean
 
+  /**
+   * Whether lint should print a text report to stdout.
+   *
+   * Default is false.
+   */
+  var printTextReport: Boolean
+
   /** Whether we should write an HTML report. Default is true. The location can be controlled by [htmlOutput]. */
   var htmlReport: Boolean
 

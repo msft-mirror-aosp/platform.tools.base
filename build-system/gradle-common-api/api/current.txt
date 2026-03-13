@@ -74,6 +74,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getInformational();
     method @InaccessibleFromKotlin public java.io.File? getLintConfig();
     method @InaccessibleFromKotlin public boolean getNoLines();
+    method @InaccessibleFromKotlin public boolean getPrintTextReport();
     method @InaccessibleFromKotlin public boolean getQuiet();
     method @InaccessibleFromKotlin public java.io.File? getSarifOutput();
     method @InaccessibleFromKotlin public boolean getSarifReport();
@@ -102,6 +103,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setIgnoreWarnings(boolean);
     method @InaccessibleFromKotlin public void setLintConfig(java.io.File?);
     method @InaccessibleFromKotlin public void setNoLines(boolean);
+    method @InaccessibleFromKotlin public void setPrintTextReport(boolean);
     method @InaccessibleFromKotlin public void setQuiet(boolean);
     method @InaccessibleFromKotlin public void setSarifOutput(java.io.File?);
     method @InaccessibleFromKotlin public void setSarifReport(boolean);
@@ -137,6 +139,7 @@ package com.android.build.api.dsl {
     property public abstract java.util.Set<java.lang.String> informational;
     property public abstract java.io.File? lintConfig;
     property public abstract boolean noLines;
+    property public abstract boolean printTextReport;
     property public abstract boolean quiet;
     property public abstract java.io.File? sarifOutput;
     property public abstract boolean sarifReport;

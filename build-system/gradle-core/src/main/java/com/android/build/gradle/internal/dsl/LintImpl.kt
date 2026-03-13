@@ -168,6 +168,7 @@ abstract class LintImpl @Inject constructor(private val dslServices: DslServices
     }
 
   abstract override var textReport: Boolean
+  abstract override var printTextReport: Boolean
   abstract override var htmlReport: Boolean
   abstract override var sarifReport: Boolean
   abstract override var xmlReport: Boolean

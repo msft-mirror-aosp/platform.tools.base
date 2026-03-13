@@ -149,6 +149,7 @@ internal open class SettingsLintImpl @Inject constructor(private val objectFacto
   override var checkGeneratedSources: Boolean = false
   override var showAll: Boolean = false
   override var textReport: Boolean = false
+  override var printTextReport: Boolean = false
   override var sarifReport: Boolean = false
   override val informational: MutableSet<String> = mutableSetOf()
   @Deprecated("Ignore and disable are synonyms", replaceWith = ReplaceWith("disable"))

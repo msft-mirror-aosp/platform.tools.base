@@ -201,8 +201,8 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
     val textOutput = lintOptions.textOutput
     when {
       fatalOnly || (lintOptions.textReport && textOutput?.isLintStderr() == true) -> outputStream.setDisallowChanges(OutputStream.STDERR)
-      // If text report is requested, but no path specified, use stdout, hence the ?: true
-      lintOptions.textReport && textOutput?.isLintStdout() ?: true -> outputStream.setDisallowChanges(OutputStream.STDOUT)
+      lintOptions.printTextReport || (lintOptions.textReport && textOutput?.isLintStdout() ?: true) ->
+        outputStream.setDisallowChanges(OutputStream.STDOUT)
       else -> outputStream.setDisallowChanges(OutputStream.ABBREVIATED)
     }
     hasBaseline.setDisallowChanges(lintOptions.baseline != null)

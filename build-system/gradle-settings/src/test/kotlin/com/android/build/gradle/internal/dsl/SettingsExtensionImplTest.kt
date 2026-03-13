@@ -194,6 +194,7 @@ internal class SettingsExtensionImplTest {
       checkGeneratedSources = true
       showAll = true
       textReport = true
+      printTextReport = true
       sarifReport = true
     }
     assertThat(settings.lint.abortOnError).isFalse()
@@ -214,6 +215,7 @@ internal class SettingsExtensionImplTest {
     assertThat(settings.lint.checkGeneratedSources).isTrue()
     assertThat(settings.lint.showAll).isTrue()
     assertThat(settings.lint.textReport).isTrue()
+    assertThat(settings.lint.printTextReport).isTrue()
     assertThat(settings.lint.sarifReport).isTrue()
 
     settings.lint {
@@ -235,6 +237,7 @@ internal class SettingsExtensionImplTest {
       checkGeneratedSources = false
       showAll = false
       textReport = false
+      printTextReport = false
       sarifReport = false
     }
     assertThat(settings.lint.abortOnError).isTrue()
@@ -255,6 +258,7 @@ internal class SettingsExtensionImplTest {
     assertThat(settings.lint.checkGeneratedSources).isFalse()
     assertThat(settings.lint.showAll).isFalse()
     assertThat(settings.lint.textReport).isFalse()
+    assertThat(settings.lint.printTextReport).isFalse()
     assertThat(settings.lint.sarifReport).isFalse()
 
     // Sets
