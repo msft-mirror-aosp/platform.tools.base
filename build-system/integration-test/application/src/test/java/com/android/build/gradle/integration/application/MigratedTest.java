@@ -34,7 +34,7 @@ import java.io.IOException;
 public class MigratedTest {
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("migrated").disableBuiltInKotlin().create();
+            GradleTestProject.builder().fromTestProject("migrated").create();
 
     @Test
     public void checkModelReflectsMigratedSourceProviders() throws IOException {
