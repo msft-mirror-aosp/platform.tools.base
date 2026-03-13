@@ -38,7 +38,6 @@ public class TictactoeTest {
     public static GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestProject("tictactoe")
-                    .disableBuiltInKotlin()
                     .create();
 
     @AfterClass

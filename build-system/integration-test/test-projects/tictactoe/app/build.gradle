@@ -11,4 +11,5 @@ android {
     defaultConfig {
         minSdkVersion libs.versions.supportLibMinSdk.get()
     }
+    enableKotlin = false
 }
