@@ -14,6 +14,7 @@ android {
         create("minified").initWith(buildTypes.debug)
         minified {
             minifyEnabled true
+            shrinkResources = true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
         }
     }

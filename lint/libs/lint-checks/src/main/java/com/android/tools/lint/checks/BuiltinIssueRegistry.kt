@@ -399,6 +399,7 @@ open class BuiltinIssueRegistry : IssueRegistry() {
           PxUsageDetector.PX_ISSUE,
           PxUsageDetector.SMALL_SP_ISSUE,
           RangeDetector.RANGE,
+          R8GradleConfigDetector.ISSUE,
           ReadParcelableDetector.ISSUE,
           RecyclerViewDetector.CLEAR_ALL_DATA,
           RecyclerViewDetector.DATA_BINDER,

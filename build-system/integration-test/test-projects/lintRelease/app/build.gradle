@@ -24,6 +24,7 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
+            //noinspection NotShrinkingResources
             shrinkResources = false
         }
         release {
