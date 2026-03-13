@@ -92,17 +92,16 @@ public class SdkVersionInfo {
     public static final int HIGHEST_KNOWN_API_DESKTOP = 32;
 
     /**
-     * The highest known API level for Android TV. Note the tools at the
-     * downloadable system images for TV to see if there are more recent
-     * versions.
+     * The highest known API level for Android TV. Note the tools at the downloadable system images
+     * for TV to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_TV = 34;
+    public static final int HIGHEST_KNOWN_API_TV = 36;
 
     /**
      * The highest known API level for Android Auto. To find out if this value needs to be updated,
      * check the downloadable system images for Auto to see if there are more recent versions.
      */
-    public static final int HIGHEST_KNOWN_API_AUTO = 34;
+    public static final int HIGHEST_KNOWN_API_AUTO = 35;
 
     /**
      * The lowest active api for TV. This number will change over time
