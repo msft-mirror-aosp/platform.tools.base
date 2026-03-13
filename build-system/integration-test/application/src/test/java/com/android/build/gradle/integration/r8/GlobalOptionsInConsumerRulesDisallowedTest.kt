@@ -19,47 +19,49 @@ package com.android.build.gradle.integration.r8
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_APP_PATH
 import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_FEATURE_PATH
+import com.android.build.gradle.integration.common.fixture.project.builder.AndroidProjectDefinition.Companion.DEFAULT_LIB_PATH
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
 import com.android.utils.FileUtils
 import com.google.common.truth.Truth.assertThat
 import org.gradle.internal.impldep.com.amazonaws.util.Throwables
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRulesDisallowed: Boolean) {
+class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRulesDisallowed: Boolean, val keepRulesInSourceSet: Boolean) {
   companion object {
     @JvmStatic
-    @Parameterized.Parameters(name = "globalOptionsInConsumerRulesDisallowed={0}")
-    fun proguardAndroidTxtDisallowed() = listOf(true, false)
+    @Parameterized.Parameters(name = "globalOptionsInConsumerRulesDisallowed={0},keepRulesInSourceSet={1}")
+    fun params() = buildList {
+      for (globalOptionsInConsumerRulesDisallowed in listOf(true, false)) {
+        for (keepRulesInSourceSet in listOf(true, false)) {
+          add(arrayOf(globalOptionsInConsumerRulesDisallowed, keepRulesInSourceSet))
+        }
+      }
+    }
   }
 
   @get:Rule
   val rule =
     GradleRule.from {
       gradleProperties { add(BooleanOption.R8_GLOBAL_OPTIONS_IN_CONSUMER_RULES_DISALLOWED, globalOptionsInConsumerRulesDisallowed) }
-      androidLibrary {
-        android {
-          defaultConfig.minSdk = 30
-          defaultConfig.consumerProguardFiles("consumer-rules.pro")
-        }
-      }
+      androidLibrary { android { defaultConfig.minSdk = 30 } }
       androidJavaApplication {
         android {
+          android { defaultConfig.minSdk = 30 }
           defaultConfig { applicationId = "com.example.test" }
           dynamicFeatures.add(DEFAULT_FEATURE_PATH)
 
           buildTypes { named("debug") { it.isMinifyEnabled = true } }
+          dependencies { implementation(project(DEFAULT_LIB_PATH)) }
         }
       }
       androidFeature {
-        android {
-          namespace = "com.example.test.feature"
-          defaultConfig.proguardFiles("consumer-rules.pro")
-        }
+        android { namespace = "com.example.test.feature" }
 
         dependencies { implementation(project(DEFAULT_APP_PATH)) }
       }
@@ -91,8 +93,29 @@ class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRule
     }
   }
 
+  @Test
+  fun `application with library banned consumer content`() {
+    populateLibraryConsumerRules("-dontoptimize")
+
+    if (globalOptionsInConsumerRulesDisallowed) {
+      rule.build.executor.expectFailure().run(":app:assembleDebug").apply {
+        assertThat(Throwables.getRootCause(exception).message).contains("Global keep option -dontoptimize was specified as")
+      }
+    } else {
+      rule.build.executor.run(":app:assembleDebug")
+    }
+  }
+
   private fun populateLibraryConsumerRules(content: String) {
-    rule.build { androidLibrary { files { add(relativePath = "consumer-rules.pro", content = content) } } }
+    if (keepRulesInSourceSet)
+      rule.build { androidLibrary { files { add(relativePath = "src/main/keepRules/rules.keep", content = content) } } }
+    else
+      rule.build {
+        androidLibrary {
+          android.defaultConfig.consumerProguardFiles("consumer-rules.pro")
+          files { add(relativePath = "consumer-rules.pro", content = content) }
+        }
+      }
   }
 
   @Test
@@ -125,16 +148,26 @@ class GlobalOptionsInConsumerRulesDisallowedTest(val globalOptionsInConsumerRule
   }
 
   private fun populateFeatureConsumerRules(content: String) {
-    rule.build { androidFeature { files { add(relativePath = "consumer-rules.pro", content = content) } } }
+    if (keepRulesInSourceSet)
+      rule.build { androidFeature { files { add(relativePath = "src/main/keepRules/rules.keep", content = content) } } }
+    else
+      rule.build {
+        androidFeature {
+          android.defaultConfig.proguardFiles("consumer-rules.pro")
+          files { add(relativePath = "consumer-rules.pro", content = content) }
+        }
+      }
   }
 
   @Test
   fun `app filters out global rules from jar`() {
+    assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
     validateAppGlobalRuleFilter(useLegacyJarPath = false)
   }
 
   @Test
   fun `app filters out global rules from jar (legacy dir)`() {
+    assumeFalse(keepRulesInSourceSet) // source set is not involved in test logic
     validateAppGlobalRuleFilter(useLegacyJarPath = true)
   }
 

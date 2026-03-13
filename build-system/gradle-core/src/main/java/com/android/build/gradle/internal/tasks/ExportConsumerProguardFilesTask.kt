@@ -158,7 +158,7 @@ abstract class ExportConsumerProguardFilesTask @Inject constructor(@get:Internal
 
       creationConfig.sources.keepRules {
         task.keepRulesDirectories.set(it.all)
-        task.inputFiles.from(it.getAsFileTrees())
+        task.consumerProguardFiles.from(it.getAsFileTrees())
       }
       task.keepRulesDirectories.disallowChanges()
 
