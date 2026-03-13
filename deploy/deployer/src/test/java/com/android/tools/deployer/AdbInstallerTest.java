@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer.deployerrunner;
+package com.android.tools.deployer;
 
 import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.testutils.AssumeUtil;
-import com.android.tools.deployer.AdbClient;
-import com.android.tools.deployer.AdbInstaller;
-import com.android.tools.deployer.DeployMetric;
-import com.android.tools.deployer.Deployer;
-import com.android.tools.deployer.DeployerTestUtils;
-import com.android.tools.deployer.TestLogger;
+import com.android.tools.deployer.common.DeployerTestConstants;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;
@@ -55,15 +50,7 @@ public class AdbInstallerTest {
     private static final String INVOCATION =
             AdbInstaller.INSTALLER_PATH + " -version=wrong_version_hash";
 
-    private static final String INSTALLER_WORKSPACE =
-            Deployer.INSTALLER_DIRECTORY + " " + Deployer.INSTALLER_TMP_DIRECTORY;
-    public static final String RM_DIR = "rm -fr " + INSTALLER_WORKSPACE;
-    public static final String MK_DIR = "mkdir -p " + INSTALLER_WORKSPACE;
-    public static final String CHMOD_DIR = "chmod -R 775 " + Deployer.BASE_DIRECTORY;
-    public static final String CHOWN_DIR = "chown -R shell:shell " + Deployer.BASE_DIRECTORY;
-    public static final String CHMOD_INSTALLER = "chmod +x " + AdbInstaller.INSTALLER_PATH;
-
-    @Rule @ApiLevel.Init public FakeDeviceConnection connection;
+    @Rule @ApiLevel.Init public FakeDeviceConnection.WithAdbLib connection;
     private FakeDevice device;
     private ILogger logger;
 
@@ -74,6 +61,7 @@ public class AdbInstallerTest {
     }
 
     @Test
+    @ApiLevel.InRange(min = 24)
     public void testWrongVersionDetection() throws Exception {
         AssumeUtil.assumeNotWindows(); // This test runs the installer on the host
 
@@ -100,7 +88,14 @@ public class AdbInstallerTest {
         }
 
         String[] expectedHistory = {
-            "getprop", INVOCATION, RM_DIR, MK_DIR, CHMOD_INSTALLER, CHMOD_DIR, CHOWN_DIR, INVOCATION
+            INVOCATION,
+            "getprop",
+            DeployerTestConstants.RM_DIR,
+            DeployerTestConstants.MK_DIR,
+            DeployerTestConstants.CHMOD_INSTALLER,
+            DeployerTestConstants.CHMOD_DIR,
+            DeployerTestConstants.CHOWN_DIR,
+            INVOCATION
         };
 
         assertHistory(device, expectedHistory);
@@ -146,6 +141,8 @@ public class AdbInstallerTest {
     }
 
     private static void assertHistory(FakeDevice device, String... expected) {
+        // Note that `device.getShell().getHistory()` only includes history
+        // recorded by the `FakeDeviceHandler`
         Object[] actual = device.getShell().getHistory().toArray();
         Assert.assertArrayEquals("", expected, actual);
     }

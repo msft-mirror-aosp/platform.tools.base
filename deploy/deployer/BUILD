@@ -256,6 +256,7 @@ java_library(
     srcs = glob(
         [
             "src/test/java/com/android/tools/deployer/*.java",
+            "src/test/java/com/android/tools/deployer/common/*.java",
             "src/test/java/com/android/tools/deployer/devices/**/*.java",
             "src/test/java/com/android/tools/deployer/rules/**/*.java",
         ],
@@ -318,6 +319,7 @@ coverage_java_test(
     srcs = glob(
         [
             "src/test/java/com/android/tools/deployer/*.java",
+            "src/test/java/com/android/tools/deployer/common/*.java",
             "src/test/java/com/android/tools/deployer/devices/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/*.java",
             "src/test/java/com/android/tools/deployer/devices/shell/interpreter/*.java",
