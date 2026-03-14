@@ -65,6 +65,16 @@ class FakeAdbDeviceServices(override val session: AdbSession) : AdbDeviceService
    */
   var shellNumTimeouts = 0
 
+  /** Configures the features returned by [AdbHostServices.hostFeatures] */
+  fun configureHostFeatures(features: List<String>) {
+    (session.hostServices as FakeAdbHostServices).hostFeatures = features
+  }
+
+  /** Configures the features returned by [AdbHostServices.features] */
+  fun configureDeviceFeatures(features: List<String>) {
+    (session.hostServices as FakeAdbHostServices).deviceFeatures = features
+  }
+
   /**
    * Configures device properties for the given device, such that [AdbDeviceServices.deviceProperties] will return the supplied properties.
    *
