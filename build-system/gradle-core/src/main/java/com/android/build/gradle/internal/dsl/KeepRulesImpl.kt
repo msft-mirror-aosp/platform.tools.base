@@ -10,7 +10,7 @@ import org.gradle.api.provider.SetProperty
 abstract class KeepRulesImpl @Inject constructor(dslService: DslServices) : KeepRules {
 
   internal abstract val ignoreFrom: MutableSet<String>
-  internal abstract var ignoreFromAllExternalDependencies: Boolean
+  abstract override var ignoreFromAllExternalDependencies: Boolean
   abstract override var includeDefault: Boolean
   abstract override val files: SetProperty<File>
 
@@ -18,6 +18,7 @@ abstract class KeepRulesImpl @Inject constructor(dslService: DslServices) : Keep
   @Suppress("unused")
   protected fun lazyInit() {
     includeDefault = true
+    ignoreFromAllExternalDependencies = false
   }
 
   override fun ignoreExternalDependencies(vararg ids: String) {

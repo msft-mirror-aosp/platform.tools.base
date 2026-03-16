@@ -26,6 +26,9 @@ interface KeepRules {
   /** Ignore keep rules from all the external dependencies. */
   @Incubating fun ignoreFromAllExternalDependencies(ignore: Boolean)
 
+  /** Ignore keep rules from all the external dependencies. */
+  var ignoreFromAllExternalDependencies: Boolean
+
   /** Keep rules files set */
   @get:HiddenInDefinition @get:Incubating val files: SetProperty<File>
 
