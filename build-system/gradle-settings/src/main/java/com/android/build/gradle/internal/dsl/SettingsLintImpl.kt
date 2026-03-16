@@ -30,7 +30,13 @@ internal open class SettingsLintImpl @Inject constructor(private val objectFacto
   override var absolutePaths: Boolean = true
   override var explainIssues: Boolean = true
   override var checkReleaseBuilds: Boolean = true
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to consume lint report artifacts."
+  )
   override var htmlReport: Boolean = true
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts."
+  )
   override var xmlReport: Boolean = true
   override var checkDependencies: Boolean = false
 
@@ -97,24 +103,28 @@ internal open class SettingsLintImpl @Inject constructor(private val objectFacto
 
   // Error for unsupported options. These are temporary, as these properties will be removed when
   // we move to aggregated reporting.
+  @Deprecated("Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts.")
   override var textOutput: File?
     get() = null
     set(value) {
       throw UnsupportedOperationException("The lint 'textOutput' property is not supported in the settings plugin.")
     }
 
+  @Deprecated("Use SingleArtifact.LINT_HTML_REPORT or SingleArtifact.AGGREGATED_LINT_HTML_REPORT to consume lint report artifacts.")
   override var htmlOutput: File?
     get() = null
     set(value) {
       throw UnsupportedOperationException("The lint 'htmlOutput' property is not supported in the settings plugin.")
     }
 
+  @Deprecated("Use SingleArtifact.LINT_XML_REPORT or SingleArtifact.AGGREGATED_LINT_XML_REPORT to consume lint report artifacts.")
   override var xmlOutput: File?
     get() = null
     set(value) {
       throw UnsupportedOperationException("The lint 'xmlOutput' property is not supported in the settings plugin.")
     }
 
+  @Deprecated("Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts.")
   override var sarifOutput: File?
     get() = null
     set(value) {
@@ -148,9 +158,15 @@ internal open class SettingsLintImpl @Inject constructor(private val objectFacto
   override var ignoreTestFixturesSources: Boolean = false
   override var checkGeneratedSources: Boolean = false
   override var showAll: Boolean = false
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_TEXT_REPORT or SingleArtifact.AGGREGATED_LINT_TEXT_REPORT to consume lint report artifacts."
+  )
   override var textReport: Boolean = false
   override var printTextReport: Boolean = false
-  override var sarifReport: Boolean = false
+  @Deprecated(
+    "Lint reports are now always generated. Use SingleArtifact.LINT_SARIF_REPORT or SingleArtifact.AGGREGATED_LINT_SARIF_REPORT to consume lint report artifacts."
+  )
+  override var sarifReport: Boolean = true
   override val informational: MutableSet<String> = mutableSetOf()
   @Deprecated("Ignore and disable are synonyms", replaceWith = ReplaceWith("disable"))
   override val ignore: MutableSet<String>

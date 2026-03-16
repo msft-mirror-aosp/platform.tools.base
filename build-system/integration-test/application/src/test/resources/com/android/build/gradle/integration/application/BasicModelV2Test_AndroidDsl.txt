@@ -179,7 +179,7 @@
       - htmlOutput                = {PROJECT}/app/lint-report.html{!}
       - xmlReport                 = true
       - xmlOutput                 = {PROJECT}/app/lint-report.xml{!}
-      - sarifReport               = false
+      - sarifReport               = true
       - sarifOutput               = (null)
       - checkReleaseBuilds        = true
       - checkDependencies         = false
