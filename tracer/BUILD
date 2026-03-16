@@ -86,7 +86,7 @@ iml_module(
     deps = [
         "@intellij//:intellij-sdk",
         "//prebuilts/tools/common/m2:wire-runtime-jvm-5.4.0",
-        "//prebuilts/tools/common/m2:tracing-desktop-2.0.0-alpha01",
-        "//prebuilts/tools/common/m2:tracing-wire-desktop-2.0.0-alpha01",
+        "//prebuilts/tools/common/m2:tracing-desktop-2.0.0-alpha03",
+        "//prebuilts/tools/common/m2:tracing-wire-desktop-2.0.0-alpha03",
     ],
 )

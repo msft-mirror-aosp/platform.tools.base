@@ -21,7 +21,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/tracing/tracing-desktop/2.0.0-alpha01/tracing-desktop-2.0.0-alpha01.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/tracing/tracing-desktop/2.0.0-alpha03/tracing-desktop-2.0.0-alpha03.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -30,7 +30,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha01/tracing-wire-desktop-2.0.0-alpha01.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../prebuilts/tools/common/m2/repository/androidx/tracing/tracing-wire-desktop/2.0.0-alpha03/tracing-wire-desktop-2.0.0-alpha03.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
