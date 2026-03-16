@@ -5,7 +5,7 @@
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
@@ -19,7 +19,7 @@
          - com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0:
             - requestedCoordinates = (null)
             - dependencies         = []
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
@@ -94,14 +94,14 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < com.google.guava|guava|19.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.google.guava:guava:19.0
-      > org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "2.2.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -113,19 +113,19 @@
                * "org.gradle.usage -> java-api"
                * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10
-      > org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "2.2.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -137,11 +137,11 @@
                * "org.gradle.usage -> java-runtime"
                * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
       > org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar{F}

@@ -102,6 +102,14 @@ fun createReplacements(project: GradleTestProject): Map<String, String> {
       put("kotlin-stdlib-common:${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common:${"$"}{kotlinVersion}")
       put("kotlin-stdlib-common/${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common/${"$"}{kotlinVersion}")
       put("kotlin-stdlib-common-${TestUtils.KOTLIN_VERSION_FOR_TESTS}", "kotlin-stdlib-common-${"$"}{kotlinVersion}")
+      put(
+        "org.jetbrains.kotlin:kotlin-stdlib:${TestUtils.BUILT_IN_KOTLIN_VERSION}",
+        "org.jetbrains.kotlin:kotlin-stdlib:${"$"}{BUILT_IN_KOTLIN_VERSION}",
+      )
+      put(
+        "org/jetbrains/kotlin/kotlin-stdlib/${TestUtils.BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${TestUtils.BUILT_IN_KOTLIN_VERSION}.jar",
+        "org/jetbrains/kotlin/kotlin-stdlib/${"$"}{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${"$"}{BUILT_IN_KOTLIN_VERSION}.jar",
+      )
     }
   )
 }

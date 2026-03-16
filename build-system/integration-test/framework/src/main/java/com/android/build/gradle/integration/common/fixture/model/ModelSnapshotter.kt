@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.model.SnapshotItemWriter.Companion.NULL_STRING
 import com.android.build.gradle.internal.ide.dependencies.LOCAL_AAR_GROUPID
 import com.android.build.gradle.internal.ide.dependencies.LOCAL_ASAR_GROUPID
+import com.android.testutils.TestUtils.BUILT_IN_KOTLIN_VERSION
 import com.android.testutils.TestUtils.KOTLIN_VERSION_FOR_TESTS
 import java.io.File
 
@@ -305,6 +306,7 @@ fun Any?.toNormalizedStrings(normalizer: FileNormalizer): Any =
 fun String.normalizeVersionsOfCommonDependencies(): String {
   return this.replace(ANDROID_GRADLE_PLUGIN_VERSION.toVersionRegex(), "{AGP_Version}")
     .replace(KOTLIN_VERSION_FOR_TESTS.toVersionRegex(), "{KOTLIN_VERSION_FOR_TESTS}")
+    .replace(BUILT_IN_KOTLIN_VERSION.toVersionRegex(), "{BUILT_IN_KOTLIN_VERSION}")
     .replace(GRADLE_TEST_VERSION.toVersionRegex(), "{GRADLE_VERSION}")
     .replace("org.gradle.jvm.version>${Runtime.version().feature()}", "org.gradle.jvm.version>{Java_Version}")
     .replace("org.gradle.jvm.version -> ${Runtime.version().feature()}", "org.gradle.jvm.version -> {Java_Version}")

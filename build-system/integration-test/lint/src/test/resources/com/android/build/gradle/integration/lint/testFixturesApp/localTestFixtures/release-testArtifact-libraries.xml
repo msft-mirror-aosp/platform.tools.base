@@ -4,9 +4,9 @@
       project=":lib"
       provided="true"/>
   <library
-      name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
-      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib:2.2.10"/>
+      name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
+      jars="${mavenRepo}/org/jetbrains/kotlin/kotlin-stdlib/${BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-${BUILT_IN_KOTLIN_VERSION}.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}"/>
   <library
       name=":@@:javaLib"
       jars="${projectDir}/javaLib/build/libs/javaLib.jar"

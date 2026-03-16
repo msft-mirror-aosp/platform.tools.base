@@ -5,7 +5,7 @@
          - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
@@ -15,7 +15,7 @@
       - runtimeDependencies:
          - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
             - dependencies = "*visited*"
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
@@ -28,7 +28,7 @@
          - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
@@ -39,7 +39,7 @@
             - dependencies:
                - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
                   - dependencies = "*visited*"
-               - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - dependencies = "*visited*"
       < compileDependencies
       - runtimeDependencies    = []
@@ -50,7 +50,7 @@
          - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
             - requestedCoordinates = (null)
             - dependencies         = []
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - requestedCoordinates = (null)
             - dependencies:
                - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
@@ -61,7 +61,7 @@
             - dependencies:
                - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
                   - dependencies = "*visited*"
-               - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - dependencies = "*visited*"
       < compileDependencies
       > runtimeDependencies:
@@ -70,7 +70,7 @@
             - dependencies:
                - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
                   - dependencies = "*visited*"
-               - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - requestedCoordinates = (null)
                   - dependencies:
                      - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
@@ -79,7 +79,7 @@
          < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-runtime|localAarTest:app:unspecified
          - __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified:
             - dependencies = "*visited*"
-         - org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
             - dependencies = "*visited*"
       < runtimeDependencies
       - unresolvedDependencies = []
@@ -158,14 +158,14 @@
             - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/lib1/R.txt{F}
          < androidLibraryData
       < __wrapped_aars__|:lib1|unspecified||localAarTest:lib1:unspecified
-      > org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "2.2.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -177,19 +177,19 @@
                * "org.gradle.usage -> java-api"
                * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10
-      > org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10:
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "2.2.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -201,11 +201,11 @@
                * "org.gradle.usage -> java-runtime"
                * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:2.2.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|2.2.10|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:2.2.10
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
       > org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar{F}

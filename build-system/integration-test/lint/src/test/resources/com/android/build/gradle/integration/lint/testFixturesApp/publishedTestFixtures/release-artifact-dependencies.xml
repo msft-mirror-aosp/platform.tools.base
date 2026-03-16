@@ -1,11 +1,11 @@
 <dependencies>
   <compile
-      roots="com.example.lib:lib:1.0@aar,org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,com.example.javaLib:javaLib:1.0@jar,org.jetbrains:annotations:13.0@jar">
+      roots="com.example.lib:lib:1.0@aar,org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar,com.example.javaLib:javaLib:1.0@jar,org.jetbrains:annotations:13.0@jar">
     <dependency
         name="com.example.lib:lib:1.0@aar"
         simpleName="com.example.lib:lib"/>
     <dependency
-        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
         simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
     <dependency
         name="com.example.javaLib:javaLib:1.0@jar"
@@ -15,9 +15,9 @@
         simpleName="org.jetbrains:annotations"/>
   </compile>
   <package
-      roots="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,org.jetbrains:annotations:13.0@jar">
+      roots="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar,org.jetbrains:annotations:13.0@jar">
     <dependency
-        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
         simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
     <dependency
         name="org.jetbrains:annotations:13.0@jar"

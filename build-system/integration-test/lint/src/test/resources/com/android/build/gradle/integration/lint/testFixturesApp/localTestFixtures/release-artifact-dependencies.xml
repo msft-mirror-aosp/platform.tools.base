@@ -1,11 +1,11 @@
 <dependencies>
   <compile
-      roots=":@@:lib::release,org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,:@@:javaLib,org.jetbrains:annotations:13.0@jar">
+      roots=":@@:lib::release,org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar,:@@:javaLib,org.jetbrains:annotations:13.0@jar">
     <dependency
         name=":@@:lib::release"
         simpleName="artifacts::lib"/>
     <dependency
-        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
         simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
     <dependency
         name=":@@:javaLib"
@@ -15,9 +15,9 @@
         simpleName="org.jetbrains:annotations"/>
   </compile>
   <package
-      roots="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar,org.jetbrains:annotations:13.0@jar">
+      roots="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar,org.jetbrains:annotations:13.0@jar">
     <dependency
-        name="org.jetbrains.kotlin:kotlin-stdlib:2.2.10@jar"
+        name="org.jetbrains.kotlin:kotlin-stdlib:${BUILT_IN_KOTLIN_VERSION}@jar"
         simpleName="org.jetbrains.kotlin:kotlin-stdlib"/>
     <dependency
         name="org.jetbrains:annotations:13.0@jar"
