@@ -133,8 +133,8 @@ py_library(
 )
 
 py_library(
-    name = "uitools_evals",
-    srcs = ["uitools_evals.py"],
+    name = "studio_evals",
+    srcs = ["studio_evals.py"],
     deps = [
         ":bazel",
         ":studio",
@@ -151,11 +151,11 @@ py_library(
         ":flake_reruns",
         ":owners_checks",
         ":query_checks",
+        ":studio_evals",
         ":studio_linux",
         ":studio_mac",
         ":studio_nightly",
         ":studio_win",
-        ":uitools_evals",
     ],
 )
 
