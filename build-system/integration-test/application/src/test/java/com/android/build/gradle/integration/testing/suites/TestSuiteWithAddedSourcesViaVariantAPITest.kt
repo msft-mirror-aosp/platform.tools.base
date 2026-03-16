@@ -65,6 +65,8 @@ class TestSuiteWithAddedSourcesViaVariantAPITest {
         }
         dependencies { implementation("com.google.truth:truth:0.44") }
         files {
+          add("src/first/java/Dummy.java", "public class Dummy {}")
+          add("src/second/test.txt", "dummy content")
           add("src/configuration", "1")
           add("src/test/shared/shared_file.txt", "shared content")
         }

@@ -22,6 +22,7 @@ import com.android.tools.journeys.testengine.selector.DeviceSpecificDirectorySel
 import java.util.Optional
 import org.junit.platform.engine.DiscoverySelector
 import org.junit.platform.engine.discovery.ClassSelector
+import org.junit.platform.engine.discovery.DirectorySelector
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
@@ -30,11 +31,27 @@ import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution.s
 
 class DeviceSelectorResolver : SelectorResolver {
 
+  override fun resolve(selector: DirectorySelector, context: SelectorResolver.Context): Resolution {
+    // When a DirectorySelector is encountered, we delegate the resolution to DeviceSelector
+    // to ensure tests are resolved for each target device.
+    return resolveToDeviceSelectors()
+  }
+
   override fun resolve(selector: ClassSelector, context: SelectorResolver.Context): Resolution {
     // Gradle's Test task only supports class-selector. To work around the limitation,
     // we use the "JourneysEntryPoint" class as an entry point and delegate the resolution
     // to DeviceSelector.
-    return if (selector.className == "JourneysEntryPoint" && JourneysTestEngineInput.testDeviceIds.isNotEmpty()) {
+    //
+    // This ClassSelector resolution is kept for backward compatibility with older AGP versions (AGP 9.2 and earlier).
+    return if (selector.className == "JourneysEntryPoint") {
+      resolveToDeviceSelectors()
+    } else {
+      Resolution.unresolved()
+    }
+  }
+
+  private fun resolveToDeviceSelectors(): Resolution {
+    return if (JourneysTestEngineInput.testDeviceIds.isNotEmpty()) {
       val deviceIds = JourneysTestEngineInput.testDeviceIds.split(",")
       val deviceNames = JourneysTestEngineInput.testDeviceDisplayNames.split(",")
 

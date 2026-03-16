@@ -127,6 +127,7 @@ class TestEngineWiringTest(
               it.targets.create("t1") {}
             }
           }
+          files { add("src/first/java/Dummy.java", "public class Dummy {}") }
           this.dependencies { implementation("com.google.truth:truth:0.44") }
         }
       }

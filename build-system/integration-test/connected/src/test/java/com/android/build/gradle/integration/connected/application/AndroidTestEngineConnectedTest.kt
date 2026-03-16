@@ -88,6 +88,7 @@ class AndroidTestEngineConnectedTest {
         }
 
         files {
+          add("src/myAndroidTestSuite/testcase1.txt", "some content")
           add(
             "src/androidTest/java/com/example/android/ExampleInstrumentedTest.kt",
             // language=kotlin

@@ -777,22 +777,19 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     assertThat(deviceInfo).isNotNull()
     assertThat(deviceInfo?.name).isNotEmpty()
 
-    // TODO(b/476442048): Re-enable this check after TestSuiteTestTask configuration cache issue is resolved.
-    if (!runWithBuiltInPlatform) {
-      // Run the task again after clean. This time the task configuration is
-      // restored from the configuration cache. We expect no crashes.
-      executor.run("clean")
+    // Run the task again after clean. This time the task configuration is
+    // restored from the configuration cache. We expect no crashes.
+    executor.run("clean")
 
-      assertThat(project.resolve(testResultXmlPath)).doesNotExist()
-      assertThat(project.resolve(testReportPath)).doesNotExist()
-      assertThat(project.resolve(testResultPbPath)).doesNotExist()
+    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+    assertThat(project.resolve(testReportPath)).doesNotExist()
+    assertThat(project.resolve(testResultPbPath)).doesNotExist()
 
-      executor.run(testTaskName)
+    executor.run(testTaskName)
 
-      assertThat(project.resolve(testResultXmlPath)).exists()
-      assertThat(project.resolve(testReportPath)).exists()
-      assertThat(project.resolve(testResultPbPath)).exists()
-    }
+    assertThat(project.resolve(testResultXmlPath)).exists()
+    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(project.resolve(testResultPbPath)).exists()
   }
 
   @Test

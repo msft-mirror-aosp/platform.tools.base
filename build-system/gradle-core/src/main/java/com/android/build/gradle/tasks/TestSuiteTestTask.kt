@@ -371,7 +371,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.outputs.upToDateWhen { false }
 
       val classesDir = task.project.layout.buildDirectory.file(task.name)
-      UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
       task.testClassesDirs =
         creationConfig.services.fileCollection().also { fileCollection ->
           fileCollection.from(classesDir)
@@ -468,6 +467,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         when (val sourceSet = sourceContainer.source) {
           is TestSuiteSourceSet.Assets -> {
             task.sourceFolders.from(sourceSet.get().all)
+            task.testDefinitionDirs.from(sourceSet.get().all)
             task.failOnNoDiscoveredTests.setDisallowChanges(false)
           }
           is TestSuiteSourceSet.HostJar -> {
@@ -590,15 +590,18 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.testUtilApks.from(androidTestUtil)
       }
 
-      val classesDir = task.project.layout.buildDirectory.file(task.name)
-      UniqueClassGenerator().generateSimpleClass(classesDir.get().asFile)
-      task.testClassesDirs = creationConfig.services.fileCollection().also { it.from(classesDir) }
+      // Gradle's Test task requires a non-empty testDefinitionDirs to avoid being skipped
+      // as NO-SOURCE. For Android instrumentation tests, discovery occurs dynamically
+      // on the device via 'am instrument' at execution time, which is opaque to Gradle.
+      //
+      // We use the test APK directory as a stable, flavor-agnostic "trigger" to ensure
+      // task execution while letting AndroidTestEngine handle the actual test orchestration.
+      task.testDefinitionDirs.from(creationConfig.artifacts.get(SingleArtifact.APK))
 
       val androidTestEngineVersion = if (Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")) "0.1.0-dev" else "0.1.0"
 
       task.classpath =
         creationConfig.services.fileCollection().also {
-          it.from(task.testClassesDirs)
           it.from(creationConfig.variantDependencies.runtimeClasspath)
           it.from(
             creationConfig.services.configurations.detachedConfiguration(
@@ -611,10 +614,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
             )
           )
         }
-
-      // Disable Gradle Test task's no discovered tests check until Gradle supports resource based
-      // testing. (Android Test's input to TestEngine is an APK, not a compiled classes).
-      task.failOnNoDiscoveredTests.setDisallowChanges(false)
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
 
