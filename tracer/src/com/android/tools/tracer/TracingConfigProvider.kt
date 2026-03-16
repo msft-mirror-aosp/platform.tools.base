@@ -24,4 +24,7 @@ interface TracingConfigProvider {
 
   /** Returns the directory where trace files should be stored. */
   fun getTraceDirectory(): File
+
+  /** Return the fixed size in bytes to limit the ring buffer capacity. If <= 0, a RingBuffer will not be used. */
+  fun getRingBufferCapacity(): Long = 0
 }

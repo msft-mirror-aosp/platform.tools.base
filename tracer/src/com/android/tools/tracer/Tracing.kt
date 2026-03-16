@@ -15,10 +15,11 @@
  */
 package com.android.tools.tracer
 
-import androidx.tracing.TraceDriver
+import androidx.tracing.TraceSink
 import androidx.tracing.Tracer
+import androidx.tracing.wire.ExperimentalRingBufferApi
+import androidx.tracing.wire.InMemoryRingBufferTraceSink
 import androidx.tracing.wire.TraceDriver
-import androidx.tracing.wire.TraceSink
 import com.android.tools.tracer.Tracing.initialize
 import java.io.File
 import java.text.SimpleDateFormat
@@ -26,11 +27,11 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.Dispatchers
 import okio.appendingSink
 import okio.buffer
 import org.jetbrains.annotations.VisibleForTesting
 
+@OptIn(ExperimentalRingBufferApi::class)
 object Tracing {
   private val state = AtomicReference<TracingState?>(null)
 
@@ -40,56 +41,138 @@ object Tracing {
   /** Initialize the tracer with the provided [config]. */
   @JvmStatic
   fun initialize(config: TracingConfigProvider) {
+    if (state.get()?.isEquivalent(config) == true) {
+      return
+    }
+
     initialize(config) { dir -> dir.perfettoTraceFile() }
   }
 
   @VisibleForTesting
   internal fun initialize(config: TracingConfigProvider, fileProvider: (File) -> File) {
-    if (!config.isTracingEnabled()) {
-      // Avoid creating a sink and driver, given they start a file.
-      // TODO(b/484409653): Add a RingBuffer implementation in the library to avoid this.
+    val traceDirectory = config.getTraceDirectory()
 
-      // Close any existing state if strictly disabling
-      close()
-      return
+    var oldState: TracingState? = null
+    val newState: TracingState
+
+    synchronized(this) {
+      val current = state.get()
+
+      newState =
+        if (current?.canReuse(config) == true) {
+          // All that changes about the previous state is the file, so just copy.
+          current.copy(traceFile = fileProvider(traceDirectory))
+        } else {
+          oldState = current
+          createNewState(config, fileProvider)
+        }
+
+      state.set(newState)
     }
-    val traceFile = fileProvider(config.getTraceDirectory())
-    val sink = TraceSink(1, traceFile.appendingSink().buffer(), Dispatchers.IO)
-    val driver = TraceDriver(sink, true)
 
-    // Atomically set the new state and close the old one if it existed.
-    val oldState = state.getAndSet(TracingState(config, traceFile, driver, fileProvider))
     oldState?.close()
   }
 
+  private fun createNewState(config: TracingConfigProvider, fileProvider: (File) -> File): TracingState {
+    val capacity = config.getRingBufferCapacity()
+    val isEnabled = config.isTracingEnabled()
+    val traceDirectory = config.getTraceDirectory()
+    val traceFile = fileProvider(traceDirectory)
+    val sink = TracingSink(capacity, traceFile)
+    val driver = TraceDriver(sink.sink, isEnabled)
+    return TracingState(config, isEnabled, capacity, traceDirectory, traceFile, driver, sink, fileProvider)
+  }
+
   /**
-   * Flush any current trace events to the file and return the path.
+   * Flush any current trace events to a file and return the path.
    *
-   * Upon flushing, a new file will be started. [initialize] must first be called before this can take any action
+   * [initialize] must first be called before this can take any action.
+   *
+   * Upon flushing, a new file will be started.
    */
   @JvmStatic
   fun flush(): String? {
     val currentState = state.get() ?: return null
-    // TODO(b/479214523): Upstream the use-case of file rotation to avoid re-initialization that
-    //   leads to threading issues. Also have a mechanism for getting the file path from the sink.
-    val file = currentState.traceFile.absolutePath
+    val file = currentState.traceFile
+    currentState.sink.flushTo(file)
     initialize(currentState.config, currentState.fileProvider)
-    return file
+    return file.absolutePath
   }
 
-  /** Close tracing and ignore any future [trace] calls. [initialize] must be called again. */
+  /**
+   * Closes the active tracing session. Any subsequent calls to [trace] will be ignored until [initialize] is called again.
+   *
+   * If [saveToDisk] is true (defaults to false), flushes any unwritten trace data to disk before closing. This is only applicable when
+   * using a ring buffer (capacity > 0). Without a ring buffer, data is always flushed.
+   */
   @JvmStatic
-  fun close() {
-    // TODO(b/484409653): Add an implementation that allows closing without writing to a file.
-    state.getAndSet(null)?.close()
+  fun close(saveToDisk: Boolean = false) {
+    // If we don't have a current state, exit early.
+    val currentState = state.getAndSet(null) ?: return
+    val file = currentState.traceFile
+    if (saveToDisk) {
+      currentState.sink.flushTo(file)
+    }
+    currentState.close()
   }
 
   private data class TracingState(
     val config: TracingConfigProvider,
+    val isTracingEnabled: Boolean,
+    val ringBufferCapacity: Long,
+    val traceDirectory: File,
     val traceFile: File,
-    val driver: TraceDriver,
+    val driver: androidx.tracing.TraceDriver,
+    val sink: TracingSink,
     val fileProvider: (File) -> File,
-  ) : AutoCloseable by driver
+  ) : AutoCloseable by driver {
+    fun isEquivalent(newConfig: TracingConfigProvider): Boolean {
+      return isTracingEnabled == newConfig.isTracingEnabled() &&
+        ringBufferCapacity == newConfig.getRingBufferCapacity() &&
+        traceDirectory.absolutePath == newConfig.getTraceDirectory().absolutePath
+    }
+
+    // If the config is the same, a ring buffer sink can be reused.
+    // Non-ring buffer sinks don't natively handle file rotation.
+    fun canReuse(newConfig: TracingConfigProvider): Boolean {
+      return sink.canReuse && isEquivalent(newConfig)
+    }
+  }
+
+  private sealed interface TracingSink {
+    val sink: TraceSink
+    val canReuse: Boolean
+
+    fun flushTo(file: File)
+
+    companion object {
+      operator fun invoke(capacity: Long, traceFile: File): TracingSink {
+        return if (capacity > 0) {
+          RingBufferTracingSink(capacity)
+        } else {
+          StandardTracingSink(traceFile)
+        }
+      }
+    }
+  }
+
+  private class RingBufferTracingSink(capacity: Long) : TracingSink {
+    override val sink = InMemoryRingBufferTraceSink(1, capacity)
+    override val canReuse = true
+
+    override fun flushTo(file: File) {
+      file.appendingSink().buffer().use { buffer -> sink.flushTo(buffer) }
+    }
+  }
+
+  private class StandardTracingSink(file: File) : TracingSink {
+    override val sink = androidx.tracing.wire.TraceSink(1, file.appendingSink().buffer())
+    override val canReuse = false
+
+    override fun flushTo(file: File) {
+      // No explicit flush required as the sink can't be reused and is closed upon flushing.
+    }
+  }
 }
 
 private fun File.perfettoTraceFile(): File {

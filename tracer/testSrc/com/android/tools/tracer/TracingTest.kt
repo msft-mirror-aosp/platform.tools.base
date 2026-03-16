@@ -19,6 +19,7 @@ import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.nio.file.Files
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Test
 
@@ -46,7 +47,8 @@ class TracingTest {
     Tracing.initialize(config, fileProvider)
 
     assertThat(File(tempDir, "trace-0.perfetto").exists()).isTrue()
-    assertThat(Tracing.tracer).isNotNull()
+    val initialTracer = Tracing.tracer
+    assertThat(initialTracer).isNotNull()
 
     val result = trace { "result" }
     assertThat(result).isEqualTo("result")
@@ -54,10 +56,60 @@ class TracingTest {
     val flushedFile = Tracing.flush()
     assertThat(flushedFile).endsWith("trace-0.perfetto")
 
+    // Assert that the tracer instance was NOT reused after flushing because we aren't using a ring buffer.
+    val tracerAfterFlush = Tracing.tracer
+    assertThat(tracerAfterFlush).isNotSameAs(initialTracer)
+    assertThat(tracerAfterFlush).isNotNull()
+
+    // The next file is created, despite not having any data.
     assertThat(File(tempDir, "trace-1.perfetto").exists()).isTrue()
+    assertEquals(0L, File(tempDir, "trace-1.perfetto").length())
 
     Tracing.close()
     assertThat(Tracing.tracer).isNull()
+  }
+
+  @Test
+  fun testTracingRingBufferLifecycle() {
+    val config =
+      object : TracingConfigProvider {
+        override fun isTracingEnabled() = true
+
+        override fun getTraceDirectory() = tempDir
+
+        override fun getRingBufferCapacity(): Long = 10_000_000
+      }
+
+    var fileCounter = 0
+    val fileProvider: (File) -> File = { dir -> File(dir, "trace-${fileCounter++}.perfetto") }
+
+    Tracing.initialize(config, fileProvider)
+
+    val initialTracer = Tracing.tracer
+    assertThat(initialTracer).isNotNull()
+
+    // A file won't be created until flushing.
+    val file0 = File(tempDir, "trace-0.perfetto")
+    assertThat(file0.exists()).isFalse()
+
+    val result = trace { "result" }
+    assertThat(result).isEqualTo("result")
+
+    val flushedFile = Tracing.flush()
+    assertThat(flushedFile).endsWith(file0.name)
+    assertThat(file0.exists()).isTrue()
+    assertThat(file0.length() > 0L).isTrue()
+
+    // Assert that the tracer instance was reused after flushing.
+    val tracerAfterFlush = Tracing.tracer
+    assertThat(tracerAfterFlush).isSameAs(initialTracer)
+
+    Tracing.close()
+
+    assertThat(Tracing.tracer).isNull()
+
+    // The next file doesn't exist.
+    assertThat(File(tempDir, "trace-1.perfetto").exists()).isFalse()
   }
 
   @Test
@@ -67,20 +119,24 @@ class TracingTest {
         override fun isTracingEnabled() = false
 
         override fun getTraceDirectory() = tempDir
+
+        override fun getRingBufferCapacity(): Long = 10_000_000
       }
 
-    val disabledFile = "trace-disabled.perfetto"
-    Tracing.initialize(config) { dir -> File(dir, disabledFile) }
+    val disabledFile = File(tempDir, "trace-disabled.perfetto")
+    Tracing.initialize(config) { disabledFile }
 
-    assertThat(Tracing.tracer).isNull()
-    assertThat(File(tempDir, disabledFile).exists()).isFalse()
+    assertThat(Tracing.tracer).isNotNull()
+    assertThat(disabledFile.exists()).isFalse()
 
     val result = trace { "result" }
     assertThat(result).isEqualTo("result")
 
-    assertThat(Tracing.flush()).isNull()
+    assertThat(Tracing.flush()).endsWith("trace-disabled.perfetto")
 
-    assertThat(File(tempDir, disabledFile).exists()).isFalse()
+    // Despite flushing, nothing is written because we're disabled.
+    assertThat(disabledFile.exists()).isTrue()
+    assertEquals(0L, disabledFile.length())
   }
 
   @Test
@@ -98,6 +154,8 @@ class TracingTest {
         override fun isTracingEnabled() = true
 
         override fun getTraceDirectory() = tempDir
+
+        override fun getRingBufferCapacity(): Long = 10_000_000
       }
     Tracing.initialize(config) { File(it, "trace.perfetto") }
 
@@ -108,5 +166,41 @@ class TracingTest {
     } catch (e: RuntimeException) {
       assertThat(e.message).isEqualTo("Intentional Failure")
     }
+  }
+
+  @Test
+  fun testPublicInitializeShortCircuitsIfConfigIsSame() {
+    val config =
+      object : TracingConfigProvider {
+        override fun isTracingEnabled() = true
+
+        override fun getTraceDirectory() = tempDir
+      }
+
+    Tracing.initialize(config)
+    val initialTracer = Tracing.tracer
+    assertThat(initialTracer).isNotNull()
+
+    val config2 =
+      object : TracingConfigProvider {
+        override fun isTracingEnabled() = true
+
+        override fun getTraceDirectory() = tempDir
+      }
+    Tracing.initialize(config2)
+
+    val secondTracer = Tracing.tracer
+    assertThat(secondTracer).isSameAs(initialTracer)
+
+    val config3 =
+      object : TracingConfigProvider {
+        override fun isTracingEnabled() = false
+
+        override fun getTraceDirectory() = tempDir
+      }
+    Tracing.initialize(config3)
+
+    val thirdTracer = Tracing.tracer
+    assertThat(thirdTracer).isNotSameAs(initialTracer)
   }
 }
