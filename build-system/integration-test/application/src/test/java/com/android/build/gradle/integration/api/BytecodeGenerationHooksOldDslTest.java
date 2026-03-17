@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,14 @@ import java.util.stream.Collectors;
 
 /** test to verify the hook to register custom pre-javac compilers */
 @Category(SmokeTests.class)
-public class BytecodeGenerationHooksTest {
+public class BytecodeGenerationHooksOldDslTest {
     @ClassRule
     public static GradleTestProject project =
             GradleTestProject.builder()
-                    .fromTestProject("bytecodeGenerationHooks")
+                    .fromTestProject("bytecodeGenerationHooksOld")
+                    // Delete this test and bytecodeGenerationHooksOld test project when removing
+                    // USE_NEW_DSL.
+                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
                     .create();
 
     @AfterClass
@@ -95,18 +98,16 @@ public class BytecodeGenerationHooksTest {
                 });
 
         File resDir =
-                project.file("library/build/intermediates/java_res/debug/generateBytecodeFordebug");
+                project.file("library/build/intermediates/java_res/debug/processDebugJavaRes/out");
         assertThat(resDir).exists();
         assertThat(FileUtils.join(resDir, "META-INF", "lib.kotlin_module")).isFile();
+        assertThat(FileUtils.join(resDir, "META-INF", "post-lib.kotlin_module")).isFile();
 
         // verify the compile classpath
         checkDependencies(
                 result,
                 "BytecodeGeneratingTask(:app:generateBytecodeFordebug): ",
                 true,
-                "app/build/intermediates/"
-                        + InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE.getFolderName() +
-                        "/debug/generateDebugRFile/R.jar",
                 "library/build/intermediates/"
                         + COMPILE_LIBRARY_CLASSES_JAR.INSTANCE.getFolderName()
                         + "/debug/bundleLibCompileToJarDebug/classes.jar",
@@ -143,9 +144,6 @@ public class BytecodeGenerationHooksTest {
                 result,
                 "BytecodeGeneratingTask(:app:generateBytecodeFordebugAndroidTest): ",
                 true,
-                "app/build/intermediates/"
-                        + InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE.getFolderName() +
-                        "/debugAndroidTest/generateDebugAndroidTestRFile/R.jar",
                 "app/build/intermediates/"
                         + InternalArtifactType.COMPILE_APP_CLASSES_JAR.INSTANCE.getFolderName()
                         + "/debug/bundleDebugClassesToCompileJar/classes.jar",
@@ -211,9 +209,6 @@ public class BytecodeGenerationHooksTest {
                 "BytecodeGeneratingTask(:library:generateBytecodeFordebugAndroidTest): ",
                 true,
                 "library/build/intermediates/"
-                        + InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE.getFolderName() +
-                        "/debugAndroidTest/generateDebugAndroidTestRFile/R.jar",
-                "library/build/intermediates/"
                         + COMPILE_LIBRARY_CLASSES_JAR.INSTANCE.getFolderName()
                         + "/debug/bundleLibCompileToJarDebug/classes.jar");
     }
@@ -232,9 +227,6 @@ public class BytecodeGenerationHooksTest {
                 result,
                 "BytecodeGeneratingTask(:test:generateBytecodeFordebug): ",
                 true,
-                "test/build/intermediates/"
-                        + InternalArtifactType.COMPILE_R_CLASS_JAR.INSTANCE.getFolderName() +
-                        "/debug/generateDebugRFile/R.jar",
                 "app/build/intermediates/"
                         + InternalArtifactType.COMPILE_APP_CLASSES_JAR.INSTANCE.getFolderName()
                         + "/debug/bundleDebugClassesToCompileJar/classes.jar",

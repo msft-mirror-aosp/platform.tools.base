@@ -3,13 +3,15 @@ apply plugin: 'com.example.compiler'
 
 android {
     namespace = "com.example.app"
-    compileSdk = libs.versions.latestCompileSdk.get().toInteger()
+    compileSdkVersion libs.versions.latestCompileSdk.get().toInteger()
     buildToolsVersion = libs.versions.buildToolsVersion.get()
 
     defaultConfig {
-        minSdk = libs.versions.supportLibMinSdk.get().toInteger()
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        minSdkVersion libs.versions.supportLibMinSdk.get()
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    publishNonDefault = true
 }
 
 dependencies {

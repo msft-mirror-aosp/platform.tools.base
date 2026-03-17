@@ -175,7 +175,7 @@ public class CheckAll {
             ImmutableSet.of(
                     "api",
                     "artifactApi",
-                    "bytecodeGenerationHooks",
+                    "bytecodeGenerationHooksOld",
                     "genFolderApi2",
                     "noPreDex",
                     "renamedApk",

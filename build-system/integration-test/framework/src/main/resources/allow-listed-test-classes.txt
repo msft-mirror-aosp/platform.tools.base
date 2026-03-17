@@ -11,6 +11,7 @@ com.android.build.gradle.integration.api.ApiCompatibilityTest
 com.android.build.gradle.integration.api.ArtifactReplacementTest
 com.android.build.gradle.integration.api.BuiltArtifactsWithWorkerTest
 com.android.build.gradle.integration.api.BytecodeGenerationHooksTest
+com.android.build.gradle.integration.api.BytecodeGenerationHooksOldDslTest
 com.android.build.gradle.integration.api.DynamicAppClassesAccessTest
 com.android.build.gradle.integration.api.GetCompileClasspathTest
 com.android.build.gradle.integration.api.GetRuntimeSymbolListTest
