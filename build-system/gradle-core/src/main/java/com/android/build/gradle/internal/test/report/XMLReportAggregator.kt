@@ -137,6 +137,7 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
           // We only want files with the "xml" extension
           it.extension == EXT_XML
       }
+      ?.sortedBy { it.name }
       ?.forEach { xmlFile ->
         logger.verbose("Found XML file: ${xmlFile.name}")
         try {
