@@ -176,11 +176,12 @@ public class TypedefRemover {
         mAnnotationNames.add(owner);
 
         int index = owner.lastIndexOf('$');
-        if (index != -1) {
+        while (index != -1) {
             String outer = owner.substring(0, index) + DOT_CLASS;
             if (!mAnnotationOuterClassFiles.contains(outer)) {
                 mAnnotationOuterClassFiles.add(outer);
             }
+            index = owner.lastIndexOf('$', index - 1);
         }
     }
 

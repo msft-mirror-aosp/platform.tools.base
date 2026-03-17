@@ -54,16 +54,15 @@ public class TypedefRemoverTest {
     public static final byte[] OUTER_CLASS =
             Base64.getDecoder()
                     .decode(
-                            ""
-                                    + "yv66vgAAADMAGAoAAwAUBwAVBwAWBwAXAQAKSW5uZXJDbGFzcwEADElubmVy"
-                                    + "Q2xhc3NlcwEACENPTlNUQU5UAQABSQEADUNvbnN0YW50VmFsdWUDAAAAAQEA"
-                                    + "Bjxpbml0PgEAAygpVgEABENvZGUBAA9MaW5lTnVtYmVyVGFibGUBABJMb2Nh"
-                                    + "bFZhcmlhYmxlVGFibGUBAAR0aGlzAQAVTHRlc3QvcGtnL091dGVyQ2xhc3M7"
-                                    + "AQAKU291cmNlRmlsZQEAD091dGVyQ2xhc3MuamF2YQwACwAMAQATdGVzdC9w"
-                                    + "a2cvT3V0ZXJDbGFzcwEAEGphdmEvbGFuZy9PYmplY3QBAB50ZXN0L3BrZy9P"
-                                    + "dXRlckNsYXNzJElubmVyQ2xhc3MAIQACAAMAAAABABkABwAIAAEACQAAAAIA"
-                                    + "CgABAAEACwAMAAEADQAAAC8AAQABAAAABSq3AAGxAAAAAgAOAAAABgABAAAA"
-                                    + "BQAPAAAADAABAAAABQAQABEAAAACABIAAAACABMABgAAAAoAAQAEAAIABSYJ");
+                            "yv66vgAAADMAGAoAAwAUBwAVBwAWBwAXAQAKSW5uZXJDbGFzcwEADElubmVy"
+                                + "Q2xhc3NlcwEACENPTlNUQU5UAQABSQEADUNvbnN0YW50VmFsdWUDAAAAAQEA"
+                                + "Bjxpbml0PgEAAygpVgEABENvZGUBAA9MaW5lTnVtYmVyVGFibGUBABJMb2Nh"
+                                + "bFZhcmlhYmxlVGFibGUBAAR0aGlzAQAVTHRlc3QvcGtnL091dGVyQ2xhc3M7"
+                                + "AQAKU291cmNlRmlsZQEAD091dGVyQ2xhc3MuamF2YQwACwAMAQATdGVzdC9w"
+                                + "a2cvT3V0ZXJDbGFzcwEAEGphdmEvbGFuZy9PYmplY3QBAB50ZXN0L3BrZy9P"
+                                + "dXRlckNsYXNzJElubmVyQ2xhc3MAIQACAAMAAAABABkABwAIAAEACQAAAAIA"
+                                + "CgABAAEACwAMAAEADQAAAC8AAQABAAAABSq3AAGxAAAAAgAOAAAABgABAAAA"
+                                + "BQAPAAAADAABAAAABQAQABEAAAACABIAAAACABMABgAAAAoAAQAEAAIABSYJ");
 
     /** Compiled version of inner class listed as part of {@link #OUTER_CLASS} */
     public static final byte[] INNER_CLASS =
@@ -201,5 +200,27 @@ public class TypedefRemoverTest {
         assertThat(unrelated.isFile()).isTrue();
         assertThat(innerClass.exists()).isFalse();
         assertThat(Files.toByteArray(outerClass)).isEqualTo(REWRITTEN_OUTER_CLASS);
+    }
+
+    @Test
+    public void testDeepNesting() throws IOException {
+        File typedefFile = testFolder.newFile("testDeepNestingTypedefs.txt");
+        Files.asCharSink(typedefFile, UTF_8).write("D test/pkg/A$B$C$D");
+
+        TypedefRemover remover = new TypedefRemover();
+        remover.setTypedefFile(typedefFile);
+
+        // Check that all levels are recognized as outer classes (filter rewrites them)
+        InputStream input = new ByteArrayInputStream(OUTER_CLASS);
+        assertThat(remover.filter("test/pkg/A.class", input)).isNotSameAs(input);
+
+        input = new ByteArrayInputStream(OUTER_CLASS);
+        assertThat(remover.filter("test/pkg/A$B.class", input)).isNotSameAs(input);
+
+        input = new ByteArrayInputStream(OUTER_CLASS);
+        assertThat(remover.filter("test/pkg/A$B$C.class", input)).isNotSameAs(input);
+
+        // Check that A$B$C$D is stripped
+        assertThat(remover.filter("test/pkg/A$B$C$D.class", input)).isNull();
     }
 }
