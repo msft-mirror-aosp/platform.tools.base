@@ -15,6 +15,10 @@
  */
 package com.android.tools.tracer
 
+import androidx.tracing.DelicateTracingApi
+import androidx.tracing.ProcessTrack
+import androidx.tracing.PropagationToken
+import androidx.tracing.ThreadTrack
 import androidx.tracing.TraceSink
 import androidx.tracing.Tracer
 import androidx.tracing.wire.ExperimentalRingBufferApi
@@ -35,8 +39,11 @@ import org.jetbrains.annotations.VisibleForTesting
 object Tracing {
   private val state = AtomicReference<TracingState?>(null)
 
+  internal val driver: androidx.tracing.TraceDriver?
+    get() = state.get()?.driver
+
   internal val tracer: Tracer?
-    get() = state.get()?.driver?.tracer
+    get() = driver?.tracer
 
   /** Initialize the tracer with the provided [config]. */
   @JvmStatic
@@ -182,7 +189,9 @@ private fun File.perfettoTraceFile(): File {
   return traceFile
 }
 
-// TODO(b/467364934): Finalize the tracing APIs below for use within Studio and other tools.
+fun isTracingEnabled(): Boolean {
+  return Tracing.tracer != null
+}
 
 /**
  * Traces the [block] as a named section of code in the trace with context propagation. If [block] is suspending, you should use
@@ -211,4 +220,53 @@ suspend fun <T> traceCoroutine(category: String? = null, name: String? = null, i
   val traceName = name ?: block.toString()
   val traceCategory = category ?: "default"
   return tracer.traceCoroutine(traceCategory, traceName, isRoot = isRoot, block = block)
+}
+
+/**
+ * Writes a trace message indicating that a given section of code has begun.
+ *
+ * Should be followed by a corresponding call to [endSection].
+ *
+ * It's useful to add a [category] to trace events so that they can be filtered if necessary using the appropriate trace configuration.
+ * [name] gives a name to the trace section.
+ */
+@OptIn(DelicateTracingApi::class)
+fun beginSectionWithMetadata(category: String, name: String, token: PropagationToken? = null) {
+  val tracer = Tracing.tracer ?: return
+  val result = tracer.beginSectionWithMetadata(category, name, token, isRoot = false)
+  result.metadata.dispatchToTraceSink()
+}
+
+/**
+ * Writes a trace message indicating that a given section of code has ended.
+ *
+ * Should follow a corresponding call to [beginSectionWithMetadata].
+ */
+fun endSection() {
+  val driver = Tracing.driver ?: return
+  val process = driver.context.process
+  process.currentThreadTrack().endSection()
+}
+
+@Volatile private var l1ThreadTrack: ThreadTrack? = null
+
+@Volatile private var l2ThreadTrack: ThreadTrack? = null
+
+// TODO(b/467364934): Remove this once the library supports getting the thread track.
+fun ProcessTrack.currentThreadTrack(): ThreadTrack {
+  val current = Thread.currentThread()
+  val id = current.id.toInt()
+  val l1 = l1ThreadTrack
+  val l2 = l2ThreadTrack
+
+  return when {
+    l1 != null && l1.id == id -> l1
+    l2 != null && l2.id == id -> l2
+    else -> {
+      val track = this.getOrCreateThreadTrack(id = id, name = name)
+      l2ThreadTrack = l1ThreadTrack
+      l1ThreadTrack = track
+      track
+    }
+  }
 }
