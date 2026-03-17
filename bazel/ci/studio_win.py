@@ -48,12 +48,15 @@ def studio_win(build_env: bazel.BuildEnv):
 
       '--tool_tag=studio_win.cmd',
       '--jobs=500',
+
+      '--bes_keywords=cinder',
   ]
 
   build_type = studio.BuildType.from_build_number(build_env.build_number)
   if build_type == studio.BuildType.POSTSUBMIT:
     impacted_targets.generate_and_upload_hash_file(build_env)
     targets += extra_targets
+    flags.append('--build_metadata=cinder_pipelines=test-stats')
 
   if build_type == studio.BuildType.PRESUBMIT:
     result = presubmit.find_test_targets(
