@@ -20,21 +20,10 @@ import static com.android.ddmlib.Log.LogLevel.INFO;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ddmlib.HeapSegment.HeapSegmentElement;
 
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 /** Contains the data of a Client. */
 public class ClientData {
@@ -69,22 +58,6 @@ public class ClientData {
         ERROR
     }
 
-    public enum AllocationTrackingStatus {
-        /**
-         * Allocation tracking status: unknown.
-         *
-         * <p>This happens right after a Client is discovered by the {@link AndroidDebugBridge}, and
-         * before the Client answered the query regarding its allocation tracking status.
-         *
-         * @see Client#requestAllocationStatus()
-         */
-        UNKNOWN,
-        /** Allocation tracking status: the Client is not tracking allocations. */
-        OFF,
-        /** Allocation tracking status: the Client is tracking allocations. */
-        ON
-    }
-
     public enum MethodProfilingStatus {
         /**
          * Method profiling status: unknown.
@@ -104,12 +77,6 @@ public class ClientData {
     }
 
     /**
-     * String for feature enabling starting/stopping method profiling
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_PROFILING = "method-trace-profiling"; //$NON-NLS-1$
-
-    /**
      * String for feature enabling direct streaming of method profiling data
      *
      * @see #hasFeature(String)
@@ -117,40 +84,7 @@ public class ClientData {
     public static final String FEATURE_PROFILING_STREAMING =
             "method-trace-profiling-streaming"; //$NON-NLS-1$
 
-    /**
-     * String for feature enabling sampling profiler.
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_SAMPLING_PROFILER = "method-sample-profiling"; //$NON-NLS-1$
-
-    /**
-     * String for feature indicating support for tracing OpenGL calls.
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_OPENGL_TRACING = "opengl-tracing"; //$NON-NLS-1$
-
-    /**
-     * String for feature indicating support for providing view hierarchy.
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_VIEW_HIERARCHY = "view-hierarchy"; //$NON-NLS-1$
-
-    /**
-     * String for feature allowing to dump hprof files
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_HPROF = "hprof-heap-dump"; //$NON-NLS-1$
-
-    /**
-     * String for feature allowing direct streaming of hprof dumps
-     * @see #hasFeature(String)
-     */
-    public static final String FEATURE_HPROF_STREAMING = "hprof-heap-dump-streaming"; //$NON-NLS-1$
-
-    @Deprecated
-    private static IHprofDumpHandler sHprofDumpHandler;
     private static IMethodProfilingHandler sMethodProfilingHandler;
-    private static IAllocationTrackingHandler sAllocationTrackingHandler;
 
     // owning Client
     private final Client mClient;
@@ -167,9 +101,6 @@ public class ClientData {
     // client's ABI
     private String mAbi;
 
-    // jvm flag: currently only indicates whether checkJni is enabled
-    private String mJvmFlags;
-
     // is the app native debuggable?
     private boolean mNativeDebuggable = false;
 
@@ -179,208 +110,12 @@ public class ClientData {
     // List of supported features by the client.
     private final HashSet<String> mFeatures = new HashSet<String>();
 
-    // Thread tracking (THCR, THDE).
-    private TreeMap<Integer,ThreadInfo> mThreadMap;
-
-    /** VM Heap data */
-    private final HeapData mHeapData = new HeapData();
-    /** Native Heap data */
-    private final HeapData mNativeHeapData = new HeapData();
-
-    /** Hprof data */
-    private HprofData mHprofData = null;
-
-    private HashMap<Integer, HeapInfo> mHeapInfoMap = new HashMap<Integer, HeapInfo>();
-
-    /** library map info. Stored here since the backtrace data
-     * is computed on a need to display basis.
-     */
-    private ArrayList<NativeLibraryMapInfo> mNativeLibMapInfo =
-        new ArrayList<NativeLibraryMapInfo>();
-
-    /** Native Alloc info list */
-    private ArrayList<NativeAllocationInfo> mNativeAllocationList =
-        new ArrayList<NativeAllocationInfo>();
-    private int mNativeTotalMemory;
-
     private byte[] mAllocationsData;
-    private AllocationInfo[] mAllocations;
-    private AllocationTrackingStatus mAllocationStatus = AllocationTrackingStatus.UNKNOWN;
 
     @Deprecated
     private String mPendingHprofDump;
 
     private MethodProfilingStatus mProfilingStatus = MethodProfilingStatus.UNKNOWN;
-    private String mPendingMethodProfiling;
-
-    /**
-     * Heap Information.
-     * <p>The heap is composed of several {@link HeapSegment} objects.
-     * <p>A call to {@link #isHeapDataComplete()} will indicate if the segments (available through
-     * {@link #getHeapSegments()}) represent the full heap.
-     */
-    public static class HeapData {
-        private TreeSet<HeapSegment> mHeapSegments = new TreeSet<HeapSegment>();
-        private boolean mHeapDataComplete = false;
-        private byte[] mProcessedHeapData;
-        private Map<Integer, ArrayList<HeapSegmentElement>> mProcessedHeapMap;
-
-        /**
-         * Abandon the current list of heap segments.
-         */
-        public synchronized void clearHeapData() {
-            /* Abandon the old segments instead of just calling .clear().
-             * This lets the user hold onto the old set if it wants to.
-             */
-            mHeapSegments = new TreeSet<HeapSegment>();
-            mHeapDataComplete = false;
-        }
-
-        /**
-         * Add raw HPSG chunk data to the list of heap segments.
-         *
-         * @param data The raw data from an HPSG chunk.
-         */
-        public synchronized void addHeapData(ByteBuffer data) {
-            HeapSegment hs;
-
-            if (mHeapDataComplete) {
-                clearHeapData();
-            }
-
-            try {
-                hs = new HeapSegment(data);
-            } catch (BufferUnderflowException e) {
-                System.err.println("Discarding short HPSG data (length " + data.limit() + ")");
-                return;
-            }
-
-            mHeapSegments.add(hs);
-        }
-
-        /** Called when all heap data has arrived. */
-        public synchronized void sealHeapData() {
-            mHeapDataComplete = true;
-        }
-
-        /**
-         * Returns whether the heap data has been sealed.
-         */
-        public boolean isHeapDataComplete() {
-            return mHeapDataComplete;
-        }
-
-        /**
-         * Get the collected heap data, if sealed.
-         *
-         * @return The list of heap segments if the heap data has been sealed, or null if it hasn't.
-         */
-        public Collection<HeapSegment> getHeapSegments() {
-            if (isHeapDataComplete()) {
-                return mHeapSegments;
-            }
-            return null;
-        }
-
-        /**
-         * Sets the processed heap data.
-         *
-         * @param heapData The new heap data (can be null)
-         */
-        public void setProcessedHeapData(byte[] heapData) {
-            mProcessedHeapData = heapData;
-        }
-
-        /**
-         * Get the processed heap data, if present.
-         *
-         * @return the processed heap data, or null.
-         */
-        public byte[] getProcessedHeapData() {
-            return mProcessedHeapData;
-        }
-
-        public void setProcessedHeapMap(Map<Integer, ArrayList<HeapSegmentElement>> heapMap) {
-            mProcessedHeapMap = heapMap;
-        }
-
-        public Map<Integer, ArrayList<HeapSegmentElement>> getProcessedHeapMap() {
-            return mProcessedHeapMap;
-        }
-    }
-
-    public static class HeapInfo {
-        public long maxSizeInBytes;
-        public long sizeInBytes;
-        public long bytesAllocated;
-        public long objectsAllocated;
-        public long timeStamp;
-        public byte reason;
-
-        public HeapInfo(long maxSizeInBytes,
-                        long sizeInBytes,
-                        long bytesAllocated,
-                        long objectsAllocated,
-                        long timeStamp,
-                        byte reason) {
-            this.maxSizeInBytes = maxSizeInBytes;
-            this.sizeInBytes = sizeInBytes;
-            this.bytesAllocated = bytesAllocated;
-            this.objectsAllocated = objectsAllocated;
-            this.timeStamp = timeStamp;
-            this.reason = reason;
-        }
-    }
-
-    public static class HprofData {
-        public enum Type {
-            FILE,
-            DATA
-        }
-
-        public final Type type;
-        public final String filename;
-        public final byte[] data;
-
-        public HprofData(@NonNull String filename) {
-            type = Type.FILE;
-            this.filename = filename;
-            this.data = null;
-        }
-
-        public HprofData(@NonNull byte[] data) {
-            type = Type.DATA;
-            this.data = data;
-            this.filename = null;
-        }
-    }
-
-    /**
-     * Handlers able to act on HPROF dumps.
-     */
-    @Deprecated
-    public interface IHprofDumpHandler {
-        /**
-         * Called when a HPROF dump succeeded.
-         * @param remoteFilePath the device-side path of the HPROF file.
-         * @param client the client for which the HPROF file was.
-         */
-        void onSuccess(String remoteFilePath, Client client);
-
-        /**
-         * Called when a HPROF dump was successful.
-         * @param data the data containing the HPROF file, streamed from the VM
-         * @param client the client that was profiled.
-         */
-        void onSuccess(byte[] data, Client client);
-
-        /**
-         * Called when a hprof dump failed to end on the VM side
-         * @param client the client that was profiled.
-         * @param message an optional (<code>null</code> ok) error message to be displayed.
-         */
-        void onEndFailure(Client client, String message);
-    }
 
     /**
      * Handlers able to act on Method profiling info
@@ -415,50 +150,6 @@ public class ClientData {
         void onEndFailure(Client client, String message);
     }
 
-    /*
-     * Handlers able to act on allocation tracking info
-     */
-    public interface IAllocationTrackingHandler {
-        /**
-         * Called when an allocation tracking was successful.
-         *
-         * @param data the data containing the encoded allocations. See {@link
-         *     AllocationsParser#parse(ByteBuffer)} for parsing this data.
-         * @param client the client for which allocations were tracked.
-         */
-        void onSuccess(@NonNull byte[] data, @NonNull Client client);
-    }
-
-    public void setHprofData(byte[] data) {
-        mHprofData = new HprofData(data);
-    }
-
-    public void setHprofData(String filename) {
-        mHprofData = new HprofData(filename);
-    }
-
-    public void clearHprofData() {
-        mHprofData = null;
-    }
-
-    public HprofData getHprofData() {
-        return mHprofData;
-    }
-
-    /**
-     * Sets the handler to receive notifications when an HPROF dump succeeded or failed.
-     * This method is deprecated, please register a client listener and listen for CHANGE_HPROF.
-     */
-    @Deprecated
-    public static void setHprofDumpHandler(IHprofDumpHandler handler) {
-        sHprofDumpHandler = handler;
-    }
-
-    @Deprecated
-    public static IHprofDumpHandler getHprofDumpHandler() {
-        return sHprofDumpHandler;
-    }
-
     /**
      * Sets the handler to receive notifications when an HPROF dump succeeded or failed.
      * This method is deprecated, please register a client listener and listen for CHANGE_HPROF.
@@ -471,29 +162,12 @@ public class ClientData {
         return sMethodProfilingHandler;
     }
 
-    /**
-     * This method is deprecated. Please register an {@link
-     * AndroidDebugBridge.IClientChangeListener} with {@link
-     * AndroidDebugBridge#addClientChangeListener(AndroidDebugBridge.IClientChangeListener)}
-     */
-    @Deprecated
-    public static void setAllocationTrackingHandler(IAllocationTrackingHandler handler) {
-        sAllocationTrackingHandler = handler;
-    }
-
-    @Deprecated
-    @Nullable
-    public static IAllocationTrackingHandler getAllocationTrackingHandler() {
-        return sAllocationTrackingHandler;
-    }
-
     /** Generic constructor. */
     public ClientData(@NonNull Client client, int pid) {
         mClient = client;
         mPid = pid;
 
         mDebuggerInterest = DebuggerStatus.DEFAULT;
-        mThreadMap = new TreeMap<Integer, ThreadInfo>();
 
         // Log pid to help troubleshoot "Cannot connect to debugger" issued.
         if (Log.isAtLeast(INFO)) {
@@ -568,11 +242,6 @@ public class ClientData {
         return mAbi;
     }
 
-    /** Returns the VM flags in use, or null if unknown. */
-    public String getJvmFlags() {
-        return mJvmFlags;
-    }
-
     /**
      * Sets the process, user ID (i.e. personal vs work profile), and package names.
      *
@@ -609,10 +278,6 @@ public class ClientData {
         mAbi = abi;
     }
 
-    public void setJvmFlags(String jvmFlags) {
-        mJvmFlags = jvmFlags;
-    }
-
     public boolean isNativeDebuggable() {
         return mNativeDebuggable;
     }
@@ -633,153 +298,6 @@ public class ClientData {
         mDebuggerInterest = status;
     }
 
-    /**
-     * Sets the current heap info values for the specified heap.
-     *
-     * @param heapId The heap whose info to update
-     * @param sizeInBytes The size of the heap, in bytes
-     * @param bytesAllocated The number of bytes currently allocated in the heap
-     * @param objectsAllocated The number of objects currently allocated in
-     * @param timeStamp
-     * @param reason
-     */
-    public synchronized void setHeapInfo(
-            int heapId,
-            long maxSizeInBytes,
-            long sizeInBytes,
-            long bytesAllocated,
-            long objectsAllocated,
-            long timeStamp,
-            byte reason) {
-        mHeapInfoMap.put(heapId, new HeapInfo(maxSizeInBytes, sizeInBytes, bytesAllocated,
-                objectsAllocated, timeStamp, reason));
-    }
-
-    /**
-     * Returns the {@link HeapData} object for the VM.
-     */
-    public HeapData getVmHeapData() {
-        return mHeapData;
-    }
-
-    /** Returns the {@link HeapData} object for the native code. */
-    public HeapData getNativeHeapData() {
-        return mNativeHeapData;
-    }
-
-    /**
-     * Returns an iterator over the list of known VM heap ids.
-     * <p>
-     * The caller must synchronize on the {@link ClientData} object while iterating.
-     *
-     * @return an iterator over the list of heap ids
-     */
-    public synchronized Iterator<Integer> getVmHeapIds() {
-        return mHeapInfoMap.keySet().iterator();
-    }
-
-    /**
-     * Returns the most-recent info values for the specified VM heap.
-     *
-     * @param heapId The heap whose info should be returned
-     * @return a map containing the info values for the specified heap.
-     *         Returns <code>null</code> if the heap ID is unknown.
-     */
-    public synchronized HeapInfo getVmHeapInfo(int heapId) {
-        return mHeapInfoMap.get(heapId);
-    }
-
-    /** Adds a new thread to the list. */
-    public synchronized void addThread(int threadId, String threadName) {
-        ThreadInfo attr = new ThreadInfo(threadId, threadName);
-        mThreadMap.put(threadId, attr);
-    }
-
-    /** Removes a thread from the list. */
-    public synchronized void removeThread(int threadId) {
-        mThreadMap.remove(threadId);
-    }
-
-    /**
-     * Returns the list of threads as {@link ThreadInfo} objects.
-     *
-     * <p>The list is empty until a thread update was requested with {@link
-     * Client#requestThreadUpdate()}.
-     */
-    public synchronized ThreadInfo[] getThreads() {
-        Collection<ThreadInfo> threads = mThreadMap.values();
-        return threads.toArray(new ThreadInfo[0]);
-    }
-
-    /** Returns the {@link ThreadInfo} by thread id. */
-    public synchronized ThreadInfo getThread(int threadId) {
-        return mThreadMap.get(threadId);
-    }
-
-    public synchronized void clearThreads() {
-        mThreadMap.clear();
-    }
-
-    /**
-     * Returns the list of {@link NativeAllocationInfo}.
-     *
-     * @see Client#requestNativeHeapInformation()
-     */
-    public synchronized List<NativeAllocationInfo> getNativeAllocationList() {
-        return Collections.unmodifiableList(mNativeAllocationList);
-    }
-
-    /**
-     * adds a new {@link NativeAllocationInfo} to the Client
-     *
-     * @param allocInfo The {@link NativeAllocationInfo} to add.
-     */
-    public synchronized void addNativeAllocation(NativeAllocationInfo allocInfo) {
-        mNativeAllocationList.add(allocInfo);
-    }
-
-    /** Clear the current malloc info. */
-    public synchronized void clearNativeAllocationInfo() {
-        mNativeAllocationList.clear();
-    }
-
-    /**
-     * Returns the total native memory.
-     *
-     * @see Client#requestNativeHeapInformation()
-     */
-    public synchronized int getTotalNativeMemory() {
-        return mNativeTotalMemory;
-    }
-
-    public synchronized void setTotalNativeMemory(int totalMemory) {
-        mNativeTotalMemory = totalMemory;
-    }
-
-    public synchronized void addNativeLibraryMapInfo(long startAddr, long endAddr, String library) {
-        mNativeLibMapInfo.add(new NativeLibraryMapInfo(startAddr, endAddr, library));
-    }
-
-    /**
-     * Returns the list of native libraries mapped in memory for this client.
-     */
-    public synchronized List<NativeLibraryMapInfo> getMappedNativeLibraries() {
-        return Collections.unmodifiableList(mNativeLibMapInfo);
-    }
-
-    public synchronized void setAllocationStatus(AllocationTrackingStatus status) {
-        mAllocationStatus = status;
-    }
-
-    /**
-     * Returns the allocation tracking status.
-     *
-     * @see Client#requestAllocationStatus()
-     */
-    public synchronized AllocationTrackingStatus getAllocationStatus() {
-        return mAllocationStatus;
-    }
-
     public synchronized void setAllocationsData(byte[] data) {
         mAllocationsData = data;
     }
@@ -791,11 +309,6 @@ public class ClientData {
      */
     public synchronized byte[] getAllocationsData() {
         return mAllocationsData;
-    }
-
-    @Deprecated
-    synchronized void setAllocations(AllocationInfo[] allocs) {
-        mAllocations = allocs;
     }
 
     /**
@@ -820,8 +333,7 @@ public class ClientData {
      *
      * @param feature The feature to test.
      * @return true if the feature is supported
-     * @see ClientData#FEATURE_PROFILING
-     * @see ClientData#FEATURE_HPROF
+     * @see ClientData#FEATURE_PROFILING_STREAMING
      */
     public boolean hasFeature(String feature) {
         return mFeatures.contains(feature);
@@ -859,20 +371,6 @@ public class ClientData {
      */
     public synchronized MethodProfilingStatus getMethodProfilingStatus() {
         return mProfilingStatus;
-    }
-
-    /**
-     * Sets the device-side path to the method profile file being written
-     *
-     * @param pendingMethodProfiling the file being written
-     */
-    public void setPendingMethodProfiling(String pendingMethodProfiling) {
-        mPendingMethodProfiling = pendingMethodProfiling;
-    }
-
-    /** Returns the path to the device-side method profiling file being written. */
-    public String getPendingMethodProfiling() {
-        return mPendingMethodProfiling;
     }
 
     /**
@@ -922,4 +420,3 @@ public class ClientData {
         }
     }
 }
-

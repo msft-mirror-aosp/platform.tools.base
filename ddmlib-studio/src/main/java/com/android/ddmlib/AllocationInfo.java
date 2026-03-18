@@ -18,6 +18,7 @@ package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+
 import com.google.common.collect.Lists;
 
 import java.util.Collections;
@@ -25,10 +26,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Holds an Allocation information.
- */
-public class AllocationInfo implements IStackTraceInfo {
+/** Holds an Allocation information. */
+public class AllocationInfo {
     private final String mAllocatedClass;
     private final int mAllocNumber;
     private final int mAllocationSize;
@@ -178,7 +177,6 @@ public class AllocationInfo implements IStackTraceInfo {
      * (non-Javadoc)
      * @see com.android.ddmlib.IStackTraceInfo#getStackTrace()
      */
-    @Override
     public StackTraceElement[] getStackTrace() {
         return mStackTrace;
     }
