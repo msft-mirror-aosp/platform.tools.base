@@ -73,7 +73,7 @@ def studio_win(build_env: bazel.BuildEnv):
   studio.copy_artifacts(
       build_env,
       [
-          ('tools/vendor/google/android/android', ''),
+          ('tools/vendor/google/android/android.exe', ''),
           ('tools/vendor/google/android/android-cli.zip', ''),
           ('tools/vendor/google/skia/skiaparser.zip', ''),
           ('tools/vendor/google/skia/skia_test_support.zip', ''),
