@@ -79,9 +79,9 @@ class ConstraintLatticeTest :
 
 // Constructor shorthands
 
-internal val x = Sym.Param("x")
-internal val y = Sym.Param("y")
-internal val z = Sym.Param("z")
+internal val x = Sym.Param("x", Scope.Generated(0))
+internal val y = Sym.Param("y", Scope.Generated(0))
+internal val z = Sym.Param("z", Scope.Generated(0))
 
 internal operator fun <FX> Sym<FX>.get(methodName: String, vararg args: Type<FX>): Invoke<FX> {
   // Method descriptor. Type signature unimportant for this test.

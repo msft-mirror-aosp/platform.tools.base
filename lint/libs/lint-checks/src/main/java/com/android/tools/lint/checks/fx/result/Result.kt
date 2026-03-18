@@ -159,12 +159,14 @@ sealed interface Type<out FX> {
   }
 
   sealed interface Sym<out FX> : Type<FX> {
-    class Param(name: String) : Sym<Nothing> {
+    sealed interface Name : Sym<Nothing>
+
+    class Param(name: String, val scope: Scope) : Name {
       val name = InterningPool.string(name)
 
-      override fun equals(other: Any?) = other is Param && name === other.name
+      override fun equals(other: Any?) = other is Param && name === other.name && scope == other.scope
 
-      override fun hashCode() = System.identityHashCode(name)
+      override fun hashCode() = System.identityHashCode(name) * 31 + scope.hashCode()
 
       init {
         require(!name.isReceiverName()) { "Should be `This`" }
@@ -173,7 +175,7 @@ sealed interface Type<out FX> {
       override fun toString() = name.bold()
     }
 
-    data class This(val site: ClassId) : Sym<Nothing> {
+    data class This(val site: ClassId) : Name {
       val uniqueName = "\$this\$$site"
 
       override fun toString() = "this"
@@ -214,9 +216,6 @@ sealed interface Type<out FX> {
 
   companion object {
     val None: Type<Nothing> = Union.Empty
-
-    // TODO ensure distinct. Sloppy for debugging for now.
-    fun genParam(hint: String): Sym.Param = Sym.Param(hint)
 
     fun ofLiteral(value: Any?): Type<Nothing> =
       when (value) {

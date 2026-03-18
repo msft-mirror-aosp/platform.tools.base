@@ -36,7 +36,7 @@ import kotlinx.collections.immutable.persistentMapOf
  *
  * Users of [ClassId] are expected to create instances through an appropriate overloading of [ClassId.of].
  */
-sealed interface ClassId {
+sealed interface ClassId : Scope {
   val fqn: String?
     get() = null
 

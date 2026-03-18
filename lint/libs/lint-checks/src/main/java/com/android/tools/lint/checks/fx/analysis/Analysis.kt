@@ -47,6 +47,7 @@ import com.android.tools.lint.checks.fx.result.isExtension
 import com.android.tools.lint.checks.fx.result.isFinal
 import com.android.tools.lint.checks.fx.result.isStatic
 import com.android.tools.lint.checks.fx.result.renderAbbrev
+import com.android.tools.lint.checks.fx.result.translate
 import com.android.tools.lint.checks.fx.utils.DependentMonotone
 import com.android.tools.lint.checks.fx.utils.EffectfulComputation
 import com.android.tools.lint.checks.fx.utils.Lattice
@@ -294,7 +295,7 @@ internal open class Analysis<FX : Any>(
     body: UExpression,
     returns: PersistentList<ReturnRecord<FX>>,
   ): Result<Type<FX>, R> {
-    val typeParams = initEnv.types.keys
+    val typeParams = initEnv.boundParamNames
     var env = initEnv
 
     val target = returns.last()
@@ -837,7 +838,7 @@ internal open class Analysis<FX : Any>(
           Result(Type.Unit, fx1 join fx2)
         }
         is UObjectLiteralExpression -> {
-          val typeArgs = typeParams.map { Type.Sym.Param(it) }
+          val typeArgs = typeParams.values.toList()
           val typeRef = ClassId.of(e.declaration.javaPsi)
           val type = Type.Application(typeRef, typeArgs)
           val errorAgainstFunIntf: PersistentSet<Error<FX>> = run {
@@ -1094,7 +1095,8 @@ internal open class Analysis<FX : Any>(
     val callee = call.resolve() ?: return typeOf(param.type)
     val calleeRef = Type.MethodRef(callee)
     val calleeHeader = module[calleeRef] ?: return typeOf(param.type)
-    val paramBound = calleeHeader.initEnvironment.types[param.name] ?: return typeOf(param.type)
+    val paramBound =
+      with(calleeHeader.initEnvironment) { types[boundParamNames[param.name] ?: return typeOf(param.type)] } ?: return typeOf(param.type)
     return when {
       paramBound.size == 1 -> {
         val bound = paramBound.first() as? Type.Application ?: return typeOf(param.type)
@@ -1106,7 +1108,7 @@ internal open class Analysis<FX : Any>(
 
   /** Given [method] and user-supplied arguments in [call], fill in default arguments from [method] */
   private fun <M : UElement> completeArguments(
-    typeParams: Set<String>,
+    typeParams: Map<String, Type.Sym.Param>,
     call: UCallExpression,
     method: M,
     params: M.() -> List<UParameter>,
@@ -1124,7 +1126,7 @@ internal open class Analysis<FX : Any>(
     }
   }
 
-  private fun completeArguments(typeParams: Set<String>, call: UCallExpression, params: List<UParameter>) =
+  private fun completeArguments(typeParams: Map<String, Type.Sym.Param>, call: UCallExpression, params: List<UParameter>) =
     when {
       // Common case: don't resort to `getArgumentForParameter` args already match!
       params.size == call.valueArguments.size && params.none { it.isVararg() } && !call.hasComplexArgList() -> call.valueArguments
