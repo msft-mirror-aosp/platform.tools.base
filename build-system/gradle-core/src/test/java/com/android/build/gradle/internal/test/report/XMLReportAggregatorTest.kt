@@ -69,6 +69,9 @@ class XMLReportAggregatorTest {
 
     assertThat(report.projectName).isEqualTo("MyProject")
     assertThat(report.timestamp).isNotEmpty()
+    assertThat(report.numberOfModules).isEqualTo(1)
+    assertThat(report.numberOfPackages).isEqualTo(1)
+    assertThat(report.numberOfClasses).isEqualTo(1)
     assertThat(report.modules).hasSize(1)
 
     val module = report.modules.first()
@@ -133,6 +136,9 @@ class XMLReportAggregatorTest {
 
     assertThat(report.projectName).isEqualTo("MyMultiVariantProject")
     assertThat(report.timestamp).isNotEmpty()
+    assertThat(report.numberOfModules).isEqualTo(1)
+    assertThat(report.numberOfPackages).isEqualTo(1)
+    assertThat(report.numberOfClasses).isEqualTo(2)
     assertThat(report.variants).containsExactly("debug", "release").inOrder()
     assertThat(report.modules).hasSize(1)
 

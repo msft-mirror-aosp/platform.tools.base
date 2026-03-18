@@ -278,7 +278,21 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
       val formattedTimestamp = zonedDateTime.format(formatter)
       val modules = moduleBuilders.values.map { it.build() }.sortedBy { it.name }
       val summary = calculateSummaryFromChildren(modules.map { it.summary }, variants)
-      return RootReport(projectName, formattedTimestamp, variants = variants.sorted(), modules = modules, summary = summary)
+
+      val numberOfModules = modules.size
+      val numberOfPackages = modules.sumOf { it.packages.size }
+      val numberOfClasses = modules.sumOf { module -> module.packages.sumOf { pkg -> pkg.classes.size } }
+
+      return RootReport(
+        projectName = projectName,
+        timestamp = formattedTimestamp,
+        numberOfModules = numberOfModules,
+        numberOfPackages = numberOfPackages,
+        numberOfClasses = numberOfClasses,
+        variants = variants.sorted(),
+        modules = modules,
+        summary = summary,
+      )
     }
   }
 

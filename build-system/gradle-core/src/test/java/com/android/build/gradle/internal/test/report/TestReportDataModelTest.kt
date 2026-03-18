@@ -50,12 +50,21 @@ class TestReportDataModelTest {
     val pkg = Package(name = "com.example", testSuiteSummaries = emptyList(), classes = listOf(classType), summary = emptySummary)
     val module = Module(name = ":app", testSuiteSummaries = emptyList(), packages = listOf(pkg), summary = emptySummary)
     val rootReport =
-      RootReport("project", "Mar 4, 2026, 6:09PM", variants = listOf("debug", "release"), modules = listOf(module), summary = emptySummary)
+      RootReport(
+        projectName = "project",
+        timestamp = "Mar 4, 2026, 6:09PM",
+        numberOfModules = 1,
+        numberOfPackages = 1,
+        numberOfClasses = 1,
+        variants = listOf("debug", "release"),
+        modules = listOf(module),
+        summary = emptySummary,
+      )
 
     val jsonString = gson.toJson(rootReport)
 
     val expectedJson =
-      """{"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","variants":["debug","release"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","debug":"pass"}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}"""
+      """{"projectName":"project","timestamp":"Mar 4, 2026, 6:09PM","numberOfModules":1,"numberOfPackages":1,"numberOfClasses":1,"variants":["debug","release"],"modules":[{"name":":app","testSuiteSummaries":[],"packages":[{"name":"com.example","testSuiteSummaries":[],"classes":[{"name":"MyTest","testSuiteSummaries":[],"testCases":[{"name":"test1","debug":"pass"}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}],"summary":{"total":0,"passed":0,"failed":0,"skipped":0,"passRate":0.0}}"""
         .trimIndent()
         .replace(Regex("\\s"), "")
 

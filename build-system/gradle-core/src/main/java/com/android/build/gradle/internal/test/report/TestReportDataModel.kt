@@ -29,6 +29,9 @@ package com.android.build.gradle.internal.test.report
 data class RootReport(
   val projectName: String,
   val timestamp: String,
+  val numberOfModules: Int,
+  val numberOfPackages: Int,
+  val numberOfClasses: Int,
   val variants: List<String>,
   val modules: List<Module>,
   val summary: TestSummary,
