@@ -419,6 +419,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
   Agent::Instance().RegisterCommandHandler(
       Command::SIGNAL_HEAP_DUMP_COMPLETE, [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling SIGNAL_HEAP_DUMP_COMPLETE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -453,6 +455,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::SET_STUDIO_LEAKCANARY_MODE,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling SET_STUDIO_LEAKCANARY_MODE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -495,6 +499,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::STOP_LEAKCANARY_OBJECT_COUNT_TRACKING,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling STOP_LEAKCANARY_OBJECT_COUNT_TRACKING command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -527,6 +533,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::FORCE_DUMP_LEAKCANARY_ON_DEVICE,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling FORCE_DUMP_LEAKCANARY_ON_DEVICE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
