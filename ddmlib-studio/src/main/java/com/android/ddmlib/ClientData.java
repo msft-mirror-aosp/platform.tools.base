@@ -21,7 +21,6 @@ import static com.android.ddmlib.Log.LogLevel.INFO;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Locale;
 
@@ -309,19 +308,6 @@ public class ClientData {
      */
     public synchronized byte[] getAllocationsData() {
         return mAllocationsData;
-    }
-
-    /**
-     * Returns the list of tracked allocations.
-     *
-     * @see Client#requestAllocationDetails()
-     */
-    @Nullable
-    public synchronized AllocationInfo[] getAllocations() {
-        if (mAllocationsData != null) {
-            return AllocationsParser.parse(ByteBuffer.wrap(mAllocationsData));
-        }
-        return null;
     }
 
     public void addFeature(String feature) {
