@@ -685,3 +685,21 @@ https://issuetracker.google.com/491855034
   * com.android.build.api.artifact.SingleArtifact$LINT_SARIF_REPORT extends com.android.build.api.artifact.SingleArtifact
   * com.android.build.api.artifact.SingleArtifact$LINT_TEXT_REPORT extends com.android.build.api.artifact.SingleArtifact
   * com.android.build.api.artifact.SingleArtifact$LINT_XML_REPORT extends com.android.build.api.artifact.SingleArtifact
+https://issuetracker.google.com/494573625
+  * com.android.build.api.dsl.BuildTypeDependenciesExtension implements com.android.build.api.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
+  * com.android.build.api.dsl.DeclarativeApplicationBuildType implements com.android.build.api.dsl.ApplicationBuildType
+  * com.android.build.api.dsl.DeclarativeApplicationBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeApplicationFlavor implements com.android.build.api.dsl.ApplicationProductFlavor
+  * com.android.build.api.dsl.DeclarativeApplicationFlavor.getDependencies: com.android.build.api.dsl.ProductFlavorDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeLibraryBuildType implements com.android.build.api.dsl.LibraryBuildType
+  * com.android.build.api.dsl.DeclarativeLibraryBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
+  * com.android.build.api.dsl.DeclarativeLibraryFlavor implements com.android.build.api.dsl.LibraryProductFlavor
+  * com.android.build.api.dsl.DeclarativeLibraryFlavor.getDependencies: com.android.build.api.dsl.ProductFlavorDependenciesExtension ()
+  * com.android.build.api.dsl.ProductFlavorDependenciesExtension implements com.android.build.api.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getAnnotationProcessor: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getCompileOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getCompileOnlyApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
+  * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()

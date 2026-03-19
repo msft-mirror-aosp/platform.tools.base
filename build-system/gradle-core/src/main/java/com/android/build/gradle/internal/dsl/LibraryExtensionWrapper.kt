@@ -16,14 +16,6 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.LibraryExtension
-import com.android.build.gradle.LibraryExtensionInternal
-import com.android.build.gradle.internal.DependenciesExtension
-
 abstract class LibraryExtensionWrapper : DeclarativeLibraryExtension {
-  var delegate: LibraryExtension? = null
-
-  override fun dependenciesDcl(action: DependenciesExtension.() -> Unit) {
-    (delegate as? LibraryExtensionInternal)?.dependenciesDcl(action)
-  }
+  var delegate: DeclarativeLibraryExtension? = null
 }

@@ -17,6 +17,9 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationBuildType
+import com.android.build.api.dsl.BuildTypeDependenciesExtension
+import com.android.build.api.dsl.DeclarativeApplicationBuildType
+import com.android.build.api.dsl.DeclarativeLibraryBuildType
 import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.Ndk
@@ -43,17 +46,15 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
 import org.gradle.declarative.dsl.model.annotations.Configuring
-import org.gradle.declarative.dsl.model.annotations.ElementFactoryName
 import org.gradle.declarative.dsl.model.annotations.Restricted
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
-@ElementFactoryName("buildType")
 abstract class DeclarativeBuildType
 @Inject
 constructor(name: String, private val dslServices: DslServices, componentType: ComponentType, objectFactory: ObjectFactory) :
-  BuildType(name, dslServices, componentType, objectFactory) {
+  BuildType(name, dslServices, componentType, objectFactory), DeclarativeApplicationBuildType, DeclarativeLibraryBuildType {
 
-  val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
+  override val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
 
   @Configuring
   fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {

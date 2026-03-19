@@ -14,8 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.api.dsl
 
-abstract class ApplicationExtensionWrapper : DeclarativeApplicationExtension {
-  var delegate: DeclarativeApplicationExtension? = null
+import org.gradle.api.Incubating
+import org.gradle.declarative.dsl.model.annotations.ElementFactoryName
+
+@ElementFactoryName("productFlavor")
+@Incubating
+/** @suppress */
+interface DeclarativeLibraryFlavor : LibraryProductFlavor {
+
+  @get:Incubating val dependencies: ProductFlavorDependenciesExtension
 }

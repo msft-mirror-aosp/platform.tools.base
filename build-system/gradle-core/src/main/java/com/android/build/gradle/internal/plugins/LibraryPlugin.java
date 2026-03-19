@@ -27,7 +27,6 @@ import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.LibraryAndroidComponentsExtension;
 import com.android.build.api.variant.LibraryVariant;
 import com.android.build.api.variant.LibraryVariantBuilder;
-import com.android.build.gradle.LibraryExtensionInternal;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.LibraryTaskManager;
 import com.android.build.gradle.internal.component.LibraryCreationConfig;
@@ -37,6 +36,7 @@ import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension;
+import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
@@ -100,8 +100,8 @@ public class LibraryPlugin
                                 DeclarativeServices services =
                                         context.getObjectFactory()
                                                 .newInstance(DeclarativeServices.class);
-                                LibraryExtensionInternal extension =
-                                        (LibraryExtensionInternal)
+                                DeclarativeLibraryExtension extension =
+                                        (DeclarativeLibraryExtension)
                                                 Objects.requireNonNull(services)
                                                         .getProject()
                                                         .getExtensions()
@@ -180,26 +180,33 @@ public class LibraryPlugin
 
             project.getPlugins().apply(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
 
-            // noinspection unchecked,rawtypes: Hacks to make the parameterized types make sense
-            Class<LibraryExtension> instanceType =
-                    (Class) com.android.build.gradle.LibraryExtensionInternal.class;
-            com.android.build.gradle.LibraryExtensionInternal android =
-                    (com.android.build.gradle.LibraryExtensionInternal)
-                            project.getExtensions()
-                                    .create(
-                                            new TypeOf<>() {},
-                                            "android",
-                                            instanceType,
-                                            dslServices,
-                                            bootClasspathConfig,
-                                            buildOutputs,
-                                            dslContainers.getSourceSetManager(),
-                                            libraryExtension,
-                                            stats);
+            DeclarativeLibraryExtensionImpl android =
+                    dslServices.newDecoratedInstance(
+                            DeclarativeLibraryExtensionImpl.class, dslServices, dslContainers);
 
-            initExtensionFromSettings(libraryExtension);
+            project.getExtensions().add(new TypeOf<>() {}, "android", android);
+
+            bootClasspathConfig =
+                    new BootClasspathConfigImpl(
+                            project,
+                            getProjectServices(),
+                            versionedSdkLoaderService,
+                            android,
+                            forUnitTesting);
+
+            com.android.build.gradle.LibraryExtension internalOnly =
+                    dslServices.newInstance(
+                            com.android.build.gradle.LibraryExtension.class,
+                            dslServices,
+                            bootClasspathConfig,
+                            buildOutputs,
+                            dslContainers.getSourceSetManager(),
+                            android,
+                            stats != null ? stats : GradleBuildProject.newBuilder());
+
+            initExtensionFromSettings(android);
             setupDependencies(android);
-            return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
+            return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
         }
 
         if (getProjectServices()
@@ -269,22 +276,22 @@ public class LibraryPlugin
         return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
     }
 
-    private void setupDependencies(LibraryExtensionInternal android) {
+    private void setupDependencies(DeclarativeLibraryExtension android) {
         project.getConfigurations()
                 .getByName("api")
-                .fromDependencyCollector(android.getDependenciesDcl().getApi());
+                .fromDependencyCollector(android.getDependencies().getApi());
         project.getConfigurations()
                 .getByName("implementation")
-                .fromDependencyCollector(android.getDependenciesDcl().getImplementation());
+                .fromDependencyCollector(android.getDependencies().getImplementation());
 
         project.getConfigurations()
                 .getByName("testImplementation")
-                .fromDependencyCollector(android.getDependenciesDcl().getTestImplementation());
+                .fromDependencyCollector(android.getDependencies().getTestImplementation());
 
         project.getConfigurations()
                 .getByName("androidTestImplementation")
                 .fromDependencyCollector(
-                        android.getDependenciesDcl().getAndroidTestImplementation());
+                        android.getDependencies().getAndroidTestImplementation());
     }
 
     /**

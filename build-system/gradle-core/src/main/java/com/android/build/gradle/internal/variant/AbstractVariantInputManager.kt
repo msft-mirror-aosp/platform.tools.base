@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.variant
 
+import com.android.build.api.dsl.VariantDimensionDependenciesExtension
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.api.AndroidSourceSetName
@@ -24,7 +25,6 @@ import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.DeclarativeBuildType
 import com.android.build.gradle.internal.dsl.DeclarativeProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension
 import com.android.build.gradle.internal.plugins.DslContainerProvider
 import com.android.build.gradle.internal.services.DslServices
 import com.android.build.gradle.options.BooleanOption

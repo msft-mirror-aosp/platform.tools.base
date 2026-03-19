@@ -327,14 +327,6 @@ com.android.build.gradle.LibraryExtension.useLibrary: void (java.lang.String)
 com.android.build.gradle.LibraryExtension.useLibrary: void (java.lang.String, boolean)
 com.android.build.gradle.LibraryExtension.viewBinding: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ViewBinding, kotlin.Unit>)
 com.android.build.gradle.LibraryExtension.viewBinding: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl>)
-com.android.build.gradle.LibraryExtensionInternal extends com.android.build.gradle.LibraryExtension
-com.android.build.gradle.LibraryExtensionInternal.<init>: com.android.build.gradle.LibraryExtensionInternal (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.tasks.factory.BootClasspathConfig, org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>, com.android.build.gradle.internal.dependency.SourceSetManager, com.android.build.gradle.internal.dsl.LibraryExtensionImpl, com.google.wireless.android.sdk.stats.GradleBuildProject$Builder)
-com.android.build.gradle.LibraryExtensionInternal.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.LibraryExtensionInternal.getBuildTypes: java.util.Collection ()
-com.android.build.gradle.LibraryExtensionInternal.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.DeclarativeBuildType> ()
-com.android.build.gradle.LibraryExtensionInternal.getDependenciesDcl: com.android.build.gradle.internal.DependenciesExtension ()
-com.android.build.gradle.LibraryExtensionInternal.getProductFlavors: java.util.Collection ()
-com.android.build.gradle.LibraryExtensionInternal.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.DeclarativeProductFlavor> ()
 com.android.build.gradle.LibraryPlugin extends com.android.build.gradle.BasePlugin
 com.android.build.gradle.LibraryPlugin.<init>: com.android.build.gradle.LibraryPlugin ()
 com.android.build.gradle.LibraryPlugin.apply: void (java.lang.Object)
@@ -824,9 +816,8 @@ com.android.build.gradle.internal.dsl.AnnotationProcessorOptions.setCompilerArgu
 com.android.build.gradle.internal.dsl.AnnotationProcessorOptions.toString: java.lang.String ()
 com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper implements com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension
 com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.<init>: com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper ()
-com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.getDelegate: com.android.build.api.dsl.ApplicationExtension ()
-com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.setDelegate: void (com.android.build.api.dsl.ApplicationExtension)
+com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.getDelegate: com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension ()
+com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper.setDelegate: void (com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension)
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension extends com.android.build.gradle.AppExtension implements com.android.build.gradle.internal.dsl.InternalApplicationExtension
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension.<init>: com.android.build.gradle.internal.dsl.BaseAppModuleExtension (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.tasks.factory.BootClasspathConfig, org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>, com.android.build.gradle.internal.dependency.SourceSetManager, com.android.build.gradle.internal.dsl.ApplicationExtensionImpl, com.google.wireless.android.sdk.stats.GradleBuildProject$Builder)
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension.aaptOptions: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.AaptOptions, kotlin.Unit>)
@@ -984,14 +975,6 @@ com.android.build.gradle.internal.dsl.BaseAppModuleExtension.useLibrary: void (j
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension.useLibrary: void (java.lang.String, boolean)
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension.viewBinding: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ViewBinding, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.BaseAppModuleExtension.viewBinding: void (org.gradle.api.Action<com.android.build.gradle.internal.dsl.ViewBindingOptionsImpl>)
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal extends com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.<init>: com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.tasks.factory.BootClasspathConfig, org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.api.BaseVariantOutput>, com.android.build.gradle.internal.dependency.SourceSetManager, com.android.build.gradle.internal.dsl.ApplicationExtensionImpl, com.google.wireless.android.sdk.stats.GradleBuildProject$Builder)
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.getBuildTypes: java.util.Collection ()
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.DeclarativeBuildType> ()
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.getDependenciesDcl: com.android.build.gradle.internal.DependenciesExtension ()
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.getProductFlavors: java.util.Collection ()
-com.android.build.gradle.internal.dsl.BaseAppModuleExtensionInternal.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.DeclarativeProductFlavor> ()
 com.android.build.gradle.internal.dsl.BaseFlavor extends com.android.builder.core.AbstractProductFlavor implements com.android.build.gradle.internal.dsl.CoreProductFlavor, com.android.build.api.dsl.ApplicationBaseFlavor, com.android.build.api.dsl.DynamicFeatureBaseFlavor, com.android.build.api.dsl.LibraryBaseFlavor, com.android.build.api.dsl.TestBaseFlavor
 com.android.build.gradle.internal.dsl.BaseFlavor.<init>: com.android.build.gradle.internal.dsl.BaseFlavor (java.lang.String, com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.BaseFlavor._initWith: void (com.android.builder.model.BaseConfig)
@@ -1201,7 +1184,6 @@ com.android.build.gradle.internal.dsl.BuildType.testProguardFile: com.android.bu
 com.android.build.gradle.internal.dsl.BuildType.testProguardFile: java.lang.Object (java.lang.Object)
 com.android.build.gradle.internal.dsl.BuildType.testProguardFiles: com.android.build.gradle.internal.dsl.BuildType (java.lang.Object[])
 com.android.build.gradle.internal.dsl.BuildType.testProguardFiles: java.lang.Object (java.lang.Object[])
-com.android.build.gradle.internal.dsl.BuildTypeDependenciesExtension implements com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
 com.android.build.gradle.internal.dsl.BuildTypeFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.BuildTypeFactory.<init>: com.android.build.gradle.internal.dsl.BuildTypeFactory (com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType)
 com.android.build.gradle.internal.dsl.BuildTypeFactory.create: com.android.build.gradle.internal.dsl.BuildType (java.lang.String)
@@ -1341,22 +1323,28 @@ com.android.build.gradle.internal.dsl.DataBindingOptions.setEnable: void (boolea
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabled: void (boolean)
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabledForTests: void (boolean)
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension implements com.android.build.api.dsl.ApplicationExtension, org.gradle.features.binding.Definition
-com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.DeclarativeBuildType extends com.android.build.gradle.internal.dsl.BuildType
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> ()
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getDependencies: com.android.build.gradle.internal.DependenciesExtension ()
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationFlavor> ()
+com.android.build.gradle.internal.dsl.DeclarativeBuildType extends com.android.build.gradle.internal.dsl.BuildType implements com.android.build.api.dsl.DeclarativeApplicationBuildType, com.android.build.api.dsl.DeclarativeLibraryBuildType
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String, com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType, org.gradle.api.model.ObjectFactory)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.DeclarativeBuildType)
-com.android.build.gradle.internal.dsl.DeclarativeBuildType.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.dsl.BuildTypeDependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.DeclarativeBuildType.getDependencies: com.android.build.gradle.internal.dsl.BuildTypeDependenciesExtension ()
+com.android.build.gradle.internal.dsl.DeclarativeBuildType.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BuildTypeDependenciesExtension, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.DeclarativeBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory (com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType)
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.create: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String)
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.create: java.lang.Object (java.lang.String)
 com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension implements com.android.build.api.dsl.LibraryExtension, org.gradle.features.binding.Definition
-com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.DeclarativeProductFlavor extends com.android.build.gradle.internal.dsl.ProductFlavor
+com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType> ()
+com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.getDependencies: com.android.build.gradle.internal.DependenciesExtension ()
+com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryFlavor> ()
+com.android.build.gradle.internal.dsl.DeclarativeProductFlavor extends com.android.build.gradle.internal.dsl.ProductFlavor implements com.android.build.api.dsl.DeclarativeApplicationFlavor, com.android.build.api.dsl.DeclarativeLibraryFlavor
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.<init>: com.android.build.gradle.internal.dsl.DeclarativeProductFlavor (java.lang.String, com.android.build.gradle.internal.services.DslServices)
-com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.dsl.ProductFlavorDependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.getDependencies: com.android.build.gradle.internal.dsl.ProductFlavorDependenciesExtension ()
+com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.ProductFlavorDependenciesExtension, kotlin.Unit>)
+com.android.build.gradle.internal.dsl.DeclarativeProductFlavor.getDependencies: com.android.build.api.dsl.ProductFlavorDependenciesExtension ()
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory.<init>: com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory (com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.DeclarativeProductFlavorFactory.create: com.android.build.gradle.internal.dsl.DeclarativeProductFlavor (java.lang.String)
@@ -1719,9 +1707,8 @@ com.android.build.gradle.internal.dsl.JavaCompileOptions.getAnnotationProcessorO
 com.android.build.gradle.internal.dsl.JavaCompileOptions.toString: java.lang.String ()
 com.android.build.gradle.internal.dsl.LibraryExtensionWrapper implements com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension
 com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.<init>: com.android.build.gradle.internal.dsl.LibraryExtensionWrapper ()
-com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.dependenciesDcl: void (kotlin.jvm.functions.Function1<? super com.android.build.gradle.internal.DependenciesExtension, kotlin.Unit>)
-com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.getDelegate: com.android.build.api.dsl.LibraryExtension ()
-com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.setDelegate: void (com.android.build.api.dsl.LibraryExtension)
+com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.getDelegate: com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension ()
+com.android.build.gradle.internal.dsl.LibraryExtensionWrapper.setDelegate: void (com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension)
 com.android.build.gradle.internal.dsl.LintOptions implements com.android.builder.model.LintOptions, com.android.build.api.dsl.LintOptions
 com.android.build.gradle.internal.dsl.LintOptions$WhenMappings
 com.android.build.gradle.internal.dsl.LintOptions.<init>: com.android.build.gradle.internal.dsl.LintOptions (com.android.build.gradle.internal.services.DslServices, com.android.build.gradle.internal.dsl.LintImpl)
@@ -1934,7 +1921,6 @@ com.android.build.gradle.internal.dsl.ProductFlavor.setMatchingFallbacks: void (
 com.android.build.gradle.internal.dsl.ProductFlavor.setMatchingFallbacks: void (java.util.List<java.lang.String>)
 com.android.build.gradle.internal.dsl.ProductFlavor.setSigningConfig: void (com.android.build.api.dsl.ApkSigningConfig)
 com.android.build.gradle.internal.dsl.ProductFlavor.set_dimension: void (java.lang.String)
-com.android.build.gradle.internal.dsl.ProductFlavorDependenciesExtension implements com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension, org.gradle.api.artifacts.dsl.GradleDependencies
 com.android.build.gradle.internal.dsl.ProductFlavorFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.ProductFlavorFactory.<init>: com.android.build.gradle.internal.dsl.ProductFlavorFactory (com.android.build.gradle.internal.services.DslServices)
 com.android.build.gradle.internal.dsl.ProductFlavorFactory.create: com.android.build.gradle.internal.dsl.ProductFlavor (java.lang.String)
@@ -2026,13 +2012,6 @@ com.android.build.gradle.internal.dsl.VariantDimensionBinaryCompatibilityFix.get
 com.android.build.gradle.internal.dsl.VariantDimensionBinaryCompatibilityFix.getSigningConfig: com.android.builder.model.SigningConfig ()
 com.android.build.gradle.internal.dsl.VariantDimensionBinaryCompatibilityFixParent
 com.android.build.gradle.internal.dsl.VariantDimensionBinaryCompatibilityFixParent.getSigningConfig: com.android.builder.model.SigningConfig ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getAnnotationProcessor: org.gradle.api.artifacts.dsl.DependencyCollector ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getCompileOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getCompileOnlyApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
-com.android.build.gradle.internal.dsl.VariantDimensionDependenciesExtension.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
 com.android.build.gradle.internal.dsl.VectorDrawablesOptions extends com.android.builder.core.DefaultVectorDrawablesOptions implements com.android.build.api.dsl.VectorDrawables
 com.android.build.gradle.internal.dsl.VectorDrawablesOptions.<init>: com.android.build.gradle.internal.dsl.VectorDrawablesOptions ()
 com.android.build.gradle.internal.dsl.VectorDrawablesOptions.copyOf: com.android.build.gradle.internal.dsl.VectorDrawablesOptions (com.android.builder.model.VectorDrawablesOptions)

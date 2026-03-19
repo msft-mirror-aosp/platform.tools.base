@@ -884,6 +884,9 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.VcsInfo vcsInfo;
   }
 
+  @org.gradle.api.Incubating public interface BuildTypeDependenciesExtension extends com.android.build.api.dsl.VariantDimensionDependenciesExtension org.gradle.api.artifacts.dsl.GradleDependencies {
+  }
+
   public interface Bundle {
     method public void abi(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleAbi,kotlin.Unit> action);
     method @org.gradle.api.Incubating public void aiModelVersion(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BundleAiModelVersion,kotlin.Unit> action);
@@ -1187,6 +1190,26 @@ package com.android.build.api.dsl {
     property @Deprecated public abstract boolean isEnabled;
     property @Deprecated public abstract boolean isEnabledForTests;
     property public abstract String? version;
+  }
+
+  @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.ElementFactoryName("buildType") public interface DeclarativeApplicationBuildType extends com.android.build.api.dsl.ApplicationBuildType {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.BuildTypeDependenciesExtension getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BuildTypeDependenciesExtension dependencies;
+  }
+
+  @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.ElementFactoryName("productFlavor") public interface DeclarativeApplicationFlavor extends com.android.build.api.dsl.ApplicationProductFlavor {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ProductFlavorDependenciesExtension getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ProductFlavorDependenciesExtension dependencies;
+  }
+
+  @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.ElementFactoryName("buildType") public interface DeclarativeLibraryBuildType extends com.android.build.api.dsl.LibraryBuildType {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.BuildTypeDependenciesExtension getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BuildTypeDependenciesExtension dependencies;
+  }
+
+  @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.ElementFactoryName("productFlavor") public interface DeclarativeLibraryFlavor extends com.android.build.api.dsl.LibraryProductFlavor {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ProductFlavorDependenciesExtension getDependencies();
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ProductFlavorDependenciesExtension dependencies;
   }
 
   public interface DefaultConfig extends com.android.build.api.dsl.BaseFlavor {
@@ -1853,10 +1876,10 @@ package com.android.build.api.dsl {
   }
 
   public interface ManagedDevices {
-    method @InaccessibleFromKotlin public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> getAllDevices();
+    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> getAllDevices();
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> getGroups();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ManagedVirtualDevice> getLocalDevices();
-    property public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> allDevices;
+    property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.ExtensiblePolymorphicDomainObjectContainer<com.android.build.api.dsl.Device> allDevices;
     property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeviceGroup> groups;
     property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ManagedVirtualDevice> localDevices;
   }
@@ -2029,6 +2052,9 @@ package com.android.build.api.dsl {
     method @Deprecated public void setMatchingFallbacks(java.util.List<java.lang.String> fallbacks);
     property public abstract String? dimension;
     property public abstract java.util.List<java.lang.String> matchingFallbacks;
+  }
+
+  @org.gradle.api.Incubating public interface ProductFlavorDependenciesExtension extends com.android.build.api.dsl.VariantDimensionDependenciesExtension org.gradle.api.artifacts.dsl.GradleDependencies {
   }
 
   public interface ProductFlavorDimensionSpec {
@@ -2367,6 +2393,21 @@ package com.android.build.api.dsl {
     property public abstract java.util.List<java.io.File> proguardFiles;
     property public abstract com.android.build.api.dsl.Shaders shaders;
     property public abstract java.util.List<java.io.File> testProguardFiles;
+  }
+
+  @org.gradle.api.Incubating public interface VariantDimensionDependenciesExtension {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getAnnotationProcessor();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getApi();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getCompileOnly();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getCompileOnlyApi();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getImplementation();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getRuntimeOnly();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector annotationProcessor;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector api;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector compileOnly;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector compileOnlyApi;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector implementation;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.artifacts.dsl.DependencyCollector runtimeOnly;
   }
 
   public interface VcsInfo {

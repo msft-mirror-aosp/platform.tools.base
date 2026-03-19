@@ -24,22 +24,22 @@ androidLibrary {
 ////        targetCompatibility = VERSION_17
 //    }
 
-//    buildTypes {
-//        buildType("debug") {
-//            isMinifyEnabled = false
-//            dependencies {
-//                implementation("com.google.guava:guava:33.3.1-jre")
-//            }
-//        }
-//
-//        buildType("release") {
-//            isMinifyEnabled = true
-//        }
-//
-//        buildType("benchmark") {
-//            isMinifyEnabled = false
-//        }
-//    }
+    buildTypes {
+        buildType("debug") {
+            isMinifyEnabled = false
+            dependencies {
+                implementation("com.google.guava:guava:33.3.1-jre")
+            }
+        }
+
+        buildType("release") {
+            isMinifyEnabled = true
+        }
+
+        buildType("benchmark") {
+            isMinifyEnabled = false
+        }
+    }
 
 //    sourceSets {
 //        configure("main") {
@@ -55,7 +55,7 @@ androidLibrary {
         checkReleaseBuilds = false
     }
 
-    dependenciesDcl {
+    dependencies {
         implementation("org.apache.commons:commons-lang3:3.13.0")
         implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.24")
         implementation("com.google.guava:guava:33.3.1-jre")

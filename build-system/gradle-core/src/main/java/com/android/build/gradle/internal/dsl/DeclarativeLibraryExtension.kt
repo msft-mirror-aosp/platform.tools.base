@@ -16,11 +16,22 @@
 
 package com.android.build.gradle.internal.dsl
 
+import com.android.build.api.dsl.DeclarativeLibraryBuildType
+import com.android.build.api.dsl.DeclarativeLibraryFlavor
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.AndroidLibraryModuleModel
 import com.android.build.gradle.internal.DependenciesExtension
+import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.features.binding.Definition
 
+@Incubating
 interface DeclarativeLibraryExtension : LibraryExtension, Definition<AndroidLibraryModuleModel> {
-  fun dependenciesDcl(action: DependenciesExtension.() -> Unit)
+  val dependencies: DependenciesExtension
+
+  fun dependencies(configure: DependenciesExtension.() -> Unit)
+
+  override val buildTypes: NamedDomainObjectContainer<DeclarativeLibraryBuildType>
+
+  override val productFlavors: NamedDomainObjectContainer<DeclarativeLibraryFlavor>
 }
