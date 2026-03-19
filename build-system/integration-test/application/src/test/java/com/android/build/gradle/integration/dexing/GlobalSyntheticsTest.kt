@@ -102,6 +102,9 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
   @Test
   fun testGlobalFromAppAndFileDep() {
+    // Native multidex (minSdk >= 21) uses the Universal DEX optimization, which skips per-class .globals files
+    // entirely and does not derive synthetics from app or file dependencies. These tests validate the legacy pipeline.
+    Assume.assumeTrue(dexType != DexType.NATIVE)
     createExceptionGlobalSourceFile(
       app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
       "com.example.app",
@@ -111,17 +114,18 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
     executor().run("assembleDebug")
 
-    val localeGlobalFromApp =
-      InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT.getOutputDir(app.buildDir)
-        .resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
-    Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
-    val recordGlobalFromFileDep =
-      InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB.getOutputDir(app.buildDir).resolve("debug/desugarDebugFileDependencies/0_record.jar")
-    Truth.assertThat(recordGlobalFromFileDep.exists()).isTrue()
-
-    if (dexType == DexType.NATIVE) {
+    if (dexType != DexType.NATIVE) {
+      val localeGlobalFromApp =
+        InternalArtifactType.GLOBAL_SYNTHETICS_PROJECT.getOutputDir(app.buildDir)
+          .resolve("debug/dexBuilderDebug/out/com/example/app/$exceptionGlobalTriggerClass.globals")
+      Truth.assertThat(localeGlobalFromApp.exists()).isTrue()
+      val recordGlobalFromFileDep =
+        InternalArtifactType.GLOBAL_SYNTHETICS_FILE_LIB.getOutputDir(app.buildDir)
+          .resolve("debug/desugarDebugFileDependencies/0_record.jar")
+      Truth.assertThat(recordGlobalFromFileDep.exists()).isTrue()
+    } else {
       val globalDex =
-        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
+        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/generateDebugGlobalSynthetics/classes.dex")
       Truth.assertThat(globalDex.exists()).isTrue()
     }
 
@@ -131,6 +135,9 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
   @Test
   fun testGlobalFromAppProgramClass() {
+    // Native multidex (minSdk >= 21) uses the Universal DEX optimization, which skips per-class .globals files
+    // entirely and does not derive synthetics from app or file dependencies. These tests validate the legacy pipeline.
+    Assume.assumeTrue(dexType != DexType.NATIVE)
     val recordClass = app.mainSrcDir.resolve("com/example/app/$recordClass.java").also { it.parentFile.mkdirs() }
     TestFileUtils.appendToFile(
       recordClass,
@@ -172,6 +179,9 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
   @Test
   fun testGlobalFromLibAndExternalDep() {
+    // Native multidex (minSdk >= 21) uses the Universal DEX optimization, which skips per-class .globals files
+    // entirely and does not derive synthetics from app or file dependencies. These tests validate the legacy pipeline.
+    Assume.assumeTrue(dexType != DexType.NATIVE)
     createExceptionGlobalSourceFile(
       lib.mainSrcDir.resolve("com/example/lib/$exceptionGlobalTriggerClass.java"),
       "com.example.lib",
@@ -192,7 +202,7 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
     if (dexType == DexType.NATIVE) {
       val globalDex =
-        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/mergeDebugGlobalSynthetics/classes.dex")
+        InternalArtifactType.GLOBAL_SYNTHETICS_DEX.getOutputDir(app.buildDir).resolve("debug/generateDebugGlobalSynthetics/classes.dex")
       Truth.assertThat(globalDex.exists()).isTrue()
     }
 
@@ -202,6 +212,9 @@ class GlobalSyntheticsTest(private val dexType: DexType) {
 
   @Test
   fun testDeDupGlobal() {
+    // Native multidex (minSdk >= 21) uses the Universal DEX optimization, which skips per-class .globals files
+    // entirely and does not derive synthetics from app or file dependencies. These tests validate the legacy pipeline.
+    Assume.assumeTrue(dexType != DexType.NATIVE)
     createExceptionGlobalSourceFile(
       app.mainSrcDir.resolve("com/example/app/$exceptionGlobalTriggerClass.java"),
       "com.example.app",

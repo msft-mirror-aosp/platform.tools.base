@@ -381,6 +381,7 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
+  ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS("android.enableGlobalSyntheticsForAllDebugBuilds", true, FeatureStage.Experimental),
 
   /* ------------------------
    * SOFTLY-ENFORCED FEATURES

@@ -87,6 +87,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }
@@ -241,6 +242,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }
@@ -298,6 +300,7 @@ class BuiltInKotlinForAppTest(private val useLatestKgpVersion: Boolean) {
           "kotlin/",
           "org/intellij/",
           "org/jetbrains/",
+          "com/android/tools/r8/annotations/LambdaMethod",
         )
     }
   }

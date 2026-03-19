@@ -122,6 +122,7 @@ class BooleanOptionTest {
         BooleanOption.ENABLE_IDENTITY_TRANSFORMS_FOR_PROCESSED_ARTIFACTS,
         BooleanOption.TREAT_MANIFEST_MERGER_WARNINGS_AS_ERRORS,
         BooleanOption.REPORT_AGGREGATION_SUPPORT,
+        BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS,
       )
 
     checkViolatingProjectOptions(

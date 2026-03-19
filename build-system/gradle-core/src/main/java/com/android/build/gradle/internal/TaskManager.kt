@@ -98,6 +98,7 @@ import com.android.build.gradle.internal.tasks.ExtractProguardFiles
 import com.android.build.gradle.internal.tasks.FeatureDexMergeTask
 import com.android.build.gradle.internal.tasks.FeatureGlobalSyntheticsMergeTask
 import com.android.build.gradle.internal.tasks.GenerateLibraryProguardRulesTask
+import com.android.build.gradle.internal.tasks.GlobalSyntheticsGeneratorTask
 import com.android.build.gradle.internal.tasks.GlobalSyntheticsMergeTask
 import com.android.build.gradle.internal.tasks.InstallVariantTask
 import com.android.build.gradle.internal.tasks.JacocoTask
@@ -153,6 +154,7 @@ import com.android.build.gradle.internal.utils.KgpVersion.Companion.MINIMUM_BUIL
 import com.android.build.gradle.internal.utils.getKotlinAndroidPluginVersion
 import com.android.build.gradle.internal.utils.isKotlinKaptPluginApplied
 import com.android.build.gradle.internal.utils.isKspPluginApplied
+import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.tasks.AidlCompile
@@ -1338,6 +1340,11 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
    * dexing support.
    */
   private fun createDexTasks(creationConfig: ApkCreationConfig, dexingType: DexingType) {
+    val useUniversalGlobalSyntheticsDex = creationConfig.useUniversalGlobalSyntheticsDex
+    if (useUniversalGlobalSyntheticsDex) {
+      taskFactory.register(GlobalSyntheticsGeneratorTask.CreationAction(creationConfig))
+    }
+
     val classpathUtils = getClassPathUtils(creationConfig)
 
     taskFactory.register(DexArchiveBuilderTask.CreationAction(creationConfig, classpathUtils))
@@ -1362,7 +1369,7 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       separateFileDependenciesDexingTask,
     )
 
-    if (creationConfig.enableGlobalSynthetics) {
+    if (creationConfig.enableGlobalSynthetics && !useUniversalGlobalSyntheticsDex) {
       if (dexingType == DexingType.NATIVE_MULTIDEX) {
         taskFactory.register(
           GlobalSyntheticsMergeTask.CreationAction(

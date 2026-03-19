@@ -20,7 +20,9 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.apk.Dex
+import com.android.utils.FileUtils
 import com.google.common.base.Throwables
 import org.junit.Assert
 import org.junit.Rule
@@ -86,12 +88,30 @@ class AutoEnableMultidexTest {
       }
     }
 
-    assertThat(classToDexMap.keys)
-      .containsExactly(
-        "Lcom/example/helloworld/A0;",
-        "Lcom/example/helloworld/A1;",
-        "Lcom/example/helloworld/A2;",
-        "Lcom/example/helloworld/R;",
-      )
+    val appClasses =
+      classToDexMap.keys.filterNot {
+        it.startsWith("Lcom/android/tools/r8/") ||
+          it.startsWith("Lkotlin/") ||
+          it.startsWith("Landroid/") ||
+          it.startsWith("Ljava/") ||
+          it.startsWith("Ldalvik/")
+      }
+    if (FileUtils.join(project.intermediatesDir, InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
+      assertThat(appClasses)
+        .containsExactly(
+          "Lcom/example/helloworld/A0;",
+          "Lcom/example/helloworld/A1;",
+          "Lcom/example/helloworld/A2;",
+          "Lcom/example/helloworld/R;",
+        )
+    } else {
+      assertThat(appClasses)
+        .containsExactly(
+          "Lcom/example/helloworld/A0;",
+          "Lcom/example/helloworld/A1;",
+          "Lcom/example/helloworld/A2;",
+          "Lcom/example/helloworld/R;",
+        )
+    }
   }
 }

@@ -63,7 +63,11 @@ class IncrementalGlobalSyntheticsTest {
       app.buildFile,
       """
 
-      android.defaultConfig.minSdkVersion  21
+      // To test the incremental merging of .globals files (GlobalSyntheticsMergeTask),
+      // we must force minSdk < 21. Otherwise, the modern Universal DEX optimization
+      // will bypass the merge task completely.
+      android.defaultConfig.minSdkVersion = 19
+      android.defaultConfig.multiDexEnabled = true
       """
         .trimIndent(),
     )
