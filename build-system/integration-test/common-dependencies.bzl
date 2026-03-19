@@ -8,7 +8,7 @@ and can be combined together
 KGP_VERSION_FOR_TESTS = "2.3.20-RC"
 
 # Kotlin Gradle plugin version that AGP depends on
-BUILT_IN_KOTLIN_VERSION = "2.2.10"
+BUILT_IN_KOTLIN_VERSION = "2.3.10"
 
 # KSP version used in AGP tests
 KSP_VERSION_FOR_TESTS = "2.2.20-RC-2.0.2"

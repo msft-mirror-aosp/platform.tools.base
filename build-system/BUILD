@@ -627,13 +627,12 @@ maven_repository(
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",
         "@maven//:org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin",
+        "@maven//:org.jetbrains.kotlin.kotlin-build-tools-compat",
         "@maven//:org.jetbrains.kotlin.kotlin-build-tools-impl",
         "@maven//:org.jetbrains.kotlin.kotlin-compiler",
         "@maven//:org.jetbrains.kotlin.kotlin-gradle-plugin-api",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.0.21",
-        "@maven//:org.jetbrains.kotlin.kotlin-reflect_2.2.0",  # AGP depends on kotlin-reflect:2.2.10, but Gradle downgrades it to kotlin-reflect:2.2.0
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.0",  # AGP depends on kotlin-stdlib:2.2.10, but Gradle downgrades it to kotlin-stdlib:2.2.0
+        "@maven//:org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.3.10",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-android",
         "@maven//:org.jetbrains.markdown",
@@ -716,7 +715,7 @@ maven_repository(
         "@maven//:com.android.tools.metalava.metalava_1.0.0-alpha14",
         "@maven//:ch.randelshofer.fastdoubleparser_0.8.0",
         "@maven//:com.google.protobuf.protobuf-bom_3.19.3",
-        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.1.0",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",
     ],
 )
 
@@ -760,6 +759,7 @@ gradle_test(
         "//tools/base/common:agp_gradle_build_files",
         "//tools/buildSrc:agp_gradle_build_files",
         "//tools/buildSrc/base:agp_gradle_build_files",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.10",  # Currently used by //tools/base/build-system:android_gradle_plugin_gradle_api_metalava_test
     ],
     gradle_properties = GRADLE_PROPERTIES,
     # keep sorted

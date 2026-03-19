@@ -66,7 +66,7 @@ ARTIFACTS = [
     "com.google.code.gson:gson:2.11.0",
     "com.google.crypto.tink:tink:1.7.0",
     "com.google.dagger:dagger-compiler:2.48",
-    "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.2.10-2.0.2",  # AGP dependencies
+    "com.google.devtools.ksp:symbol-processing-gradle-plugin:2.3.5",  # Used by AGP tests
     "com.google.errorprone:error_prone_annotations:2.28.0",
     "com.google.flatbuffers:flatbuffers-java:1.12.0",
     "com.google.flogger:flogger:0.8",
@@ -193,15 +193,19 @@ ARTIFACTS = [
     "org.jetbrains.exposed:exposed-core:1.0.0-rc-4",
     "org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4",
     "org.jetbrains.intellij.deps:asm-all:8.0.1",
-    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-compiler:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-reflect:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-stdlib:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test:2.2.10",  # AGP dependencies
-    "org.jetbrains.kotlin:kotlin-test-junit:2.2.10",  # AGP dependencies
+    "org.jetbrains.kotlin:compose-compiler-gradle-plugin:2.3.10",  # Used by AGP tests
+    "org.jetbrains.kotlin.jvm:org.jetbrains.kotlin.jvm.gradle.plugin:pom:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-build-tools-compat:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-build-tools-impl:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-compiler:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-gradle-plugin:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-api:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-gradle-plugin-idea:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-reflect:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-scripting-compiler-embeddable:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-stdlib:2.3.10",  # AGP dependency
+    "org.jetbrains.kotlin:kotlin-test:2.3.10",  # Used by AGP tests
+    "org.jetbrains.kotlin:kotlin-test-junit:2.3.10",  # Used by AGP tests
     "org.jetbrains.kotlinx:kotlinx-cli-jvm:0.3.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4",
