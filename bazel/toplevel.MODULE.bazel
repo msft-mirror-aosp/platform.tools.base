@@ -57,6 +57,11 @@ crate.spec(
     package = "sha1",
     version = "0.10.6",
 )
+crate.spec(
+    package = "windows",
+    features = ["Win32_Globalization"],
+    version = "0.61.1",
+)
 crate.from_specs()
 use_repo(crate, "crates")
 
