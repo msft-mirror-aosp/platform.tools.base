@@ -9367,6 +9367,184 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-analysis-common_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-analysis-common/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-analysis-common",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-analysis-common/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-core_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-core",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-facet_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-facet",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queries_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-queries",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queryparser_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-sandbox_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-queryparser",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+        "org.apache.lucene.lucene-queries",
+        "org.apache.lucene.lucene-sandbox",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-sandbox_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-sandbox_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-facet_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-sandbox",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+        "org.apache.lucene.lucene-queries",
+        "org.apache.lucene.lucene-facet",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-facet_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-aether-provider_3.3.9",
     pom = "repository/org/apache/maven/maven-aether-provider/3.3.9/maven-aether-provider-3.3.9.pom",
     repo_root_path = "repository",
