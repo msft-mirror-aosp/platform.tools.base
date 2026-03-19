@@ -29,6 +29,7 @@ for /f %%i in (%SCRIPTDIR%targets.win) do set TARGETS=!TARGETS! %%i
 
 if defined BUILD_NUMBER (
   echo common --credential_helper=*.pkg.dev=%%workspace%%/build/bazel/tools/ci_credhelper.cmd > ci.bazelrc
+  echo common --credential_helper=*.googleapis.com=%%workspace%%/build/bazel/tools/ci_credhelper.cmd >> ci.bazelrc
 )
 
 @rem Run Bazel

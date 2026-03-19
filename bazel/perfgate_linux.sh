@@ -26,6 +26,7 @@ fi
 
 if [[ -n "${BUILD_NUMBER}" ]]; then
   echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" > ci.bazelrc
+  echo "common --credential_helper=*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" >> ci.bazelrc
 fi
 
 build_tag_filters=-no_linux
