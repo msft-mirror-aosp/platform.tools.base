@@ -50,7 +50,7 @@ internal fun parseTargetHash(targetHash: String): CompileSdkVersionImpl {
 
   val previewMatcher = FULL_PREVIEW_PATTERN.matcher(targetHash)
   if (previewMatcher.matches()) {
-    return CompileSdkVersionImpl(_codeName = previewMatcher.group(1))
+    return CompileSdkVersionImpl(previewCodeName = previewMatcher.group(1))
   }
 
   val addonMatcher = ADDON_PATTERN.matcher(targetHash)

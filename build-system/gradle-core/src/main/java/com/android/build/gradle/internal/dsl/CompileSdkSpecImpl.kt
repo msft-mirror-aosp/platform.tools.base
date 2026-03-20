@@ -60,7 +60,7 @@ abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: Ds
 
   override fun preview(codeName: String): CompileSdkVersion {
     val apiLevel = SdkVersionInfo.getApiByBuildCode(codeName, true) - 1
-    return CompileSdkVersionImpl(apiLevel = apiLevel, _codeName = codeName)
+    return CompileSdkVersionImpl(apiLevel = apiLevel, previewCodeName = codeName)
   }
 
   override fun canary(date: String): CompileSdkVersion {
@@ -88,7 +88,7 @@ internal data class CompileSdkVersionImpl(
   override val apiLevel: Int? = null,
   override val minorApiLevel: Int? = null,
   override val sdkExtension: Int? = null,
-  private val _codeName: String? = null,
+  private val previewCodeName: String? = null,
   override val canaryDate: String? = null,
   override val betaVersion: Int? = null,
   override val addonName: String? = null,
@@ -96,7 +96,7 @@ internal data class CompileSdkVersionImpl(
 ) : CompileSdkVersion, Serializable {
   override val codeName: String?
     get() =
-      _codeName
+      previewCodeName
         ?: canaryDate?.let { "canary-$it" }
         ?: betaVersion?.let {
           val minor = minorApiLevel ?: 0

@@ -151,7 +151,7 @@ internal class CompileSdkDelegate(
           apiLevel = version?.apiLevel,
           minorApiLevel = version?.minorApiLevel,
           sdkExtension = version?.sdkExtension,
-          _codeName = version?.codeName,
+          previewCodeName = version?.codeName,
           canaryDate = version?.canaryDate,
           betaVersion = version?.betaVersion,
           addonName = version?.addonName,
@@ -206,6 +206,7 @@ internal class CompileSdkDelegate(
     if (compileData.isAddon()) {
       compileSdk { version = addon(vendor = compileData.vendorName!!, name = compileData.addonName!!, version = compileData.apiLevel!!) }
     } else {
+      // the canary and beta version is parsed from the parseTargetHash function, and they are reflected in codeName
       val codeName = compileData.codeName
       if (codeName != null) {
         compileSdk { version = preview(codeName) }

@@ -278,7 +278,7 @@ constructor(listenerRegistry: BuildEventsListenerRegistry, private val buildFeat
               apiLevel = it.apiLevel,
               minorApiLevel = it.minorApiLevel,
               sdkExtension = it.sdkExtension,
-              _codeName = it.codeName,
+              previewCodeName = it.codeName,
               canaryDate = it.canaryDate,
               betaVersion = it.betaVersion,
               addonName = it.addonName,
