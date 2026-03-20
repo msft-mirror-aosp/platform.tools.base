@@ -22,6 +22,7 @@ import com.android.tools.lint.checks.fx.utils.assoc
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.PersistentMap
 import kotlinx.collections.immutable.PersistentSet
+import kotlinx.collections.immutable.persistentHashMapOf
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 
@@ -167,6 +168,11 @@ internal typealias TermEnv<FX> = PersistentMap<String, Type<FX>>
 /** A mapping from function name to 1+ overloadings. Order matters!. */
 private typealias FunEnv = PersistentMap<String, PersistentList<Type.MethodRef>>
 
+/** An explicit substitution explaining free type variables */
+internal typealias Subst<FX> = PersistentMap<Type.Sym.Name, Type<FX>>
+
+internal val emptySubst: Subst<Nothing> = persistentHashMapOf()
+
 private fun <FX> emptyEnv(): TermEnv<FX> = persistentMapOf()
 
 private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type<FX>>, args: List<Type<FX>>): Env<FX> {
@@ -249,3 +255,5 @@ internal fun String.isExtensionReceiverName() = this == "<this>" || this.startsW
 
 internal fun TypeBounds<*>.paramNames(): PersistentMap<String, Type.Sym.Param> =
   asSequence().fold(persistentMapOf()) { m, (x, _) -> if (x is Type.Sym.Param) m.put(x.name, x) else m }
+
+internal fun <FX> showSubst(subst: Subst<FX>): String = subst.asSequence().joinToString { (l, r) -> "$l ↦ $r" }

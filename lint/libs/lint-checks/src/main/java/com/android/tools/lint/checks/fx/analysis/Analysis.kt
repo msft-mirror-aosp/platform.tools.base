@@ -39,6 +39,7 @@ import com.android.tools.lint.checks.fx.result.PsiClassAdapter
 import com.android.tools.lint.checks.fx.result.PsiTypeAdapter
 import com.android.tools.lint.checks.fx.result.Result
 import com.android.tools.lint.checks.fx.result.ResultTable
+import com.android.tools.lint.checks.fx.result.Subst
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.TypeBounds
 import com.android.tools.lint.checks.fx.result.at
@@ -192,15 +193,40 @@ internal open class Analysis<FX : Any>(
     )
 
   private val typeLattice = Type.latticeOf(effectLattice)
+  private val substLattice = Lattice.pointWise<Type.Sym.Name, _>(typeLattice)
 
   private val fxInstantiationLattice =
-    Lattice.product(::Instantiation, Instantiation<FX>::result, Instantiation<FX>::errors, effectLattice, possibilityLattice())
+    Lattice.product(
+      ::Instantiation,
+      Instantiation<FX>::result,
+      Instantiation<FX>::errors,
+      Instantiation<FX>::subst,
+      effectLattice,
+      possibilityLattice(),
+      substLattice,
+    )
 
   private val fxInferenceLattice =
-    Lattice.product(::Inference, Inference<FX>::result, Inference<FX>::errors, effectLattice, errorSetLattice())
+    Lattice.product(
+      ::Inference,
+      Inference<FX>::result,
+      Inference<FX>::errors,
+      Inference<FX>::subst,
+      effectLattice,
+      errorSetLattice(),
+      substLattice,
+    )
 
   private val fxCheckingLattice =
-    Lattice.product(::Checking, Checking<FX>::result, Checking<FX>::errors, constraintLattice, errorSetLattice())
+    Lattice.product(
+      ::Checking,
+      Checking<FX>::result,
+      Checking<FX>::errors,
+      Checking<FX>::subst,
+      constraintLattice,
+      errorSetLattice(),
+      substLattice,
+    )
 
   private val instantiationLattice = Result.domain(typeLattice, fxInstantiationLattice)
   private val inferenceLattice = Result.domain(typeLattice, fxInferenceLattice)
@@ -1330,19 +1356,31 @@ private val <T> Lattice<T>.unitResult: Result<Type<Nothing>, T>
 sealed class EffectResult<out FX> {
   abstract val errors: UnboundedSet<*>
   abstract val result: Any?
+  abstract val subst: Subst<FX>?
 
   sealed class Eval<out FX> : EffectResult<FX>() {
     abstract override val errors: UnboundedSet<Error<FX>>
   }
 
-  data class Inference<out FX>(override val result: Effect<FX>, override val errors: UnboundedSet<Error<FX>>) : Eval<FX>()
+  data class Inference<out FX>(
+    override val result: Effect<FX>,
+    override val errors: UnboundedSet<Error<FX>>,
+    override val subst: Subst<FX>? = persistentMapOf(),
+  ) : Eval<FX>()
 
   // TODO: Also generate constraints on higher-order arguments
-  data class Checking<out FX>(override val result: Constraint<FX>, override val errors: UnboundedSet<Error<FX>>) : Eval<FX>()
+  data class Checking<out FX>(
+    override val result: Constraint<FX>,
+    override val errors: UnboundedSet<Error<FX>>,
+    override val subst: Subst<FX>? = persistentMapOf(),
+  ) : Eval<FX>()
 
   data object Inapplicable : Eval<Nothing>(), Lattice<Inapplicable> {
     override val errors = persistentSetOf<Nothing>()
     override val result = null
+    override val subst: Subst<Nothing>
+      get() = persistentMapOf()
+
     override val bottom
       get() = this
 
@@ -1359,6 +1397,7 @@ sealed class EffectResult<out FX> {
   data class Instantiation<out FX>(
     override val result: Effect<FX>,
     override val errors: UnboundedSet<ConstraintFailure<FX>> = persistentSetOf(),
+    override val subst: Subst<FX>? = persistentMapOf(),
   ) : EffectResult<FX>()
 
   final override fun toString() =
