@@ -31,6 +31,7 @@ android {
 }
 """
 
+/** Creates a minimal library subproject with ProGuard rules for testing. */
 fun testLib(i: Int) =
   MinimalSubProject.lib("com.example.lib$i")
     .appendToBuild(LIB1_BUILD_GRADLE)
@@ -52,6 +53,7 @@ public class Lib${i}ClassToRemove {
     )
     .withFile("proguard-rules.pro", "-keep public class com.example.lib$i.Lib${i}ClassToKeep")
 
+/** Creates a minimal Java library subproject with embedded ProGuard rules for testing. */
 fun testJavalib(i: Int) =
   MinimalSubProject.javaLibrary()
     .withFile(
@@ -72,6 +74,7 @@ public class Javalib${i}ClassToRemove {
     )
     .withFile("src/main/resources/META-INF/proguard/rules.pro", "-keep public class com.example.javalib$i.Javalib${i}ClassToKeep")
 
+/** Java source for a class in the base module that should be kept during shrinking. */
 const val BASE_CLASS_KEEP =
   """
 package com.example.baseModule;
@@ -79,6 +82,7 @@ public class BaseClassToKeep {
 }
 """
 
+/** Java source for a class in the base module that should be removed during shrinking. */
 const val BASE_CLASS_REMOVE =
   """
 package com.example.baseModule;
@@ -86,6 +90,7 @@ public class BaseClassToRemove {
 }
 """
 
+/** Java source for a class in a feature module that should be kept during shrinking. */
 const val FEATURE1_CLASS_KEEP =
   """
 package com.example.feature1;
@@ -93,6 +98,7 @@ public class Feature1ClassToKeep {
 }
 """
 
+/** Java source for a class in a feature module that should be removed during shrinking. */
 const val FEATURE_CLASS_REMOVE =
   """
 package com.example.feature1;
@@ -100,4 +106,5 @@ public class Feature1ClassToRemove {
 }
 """
 
+/** The [GradleTestProject.ApkType] for the "minified" build type. */
 val APK_TYPE = GradleTestProject.ApkType.of("minified", true)
