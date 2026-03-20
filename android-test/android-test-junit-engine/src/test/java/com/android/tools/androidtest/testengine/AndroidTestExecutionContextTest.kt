@@ -35,6 +35,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1, serial2 ,serial3"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
 
     val request = mock<ExecutionRequest>()
     whenever(request.configurationParameters).thenReturn(configParams)
@@ -51,6 +52,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
 
     val request = mock<ExecutionRequest>()
     whenever(request.configurationParameters).thenReturn(configParams)
@@ -67,6 +69,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
     whenever(configParams.get(AndroidTestConfigurationKeys.RESULTS_DIR)).thenReturn(Optional.of("/path/to/results"))
 
     val request = mock<ExecutionRequest>()
@@ -84,6 +87,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1,serial2"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
 
     whenever(configParams.get(AndroidTestConfigurationKeys.TESTED_APKS)).thenReturn(Optional.of("/path/to/generic.apk"))
     whenever(configParams.get("${AndroidTestConfigurationKeys.TESTED_APKS}[serial1]")).thenReturn(Optional.of("/path/to/serial1.apk"))
@@ -105,6 +109,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
     whenever(configParams.get(AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE))
       .thenReturn(Optional.of("ANDROIDX_TEST_ORCHESTRATOR"))
 
@@ -123,6 +128,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1,serial2"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
 
     whenever(configParams.get(AndroidTestConfigurationKeys.TEST_UTIL_APKS)).thenReturn(Optional.of("/path/to/generic_util.apk"))
     whenever(configParams.get("${AndroidTestConfigurationKeys.TEST_UTIL_APKS}[serial1]"))
@@ -145,6 +151,7 @@ class AndroidTestExecutionContextTest {
     whenever(configParams.get(AndroidTestConfigurationKeys.DEVICE_SERIALS)).thenReturn(Optional.of("serial1"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS)).thenReturn(Optional.of("com.example.Runner"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID)).thenReturn(Optional.of("com.example.app"))
+    whenever(configParams.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID)).thenReturn(Optional.of("com.example.app.test"))
     whenever(configParams.get(AndroidTestConfigurationKeys.INSTRUMENTATION_ARGS))
       .thenReturn(Optional.of("clearPackageData=true,useTestStorageService=false"))
 

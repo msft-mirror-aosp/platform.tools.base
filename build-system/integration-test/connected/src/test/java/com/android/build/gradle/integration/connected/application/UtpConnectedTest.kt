@@ -28,7 +28,6 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,9 +80,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithUtpTestResultListener() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     val benchmark: Benchmark =
       Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
     val startTime: Long = System.currentTimeMillis()
@@ -180,25 +176,16 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithoutTestStorageServiceInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithoutTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithBenchmarkFilesInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithBenchmarkFiles() }
   }
 

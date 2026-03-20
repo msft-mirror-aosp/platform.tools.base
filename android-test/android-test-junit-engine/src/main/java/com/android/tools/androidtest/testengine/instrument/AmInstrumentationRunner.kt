@@ -30,7 +30,7 @@ import java.util.logging.Logger
  * @param deviceSerial The serial number of the target Android device.
  * @param instrumentationRunnerClass The fully qualified name of the instrumentation runner (e.g.,
  *   `androidx.test.runner.AndroidJUnitRunner`).
- * @param instrumentationTargetPackageId The package ID of the application to be instrumented.
+ * @param testPackageId The package ID of the test APK containing the instrumentation runner.
  * @param listeners A set of [AmInstrumentationListener]s to receive test events.
  * @param logger An optional [Logger] for recording command outputs and warnings.
  * @param processBuilder A factory for creating [ProcessBuilder] instances, primarily exposed for testing purposes to allow mocking of
@@ -40,7 +40,7 @@ class AmInstrumentationRunner(
   private val adb: File,
   private val deviceSerial: String,
   private val instrumentationRunnerClass: String,
-  private val instrumentationTargetPackageId: String,
+  private val testPackageId: String,
   private val executionMode: String? = null,
   private val instrumentationArgs: Map<String, String> = emptyMap(),
   private val listeners: Set<AmInstrumentationListener> = emptySet(),
@@ -84,7 +84,7 @@ class AmInstrumentationRunner(
     return AmInstrumentCommandBuilder()
       .setAdbPath(adb.absolutePath)
       .setDeviceSerial(deviceSerial)
-      .setInstrumentationRunner(instrumentationTargetPackageId, instrumentationRunnerClass)
+      .setInstrumentationRunner(testPackageId, instrumentationRunnerClass)
       .setExecutionMode(executionMode)
       .addInstrumentationArgs(instrumentationArgs)
       .build()

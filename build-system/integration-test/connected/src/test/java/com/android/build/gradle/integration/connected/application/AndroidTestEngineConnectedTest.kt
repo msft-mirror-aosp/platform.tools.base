@@ -151,6 +151,7 @@ class AndroidTestEngineConnectedTest {
             }
 
             task.systemProperty("android-test.instrumentation-runner-class", "androidx.test.runner.AndroidJUnitRunner")
+            task.systemProperty("android-test.test-package-id", "pkg.name.app.test")
             task.systemProperty("android-test.instrumentation-target-package-id", "pkg.name.app.test")
 
             task.testLogging.apply {

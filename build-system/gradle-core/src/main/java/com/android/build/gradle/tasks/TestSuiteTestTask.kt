@@ -647,6 +647,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // These are the AndroidTestEngine specific parameters. Consider making it a part of official
       // AgpTestSuiteInputParameters if they are useful for other JUnit engines.
       task.engineInputProperties.put("android-test.instrumentation-runner-class", testData.instrumentationRunner)
+      task.engineInputProperties.put("android-test.test-package-id", testData.applicationId)
+      task.engineInputProperties.put("android-test.instrumentation-target-package-id", testData.instrumentationTargetPackageId)
       task.engineInputProperties.put(
         "android-test.instrumentation-args",
         testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
@@ -654,6 +656,35 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.engineInputProperties.put(
         "android-test.uninstall-after-tests",
         (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
+      )
+
+      val variantName = creationConfig.mainVariant.name
+      var buildTarget: String
+      var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
+      if (flavorFolder.isNotEmpty()) {
+        buildTarget = variantName.substring(flavorFolder.length).lowercase(Locale.US)
+        flavorFolder = "${BuilderConstants.FD_FLAVORS}/$flavorFolder"
+      } else {
+        buildTarget = variantName
+      }
+      val providerFolder = BuilderConstants.CONNECTED
+      val subFolder = "$providerFolder/$buildTarget/$flavorFolder"
+
+      val additionalTestOutputDir =
+        creationConfig.services.projectInfo.getOutputsDir().map {
+          it.dir("connected_android_test_additional_output/${creationConfig.name}/$providerFolder")
+        }
+      task.engineInputProperties.put(
+        "android-test.additional-test-output-dir-on-host",
+        additionalTestOutputDir.map { it.asFile.absolutePath },
+      )
+      task.engineInputProperties.put(
+        "android-test.additional-test-output-dir-on-device",
+        testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
+      )
+      task.engineInputProperties.put(
+        "android-test.use-test-storage-service",
+        testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
       )
 
       if (testData is BundleTestDataImpl) {
@@ -673,18 +704,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
 
       task.engineInputProperties.disallowChanges()
-
-      val variantName = creationConfig.mainVariant.name
-      var buildTarget: String
-      var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
-      if (flavorFolder.isNotEmpty()) {
-        buildTarget = variantName.substring(flavorFolder.length).lowercase(Locale.US)
-        flavorFolder = "${BuilderConstants.FD_FLAVORS}/$flavorFolder"
-      } else {
-        buildTarget = variantName
-      }
-      val providerFolder = BuilderConstants.CONNECTED
-      val subFolder = "$providerFolder/$buildTarget/$flavorFolder"
 
       val testOptions = globalConfig.androidTestOptions
 

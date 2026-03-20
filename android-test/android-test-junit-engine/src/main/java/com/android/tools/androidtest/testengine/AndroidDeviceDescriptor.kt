@@ -73,6 +73,20 @@ class AndroidDeviceDescriptor(
 
     val reporter = baseResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
     val logcatCollector = deviceResultsDir?.let { LogcatCollector(it, config.adb.absolutePath) }
+    logger.info(
+      "Configuring AndroidAdditionalTestOutputCollector: hostDir=${config.additionalTestOutputDirOnHost}, deviceDir=${config.additionalTestOutputDirOnDevice}, testedApplicationId=${config.testedApplicationId}, useTestStorage=${config.useTestStorageService}"
+    )
+    val additionalTestOutputCollector =
+      AndroidAdditionalTestOutputCollector(
+        adbController = AdbController(config.adb),
+        deviceSerial = deviceSerial,
+        additionalOutputDirectoryOnHost = config.additionalTestOutputDirOnHost?.let { File(it, deviceId) },
+        additionalOutputDirectoryOnDevice = config.additionalTestOutputDirOnDevice,
+        instrumentationTargetPackageId = config.instrumentationTargetPackageId,
+        testedApplicationId = config.testedApplicationId,
+        testPackageId = config.testPackageId,
+        useTestStorageService = config.useTestStorageService,
+      )
 
     val deviceInfoFile =
       deviceResultsDir?.let { dir ->
@@ -87,14 +101,14 @@ class AndroidDeviceDescriptor(
         }
       }
 
-    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile)
+    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
 
     val instrumentationRunner =
       AmInstrumentationRunner(
         config.adb,
         deviceSerial,
         config.instrumentationRunnerClass,
-        config.instrumentationTargetPackageId,
+        config.testPackageId,
         config.executionMode,
         config.instrumentationArgs,
         setOf(listener),
@@ -104,11 +118,14 @@ class AndroidDeviceDescriptor(
       AndroidTestRunner(
         adbApkInstaller,
         instrumentationRunner,
+        config.instrumentationTargetPackageId,
         config.getTestedApks(deviceSerial),
         config.getTestApks(deviceSerial),
         config.apkInstallOptions,
         config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
+        onBeforeInstrumentation = { additionalTestOutputCollector.prepare() },
+        onTestFinished = { additionalTestOutputCollector.collect() },
       )
 
     // We run the instrumentation runner in a separate thread so that it can discover and send
@@ -160,6 +177,7 @@ class AndroidDeviceDescriptor(
     private val reporter: SimpleXmlResultReporter?,
     private val logcatCollector: LogcatCollector?,
     private val deviceInfoFile: File?,
+    private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector?,
   ) : AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
@@ -209,6 +227,8 @@ class AndroidDeviceDescriptor(
         reporter?.testFailed(ddmlibTestId, testResult.stackTrace ?: "")
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
+
+      additionalTestOutputCollector?.addBenchmarkOutput(testResult)
 
       val testDescriptor = testDescriptors[testIdentifier]
       if (testDescriptor != null) {

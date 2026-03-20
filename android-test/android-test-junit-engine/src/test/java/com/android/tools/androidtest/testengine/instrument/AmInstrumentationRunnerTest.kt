@@ -81,7 +81,7 @@ class AmInstrumentationRunnerTest {
         adb = fakeAdb,
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
-        instrumentationTargetPackageId = targetPackage,
+        testPackageId = targetPackage,
         logger = mockLogger,
         processBuilder = { command ->
           capturedCommand = command
@@ -128,7 +128,7 @@ class AmInstrumentationRunnerTest {
         adb = fakeAdb,
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
-        instrumentationTargetPackageId = targetPackage,
+        testPackageId = targetPackage,
         executionMode = "androidx_test_orchestrator", // Test case-insensitivity
         logger = mockLogger,
         processBuilder = { command ->
@@ -187,7 +187,7 @@ class AmInstrumentationRunnerTest {
         adb = fakeAdb,
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
-        instrumentationTargetPackageId = targetPackage,
+        testPackageId = targetPackage,
         executionMode = "ANDROID_TEST_ORCHESTRATOR",
         logger = mockLogger,
         processBuilder = { command ->
@@ -237,7 +237,7 @@ class AmInstrumentationRunnerTest {
         adb = fakeAdb,
         deviceSerial = deviceSerial,
         instrumentationRunnerClass = runnerClass,
-        instrumentationTargetPackageId = targetPackage,
+        testPackageId = targetPackage,
         instrumentationArgs = mapOf("clearPackageData" to "true", "useTestStorageService" to "false"),
         logger = mockLogger,
         processBuilder = { command ->

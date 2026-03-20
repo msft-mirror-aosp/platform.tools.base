@@ -27,7 +27,9 @@ import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.RESULTS_DIR
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TESTED_APKS
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TESTED_APPLICATION_ID
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TEST_APKS
+import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TEST_PACKAGE_ID
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.TEST_UTIL_APKS
 import com.android.tools.androidtest.testengine.AndroidTestConfigurationKeys.UNINSTALL_AFTER_TESTS
 import java.io.File
@@ -85,9 +87,10 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
 
   val instrumentationRunnerClass: String =
     get(INSTRUMENTATION_RUNNER_CLASS) ?: throw RuntimeException("$INSTRUMENTATION_RUNNER_CLASS configuration is required")
+  val testPackageId: String = get(TEST_PACKAGE_ID) ?: throw RuntimeException("$TEST_PACKAGE_ID configuration is required")
   val instrumentationTargetPackageId: String =
-    get(INSTRUMENTATION_TARGET_PACKAGE_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID)
-      ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
+    get(INSTRUMENTATION_TARGET_PACKAGE_ID) ?: throw RuntimeException("$INSTRUMENTATION_TARGET_PACKAGE_ID configuration is required")
+  val testedApplicationId: String = get(TESTED_APPLICATION_ID, AgpTestSuiteInput.TESTED_APPLICATION_ID) ?: instrumentationTargetPackageId
 
   val instrumentationArgs: Map<String, String> =
     get(INSTRUMENTATION_ARGS)
@@ -99,6 +102,10 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
       ?.toMap() ?: emptyMap()
 
   val resultsDir: File? = get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR)?.let { File(it) }
+
+  val additionalTestOutputDirOnHost: File? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_HOST)?.let { File(it) }
+  val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
+  val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
 
   fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
 

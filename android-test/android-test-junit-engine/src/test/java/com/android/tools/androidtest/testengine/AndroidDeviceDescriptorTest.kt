@@ -68,6 +68,8 @@ class AndroidDeviceDescriptorTest {
       .thenReturn(java.util.Optional.of(resultsDir.absolutePath))
     whenever(configurationParameters.get(AndroidTestConfigurationKeys.INSTRUMENTATION_RUNNER_CLASS))
       .thenReturn(java.util.Optional.of("android.support.test.runner.AndroidJUnitRunner"))
+    whenever(configurationParameters.get(AndroidTestConfigurationKeys.TEST_PACKAGE_ID))
+      .thenReturn(java.util.Optional.of("com.example.app.test"))
     whenever(configurationParameters.get(AndroidTestConfigurationKeys.INSTRUMENTATION_TARGET_PACKAGE_ID))
       .thenReturn(java.util.Optional.of("com.example.app"))
   }
@@ -79,7 +81,7 @@ class AndroidDeviceDescriptorTest {
     val context = AndroidTestExecutionContext(executionRequest)
     val deviceInfoFile = File(resultsDir, "device-info.pb")
 
-    val listener = descriptor.Listener(context, null, null, deviceInfoFile)
+    val listener = descriptor.Listener(context, null, null, deviceInfoFile, null)
 
     listener.instrumentationStarted(1)
 
