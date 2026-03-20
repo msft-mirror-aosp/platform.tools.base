@@ -1,4 +1,150 @@
 /**
+ * UI Utilities
+ * Collection of helper functions for DOM manipulation and common UI patterns.
+ */
+const UIUtils = {
+  /**
+   * Builds a multi-select dropdown with "Select All" / "Clear" actions
+   * and a scrollable list of options.
+   */
+  buildActionDropdown(container, options, initialState, onSelectionChange, searchable = true, multiSelect = true) {
+    if (!container) return;
+
+    container.innerHTML = "";
+    container.style.padding = "0";
+    container.style.overflow = "hidden";
+
+    let currentState = multiSelect
+      ? (Array.isArray(initialState) ? [...initialState] : [])
+      : initialState;
+
+    let searchInput = null;
+    if (searchable) {
+      const searchContainer = document.createElement("div");
+      searchContainer.className = "dropdown-search-zone";
+
+      searchInput = document.createElement("input");
+      searchInput.type = "text";
+      searchInput.className = "popover-search";
+      searchInput.placeholder = "Search...";
+
+      searchContainer.appendChild(searchInput);
+      container.appendChild(searchContainer);
+    }
+
+    const listZone = document.createElement("div");
+    listZone.className = "dropdown-scroll-zone";
+
+    if (multiSelect) {
+      const actionZone = document.createElement("div");
+      actionZone.className = "dropdown-action-zone";
+
+      const selectAllBtn = document.createElement("button");
+      selectAllBtn.className = "dropdown-action-btn";
+      selectAllBtn.textContent = "Select all";
+
+      const clearBtn = document.createElement("button");
+      clearBtn.className = "dropdown-action-btn";
+      clearBtn.textContent = "Clear";
+
+      actionZone.appendChild(selectAllBtn);
+      actionZone.appendChild(clearBtn);
+      container.appendChild(actionZone);
+
+      selectAllBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        currentState = options.filter(o => o.value !== "all").map(o => o.value);
+        onSelectionChange([...currentState]);
+        renderList(searchInput ? searchInput.value : "");
+      });
+
+      clearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        currentState = [];
+        onSelectionChange([...currentState]);
+        renderList(searchInput ? searchInput.value : "");
+      });
+    }
+
+    container.appendChild(listZone);
+
+    const renderList = (filter = "") => {
+      listZone.innerHTML = "";
+
+      const filteredOptions = options.filter(opt =>
+        opt.name.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      if (filteredOptions.length === 0) {
+        listZone.innerHTML = `<div class="p-4 text-xs text-gray-400 text-center">No options found</div>`;
+        return;
+      }
+
+      filteredOptions.forEach(opt => {
+        const isChecked = multiSelect ? currentState.includes(opt.value) : currentState === opt.value;
+
+        const item = document.createElement("label");
+        item.className = "popover-item";
+
+        if (multiSelect) {
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.className = "popover-checkbox";
+          checkbox.checked = isChecked;
+          item.appendChild(checkbox);
+
+          item.addEventListener("change", (e) => {
+            e.stopPropagation();
+            if (checkbox.checked) {
+              if (!currentState.includes(opt.value)) currentState.push(opt.value);
+            } else {
+              currentState = currentState.filter(v => v !== opt.value);
+            }
+            onSelectionChange([...currentState]);
+          });
+        } else {
+          if (isChecked) {
+            item.classList.add('active-popover-item');
+          }
+
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            currentState = opt.value;
+            onSelectionChange(currentState);
+            renderList(searchInput ? searchInput.value : "");
+
+            // Close dropdown
+            const dropdownMenu = container.closest('.dropdown-menu');
+            if (dropdownMenu) {
+              dropdownMenu.classList.add('hidden');
+              const btn = document.querySelector(`[aria-controls="${dropdownMenu.id}"]`) || dropdownMenu.previousElementSibling;
+              if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+          });
+        }
+
+        const text = document.createElement("span");
+        text.textContent = opt.name;
+        item.appendChild(text);
+
+        listZone.appendChild(item);
+      });
+    };
+
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => {
+        renderList(e.target.value);
+      });
+    }
+
+    renderList();
+  }
+};
+
+/**
  * Main application object.
  * DEPENDENCY: Requires 'TEST_DATA_SOURCE' to be defined in data.js
  */
@@ -6,7 +152,7 @@ const TestReportApp = {
   state: {
     viewMode: 'tree',
     currentFlatView: 'modules',
-    filters: { variant: 'all', search: '', status: 'all' },
+    filters: { variants: [], search: '', status: 'all' },
     sort: { by: 'name', order: 'asc' },
     variants: [],
     processedData: null
@@ -21,6 +167,7 @@ const TestReportApp = {
       this.setupTestResults(TEST_DATA_SOURCE);
       this.populateFilters();
       this.bindEvents();
+      this.closeDropdownsOnClickOutside();
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
@@ -30,17 +177,35 @@ const TestReportApp = {
 
   cacheDOMElements() {
     this.elements = {
+      appTitle: document.getElementById('app-title'),
+      reportDate: document.getElementById('report-date'),
+      totalModules: document.getElementById('total-modules'),
+      totalPackages: document.getElementById('total-packages'),
+      totalClasses: document.getElementById('total-classes'),
       searchInput: document.getElementById('search-input'),
-      viewModeSelect: document.getElementById('view-mode-select'),
-      variantMultiselect: document.getElementById('variant-multiselect'),
-      variantSelectBtn: document.getElementById('variant-select-btn'),
-      variantDropdownContent: document.getElementById('variant-dropdown-content'),
-      statusFilterSelect: document.getElementById('status-filter-select'),
+
+      viewModeBtn: document.getElementById('view-mode-btn'),
+      viewModeText: document.getElementById('view-mode-text'),
+      viewModeDropdown: document.getElementById('view-mode-dropdown'),
+      viewModeList: document.getElementById('view-mode-list'),
+
+      variantFilterBtn: document.getElementById('variant-filter-btn'),
+      variantFilterText: document.getElementById('variant-filter-text'),
+      variantFilterDropdown: document.getElementById('variant-filter-dropdown'),
+      variantFilterList: document.getElementById('variant-filter-list'),
+
+      statusFilterBtn: document.getElementById('status-filter-btn'),
+      statusFilterText: document.getElementById('status-filter-text'),
+      statusFilterDropdown: document.getElementById('status-filter-dropdown'),
+      statusFilterList: document.getElementById('status-filter-list'),
+
       tableHeaders: document.getElementById('table-headers'),
       resultsData: document.getElementById('results-data'),
       breadcrumbs: document.getElementById('breadcrumbs'),
       viewToggles: document.getElementById('view-toggles'),
       flatViewControls: document.getElementById('flat-view-controls'),
+
+      // Summary Card Elements
       totalTests: document.getElementById('total-tests'),
       totalPassed: document.getElementById('total-passed'),
       totalFailed: document.getElementById('total-failed'),
@@ -55,13 +220,20 @@ const TestReportApp = {
     this.state.variants = dataCopy.variants;
     this.state.filters.variants = [...dataCopy.variants]; // Default to all selected
 
+    // Populate header
+    if (this.elements.appTitle) this.elements.appTitle.textContent = dataCopy.projectName || 'Test Report';
+    if (this.elements.reportDate) this.elements.reportDate.textContent = dataCopy.timestamp || '';
+    if (this.elements.totalModules) this.elements.totalModules.textContent = dataCopy.numberOfModules || 0;
+    if (this.elements.totalPackages) this.elements.totalPackages.textContent = dataCopy.numberOfPackages || 0;
+    if (this.elements.totalClasses) this.elements.totalClasses.textContent = dataCopy.numberOfClasses || 0;
+
     const processNode = (node, type) => {
       node.type = type;
       const childKey = this.pluralize(this.getChildType(type));
       let children = node[childKey];
 
       if (type === 'class') {
-        children = node.functions || [];
+        children = node.testCases || [];
       }
 
       if (children) {
@@ -77,13 +249,36 @@ const TestReportApp = {
   },
 
   populateFilters() {
-    this.elements.variantDropdownContent.innerHTML = this.state.variants.map(v => `
-      <label class="checkbox-item">
-        <input type="checkbox" value="${v}" checked>
-        ${v}
-      </label>
-    `).join('');
-    this.updateVariantButtonText();
+    // View Mode Dropdown
+    const viewModeOptions = [
+      { name: 'Tree View', value: 'tree' },
+      { name: 'Flat View', value: 'flat' }
+    ];
+    UIUtils.buildActionDropdown(this.elements.viewModeList, viewModeOptions, this.state.viewMode, (newVal) => {
+      this.state.viewMode = newVal;
+      this.elements.viewModeText.textContent = viewModeOptions.find(o => o.value === newVal)?.name || 'Tree View';
+      this.render();
+    }, false, false);
+
+    // Variants Dropdown
+    const variantOptions = this.state.variants.map(v => ({ name: v, value: v }));
+    UIUtils.buildActionDropdown(this.elements.variantFilterList, variantOptions, this.state.filters.variants, (newArr) => {
+      this.state.filters.variants = newArr;
+      this.updateVariantButtonText();
+      this.render();
+    }, true, true);
+
+    // Status Dropdown
+    const statusOptions = [
+      { name: 'All Statuses', value: 'all' },
+      { name: 'Passed', value: 'passed' },
+      { name: 'Failed', value: 'failed' }
+    ];
+    UIUtils.buildActionDropdown(this.elements.statusFilterList, statusOptions, this.state.filters.status, (newVal) => {
+      this.state.filters.status = newVal;
+      this.elements.statusFilterText.textContent = statusOptions.find(o => o.value === newVal)?.name || 'All Statuses';
+      this.render();
+    }, false, false);
   },
 
   updateVariantButtonText() {
@@ -91,61 +286,73 @@ const TestReportApp = {
     const totalCount = this.state.variants.length;
 
     if (selectedCount === 0) {
-      this.elements.variantSelectBtn.textContent = 'Select Variants';
+      this.elements.variantFilterText.textContent = 'None';
     } else if (selectedCount === totalCount) {
-      this.elements.variantSelectBtn.textContent = 'All Variants';
+      this.elements.variantFilterText.textContent = 'All';
+    } else if (selectedCount === 1) {
+      this.elements.variantFilterText.textContent = this.state.filters.variants[0];
     } else {
-      this.elements.variantSelectBtn.textContent = `${selectedCount} Variant${selectedCount > 1 ? 's' : ''}`;
+      this.elements.variantFilterText.textContent = `${selectedCount} Variants`;
     }
   },
 
   // --- EVENT BINDING & HANDLING ---
   bindEvents() {
     this.elements.searchInput.addEventListener('input', () => { this.state.filters.search = this.elements.searchInput.value.trim(); this.render(); });
-    this.elements.viewModeSelect.addEventListener('change', (e) => { this.state.viewMode = e.target.value; this.render(); });
-    this.elements.statusFilterSelect.addEventListener('change', (e) => { this.state.filters.status = e.target.value; this.render(); });
+
+    this.elements.viewModeBtn.addEventListener('click', () => this.toggleDropdown(this.elements.viewModeDropdown, this.elements.viewModeBtn));
+    this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
+    this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
+
     this.elements.flatViewControls.addEventListener('click', (e) => { const button = e.target.closest('.view-toggle'); if (button) { this.state.currentFlatView = button.dataset.view; this.render(); } });
-    this.elements.resultsData.addEventListener('click', (e) => { const treeToggle = e.target.closest('.tree-toggle'); if (treeToggle) { e.stopPropagation(); e.preventDefault(); this.handleTreeRowClick(treeToggle); } });
+    this.elements.resultsData.addEventListener('click', (e) => {
+        const treeToggle = e.target.closest('.tree-toggle');
+        if (treeToggle) {
+            e.stopPropagation();
+            e.preventDefault();
+            this.handleTreeRowClick(treeToggle);
+        }
+    });
     this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); });
 
+    // Failed Card interaction
     if (this.elements.failedCard) {
       this.elements.failedCard.classList.add('cursor-pointer');
       this.elements.failedCard.addEventListener('click', () => {
         this.state.viewMode = 'flat';
-        this.state.currentFlatView = 'functions';
+        this.state.currentFlatView = 'testCases';
         this.state.filters.status = 'failed';
-        this.elements.viewModeSelect.value = 'flat';
-        this.elements.statusFilterSelect.value = 'failed';
+        this.elements.viewModeText.textContent = 'Flat View';
+        this.elements.statusFilterText.textContent = 'Failed';
         this.render();
       });
     }
+  },
 
-    // Multi-select events
-    this.elements.variantSelectBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.elements.variantDropdownContent.classList.toggle('hidden');
-    });
+  toggleDropdown(dropdown, button) {
+    const isHidden = dropdown.classList.contains('hidden');
+    this.closeAllDropdowns();
+    if (isHidden) {
+        dropdown.classList.remove('hidden');
+        button.setAttribute('aria-expanded', 'true');
+    }
+  },
 
-    this.elements.variantDropdownContent.addEventListener('change', (e) => {
-      if (e.target.type === 'checkbox') {
-        const value = e.target.value;
-        if (e.target.checked) {
-          if (!this.state.filters.variants.includes(value)) {
-            this.state.filters.variants.push(value);
-            // Sort to maintain order
-            this.state.filters.variants.sort((a, b) => this.state.variants.indexOf(a) - this.state.variants.indexOf(b));
-          }
-        } else {
-          this.state.filters.variants = this.state.filters.variants.filter(v => v !== value);
-        }
-        this.updateVariantButtonText();
-        this.render();
-      }
-    });
+  closeAllDropdowns() {
+    this.elements.viewModeDropdown.classList.add('hidden');
+    this.elements.viewModeBtn.setAttribute('aria-expanded', 'false');
+    this.elements.variantFilterDropdown.classList.add('hidden');
+    this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+    this.elements.statusFilterDropdown.classList.add('hidden');
+    this.elements.statusFilterBtn.setAttribute('aria-expanded', 'false');
+  },
 
+  closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
-      if (!this.elements.variantMultiselect.contains(e.target)) {
-        this.elements.variantDropdownContent.classList.add('hidden');
+      if (!this.elements.viewModeBtn.contains(e.target) && !this.elements.viewModeDropdown.contains(e.target) &&
+          !this.elements.variantFilterBtn.contains(e.target) && !this.elements.variantFilterDropdown.contains(e.target) &&
+          !this.elements.statusFilterBtn.contains(e.target) && !this.elements.statusFilterDropdown.contains(e.target)) {
+        this.closeAllDropdowns();
       }
     });
   },
@@ -181,13 +388,13 @@ const TestReportApp = {
       if (!nodes) return [];
       return nodes.filter(node => {
         const childKey = this.pluralize(this.getChildType(type));
-        let children = node[childKey] || (type === 'class' ? node.functions : []);
+        let children = node[childKey] || (type === 'class' ? node.testCases : []);
         let hasVisibleChildren = false;
 
         // Filter children first
         if (children) {
           const filteredChildren = applyFilters(children, this.getChildType(type));
-          if (type === 'class') node.functions = filteredChildren;
+          if (type === 'class') node.testCases = filteredChildren;
           else node[childKey] = filteredChildren;
           hasVisibleChildren = filteredChildren.length > 0;
         }
@@ -245,7 +452,7 @@ const TestReportApp = {
 
       nodes.forEach(node => {
         const childKey = this.pluralize(this.getChildType(node.type));
-        let children = node[childKey] || (node.type === 'class' ? node.functions : []);
+        let children = node[childKey] || (node.type === 'class' ? node.testCases : []);
         if (children) sortNodes(children);
       });
     };
@@ -262,18 +469,20 @@ const TestReportApp = {
   render() {
     const data = this.getFilteredAndSortedData();
     this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
-    this.updateSummaryCards(this.processedData.summary);
+    this.updateSummaryCards();
     this.renderTable(data);
     if (this.state.viewMode === 'flat') {
       this.updateActiveTabs();
     }
   },
 
-  updateSummaryCards(summary) {
-    this.elements.totalTests.textContent = summary.total;
-    this.elements.totalPassed.textContent = summary.passed;
-    this.elements.totalFailed.textContent = summary.failed;
-    this.elements.totalSkipped.textContent = summary.skipped;
+  updateSummaryCards() {
+    if (!this.processedData || !this.processedData.summary) return;
+    const sum = this.processedData.summary;
+    if (this.elements.totalTests) this.elements.totalTests.textContent = sum.total;
+    if (this.elements.totalPassed) this.elements.totalPassed.textContent = sum.passed;
+    if (this.elements.totalFailed) this.elements.totalFailed.textContent = sum.failed;
+    if (this.elements.totalSkipped) this.elements.totalSkipped.textContent = sum.skipped;
   },
 
   updateActiveTabs() {
@@ -320,7 +529,7 @@ const TestReportApp = {
       const type = node.type;
       const childType = this.getChildType(type);
       const childKey = this.pluralize(childType);
-      const children = node[childKey] || (type === 'class' ? node.functions : []) || [];
+      const children = node[childKey] || (type === 'class' ? node.testCases : []) || [];
       const hasChildren = children.length > 0;
       const uniqueId = `${parentId}-${node.name}`.replace(/[^a-zA-Z0-9-_]/g, '');
 
@@ -334,7 +543,7 @@ const TestReportApp = {
                             ${chevron} ${nameContent}
                         </div>
                     </td>
-                    ${this._renderStatusCell(type === 'function' ? node : node.summary, type === 'function')}
+                    ${this._renderStatusCell(type === 'testCase' ? node : node.summary, type === 'testCase')}
                 </tr>`;
 
       if (hasChildren) {
@@ -350,11 +559,10 @@ const TestReportApp = {
     let items = [];
     const view = this.state.currentFlatView;
     if (data.modules) {
-      if (view === 'modules') items = data.modules;
-      else if (view === 'testSuites') items = data.modules.flatMap(m => m.testSuites.map(i => ({ ...i, parent: m.name })));
-      else if (view === 'packages') items = data.modules.flatMap(m => m.testSuites.flatMap(tc => tc.packages.map(i => ({ ...i, parent: tc.name }))));
-      else if (view === 'classes') items = data.modules.flatMap(m => m.testSuites.flatMap(tc => tc.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name })))));
-      else if (view === 'functions') items = data.modules.flatMap(m => m.testSuites.flatMap(tc => tc.packages.flatMap(p => p.classes.flatMap(c => c.functions.map(i => ({ ...i, parent: c.name }))))));
+        if (view === 'modules') items = data.modules;
+        else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name })));
+        else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name }))));
+        else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name })))));
     }
 
     this.elements.resultsData.innerHTML = items.map(item => `
@@ -363,7 +571,7 @@ const TestReportApp = {
                      <div class="font-medium">${item.name}</div>
                      ${item.parent ? `<div class="text-xs text-gray">${item.parent}</div>` : ''}
                 </td>
-                ${this._renderStatusCell(view === 'functions' ? item : item.summary, view === 'functions')}
+                ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
             </tr>`).join('') || '<tr><td colspan="100%" class="text-center text-gray" style="padding: 2rem;">No results found.</td></tr>';
   },
 
@@ -385,7 +593,7 @@ const TestReportApp = {
 
     children.forEach(child => {
       this.state.variants.forEach(v => {
-        if (child.type === 'function') {
+        if (child.type === 'testCase') {
           const statusVal = child[v];
           const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
           if (status === 'pass') summary[v].passed++;
@@ -504,12 +712,12 @@ const TestReportApp = {
   },
 
   getChildType(parentType) {
-    const hierarchy = { 'root': 'module', 'module': 'testSuite', 'testSuite': 'package', 'package': 'class', 'class': 'function', 'function': null };
+    const hierarchy = { 'root': 'module', 'module': 'package', 'package': 'class', 'class': 'testCase', 'testCase': null };
     return hierarchy[parentType];
   },
 
   pluralize(type) {
-    const pluralMap = { 'module': 'modules', 'testSuite': 'testSuites', 'package': 'packages', 'class': 'classes', 'function': 'functions' };
+    const pluralMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
     return pluralMap[type];
   }
 };
@@ -537,8 +745,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Close on Escape key
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) {
-      modal.classList.add('hidden');
+    if (e.key === 'Escape') {
+      TestReportApp.closeAllDropdowns();
+      if (modal && !modal.classList.contains('hidden')) {
+        modal.classList.add('hidden');
+      }
     }
   });
 });
