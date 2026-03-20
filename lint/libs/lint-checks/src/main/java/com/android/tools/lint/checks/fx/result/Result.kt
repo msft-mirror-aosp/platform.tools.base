@@ -354,7 +354,7 @@ data class Result<out T, out FX>(val value: T, val effect: FX) {
 
 /** A [Point] is either a [Type.MethodRef] whose summary is polymorphic, or an [Instantiation] whose summary is monomorphic */
 sealed interface Point<out FX> {
-  data class Instantiation<out FX>(val method: Instantiable<FX>, val args: List<Type<FX>>) : Point<FX> {
-    override fun toString() = "$method @ (${args.joinToString()})"
+  data class Instantiation<out FX>(val subst: Subst<FX>, val type: Type<FX>) : Point<FX> {
+    override fun toString() = "⟨$type | ${showSubst(subst)}⟩"
   }
 }

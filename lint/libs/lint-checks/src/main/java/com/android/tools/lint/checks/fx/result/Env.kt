@@ -15,8 +15,6 @@
  */
 package com.android.tools.lint.checks.fx.result
 
-import com.android.tools.lint.checks.fx.result.Env.Companion.withReceiver
-import com.android.tools.lint.checks.fx.result.Env.Companion.withVar
 import com.android.tools.lint.checks.fx.utils.Lattice
 import com.android.tools.lint.checks.fx.utils.assoc
 import kotlinx.collections.immutable.PersistentList
@@ -132,10 +130,10 @@ internal data class Env<out FX>(
       typeBounds: TypeBounds<FX>,
       params: List<Type<FX>>,
       args: List<Type<FX>>,
-    ): Env<FX> {
-      var env = empty.unify(typeLattice, params, args)
+    ): Subst<FX> {
+      var env = emptySubst.unify(typeLattice, params, args)
       for ((param, arg) in params zip args) {
-        if (param !is Type.Sym.Param) continue
+        if (param !is Type.Sym.Name) continue
         val bounds = typeBounds[param] ?: continue
 
         fun unify(arg: Type.Application<FX>) = { bound: Type.Application<FX> ->
@@ -175,7 +173,7 @@ internal val emptySubst: Subst<Nothing> = persistentHashMapOf()
 
 private fun <FX> emptyEnv(): TermEnv<FX> = persistentMapOf()
 
-private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type<FX>>, args: List<Type<FX>>): Env<FX> {
+private fun <FX> Subst<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type<FX>>, args: List<Type<FX>>): Subst<FX> {
   val lastParam = params.lastOrNull()
   val arityChecks = params.size == args.size || lastParam is Type.Sym.Param && lastParam.name == "\$completion"
   return when {
@@ -185,26 +183,12 @@ private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, params: List<Type
   }
 }
 
-private fun <FX> Env<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rhs: Type<FX>): Env<FX> =
+private fun <FX> Subst<FX>.unify(typeLattice: Lattice<Type<FX>>, lhs: Type<FX>, rhs: Type<FX>): Subst<FX> =
   when (rhs) {
     is Type.Union -> rhs.cases.fold(this) { env, case -> env.unify(typeLattice, lhs, case) }
     else ->
       when (lhs) {
-        is Type.Sym.Param ->
-          when (val existing = varAt(lhs.name)) {
-            null -> withVar(lhs.name, rhs)
-            rhs -> this
-            // We assume the program's already type-checked. So calling this "unification" was
-            // misleading.
-            // It's about collecting concrete types that the parameters may instantiate to.
-            else -> withVar(lhs.name, typeLattice.joinOf(existing, rhs))
-          }
-        is Type.Sym.This ->
-          when (val existing = receiver(lhs.site)) {
-            null -> withReceiver(lhs.site, rhs)
-            rhs -> this
-            else -> withReceiver(lhs.site, typeLattice.joinOf(existing, rhs))
-          }
+        is Type.Sym.Name -> if (lhs == rhs) this else put(lhs, typeLattice.joinOf(this[lhs] ?: typeLattice.bottom, rhs))
         is Type.Application ->
           when (rhs) {
             is Type.Application ->
