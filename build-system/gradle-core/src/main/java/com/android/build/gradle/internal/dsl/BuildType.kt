@@ -45,8 +45,6 @@ import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
-import org.gradle.declarative.dsl.model.annotations.Configuring
-import org.gradle.declarative.dsl.model.annotations.Restricted
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
 abstract class DeclarativeBuildType
@@ -56,7 +54,6 @@ constructor(name: String, private val dslServices: DslServices, componentType: C
 
   override val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
 
-  @Configuring
   fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {
     configure.invoke(dependencies)
   }
@@ -408,7 +405,7 @@ constructor(
     action.invoke(shaders)
   }
 
-  @get:Restricted override var isMinifyEnabled: Boolean = false
+  override var isMinifyEnabled: Boolean = false
 
   /**
    * Whether shrinking of unused resources is enabled.

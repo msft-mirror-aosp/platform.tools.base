@@ -16,8 +16,6 @@
 
 package com.android.build.api.dsl
 
-import org.gradle.declarative.dsl.model.annotations.Restricted
-
 /**
  * Shared properties between [ApplicationProductFlavor] and [ApplicationDefaultConfig]
  *
@@ -29,21 +27,21 @@ interface ApplicationBaseFlavor : BaseFlavor, ApplicationVariantDimension {
    *
    * See [Set the Application ID](https://developer.android.com/studio/build/application-id.html)
    */
-  @get:Restricted var applicationId: String?
+  var applicationId: String?
 
   /**
    * Version code.
    *
    * See [Versioning Your Application](http://developer.android.com/tools/publishing/versioning.html)
    */
-  @get:Restricted var versionCode: Int?
+  var versionCode: Int?
 
   /**
    * Version name.
    *
    * See [Versioning Your Application](http://developer.android.com/tools/publishing/versioning.html)
    */
-  @get:Restricted var versionName: String?
+  var versionName: String?
 
   /**
    * The target SDK version. Setting this it will override previous calls of [targetSdk] and [targetSdkPreview] setters. Only one of
@@ -51,7 +49,7 @@ interface ApplicationBaseFlavor : BaseFlavor, ApplicationVariantDimension {
    *
    * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
    */
-  @get:Restricted var targetSdk: Int?
+  var targetSdk: Int?
 
   /** Configures all aspects regarding target sdk, see [TargetSdkSpec] for available options. */
   fun targetSdk(action: TargetSdkSpec.() -> Unit)
@@ -65,7 +63,7 @@ interface ApplicationBaseFlavor : BaseFlavor, ApplicationVariantDimension {
    *
    * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
    */
-  @get:Restricted var targetSdkPreview: String?
+  var targetSdkPreview: String?
 
   @Deprecated(message = "Will be removed in AGP 10.0, replaced with the targetSdk block") fun setTargetSdkVersion(targetSdkVersion: String?)
 
@@ -76,7 +74,7 @@ interface ApplicationBaseFlavor : BaseFlavor, ApplicationVariantDimension {
    *
    * See [uses-sdk element documentation](http://developer.android.com/guide/topics/manifest/uses-sdk-element.html).
    */
-  @get:Restricted var maxSdk: Int?
+  var maxSdk: Int?
 
   /** Configures all aspects regarding maxSdk, see [MaxSdkSpec] for available options. */
   fun maxSdk(action: MaxSdkSpec.() -> Unit)

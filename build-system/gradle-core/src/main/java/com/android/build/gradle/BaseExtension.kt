@@ -67,7 +67,6 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.SourceSet
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * Base extension for all Android plugins.
@@ -452,5 +451,5 @@ protected constructor(
   // extension interfaces via delegates.
   abstract val buildFeatures: BuildFeatures
 
-  @get:Restricted abstract var namespace: String?
+  abstract var namespace: String?
 }

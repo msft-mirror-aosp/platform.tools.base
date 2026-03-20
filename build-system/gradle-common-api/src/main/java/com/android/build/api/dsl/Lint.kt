@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import java.io.File
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * DSL object for configuring lint options. Example:
@@ -119,7 +118,7 @@ interface Lint {
   val checkOnly: MutableSet<String>
 
   /** Whether lint should set the exit code of the process if errors are found */
-  @get:Restricted var abortOnError: Boolean
+  var abortOnError: Boolean
 
   /** Whether lint should display full paths in the error output. By default the paths are relative to the path lint was invoked from. */
   var absolutePaths: Boolean
@@ -173,7 +172,7 @@ interface Lint {
    * Whether lint should check for fatal errors during release builds. Default is true. If issues with severity "fatal" are found, the
    * release build is aborted.
    */
-  @get:Restricted var checkReleaseBuilds: Boolean
+  var checkReleaseBuilds: Boolean
 
   /**
    * The default config file to use as a fallback. This corresponds to a `lint.xml` file with severities etc to use when a project does not

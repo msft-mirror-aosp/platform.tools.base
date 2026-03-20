@@ -550,12 +550,12 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationBaseFlavor extends com.android.build.api.dsl.BaseFlavor com.android.build.api.dsl.ApplicationVariantDimension {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getApplicationId();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getMaxSdk();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getTargetSdk();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTargetSdkPreview();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getVersionCode();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getVersionName();
+    method @InaccessibleFromKotlin public String? getApplicationId();
+    method @InaccessibleFromKotlin public Integer? getMaxSdk();
+    method @InaccessibleFromKotlin public Integer? getTargetSdk();
+    method @InaccessibleFromKotlin public String? getTargetSdkPreview();
+    method @InaccessibleFromKotlin public Integer? getVersionCode();
+    method @InaccessibleFromKotlin public String? getVersionName();
     method public void maxSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.MaxSdkSpec,kotlin.Unit> action);
     method @Deprecated public void maxSdkVersion(int maxSdkVersion);
     method @InaccessibleFromKotlin public void setApplicationId(String?);
@@ -568,20 +568,20 @@ package com.android.build.api.dsl {
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
     method @Deprecated public void targetSdkVersion(int targetSdkVersion);
     method @Deprecated public void targetSdkVersion(String? targetSdkVersion);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? applicationId;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? maxSdk;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? targetSdk;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? targetSdkPreview;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? versionCode;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? versionName;
+    property public abstract String? applicationId;
+    property public abstract Integer? maxSdk;
+    property public abstract Integer? targetSdk;
+    property public abstract String? targetSdkPreview;
+    property public abstract Integer? versionCode;
+    property public abstract String? versionName;
   }
 
   public interface ApplicationBuildFeatures extends com.android.build.api.dsl.BuildFeatures {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getDataBinding();
+    method @InaccessibleFromKotlin public Boolean? getDataBinding();
     method @InaccessibleFromKotlin public Boolean? getMlModelBinding();
     method @InaccessibleFromKotlin public void setDataBinding(Boolean?);
     method @InaccessibleFromKotlin public void setMlModelBinding(Boolean?);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? dataBinding;
+    property public abstract Boolean? dataBinding;
     property public abstract Boolean? mlModelBinding;
   }
 
@@ -697,18 +697,18 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationVariantDimension extends com.android.build.api.dsl.VariantDimension {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getApplicationIdSuffix();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin public String? getApplicationIdSuffix();
+    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getVersionNameSuffix();
+    method @InaccessibleFromKotlin public String? getVersionNameSuffix();
     method @InaccessibleFromKotlin public void setApplicationIdSuffix(String?);
     method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     method @InaccessibleFromKotlin public void setVersionNameSuffix(String?);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? applicationIdSuffix;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? multiDexEnabled;
+    property public abstract String? applicationIdSuffix;
+    property public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? versionNameSuffix;
+    property public abstract String? versionNameSuffix;
   }
 
   public interface AssetPackBundleExtension {
@@ -751,8 +751,8 @@ package com.android.build.api.dsl {
   }
 
   public interface BaseFlavor extends com.android.build.api.dsl.VariantDimension {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getMinSdk();
-    method @InaccessibleFromKotlin @Deprecated @org.gradle.declarative.dsl.model.annotations.Restricted public String? getMinSdkPreview();
+    method @InaccessibleFromKotlin public Integer? getMinSdk();
+    method @InaccessibleFromKotlin @Deprecated public String? getMinSdkPreview();
     method public String getName();
     method @InaccessibleFromKotlin public Boolean? getRenderscriptNdkModeEnabled();
     method @InaccessibleFromKotlin public Boolean? getRenderscriptSupportModeBlasEnabled();
@@ -762,7 +762,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String? getTestApplicationId();
     method @InaccessibleFromKotlin public Boolean? getTestFunctionalTest();
     method @InaccessibleFromKotlin public Boolean? getTestHandleProfiling();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTestInstrumentationRunner();
+    method @InaccessibleFromKotlin public String? getTestInstrumentationRunner();
     method @InaccessibleFromKotlin public java.util.Map<java.lang.String,java.lang.String> getTestInstrumentationRunnerArguments();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.VectorDrawables getVectorDrawables();
     method @InaccessibleFromKotlin public Boolean? getWearAppUnbundled();
@@ -795,8 +795,8 @@ package com.android.build.api.dsl {
     method @Deprecated public void testInstrumentationRunnerArgument(String key, String value);
     method @Deprecated public void testInstrumentationRunnerArguments(java.util.Map<java.lang.String,java.lang.String> args);
     method public void vectorDrawables(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.VectorDrawables,kotlin.Unit> action);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? minSdk;
-    property @Deprecated @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? minSdkPreview;
+    property public abstract Integer? minSdk;
+    property @Deprecated public abstract String? minSdkPreview;
     property public abstract Boolean? renderscriptNdkModeEnabled;
     property public abstract Boolean? renderscriptSupportModeBlasEnabled;
     property public abstract Boolean? renderscriptSupportModeEnabled;
@@ -805,7 +805,7 @@ package com.android.build.api.dsl {
     property public abstract String? testApplicationId;
     property public abstract Boolean? testFunctionalTest;
     property public abstract Boolean? testHandleProfiling;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? testInstrumentationRunner;
+    property public abstract String? testInstrumentationRunner;
     property public abstract java.util.Map<java.lang.String,java.lang.String> testInstrumentationRunnerArguments;
     property public abstract com.android.build.api.dsl.VectorDrawables vectorDrawables;
     property public abstract Boolean? wearAppUnbundled;
@@ -820,14 +820,14 @@ package com.android.build.api.dsl {
   }
 
   public interface BuildFeatures extends org.gradle.api.plugins.ExtensionAware {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getAidl();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getBuildConfig();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getCompose();
+    method @InaccessibleFromKotlin public Boolean? getAidl();
+    method @InaccessibleFromKotlin public Boolean? getBuildConfig();
+    method @InaccessibleFromKotlin public Boolean? getCompose();
     method @InaccessibleFromKotlin public Boolean? getPrefab();
     method @InaccessibleFromKotlin @Deprecated public Boolean? getRenderScript();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getResValues();
+    method @InaccessibleFromKotlin public Boolean? getResValues();
     method @InaccessibleFromKotlin public Boolean? getShaders();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getViewBinding();
+    method @InaccessibleFromKotlin public Boolean? getViewBinding();
     method @InaccessibleFromKotlin public void setAidl(Boolean?);
     method @InaccessibleFromKotlin public void setBuildConfig(Boolean?);
     method @InaccessibleFromKotlin public void setCompose(Boolean?);
@@ -836,14 +836,14 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setResValues(Boolean?);
     method @InaccessibleFromKotlin public void setShaders(Boolean?);
     method @InaccessibleFromKotlin public void setViewBinding(Boolean?);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? aidl;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? buildConfig;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? compose;
+    property public abstract Boolean? aidl;
+    property public abstract Boolean? buildConfig;
+    property public abstract Boolean? compose;
     property public abstract Boolean? prefab;
     property @Deprecated public abstract Boolean? renderScript;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? resValues;
+    property public abstract Boolean? resValues;
     property public abstract Boolean? shaders;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? viewBinding;
+    property public abstract Boolean? viewBinding;
   }
 
   public interface BuildType extends org.gradle.api.Named org.gradle.api.plugins.ExtensionAware com.android.build.api.dsl.VariantDimension {
@@ -854,7 +854,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.VcsInfo getVcsInfo();
     method public void initWith(com.android.build.api.dsl.BuildType that);
     method @InaccessibleFromKotlin public boolean isJniDebuggable();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean isMinifyEnabled();
+    method @InaccessibleFromKotlin public boolean isMinifyEnabled();
     method @InaccessibleFromKotlin public boolean isPseudoLocalesEnabled();
     method @InaccessibleFromKotlin public boolean isShrinkResources();
     method @InaccessibleFromKotlin @Deprecated public boolean isTestCoverageEnabled();
@@ -874,7 +874,7 @@ package com.android.build.api.dsl {
     property public abstract boolean enableAndroidTestCoverage;
     property public abstract boolean enableUnitTestCoverage;
     property public abstract boolean isJniDebuggable;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isMinifyEnabled;
+    property public abstract boolean isMinifyEnabled;
     property public abstract boolean isPseudoLocalesEnabled;
     property public abstract boolean isShrinkResources;
     property @Deprecated public abstract boolean isTestCoverageEnabled;
@@ -901,9 +901,9 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.BundleCountrySet getCountrySet();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.BundleDensity getDensity();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceGroup getDeviceGroup();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.file.RegularFileProperty getDeviceTargetingConfig();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.file.RegularFileProperty getDeviceTargetingConfig();
     method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.BundleDeviceTier getDeviceTier();
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.file.DirectoryProperty getIntegrityConfigDir();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.file.DirectoryProperty getIntegrityConfigDir();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.BundleLanguage getLanguage();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.BundleStoreArchive getStoreArchive();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.BundleTexture getTexture();
@@ -916,9 +916,9 @@ package com.android.build.api.dsl {
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleCountrySet countrySet;
     property public abstract com.android.build.api.dsl.BundleDensity density;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceGroup deviceGroup;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.file.RegularFileProperty deviceTargetingConfig;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.file.RegularFileProperty deviceTargetingConfig;
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BundleDeviceTier deviceTier;
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.file.DirectoryProperty integrityConfigDir;
+    property @org.gradle.api.Incubating public abstract org.gradle.api.file.DirectoryProperty integrityConfigDir;
     property public abstract com.android.build.api.dsl.BundleLanguage language;
     property public abstract com.android.build.api.dsl.BundleStoreArchive storeArchive;
     property public abstract com.android.build.api.dsl.BundleTexture texture;
@@ -1044,15 +1044,15 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public String getBuildToolsVersion();
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.BuildType> getBuildTypes();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.CompileOptions getCompileOptions();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Integer? getCompileSdk();
+    method @InaccessibleFromKotlin public Integer? getCompileSdk();
     method @InaccessibleFromKotlin public Integer? getCompileSdkExtension();
     method @InaccessibleFromKotlin public Integer? getCompileSdkMinor();
     method @InaccessibleFromKotlin public String? getCompileSdkPreview();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ComposeOptions getComposeOptions();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.DataBinding getDataBinding();
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.DefaultConfig getDefaultConfig();
-    method @org.gradle.declarative.dsl.model.annotations.Restricted public java.io.File getDefaultProguardFile(String name);
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getEnableKotlin();
+    method public java.io.File getDefaultProguardFile(String name);
+    method @InaccessibleFromKotlin public boolean getEnableKotlin();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.Object> getExperimentalProperties();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ExternalNativeBuild getExternalNativeBuild();
     method @InaccessibleFromKotlin public java.util.List<java.lang.String> getFlavorDimensions();
@@ -1060,7 +1060,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating public com.android.build.api.dsl.JacocoOptions getJacoco();
     method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.Lint getLint();
     method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public com.android.build.api.dsl.LintOptions getLintOptions();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getNamespace();
+    method @InaccessibleFromKotlin public String? getNamespace();
     method @InaccessibleFromKotlin public String? getNdkPath();
     method @InaccessibleFromKotlin public String getNdkVersion();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Packaging getPackaging();
@@ -1093,14 +1093,14 @@ package com.android.build.api.dsl {
     property public abstract String buildToolsVersion;
     property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.NamedDomainObjectContainer<? extends com.android.build.api.dsl.BuildType> buildTypes;
     property public abstract com.android.build.api.dsl.CompileOptions compileOptions;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Integer? compileSdk;
+    property public abstract Integer? compileSdk;
     property public abstract Integer? compileSdkExtension;
     property public abstract Integer? compileSdkMinor;
     property public abstract String? compileSdkPreview;
     property public abstract com.android.build.api.dsl.ComposeOptions composeOptions;
     property public abstract com.android.build.api.dsl.DataBinding dataBinding;
     property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.DefaultConfig defaultConfig;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean enableKotlin;
+    property public abstract boolean enableKotlin;
     property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.Object> experimentalProperties;
     property public abstract com.android.build.api.dsl.ExternalNativeBuild externalNativeBuild;
     property public abstract java.util.List<java.lang.String> flavorDimensions;
@@ -1108,7 +1108,7 @@ package com.android.build.api.dsl {
     property @Deprecated @org.gradle.api.Incubating public abstract com.android.build.api.dsl.JacocoOptions jacoco;
     property @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.Lint lint;
     property @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract com.android.build.api.dsl.LintOptions lintOptions;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? namespace;
+    property public abstract String? namespace;
     property public abstract String? ndkPath;
     property public abstract String ndkVersion;
     property public abstract com.android.build.api.dsl.Packaging packaging;
@@ -1125,20 +1125,20 @@ package com.android.build.api.dsl {
   }
 
   public interface CompileOptions {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String getEncoding();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.JavaVersion getSourceCompatibility();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public org.gradle.api.JavaVersion getTargetCompatibility();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean isCoreLibraryDesugaringEnabled();
+    method @InaccessibleFromKotlin public String getEncoding();
+    method @InaccessibleFromKotlin public org.gradle.api.JavaVersion getSourceCompatibility();
+    method @InaccessibleFromKotlin public org.gradle.api.JavaVersion getTargetCompatibility();
+    method @InaccessibleFromKotlin public boolean isCoreLibraryDesugaringEnabled();
     method @InaccessibleFromKotlin public void setCoreLibraryDesugaringEnabled(boolean);
     method @InaccessibleFromKotlin public void setEncoding(String);
     method @InaccessibleFromKotlin public void setSourceCompatibility(org.gradle.api.JavaVersion);
     method @InaccessibleFromKotlin public void setTargetCompatibility(org.gradle.api.JavaVersion);
     method public void sourceCompatibility(Object sourceCompatibility);
     method public void targetCompatibility(Object targetCompatibility);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String encoding;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean isCoreLibraryDesugaringEnabled;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion sourceCompatibility;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract org.gradle.api.JavaVersion targetCompatibility;
+    property public abstract String encoding;
+    property public abstract boolean isCoreLibraryDesugaringEnabled;
+    property public abstract org.gradle.api.JavaVersion sourceCompatibility;
+    property public abstract org.gradle.api.JavaVersion targetCompatibility;
   }
 
   public interface ComposeOptions {
@@ -1762,13 +1762,13 @@ package com.android.build.api.dsl {
     method public Object consumerProguardFiles(java.lang.Object... proguardFiles);
     method @InaccessibleFromKotlin public com.android.build.api.dsl.AarMetadata getAarMetadata();
     method @InaccessibleFromKotlin public java.util.List<java.io.File> getConsumerProguardFiles();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public Boolean? getMultiDexEnabled();
+    method @InaccessibleFromKotlin public Boolean? getMultiDexEnabled();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.ApkSigningConfig? getSigningConfig();
     method @InaccessibleFromKotlin public void setMultiDexEnabled(Boolean?);
     method @InaccessibleFromKotlin public void setSigningConfig(com.android.build.api.dsl.ApkSigningConfig?);
     property public abstract com.android.build.api.dsl.AarMetadata aarMetadata;
     property public abstract java.util.List<java.io.File> consumerProguardFiles;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract Boolean? multiDexEnabled;
+    property public abstract Boolean? multiDexEnabled;
     property public abstract com.android.build.api.dsl.ApkSigningConfig? signingConfig;
   }
 
@@ -2335,15 +2335,15 @@ package com.android.build.api.dsl {
   }
 
   public interface TestedExtension {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String getTestBuildType();
+    method @InaccessibleFromKotlin public String getTestBuildType();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.TestFixtures getTestFixtures();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public String? getTestNamespace();
+    method @InaccessibleFromKotlin public String? getTestNamespace();
     method @InaccessibleFromKotlin public void setTestBuildType(String);
     method @InaccessibleFromKotlin public void setTestNamespace(String?);
     method @org.gradle.api.Incubating public void testFixtures(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TestFixtures,kotlin.Unit> action);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String testBuildType;
+    property public abstract String testBuildType;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.TestFixtures testFixtures;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract String? testNamespace;
+    property public abstract String? testNamespace;
   }
 
   public interface UnitTestOptions {

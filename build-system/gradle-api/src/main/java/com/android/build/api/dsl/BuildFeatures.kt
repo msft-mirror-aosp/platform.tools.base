@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * A list of build features that can be disabled or enabled in an Android project.
@@ -32,7 +31,7 @@ interface BuildFeatures : ExtensionAware {
    *
    * See [AIDL](http://developer.android.com/r/tools/reference/dsl/buildfeatures/aidl).
    */
-  @get:Restricted var aidl: Boolean?
+  var aidl: Boolean?
 
   /**
    * Flag to enable Compose feature. Setting the value to `null` resets to the default value
@@ -41,7 +40,7 @@ interface BuildFeatures : ExtensionAware {
    *
    * See [Compose](http://developer.android.com/compose).
    */
-  @get:Restricted var compose: Boolean?
+  var compose: Boolean?
 
   /**
    * Flag to enable/disable generation of the `BuildConfig` class.
@@ -50,7 +49,7 @@ interface BuildFeatures : ExtensionAware {
    *
    * See [build config fields](http://developer.android.com/r/tools/build-config-fields).
    */
-  @get:Restricted var buildConfig: Boolean?
+  var buildConfig: Boolean?
 
   /**
    * Flag to enable/disable import of Prefab dependencies from AARs.
@@ -77,7 +76,7 @@ interface BuildFeatures : ExtensionAware {
    * Setting the value to `null` resets to the default value. Default value is `false`. See
    * [Resources](http://developer.android.com/r/tools/res-values).
    */
-  @get:Restricted var resValues: Boolean?
+  var resValues: Boolean?
 
   /**
    * Flag to enable Shader compilation.
@@ -101,5 +100,5 @@ interface BuildFeatures : ExtensionAware {
    *
    * See [View Binding Library](https://developer.android.com/viewbinding)
    */
-  @get:Restricted var viewBinding: Boolean?
+  var viewBinding: Boolean?
 }

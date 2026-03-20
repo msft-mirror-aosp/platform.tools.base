@@ -51,14 +51,14 @@ package com.android.build.api.dsl {
   }
 
   public interface Lint {
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getAbortOnError();
+    method @InaccessibleFromKotlin public boolean getAbortOnError();
     method @InaccessibleFromKotlin public boolean getAbsolutePaths();
     method @InaccessibleFromKotlin public java.io.File? getBaseline();
     method @InaccessibleFromKotlin public boolean getCheckAllWarnings();
     method @InaccessibleFromKotlin public boolean getCheckDependencies();
     method @InaccessibleFromKotlin public boolean getCheckGeneratedSources();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getCheckOnly();
-    method @InaccessibleFromKotlin @org.gradle.declarative.dsl.model.annotations.Restricted public boolean getCheckReleaseBuilds();
+    method @InaccessibleFromKotlin public boolean getCheckReleaseBuilds();
     method @InaccessibleFromKotlin public boolean getCheckTestSources();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getDisable();
     method @InaccessibleFromKotlin public java.util.Set<java.lang.String> getEnable();
@@ -114,14 +114,14 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setXmlOutput(java.io.File?);
     method @InaccessibleFromKotlin public void setXmlReport(boolean);
     method public void targetSdk(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.TargetSdkSpec,kotlin.Unit> action);
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean abortOnError;
+    property public abstract boolean abortOnError;
     property public abstract boolean absolutePaths;
     property public abstract java.io.File? baseline;
     property public abstract boolean checkAllWarnings;
     property public abstract boolean checkDependencies;
     property public abstract boolean checkGeneratedSources;
     property public abstract java.util.Set<java.lang.String> checkOnly;
-    property @org.gradle.declarative.dsl.model.annotations.Restricted public abstract boolean checkReleaseBuilds;
+    property public abstract boolean checkReleaseBuilds;
     property public abstract boolean checkTestSources;
     property public abstract java.util.Set<java.lang.String> disable;
     property public abstract java.util.Set<java.lang.String> enable;

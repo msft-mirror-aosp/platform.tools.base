@@ -28,8 +28,6 @@ import com.android.builder.model.BaseConfig
 import javax.inject.Inject
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
-import org.gradle.declarative.dsl.model.annotations.Configuring
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 abstract class DeclarativeProductFlavor @Inject constructor(name: String, dslServices: DslServices) :
   ProductFlavor(name, dslServices), DeclarativeApplicationFlavor, DeclarativeLibraryFlavor {
@@ -37,7 +35,6 @@ abstract class DeclarativeProductFlavor @Inject constructor(name: String, dslSer
     dslServices.newInstance(ProductFlavorDependenciesExtension::class.java)
   }
 
-  @Configuring
   fun dependencies(configure: ProductFlavorDependenciesExtension.() -> Unit) {
     configure.invoke(dependencies)
   }
@@ -109,7 +106,6 @@ abstract class ProductFlavor @Inject constructor(name: String, dslServices: DslS
       field = value
     }
 
-  @get:Restricted
   override var dimension: String?
     get() = _dimension ?: internalDimensionDefault
     set(value) {
