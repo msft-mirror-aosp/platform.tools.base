@@ -494,7 +494,6 @@ com/android/tools/build/gradle
   META-INF/gradle-plugins/com.android.kotlin.multiplatform.library.properties
   META-INF/gradle-plugins/com.android.library.properties
   META-INF/gradle-plugins/com.android.lint.properties
-  META-INF/gradle-plugins/com.android.privacy-sandbox-sdk.properties
   META-INF/gradle-plugins/com.android.test.properties
   META-INF/kotlin-multiplatform-models.kotlin_module
   META-INF/profgen.kotlin_module
@@ -606,7 +605,6 @@ com/android/tools/build/gradle
   com/android/build/gradle/internal/ndk/
   com/android/build/gradle/internal/packaging/
   com/android/build/gradle/internal/plugins/
-  com/android/build/gradle/internal/privaysandboxsdk/
   com/android/build/gradle/internal/process/
   com/android/build/gradle/internal/profile/
   com/android/build/gradle/internal/publishing/

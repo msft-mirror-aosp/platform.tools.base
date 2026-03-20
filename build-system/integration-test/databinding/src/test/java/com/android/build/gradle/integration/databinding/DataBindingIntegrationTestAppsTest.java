@@ -45,9 +45,6 @@ public class DataBindingIntegrationTestAppsTest {
                         .fromDataBindingIntegrationTest(projectName, useAndroidX)
                         .addGradleProperties(
                                 BooleanOption.USE_ANDROID_X.getPropertyName() + "=" + useAndroidX)
-                        .addGradleProperties(
-                                BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName()
-                                        + "=false")
                         // b/116109681 - Enforce unique package names disabled in this test due to
                         // test project
                         // containing violation.

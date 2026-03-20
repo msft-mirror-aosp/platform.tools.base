@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.core.dsl.ComponentDslInfo
 import com.android.build.gradle.internal.tasks.factory.GlobalTaskCreationAction
-import com.android.build.gradle.internal.tasks.factory.PrivacySandboxSdkVariantTaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.TaskCreationAction
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.tasks.PackageAndroidArtifact
@@ -183,12 +182,7 @@ class TaskMethodModifiersAndAnnotationsTest {
 
   @Test
   fun `check that task creation actions should extend a set of base task creation actions`() {
-    val permittedCreationActionTypes =
-      listOf(
-        VariantTaskCreationAction::class.java,
-        GlobalTaskCreationAction::class.java,
-        PrivacySandboxSdkVariantTaskCreationAction::class.java,
-      )
+    val permittedCreationActionTypes = listOf(VariantTaskCreationAction::class.java, GlobalTaskCreationAction::class.java)
     val violations =
       taskCreationActions
         .filter { creationAction ->
@@ -360,7 +354,6 @@ class TaskMethodModifiersAndAnnotationsTest {
         "getMergedArtProfileMetadata  @org.gradle.api.tasks.PathSensitive(NAME_ONLY)",
         "getResourceFiles  @org.gradle.api.tasks.PathSensitive(RELATIVE)",
         "getVersionControlInfoFile  @org.gradle.api.tasks.PathSensitive(NAME_ONLY)",
-        "getPrivacySandboxRuntimeEnabledSdkTable  @org.gradle.api.tasks.PathSensitive(NAME_ONLY)",
       )
   }
 

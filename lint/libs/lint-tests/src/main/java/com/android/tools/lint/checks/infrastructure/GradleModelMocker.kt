@@ -911,8 +911,6 @@ constructor(
           updateProjectType(LintModelModuleType.FEATURE, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "apply plugin: 'com.android.instantapp'" ->
           updateProjectType(LintModelModuleType.INSTANT_APP, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
-        "apply plugin: 'com.android.privacy-sandbox-sdk'" ->
-          updateProjectType(LintModelModuleType.PRIVACY_SANDBOX_SDK, hasJavaOrJavaLibraryPlugin = false, isLibrary = false)
         "java",
         "id('java')",
         "apply plugin: 'java'" -> updateProjectType(LintModelModuleType.JAVA_LIBRARY, hasJavaOrJavaLibraryPlugin = true, isLibrary = false)

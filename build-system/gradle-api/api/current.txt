@@ -3121,13 +3121,11 @@ package com.android.build.api.variant {
     method @InaccessibleFromKotlin public String? getCodeName();
     method @InaccessibleFromKotlin public String? getName();
     method @InaccessibleFromKotlin public int getScreenDensity();
-    method @InaccessibleFromKotlin public boolean getSupportsPrivacySandbox();
     property public java.util.List<java.lang.String> abis;
     property public int apiLevel;
     property public String? codeName;
     property public String? name;
     property public int screenDensity;
-    property public boolean supportsPrivacySandbox;
   }
 
   @org.gradle.api.Incubating public static final class DeviceSpec.Builder {
@@ -3138,19 +3136,16 @@ package com.android.build.api.variant {
     method @InaccessibleFromKotlin public String? getCodeName();
     method @InaccessibleFromKotlin public String? getName();
     method @InaccessibleFromKotlin public int getScreenDensity();
-    method @InaccessibleFromKotlin public boolean getSupportsPrivacySandbox();
     method public com.android.build.api.variant.DeviceSpec.Builder setAbis(java.util.List<java.lang.String> abis);
     method public com.android.build.api.variant.DeviceSpec.Builder setApiLevel(int apiLevel);
     method public com.android.build.api.variant.DeviceSpec.Builder setCodeName(String? codeName);
     method public com.android.build.api.variant.DeviceSpec.Builder setName(String? name);
     method public com.android.build.api.variant.DeviceSpec.Builder setScreenDensity(int screenDensity);
-    method public com.android.build.api.variant.DeviceSpec.Builder setSupportsPrivacySandbox(boolean supportsPrivacySandbox);
     property public java.util.List<java.lang.String> abis;
     property public int apiLevel;
     property public String? codeName;
     property public String? name;
     property public int screenDensity;
-    property public boolean supportsPrivacySandbox;
   }
 
   public interface DeviceTest extends com.android.build.api.variant.GeneratesTestApk com.android.build.api.variant.HasAndroidResources com.android.build.api.variant.TestComponent {
@@ -3931,11 +3926,6 @@ package com.android.build.gradle.api {
 
   public final class KotlinMultiplatformAndroidPlugin extends com.android.build.gradle.BasePlugin {
     ctor public KotlinMultiplatformAndroidPlugin();
-  }
-
-  @org.gradle.api.Incubating public final class PrivacySandboxSdkPlugin implements org.gradle.api.Plugin<org.gradle.api.Project> {
-    ctor public PrivacySandboxSdkPlugin();
-    method public void apply(org.gradle.api.Project project);
   }
 
 }

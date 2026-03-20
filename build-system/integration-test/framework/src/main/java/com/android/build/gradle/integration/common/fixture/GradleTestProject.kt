@@ -117,7 +117,6 @@ constructor(
   private val withKotlinGradlePlugin: Boolean,
   private val withKspGradlePlugin: Boolean,
   private val withComposeCompilerGradlePlugin: Boolean,
-  private val withAndroidxPrivacySandboxLibraryPlugin: Boolean,
   private val withExtraPluginClasspath: String?,
   private val withBuiltInKotlinSupport: Boolean,
   private val withPluginManagementBlock: Boolean,
@@ -461,7 +460,6 @@ constructor(
     withKotlinGradlePlugin = rootProject.withKotlinGradlePlugin,
     withKspGradlePlugin = rootProject.withKspGradlePlugin,
     withComposeCompilerGradlePlugin = rootProject.withComposeCompilerGradlePlugin,
-    withAndroidxPrivacySandboxLibraryPlugin = rootProject.withAndroidxPrivacySandboxLibraryPlugin,
     withExtraPluginClasspath = rootProject.withExtraPluginClasspath,
     withBuiltInKotlinSupport = rootProject.withBuiltInKotlinSupport,
     withPluginManagementBlock = rootProject.withPluginManagementBlock,
@@ -684,7 +682,6 @@ ext {
         withKotlinGradlePlugin,
         withKspGradlePlugin,
         withComposeCompilerGradlePlugin,
-        withAndroidxPrivacySandboxLibraryPlugin,
         withExtraPluginClasspath,
         withBuiltInKotlinSupport,
       )

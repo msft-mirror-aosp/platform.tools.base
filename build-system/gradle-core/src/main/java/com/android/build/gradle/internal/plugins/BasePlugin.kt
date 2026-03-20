@@ -603,10 +603,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             ?.name
             ?.let { AnalyticsUtil.toProto(it).number }
             ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
-          ModulePropertyKey.Dependencies[modulePropertyKey]
-            ?.name
-            ?.let { AnalyticsUtil.toProto(it).number }
-            ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
           ModulePropertyKey.OptionalBoolean[modulePropertyKey]
             ?.name
             ?.let { AnalyticsUtil.toProto(it).number }

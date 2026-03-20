@@ -39,7 +39,6 @@ fun getDeviceSpec(device: DeviceConnector): DeviceSpec {
     .setApiLevel(device.apiLevel)
     .setCodeName(device.apiCodeName)
     .setAbis(device.abis)
-    .setSupportsPrivacySandbox(device.supportsPrivacySandbox)
     .setScreenDensity(device.density)
     .build()
 }

@@ -126,10 +126,6 @@ gradlePlugin {
             id = "com.android.fused-library"
             implementationClass = "com.android.build.gradle.api.FusedLibraryPlugin"
         }
-        comAndroidSdkLibrary {
-            id = "com.android.privacy-sandbox-sdk"
-            implementationClass = "com.android.build.gradle.api.PrivacySandboxSdkPlugin"
-        }
         comAndroidKotlinMultiplatform {
             id = "com.android.kotlin.multiplatform.library"
             implementationClass = "com.android.build.gradle.api.KotlinMultiplatformAndroidPlugin"

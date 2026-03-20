@@ -1449,14 +1449,7 @@ public class ManifestMerger2 {
          * annotations will not be removed as they can be useful when later importing the resulting
          * merged android manifest into an application.
          */
-        LIBRARY(false, false),
-
-        /**
-         * Privacy sandbox library merging similar to fused library merging except that resulting
-         * manifest is expected to be processed by aapt2 and shipped into an .asb file to the Play
-         * Store.
-         */
-        PRIVACY_SANDBOX_LIBRARY(true, true);
+        LIBRARY(false, false);
 
         private final boolean isKeepToolsAttributeRequired;
         private final boolean isFullPlaceholderSubstitutionRequired;

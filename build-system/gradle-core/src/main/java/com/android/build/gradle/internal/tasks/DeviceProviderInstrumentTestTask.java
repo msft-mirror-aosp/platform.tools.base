@@ -640,11 +640,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @PathSensitive(PathSensitivity.RELATIVE)
     public abstract ConfigurableFileCollection getBuddyApks();
 
-    @InputFiles
-    @PathSensitive(PathSensitivity.ABSOLUTE)
-    @Optional
-    public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
-
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();
 

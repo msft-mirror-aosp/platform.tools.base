@@ -1280,7 +1280,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
       "com.android.ai-pack",
       "com.android.lint",
       "com.android.fused-library",
-      "com.android.privacy-sandbox-sdk",
       "com.android.kotlin.multiplatform.library",
       "com.android.tools.build" -> {
         if ("gradle" == artifactId || "$groupId$GRADLE_PLUGIN_ARTIFACT_SUFFIX" == artifactId) {
@@ -3585,7 +3584,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
         "com.android.lint",
         "com.android.test",
         "com.android.fused-library",
-        "com.android.privacy-sandbox-sdk",
         "com.android.kotlin.multiplatform.library",
         // from build-system/gradle-settings/build.gradle
         "com.android.settings",
@@ -4300,7 +4298,6 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
             LintModelModuleType.DYNAMIC_FEATURE -> true
             LintModelModuleType.TEST -> false
             LintModelModuleType.INSTANT_APP -> false
-            LintModelModuleType.PRIVACY_SANDBOX_SDK -> false
             LintModelModuleType.FUSED_LIBRARY -> false
           }
       }

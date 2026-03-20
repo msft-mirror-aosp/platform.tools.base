@@ -218,12 +218,6 @@ abstract class PackageAndroidArtifact : NewIncrementalTask() {
   @get:InputFiles
   abstract val versionControlInfoFile: RegularFileProperty
 
-  @get:Optional
-  @get:PathSensitive(PathSensitivity.NAME_ONLY)
-  @get:InputFiles
-  @get:Incremental
-  abstract val privacySandboxRuntimeEnabledSdkTable: RegularFileProperty?
-
   @get:Input abstract val pageSize: Property<Long>
 
   @get:Input abstract val buildAllAbis: Property<Boolean>
