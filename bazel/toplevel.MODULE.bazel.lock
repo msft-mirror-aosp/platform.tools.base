@@ -6322,7 +6322,7 @@
     "@@rules_rust+//crate_universe:extensions.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "WJ6Y6XzNtjZgZmulxy1tgSSu5SVM0b9e78wjt6q1Cdo=",
-        "usagesDigest": "ut7a6Mckuda3kgjD8qFQ+sWS8nGAQwMPoiaZFp2xv1E=",
+        "usagesDigest": "Z39IX3+Dy3HdebCPL7+fsKxHAQ/NugvsuC0uVsn45aY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {
