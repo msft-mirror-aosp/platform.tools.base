@@ -622,6 +622,7 @@ maven_repository(
         "@maven//:org.eclipse.aether.aether-transport-http",
         "@maven//:org.glassfish.jaxb.jaxb-xjc",
         "@maven//:org.gradle.gradle-tooling-api",
+        "@maven//:org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.0.0",
         "@maven//:org.jacoco.org.jacoco.agent",
         "@maven//:org.jacoco.org.jacoco.report",
         "@maven//:org.jetbrains.dokka.dokka-core",

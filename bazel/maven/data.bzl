@@ -1109,6 +1109,7 @@ _CLASS_JARS = [
     "org.gradle.experimental.plugin-ecosystem:org.gradle.experimental.plugin-ecosystem.gradle.plugin:pom:0.1.54",  # for declarative testing
     "org.gradle:gradle-core:4.2.1",
     "org.gradle:gradle-tooling-api:9.2.1",
+    "org.gradle.plugin-compatibility:org.gradle.plugin-compatibility.gradle.plugin:pom:1.0.0",  # for AGP configuration cache compatibility
     "org.gradle.toolchains.foojay-resolver-convention:org.gradle.toolchains.foojay-resolver-convention.gradle.plugin:pom:1.0.0",
     "org.hamcrest:hamcrest-core:2.2",
     "org.iq80.snappy:snappy:0.4",
