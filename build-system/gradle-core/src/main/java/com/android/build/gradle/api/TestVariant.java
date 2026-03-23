@@ -18,10 +18,12 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import java.util.List;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskProvider;
+
+import java.util.List;
 
 /** A Build variant and all its public data. */
 @Deprecated
@@ -62,6 +64,7 @@ public interface TestVariant extends ApkVariant {
      *
      * @deprecated Use {@link #getProviderInstrumentTestProviders()}
      */
+    @Deprecated
     @NonNull
     List<? extends DefaultTask> getProviderInstrumentTests();
 
