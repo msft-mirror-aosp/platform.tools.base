@@ -95,3 +95,20 @@ def studio_win(build_env: bazel.BuildEnv):
     return
 
   raise studio.BazelTestError(exit_code=test_result.exit_code)
+
+
+def studio_win_canary(build_env: bazel.BuildEnv):
+  """Runs Windows canary build."""
+  process = build_env.bazel_build(
+      '--config=ci',
+      '--config=remote-exec',
+      '--build_tag_filters=-no_windows',
+      '--tool_tag=studio-win-canary',
+      '--',
+      '//tools/...',
+      '-//tools/vendor/google3/aswb/...',
+      '-//tools/vendor/google/aswb/...',
+      '-//tools/adt/idea/aswb/...',
+  )
+  if process.returncode != 0:
+    raise studio.BazelTestError(exit_code=process.returncode)

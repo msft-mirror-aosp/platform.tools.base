@@ -161,6 +161,8 @@ def main():
       ci.run(flake_reruns.studio_linux_flake_reruns)
     case 'studio-win':
       ci.run(studio_win.studio_win)
+    case 'studio-win-canary':
+      ci.run(studio_win.studio_win_canary)
     case 'studio-win-flake-reruns':
       ci.run(flake_reruns.studio_win_flake_reruns)
     case 'studio-mac':
