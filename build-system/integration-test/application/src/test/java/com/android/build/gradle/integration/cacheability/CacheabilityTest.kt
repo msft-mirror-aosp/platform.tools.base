@@ -118,6 +118,8 @@ class CacheabilityTest {
         SKIPPED to
           setOf(
             ":app:assemble${DEBUG_RELEASE}",
+            ":app:compile${DEBUG_RELEASE}Kotlin",
+            ":app:compileDebugUnitTestKotlin",
             ":app:extractReleaseNativeSymbolTables",
             ":app:merge${DEBUG_RELEASE}NativeDebugMetadata",
             ":app:merge${DEBUG_RELEASE}NativeLibs",
@@ -138,7 +140,6 @@ class CacheabilityTest {
     return with(EmptyActivityProjectBuilder()) {
       this.projectName = projectName
       this.withUnitTest = true
-      disableBuiltInKotlin()
       withHeap("2048m")
       build()
     }
