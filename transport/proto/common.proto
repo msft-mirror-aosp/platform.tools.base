@@ -116,6 +116,7 @@ message Event {
     LEAKCANARY_OBJECT_COUNT = 803;
     LEAKCANARY_PRESENCE_CHECK = 804;
     LEAKCANARY_THRESHOLD = 805;
+    LEAKCANARY_DEVICE_ERROR = 806;
 
     // group_id: session id
     LIVE_VIEW_STATUS = 901;
@@ -236,6 +237,7 @@ message Event {
     LeakCanaryObjectCountData leakcanary_object_count = 803;
     LeakCanaryPresenceCheck leakcanary_presence_check = 804;
     LeakCanaryThresholdData leakcanary_threshold = 805;
+    LeakCanaryDeviceError leakcanary_device_error = 806;
 
     // Echo Event Prefix = 1000
     echo.EchoData echo = 1000;
@@ -516,4 +518,15 @@ message LeakCanaryObjectCountData {
 
 message LeakCanaryThresholdData {
   int32 threshold = 1;
+}
+
+/** Error originating from the device side. */
+message LeakCanaryDeviceError {
+  enum ErrorType {
+    LEAKCANARY_ERROR_UNKNOWN = 0;
+    LEAKCANARY_ERROR_APP_CONTEXT_NULL = 1;
+    LEAKCANARY_ERROR_BROADCAST_DELIVERY_FAILED = 2;
+    LEAKCANARY_ERROR_LOGCAT_PARSING_FAILURE = 3;
+  }
+  ErrorType error_type = 1;
 }
