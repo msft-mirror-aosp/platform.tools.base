@@ -49,6 +49,7 @@ import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.testing.TestData
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.StringOption
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.core.BuilderConstants
@@ -184,7 +185,12 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   protected open fun doExecuteTests(engineInputParameters: List<TestEngineInputProperty>) {
     // only get the connected devices if the test requested an APK.
-    if (engineInputParameters.any { inputParameter -> inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName }) {
+    if (
+      engineInputParameters.any { inputParameter ->
+        inputParameter.name == AgpTestSuiteInputParameters.TESTED_APKS.propertyName ||
+          inputParameter.name == AgpTestSuiteInputParameters.TESTING_APK.propertyName
+      }
+    ) {
       provisionDevicesAndExecute { onlineDevices -> executeTests(engineInputParameters, onlineDevices) }
     } else {
       executeTests(engineInputParameters)
@@ -299,12 +305,14 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       julConfigFile.parentFile.mkdirs()
       julConfigFile.writeText(
         """
-        handlers = java.util.logging.FileHandler
+        handlers = java.util.logging.FileHandler, java.util.logging.ConsoleHandler
         .level = INFO
         java.util.logging.FileHandler.level = INFO
         java.util.logging.FileHandler.pattern = ${logFile.get().asFile.absolutePath.replace("\\", "/")}
         java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter
         java.util.logging.FileHandler.append = true
+        java.util.logging.ConsoleHandler.level = INFO
+        java.util.logging.ConsoleHandler.formatter = java.util.logging.SimpleFormatter
         """
           .trimIndent()
       )
@@ -637,7 +645,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         "android-test.instrumentation-args",
         testData.instrumentationRunnerArguments.map { it.entries.joinToString(",") { (k, v) -> "$k=$v" } },
       )
-      task.engineInputProperties.put("android-test.uninstall-after-tests", "true")
+      task.engineInputProperties.put(
+        "android-test.uninstall-after-tests",
+        (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
+      )
 
       if (testData is BundleTestDataImpl) {
         task.apkBundle.from(testData.apkBundle)
