@@ -67,19 +67,10 @@ class EmptyActivityProjectBuilder {
    */
   private var kotlinUsedInLibrarySubprojects: Boolean = false
 
-  /** Whether built-in Kotlin should be enabled. */
-  private var builtInKotlin: Boolean = true
-
   init {
     if (useGradleBuildCache) {
       checkNotNull(gradleBuildCacheDir) { "gradleBuildCacheDir must be specified when useGradleBuildCache=true" }
     }
-  }
-
-  @Deprecated("Do not use this method. Try to migrate the test to built-in Kotlin instead (b/385745419).")
-  fun disableBuiltInKotlin(): EmptyActivityProjectBuilder {
-    builtInKotlin = false
-    return this
   }
 
   fun build(): GradleTestProject {
@@ -97,13 +88,8 @@ class EmptyActivityProjectBuilder {
         .withConfigurationCaching(withConfigurationCaching)
 
     rootProjectBuilder.withKotlinGradlePlugin(useKotlin || kotlinUsedInLibrarySubprojects)
-    if (!builtInKotlin && (useKotlin || kotlinUsedInLibrarySubprojects)) {
-      rootProjectBuilder.addGradleProperty(BooleanOption.USE_NEW_DSL, false)
-    }
 
-    rootProjectBuilder
-      .addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
-      .addGradleProperty(BooleanOption.BUILT_IN_KOTLIN, builtInKotlin)
+    rootProjectBuilder.addGradleProperties(BooleanOption.ENABLE_JETIFIER.propertyName + "=true")
 
     if (useGradleBuildCache) {
       rootProjectBuilder.withGradleBuildCacheDirectory(gradleBuildCacheDir!!)
