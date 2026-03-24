@@ -444,7 +444,13 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       get() = "Run lint on the ${creationConfig.name} variant"
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
-      registerLintIntermediateArtifacts(taskProvider, creationConfig.artifacts, variantName = creationConfig.name)
+      registerLintIntermediateArtifacts(
+        taskProvider,
+        creationConfig.artifacts,
+        InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT,
+        InternalArtifactType.LINT_RETURN_VALUE,
+        variantName = creationConfig.name,
+      )
       registerLintReportArtifacts(
         taskProvider,
         creationConfig.artifacts,
@@ -482,7 +488,13 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       get() = "Create local lint report on the ${creationConfig.name} variant"
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
-      registerLintIntermediateArtifacts(taskProvider, creationConfig.artifacts, variantName = creationConfig.name)
+      registerLintIntermediateArtifacts(
+        taskProvider,
+        creationConfig.artifacts,
+        InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT,
+        InternalArtifactType.LINT_RETURN_VALUE,
+        variantName = creationConfig.name,
+      )
       registerLintReportArtifacts(
         taskProvider,
         creationConfig.artifacts,
@@ -520,6 +532,14 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       get() = true
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
+      registerLintIntermediateArtifacts(
+        taskProvider,
+        creationConfig.artifacts,
+        InternalArtifactType.AGGREGATED_LINT_INTERMEDIATE_TEXT_REPORT,
+        InternalArtifactType.AGGREGATED_LINT_RETURN_VALUE,
+        prefix = "aggregated-",
+        variantName = creationConfig.name,
+      )
       registerLintReportArtifacts(
         taskProvider,
         creationConfig.artifacts,
@@ -575,7 +595,13 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       get() = "Run lint with only the fatal issues enabled on the ${creationConfig.name} variant"
 
     override fun handleProvider(taskProvider: TaskProvider<AndroidLintTask>) {
-      registerLintIntermediateArtifacts(taskProvider, creationConfig.artifacts, fatalOnly = true, variantName = creationConfig.name)
+      registerLintIntermediateArtifacts(
+        taskProvider,
+        creationConfig.artifacts,
+        InternalArtifactType.LINT_VITAL_INTERMEDIATE_TEXT_REPORT,
+        InternalArtifactType.LINT_VITAL_RETURN_VALUE,
+        variantName = creationConfig.name,
+      )
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
@@ -885,30 +911,22 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       fun registerLintIntermediateArtifacts(
         taskProvider: TaskProvider<AndroidLintTask>,
         artifacts: ArtifactsImpl,
-        fatalOnly: Boolean = false,
+        intermediateTextReportArtifactType: InternalArtifactType<RegularFile>,
+        returnValueArtifactType: InternalArtifactType<RegularFile>,
+        prefix: String = "",
         variantName: String? = null,
       ) {
-        val reportName = "lint-results" + if (variantName != null) "-$variantName" else ""
+        val reportName = "${prefix}lint-results" + if (variantName != null) "-$variantName" else ""
         artifacts
           .setInitialProvider(taskProvider, AndroidLintTask::intermediateTextReport)
           .withName("$reportName.txt")
-          .on(
-            when {
-              fatalOnly -> InternalArtifactType.LINT_VITAL_INTERMEDIATE_TEXT_REPORT
-              else -> InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT
-            }
-          )
+          .on(intermediateTextReportArtifactType)
 
-        val returnValueName = "return-value" + if (variantName != null) "-$variantName" else ""
+        val returnValueName = "${prefix}return-value" + if (variantName != null) "-$variantName" else ""
         artifacts
           .setInitialProvider(taskProvider, AndroidLintTask::returnValueOutputFile)
           .withName("$returnValueName.txt")
-          .on(
-            when {
-              fatalOnly -> InternalArtifactType.LINT_VITAL_RETURN_VALUE
-              else -> InternalArtifactType.LINT_RETURN_VALUE
-            }
-          )
+          .on(returnValueArtifactType)
       }
     }
   }
