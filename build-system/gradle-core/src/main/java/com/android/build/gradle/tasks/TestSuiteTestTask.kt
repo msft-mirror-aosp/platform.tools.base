@@ -606,7 +606,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       // task execution while letting AndroidTestEngine handle the actual test orchestration.
       task.testDefinitionDirs.from(creationConfig.artifacts.get(SingleArtifact.APK))
 
-      val androidTestEngineVersion = if (Version.ANDROID_GRADLE_PLUGIN_VERSION.endsWith("-dev")) "0.1.0-dev" else "0.1.0"
+      val androidTestEngineVersion = if (Version.IS_AGP_RELEASE_BRANCH) "0.1.0" else "0.1.0-dev"
 
       task.classpath =
         creationConfig.services.fileCollection().also {

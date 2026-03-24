@@ -2,7 +2,6 @@
 This module contains variables storing the next release version number of the android test engine.
 """
 
-ANDROID_TEST_ENGINE_VERSION = select({
-    "//tools/base/bazel:release": "0.1.0",
-    "//conditions:default": "0.1.0-dev",
-})
+load("//tools/base/common:version.bzl", "IS_AGP_RELEASE_BRANCH")
+
+ANDROID_TEST_ENGINE_VERSION = "0.1.0" if IS_AGP_RELEASE_BRANCH == "true" else "0.1.0-dev"
