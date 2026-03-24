@@ -560,7 +560,6 @@ com.android.build.gradle.integration.publishing.JavaDocGenerationMixedSourceTest
 com.android.build.gradle.integration.publishing.JavaDocPublishingTest
 com.android.build.gradle.integration.publishing.LibraryPublishingTest
 com.android.build.gradle.integration.publishing.SourcePublishingTest
-com.android.build.gradle.integration.r8.DefaultProguardFilesTest
 com.android.build.gradle.integration.r8.IgnoreKeepRulesAppFeatureTest
 com.android.build.gradle.integration.r8.IgnoreKeepRulesLibraryTest
 com.android.build.gradle.integration.r8.ShrinkLibraryRClassTest
