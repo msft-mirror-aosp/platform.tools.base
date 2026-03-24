@@ -152,7 +152,7 @@ const TestReportApp = {
   state: {
     viewMode: 'tree',
     currentFlatView: 'modules',
-    filters: { variants: [], search: '', status: 'all', testSuite: 'all' },
+    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all' },
     sort: { by: 'name', order: 'asc' },
     variants: [],
     processedData: null
@@ -184,10 +184,9 @@ const TestReportApp = {
       totalClasses: document.getElementById('total-classes'),
       searchInput: document.getElementById('search-input'),
 
-      viewModeBtn: document.getElementById('view-mode-btn'),
-      viewModeText: document.getElementById('view-mode-text'),
-      viewModeDropdown: document.getElementById('view-mode-dropdown'),
-      viewModeList: document.getElementById('view-mode-list'),
+      variantFilterBtn: document.getElementById('variant-filter-btn'),
+      variantFilterDropdown: document.getElementById('variant-filter-dropdown'),
+      variantFilterList: document.getElementById('variant-filter-list'),
 
       testSuiteFilterBtn: document.getElementById('testsuite-filter-btn'),
       testSuiteFilterText: document.getElementById('testsuite-filter-text'),
@@ -196,14 +195,9 @@ const TestReportApp = {
       tsAllState: document.getElementById('ts-all-state'),
       tsSelectedState: document.getElementById('ts-selected-state'),
 
-      variantFilterBtn: document.getElementById('variant-filter-btn'),
-      variantFilterText: document.getElementById('variant-filter-text'),
-      variantFilterDropdown: document.getElementById('variant-filter-dropdown'),
-      variantFilterList: document.getElementById('variant-filter-list'),
-
       statusFilterBtn: document.getElementById('status-filter-btn'),
       statusFilterText: document.getElementById('status-filter-text'),
-      statusFilterDropdown: document.getElementById('status-filter-dropdown'),
+      statusFilterDropdown: document.getElementById('status-dropdown'),
       statusFilterList: document.getElementById('status-filter-list'),
 
       tableHeaders: document.getElementById('table-headers'),
@@ -218,6 +212,16 @@ const TestReportApp = {
       totalFailed: document.getElementById('total-failed'),
       totalSkipped: document.getElementById('total-skipped'),
       failedCard: document.getElementById('failed-card'),
+
+      // New UI Elements
+      viewSegments: document.getElementById('view-segments'),
+      statusChipContainer: document.getElementById('status-chip-container'),
+      addFilterBtn: document.getElementById('add-filter-btn'),
+      addFilterDropdown: document.getElementById('add-filter-dropdown'),
+      addFilterList: document.getElementById('add-filter-list'),
+      searchRevealBtn: document.getElementById('search-reveal-btn'),
+      searchWrapper: document.getElementById('search-wrapper'),
+      searchClearBtn: document.getElementById('search-clear-btn'),
     };
   },
 
@@ -289,17 +293,6 @@ const TestReportApp = {
       this.render();
     }, false, false);
 
-    // View Mode Dropdown
-    const viewModeOptions = [
-      { name: 'Tree View', value: 'tree' },
-      { name: 'Flat View', value: 'flat' }
-    ];
-    UIUtils.buildActionDropdown(this.elements.viewModeList, viewModeOptions, this.state.viewMode, (newVal) => {
-      this.state.viewMode = newVal;
-      this.elements.viewModeText.textContent = viewModeOptions.find(o => o.value === newVal)?.name || 'Tree View';
-      this.render();
-    }, false, false);
-
     // Variants Dropdown
     const variantOptions = this.state.variants.map(v => ({ name: v, value: v }));
     UIUtils.buildActionDropdown(this.elements.variantFilterList, variantOptions, this.state.filters.variants, (newArr) => {
@@ -309,41 +302,149 @@ const TestReportApp = {
     }, true, true);
 
     // Status Dropdown
+    this.buildStatusDropdown();
+    this.updateVariantButtonText();
+  },
+
+  buildStatusDropdown() {
     const statusOptions = [
-      { name: 'All Statuses', value: 'all' },
       { name: 'Passed', value: 'passed' },
-      { name: 'Failed', value: 'failed' }
+      { name: 'Failed', value: 'failed' },
+      { name: 'Skipped', value: 'skipped' }
     ];
-    UIUtils.buildActionDropdown(this.elements.statusFilterList, statusOptions, this.state.filters.status, (newVal) => {
-      this.state.filters.status = newVal;
-      this.elements.statusFilterText.textContent = statusOptions.find(o => o.value === newVal)?.name || 'All Statuses';
+    if (!Array.isArray(this.state.filters.status)) {
+        this.state.filters.status = ['passed', 'failed', 'skipped'];
+    }
+
+    const updateStatusButtonText = () => {
+      let label = 'Status: All';
+      const statusArr = this.state.filters.status;
+      if (statusArr.length === 0 || statusArr.length === statusOptions.length) {
+          label = 'Status: All';
+      } else if (statusArr.length === 1) {
+          label = 'Status: ' + statusOptions.find(o => o.value === statusArr[0])?.name;
+      } else {
+          label = `Status: ${statusArr.length} Selected`;
+      }
+      if (this.elements.statusFilterText) {
+          this.elements.statusFilterText.textContent = label;
+      }
+    };
+
+    updateStatusButtonText();
+
+    UIUtils.buildActionDropdown(this.elements.statusFilterList, statusOptions, this.state.filters.status, (newArr) => {
+      this.state.filters.status = newArr;
+      updateStatusButtonText();
       this.render();
-    }, false, false);
+    }, false, true);
   },
 
   updateVariantButtonText() {
     const selectedCount = this.state.filters.variants.length;
     const totalCount = this.state.variants.length;
 
-    if (selectedCount === 0) {
-      this.elements.variantFilterText.textContent = 'None';
-    } else if (selectedCount === totalCount) {
-      this.elements.variantFilterText.textContent = 'All';
-    } else if (selectedCount === 1) {
-      this.elements.variantFilterText.textContent = this.state.filters.variants[0];
-    } else {
-      this.elements.variantFilterText.textContent = `${selectedCount} Variants`;
+    if (this.elements.variantFilterBtn) {
+      if (selectedCount === totalCount && totalCount > 0) {
+          this.elements.variantFilterBtn.setAttribute('data-tooltip', 'Filter by Variant: All');
+      } else if (selectedCount === 1) {
+          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${this.state.filters.variants[0]}`);
+      } else {
+          this.elements.variantFilterBtn.setAttribute('data-tooltip', `Filter by Variant: ${selectedCount} Selected`);
+      }
     }
   },
 
   // --- EVENT BINDING & HANDLING ---
   bindEvents() {
-    this.elements.searchInput.addEventListener('input', () => { this.state.filters.search = this.elements.searchInput.value.trim(); this.render(); });
+    this.elements.searchInput.addEventListener('input', () => {
+      this.state.filters.search = this.elements.searchInput.value.trim();
+      if (this.state.filters.search.length > 0) {
+          this.elements.searchClearBtn.classList.remove('hidden');
+      } else {
+          this.elements.searchClearBtn.classList.add('hidden');
+      }
+      this.render();
+    });
+
+    if (this.elements.searchClearBtn) {
+        this.elements.searchClearBtn.addEventListener('click', () => {
+            this.elements.searchInput.value = '';
+            this.state.filters.search = '';
+            this.elements.searchClearBtn.classList.add('hidden');
+            this.render();
+            this.elements.searchInput.focus();
+        });
+    }
+
+    if (this.elements.searchRevealBtn) {
+        this.elements.searchRevealBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.elements.searchRevealBtn.classList.add('hidden');
+            this.elements.searchWrapper.classList.add('expanded');
+            this.elements.searchInput.focus();
+        });
+    }
 
     this.elements.testSuiteFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn));
-    this.elements.viewModeBtn.addEventListener('click', () => this.toggleDropdown(this.elements.viewModeDropdown, this.elements.viewModeBtn));
     this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
     this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
+
+    // Add Filter Logic
+    if (this.elements.addFilterBtn) {
+        this.elements.addFilterBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
+        });
+    }
+
+    if (this.elements.addFilterList) {
+        this.elements.addFilterList.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = e.target.closest('.dropdown-item');
+            if (!target) return;
+
+            const filterType = target.dataset.filterType;
+            if (filterType === 'status') {
+                this.elements.statusChipContainer.classList.remove('hidden');
+                this.elements.addFilterDropdown.classList.add('hidden');
+                this.updateFilterButtons();
+                this.render();
+
+                // Auto open it
+                setTimeout(() => {
+                    this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn);
+                }, 0);
+            }
+        });
+    }
+
+    // Close Filter Logic
+    document.querySelectorAll('.chip-close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const filterType = closeBtn.dataset.filterClose;
+            if (filterType === 'status') {
+                this.state.filters.status = ['passed', 'failed', 'skipped'];
+                this.elements.statusChipContainer.classList.add('hidden');
+                this.updateFilterButtons();
+                this.buildStatusDropdown();
+                this.render();
+            }
+        });
+    });
+
+    if (this.elements.viewSegments) {
+        this.elements.viewSegments.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.state.viewMode = btn.dataset.value;
+            this.render();
+        });
+    }
 
     this.elements.flatViewControls.addEventListener('click', (e) => { const button = e.target.closest('.view-toggle'); if (button) { this.state.currentFlatView = button.dataset.view; this.render(); } });
     this.elements.resultsData.addEventListener('click', (e) => {
@@ -362,12 +463,29 @@ const TestReportApp = {
       this.elements.failedCard.addEventListener('click', () => {
         this.state.viewMode = 'flat';
         this.state.currentFlatView = 'testCases';
-        this.state.filters.status = 'failed';
-        this.elements.viewModeText.textContent = 'Flat View';
-        this.elements.statusFilterText.textContent = 'Failed';
+        this.state.filters.status = ['failed'];
+        if (this.elements.viewSegments) {
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            const flatBtn = this.elements.viewSegments.querySelector('[data-value="flat"]');
+            if (flatBtn) flatBtn.classList.add('active');
+        }
+
+        this.elements.statusChipContainer.classList.remove('hidden');
+        this.updateFilterButtons();
+        this.buildStatusDropdown();
+
         this.render();
       });
     }
+  },
+
+  updateFilterButtons() {
+      const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
+      if (isStatusVisible) {
+          this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+      } else {
+          this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
+      }
   },
 
   toggleDropdown(dropdown, button) {
@@ -375,28 +493,39 @@ const TestReportApp = {
     this.closeAllDropdowns();
     if (isHidden) {
         dropdown.classList.remove('hidden');
-        button.setAttribute('aria-expanded', 'true');
+        if (button) button.setAttribute('aria-expanded', 'true');
     }
   },
 
   closeAllDropdowns() {
     this.elements.testSuiteFilterDropdown.classList.add('hidden');
-    this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
-    this.elements.viewModeDropdown.classList.add('hidden');
-    this.elements.viewModeBtn.setAttribute('aria-expanded', 'false');
+    if (this.elements.testSuiteFilterBtn) this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
     this.elements.variantFilterDropdown.classList.add('hidden');
-    this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
-    this.elements.statusFilterDropdown.classList.add('hidden');
-    this.elements.statusFilterBtn.setAttribute('aria-expanded', 'false');
+    if (this.elements.variantFilterBtn) this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+    if (this.elements.statusFilterDropdown) this.elements.statusFilterDropdown.classList.add('hidden');
+    if (this.elements.statusFilterBtn) this.elements.statusFilterBtn.setAttribute('aria-expanded', 'false');
+    if (this.elements.addFilterDropdown) this.elements.addFilterDropdown.classList.add('hidden');
   },
 
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
-      if (!this.elements.viewModeBtn.contains(e.target) && !this.elements.viewModeDropdown.contains(e.target) &&
-          !this.elements.variantFilterBtn.contains(e.target) && !this.elements.variantFilterDropdown.contains(e.target) &&
-          !this.elements.statusFilterBtn.contains(e.target) && !this.elements.statusFilterDropdown.contains(e.target) &&
-          !this.elements.testSuiteFilterBtn.contains(e.target) && !this.elements.testSuiteFilterDropdown.contains(e.target)) {
+      if (!this.elements.variantFilterBtn.contains(e.target) && !this.elements.variantFilterDropdown.contains(e.target) &&
+          (!this.elements.statusFilterBtn || !this.elements.statusFilterBtn.contains(e.target)) && (!this.elements.statusFilterDropdown || !this.elements.statusFilterDropdown.contains(e.target)) &&
+          !this.elements.testSuiteFilterBtn.contains(e.target) && !this.elements.testSuiteFilterDropdown.contains(e.target) &&
+          (!this.elements.addFilterBtn || !this.elements.addFilterBtn.contains(e.target)) && (!this.elements.addFilterDropdown || !this.elements.addFilterDropdown.contains(e.target))) {
         this.closeAllDropdowns();
+      }
+
+      // Search Input Collapse
+      if (this.elements.searchWrapper && this.elements.searchRevealBtn) {
+          if (!this.elements.searchWrapper.contains(e.target) && !this.elements.searchRevealBtn.contains(e.target)) {
+              if (this.elements.searchInput && this.elements.searchInput.value === '') {
+                  this.elements.searchWrapper.classList.remove('expanded');
+                  setTimeout(() => {
+                      this.elements.searchRevealBtn.classList.remove('hidden');
+                  }, 300);
+              }
+          }
       }
     });
   },
@@ -462,32 +591,35 @@ const TestReportApp = {
         }
 
         let matchesStatus = true;
-        if (this.state.filters.status !== 'all') {
+        if (this.state.filters.status.length < 3) {
           const isLeaf = !this.getChildType(type);
           if (isLeaf) {
-            // Check against SELECTED variants
             let hasFail = false;
             let hasPass = false;
+            let hasSkipped = false;
 
             this.state.filters.variants.forEach(v => {
               const statusVal = node[v];
               const status = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.status : statusVal;
               if (status === 'fail') hasFail = true;
               if (status === 'pass') hasPass = true;
+              if (status === 'skipped') hasSkipped = true;
             });
 
-            if (this.state.filters.status === 'passed') matchesStatus = hasPass;
-            if (this.state.filters.status === 'failed') matchesStatus = hasFail;
+            matchesStatus = false;
+            if (hasPass && this.state.filters.status.includes('passed')) matchesStatus = true;
+            if (hasFail && this.state.filters.status.includes('failed')) matchesStatus = true;
+            if (hasSkipped && this.state.filters.status.includes('skipped')) matchesStatus = true;
           } else {
             matchesStatus = hasVisibleChildren;
           }
         }
 
-        if (this.state.filters.status !== 'all' && !this.getChildType(type)) {
+        if (this.state.filters.status.length < 3 && !this.getChildType(type)) {
           return matchesStatus && selfMatchesSearch;
         }
 
-        if (this.state.filters.status !== 'all') {
+        if (this.state.filters.status.length < 3) {
           return hasVisibleChildren;
         }
 
@@ -752,9 +884,9 @@ const TestReportApp = {
       const relevantTotal = passed + failed;
 
       const filter = this.state.filters.status;
-      const showPassed = filter === 'all' || filter === 'passed';
-      const showFailed = filter === 'all' || filter === 'failed';
-      const showSkipped = filter === 'all' || filter === 'skipped';
+      const showPassed = filter.includes('passed');
+      const showFailed = filter.includes('failed');
+      const showSkipped = filter.includes('skipped');
 
       return `
                 <td class="text-center ${showPassed ? 'text-green' : 'text-gray'} font-medium border-l">${showPassed ? passed : '-'}</td>
