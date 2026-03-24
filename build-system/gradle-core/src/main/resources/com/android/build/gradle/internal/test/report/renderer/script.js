@@ -152,7 +152,7 @@ const TestReportApp = {
   state: {
     viewMode: 'tree',
     currentFlatView: 'modules',
-    filters: { variants: [], search: '', status: 'all' },
+    filters: { variants: [], search: '', status: 'all', testSuite: 'all' },
     sort: { by: 'name', order: 'asc' },
     variants: [],
     processedData: null
@@ -188,6 +188,13 @@ const TestReportApp = {
       viewModeText: document.getElementById('view-mode-text'),
       viewModeDropdown: document.getElementById('view-mode-dropdown'),
       viewModeList: document.getElementById('view-mode-list'),
+
+      testSuiteFilterBtn: document.getElementById('testsuite-filter-btn'),
+      testSuiteFilterText: document.getElementById('testsuite-filter-text'),
+      testSuiteFilterDropdown: document.getElementById('testsuite-filter-dropdown'),
+      testSuiteFilterList: document.getElementById('testsuite-filter-list'),
+      tsAllState: document.getElementById('ts-all-state'),
+      tsSelectedState: document.getElementById('ts-selected-state'),
 
       variantFilterBtn: document.getElementById('variant-filter-btn'),
       variantFilterText: document.getElementById('variant-filter-text'),
@@ -243,12 +250,45 @@ const TestReportApp = {
       node.summary = this._calculateSummaryFromChildren(children);
     };
 
+    const suiteSet = new Set();
+    const extractSuites = (nodes) => {
+      if (!nodes) return;
+      nodes.forEach(n => {
+        if (n.testSuiteSummaries) {
+          n.testSuiteSummaries.forEach(ts => suiteSet.add(ts.name));
+        }
+        if (n.packages) extractSuites(n.packages);
+        if (n.classes) extractSuites(n.classes);
+      });
+    };
+    extractSuites(dataCopy.modules);
+    this.state.testSuites = Array.from(suiteSet).sort();
+
     dataCopy.modules.forEach(module => processNode(module, 'module'));
     dataCopy.summary = this._calculateSummaryFromChildren(dataCopy.modules);
     this.processedData = dataCopy;
   },
 
   populateFilters() {
+    // Test Suite Dropdown
+    const testSuiteOptions = [
+      { name: 'All', value: 'all' },
+      ...this.state.testSuites.map(ts => ({ name: ts, value: ts }))
+    ];
+    UIUtils.buildActionDropdown(this.elements.testSuiteFilterList, testSuiteOptions, this.state.filters.testSuite, (newVal) => {
+      this.state.filters.testSuite = newVal;
+
+      if (newVal === 'all') {
+        this.elements.tsAllState.classList.remove('hidden');
+        this.elements.tsSelectedState.classList.add('hidden');
+      } else {
+        this.elements.tsAllState.classList.add('hidden');
+        this.elements.tsSelectedState.classList.remove('hidden');
+        this.elements.testSuiteFilterText.textContent = newVal;
+      }
+      this.render();
+    }, false, false);
+
     // View Mode Dropdown
     const viewModeOptions = [
       { name: 'Tree View', value: 'tree' },
@@ -300,6 +340,7 @@ const TestReportApp = {
   bindEvents() {
     this.elements.searchInput.addEventListener('input', () => { this.state.filters.search = this.elements.searchInput.value.trim(); this.render(); });
 
+    this.elements.testSuiteFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.testSuiteFilterDropdown, this.elements.testSuiteFilterBtn));
     this.elements.viewModeBtn.addEventListener('click', () => this.toggleDropdown(this.elements.viewModeDropdown, this.elements.viewModeBtn));
     this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
     this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
@@ -339,6 +380,8 @@ const TestReportApp = {
   },
 
   closeAllDropdowns() {
+    this.elements.testSuiteFilterDropdown.classList.add('hidden');
+    this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
     this.elements.viewModeDropdown.classList.add('hidden');
     this.elements.viewModeBtn.setAttribute('aria-expanded', 'false');
     this.elements.variantFilterDropdown.classList.add('hidden');
@@ -351,7 +394,8 @@ const TestReportApp = {
     document.addEventListener('click', (e) => {
       if (!this.elements.viewModeBtn.contains(e.target) && !this.elements.viewModeDropdown.contains(e.target) &&
           !this.elements.variantFilterBtn.contains(e.target) && !this.elements.variantFilterDropdown.contains(e.target) &&
-          !this.elements.statusFilterBtn.contains(e.target) && !this.elements.statusFilterDropdown.contains(e.target)) {
+          !this.elements.statusFilterBtn.contains(e.target) && !this.elements.statusFilterDropdown.contains(e.target) &&
+          !this.elements.testSuiteFilterBtn.contains(e.target) && !this.elements.testSuiteFilterDropdown.contains(e.target)) {
         this.closeAllDropdowns();
       }
     });
@@ -397,6 +441,17 @@ const TestReportApp = {
           if (type === 'class') node.testCases = filteredChildren;
           else node[childKey] = filteredChildren;
           hasVisibleChildren = filteredChildren.length > 0;
+        }
+
+        // Test Suite Filter
+        if (this.state.filters.testSuite !== 'all' && type !== 'testCase') {
+          if (node.testSuiteSummaries) {
+            const suiteMatch = node.testSuiteSummaries.find(ts => ts.name === this.state.filters.testSuite);
+            if (!suiteMatch) return false;
+            node.summary = suiteMatch.summary;
+          } else {
+            return false;
+          }
         }
 
         // Search filter
@@ -469,16 +524,27 @@ const TestReportApp = {
   render() {
     const data = this.getFilteredAndSortedData();
     this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
-    this.updateSummaryCards();
+    this.updateSummaryCards(data);
     this.renderTable(data);
     if (this.state.viewMode === 'flat') {
       this.updateActiveTabs();
     }
   },
 
-  updateSummaryCards() {
-    if (!this.processedData || !this.processedData.summary) return;
-    const sum = this.processedData.summary;
+  updateSummaryCards(data) {
+    if (!data || !data.modules) return;
+
+    // Compute total from filtered modules
+    let sum = { total: 0, passed: 0, failed: 0, skipped: 0 };
+    data.modules.forEach(m => {
+      if (m.summary) {
+        sum.total += m.summary.total || 0;
+        sum.passed += m.summary.passed || 0;
+        sum.failed += m.summary.failed || 0;
+        sum.skipped += m.summary.skipped || 0;
+      }
+    });
+
     if (this.elements.totalTests) this.elements.totalTests.textContent = sum.total;
     if (this.elements.totalPassed) this.elements.totalPassed.textContent = sum.passed;
     if (this.elements.totalFailed) this.elements.totalFailed.textContent = sum.failed;
