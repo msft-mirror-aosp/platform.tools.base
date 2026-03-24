@@ -85,6 +85,7 @@ class FakeAvdManager(val session: FakeAdbSession, val avdRoot: Path) {
           "dev.bootcomplete" to if (bootMode == ColdBoot) "" else "1",
         ),
     )
+    session.deviceServices.configureShellCommand(selector, "wm size", "Physical size: 1080x1920\n")
     device.start()
     runningDevices += device
     updateDevices()

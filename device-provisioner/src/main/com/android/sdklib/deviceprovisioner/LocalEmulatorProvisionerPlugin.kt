@@ -559,9 +559,58 @@ class LocalEmulatorDeviceHandle(
     updatePairedDevice(UserSettingsKey.PAIRED_PHONE_AVD_ID, companion)
   }
 
-  /** Sets the glasses that are paired to this device; if null, clears the paired glasses. */
-  fun updatePairedGlasses(companion: LocalEmulatorDeviceHandle?) {
-    updatePairedDevice(UserSettingsKey.PAIRED_GLASSES_AVD_ID, companion)
+  fun addPairedGlasses(id: DeviceId, mac: String?) {
+    val currentList = getPairedGlassesFromDisk()
+    val existingIndex = currentList.indexOfFirst { it.id == id }
+    val newList =
+      if (existingIndex >= 0) {
+        currentList.toMutableList().apply { this[existingIndex] = PairedGlassesInfo(id, mac) }
+      } else {
+        currentList + PairedGlassesInfo(id, mac)
+      }
+    updatePairedGlassesState(newList)
+  }
+
+  fun removePairedGlasses(id: DeviceId) {
+    val currentList = getPairedGlassesFromDisk()
+    if (currentList.any { it.id == id }) {
+      val newList = currentList.filter { it.id != id }
+      updatePairedGlassesState(newList)
+    }
+  }
+
+  fun clearPairedGlasses() {
+    updatePairedGlassesState(emptyList())
+  }
+
+  private fun getPairedGlassesFromDisk(): List<PairedGlassesInfo> {
+    val avdPath = (state.properties as LocalEmulatorProperties).avdPath
+    val currentSettings = AvdInfo.parseUserSettingsFile(avdPath, logger.asILogger())
+    return PairedGlassesInfo.parseFromSettings(currentSettings)
+  }
+
+  private fun updatePairedGlassesState(newList: List<PairedGlassesInfo>) {
+    val avdPath = (state.properties as LocalEmulatorProperties).avdPath
+    val currentSettings = AvdInfo.parseUserSettingsFile(avdPath, logger.asILogger())
+
+    val map = mutableMapOf<String, String?>(UserSettingsKey.PAIRED_GLASSES_AVD_ID to null)
+
+    // Initialize all existing paired glasses keys to null to clear them from disk
+    currentSettings.keys
+      .filter {
+        it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX) || it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX)
+      }
+      .forEach { map[it] = null }
+
+    // Overwrite with the new list
+    for (i in newList.indices) {
+      val info = newList[i]
+      map["${UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX}${i + 1}"] = info.id.toString()
+      map["${UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX}${i + 1}"] = info.mac
+    }
+
+    AvdBuilder.updateUserSettings(avdPath, map, logger.asILogger())
+    avdScanner.rescanAsync()
   }
 
   private fun updatePairedDevice(key: String, companion: LocalEmulatorDeviceHandle?) {
@@ -597,7 +646,7 @@ data class LocalEmulatorProperties(
   override val isResizable: Boolean?,
   override val wearPairingId: String?,
   override val pairedPhoneId: DeviceId?,
-  override val pairedGlassesId: DeviceId?,
+  override val pairedGlassesInfos: List<PairedGlassesInfo>,
   override val resolution: Resolution?,
   override val density: Int?,
   override val icon: Icon,
@@ -610,13 +659,12 @@ data class LocalEmulatorProperties(
   val avdConfigProperties: ImmutableMap<String, String>,
   val isAiGlassesCompatible: Boolean,
 ) : DeviceProperties {
-
   override fun toBuilder(): Builder = Builder().apply { copyFrom(this@LocalEmulatorProperties) }
 
   override val title = displayName
 
   companion object {
-    inline fun build(avdInfo: AvdInfo, block: Builder.() -> Unit): LocalEmulatorProperties =
+    inline fun build(avdInfo: AvdInfo, block: Builder.() -> Unit = {}): LocalEmulatorProperties =
       Builder()
         .apply {
           setAvdInfo(avdInfo)
@@ -669,7 +717,7 @@ data class LocalEmulatorProperties(
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
       pairedPhoneId = avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
-      pairedGlassesId = avdInfo.userSettings[UserSettingsKey.PAIRED_GLASSES_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedGlassesInfos = PairedGlassesInfo.parseFromSettings(avdInfo.userSettings)
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
@@ -694,6 +742,8 @@ data class LocalEmulatorProperties(
         isDebuggable = isDebuggable,
         isResizable = isResizable,
         wearPairingId = wearPairingId,
+        pairedPhoneId = pairedPhoneId,
+        pairedGlassesInfos = pairedGlassesInfos.toList(),
         resolution = resolution,
         density = density,
         icon = checkNotNull(icon),
@@ -703,8 +753,6 @@ data class LocalEmulatorProperties(
         avdPath = checkNotNull(avdPath),
         displayName = checkNotNull(displayName),
         hasPlayStore = hasPlayStore,
-        pairedPhoneId = pairedPhoneId,
-        pairedGlassesId = pairedGlassesId,
         avdConfigProperties = avdConfigProperties.toImmutableMap(),
         isAiGlassesCompatible = isAiGlassesCompatible,
       )
@@ -828,3 +876,23 @@ fun AdbLogger.asILogger(): ILogger =
       logIf(AdbLogger.Level.VERBOSE) { msgFormat.format(*args) }
     }
   }
+
+data class PairedGlassesInfo(val id: DeviceId, val mac: String?) {
+  companion object {
+    fun parseFromSettings(settings: Map<String, String>): List<PairedGlassesInfo> {
+      val idKeys = settings.keys.filter { it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX) }
+      val indexedList = mutableListOf<PairedGlassesInfo>()
+
+      for (key in idKeys) {
+        val idStr = settings[key] ?: continue
+        val indexSuffix = key.substringAfterLast('.')
+        val macStr = settings["${UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX}$indexSuffix"]
+        val id = DeviceId.fromString(idStr)
+        if (id != null) {
+          indexedList.add(PairedGlassesInfo(id, macStr))
+        }
+      }
+      return indexedList.toList()
+    }
+  }
+}

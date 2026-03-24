@@ -1570,6 +1570,9 @@ private constructor(
       if (SdkConstants.CURRENT_PLATFORM != SdkConstants.PLATFORM_LINUX) {
         return
       }
+      if (avdFolder.fileSystem != FileSystems.getDefault()) {
+        return
+      }
       try {
         val chattrProcess = Runtime.getRuntime().exec(arrayOf("chattr", "+C", avdFolder.toAbsolutePath().toString()))
 

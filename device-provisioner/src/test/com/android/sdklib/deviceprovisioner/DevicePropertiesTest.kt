@@ -160,6 +160,6 @@ private val pixel8Props =
       connectionType = ConnectionType.USB
       wearPairingId = "abcd"
       pairedPhoneId = DeviceId("Test", false, "abcd")
-      pairedGlassesId = DeviceId("Test", false, "efgh")
+      pairedGlassesInfos = listOf(PairedGlassesInfo(DeviceId("Test", false, "efgh"), "00:11:22:33:44:55"))
     }
     .build()

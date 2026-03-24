@@ -60,7 +60,7 @@ abstract class AbstractAvdScanner(val coroutineScope: CoroutineScope, val rescan
    * A channel that can be used to update [avdFlow]. Sending null on this channel tells the [avdFlow] to immediately rescan; sending a list
    * will update the [avdFlow] with that list.
    */
-  private val triggerChannel: Channel<List<AvdInfo>?> = Channel()
+  private val triggerChannel: Channel<List<AvdInfo>?> = Channel(Channel.CONFLATED)
   private val mutex = Mutex()
 
   private suspend fun doRescan(): List<AvdInfo> = mutex.withLock { scanAvds() }
