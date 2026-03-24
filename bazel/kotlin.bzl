@@ -254,10 +254,12 @@ def kotlin_library(
     kotlinc_opts = ["-Xlambdas=class", "-Xsam-conversions=class"] + kotlinc_opts
 
     # Include non-test kotlin libraries in coverage
+    cb_jar = name + "_coverage.baseline.classes.jar"  # a jar for coverage baseline classfiles
     if coverage_baseline_enabled and not testonly:
         coverage_baseline(
             name = name,
             srcs = srcs,
+            jar = cb_jar,
         )
 
     jar = kwargs.pop("jar", "lib" + name + ".jar")
@@ -275,6 +277,7 @@ def kotlin_library(
         kotlinc_opts = kotlinc_opts,
         testonly = testonly,
         stdlib = stdlib,
+        coverage_baseline_jar = cb_jar,
         **kwargs
     )
 
@@ -329,7 +332,8 @@ def _kotlin_library_impl(ctx):
     java_info_deps = [dep[JavaInfo] for dep in ctx.attr.deps]
 
     # Kotlin
-    jars = []
+    cjars = []  # classfiles
+    rjars = []  # resources
     ijars = []
     kotlin_providers = []
 
@@ -360,7 +364,7 @@ def _kotlin_library_impl(ctx):
             kotlinc_opts = kotlinc_opts,
             warn = warn,
         ))
-        jars.append(kotlin_jar)
+        cjars.append(kotlin_jar)
         ijars.append(kotlin_ijar)
 
     # Resources.
@@ -368,7 +372,7 @@ def _kotlin_library_impl(ctx):
     if ctx.files.resources or ctx.files.notice:
         resources_jar = ctx.actions.declare_file(name + ".res.jar")
         _resources(ctx, ctx.files.resources, ctx.file.notice, resources_jar)
-        jars.append(resources_jar)
+        rjars.append(resources_jar)
 
     # Java
     if java_srcs or source_jars:
@@ -384,12 +388,21 @@ def _kotlin_library_impl(ctx):
             plugins = [plugin[JavaPluginInfo] for plugin in ctx.attr.plugins],
         )
 
-        jars.append(java_jar)
+        cjars.append(java_jar)
         ijars += java_provider.compile_jars.to_list()
 
+    # build a jar of classfiles separately for baseline coverage
+    class_jar = ctx.outputs.coverage_baseline_jar
     run_singlejar(
         ctx = ctx,
-        jars = jars,
+        jars = cjars,
+        out = class_jar,
+    )
+
+    # combine the classfiles and resources into a single jar for normal build output
+    run_singlejar(
+        ctx = ctx,
+        jars = [class_jar] + rjars,
         out = ctx.outputs.jar,
         # allow_duplicates = True,  # TODO: Ideally we could be more strict here.
     )
@@ -456,6 +469,7 @@ _kotlin_library = rule(
         ),
         "stdlib": attr.label(),
         "warn": attr.string(default = "off", values = ["off", "report", "error"]),
+        "coverage_baseline_jar": attr.output(),
         "_java_toolchains": attr.label(
             default = Label("//tools/base/bazel:default_java_toolchain_bundle"),
             providers = [KtJvmToolchainInfo],
