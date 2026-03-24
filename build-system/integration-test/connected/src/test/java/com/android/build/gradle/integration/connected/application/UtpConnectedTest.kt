@@ -166,9 +166,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("lib")
 
     val result = executor.withEnableInfoLogging(true).run(testTaskName)

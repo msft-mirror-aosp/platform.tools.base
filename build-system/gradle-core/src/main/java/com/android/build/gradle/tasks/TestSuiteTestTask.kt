@@ -610,7 +610,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.classpath =
         creationConfig.services.fileCollection().also {
-          it.from(creationConfig.variantDependencies.runtimeClasspath)
           it.from(
             creationConfig.services.configurations.detachedConfiguration(
               creationConfig.services.dependencies.create("com.android.tools.androidtest:android-test-engine:$androidTestEngineVersion"),
@@ -625,9 +624,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
 
-      task.engineInputParameters.add(
-        AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.mainVariant.artifacts.get(SingleArtifact.APK))
-      )
+      if (creationConfig.mainVariant.artifacts.get(SingleArtifact.APK).isPresent) {
+        task.engineInputParameters.add(
+          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.mainVariant.artifacts.get(SingleArtifact.APK))
+        )
+      }
       task.engineInputParameters.add(
         AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTING_APK, creationConfig.artifacts.get(SingleArtifact.APK))
       )
