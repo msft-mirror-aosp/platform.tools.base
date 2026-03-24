@@ -2564,12 +2564,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-api_2.3.5",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.3.5/symbol-processing-api-2.3.5.pom",
+    name = "com.google.devtools.ksp.symbol-processing-api_2.2.10-2.0.2",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2/symbol-processing-api-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -2578,27 +2578,27 @@ maven_import(
     name = "com.google.devtools.ksp.symbol-processing-api",
     classifiers = [],
     jars = [
-        "repository/com/google/devtools/ksp/symbol-processing-api/2.3.5/symbol-processing-api-2.3.5.jar"
+        "repository/com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2/symbol-processing-api-2.2.10-2.0.2.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
-    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.3.5/symbol-processing-api-2.3.5.pom",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2/symbol-processing-api-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-common-deps_2.3.5",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.3.5/symbol-processing-common-deps-2.3.5.pom",
+    name = "com.google.devtools.ksp.symbol-processing-common-deps_2.2.10-2.0.2",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2/symbol-processing-common-deps-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -2607,28 +2607,28 @@ maven_import(
     name = "com.google.devtools.ksp.symbol-processing-common-deps",
     classifiers = [],
     jars = [
-        "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.3.5/symbol-processing-common-deps-2.3.5.jar"
+        "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2/symbol-processing-common-deps-2.2.10-2.0.2.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
-    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.3.5/symbol-processing-common-deps-2.3.5.pom",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2/symbol-processing-common-deps-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.3.5",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.3.5/symbol-processing-gradle-plugin-2.3.5.pom",
+    name = "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.2.10-2.0.2",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2/symbol-processing-gradle-plugin-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2",
     deps = [
-        "com.google.devtools.ksp.symbol-processing-api_2.3.5",
-        "com.google.devtools.ksp.symbol-processing-common-deps_2.3.5",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.10-2.0.2",
+        "com.google.devtools.ksp.symbol-processing-common-deps_2.2.10-2.0.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -2637,7 +2637,7 @@ maven_import(
     name = "com.google.devtools.ksp.symbol-processing-gradle-plugin",
     classifiers = [],
     jars = [
-        "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.3.5/symbol-processing-gradle-plugin-2.3.5.jar"
+        "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2/symbol-processing-gradle-plugin-2.2.10-2.0.2.jar"
     ],
     exports = [
         "com.google.devtools.ksp.symbol-processing-api",
@@ -2646,12 +2646,12 @@ maven_import(
         "com.google.devtools.ksp.symbol-processing-common-deps",
     ],
     original_deps = [
-        "com.google.devtools.ksp.symbol-processing-api_2.3.5",
-        "com.google.devtools.ksp.symbol-processing-common-deps_2.3.5",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.10-2.0.2",
+        "com.google.devtools.ksp.symbol-processing-common-deps_2.2.10-2.0.2",
     ],
-    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.3.5/symbol-processing-gradle-plugin-2.3.5.pom",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2/symbol-processing-gradle-plugin-2.2.10-2.0.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.3.5",
+    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2",
     visibility = ["//visibility:public"],
 )
 
@@ -12119,12 +12119,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.2.10/org.jetbrains.kotlin.jvm.gradle.plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12136,19 +12136,19 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-gradle-plugin",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.2.10/org.jetbrains.kotlin.jvm.gradle.plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.abi-tools-api_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.3.10/abi-tools-api-2.3.10.pom",
+    name = "org.jetbrains.kotlin.abi-tools-api_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -12156,12 +12156,12 @@ maven_import(
     name = "org.jetbrains.kotlin.abi-tools-api",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/abi-tools-api/2.3.10/abi-tools-api-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.3.10/abi-tools-api-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12176,14 +12176,15 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10/compose-compiler-gradle-plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10/compose-compiler-gradle-plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12192,21 +12193,24 @@ maven_import(
     name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10/compose-compiler-gradle-plugin-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10/compose-compiler-gradle-plugin-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
         "org.jetbrains.kotlin.kotlin-gradle-plugin",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10/compose-compiler-gradle-plugin-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10/compose-compiler-gradle-plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10",
     deps_with_exclusions = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
         "org.jetbrains.kotlin.kotlin-gradle-plugin",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
      ],
@@ -12214,12 +12218,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10/fus-statistics-gradle-plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10/fus-statistics-gradle-plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12228,17 +12232,17 @@ maven_import(
     name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10/fus-statistics-gradle-plugin-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10/fus-statistics-gradle-plugin-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10/fus-statistics-gradle-plugin-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10/fus-statistics-gradle-plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10",
     deps_with_exclusions = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
      ],
@@ -12256,12 +12260,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.10/kotlin-build-statistics-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
         "com.google.code.gson.gson_2.11.0",
     ],
     visibility = ["//visibility:public"],
@@ -12271,19 +12275,19 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-build-statistics",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.10/kotlin-build-statistics-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-build-tools-api",
         "com.google.code.gson.gson",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
         "com.google.code.gson.gson_2.11.0",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.10/kotlin-build-statistics-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12298,10 +12302,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10/kotlin-build-tools-api-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -12309,12 +12313,12 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-build-tools-api",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10/kotlin-build-tools-api-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10/kotlin-build-tools-api-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12329,44 +12333,17 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10/kotlin-build-tools-compat-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10/kotlin-build-tools-impl-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_import(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-compat",
-    classifiers = [],
-    jars = [
-        "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10/kotlin-build-tools-compat-2.3.10.jar"
-    ],
-    deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core",
-    ],
-    original_deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-    ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10/kotlin-build-tools-compat-2.3.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10",
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10/kotlin-build-tools-impl-2.3.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12375,7 +12352,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-build-tools-impl",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10/kotlin-build-tools-impl-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10/kotlin-build-tools-impl-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-build-tools-api",
@@ -12384,29 +12361,33 @@ maven_import(
     deps = [
         "org.jetbrains.kotlin.kotlin-compiler-embeddable",
         "org.jetbrains.kotlin.kotlin-compiler-runner",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10/kotlin-build-tools-impl-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10/kotlin-build-tools-impl-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10/kotlin-compiler-embeddable-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10/kotlin-compiler-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.2.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -12416,7 +12397,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-compiler-embeddable",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10/kotlin-compiler-embeddable-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10/kotlin-compiler-embeddable-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-script-runtime",
@@ -12428,15 +12409,15 @@ maven_import(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.2.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10/kotlin-compiler-embeddable-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10/kotlin-compiler-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10",
     deps_with_exclusions = [
         "org.jetbrains.kotlin.kotlin-reflect",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
@@ -12445,14 +12426,14 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10/kotlin-compiler-runner-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-daemon-client_2.3.10",
+        "org.jetbrains.kotlin.kotlin-daemon-client_2.2.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12461,7 +12442,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-compiler-runner",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10/kotlin-compiler-runner-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-daemon-client",
@@ -12469,13 +12450,13 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-compiler-embeddable",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-daemon-client_2.3.10",
+        "org.jetbrains.kotlin.kotlin-daemon-client_2.2.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10/kotlin-compiler-runner-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-compiler-embeddable",
@@ -12491,13 +12472,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.10/kotlin-compiler-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.2.10/kotlin-compiler-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
@@ -12508,7 +12489,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-compiler",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.10/kotlin-compiler-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-compiler/2.2.10/kotlin-compiler-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -12517,14 +12498,14 @@ maven_import(
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.10/kotlin-compiler-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.2.10/kotlin-compiler-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.2.10",
     deps_with_exclusions = [
         "org.jetbrains.kotlin.kotlin-reflect",
      ],
@@ -12532,12 +12513,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.10/kotlin-daemon-client-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12546,25 +12527,25 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-daemon-client",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.10/kotlin-daemon-client-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.10/kotlin-daemon-client-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10/kotlin-daemon-embeddable-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10/kotlin-daemon-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -12572,22 +12553,22 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-daemon-embeddable",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10/kotlin-daemon-embeddable-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10/kotlin-daemon-embeddable-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10/kotlin-daemon-embeddable-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10/kotlin-daemon-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10/kotlin-gradle-plugin-annotations-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12596,14 +12577,14 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10/kotlin-gradle-plugin-annotations-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.jar"
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10/kotlin-gradle-plugin-annotations-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12618,16 +12599,16 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10/kotlin-gradle-plugin-api-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10/kotlin-gradle-plugin-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12636,7 +12617,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10/kotlin-gradle-plugin-api-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10/kotlin-gradle-plugin-api-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations",
@@ -12645,15 +12626,15 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-build-tools-api",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10/kotlin-gradle-plugin-api-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10/kotlin-gradle-plugin-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10",
     deps_with_exclusions = [
         "org.jetbrains.kotlin.kotlin-native-utils",
         "org.jetbrains.kotlin.kotlin-tooling-core",
@@ -12661,6 +12642,14 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations",
      ],
     exclusions_for_parents = {
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
         "org.jetbrains.kotlin.compose-compiler-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
             "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
@@ -12690,12 +12679,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10/kotlin-gradle-plugin-idea-proto-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12704,17 +12693,17 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10/kotlin-gradle-plugin-idea-proto-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10/kotlin-gradle-plugin-idea-proto-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12729,13 +12718,13 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10/kotlin-gradle-plugin-idea-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12744,19 +12733,19 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10/kotlin-gradle-plugin-idea-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.jar"
     ],
-    exports = [
+    deps = [
         "org.jetbrains.kotlin.kotlin-tooling-core",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10/kotlin-gradle-plugin-idea-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12771,21 +12760,74 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10/kotlin-gradle-plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10/kotlin-gradle-plugin-model-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
-        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.10",
-        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-build-statistics_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.10",
-        "org.jetbrains.kotlin.abi-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
+    classifiers = [],
+    jars = [
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10/kotlin-gradle-plugin-model-2.2.10.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+    ],
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10/kotlin-gradle-plugin-model-2.2.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10",
+    deps_with_exclusions = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+     ],
+    exclusions_for_parents = {
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
+        "org.jetbrains.kotlin.kotlin-gradle-plugin": [
+            "org.jetbrains.kotlin.kotlin-reflect",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
+            "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
+            "org.jetbrains.kotlin.kotlin-stdlib",
+            "org.jetbrains.kotlin.kotlin-script-runtime",
+            "org.jetbrains.kotlin.kotlin-stdlib-common",
+        ],
+    },
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
+        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.2.10",
+        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-statistics_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.2.10",
+        "org.jetbrains.kotlin.abi-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12794,14 +12836,15 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugin",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10/kotlin-gradle-plugin-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
         "org.jetbrains.kotlin.fus-statistics-gradle-plugin",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
     ],
     deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto",
         "org.jetbrains.kotlin.kotlin-klib-commonizer-api",
         "org.jetbrains.kotlin.kotlin-build-statistics",
@@ -12810,22 +12853,24 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-compiler-runner",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
-        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.10",
-        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-build-statistics_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.10",
-        "org.jetbrains.kotlin.abi-tools-api_2.3.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
+        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.2.10",
+        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-statistics_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.2.10",
+        "org.jetbrains.kotlin.abi-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10/kotlin-gradle-plugin-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10",
     deps_with_exclusions = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-idea",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-model",
         "org.jetbrains.kotlin.abi-tools-api",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto",
         "org.jetbrains.kotlin.fus-statistics-gradle-plugin",
@@ -12849,10 +12894,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10/kotlin-gradle-plugins-bom-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10/kotlin-gradle-plugins-bom-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -12860,19 +12905,19 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom",
     classifiers = [],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10/kotlin-gradle-plugins-bom-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10/kotlin-gradle-plugins-bom-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10/kotlin-klib-commonizer-api-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12881,17 +12926,17 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10/kotlin-klib-commonizer-api-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-native-utils",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10/kotlin-klib-commonizer-api-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -12906,14 +12951,14 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.10/kotlin-native-utils-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12922,20 +12967,20 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-native-utils",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.10/kotlin-native-utils-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-util-io",
         "org.jetbrains.kotlin.kotlin-util-klib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.10/kotlin-native-utils-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api": [
             "org.jetbrains.kotlin.kotlin-util-klib",
@@ -12951,12 +12996,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-reflect_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.10/kotlin-reflect-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -12965,17 +13010,17 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-reflect",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.10/kotlin-reflect-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.10/kotlin-reflect-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-compiler": [
             "*.*",
@@ -12988,10 +13033,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.10/kotlin-script-runtime-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.2.10/kotlin-script-runtime-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -12999,22 +13044,22 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-script-runtime",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.10/kotlin-script-runtime-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.2.10/kotlin-script-runtime-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.10/kotlin-script-runtime-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.2.10/kotlin-script-runtime-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.10/kotlin-scripting-common-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.2.10/kotlin-scripting-common-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13023,30 +13068,30 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-scripting-common",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.10/kotlin-scripting-common-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.2.10/kotlin-scripting-common-2.2.10.jar"
     ],
-    exports = [
+    deps = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.10/kotlin-scripting-common-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.2.10/kotlin-scripting-common-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10/kotlin-scripting-compiler-embeddable-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10/kotlin-scripting-compiler-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13055,37 +13100,35 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10/kotlin-scripting-compiler-embeddable-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10/kotlin-scripting-compiler-embeddable-2.2.10.jar"
     ],
-    exports = [
+    deps = [
         "org.jetbrains.kotlin.kotlin-scripting-common",
         "org.jetbrains.kotlin.kotlin-scripting-jvm",
         "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable",
-    ],
-    deps = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10/kotlin-scripting-compiler-embeddable-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10/kotlin-scripting-compiler-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10/kotlin-scripting-compiler-impl-embeddable-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10/kotlin-scripting-compiler-impl-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13094,7 +13137,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10/kotlin-scripting-compiler-impl-embeddable-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10/kotlin-scripting-compiler-impl-embeddable-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-scripting-common",
@@ -13102,25 +13145,25 @@ maven_import(
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10/kotlin-scripting-compiler-impl-embeddable-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10/kotlin-scripting-compiler-impl-embeddable-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10/kotlin-scripting-jvm-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10/kotlin-scripting-jvm-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13129,21 +13172,21 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-scripting-jvm",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10/kotlin-scripting-jvm-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10/kotlin-scripting-jvm-2.2.10.jar"
     ],
-    exports = [
+    deps = [
         "org.jetbrains.kotlin.kotlin-script-runtime",
         "org.jetbrains.kotlin.kotlin-stdlib",
         "org.jetbrains.kotlin.kotlin-scripting-common",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10/kotlin-scripting-jvm-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10/kotlin-scripting-jvm-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -13169,12 +13212,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10/kotlin-stdlib-jdk7-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13183,28 +13226,28 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10/kotlin-stdlib-jdk7-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10/kotlin-stdlib-jdk7-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10/kotlin-stdlib-jdk8-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13213,27 +13256,27 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10/kotlin-stdlib-jdk8-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk7",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10/kotlin-stdlib-jdk8-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.10/kotlin-stdlib-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.2.10",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],
@@ -13244,7 +13287,7 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-stdlib",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.10/kotlin-stdlib-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.annotations",
@@ -13252,19 +13295,19 @@ maven_import(
     original_deps = [
         "org.jetbrains.annotations_13.0",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.10/kotlin-stdlib-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-test-junit_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.10/kotlin-test-junit-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-test-junit_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.2.10/kotlin-test-junit-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-test_2.3.10",
+        "org.jetbrains.kotlin.kotlin-test_2.2.10",
         "junit.junit_4.13.2",
     ],
     visibility = ["//visibility:public"],
@@ -13274,29 +13317,29 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-test-junit",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.10/kotlin-test-junit-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-test-junit/2.2.10/kotlin-test-junit-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-test",
         "junit.junit",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-test_2.3.10",
+        "org.jetbrains.kotlin.kotlin-test_2.2.10",
         "junit.junit_4.13.2",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.10/kotlin-test-junit-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.2.10/kotlin-test-junit-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-test_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.3.10/kotlin-test-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-test_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.2.10/kotlin-test-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-test/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13305,25 +13348,25 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-test",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-test/2.3.10/kotlin-test-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-test/2.2.10/kotlin-test-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.3.10/kotlin-test-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.2.10/kotlin-test-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-test/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-test/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.10/kotlin-tooling-core-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -13331,12 +13374,12 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-tooling-core",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.10/kotlin-tooling-core-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.10/kotlin-tooling-core-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -13351,10 +13394,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.10/kotlin-util-io-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -13362,23 +13405,23 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-util-io",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.10/kotlin-util-io-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.jar"
     ],
     original_deps = [],
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.10/kotlin-util-io-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.2.10",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10/kotlin-util-klib-metadata-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13387,19 +13430,19 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-util-klib-metadata",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10/kotlin-util-klib-metadata-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.jar"
     ],
     deps = [
         "org.jetbrains.kotlin.kotlin-util-io",
         "org.jetbrains.kotlin.kotlin-util-klib",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10/kotlin-util-klib-metadata-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10",
     exclusions_for_parents = {
         "org.jetbrains.kotlin.kotlin-gradle-plugin": [
             "org.jetbrains.kotlin.kotlin-reflect",
@@ -13414,12 +13457,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.10/kotlin-util-klib-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.2.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -13428,17 +13471,17 @@ maven_import(
     name = "org.jetbrains.kotlin.kotlin-util-klib",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.10/kotlin-util-klib-2.3.10.jar"
+        "repository/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-util-io",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
     ],
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.10/kotlin-util-klib-2.3.10.pom",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.2.10",
     visibility = ["//visibility:public"],
 )
 
@@ -75294,32 +75337,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-api_2.2.10-2.0.2",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2/symbol-processing-api-2.2.10-2.0.2.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.2.10-2.0.2",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.google.devtools.ksp.symbol-processing-api_2.2.20-RC-2.0.2",
     pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.2.20-RC-2.0.2/symbol-processing-api-2.2.20-RC-2.0.2.pom",
     repo_root_path = "repository",
     repo_path = "com/google/devtools/ksp/symbol-processing-api/2.2.20-RC-2.0.2",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-common-deps_2.2.10-2.0.2",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2/symbol-processing-common-deps-2.2.10-2.0.2.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-common-deps/2.2.10-2.0.2",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
     ],
@@ -75385,18 +75406,6 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api_1.9.0",
         "org.jetbrains.kotlin.kotlin-gradle-plugin_1.9.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.google.devtools.ksp.symbol-processing-gradle-plugin_2.2.10-2.0.2",
-    pom = "repository/com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2/symbol-processing-gradle-plugin-2.2.10-2.0.2.pom",
-    repo_root_path = "repository",
-    repo_path = "com/google/devtools/ksp/symbol-processing-gradle-plugin/2.2.10-2.0.2",
-    deps = [
-        "com.google.devtools.ksp.symbol-processing-api_2.2.10-2.0.2",
-        "com.google.devtools.ksp.symbol-processing-common-deps_2.2.10-2.0.2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86656,6 +86665,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.3.20-RC/org.jetbrains.kotlin.jvm.gradle.plugin-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -86895,10 +86915,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.abi-tools-api_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.2.10/abi-tools-api-2.2.10.pom",
+    name = "org.jetbrains.kotlin.abi-tools-api_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.3.10/abi-tools-api-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.2.10",
+    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -86933,15 +86953,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10/compose-compiler-gradle-plugin-2.2.10.pom",
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10/compose-compiler-gradle-plugin-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.2.10",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86995,12 +87014,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10/fus-statistics-gradle-plugin-2.2.10.pom",
+    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10/fus-statistics-gradle-plugin-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.2.10",
+    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87789,12 +87808,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.2.10/kotlin-build-statistics-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.3.10/kotlin-build-statistics-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
         "com.google.code.gson.gson_2.11.0",
     ],
     visibility = ["//visibility:public"],
@@ -87897,10 +87916,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10/kotlin-build-tools-api-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10/kotlin-build-tools-api-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -87917,6 +87936,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-8268/kotlin-build-tools-api-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-8268",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10/kotlin-build-tools-compat-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -88015,17 +88045,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10/kotlin-build-tools-impl-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10/kotlin-build-tools-impl-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88374,15 +88402,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10/kotlin-compiler-embeddable-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10/kotlin-compiler-embeddable-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -88713,14 +88741,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10/kotlin-compiler-runner-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10/kotlin-compiler-runner-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-daemon-client_2.2.10",
+        "org.jetbrains.kotlin.kotlin-daemon-client_2.3.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.2.10",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88848,6 +88876,20 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-script-runtime_2.1.20",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.intellij.deps.trove4j_1.0.20200330",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.10/kotlin-compiler-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -89175,12 +89217,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.2.10/kotlin-daemon-client-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.3.10/kotlin-daemon-client-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89368,10 +89410,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10/kotlin-daemon-embeddable-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10/kotlin-daemon-embeddable-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -89513,12 +89555,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10/kotlin-gradle-plugin-annotations-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10/kotlin-gradle-plugin-annotations-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89829,16 +89871,16 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10/kotlin-gradle-plugin-api-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10/kotlin-gradle-plugin-api-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
-        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90028,12 +90070,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10/kotlin-gradle-plugin-idea-proto-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10/kotlin-gradle-plugin-idea-proto-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90236,13 +90278,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10/kotlin-gradle-plugin-idea-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10/kotlin-gradle-plugin-idea-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.2.10",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90492,18 +90534,6 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.0",
         "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10/kotlin-gradle-plugin-model-2.2.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-model/2.2.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91018,22 +91048,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10/kotlin-gradle-plugin-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10/kotlin-gradle-plugin-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-model_2.2.10",
-        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.2.10",
-        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-build-statistics_2.2.10",
-        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.2.10",
-        "org.jetbrains.kotlin.abi-tools-api_2.2.10",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.3.10",
+        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.3.10",
+        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-build-statistics_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.10",
+        "org.jetbrains.kotlin.abi-tools-api_2.3.10",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91167,10 +91196,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10/kotlin-gradle-plugins-bom-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10/kotlin-gradle-plugins-bom-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -91389,12 +91418,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10/kotlin-klib-commonizer-api-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10/kotlin-klib-commonizer-api-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91726,14 +91755,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-native-utils_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.2.10/kotlin-native-utils-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-native-utils_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.3.10/kotlin-native-utils-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -92308,17 +92337,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-reflect_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.2.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-reflect_2.2.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.2.20/kotlin-reflect-2.2.20.pom",
     repo_root_path = "repository",
@@ -92347,6 +92365,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.10/kotlin-reflect-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -92539,10 +92568,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.2.10/kotlin-script-runtime-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.10/kotlin-script-runtime-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -92756,12 +92785,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.2.10/kotlin-scripting-common-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-common/2.3.10/kotlin-scripting-common-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-common/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -93012,15 +93041,15 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10/kotlin-scripting-compiler-embeddable-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-embeddable_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10/kotlin-scripting-compiler-embeddable-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-embeddable/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -93290,14 +93319,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10/kotlin-scripting-compiler-impl-embeddable-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-compiler-impl-embeddable_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10/kotlin-scripting-compiler-impl-embeddable-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-compiler-impl-embeddable/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -93548,14 +93577,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10/kotlin-scripting-jvm-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-scripting-jvm_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10/kotlin-scripting-jvm-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-scripting-jvm/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.2.10",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-        "org.jetbrains.kotlin.kotlin-scripting-common_2.2.10",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-scripting-common_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -94448,23 +94477,23 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10/kotlin-stdlib-jdk7-2.2.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.20/kotlin-stdlib-jdk7-2.2.20.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.2.20",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10/kotlin-stdlib-jdk7-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -94947,18 +94976,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10/kotlin-stdlib-jdk8-2.2.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.10",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.10",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.2.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.2.20/kotlin-stdlib-jdk8-2.2.20.pom",
     repo_root_path = "repository",
@@ -94966,6 +94983,18 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10/kotlin-stdlib-jdk8-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -95730,17 +95759,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.10/kotlin-stdlib-2.2.10.pom",
-    repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.2.10",
-    deps = [
-        "org.jetbrains.annotations_13.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.2.20/kotlin-stdlib-2.2.20.pom",
     repo_root_path = "repository",
@@ -95778,6 +95796,17 @@ maven_artifact(
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.0/kotlin-stdlib-2.3.0.pom",
     repo_root_path = "repository",
     repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.0",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.10/kotlin-stdlib-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.10",
     deps = [
         "org.jetbrains.annotations_13.0",
     ],
@@ -95880,6 +95909,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-test-junit_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.10/kotlin-test-junit-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-test-junit/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-test_2.3.10",
+        "junit.junit_4.13.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-test-junit_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-test-junit/2.3.20-RC/kotlin-test-junit-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -95942,6 +95983,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-test/2.1.20",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.1.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-test_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.3.10/kotlin-test-2.3.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-test/2.3.10",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -96099,10 +96151,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.2.10/kotlin-tooling-core-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.3.10/kotlin-tooling-core-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -96333,10 +96385,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.2.10/kotlin-util-io-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.3.10/kotlin-util-io-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.3.10",
     visibility = ["//visibility:public"],
 )
 
@@ -96393,13 +96445,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10/kotlin-util-klib-metadata-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10/kotlin-util-klib-metadata-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -96651,12 +96703,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib_2.2.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.2.10/kotlin-util-klib-2.2.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib_2.3.10",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.3.10/kotlin-util-klib-2.3.10.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.2.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.3.10",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.2.10",
+        "org.jetbrains.kotlin.kotlin-util-io_2.3.10",
     ],
     visibility = ["//visibility:public"],
 )

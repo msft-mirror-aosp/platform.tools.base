@@ -104,7 +104,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebug
             defaultSourceSetName = debug
-            disambiguatedName = Debug
+            disambiguatedName = ${ if (builtInKotlin) "debug" else "Debug" }
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, main))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debug
@@ -160,7 +160,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugUnitTest
             defaultSourceSetName = debugUnitTest
-            disambiguatedName = DebugUnitTest
+            disambiguatedName = ${if (builtInKotlin) "debugUnitTest" else "DebugUnitTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=property(org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, fixed(class org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree, test))]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugUnitTest
@@ -208,7 +208,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
             defaultSourceSet = $expectedDefaultSourceSetForDebugScreenshotTest
             defaultSourceSetName = debugScreenshotTest
-            disambiguatedName = DebugScreenshotTest
+            disambiguatedName = ${if (builtInKotlin) "debugScreenshotTest" else "DebugScreenshotTest"}
             extras = [org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage=org.jetbrains.kotlin.gradle.utils.StoredPropertyStorage@<hash-code>,org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinSourceSetTreeClassifier=None]
             getAttributes = org.jetbrains.kotlin.gradle.plugin.mpp.HierarchyAttributeContainer@<hash-code>
             getName = debugScreenshotTest
