@@ -18,18 +18,18 @@ package com.android.sdklib.deviceprovisioner
 import com.android.sdklib.internal.avd.AvdInfo
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.completeWith
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 
 /**
@@ -38,7 +38,7 @@ import kotlinx.coroutines.withTimeoutOrNull
  */
 interface AvdScanner {
 
-  /** Triggers a scan of the AVDs to occur in the future. */
+  /** Triggers an immediate update to [avdFlow]. Has no effect unless there are listeners of [avdFlow]. */
   fun rescanAsync()
 
   /** Synchronously scans the AVDs and returns them. This must work even if [avdFlow] is not being collected. */
@@ -51,29 +51,36 @@ interface AvdScanner {
 abstract class AbstractAvdScanner(val coroutineScope: CoroutineScope, val rescanPeriod: Duration = 10.seconds) : AvdScanner {
 
   override fun rescanAsync() {
-    triggerChannel.trySend(ScanRequest())
+    triggerChannel.trySend(null)
   }
 
-  override suspend fun rescan(): List<AvdInfo> {
-    val request = ScanRequest()
-    triggerChannel.send(request)
-    // If there's no listener currently, trigger the flow.
-    avdFlow.first()
-    return request.response.await()
-  }
+  override suspend fun rescan(): List<AvdInfo> = doRescan().also { triggerChannel.trySend(it) }
 
-  private class ScanRequest(val response: CompletableDeferred<List<AvdInfo>> = CompletableDeferred())
+  /**
+   * A channel that can be used to update [avdFlow]. Sending null on this channel tells the [avdFlow] to immediately rescan; sending a list
+   * will update the [avdFlow] with that list.
+   */
+  private val triggerChannel: Channel<List<AvdInfo>?> = Channel()
+  private val mutex = Mutex()
 
-  private val triggerChannel: Channel<ScanRequest> = Channel(1)
+  private suspend fun doRescan(): List<AvdInfo> = mutex.withLock { scanAvds() }
 
   override val avdFlow: SharedFlow<List<AvdInfo>> =
     flow {
-        var request: ScanRequest? = triggerChannel.tryReceive().getOrNull()
         while (true) {
-          val result = runCatching { scanAvds() }
-          result.fold(onFailure = { e -> logError("Exception scanning AVDs", e) }, onSuccess = { emit(it) })
-          request?.response?.completeWith(result)
-          request = withTimeoutOrNull(rescanPeriod) { triggerChannel.receive() }
+          try {
+            emit(doRescan())
+          } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            logError("Exception scanning AVDs", e)
+          }
+
+          while (true) {
+            when (val result = withTimeoutOrNull(rescanPeriod) { triggerChannel.receive() }) {
+              null -> break
+              else -> emit(result)
+            }
+          }
         }
       }
       .flowOn(Dispatchers.IO)
