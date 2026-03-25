@@ -529,6 +529,7 @@ gradle_build(
     repos = [
         "//tools/base:agp_dependencies",
         "//tools/base:agp_artifacts",
+        ":declarative_gradle_runtime",
     ],
     tasks = [":zipPlugin"],
     visibility = ["//visibility:public"],
@@ -536,8 +537,11 @@ gradle_build(
 
 maven_repository(
     name = "declarative_gradle_runtime",
+    # b/490330486: We should remove this dependency once we have a better idea at displaying plugins
+    # in declarative.
     artifacts = [
         "@maven//:org.gradle.experimental.plugin-ecosystem.org.gradle.experimental.plugin-ecosystem.gradle.plugin_0.1.54",
+        "@maven//:org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.2.10",
         "@maven//:org.junit.junit-bom_5.10.1",
     ],
     visibility = ["//visibility:public"],

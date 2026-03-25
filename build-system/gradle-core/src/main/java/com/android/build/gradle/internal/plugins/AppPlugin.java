@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.plugins;
 
 import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
+import static com.android.build.gradle.internal.utils.KgpUtils.COMPOSE_COMPILER_PLUGIN_ID;
 
 import com.android.annotations.NonNull;
 import com.android.build.api.dsl.ApplicationDeclarativeDefinition;
@@ -181,6 +182,11 @@ public class AppPlugin
                             stats != null ? stats : GradleBuildProject.newBuilder());
 
             initExtensionFromSettings(android);
+
+            // b/502576941: Apply the compose plugin in studio project instead of through the
+            // Gradle ecosystem plugin.
+            project.getPlugins().apply(COMPOSE_COMPILER_PLUGIN_ID);
+
             setupDependencies(android);
             return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
         }
