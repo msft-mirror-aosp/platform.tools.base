@@ -169,6 +169,8 @@ abstract class AndroidLintTask : NonIncrementalTask() {
 
   @get:Input abstract val baselineOmitLineNumbers: Property<Boolean>
 
+  @get:Input abstract val useHtmlV2: Property<Boolean>
+
   @get:Nested abstract val uastInputs: UastInputs
 
   override fun doTaskAction() {
@@ -319,6 +321,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     intermediateTextReport.orNull?.let { arguments.add("--text", it) }
     if (htmlReportEnabled.get()) {
       arguments.add("--html", htmlReportOutputFile.get())
+      if (useHtmlV2.get()) {
+        arguments += "--html-v2"
+      }
     }
     if (xmlReportEnabled.get()) {
       arguments.add("--xml", xmlReportOutputFile.get())
@@ -623,6 +628,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
 
       task.description = description
 
+      task.initializeOutputTypesConvention()
       task.initializeGlobalInputs(variant.main.services, isAndroid = true, lintMode)
       task.lintRuleJars.from(creationConfig.global.localCustomLintChecks)
       task.lintRuleJars.from(
@@ -636,6 +642,10 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       task.fatalOnly.setDisallowChanges(fatalOnly)
       task.autoFix.setDisallowChanges(autoFix)
       task.lintMode.setDisallowChanges(lintMode)
+      task.useHtmlV2.setDisallowChanges(
+        creationConfig.services.projectOptions.get(BooleanOption.LINT_REPORT_AGGREGATION) &&
+          (this is LocalLintReportCreationAction || this is AggregatedLintReportCreationAction)
+      )
       if (autoFix) {
         task.lintFixBuildService.set(getBuildService(creationConfig.services.buildServiceRegistry))
       }
@@ -822,7 +832,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         // is not annotated as an output
         task.outputs.upToDateWhen { false }
       }
-      task.initializeOutputTypesConvention()
       configureOutputSettings(task)
       task.finalizeOutputTypes()
       task.missingBaselineIsEmptyBaseline.setDisallowChanges(
@@ -910,6 +919,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     xmlReportEnabled.convention(false)
     sarifReportEnabled.convention(false)
     textReportToStdOut.convention(false)
+    useHtmlV2.convention(false)
   }
 
   private fun finalizeOutputTypes() {
@@ -918,6 +928,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     xmlReportEnabled.disallowChanges()
     sarifReportEnabled.disallowChanges()
     textReportToStdOut.disallowChanges()
+    useHtmlV2.disallowChanges()
   }
 
   private fun initializeGlobalInputs(services: TaskCreationServices, isAndroid: Boolean, lintMode: LintMode) {
@@ -968,6 +979,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     fatalOnly: Boolean = false,
     autoFix: Boolean = false,
   ) {
+    this.initializeOutputTypesConvention()
     initializeGlobalInputs(taskCreationServices, isAndroid = false, lintMode)
     this.variantName = ""
     this.analyticsService.setDisallowChanges(getBuildService(taskCreationServices.buildServiceRegistry))
@@ -995,7 +1007,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.nestedComponentPartialResults.disallowChanges()
     unitTestLintModel?.let { this.nestedComponentLintModels.from(it) }
     this.nestedComponentLintModels.disallowChanges()
-    this.initializeOutputTypesConvention()
     when {
       fatalOnly -> {
         // do nothing

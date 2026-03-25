@@ -20,6 +20,7 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Issue
+import java.io.File
 import java.lang.reflect.Field
 import junit.framework.TestCase
 
@@ -34,6 +35,22 @@ class ReporterTest : TestCase() {
     assertEquals("a/b/c/%24%26%2B%2C%3A%3B%3D%3F%40/foo+bar%25/d", encodeUrl("a/b/c/$&+,:;=?@/foo bar%/d"))
     assertEquals("a/%28b%29/d", encodeUrl("a/(b)/d"))
     assertEquals("a/b+c/d", encodeUrl("a/b c/d")) // + or %20
+  }
+
+  fun testCreateHtmlReporter() {
+    val client = LintCliClient()
+    val output = File.createTempFile("report", ".html")
+    output.deleteOnExit()
+    val flags = LintCliFlags()
+
+    flags.isUseHtmlV2 = false
+    val reporterV1 = Reporter.createHtmlReporter(client, output, flags)
+    assertTrue(reporterV1 is HtmlReporter)
+    assertFalse(reporterV1 is HtmlReporterV2)
+
+    flags.isUseHtmlV2 = true
+    val reporterV2 = Reporter.createHtmlReporter(client, output, flags)
+    assertTrue(reporterV2 is HtmlReporterV2)
   }
 
   fun testHasQuickFix() {

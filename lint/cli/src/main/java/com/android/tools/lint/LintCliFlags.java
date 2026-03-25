@@ -91,6 +91,7 @@ public class LintCliFlags {
     private boolean printInternalErrorStackTrace;
     private boolean allowBaselineSuppress;
     private boolean offline;
+    private boolean useHtmlV2;
     private boolean useK2Uast = true;
     private boolean useKlibLightElementProvider = false;
     private File cacheDir;
@@ -928,6 +929,20 @@ public class LintCliFlags {
      */
     public void setUseKlibLightElementProvider(boolean useKlibLightElementProvider) {
       this.useKlibLightElementProvider = useKlibLightElementProvider;
+    }
+
+    /**
+     * Returns whether to use the new HTML report format (V2).
+     */
+    public boolean isUseHtmlV2() {
+        return useHtmlV2;
+    }
+
+    /**
+     * Sets whether to use the new HTML report format (V2).
+     */
+    public void setUseHtmlV2(boolean useHtmlV2) {
+        this.useHtmlV2 = useHtmlV2;
     }
 
     /**

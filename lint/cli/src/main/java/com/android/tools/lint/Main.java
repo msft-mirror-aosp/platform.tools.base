@@ -144,6 +144,8 @@ public class Main {
 
     private static final String ARG_HTML = "--html";
 
+    private static final String ARG_HTML_V2 = "--html-v2";
+
     @SuppressWarnings("SpellCheckingInspection")
     private static final String ARG_SIMPLE_HTML = "--simplehtml";
 
@@ -1254,6 +1256,8 @@ public class Main {
                     }
                     libraries.add(input);
                 }
+            } else if (arg.equals(ARG_HTML_V2)) {
+                flags.setUseHtmlV2(true);
             } else if (arg.equals(ARG_SKIP_ANNOTATED)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing annotation name");

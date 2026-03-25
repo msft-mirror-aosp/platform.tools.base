@@ -42,7 +42,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** A reporter which emits lint results into an HTML report. */
-class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : Reporter(client, output) {
+open class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : Reporter(client, output) {
 
   private val writer: Writer
   private val flags: LintCliFlags
