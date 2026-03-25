@@ -207,12 +207,6 @@ const TestReportApp = {
       viewToggles: document.getElementById('view-toggles'),
       flatViewControls: document.getElementById('flat-view-controls'),
 
-      // Summary Card Elements
-      totalTests: document.getElementById('total-tests'),
-      totalPassed: document.getElementById('total-passed'),
-      totalFailed: document.getElementById('total-failed'),
-      totalSkipped: document.getElementById('total-skipped'),
-      failedCard: document.getElementById('failed-card'),
 
       // New UI Elements
       viewSegments: document.getElementById('view-segments'),
@@ -522,26 +516,6 @@ const TestReportApp = {
     });
     this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); });
 
-    // Failed Card interaction
-    if (this.elements.failedCard) {
-      this.elements.failedCard.classList.add('cursor-pointer');
-      this.elements.failedCard.addEventListener('click', () => {
-        this.state.viewMode = 'flat';
-        this.state.currentFlatView = 'testCases';
-        this.state.filters.status = ['failed'];
-        if (this.elements.viewSegments) {
-            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-            const flatBtn = this.elements.viewSegments.querySelector('[data-value="flat"]');
-            if (flatBtn) flatBtn.classList.add('active');
-        }
-
-        this.elements.statusChipContainer.classList.remove('hidden');
-        this.updateFilterButtons();
-        this.buildStatusDropdown();
-
-        this.render();
-      });
-    }
   },
 
   updateFilterButtons() {
@@ -797,7 +771,6 @@ const TestReportApp = {
     this.updateDynamicFilters();
     const data = this.getFilteredAndSortedData();
     this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
-    this.updateSummaryCards(data);
     this.renderTable(data);
     if (this.state.viewMode === 'flat') {
       this.updateActiveTabs();
@@ -858,26 +831,6 @@ const TestReportApp = {
       this.updateFilterButtons();
       this.render();
     });
-  },
-
-  updateSummaryCards(data) {
-    if (!data || !data.modules) return;
-
-    // Compute total from filtered modules
-    let sum = { total: 0, passed: 0, failed: 0, skipped: 0 };
-    data.modules.forEach(m => {
-      if (m.summary) {
-        sum.total += m.summary.total || 0;
-        sum.passed += m.summary.passed || 0;
-        sum.failed += m.summary.failed || 0;
-        sum.skipped += m.summary.skipped || 0;
-      }
-    });
-
-    if (this.elements.totalTests) this.elements.totalTests.textContent = sum.total;
-    if (this.elements.totalPassed) this.elements.totalPassed.textContent = sum.passed;
-    if (this.elements.totalFailed) this.elements.totalFailed.textContent = sum.failed;
-    if (this.elements.totalSkipped) this.elements.totalSkipped.textContent = sum.skipped;
   },
 
   updateActiveTabs() {
