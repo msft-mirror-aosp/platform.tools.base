@@ -150,7 +150,8 @@ const UIUtils = {
  */
 const TestReportApp = {
   state: {
-    viewMode: 'tree',
+    viewMode: 'flat',
+    density: 'comfy',
     currentFlatView: 'modules',
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
@@ -215,6 +216,8 @@ const TestReportApp = {
 
       // New UI Elements
       viewSegments: document.getElementById('view-segments'),
+      densitySegments: document.getElementById('density-segments'),
+      mainTable: document.querySelector('table'),
       statusChipContainer: document.getElementById('status-chip-container'),
       modChipContainer: document.getElementById('mod-chip-container'),
       pkgChipContainer: document.getElementById('pkg-chip-container'),
@@ -488,6 +491,23 @@ const TestReportApp = {
             btn.classList.add('active');
             this.state.viewMode = btn.dataset.value;
             this.render();
+        });
+    }
+
+    if (this.elements.densitySegments) {
+        this.elements.densitySegments.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.state.density = btn.dataset.value;
+            if (this.elements.mainTable) {
+                if (this.state.density === 'compact') {
+                    this.elements.mainTable.classList.add('table-compact');
+                } else {
+                    this.elements.mainTable.classList.remove('table-compact');
+                }
+            }
         });
     }
 

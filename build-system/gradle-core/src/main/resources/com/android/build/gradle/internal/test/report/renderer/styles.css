@@ -752,6 +752,16 @@ th.sticky-name {
   padding: var(--spacing-3) var(--spacing-6);
 }
 
+/* Compact Mode */
+.table-compact th,
+.table-compact td {
+  padding: 0.25rem 0.5rem;
+}
+
+.table-compact .table-row td.sticky-name {
+  padding: 0.25rem 0.75rem;
+}
+
 .tree-toggle {
   display: flex;
   align-items: center;
