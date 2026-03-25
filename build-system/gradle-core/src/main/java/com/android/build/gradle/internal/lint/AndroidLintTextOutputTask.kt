@@ -31,6 +31,8 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer
 import com.android.build.gradle.internal.tasks.NonIncrementalTask
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.options.OptionalBooleanOption
+import com.android.build.gradle.options.ProjectOptions
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import org.gradle.api.file.RegularFile
@@ -154,6 +156,7 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
       task.initializeCommonInputs(
         creationConfig.artifacts,
         creationConfig.global.lintOptions,
+        creationConfig.services.projectOptions,
         fatalOnly,
         InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT,
         InternalArtifactType.LINT_RETURN_VALUE,
@@ -170,6 +173,7 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
       task.initializeCommonInputs(
         creationConfig.artifacts,
         creationConfig.global.lintOptions,
+        creationConfig.services.projectOptions,
         fatalOnly,
         InternalArtifactType.AGGREGATED_LINT_INTERMEDIATE_TEXT_REPORT,
         InternalArtifactType.AGGREGATED_LINT_RETURN_VALUE,
@@ -186,6 +190,7 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
       task.initializeCommonInputs(
         creationConfig.artifacts,
         creationConfig.global.lintOptions,
+        creationConfig.services.projectOptions,
         fatalOnly,
         InternalArtifactType.LINT_VITAL_INTERMEDIATE_TEXT_REPORT,
         InternalArtifactType.LINT_VITAL_RETURN_VALUE,
@@ -220,6 +225,7 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
   internal fun initializeCommonInputs(
     artifacts: ArtifactsImpl,
     lintOptions: Lint,
+    projectOptions: ProjectOptions,
     fatalOnly: Boolean,
     textReportArtifactType: InternalArtifactType<RegularFile>,
     returnValueArtifactType: InternalArtifactType<RegularFile>,
@@ -229,10 +235,12 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
     this.fatalOnly.setDisallowChanges(fatalOnly)
     abortOnError.setDisallowChanges(lintOptions.abortOnError)
     val textOutput = lintOptions.textOutput
+    val printTextReport =
+      projectOptions.get(OptionalBooleanOption.LINT_PRINT_TEXT_REPORT)
+        ?: (lintOptions.printTextReport || (lintOptions.textReport && textOutput?.isLintStdout() ?: true))
     when {
       fatalOnly || (lintOptions.textReport && textOutput?.isLintStderr() == true) -> outputStream.setDisallowChanges(OutputStream.STDERR)
-      lintOptions.printTextReport || (lintOptions.textReport && textOutput?.isLintStdout() ?: true) ->
-        outputStream.setDisallowChanges(OutputStream.STDOUT)
+      printTextReport -> outputStream.setDisallowChanges(OutputStream.STDOUT)
       else -> outputStream.setDisallowChanges(OutputStream.ABBREVIATED)
     }
     hasBaseline.setDisallowChanges(lintOptions.baseline != null)
@@ -252,6 +260,7 @@ abstract class AndroidLintTextOutputTask : NonIncrementalTask() {
     initializeCommonInputs(
       artifacts,
       lintOptions,
+      taskCreationServices.projectOptions,
       fatalOnly,
       if (fatalOnly) InternalArtifactType.LINT_VITAL_INTERMEDIATE_TEXT_REPORT else InternalArtifactType.LINT_INTERMEDIATE_TEXT_REPORT,
       if (fatalOnly) InternalArtifactType.LINT_VITAL_RETURN_VALUE else InternalArtifactType.LINT_RETURN_VALUE,

@@ -54,6 +54,8 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
+import com.android.build.gradle.options.OptionalBooleanOption
+import com.android.build.gradle.options.ProjectOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
@@ -463,7 +465,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
     }
   }
 
@@ -507,7 +509,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
     }
   }
 
@@ -552,7 +554,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
     }
   }
 
@@ -1040,7 +1042,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         this.outputs.upToDateWhen { false }
       }
       else -> {
-        configureOutputSettings(lintOptions)
+        configureOutputSettings(lintOptions, taskCreationServices.projectOptions)
       }
     }
     this.finalizeOutputTypes()
@@ -1053,10 +1055,12 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.uastInputs.initializeForStandalone(project, taskCreationServices, uastReferenceKotlinCompileTaskName)
   }
 
-  private fun configureOutputSettings(lintOptions: Lint) {
+  private fun configureOutputSettings(lintOptions: Lint, projectOptions: ProjectOptions) {
     // Always output the text report for the text output task
     this.textReportEnabled.setDisallowChanges(true)
-    this.textReportToStdOut.setDisallowChanges(lintOptions.printTextReport)
+    this.textReportToStdOut.setDisallowChanges(
+      projectOptions.get(OptionalBooleanOption.LINT_PRINT_TEXT_REPORT) ?: lintOptions.printTextReport
+    )
     this.htmlReportEnabled.setDisallowChanges(lintOptions.htmlReport)
     this.xmlReportEnabled.setDisallowChanges(lintOptions.xmlReport)
     this.sarifReportEnabled.setDisallowChanges(lintOptions.sarifReport)
