@@ -1460,7 +1460,7 @@ package com.android.build.api.dsl {
   }
 
   public interface KeepRules {
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.io.File> getFiles();
+    method @InaccessibleFromKotlin @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.io.File> getFiles();
     method @InaccessibleFromKotlin public boolean getIgnoreFromAllExternalDependencies();
     method @InaccessibleFromKotlin public boolean getIncludeDefault();
     method @Deprecated @org.gradle.api.Incubating public void ignoreAllExternalDependencies(boolean ignore);
@@ -1469,7 +1469,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void ignoreFromAllExternalDependencies(boolean ignore);
     method @InaccessibleFromKotlin public void setIgnoreFromAllExternalDependencies(boolean);
     method @InaccessibleFromKotlin public void setIncludeDefault(boolean);
-    property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.io.File> files;
+    property @Deprecated @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.io.File> files;
     property public abstract boolean ignoreFromAllExternalDependencies;
     property public abstract boolean includeDefault;
   }
@@ -1999,7 +1999,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getEnable();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
-    method @org.gradle.api.Incubating public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
+    method public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);
     method @InaccessibleFromKotlin public void setEnable(boolean);
     property public abstract boolean enable;
     property @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public abstract org.gradle.api.provider.SetProperty<java.lang.String> packageScope;

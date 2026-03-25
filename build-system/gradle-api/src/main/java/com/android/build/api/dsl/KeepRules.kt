@@ -30,7 +30,7 @@ interface KeepRules {
   var ignoreFromAllExternalDependencies: Boolean
 
   /** Keep rules files set */
-  @get:HiddenInDefinition @get:Incubating val files: SetProperty<File>
+  @get:HiddenInDefinition @get:Incubating @Deprecated("Use keepRules source folder instead") val files: SetProperty<File>
 
   /**
    * This flag will include default keep rules that enables shrinking, obfuscation, and optimization of bytecode when `optimization.enable`

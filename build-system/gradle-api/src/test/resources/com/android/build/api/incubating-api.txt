@@ -149,7 +149,6 @@ https://issuetracker.google.com/328748711
   * com.android.build.api.dsl.BundleDensity.setEnableSplit: void (java.lang.Boolean)
 https://issuetracker.google.com/328748714
   * com.android.build.api.dsl.Optimization.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
-  * com.android.build.api.dsl.Optimization.keepRules: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules, kotlin.Unit>)
   * com.android.build.api.dsl.VariantDimension.getOptimization: com.android.build.api.dsl.Optimization ()
   * com.android.build.api.dsl.VariantDimension.optimization: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.Optimization, kotlin.Unit>)
 https://issuetracker.google.com/328748727
