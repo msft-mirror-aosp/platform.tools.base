@@ -78,7 +78,7 @@ const UIUtils = {
       );
 
       if (filteredOptions.length === 0) {
-        listZone.innerHTML = `<div class="p-4 text-xs text-gray-400 text-center">No options found</div>`;
+        listZone.innerHTML = `<div class="p-4 text-xs text-gray-500 text-center">No options found</div>`;
         return;
       }
 
@@ -153,6 +153,9 @@ const TestReportApp = {
     viewMode: 'flat',
     density: 'comfy',
     currentFlatView: 'modules',
+    selectedModule: null,
+    selectedPackage: null,
+    selectedClass: null,
     filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
     variants: [],
@@ -172,7 +175,7 @@ const TestReportApp = {
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
-      this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red font-bold" style="padding: 2rem;">Error: Data file not loaded.</td></tr>`;
+      this.elements.resultsData.innerHTML = `<tr><td colspan="100%" class="text-center text-red-600 font-bold" style="padding: 2rem;">Error: Data file not loaded.</td></tr>`;
     }
   },
 
@@ -507,13 +510,43 @@ const TestReportApp = {
 
     this.elements.flatViewControls.addEventListener('click', (e) => { const button = e.target.closest('.view-toggle'); if (button) { this.state.currentFlatView = button.dataset.view; this.render(); } });
     this.elements.resultsData.addEventListener('click', (e) => {
-        const treeToggle = e.target.closest('.tree-toggle');
-        if (treeToggle) {
-            e.stopPropagation();
-            e.preventDefault();
-            this.handleTreeRowClick(treeToggle);
+        if (this.state.viewMode === 'flat') {
+            const clickable = e.target.closest('.nav-link');
+            if (clickable) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.handleFlatRowClick(clickable);
+            }
+        } else {
+            const treeToggle = e.target.closest('.tree-toggle');
+            if (treeToggle) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.handleTreeRowClick(treeToggle);
+            }
         }
     });
+    this.elements.breadcrumbs.addEventListener('click', (e) => {
+        const link = e.target.closest('a[data-action]');
+        if (!link) return;
+        e.preventDefault();
+        const action = link.dataset.action;
+        if (action === 'go-to-modules') {
+            this.state.selectedModule = null;
+            this.state.selectedPackage = null;
+            this.state.selectedClass = null;
+            this.state.currentFlatView = 'modules';
+        } else if (action === 'go-to-packages') {
+            this.state.selectedPackage = null;
+            this.state.selectedClass = null;
+            this.state.currentFlatView = 'packages';
+        } else if (action === 'go-to-classes') {
+            this.state.selectedClass = null;
+            this.state.currentFlatView = 'classes';
+        }
+        this.render();
+    });
+
     this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); });
 
   },
@@ -639,6 +672,24 @@ const TestReportApp = {
     });
   },
 
+  handleFlatRowClick(target) {
+    const { name, type, moduleName, packageName } = target.dataset;
+    if (type === 'module') {
+        this.state.selectedModule = name;
+        this.state.currentFlatView = 'packages';
+    } else if (type === 'package') {
+        this.state.selectedModule = moduleName;
+        this.state.selectedPackage = name;
+        this.state.currentFlatView = 'classes';
+    } else if (type === 'class') {
+        this.state.selectedModule = moduleName;
+        this.state.selectedPackage = packageName;
+        this.state.selectedClass = name;
+        this.state.currentFlatView = 'testCases';
+    }
+    this.render();
+  },
+
   handleTreeRowClick(target) {
     const row = target.closest('tr');
     if (!row) return;
@@ -674,6 +725,13 @@ const TestReportApp = {
         if (type === 'package' && this.state.filters.packages.length > 0 && !this.state.filters.packages.includes(node.name)) return false;
         if (type === 'class' && this.state.filters.classes.length > 0 && !this.state.filters.classes.includes(node.name)) return false;
         if (type === 'testCase' && this.state.filters.testCases.length > 0 && !this.state.filters.testCases.includes(node.name)) return false;
+
+        // Drill-down selection filters (Flat view only)
+        if (this.state.viewMode === 'flat') {
+          if (type === 'module' && this.state.selectedModule && this.state.selectedModule !== node.name) return false;
+          if (type === 'package' && this.state.selectedPackage && this.state.selectedPackage !== node.name) return false;
+          if (type === 'class' && this.state.selectedClass && this.state.selectedClass !== node.name) return false;
+        }
 
         // Search filter
         let selfMatchesSearch = true;
@@ -855,20 +913,58 @@ const TestReportApp = {
     let nameHeader = this.state.viewMode === 'tree' ? 'Name' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1);
 
     this.elements.tableHeaders.innerHTML = `
-            <tr>
-                <th class="sticky-name" data-sort-by="name">${nameHeader} ${sortIndicator('name')}</th>
-                ${variantsToShow.map(v => `<th class="text-center border-l" colspan="4">${v}</th>`).join('')}
+            <tr class="border-b border-gray-200">
+                <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30" data-sort-by="name">${nameHeader} ${sortIndicator('name')}</th>
+                ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${v}</th>`).join('')}
             </tr>
-            <tr>
-                <th class="sticky-name"></th>
-                ${variantsToShow.map(v => `<th class="text-center text-xs font-medium border-l">Pass</th><th class="text-center text-xs font-medium">Fail</th><th class="text-center text-xs font-medium">Skip</th><th class="text-center text-xs font-medium">Pass Rate</th>`).join('')}
+            <tr class="border-b border-gray-200">
+                <th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                ${variantsToShow.map(v => `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
             </tr>`;
   },
 
   renderBreadcrumbs() {
-    this.elements.breadcrumbs.innerHTML = (this.state.viewMode === 'flat') ?
-      `<span>Showing all ${this.state.currentFlatView}</span>` :
-      `<span class="font-medium">Project Overview</span>`;
+    if (this.state.viewMode !== 'flat') {
+        this.elements.breadcrumbs.innerHTML = `<span class="breadcrumb-current">Project Overview</span>`;
+        return;
+    }
+    const { selectedModule, selectedPackage, selectedClass } = this.state;
+    let html = '';
+
+    // "Project" is the root link
+    if (selectedModule) {
+        html += `<a href="#" class="breadcrumb-link" data-action="go-to-modules">Project</a>`;
+    } else {
+        html += `<span class="breadcrumb-current">Project</span>`;
+    }
+
+    // Module level
+    if (selectedModule) {
+        html += `<span class="breadcrumb-separator">/</span>`;
+        if (selectedPackage) {
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-packages">${selectedModule}</a>`;
+        } else {
+            html += `<span class="breadcrumb-current">${selectedModule}</span>`;
+        }
+    }
+
+    // Package level
+    if (selectedPackage) {
+        html += `<span class="breadcrumb-separator">/</span>`;
+        if (selectedClass) {
+            html += `<a href="#" class="breadcrumb-link" data-action="go-to-classes">${selectedPackage}</a>`;
+        } else {
+            html += `<span class="breadcrumb-current">${selectedPackage}</span>`;
+        }
+    }
+
+    // Class level
+    if (selectedClass) {
+        html += `<span class="breadcrumb-separator">/</span>`;
+        html += `<span class="breadcrumb-current">${selectedClass}</span>`;
+    }
+
+    this.elements.breadcrumbs.innerHTML = html;
   },
 
   renderTreeRows(data) {
@@ -886,7 +982,7 @@ const TestReportApp = {
 
       html += `
                 <tr class="table-row ${level > 0 ? 'hidden' : ''}" data-id="${uniqueId}" data-parent-id="${parentId}">
-                    <td class="sticky-name" title="${node.name}">
+                    <td class="py-3 px-6 sticky-name" title="${node.name}">
                         <div class="tree-toggle" style="padding-left: ${level * 1.0}rem;">
                             ${chevron} ${nameContent}
                         </div>
@@ -900,27 +996,33 @@ const TestReportApp = {
     };
 
     if (data.modules) data.modules.forEach(module => renderNode(module, 'root', 0));
-    this.elements.resultsData.innerHTML = html || '<tr><td colspan="100%" class="text-center text-gray" style="padding: 2rem;">No items match the current filters.</td></tr>';
+    this.elements.resultsData.innerHTML = html || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No items match the current filters.</td></tr>';
   },
 
   renderFlatRows(data) {
     let items = [];
     const view = this.state.currentFlatView;
     if (data.modules) {
-        if (view === 'modules') items = data.modules;
-        else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name })));
-        else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name }))));
-        else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name })))));
+        if (view === 'modules') items = data.modules.map(i => ({ ...i, type: 'module' }));
+        else if (view === 'packages') items = data.modules.flatMap(m => m.packages.map(i => ({ ...i, parent: m.name, moduleName: m.name, type: 'package' })));
+        else if (view === 'classes') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.map(i => ({ ...i, parent: p.name, moduleName: m.name, packageName: p.name, type: 'class' }))));
+        else if (view === 'testCases') items = data.modules.flatMap(m => m.packages.flatMap(p => p.classes.flatMap(c => c.testCases.map(i => ({ ...i, parent: c.name, moduleName: m.name, packageName: p.name, className: c.name, type: 'testCase' })))));
     }
 
-    this.elements.resultsData.innerHTML = items.map(item => `
-            <tr class="table-row">
-                <td class="sticky-name" title="${item.name}${item.parent ? ' (' + item.parent + ')' : ''}">
-                     <div class="font-medium">${item.name}</div>
-                     ${item.parent ? `<div class="text-xs text-gray">${item.parent}</div>` : ''}
-                </td>
-                ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
-            </tr>`).join('') || '<tr><td colspan="100%" class="text-center text-gray" style="padding: 2rem;">No results found.</td></tr>';
+    this.elements.resultsData.innerHTML = items.map(item => {
+        let nameCell = `<div class="font-medium">${item.name}</div>`;
+        if (view !== 'testCases') {
+            nameCell = `<div class="font-medium nav-link text-blue-700 hover-underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName || ''}" data-package-name="${item.packageName || ''}">${item.name}</div>`;
+        }
+        
+        return `<tr class="table-row">
+            <td class="py-3 px-6 sticky-name" title="${item.name}${item.parent ? ' (' + item.parent + ')' : ''}">
+                 ${nameCell}
+                 ${item.parent ? `<div class="text-xs text-gray-500">${item.parent}</div>` : ''}
+            </td>
+            ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
+        </tr>`;
+    }).join('') || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No results found.</td></tr>';
   },
 
   // --- HELPERS ---
@@ -1001,23 +1103,23 @@ const TestReportApp = {
         const stackTrace = (typeof statusVal === 'object' && statusVal !== null) ? statusVal.stackTrace : null;
 
         let cellContent = '-';
-        let cellClass = 'text-center text-gray border-l';
+        let cellClass = 'py-3 px-4 text-center text-gray-500 border-l border-gray-200';
 
         if (status === 'pass') {
           cellContent = 'Passed';
-          cellClass = 'text-center text-green font-medium border-l';
+          cellClass = 'py-3 px-4 text-center text-green-600 font-medium border-l border-gray-200';
         } else if (status === 'fail') {
           if (stackTrace) {
             cellContent = 'Failure';
-            cellClass = 'text-center text-red font-bold border-l clickable-status';
+            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200 clickable-status';
             return `<td colspan="4" class="${cellClass}" onclick="TestReportApp.openStackTrace(this)" data-stack-trace="${encodeURIComponent(stackTrace)}">${cellContent}</td>`;
           } else {
             cellContent = 'Failed';
-            cellClass = 'text-center text-red font-bold border-l';
+            cellClass = 'py-3 px-4 text-center text-red-600 font-bold border-l border-gray-200';
           }
         } else if (status === 'skipped') {
           cellContent = 'Skipped';
-          cellClass = 'text-center text-yellow border-l';
+          cellClass = 'py-3 px-4 text-center text-yellow-600 border-l border-gray-200';
         }
 
         return `<td colspan="4" class="${cellClass}">${cellContent}</td>`;
@@ -1027,10 +1129,10 @@ const TestReportApp = {
     // Rendering for a summary row
     return `${variantsToShow.map(v => {
       const stats = summaryOrNode[v];
-      if (!stats) return '<td colspan="4" class="text-center text-gray border-l">-</td>';
+      if (!stats) return '<td colspan="4" class="text-center text-gray-500 border-l border-gray-200">-</td>';
 
       const { passed, failed, skipped, total, rate } = stats;
-      const passRateColor = rate >= 95 ? 'text-green' : rate >= 80 ? 'text-yellow' : 'text-red';
+      const passRateColor = rate >= 95 ? 'text-green-600' : rate >= 80 ? 'text-yellow-600' : 'text-red-600';
       const relevantTotal = passed + failed;
 
       const filter = this.state.filters.status;
@@ -1039,13 +1141,13 @@ const TestReportApp = {
       const showSkipped = filter.includes('skipped');
 
       return `
-                <td class="text-center ${showPassed ? 'text-green' : 'text-gray'} font-medium border-l">${showPassed ? passed : '-'}</td>
-                <td class="text-center ${showFailed ? (failed > 0 ? 'text-red font-bold' : 'text-gray') : 'text-gray'}">${showFailed ? failed : '-'}</td>
-                <td class="text-center ${showSkipped ? 'text-yellow' : 'text-gray'}">${showSkipped ? skipped : '-'}</td>
-                <td class="text-center">
-                    <div class="flex-col">
+                <td class="py-3 px-4 text-center ${showPassed ? 'text-green-600' : 'text-gray-500'} font-medium border-l border-gray-200">${showPassed ? passed : '-'}</td>
+                <td class="py-3 px-4 text-center ${showFailed ? (failed > 0 ? 'text-red-600 font-bold' : 'text-gray-500') : 'text-gray-500'}">${showFailed ? failed : '-'}</td>
+                <td class="py-3 px-4 text-center ${showSkipped ? 'text-yellow-600' : 'text-gray-500'}">${showSkipped ? skipped : '-'}</td>
+                <td class="py-3 px-4 text-center">
+                    <div class="flex flex-col">
                         <span class="font-bold ${passRateColor}">${rate.toFixed(1)}%</span>
-                        <span class="text-xs text-gray">${passed}/${relevantTotal}</span>
+                        <span class="text-xs text-gray-500">${passed}/${relevantTotal}</span>
                     </div>
                 </td>`;
     }).join('')}`;

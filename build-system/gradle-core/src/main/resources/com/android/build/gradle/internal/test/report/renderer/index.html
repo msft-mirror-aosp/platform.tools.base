@@ -5,12 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Test Status Report</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
-  <header class="app-header">
+  <header>
     <div class="header-top-row">
       <div class="header-left">
         <div class="header-branding">
@@ -210,9 +209,9 @@
       </div>
     </div>  </header>
 
-  <div id="report-view" class="container">
-    <main class="main-content">
-      <div id="breadcrumbs" class="breadcrumbs"></div>
+  <div id="report-view" class="container-custom">
+    <main>
+      <div id="breadcrumbs" class="breadcrumbs-container"></div>
 
       <div id="view-toggles" class="view-toggles">
         <div id="flat-view-controls" class="toggle-group">
@@ -224,7 +223,6 @@
       </div>
 
       <div class="table-container">
-        <div class="table-scroll">
           <table>
             <thead id="table-headers" class="table-header">
             </thead>
@@ -232,7 +230,6 @@
             </tbody>
           </table>
         </div>
-      </div>
     </main>
   </div>
 
