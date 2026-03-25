@@ -56,6 +56,8 @@ import java.io.File
  *          textReport = true
  *          // file to write report to (if not specified, defaults to standard output)
  *          textOutput file("$buildDir/reports/lint-results.txt")
+ *          // if true, write text report to standard output (false by default)
+ *          printTextReport = true
  *          // if true, generate an XML report for use by for example Jenkins
  *          xmlReport true
  *          // file to write report to (if not specified, defaults to lint-results.xml)
