@@ -71,6 +71,10 @@ class AppWithRuntimeDependencyTest {
 
   @Test
   fun checkRuntimeClasspath() {
+    for (m in listOf("app", "library", "library2")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
+
     val models = project.modelV2().fetchModels("debug").container
 
     val app = models.getProject(":app")

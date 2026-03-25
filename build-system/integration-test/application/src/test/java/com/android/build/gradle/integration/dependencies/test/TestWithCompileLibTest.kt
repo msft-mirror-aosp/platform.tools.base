@@ -45,6 +45,9 @@ class TestWithCompileLibTest : ModelComparator() {
 
   @Test
   fun `test VariantDependencies model`() {
+    for (m in listOf("app", "library")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
     val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "app_VariantDependencies")
