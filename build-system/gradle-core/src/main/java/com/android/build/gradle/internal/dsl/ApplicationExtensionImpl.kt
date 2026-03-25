@@ -26,11 +26,11 @@ import com.android.build.api.dsl.ApplicationProductFlavor
 import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.DeclarativeApplicationBuildType
 import com.android.build.api.dsl.DeclarativeApplicationFlavor
+import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.dsl.Packaging
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.dsl.ViewBinding
 import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.internal.DependenciesExtension
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
@@ -52,11 +52,7 @@ constructor(
   dslContainers: DslContainerProvider<ApplicationDefaultConfig, ApplicationBuildType, ApplicationProductFlavor, SigningConfig>,
 ) : ApplicationExtensionImpl(dslServices, dslContainers), DeclarativeApplicationExtension {
 
-  override val dependencies: DependenciesExtension by lazy { dslServices.newInstance(DependenciesExtension::class.java) }
-
-  override fun dependencies(configure: DependenciesExtension.() -> Unit) {
-    configure.invoke(dependencies)
-  }
+  override val dependencies: DependenciesExtension = dslServices.newInstance(DependenciesExtension::class.java)
 
   override val buildTypes: NamedDomainObjectContainer<DeclarativeApplicationBuildType> =
     dslServices.domainObjectContainer(

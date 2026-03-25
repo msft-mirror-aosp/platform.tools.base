@@ -20,7 +20,9 @@ import com.android.build.api.dsl.AndroidLibrarySourceSet
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ComposeOptions
 import com.android.build.api.dsl.DeclarativeLibraryBuildType
+import com.android.build.api.dsl.DeclarativeLibraryExtension
 import com.android.build.api.dsl.DeclarativeLibraryFlavor
+import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.dsl.LibraryAndroidResources
 import com.android.build.api.dsl.LibraryBuildFeatures
 import com.android.build.api.dsl.LibraryBuildType
@@ -32,7 +34,6 @@ import com.android.build.api.dsl.Prefab
 import com.android.build.api.dsl.TestCoverage
 import com.android.build.api.dsl.ViewBinding
 import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.internal.DependenciesExtension
 import com.android.build.gradle.internal.coverage.JacocoOptions
 import com.android.build.gradle.internal.dsl.DefaultConfig as InternalDefaultConfig
 import com.android.build.gradle.internal.dsl.ProductFlavor as InternalProductFlavor
@@ -54,11 +55,7 @@ constructor(
   dslContainers: DslContainerProvider<LibraryDefaultConfig, LibraryBuildType, LibraryProductFlavor, SigningConfig>,
 ) : LibraryExtensionImpl(dslServices, dslContainers), DeclarativeLibraryExtension {
 
-  override val dependencies: DependenciesExtension by lazy { dslServices.newInstance(DependenciesExtension::class.java) }
-
-  override fun dependencies(configure: DependenciesExtension.() -> Unit) {
-    configure.invoke(dependencies)
-  }
+  override val dependencies: DependenciesExtension = dslServices.newInstance(DependenciesExtension::class.java)
 
   override val buildTypes: NamedDomainObjectContainer<DeclarativeLibraryBuildType> =
     dslServices.domainObjectContainer(DeclarativeBuildType::class.java, DeclarativeBuildTypeFactory(dslServices, ComponentTypeImpl.LIBRARY))

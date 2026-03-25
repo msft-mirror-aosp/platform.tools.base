@@ -19,8 +19,8 @@ package com.android.build.gradle.internal.plugins;
 import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID;
 
 import com.android.annotations.NonNull;
+import com.android.build.api.dsl.ApplicationDeclarativeDefinition;
 import com.android.build.api.dsl.ApplicationExtension;
-import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.ApplicationAndroidComponentsExtensionImpl;
 import com.android.build.api.extension.impl.VariantApiOperationsRegistrar;
@@ -33,17 +33,18 @@ import com.android.build.gradle.internal.component.ApplicationCreationConfig;
 import com.android.build.gradle.internal.component.TestComponentCreationConfig;
 import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.ApplicationVariantDslInfo;
+import com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl;
 import com.android.build.gradle.internal.dsl.ApplicationExtensionImpl;
-import com.android.build.gradle.internal.dsl.ApplicationExtensionWrapper;
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension;
+import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension;
 import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtensionImpl;
 import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
+import com.android.build.gradle.internal.dsl.DslBindingUtils;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
-import com.android.build.gradle.internal.dsl.decorator.DeclarativeDslDecorator;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
 import com.android.build.gradle.internal.tasks.ApplicationTaskManager;
@@ -100,11 +101,9 @@ public class AppPlugin
 
     static class Binding implements ProjectTypeBinding {
         public void bind(ProjectTypeBindingBuilder builder) {
-            Class<? extends DeclarativeApplicationExtension> wrapperClass =
-                    new DeclarativeDslDecorator().decorate(ApplicationExtensionWrapper.class);
             builder.bindProjectType(
                             "androidApp",
-                            DeclarativeApplicationExtension.class,
+                            ApplicationDeclarativeDefinition.class,
                             (context, definition, buildModel) -> {
                                 DeclarativeServices services =
                                         context.getObjectFactory()
@@ -116,10 +115,10 @@ public class AppPlugin
                                                         .getProject()
                                                         .getExtensions()
                                                         .getByName("android");
-
-                                ((ApplicationExtensionWrapper) definition).setDelegate(extension);
+                                DslBindingUtils.copyProperties(definition, extension);
                             })
-                    .withUnsafeDefinitionImplementationType(wrapperClass)
+                    .withUnsafeDefinitionImplementationType(
+                            ApplicationDeclarativeDefinitionImpl.class)
                     .withUnsafeApplyAction();
         }
     }

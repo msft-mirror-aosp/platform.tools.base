@@ -16,6 +16,4 @@
 
 package com.android.build.gradle.internal.dsl
 
-abstract class ApplicationExtensionWrapper : DeclarativeApplicationExtension {
-  var delegate: DeclarativeApplicationExtension? = null
-}
+abstract class ApplicationExtensionWrapper : DeclarativeApplicationExtension

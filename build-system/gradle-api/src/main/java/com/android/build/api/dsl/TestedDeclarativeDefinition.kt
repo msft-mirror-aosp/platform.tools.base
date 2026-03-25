@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.api.dsl
 
-import com.android.build.api.dsl.DeclarativeLibraryExtension
+import org.gradle.api.Incubating
 
-abstract class LibraryExtensionWrapper : DeclarativeLibraryExtension
+@Incubating
+/** @suppress */
+interface TestedDeclarativeDefinition {
+  /** Specifies the build type that the plugin should use to test the module. */
+  @get:Incubating @set:Incubating var testBuildType: String
+
+  /** The namespace used by the android test and unit test components. */
+  @get:Incubating @set:Incubating var testNamespace: String?
+
+  /** Options to configure the test fixtures. */
+  @get:Incubating val testFixtures: TestFixtures
+}

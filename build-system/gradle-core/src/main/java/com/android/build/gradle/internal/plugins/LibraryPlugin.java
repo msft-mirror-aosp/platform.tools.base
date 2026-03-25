@@ -19,6 +19,8 @@ import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_
 
 import com.android.AndroidProjectTypes;
 import com.android.annotations.NonNull;
+import com.android.build.api.dsl.DeclarativeLibraryExtension;
+import com.android.build.api.dsl.LibraryDeclarativeDefinition;
 import com.android.build.api.dsl.LibraryExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.LibraryAndroidComponentsExtensionImpl;
@@ -35,16 +37,15 @@ import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension;
 import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
+import com.android.build.gradle.internal.dsl.DslBindingUtils;
+import com.android.build.gradle.internal.dsl.LibraryDeclarativeDefinitionImpl;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
-import com.android.build.gradle.internal.dsl.LibraryExtensionWrapper;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
-import com.android.build.gradle.internal.dsl.decorator.DeclarativeDslDecorator;
 import com.android.build.gradle.internal.scope.DelayedActionsExecutor;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
@@ -91,11 +92,9 @@ public class LibraryPlugin
 
     static class Binding implements ProjectTypeBinding {
         public void bind(ProjectTypeBindingBuilder builder) {
-            Class<? extends DeclarativeLibraryExtension> wrapperClass =
-                    new DeclarativeDslDecorator().decorate(LibraryExtensionWrapper.class);
             builder.bindProjectType(
                             "androidLibrary",
-                            DeclarativeLibraryExtension.class,
+                            LibraryDeclarativeDefinition.class,
                             (context, definition, buildModel) -> {
                                 DeclarativeServices services =
                                         context.getObjectFactory()
@@ -106,9 +105,10 @@ public class LibraryPlugin
                                                         .getProject()
                                                         .getExtensions()
                                                         .getByName("android");
-                                ((LibraryExtensionWrapper) definition).setDelegate(extension);
+
+                                DslBindingUtils.copyProperties(definition, extension);
                             })
-                    .withUnsafeDefinitionImplementationType(wrapperClass)
+                    .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class)
                     .withUnsafeApplyAction();
         }
     }

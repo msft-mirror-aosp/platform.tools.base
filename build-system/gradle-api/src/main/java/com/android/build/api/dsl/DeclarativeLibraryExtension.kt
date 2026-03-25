@@ -14,8 +14,17 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.api.dsl
 
-import com.android.build.api.dsl.DeclarativeLibraryExtension
+import org.gradle.api.Incubating
+import org.gradle.api.NamedDomainObjectContainer
 
-abstract class LibraryExtensionWrapper : DeclarativeLibraryExtension
+@Incubating
+/** @suppress */
+interface DeclarativeLibraryExtension : LibraryExtension {
+  @get:Incubating val dependencies: DependenciesExtension
+
+  @get:Incubating override val buildTypes: NamedDomainObjectContainer<DeclarativeLibraryBuildType>
+
+  @get:Incubating override val productFlavors: NamedDomainObjectContainer<DeclarativeLibraryFlavor>
+}

@@ -81,7 +81,13 @@ constructor(
   @WithLazyInitialization
   fun lazyInit() {
     renderscriptOptimLevel = 3
-    enableUnitTestCoverage = dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
+    enableUnitTestCoverage =
+      try {
+        // this information may not available for declarative definition
+        dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
+      } catch (_: Exception) {
+        false
+      }
   }
 
   /** Name of this build type. */

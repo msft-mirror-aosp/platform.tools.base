@@ -19,8 +19,8 @@ package com.android.build.gradle.internal.dsl
 import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.DeclarativeApplicationBuildType
 import com.android.build.api.dsl.DeclarativeApplicationFlavor
+import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.variant.AndroidApplicationModuleModel
-import com.android.build.gradle.internal.DependenciesExtension
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.features.binding.Definition
@@ -28,8 +28,6 @@ import org.gradle.features.binding.Definition
 @Incubating
 interface DeclarativeApplicationExtension : ApplicationExtension, Definition<AndroidApplicationModuleModel> {
   val dependencies: DependenciesExtension
-
-  fun dependencies(configure: DependenciesExtension.() -> Unit)
 
   override val buildTypes: NamedDomainObjectContainer<DeclarativeApplicationBuildType>
 
