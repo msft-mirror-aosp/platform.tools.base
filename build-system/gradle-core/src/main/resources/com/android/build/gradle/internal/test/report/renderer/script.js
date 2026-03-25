@@ -672,7 +672,7 @@ const TestReportApp = {
     if (!this.processedData) return { modules: [] };
     const finalData = JSON.parse(JSON.stringify(this.processedData));
 
-    const applyFilters = (nodes, type) => {
+    const applyFilters = (nodes, type, parentMatchesSearch = false) => {
       if (!nodes) return [];
       return nodes.filter(node => {
         // Fast paths: discard outright if missing explicit filters.
@@ -681,13 +681,22 @@ const TestReportApp = {
         if (type === 'class' && this.state.filters.classes.length > 0 && !this.state.filters.classes.includes(node.name)) return false;
         if (type === 'testCase' && this.state.filters.testCases.length > 0 && !this.state.filters.testCases.includes(node.name)) return false;
 
+        // Search filter
+        let selfMatchesSearch = true;
+        if (this.state.filters.search) {
+          const searchTerm = this.state.filters.search.toLowerCase();
+          selfMatchesSearch = node.name.toLowerCase().includes(searchTerm);
+        }
+
+        const effectiveMatchesSearch = selfMatchesSearch || parentMatchesSearch;
+
         const childKey = this.pluralize(this.getChildType(type));
         let children = node[childKey] || (type === 'class' ? node.testCases : []);
         let hasVisibleChildren = false;
 
         // Filter children first
         if (children) {
-          const filteredChildren = applyFilters(children, this.getChildType(type));
+          const filteredChildren = applyFilters(children, this.getChildType(type), effectiveMatchesSearch);
           if (type === 'class') node.testCases = filteredChildren;
           else node[childKey] = filteredChildren;
           hasVisibleChildren = filteredChildren.length > 0;
@@ -702,13 +711,6 @@ const TestReportApp = {
           } else {
             return false;
           }
-        }
-
-        // Search filter
-        let selfMatchesSearch = true;
-        if (this.state.filters.search) {
-          const searchTerm = this.state.filters.search.toLowerCase();
-          selfMatchesSearch = node.name.toLowerCase().includes(searchTerm);
         }
 
         let matchesStatus = true;
@@ -738,10 +740,10 @@ const TestReportApp = {
 
         // Final evaluation check
         if (!this.getChildType(type)) { // Leaf node (testCase)
-            return matchesStatus && selfMatchesSearch;
+            return matchesStatus && effectiveMatchesSearch;
         }
 
-        return selfMatchesSearch || hasVisibleChildren;
+        return effectiveMatchesSearch || hasVisibleChildren;
       });
     };
 
