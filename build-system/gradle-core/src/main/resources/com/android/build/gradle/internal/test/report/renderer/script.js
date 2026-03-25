@@ -152,7 +152,7 @@ const TestReportApp = {
   state: {
     viewMode: 'tree',
     currentFlatView: 'modules',
-    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all' },
+    filters: { variants: [], search: '', status: ['passed', 'failed', 'skipped'], testSuite: 'all', modules: [], packages: [], classes: [], testCases: [] },
     sort: { by: 'name', order: 'asc' },
     variants: [],
     processedData: null
@@ -216,6 +216,31 @@ const TestReportApp = {
       // New UI Elements
       viewSegments: document.getElementById('view-segments'),
       statusChipContainer: document.getElementById('status-chip-container'),
+      modChipContainer: document.getElementById('mod-chip-container'),
+      pkgChipContainer: document.getElementById('pkg-chip-container'),
+      clsChipContainer: document.getElementById('cls-chip-container'),
+      tcChipContainer: document.getElementById('tc-chip-container'),
+
+      moduleFilterBtn: document.getElementById('mod-filter-btn'),
+      moduleFilterText: document.getElementById('mod-filter-text'),
+      moduleFilterDropdown: document.getElementById('mod-dropdown'),
+      moduleFilterList: document.getElementById('mod-filter-list'),
+
+      packageFilterBtn: document.getElementById('pkg-filter-btn'),
+      packageFilterText: document.getElementById('pkg-filter-text'),
+      packageFilterDropdown: document.getElementById('pkg-dropdown'),
+      packageFilterList: document.getElementById('pkg-filter-list'),
+
+      classFilterBtn: document.getElementById('cls-filter-btn'),
+      classFilterText: document.getElementById('cls-filter-text'),
+      classFilterDropdown: document.getElementById('cls-dropdown'),
+      classFilterList: document.getElementById('cls-filter-list'),
+
+      tcFilterBtn: document.getElementById('tc-filter-btn'),
+      tcFilterText: document.getElementById('tc-filter-text'),
+      tcFilterDropdown: document.getElementById('tc-dropdown'),
+      tcFilterList: document.getElementById('tc-filter-list'),
+
       addFilterBtn: document.getElementById('add-filter-btn'),
       addFilterDropdown: document.getElementById('add-filter-dropdown'),
       addFilterList: document.getElementById('add-filter-list'),
@@ -390,6 +415,11 @@ const TestReportApp = {
     this.elements.variantFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.variantFilterDropdown, this.elements.variantFilterBtn));
     this.elements.statusFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn));
 
+    if (this.elements.moduleFilterBtn) this.elements.moduleFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.moduleFilterDropdown, this.elements.moduleFilterBtn));
+    if (this.elements.packageFilterBtn) this.elements.packageFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.packageFilterDropdown, this.elements.packageFilterBtn));
+    if (this.elements.classFilterBtn) this.elements.classFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.classFilterDropdown, this.elements.classFilterBtn));
+    if (this.elements.tcFilterBtn) this.elements.tcFilterBtn.addEventListener('click', () => this.toggleDropdown(this.elements.tcFilterDropdown, this.elements.tcFilterBtn));
+
     // Add Filter Logic
     if (this.elements.addFilterBtn) {
         this.elements.addFilterBtn.addEventListener('click', (e) => {
@@ -397,6 +427,14 @@ const TestReportApp = {
             this.toggleDropdown(this.elements.addFilterDropdown, this.elements.addFilterBtn);
         });
     }
+
+    const filterTypeConfig = {
+        'status': { container: this.elements.statusChipContainer, dropdown: this.elements.statusFilterDropdown, btn: this.elements.statusFilterBtn },
+        'module': { container: this.elements.modChipContainer, dropdown: this.elements.moduleFilterDropdown, btn: this.elements.moduleFilterBtn, stateKey: 'modules' },
+        'package': { container: this.elements.pkgChipContainer, dropdown: this.elements.packageFilterDropdown, btn: this.elements.packageFilterBtn, stateKey: 'packages' },
+        'class': { container: this.elements.clsChipContainer, dropdown: this.elements.classFilterDropdown, btn: this.elements.classFilterBtn, stateKey: 'classes' },
+        'testCase': { container: this.elements.tcChipContainer, dropdown: this.elements.tcFilterDropdown, btn: this.elements.tcFilterBtn, stateKey: 'testCases' }
+    };
 
     if (this.elements.addFilterList) {
         this.elements.addFilterList.addEventListener('click', (e) => {
@@ -406,15 +444,16 @@ const TestReportApp = {
             if (!target) return;
 
             const filterType = target.dataset.filterType;
-            if (filterType === 'status') {
-                this.elements.statusChipContainer.classList.remove('hidden');
+            const config = filterTypeConfig[filterType];
+
+            if (config) {
+                config.container.classList.remove('hidden');
                 this.elements.addFilterDropdown.classList.add('hidden');
                 this.updateFilterButtons();
                 this.render();
 
-                // Auto open it
                 setTimeout(() => {
-                    this.toggleDropdown(this.elements.statusFilterDropdown, this.elements.statusFilterBtn);
+                    this.toggleDropdown(config.dropdown, config.btn);
                 }, 0);
             }
         });
@@ -425,11 +464,17 @@ const TestReportApp = {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             const filterType = closeBtn.dataset.filterClose;
-            if (filterType === 'status') {
-                this.state.filters.status = ['passed', 'failed', 'skipped'];
-                this.elements.statusChipContainer.classList.add('hidden');
+            const config = filterTypeConfig[filterType];
+
+            if (config) {
+                if (filterType === 'status') {
+                    this.state.filters.status = ['passed', 'failed', 'skipped'];
+                    this.buildStatusDropdown();
+                } else {
+                    this.state.filters[config.stateKey] = [];
+                }
+                config.container.classList.add('hidden');
                 this.updateFilterButtons();
-                this.buildStatusDropdown();
                 this.render();
             }
         });
@@ -480,12 +525,83 @@ const TestReportApp = {
   },
 
   updateFilterButtons() {
+      let activeChipsCount = 0;
+      const { filters } = this.state;
+
+      const updateChip = (type, stateArray, totalCount, textElement, chipContainer) => {
+          if (!textElement) return;
+
+          let label = `${type.charAt(0).toUpperCase() + type.slice(1)}: All`;
+          if (stateArray.length > 0 && stateArray.length < totalCount) {
+              if (stateArray.length === 1) {
+                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray[0]}`;
+              } else {
+                  label = `${type.charAt(0).toUpperCase() + type.slice(1)}: ${stateArray.length} Selected`;
+              }
+          }
+          textElement.textContent = label;
+
+          if (stateArray.length > 0 || !chipContainer.classList.contains('hidden')) {
+              chipContainer.classList.remove('hidden');
+              activeChipsCount++;
+              this.toggleAddFilterOption(type, false);
+          } else {
+              this.toggleAddFilterOption(type, true);
+          }
+      };
+
+      const totalModules = this.processedData.modules ? this.processedData.modules.length : 0;
+      const totalPackages = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).map(p => p.name)))].length : 0;
+      const totalClasses = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).map(c => c.name))))].length : 0;
+      const totalTestCases = this.processedData.modules ? [...new Set(this.processedData.modules.flatMap(m => (m.packages || []).flatMap(p => (p.classes || []).flatMap(c => (c.testCases || []).map(tc => tc.name)))))].length : 0;
+
+      updateChip('module', filters.modules, totalModules, this.elements.moduleFilterText, this.elements.modChipContainer);
+      updateChip('package', filters.packages, totalPackages, this.elements.packageFilterText, this.elements.pkgChipContainer);
+      updateChip('class', filters.classes, totalClasses, this.elements.classFilterText, this.elements.clsChipContainer);
+      updateChip('testCase', filters.testCases, totalTestCases, this.elements.tcFilterText, this.elements.tcChipContainer);
+
       const isStatusVisible = !this.elements.statusChipContainer.classList.contains('hidden');
       if (isStatusVisible) {
-          this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+          activeChipsCount++;
+          this.toggleAddFilterOption('status', false);
       } else {
-          this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
+          this.toggleAddFilterOption('status', true);
       }
+
+      if (this.elements.addFilterBtn) {
+          if (activeChipsCount === 5) { // module, package, class, testCase, status
+              this.elements.addFilterBtn.closest('#add-filter-container').classList.add('hidden');
+          } else {
+              this.elements.addFilterBtn.closest('#add-filter-container').classList.remove('hidden');
+          }
+      }
+  },
+
+  toggleAddFilterOption(type, show) {
+      if (!this.elements.addFilterList) return;
+      const option = this.elements.addFilterList.querySelector(`[data-filter-type="${type}"]`);
+      if (option) {
+          if (show) {
+              option.classList.remove('hidden');
+              option.style.display = '';
+          } else {
+              option.classList.add('hidden');
+              option.style.display = 'none';
+          }
+      }
+  },
+
+  getDropdownConfigs() {
+      return [
+          { btn: this.elements.testSuiteFilterBtn, dropdown: this.elements.testSuiteFilterDropdown },
+          { btn: this.elements.variantFilterBtn, dropdown: this.elements.variantFilterDropdown },
+          { btn: this.elements.statusFilterBtn, dropdown: this.elements.statusFilterDropdown },
+          { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+          { btn: this.elements.packageFilterBtn, dropdown: this.elements.packageFilterDropdown },
+          { btn: this.elements.classFilterBtn, dropdown: this.elements.classFilterDropdown },
+          { btn: this.elements.tcFilterBtn, dropdown: this.elements.tcFilterDropdown },
+          { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown }
+      ];
   },
 
   toggleDropdown(dropdown, button) {
@@ -498,23 +614,22 @@ const TestReportApp = {
   },
 
   closeAllDropdowns() {
-    this.elements.testSuiteFilterDropdown.classList.add('hidden');
-    if (this.elements.testSuiteFilterBtn) this.elements.testSuiteFilterBtn.setAttribute('aria-expanded', 'false');
-    this.elements.variantFilterDropdown.classList.add('hidden');
-    if (this.elements.variantFilterBtn) this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
-    if (this.elements.statusFilterDropdown) this.elements.statusFilterDropdown.classList.add('hidden');
-    if (this.elements.statusFilterBtn) this.elements.statusFilterBtn.setAttribute('aria-expanded', 'false');
-    if (this.elements.addFilterDropdown) this.elements.addFilterDropdown.classList.add('hidden');
+    this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
+        if (dropdown) dropdown.classList.add('hidden');
+        if (btn && btn.hasAttribute('aria-expanded')) btn.setAttribute('aria-expanded', 'false');
+    });
   },
 
   closeDropdownsOnClickOutside() {
     document.addEventListener('click', (e) => {
-      if (!this.elements.variantFilterBtn.contains(e.target) && !this.elements.variantFilterDropdown.contains(e.target) &&
-          (!this.elements.statusFilterBtn || !this.elements.statusFilterBtn.contains(e.target)) && (!this.elements.statusFilterDropdown || !this.elements.statusFilterDropdown.contains(e.target)) &&
-          !this.elements.testSuiteFilterBtn.contains(e.target) && !this.elements.testSuiteFilterDropdown.contains(e.target) &&
-          (!this.elements.addFilterBtn || !this.elements.addFilterBtn.contains(e.target)) && (!this.elements.addFilterDropdown || !this.elements.addFilterDropdown.contains(e.target))) {
-        this.closeAllDropdowns();
-      }
+      this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
+          if (btn && dropdown && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+              dropdown.classList.add('hidden');
+              if (btn.hasAttribute('aria-expanded')) {
+                  btn.setAttribute('aria-expanded', 'false');
+              }
+          }
+      });
 
       // Search Input Collapse
       if (this.elements.searchWrapper && this.elements.searchRevealBtn) {
@@ -560,6 +675,12 @@ const TestReportApp = {
     const applyFilters = (nodes, type) => {
       if (!nodes) return [];
       return nodes.filter(node => {
+        // Fast paths: discard outright if missing explicit filters.
+        if (type === 'module' && this.state.filters.modules.length > 0 && !this.state.filters.modules.includes(node.name)) return false;
+        if (type === 'package' && this.state.filters.packages.length > 0 && !this.state.filters.packages.includes(node.name)) return false;
+        if (type === 'class' && this.state.filters.classes.length > 0 && !this.state.filters.classes.includes(node.name)) return false;
+        if (type === 'testCase' && this.state.filters.testCases.length > 0 && !this.state.filters.testCases.includes(node.name)) return false;
+
         const childKey = this.pluralize(this.getChildType(type));
         let children = node[childKey] || (type === 'class' ? node.testCases : []);
         let hasVisibleChildren = false;
@@ -615,12 +736,9 @@ const TestReportApp = {
           }
         }
 
-        if (this.state.filters.status.length < 3 && !this.getChildType(type)) {
-          return matchesStatus && selfMatchesSearch;
-        }
-
-        if (this.state.filters.status.length < 3) {
-          return hasVisibleChildren;
+        // Final evaluation check
+        if (!this.getChildType(type)) { // Leaf node (testCase)
+            return matchesStatus && selfMatchesSearch;
         }
 
         return selfMatchesSearch || hasVisibleChildren;
@@ -654,6 +772,7 @@ const TestReportApp = {
 
   // --- RENDERING ---
   render() {
+    this.updateDynamicFilters();
     const data = this.getFilteredAndSortedData();
     this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
     this.updateSummaryCards(data);
@@ -661,6 +780,62 @@ const TestReportApp = {
     if (this.state.viewMode === 'flat') {
       this.updateActiveTabs();
     }
+  },
+
+  updateDynamicFilters() {
+    const filters = this.state.filters;
+    let contextModules = this.processedData.modules || [];
+
+    if (filters.modules.length > 0) {
+      contextModules = contextModules.filter(m => filters.modules.includes(m.name));
+    }
+
+    let basePackages = contextModules.flatMap(m => m.packages || []);
+    let filteredPackages = basePackages;
+    if (filters.packages.length > 0) {
+      filteredPackages = basePackages.filter(p => filters.packages.includes(p.name));
+    }
+
+    let baseClasses = filteredPackages.flatMap(p => p.classes || []);
+    let filteredClasses = baseClasses;
+    if (filters.classes.length > 0) {
+      filteredClasses = baseClasses.filter(c => filters.classes.includes(c.name));
+    }
+
+    const moduleOptions = (this.processedData.modules || []).map(m => ({ name: m.name, value: m.name }));
+    const packageOptions = [...new Set(basePackages.map(p => p.name))].sort().map(name => ({ name, value: name }));
+    const classOptions = [...new Set(filteredPackages.flatMap(p => p.classes || []).map(c => c.name))].sort().map(name => ({ name, value: name }));
+    const testCaseOptions = [...new Set(filteredClasses.flatMap(c => c.testCases || []).map(tc => tc.name))].sort().map(name => ({ name, value: name }));
+
+    UIUtils.buildActionDropdown(this.elements.moduleFilterDropdown, moduleOptions, filters.modules, (newArr) => {
+      filters.packages = [];
+      filters.classes = [];
+      filters.testCases = [];
+      filters.modules = newArr;
+      this.updateFilterButtons();
+      this.render();
+    });
+
+    UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
+      filters.classes = [];
+      filters.testCases = [];
+      filters.packages = newArr;
+      this.updateFilterButtons();
+      this.render();
+    });
+
+    UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
+      filters.testCases = [];
+      filters.classes = newArr;
+      this.updateFilterButtons();
+      this.render();
+    });
+
+    UIUtils.buildActionDropdown(this.elements.tcFilterDropdown, testCaseOptions, filters.testCases, (newArr) => {
+      filters.testCases = newArr;
+      this.updateFilterButtons();
+      this.render();
+    });
   },
 
   updateSummaryCards(data) {
