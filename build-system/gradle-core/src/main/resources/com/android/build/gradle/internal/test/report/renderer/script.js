@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) 2025 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  * UI Utilities
  * Collection of helper functions for DOM manipulation and common UI patterns.
@@ -490,6 +505,7 @@ const TestReportApp = {
             this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             this.state.viewMode = btn.dataset.value;
+            this.resetSelection();
             this.render();
         });
     }
@@ -545,14 +561,12 @@ const TestReportApp = {
         if (this.state.viewMode === 'flat') {
             const clickable = e.target.closest('.nav-link');
             if (clickable) {
-                e.stopPropagation();
                 e.preventDefault();
                 this.handleFlatRowClick(clickable);
             }
         } else {
             const treeToggle = e.target.closest('.tree-toggle');
             if (treeToggle) {
-                e.stopPropagation();
                 e.preventDefault();
                 this.handleTreeRowClick(treeToggle);
             }
@@ -731,6 +745,15 @@ const TestReportApp = {
             this.state.currentFlatView = 'modules';
         }
     }
+
+    // Reset drill-down context to avoid confusing states when grouping abruptly changes
+    this.resetSelection();
+  },
+
+  resetSelection() {
+    this.state.selectedModule = null;
+    this.state.selectedPackage = null;
+    this.state.selectedClass = null;
   },
 
   handleFlatRowClick(target) {
@@ -891,6 +914,7 @@ const TestReportApp = {
     const data = this.getFilteredAndSortedData();
     this.renderTable(data);
     this.updateGroupByText();
+    this.updateTooltipsForOverflow();
   },
 
   updateDynamicFilters() {
@@ -983,13 +1007,27 @@ const TestReportApp = {
     const sortIndicator = (key) => this.state.sort.by === key ? (this.state.sort.order === 'asc' ? '▲' : '▼') : '';
     let nameHeader = this.state.viewMode === 'tree' ? 'Name' : this.state.currentFlatView.charAt(0).toUpperCase() + this.state.currentFlatView.slice(1);
 
+    let pathHeader = '';
+    let pathSubHeader = '';
+    if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
+      if (this.state.currentFlatView === 'classes' || this.state.currentFlatView === 'testCases') {
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+      } else if (this.state.currentFlatView === 'packages') {
+        pathHeader = `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
+        pathSubHeader = `<th class="py-2 px-6 bg-gray-50 z-30"></th>`;
+      }
+    }
+
     this.elements.tableHeaders.innerHTML = `
             <tr class="border-b border-gray-200">
                 <th class="py-4 px-6 text-left font-semibold text-gray-700 sticky-name bg-gray-50 z-30" data-sort-by="name">${nameHeader} ${sortIndicator('name')}</th>
+                ${pathHeader}
                 ${variantsToShow.map(v => `<th class="py-4 px-4 text-center font-semibold text-gray-700 border-l border-gray-200" colspan="4">${v}</th>`).join('')}
             </tr>
             <tr class="border-b border-gray-200">
                 <th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>
+                ${pathSubHeader}
                 ${variantsToShow.map(v => `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200">Pass</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Fail</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Skip</th><th class="py-2 px-4 text-center text-xs font-medium text-gray-600">Pass Rate</th>`).join('')}
             </tr>`;
   },
@@ -1085,15 +1123,67 @@ const TestReportApp = {
         if (view !== 'testCases') {
             nameCell = `<div class="font-medium nav-link text-blue-700 hover-underline cursor-pointer" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName || ''}" data-package-name="${item.packageName || ''}">${item.name}</div>`;
         }
+
+        let pathCell = '';
+        if (this.state.viewMode === 'flat' && !this.state.selectedModule) {
+            if (view === 'packages') {
+                pathCell = `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+            } else if (view === 'classes') {
+                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                    <div class="flex flex-col" style="overflow: hidden; width: 100%;">
+                        <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
+                        <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
+                    </div>
+                </td>`;
+            } else if (view === 'testCases') {
+                pathCell = `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName} > ${item.className}">
+                    <div class="flex flex-col" style="overflow: hidden; width: 100%;">
+                        <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
+                        <span class="text-sm text-gray-500 truncate-block">${item.packageName} > ${item.className}</span>
+                    </div>
+                </td>`;
+            }
+        }
         
         return `<tr class="table-row">
-            <td class="py-3 px-6 sticky-name" title="${item.name}${item.parent ? ' (' + item.parent + ')' : ''}">
+            <td class="py-3 px-6 sticky-name" title="${item.name}">
                  ${nameCell}
-                 ${item.parent ? `<div class="text-xs text-gray-500">${item.parent}</div>` : ''}
             </td>
+            ${pathCell}
             ${this._renderStatusCell(view === 'testCases' ? item : item.summary, view === 'testCases')}
         </tr>`;
     }).join('') || '<tr><td colspan="100%" class="text-center text-gray-500" style="padding: 2rem;">No results found.</td></tr>';
+  },
+
+  updateTooltipsForOverflow() {
+    if (!this.elements.resultsData) return;
+    const nameCells = this.elements.resultsData.querySelectorAll('.sticky-name');
+    nameCells.forEach(cell => {
+      const isOverflowing = cell.scrollWidth > cell.clientWidth;
+      if (!isOverflowing) {
+        cell.removeAttribute('title');
+      }
+    });
+
+    const pathCells = this.elements.resultsData.querySelectorAll('.truncate, .max-w-300');
+    pathCells.forEach(cell => {
+      const blocks = cell.querySelectorAll('.truncate-block');
+      let isOverflowing = false;
+
+      if (blocks.length > 0) {
+        blocks.forEach(block => {
+          if (block.scrollWidth > block.clientWidth) {
+            isOverflowing = true;
+          }
+        });
+      } else if (cell.scrollWidth > cell.clientWidth) {
+        isOverflowing = true;
+      }
+
+      if (!isOverflowing) {
+        cell.removeAttribute('title');
+      }
+    });
   },
 
   // --- HELPERS ---
