@@ -207,8 +207,9 @@ const TestReportApp = {
       tableHeaders: document.getElementById('table-headers'),
       resultsData: document.getElementById('results-data'),
       breadcrumbs: document.getElementById('breadcrumbs'),
-      viewToggles: document.getElementById('view-toggles'),
-      flatViewControls: document.getElementById('flat-view-controls'),
+      groupByBtn: document.getElementById('group-by-btn'),
+      groupByText: document.getElementById('group-by-text'),
+      groupByDropdown: document.getElementById('group-by-dropdown'),
 
 
       // New UI Elements
@@ -449,6 +450,7 @@ const TestReportApp = {
             if (config) {
                 config.container.classList.remove('hidden');
                 this.elements.addFilterDropdown.classList.add('hidden');
+                this.handleHeaderFilterChange(filterType);
                 this.updateFilterButtons();
                 this.render();
 
@@ -474,6 +476,7 @@ const TestReportApp = {
                     this.state.filters[config.stateKey] = [];
                 }
                 config.container.classList.add('hidden');
+                this.handleHeaderFilterChange();
                 this.updateFilterButtons();
                 this.render();
             }
@@ -508,7 +511,36 @@ const TestReportApp = {
         });
     }
 
-    this.elements.flatViewControls.addEventListener('click', (e) => { const button = e.target.closest('.view-toggle'); if (button) { this.state.currentFlatView = button.dataset.view; this.render(); } });
+    if (this.elements.groupByBtn) {
+        this.elements.groupByBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDropdown(this.elements.groupByDropdown, this.elements.groupByBtn);
+        });
+    }
+
+    if (this.elements.groupByDropdown) {
+        this.elements.groupByDropdown.addEventListener('click', (e) => {
+            const target = e.target.closest('.dropdown-item');
+            if (target) {
+                this.state.currentFlatView = target.dataset.value;
+                this.elements.groupByDropdown.classList.add('hidden');
+                
+                // When changing the view, we reset selections if we are viewing a lower granularity
+                if (this.state.currentFlatView === 'modules') {
+                    this.state.selectedModule = null;
+                    this.state.selectedPackage = null;
+                    this.state.selectedClass = null;
+                } else if (this.state.currentFlatView === 'packages') {
+                    this.state.selectedPackage = null;
+                    this.state.selectedClass = null;
+                } else if (this.state.currentFlatView === 'classes') {
+                    this.state.selectedClass = null;
+                }
+                
+                this.render();
+            }
+        });
+    }
     this.elements.resultsData.addEventListener('click', (e) => {
         if (this.state.viewMode === 'flat') {
             const clickable = e.target.closest('.nav-link');
@@ -672,6 +704,35 @@ const TestReportApp = {
     });
   },
 
+  handleHeaderFilterChange(explicitType = null) {
+    if (this.state.viewMode !== 'flat') return;
+
+    if (explicitType) {
+        const viewMap = { 'module': 'modules', 'package': 'packages', 'class': 'classes', 'testCase': 'testCases' };
+        if (viewMap[explicitType]) {
+            this.state.currentFlatView = viewMap[explicitType];
+        }
+    } else {
+        const { classes, packages, modules, testCases } = this.state.filters;
+        const activeChips = [];
+        if (!this.elements.tcChipContainer.classList.contains('hidden')) activeChips.push('testCase');
+        if (!this.elements.clsChipContainer.classList.contains('hidden')) activeChips.push('class');
+        if (!this.elements.pkgChipContainer.classList.contains('hidden')) activeChips.push('package');
+        if (!this.elements.modChipContainer.classList.contains('hidden')) activeChips.push('module');
+
+        if (testCases.length > 0 || activeChips.includes('testCase')) {
+            this.state.currentFlatView = 'testCases';
+        } else if (classes.length > 0 || activeChips.includes('class')) {
+            this.state.currentFlatView = 'classes';
+        } else if (packages.length > 0 || activeChips.includes('package')) {
+            this.state.currentFlatView = 'packages';
+        } else {
+            // Always fallback to modules if deeper hierarchies aren't active
+            this.state.currentFlatView = 'modules';
+        }
+    }
+  },
+
   handleFlatRowClick(target) {
     const { name, type, moduleName, packageName } = target.dataset;
     if (type === 'module') {
@@ -828,11 +889,8 @@ const TestReportApp = {
   render() {
     this.updateDynamicFilters();
     const data = this.getFilteredAndSortedData();
-    this.elements.viewToggles.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
     this.renderTable(data);
-    if (this.state.viewMode === 'flat') {
-      this.updateActiveTabs();
-    }
+    this.updateGroupByText();
   },
 
   updateDynamicFilters() {
@@ -865,6 +923,7 @@ const TestReportApp = {
       filters.classes = [];
       filters.testCases = [];
       filters.modules = newArr;
+      this.handleHeaderFilterChange('module');
       this.updateFilterButtons();
       this.render();
     });
@@ -873,6 +932,7 @@ const TestReportApp = {
       filters.classes = [];
       filters.testCases = [];
       filters.packages = newArr;
+      this.handleHeaderFilterChange('package');
       this.updateFilterButtons();
       this.render();
     });
@@ -880,21 +940,32 @@ const TestReportApp = {
     UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
       filters.testCases = [];
       filters.classes = newArr;
+      this.handleHeaderFilterChange('class');
       this.updateFilterButtons();
       this.render();
     });
 
     UIUtils.buildActionDropdown(this.elements.tcFilterDropdown, testCaseOptions, filters.testCases, (newArr) => {
       filters.testCases = newArr;
+      this.handleHeaderFilterChange('testCase');
       this.updateFilterButtons();
       this.render();
     });
   },
 
-  updateActiveTabs() {
-    this.elements.flatViewControls.querySelectorAll('.view-toggle').forEach(btn => {
-      btn.classList.toggle('active', btn.dataset.view === this.state.currentFlatView);
-    });
+  updateGroupByText() {
+    if (!this.elements.groupByText) return;
+    const viewMap = {
+        'modules': 'Modules',
+        'packages': 'Packages',
+        'classes': 'Classes',
+        'testCases': 'Test Cases'
+    };
+    this.elements.groupByText.textContent = viewMap[this.state.currentFlatView] || 'Modules';
+
+    if (this.elements.groupByBtn) {
+        this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+    }
   },
 
   renderTable(data) {

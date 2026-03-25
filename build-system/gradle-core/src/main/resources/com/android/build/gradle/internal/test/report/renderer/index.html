@@ -211,14 +211,22 @@
 
   <div id="report-view" class="container-custom">
     <main>
-      <div id="breadcrumbs" class="breadcrumbs-container"></div>
-
-      <div id="view-toggles" class="view-toggles">
-        <div id="flat-view-controls" class="toggle-group">
-          <button data-view="modules" class="tab-button view-toggle">Modules</button>
-          <button data-view="packages" class="tab-button view-toggle">Packages</button>
-          <button data-view="classes" class="tab-button view-toggle">Classes</button>
-          <button data-view="testCases" class="tab-button view-toggle">Test Cases</button>
+      <div class="breadcrumb-row-style">
+        <div id="breadcrumbs" class="breadcrumbs-container"></div>
+        <div class="relative" id="group-by-container">
+            <button id="group-by-btn" class="group-by-btn-style">
+                <span class="group-by-label">Group by:</span>
+                <span id="group-by-text" class="group-by-value">Modules</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="group-by-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="group-by-dropdown" class="dropdown-menu right-0 hidden group-by-dropdown-style">
+                <div class="dropdown-item" data-value="modules">Modules</div>
+                <div class="dropdown-item" data-value="packages">Packages</div>
+                <div class="dropdown-item" data-value="classes">Classes</div>
+                <div class="dropdown-item" data-value="testCases">Test Cases</div>
+            </div>
         </div>
       </div>
 
