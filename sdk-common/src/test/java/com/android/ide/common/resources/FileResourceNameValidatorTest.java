@@ -24,12 +24,14 @@ import static org.junit.Assert.assertNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.SdkUtils;
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
 
 @RunWith(Parameterized.class)
 public class FileResourceNameValidatorTest {
@@ -100,7 +102,7 @@ public class FileResourceNameValidatorTest {
                         "1foo.png",
                         ResourceFolderType.DRAWABLE,
                         NAME_MUST_START_WITH_A_LETTER,
-                        "_foo"
+                        "_1foo"
                     },
                     {"Foo.png", ResourceFolderType.DRAWABLE, "'F'" + IS_NOT_A_VALID_ETC, "foo"},
                     {"foo$.png", ResourceFolderType.DRAWABLE, "'$'" + IS_NOT_A_VALID_ETC, "foo_"},
@@ -123,7 +125,19 @@ public class FileResourceNameValidatorTest {
                         NAME_MUST_START_WITH_A_LETTER,
                         "__icon"
                     }, // Robot face emoji.
-                    {"foo.avif", ResourceFolderType.DRAWABLE, null, "foo"}
+                    {"foo.avif", ResourceFolderType.DRAWABLE, null, "foo"},
+                    {
+                        "10mp.png",
+                        ResourceFolderType.DRAWABLE,
+                        NAME_MUST_START_WITH_A_LETTER,
+                        "_10mp"
+                    },
+                    {
+                        "10.mp.png",
+                        ResourceFolderType.DRAWABLE,
+                        NAME_MUST_START_WITH_A_LETTER,
+                        "_10_mp"
+                    },
                 });
     }
 
