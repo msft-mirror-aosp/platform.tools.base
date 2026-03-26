@@ -354,6 +354,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   }
 
   private fun AndroidProjectDefinition<out CommonExtension>.enableTestStorageService() {
+    android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
     dependencies { add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION") }
   }
 
@@ -519,6 +520,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import androidx.test.services.storage.TestStorage
           import org.junit.Test
@@ -576,6 +578,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import org.junit.Test
           import org.junit.runner.RunWith
@@ -585,13 +588,16 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           class AdditionalTestOutputExampleTest {
               @Test
               fun writeFileWithoutTestStorageService() {
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: started")
                   val dir = File("/sdcard/Android/media/com.example.android.kotlin/additional_test_output").also {
                       it.mkdirs()
                   }
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: dir created: " + dir.absolutePath)
                   File(dir,"myTestFile1").apply {
                       createNewFile()
                       writeText("output message 1")
                   }
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: finished")
               }
           }
           """
@@ -843,6 +849,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import androidx.test.services.storage.TestStorage
           import org.junit.Test

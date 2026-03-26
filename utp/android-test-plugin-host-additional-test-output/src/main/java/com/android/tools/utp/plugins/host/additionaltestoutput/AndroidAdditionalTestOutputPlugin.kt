@@ -302,7 +302,13 @@ class AndroidAdditionalTestOutputPlugin(private val logger: Logger = getLogger()
   ) {
     // Media store's file index might not be up-to-date. b/345801721.
     logger.info("Updating MediaStore's file index")
-    deviceController.deviceShellAndCheckSuccess("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$deviceDir")
+    val broadcastResult =
+      deviceController.deviceShellAndCheckSuccess("am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$deviceDir")
+    logger.info(
+      "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$deviceDir " +
+        "finished with exitCode=${broadcastResult.statusCode}. " +
+        "stdout=${broadcastResult.output.joinToString("\n").trim()}"
+    )
 
     val normalizedDeviceDir = replaceSystemPath(deviceDir, androidUser)
     val regex = Regex("""_id=(\d+), _data=(.*)""")

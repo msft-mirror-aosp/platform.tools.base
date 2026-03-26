@@ -208,24 +208,68 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
    */
   private class SecondaryUser : Closeable {
     companion object {
-      private fun createSecondaryUser(): Int {
-        val process =
-          ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "pm", "create-user", "utpTestUser", "--ephemeral")
-            .start()
+      private fun removeAllSecondaryUsers() {
+        // Ensure we are on user 0 before removing others
+        switchCurrentUser(0)
+
+        val process = ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "pm", "list", "users").start()
         assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
-        val processOutput = process.inputStream.bufferedReader().use { it.readText() }
-        val processError = process.errorStream.bufferedReader().use { it.readText() }
-        val regexToExtractUserId = Regex(pattern = "Success: created user id (?<userId>\\d+)")
-        return requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt()) {
-          "Failed to create secondary user. pm create-user command failed with the output message: $processError"
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val userRegex = Regex("""UserInfo\{(\d+):""")
+        userRegex.findAll(output).map { it.groupValues[1].toInt() }.filter { it != 0 }.forEach { userId -> removeUser(userId) }
+      }
+
+      private fun createSecondaryUser(): Int {
+        var processOutput = ""
+        var processError = ""
+        repeat(3) {
+          val process =
+            ProcessBuilder(
+                SdkHelper.getAdb().absolutePath,
+                "-s",
+                "emulator-5554",
+                "shell",
+                "pm",
+                "create-user",
+                "utpTestUser",
+                "--ephemeral",
+              )
+              .start()
+          if (process.waitFor(1, TimeUnit.MINUTES)) {
+            processOutput = process.inputStream.bufferedReader().use { it.readText() }
+            processError = process.errorStream.bufferedReader().use { it.readText() }
+            if (processOutput.contains("Success: created user id")) {
+              val regexToExtractUserId = Regex(pattern = "Success: created user id (?<userId>\\d+)")
+              val userId = requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt())
+              return userId
+            }
+          }
         }
+        throw IllegalStateException("Failed to create secondary user after 3 attempts. Output: $processOutput, Error: $processError")
       }
 
       private fun switchCurrentUser(userId: Int) {
-        val process =
-          ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "switch-user", "-w", userId.toString())
-            .start()
-        assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
+        var switched = false
+        repeat(3) {
+          if (switched) return@repeat
+          val process =
+            ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "switch-user", "-w", userId.toString())
+              .start()
+          process.waitFor(1, TimeUnit.MINUTES)
+
+          // Double check current user
+          val checkProcess =
+            ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "get-current-user").start()
+          if (checkProcess.waitFor(1, TimeUnit.MINUTES)) {
+            val currentUser = checkProcess.inputStream.bufferedReader().use { it.readText().trim() }
+            if (currentUser == userId.toString()) {
+              switched = true
+            }
+          }
+        }
+        if (!switched) {
+          throw IllegalStateException("Failed to switch to user $userId after 3 attempts")
+        }
       }
 
       private fun removeUser(userId: Int) {
@@ -235,15 +279,14 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       }
     }
 
-    val secondaryUserId = createSecondaryUser()
-
     init {
+      removeAllSecondaryUsers()
+      val secondaryUserId = createSecondaryUser()
       switchCurrentUser(secondaryUserId)
     }
 
     override fun close() {
-      switchCurrentUser(0) // Switch back to the primary user (userId = 0).
-      removeUser(secondaryUserId)
+      removeAllSecondaryUsers()
     }
   }
 }
