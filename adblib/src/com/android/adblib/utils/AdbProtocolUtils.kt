@@ -101,7 +101,7 @@ object AdbProtocolUtils {
     for (i in 0 until min(status.remaining(), maxCount)) {
       val statusByte = status.get(i + position)
       sb1.append(String.format("%02x", statusByte))
-      sb2.append(String.format("%c", statusByte.toChar()))
+      sb2.append(statusByte.toInt().toChar())
     }
     val overflow = if (status.remaining() > maxCount) " [truncated]" else ""
     return "$sb1 ${sb2.toString().replace(printableCharactersRegex, ".")}$overflow"
