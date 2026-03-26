@@ -28,9 +28,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.withContext
 
 /**
@@ -335,12 +333,11 @@ class ActivityManager(val device: ConnectedDevice) {
    */
   suspend fun crash(packageName: String) {
     mapTimeoutToAdbException("crash $packageName") {
-      retryUntilDeviceReady(
+      runAmCommandWhenServiceIsReady(
         amCommandName = "crash",
         timeout = device.session.property(AM_SERVICE_TIMEOUT),
         retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
       ) {
-        device.waitUntilOnline()
         device.session.activityManagerServices.crash(device.selector, packageName)
       }
     }
@@ -353,12 +350,11 @@ class ActivityManager(val device: ConnectedDevice) {
    */
   suspend fun forceStop(packageName: String) {
     mapTimeoutToAdbException("force-stop $packageName") {
-      retryUntilDeviceReady(
+      runAmCommandWhenServiceIsReady(
         amCommandName = "force-stop",
         timeout = device.session.property(AM_SERVICE_TIMEOUT),
         retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
       ) {
-        device.waitUntilOnline()
         device.session.activityManagerServices.forceStop(device.selector, packageName)
       }
     }
@@ -376,12 +372,11 @@ class ActivityManager(val device: ConnectedDevice) {
   suspend fun capabilities(): AmCapabilitiesResult? {
     return device.cache.getOrPutSuspending(capabilitiesKey) {
       mapTimeoutToAdbException("capabilities") {
-        retryUntilDeviceReady(
+        runAmCommandWhenServiceIsReady(
           amCommandName = "capabilities",
           timeout = device.session.property(AM_SERVICE_TIMEOUT),
           retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
         ) {
-          device.waitUntilOnline()
           logger.debug { "Retrieving device capabilities from activity manager" }
           device.session.activityManagerServices.capabilities(device.selector)
         }
@@ -390,39 +385,43 @@ class ActivityManager(val device: ConnectedDevice) {
   }
 
   /**
-   * Returns the result of the [amCommand]. Retries it if the `am` service is not running. Returns `null` if the [amCommand] is not
-   * supported by the device.
+   * Returns the result of the [amCommand]. If necessary, waits for device to come online or for the activity service to start running.
+   * Returns `null` if the [amCommand] is not supported by the device.
    */
-  private suspend fun <R> retryUntilDeviceReady(
+  private suspend fun <R> runAmCommandWhenServiceIsReady(
     amCommandName: String,
     timeout: Duration,
     retryDelay: Duration,
     amCommand: suspend () -> R,
   ): R? {
     return session.withErrorTimeout(timeout) {
-      // Note: We use a single value flow so we can use the `retryWhen` operator
-      // for the "retry" logic
-      flow<R?> { emit(amCommand()) }
-        .retryWhen { cause, _ ->
-          when {
-            (cause is AdbActivityManagerException) && cause.isServiceNotRunning -> {
-              logger.debug { "'activity' service is not running, retry after delay" }
-              delay(retryDelay.toSafeMillis())
-              true // retry
-            }
+      device.waitUntilOnline()
+      device.waitUntilActivityServiceIsReady(retryDelay)
 
-            (cause is AdbActivityManagerException) && cause.isCommandNotSupported -> {
-              logger.debug { "`am $amCommandName' is not supported, returning `null`" }
-              emit(null)
-              false // Don't retry
-            }
-
-            else -> {
-              false // Don't retry and propagate the exception
-            }
-          }
+      try {
+        amCommand()
+      } catch (cause: AdbActivityManagerException) {
+        if (cause.isCommandNotSupported) {
+          logger.debug { "`am $amCommandName' is not supported, returning `null`" }
+          null
+        } else {
+          throw cause
         }
-        .first()
+      }
+    }
+  }
+
+  private suspend fun ConnectedDevice.waitUntilActivityServiceIsReady(retryDelay: Duration) {
+    while (true) {
+      val checkOutput = shell.executeAsText("service check activity")
+      if (checkOutput.stdout.contains("Service activity: found")) {
+        break
+      } else if (checkOutput.stdout.contains("Service activity: not found")) {
+        logger.debug { "'activity' service is not running, retry after delay" }
+        delay(retryDelay.toSafeMillis())
+      } else {
+        throw IOException("Unexpected output from 'service check activity': ${checkOutput.stdout}")
+      }
     }
   }
 

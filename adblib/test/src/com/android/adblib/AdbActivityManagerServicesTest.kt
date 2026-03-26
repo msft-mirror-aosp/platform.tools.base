@@ -167,7 +167,6 @@ class AdbActivityManagerServicesTest {
       .onFailure { throwable ->
         Assert.assertTrue(throwable is AdbActivityManagerException)
         Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
-        Assert.assertFalse(throwable.isServiceNotRunning)
       }
       .onSuccess { Assert.fail("Command should have failed") }
   }
@@ -187,7 +186,6 @@ class AdbActivityManagerServicesTest {
         Assert.assertTrue(throwable is AdbActivityManagerException)
         Assert.assertTrue(throwable.message!!.contains("Error executing 'am capabilities --protobuf' on device serial #1234"))
         Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
-        Assert.assertFalse(throwable.isServiceNotRunning)
       }
       .onSuccess { Assert.fail("Command should have failed") }
   }
@@ -208,7 +206,6 @@ class AdbActivityManagerServicesTest {
           Assert.assertTrue(throwable is AdbActivityManagerException)
           Assert.assertTrue(throwable.message!!.contains("Error executing 'am capabilities --protobuf' on device serial #1234"))
           Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
-          Assert.assertFalse(throwable.isServiceNotRunning)
         }
         .onSuccess { Assert.fail("Command should have failed") }
     }

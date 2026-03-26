@@ -69,6 +69,10 @@ class ServiceManager(private val deviceState: DeviceState) {
     services[name] = service
   }
 
+  fun removeService(name: String) {
+    services.remove(name)
+  }
+
   fun services(): Map<String, Service?> {
     return services.toMap()
   }

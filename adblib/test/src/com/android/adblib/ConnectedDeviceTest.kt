@@ -23,6 +23,11 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.adblib.testingutils.asAdbInputChannel
 import com.android.fakeadbserver.DeviceFileState
+import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.ShellProtocolType
+import com.android.fakeadbserver.services.ActivityManager
+import com.android.fakeadbserver.services.StatusWriter
+import com.android.fakeadbserver.shellcommandhandlers.SimpleShellHandler
 import com.android.sdklib.AndroidApiLevel
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -966,6 +971,62 @@ class ConnectedDeviceTest {
     Assert.assertEquals(listOf("opengl-tracing", "view-hierarchy", "support_boot_stages", "app_info"), result?.frameworkCapabilities)
     Assert.assertEquals("Dalvik", result?.vmInfo?.name)
     Assert.assertEquals("2.1.0", result?.vmInfo?.version)
+  }
+
+  @Test
+  fun testActivityManagerWaitsForServiceToBeReady(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+    val deviceState = fakeDevice.toDeviceState()
+    deviceState.serviceManager.removeService(ActivityManager.SERVICE_NAME)
+
+    // Act
+    val asyncCapabilities = async { fakeDevice.activityManager.capabilities() }
+
+    // Assert: Activity manager command does not complete after a short wait, because activity service is not available
+    delay(200)
+    Assert.assertFalse(asyncCapabilities.isCompleted)
+
+    // Act: Add the activity service back
+    deviceState.serviceManager.setService(ActivityManager.SERVICE_NAME, ActivityManager(deviceState))
+    val result = asyncCapabilities.await()
+
+    // Assert: Capabilities returns null for API 30 in FakeAdbServer (default)
+    Assert.assertNull(result)
+  }
+
+  @Test
+  fun testActivityManagerThrowsOnUnexpectedServiceCheckOutput(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+
+    // Register a mock handler that returns unexpected output for "adb shell service check" command
+    fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      object : SimpleShellHandler(ShellProtocolType.SHELL_V2, "service") {
+        override fun execute(
+          fakeAdbServer: FakeAdbServer,
+          statusWriter: StatusWriter,
+          shellCommandOutput: com.android.fakeadbserver.services.ShellCommandOutput,
+          device: com.android.fakeadbserver.DeviceState,
+          shellCommand: String,
+          shellCommandArgs: String?,
+        ) {
+          if (shellCommandArgs == "check ${ActivityManager.SERVICE_NAME}") {
+            statusWriter.writeOk()
+            shellCommandOutput.writeStdout("Fake error\n")
+          }
+        }
+      },
+    )
+
+    // Act
+    exceptionRule.expect(IOException::class.java)
+    exceptionRule.expectMessage("Unexpected output from 'service check activity': Fake error")
+    fakeDevice.activityManager.capabilities()
+
+    // Assert
+    Assert.fail("Should have thrown IOException")
   }
 
   @Test

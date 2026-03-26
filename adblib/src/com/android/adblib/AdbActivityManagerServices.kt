@@ -42,7 +42,6 @@ interface AdbActivityManagerServices {
    * @throws [AdbFailResponseException] if the device is not [DeviceState.ONLINE]
    * @throws [AdbActivityManagerException] if the `am` command failed
    * @throws [IOException] if there was an issue communicating with the device
-   * @see [AdbActivityManagerException.isServiceNotRunning]
    * @see [AdbActivityManagerException.isCommandNotSupported]
    */
   suspend fun capabilities(device: DeviceSelector): AmCapabilitiesResult
@@ -85,33 +84,6 @@ class AdbActivityManagerException(
    */
   val isCommandNotSupported: Boolean
     get() = errorOutput.contains("unknown command: ", ignoreCase = true) || errorOutput.contains("unknown command ", ignoreCase = true)
-
-  /**
-   * The `activity` service is not running (probably because the device is still in the boot process, where the device is already online,
-   * but not all services are started)
-   *
-   * ## API 16-25
-   *
-   * ```
-   * Error type 2
-   * android.util.AndroidException: Can't connect to activity manager; is the system running?
-   * 	at com.android.commands.am.Am.run(Am.java:100)
-   * 	at com.android.commands.am.Am.main(Am.java:81)
-   * 	at com.android.internal.os.RuntimeInit.nativeFinishInit(Native Method)
-   * 	at com.android.internal.os.RuntimeInit.main(RuntimeInit.java:235)
-   * 	at dalvik.system.NativeStart.main(Native Method)
-   * ```
-   *
-   * ## API 26-36+
-   *
-   * ```
-   * cmd: Can't find service: activity
-   * ```
-   */
-  val isServiceNotRunning: Boolean
-    get() =
-      errorOutput.contains("Can't connect to activity manager", ignoreCase = true) ||
-        errorOutput.contains("Can't find service: activity", ignoreCase = true)
 }
 
 /**

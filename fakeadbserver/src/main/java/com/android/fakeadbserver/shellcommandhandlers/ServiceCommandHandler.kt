@@ -45,6 +45,16 @@ class ServiceCommandHandler(shellProtocolType: ShellProtocolType) : SimpleShellH
           "Found ${services.size} services:\n" + services.entries.joinToString { "${i++}       ${it.key}: [${it.value ?: ""}]\n" }
         serviceOutput.writeStdout(output)
       }
+      "check" -> {
+        val serviceName = shellCommandArgs.substringAfter("check ").trim()
+        val serviceManager = device.serviceManager
+        val service = serviceManager.services()[serviceName]
+        if (service != null) {
+          serviceOutput.writeStdout("Service $serviceName: found\n")
+        } else {
+          serviceOutput.writeStdout("Service $serviceName: not found\n")
+        }
+      }
       else -> {
         serviceOutput.writeStderr("Invalid arguments")
       }
