@@ -86,6 +86,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals(34, getApiByBuildCode("UPSIDE_DOWN_CAKE", true));
         assertEquals(35, getApiByBuildCode("VANILLA_ICE_CREAM", true));
         assertEquals(36, getApiByBuildCode("BAKLAVA", true));
+        assertEquals(37, getApiByBuildCode("CINNAMON_BUN", true));
 
         for (int api = 1; api <= HIGHEST_KNOWN_API; api++) {
             assertEquals(api, getApiByBuildCode(getBuildCode(api), false));
@@ -113,9 +114,10 @@ public class SdkVersionInfoTest extends TestCase {
         assertEquals("UpsideDownCake", getCodeName(34));
         assertEquals("VanillaIceCream", getCodeName(35));
         assertEquals("Baklava", getCodeName(36));
+        assertEquals("CinnamonBun", getCodeName(37));
         assertNull(
                 "getCodeName for future versions should return null",
-                getCodeName(37)); // Deliberately hardcoded to ensure this test gets looked at when
+                getCodeName(38)); // Deliberately hardcoded to ensure this test gets looked at when
         // adding new codenames.
 
         // make sure all known codenames are non-null

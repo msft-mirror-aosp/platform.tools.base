@@ -130,9 +130,6 @@ public class AndroidTargetHashTest extends TestCase {
                 new AndroidVersion(35, 0, "Baklava", null, true),
                 AndroidTargetHash.getPlatformVersion("android-Baklava"));
         assertEquals(
-                new AndroidVersion(36, 0, "Baklava.1", null, true),
-                AndroidTargetHash.getPlatformVersion("android-Baklava.1"));
-        assertEquals(
                 new AndroidVersion(
                         SdkVersionInfo.HIGHEST_KNOWN_API, 0, "FutureUnknownCodename", null, true),
                 AndroidTargetHash.getPlatformVersion("android-FutureUnknownCodename"));

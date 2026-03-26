@@ -113,6 +113,7 @@ public final class AndroidVersion implements Comparable<AndroidVersion>, Seriali
         VANILLA_ICE_CREAM(new AndroidApiLevel(35), 13),
         BAKLAVA(new AndroidApiLevel(36), 17),
         BAKLAVA_2025Q4(new AndroidApiLevel(36, 1), 20),
+        CINNAMON_BUN(new AndroidApiLevel(37, 0), 22),
         ;
 
         private final AndroidApiLevel myApi;
