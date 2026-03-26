@@ -16,6 +16,7 @@
 package com.android.zipflinger;
 
 import com.android.annotations.NonNull;
+
 import java.nio.charset.StandardCharsets;
 
 public class Entry {
@@ -127,7 +128,7 @@ public class Entry {
         return versionMadeBy;
     }
 
-    int getExternalAttributes() {
+    public int getExternalAttributes() {
         return externalAttributes;
     }
 }
