@@ -219,6 +219,41 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testNoInferenceIfAnnotated_496344769() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+
+            @AnyThread
+            fun invokeUi(@UiThread ui: () -> Unit) =
+                // wrong here, but not the point. We don't want callers to be concerned with this
+                ui()
+
+            @UiThread fun doUi() { }
+
+            fun main() = invokeUi(::doUi)
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:8: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            ui()
+            ~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
   fun testUnsatisfiableStatementSequence() {
     lint()
       .files(
