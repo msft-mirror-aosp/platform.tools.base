@@ -154,6 +154,11 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
   @get:Internal abstract val avdService: Property<AvdComponentsBuildService>
 
+  @Input
+  override fun getIgnoreFailures(): Boolean {
+    return super.getIgnoreFailures()
+  }
+
   @TaskAction
   override fun executeTests() {
 

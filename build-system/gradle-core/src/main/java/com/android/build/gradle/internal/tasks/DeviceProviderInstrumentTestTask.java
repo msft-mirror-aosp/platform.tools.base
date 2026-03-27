@@ -625,6 +625,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         getTestRunnerFactory().getDeviceSerialValues().addAll(serials);
     }
 
+    @Input
     @Override
     public boolean getIgnoreFailures() {
         return ignoreFailures;
