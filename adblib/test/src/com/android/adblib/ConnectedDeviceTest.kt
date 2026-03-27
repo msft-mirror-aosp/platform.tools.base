@@ -26,7 +26,9 @@ import com.android.fakeadbserver.DeviceFileState
 import com.android.fakeadbserver.FakeAdbServer
 import com.android.fakeadbserver.ShellProtocolType
 import com.android.fakeadbserver.services.ActivityManager
+import com.android.fakeadbserver.services.PackageManager
 import com.android.fakeadbserver.services.StatusWriter
+import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
 import com.android.fakeadbserver.shellcommandhandlers.SimpleShellHandler
 import com.android.sdklib.AndroidApiLevel
 import java.io.ByteArrayOutputStream
@@ -1441,6 +1443,104 @@ class ConnectedDeviceTest {
 
     // Assert
     job.await()
+  }
+
+  @Test
+  fun testPackageManagerUninstallSuccess(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act: Uninstall existing package (i.e. anything other than ShellConstants.NON_INSTALLED_APP_ID)
+    connectedDevice.packageManager.uninstall("com.app1")
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("uninstall com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailureApi28AndAbove(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailure_Api27(): Unit = runBlockingWithTimeout {
+    // Prepare: when uninstalling an unknown package the adb shell returns `0` exit code, and an error in stderr
+    val connectedDevice = addFakeConnectedDevice(sdk = 27)
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage(
+      "Exception occurred while executing:\njava.lang.IllegalArgumentException: Unknown package: ${ShellConstants.NON_INSTALLED_APP_ID}"
+    )
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailure_Api24_andBelow(): Unit = runBlockingWithTimeout {
+    // Prepare: when uninstalling an unknown package the adb shell returns `0` exit code, and an error in stdout
+    val connectedDevice = addFakeConnectedDevice(sdk = 24)
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerWaitsForServiceToBeReady(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+    val deviceState = connectedDevice.toDeviceState()
+    deviceState.serviceManager.removeService(PackageManager.SERVICE_NAME)
+
+    // Act
+    val asyncUninstall = async { connectedDevice.packageManager.uninstall("com.app1") }
+
+    // Assert: Package manager command does not complete after a short wait, because package service is not available
+    delay(200)
+    Assert.assertFalse(asyncUninstall.isCompleted)
+    Assert.assertTrue(connectedDevice.toDeviceState().pmLogs.isEmpty())
+
+    // Act: Add the package service back
+    deviceState.serviceManager.setService(PackageManager.SERVICE_NAME, PackageManager(deviceState))
+    asyncUninstall.await()
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("uninstall com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerUninstallThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+    val delay = Duration.ofMillis(200)
+    setHostPropertyValue(fakeDevice.session.host, AdbLibProperties.PM_SERVICE_TIMEOUT, delay)
+    fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+    fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+    // Act
+    exceptionRule.expect(AdbIOTimeoutException::class.java)
+    fakeDevice.packageManager.uninstall("com.app1")
+
+    // Assert
+    Assert.fail("Should not reach")
   }
 
   open class TestSyncProgress : SyncProgress {

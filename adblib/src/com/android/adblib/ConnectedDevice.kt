@@ -17,6 +17,8 @@ package com.android.adblib
 
 import com.android.adblib.AdbLibProperties.AM_SERVICE_RETRY_DELAY
 import com.android.adblib.AdbLibProperties.AM_SERVICE_TIMEOUT
+import com.android.adblib.AdbLibProperties.PM_SERVICE_RETRY_DELAY
+import com.android.adblib.AdbLibProperties.PM_SERVICE_TIMEOUT
 import java.io.IOException
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -221,6 +223,14 @@ val ConnectedDevice.activityManager: ActivityManager
     return cache.getOrPut(ActivityManagerKey) { ActivityManager(this) }
   }
 
+private val PackageManagerKey = CoroutineScopeCache.Key<PackageManager>("PackageManager")
+
+/** The [PackageManager] instance for managing packages on this [ConnectedDevice] */
+val ConnectedDevice.packageManager: PackageManager
+  get() {
+    return cache.getOrPut(PackageManagerKey) { PackageManager(this) }
+  }
+
 private val FileSystemManagerKey = CoroutineScopeCache.Key<FileSystemManager>("FileSystemManager")
 
 /** The [FileSystemManager] instance for managing files on this [ConnectedDevice] */
@@ -396,7 +406,7 @@ class ActivityManager(val device: ConnectedDevice) {
   ): R? {
     return session.withErrorTimeout(timeout) {
       device.waitUntilOnline()
-      device.waitUntilActivityServiceIsReady(retryDelay)
+      device.waitUntilServiceIsReady("activity", retryDelay)
 
       try {
         amCommand()
@@ -411,36 +421,90 @@ class ActivityManager(val device: ConnectedDevice) {
     }
   }
 
-  private suspend fun ConnectedDevice.waitUntilActivityServiceIsReady(retryDelay: Duration) {
-    while (true) {
-      val checkOutput = shell.executeAsText("service check activity")
-      if (checkOutput.stdout.contains("Service activity: found")) {
-        break
-      } else if (checkOutput.stdout.contains("Service activity: not found")) {
-        logger.debug { "'activity' service is not running, retry after delay" }
-        delay(retryDelay.toSafeMillis())
-      } else {
-        throw IOException("Unexpected output from 'service check activity': ${checkOutput.stdout}")
+  companion object {
+    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
+  }
+}
+
+/**
+ * Access to various `pm` services for a given [ConnectedDevice].
+ *
+ * See [pm command](https://developer.android.com/tools/adb#pm)
+ */
+class PackageManager(val device: ConnectedDevice) {
+
+  private val session: AdbSession
+    get() = device.session
+
+  private val logger = adbLogger(session).withDevicePrefix(device)
+
+  /**
+   * Uses `adb shell pm uninstall` to uninstall an app.
+   *
+   * Note: This method retries the command if the device is not ready, see [runPmCommandWhenServiceIsReady] for a detailed description of
+   * error conditions.
+   *
+   * @throws AdbPackageManagerException if the `pm` command failed
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbPackageManagerServices.uninstall
+   */
+  suspend fun uninstall(packageName: String) {
+    mapTimeoutToAdbException("uninstall $packageName") {
+      try {
+        runPmCommandWhenServiceIsReady(
+          timeout = device.session.property(PM_SERVICE_TIMEOUT),
+          retryDelay = device.session.property(PM_SERVICE_RETRY_DELAY),
+        ) {
+          device.session.packageManagerServices.uninstall(device.selector, packageName)
+        }
+      } catch (cause: AdbPackageManagerException) {
+        if (cause.isCommandNotSupported) {
+          // This should never happen as `pm uninstall` command is supported since at least API 16.
+          logger.warn("`pm uninstall' is not supported on this device")
+        }
+        throw cause
       }
     }
   }
 
-  /**
-   * Wrap TimeoutException in IOException.
-   *
-   * When the timeout is an implementation detail, and callers are only expected to handle generic I/O errors we should rethrow
-   * TimeoutException as IOException.
-   */
-  private inline fun <R> mapTimeoutToAdbException(commandDescription: String, block: () -> R): R {
-    return try {
-      block()
-    } catch (e: TimeoutException) {
-      throw AdbIOTimeoutException("Operation timed out executing `$commandDescription`", e)
+  /** Returns the result of the [pmCommand]. If necessary, waits for device to come online or for the package service to start running. */
+  private suspend fun <R> runPmCommandWhenServiceIsReady(timeout: Duration, retryDelay: Duration, pmCommand: suspend () -> R): R {
+    return session.withErrorTimeout(timeout) {
+      device.waitUntilOnline()
+      device.waitUntilServiceIsReady("package", retryDelay)
+
+      pmCommand()
     }
   }
+}
 
-  companion object {
-    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
+/** Wait until the [serviceName] is ready on the device. */
+private suspend fun ConnectedDevice.waitUntilServiceIsReady(serviceName: String, retryDelay: Duration) {
+  val logger = adbLogger(session).withDevicePrefix(this)
+  while (true) {
+    val checkOutput = shell.executeAsText("service check $serviceName")
+    if (checkOutput.stdout.contains("Service $serviceName: found")) {
+      break
+    } else if (checkOutput.stdout.contains("Service $serviceName: not found")) {
+      logger.debug { "'$serviceName' service is not running, retry after delay" }
+      delay(retryDelay.toSafeMillis())
+    } else {
+      throw IOException("Unexpected output from 'service check $serviceName': ${checkOutput.stdout}")
+    }
+  }
+}
+
+/**
+ * Wrap TimeoutException in IOException.
+ *
+ * When the timeout is an implementation detail, and callers are only expected to handle generic I/O errors we should rethrow
+ * TimeoutException as IOException.
+ */
+private inline fun <R> mapTimeoutToAdbException(commandDescription: String, block: () -> R): R {
+  return try {
+    block()
+  } catch (e: TimeoutException) {
+    throw AdbIOTimeoutException("Operation timed out executing `$commandDescription`", e)
   }
 }
 

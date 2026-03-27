@@ -20,7 +20,7 @@ import java.util.Collections
 
 class ServiceManager(private val deviceState: DeviceState) {
 
-  private val packageManager = PackageManager()
+  private val packageManager = PackageManager(deviceState)
   private var activityManager: Service = ActivityManager(deviceState)
   private val log = Collections.synchronizedList(mutableListOf<List<String>>())
 
