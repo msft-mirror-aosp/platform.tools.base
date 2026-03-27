@@ -205,6 +205,14 @@ common:dl-ci --downloader_config=tools/base/bazel/ci/data/downloader.cfg
 # is added by tools/base/bazel/ci/ci and ci.cmd scripts.
 common:ci --config=dl-ci
 build:ci --google_default_credentials
+# Enables pre-computed test fixtures (e.g. Emulator Snapshots).
+# - Expensive runtime operations are shifted to the build stage and converted into fixtures.
+# - Caches the resulting artifacts on RBE for global reuse across the team.
+# - Dramatically improves test performance and determinism.
+common:prebuild_test_fixtures --//tools/adt/idea/emulator-snapshots:enable_snapshots=True
+
+# Optimization: CI/CD runs always use prebuilt fixtures to reduce latency and compute costs.
+build:ci --config=prebuild_test_fixtures
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=release
