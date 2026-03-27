@@ -68,6 +68,7 @@ def _avd_impl(ctx):
         inputs = runfiles.files,
         arguments = ["create-snapshot", "5554"],
         outputs = [snapshot_output],
+        mnemonic = "CreateAvdSnapshot",
         executable = launcher,
         execution_requirements = {"cpu:2": ""},
         progress_message = "Creating AVD snapshot for " + str(ctx.label),
