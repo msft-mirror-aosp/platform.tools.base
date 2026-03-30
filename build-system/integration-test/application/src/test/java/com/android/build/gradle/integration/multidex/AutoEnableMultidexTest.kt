@@ -37,6 +37,7 @@ class AutoEnableMultidexTest {
           appendToBuild(
             """
             android {
+                enableKotlin = false
                 flavorDimensions "generation"
                 productFlavors {
                     legacy { minSdkVersion 19 }
@@ -65,7 +66,6 @@ class AutoEnableMultidexTest {
           }
         }
       )
-      .disableBuiltInKotlin()
       .create()
 
   @Test
