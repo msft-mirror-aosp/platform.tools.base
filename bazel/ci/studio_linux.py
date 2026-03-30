@@ -54,7 +54,8 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/asfp/studio:asfp.deb',
     '//tools/vendor/google/ml:aiplugin',
     '//tools/vendor/google/ml:studiobot-dogfood-plugin',
-    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
+# TODO: b/497702794 - old custom packaging deleted.
+#    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
     '//tools/base/bazel:owners.zip',
 ]
 
