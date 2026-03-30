@@ -20,9 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.testutils.apk.Dex
-import com.android.utils.FileUtils
 import com.google.common.base.Throwables
 import org.junit.Assert
 import org.junit.Rule
@@ -88,22 +86,12 @@ class AutoEnableMultidexTest {
       }
     }
 
-    if (FileUtils.join(project.intermediatesDir, InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
-      assertThat(classToDexMap.keys)
-        .containsExactly(
-          "Lcom/example/helloworld/A0;",
-          "Lcom/example/helloworld/A1;",
-          "Lcom/example/helloworld/A2;",
-          "Lcom/example/helloworld/R;",
-        )
-    } else {
-      assertThat(classToDexMap.keys)
-        .containsExactly(
-          "Lcom/example/helloworld/A0;",
-          "Lcom/example/helloworld/A1;",
-          "Lcom/example/helloworld/A2;",
-          "Lcom/example/helloworld/R;",
-        )
-    }
+    assertThat(classToDexMap.keys)
+      .containsExactly(
+        "Lcom/example/helloworld/A0;",
+        "Lcom/example/helloworld/A1;",
+        "Lcom/example/helloworld/A2;",
+        "Lcom/example/helloworld/R;",
+      )
   }
 }
