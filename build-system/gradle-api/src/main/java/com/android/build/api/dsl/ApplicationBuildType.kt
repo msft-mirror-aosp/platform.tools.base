@@ -16,6 +16,8 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.model.ReplacedBy
+
 /**
  * Build types define certain properties that Gradle uses when building and packaging your app, and are typically configured for different
  * stages of your development lifecycle.
@@ -39,7 +41,7 @@ interface ApplicationBuildType : BuildType, ApplicationVariantDimension {
    *
    * PNG crunching is enabled by default in the release build type and disabled by default in the debug build type.
    */
-  var isCrunchPngs: Boolean?
+  @get:ReplacedBy("getCrunchPngs") var isCrunchPngs: Boolean?
 
   /** Whether this product flavor should be selected in Studio by default */
   var isDefault: Boolean

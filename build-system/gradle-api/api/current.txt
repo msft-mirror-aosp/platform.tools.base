@@ -587,7 +587,7 @@ package com.android.build.api.dsl {
 
   public interface ApplicationBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.ApplicationVariantDimension {
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Optimization getOptimization();
-    method @InaccessibleFromKotlin public Boolean? isCrunchPngs();
+    method @InaccessibleFromKotlin @org.gradle.api.model.ReplacedBy("getCrunchPngs") public Boolean? isCrunchPngs();
     method @InaccessibleFromKotlin public boolean isDebuggable();
     method @InaccessibleFromKotlin public boolean isDefault();
     method @InaccessibleFromKotlin public boolean isProfileable();
@@ -596,7 +596,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setDebuggable(boolean);
     method @InaccessibleFromKotlin public void setDefault(boolean);
     method @InaccessibleFromKotlin public void setProfileable(boolean);
-    property public abstract Boolean? isCrunchPngs;
+    property @org.gradle.api.model.ReplacedBy("getCrunchPngs") public abstract Boolean? isCrunchPngs;
     property public abstract boolean isDebuggable;
     property public abstract boolean isDefault;
     property public abstract boolean isProfileable;
@@ -1381,11 +1381,11 @@ package com.android.build.api.dsl {
   }
 
   public interface DynamicFeatureBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.DynamicFeatureVariantDimension {
-    method @InaccessibleFromKotlin @org.gradle.api.Incubating public Boolean? isCrunchPngs();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.api.model.ReplacedBy("getCrunchPngs") public Boolean? isCrunchPngs();
     method @InaccessibleFromKotlin public boolean isDebuggable();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public void setCrunchPngs(Boolean?);
     method @InaccessibleFromKotlin public void setDebuggable(boolean);
-    property @org.gradle.api.Incubating public abstract Boolean? isCrunchPngs;
+    property @org.gradle.api.Incubating @org.gradle.api.model.ReplacedBy("getCrunchPngs") public abstract Boolean? isCrunchPngs;
     property public abstract boolean isDebuggable;
   }
 
@@ -2322,11 +2322,11 @@ package com.android.build.api.dsl {
   }
 
   public interface TestBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.TestVariantDimension {
-    method @InaccessibleFromKotlin public Boolean? isCrunchPngs();
+    method @InaccessibleFromKotlin @org.gradle.api.model.ReplacedBy("getCrunchPngs") public Boolean? isCrunchPngs();
     method @InaccessibleFromKotlin public boolean isDebuggable();
     method @InaccessibleFromKotlin public void setCrunchPngs(Boolean?);
     method @InaccessibleFromKotlin public void setDebuggable(boolean);
-    property public abstract Boolean? isCrunchPngs;
+    property @org.gradle.api.model.ReplacedBy("getCrunchPngs") public abstract Boolean? isCrunchPngs;
     property public abstract boolean isDebuggable;
   }
 
