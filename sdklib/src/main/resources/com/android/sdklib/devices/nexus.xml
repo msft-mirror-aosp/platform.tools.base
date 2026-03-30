@@ -5064,6 +5064,11 @@
                 <d:autofocus>true</d:autofocus>
                 <d:flash>true</d:flash>
             </d:camera>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
             <d:keyboard>nokeys</d:keyboard>
             <d:nav>nonav</d:nav>
             <d:ram unit="MiB">15433</d:ram>
