@@ -81,9 +81,13 @@ import android.view.MenuItem;
 package ${(packageName)};
 
 import android.os.Bundle;
+import androidx.activity.EdgeToEdge;
 import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)};
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
 import android.view.View;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -103,7 +107,13 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Java, isViewBindingSupported, id = "main")}, (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
         setSupportActionBar(${findViewById(Language.Java, isViewBindingSupported, id = "toolbar")});
 
         NavController navController = Navigation.findNavController(this, R.id.${navHostFragmentId});

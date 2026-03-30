@@ -48,6 +48,7 @@ fun drawerActivityJava(
 package $packageName;
 
 import android.os.Bundle;
+import androidx.activity.EdgeToEdge;
 import android.view.View;
 import android.view.Menu;
 import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)};
@@ -70,6 +71,7 @@ ${renderIf(isViewBindingSupported) {"""
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
         $contentViewBlock
         setSupportActionBar(${findViewById(
           Language.Java,

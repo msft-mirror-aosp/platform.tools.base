@@ -58,6 +58,7 @@ fun RecipeExecutor.tabbedActivityRecipe(
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support:design:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addLifecycleDependencies(useAndroidX)
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
