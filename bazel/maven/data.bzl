@@ -966,18 +966,22 @@ _CLASS_JARS = [
     "com.google.protobuf:protoc:exe:linux-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:linux-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:linux-x86_64:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protoc:exe:linux-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-aarch_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-aarch_64:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protoc:exe:osx-aarch_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:osx-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:osx-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:osx-x86_64:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protoc:exe:osx-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.protobuf:protoc:exe:windows-x86_64:3.19.6",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.22.3",
     "com.google.protobuf:protoc:exe:windows-x86_64:3.24.4",
     "com.google.protobuf:protoc:exe:windows-x86_64:4.28.3",  # Dependency for UTP.
+    "com.google.protobuf:protoc:exe:windows-x86_64:4.33.2",  # Dependency for ASwB logs.
     "com.google.testing.platform:android-device-provider-local:0.0.8-alpha07",
     "com.google.testing.platform:android-device-provider-local:0.0.8-alpha08",
     "com.google.testing.platform:android-device-provider-local:0.0.9-alpha04",

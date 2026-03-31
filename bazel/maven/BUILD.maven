@@ -78065,6 +78065,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protoc_4.33.2",
+    pom = "repository/com/google/protobuf/protoc/4.33.2/protoc-4.33.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protoc/4.33.2",
+    parent = "com.google.google_5",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.test.platform.core-proto_0.0.2-dev",
     pom = "repository/com/google/test/platform/core-proto/0.0.2-dev/core-proto-0.0.2-dev.pom",
     repo_root_path = "repository",
