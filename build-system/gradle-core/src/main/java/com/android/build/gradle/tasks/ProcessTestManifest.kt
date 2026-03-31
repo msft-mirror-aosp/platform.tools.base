@@ -268,6 +268,7 @@ abstract class ProcessTestManifest : ManifestProcessorTask() {
             .addAllowedNonUniqueNamespace(namespace)
             .setOverride(ManifestSystemProperty.Document.PACKAGE, testApplicationId)
             .setOverride(ManifestSystemProperty.UsesSdk.MIN_SDK_VERSION, minSdkVersion)
+            .addNavigationJsons(navigationJsons)
             .apply {
               if (instrumentationRunner != null) {
                 setOverride(ManifestSystemProperty.Instrumentation.TARGET_PACKAGE, testedApplicationId)
