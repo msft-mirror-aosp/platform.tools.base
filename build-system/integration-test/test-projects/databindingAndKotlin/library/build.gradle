@@ -45,7 +45,3 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).config
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
     }
 }
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
-}

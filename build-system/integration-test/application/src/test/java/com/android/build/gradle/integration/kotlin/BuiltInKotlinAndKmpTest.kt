@@ -38,7 +38,7 @@ class BuiltInKotlinAndKmpTest() {
     val result = build.executor.expectFailure().run(":app:assembleDebug")
 
     // See https://youtrack.jetbrains.com/issue/KT-81117
-    result.assertErrorContains("Cannot add extension with name 'kotlin', as there is an extension already registered with that name.")
+    result.assertErrorContains("Failed to apply plugin 'org.jetbrains.kotlin.multiplatform'")
   }
 
   @Test

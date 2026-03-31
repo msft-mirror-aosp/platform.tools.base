@@ -96,9 +96,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugClasses
             compileDependencyConfigurationName = debugCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTask = task ':app:compileDebugKotlin'
             compileKotlinTaskName = compileDebugKotlin
-            compileKotlinTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compileOnlyConfigurationName = debugCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
@@ -152,9 +150,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugUnitTestClasses
             compileDependencyConfigurationName = debugUnitTestCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTask = task ':app:compileDebugUnitTestKotlin'
             compileKotlinTaskName = compileDebugUnitTestKotlin
-            compileKotlinTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compileOnlyConfigurationName = debugUnitTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugUnitTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>
@@ -200,9 +196,7 @@ class BuiltInKotlinCompilerPluginTest(private val builtInKotlin: Boolean, privat
             compileAllTaskName = debugScreenshotTestClasses
             compileDependencyConfigurationName = debugScreenshotTestCompileClasspath
             compileDependencyFiles = <can't resolve at this point as it is too early>
-            compileKotlinTask = task ':app:compileDebugScreenshotTestKotlin'
             compileKotlinTaskName = compileDebugScreenshotTestKotlin
-            compileKotlinTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compileOnlyConfigurationName = debugScreenshotTestCompilationCompileOnly
             compileTaskProvider = provider(task 'compileDebugScreenshotTestKotlin', class org.jetbrains.kotlin.gradle.tasks.KotlinCompile)
             compilerOptions = org.jetbrains.kotlin.gradle.plugin.mpp.compilationImpl.factory.KotlinJvmCompilerOptionsFactory${"$"}create${"$"}compilerOptions$1@<hash-code>

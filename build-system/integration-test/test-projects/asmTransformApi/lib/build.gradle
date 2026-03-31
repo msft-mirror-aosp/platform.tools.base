@@ -9,7 +9,3 @@ android {
 }
 
 apply from: "../../commonHeader.gradle"  // for $kotlinVersion
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
-}
