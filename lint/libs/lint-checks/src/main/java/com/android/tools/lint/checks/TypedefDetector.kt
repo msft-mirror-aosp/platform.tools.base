@@ -372,208 +372,223 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
     }
 
-    val allowed = getAnnotationValue(annotation)?.skipParenthesizedExprDown() ?: return
+    val allowedArray = getAnnotationValue(annotation)?.skipParenthesizedExprDown()?.takeIf { it.isArrayInitializer() } ?: return
 
-    if (allowed.isArrayInitializer()) {
-      // See if we're passing in a variable which itself has been annotated with
-      // a typedef annotation; if so, make sure that the typedef constants are the
-      // same, or a subset of the allowed constants
-      val resolvedArgument =
-        when (argument) {
-          is UReferenceExpression -> argument.resolve()
-          is UCallExpression -> argument.resolve()
-          else -> null
-        }
+    // See if we're passing in a variable which itself has been annotated with
+    // a typedef annotation; if so, make sure that the typedef constants are the
+    // same, or a subset of the allowed constants
+    val resolvedArgument =
+      when (argument) {
+        is UReferenceExpression -> argument.resolve()
+        is UCallExpression -> argument.resolve()
+        else -> null
+      }
 
-      var unmatched: List<Any>? = null
-      if (resolvedArgument is PsiModifierListOwner) {
-        val evaluator = context.evaluator
-        val annotations = evaluator.getAnnotations(resolvedArgument, true)
-        var hadTypeDef = false
-        for (a in evaluator.filterRelevantAnnotations(annotations, argument)) {
-          val qualifiedName = a.qualifiedName
-          if (
-            INT_DEF_ANNOTATION.isEquals(qualifiedName) ||
-              LONG_DEF_ANNOTATION.isEquals(qualifiedName) ||
-              STRING_DEF_ANNOTATION.isEquals(qualifiedName)
-          ) {
-            hadTypeDef = true
-            val paramValues = getAnnotationValue(a)?.skipParenthesizedExprDown()
-            if (paramValues != null) {
-              if (paramValues == allowed) {
-                return
-              }
+    var unmatched: List<Any>? = null
+    if (resolvedArgument is PsiModifierListOwner) {
+      val evaluator = context.evaluator
+      val annotations = evaluator.getAnnotations(resolvedArgument, true)
+      var hadTypeDef = false
+      for (a in evaluator.filterRelevantAnnotations(annotations, argument)) {
+        val qualifiedName = a.qualifiedName
+        if (
+          INT_DEF_ANNOTATION.isEquals(qualifiedName) ||
+            LONG_DEF_ANNOTATION.isEquals(qualifiedName) ||
+            STRING_DEF_ANNOTATION.isEquals(qualifiedName)
+        ) {
+          hadTypeDef = true
+          val paramValues = getAnnotationValue(a)?.skipParenthesizedExprDown()
+          if (paramValues != null) {
+            if (paramValues == allowedArray) {
+              return
+            }
 
-              // Superset?
-              val provided = getResolvedValues(paramValues, argument)
-              val allowedValues = getResolvedValues(allowed, argument)
+            // Superset?
+            val provided = getResolvedValues(paramValues, argument)
+            val allowedValues = getResolvedValues(allowedArray, argument)
 
-              // Here we just want to use provided.removeAll(allowedValues).
-              // However, we want to treat some fields as
-              // equivalent: Class.NAME and ClassCompat.NAME,
-              // because AndroidX has duplicated a bunch of platform
-              // constants for backwards compatibility purposes
-              // and generally placed them in a Compat class.
+            // Here we just want to use provided.removeAll(allowedValues).
+            // However, we want to treat some fields as
+            // equivalent: Class.NAME and ClassCompat.NAME,
+            // because AndroidX has duplicated a bunch of platform
+            // constants for backwards compatibility purposes
+            // and generally placed them in a Compat class.
 
-              for (allowedValue in allowedValues) {
-                if (!provided.remove(allowedValue) && allowedValue is PsiField) {
-                  val containingClass = allowedValue.containingClass?.name ?: continue
-                  val equivalentName =
-                    if (containingClass.endsWith(COMPAT_SUFFIX)) {
-                      containingClass.removeSuffix(COMPAT_SUFFIX)
-                    } else {
-                      containingClass + COMPAT_SUFFIX
-                    }
-                  val fieldName = allowedValue.name
-                  provided.removeIf {
-                    it is PsiField &&
-                      it.name == fieldName &&
-                      it.containingClass?.name == equivalentName &&
-                      it.containingClass?.qualifiedName?.startsWith(ANDROIDX_PKG_PREFIX) !=
-                        allowedValue.containingClass?.qualifiedName?.startsWith(ANDROIDX_PKG_PREFIX)
+            for (allowedValue in allowedValues) {
+              if (!provided.remove(allowedValue) && allowedValue is PsiField) {
+                val containingClass = allowedValue.containingClass?.name ?: continue
+                val equivalentName =
+                  if (containingClass.endsWith(COMPAT_SUFFIX)) {
+                    containingClass.removeSuffix(COMPAT_SUFFIX)
+                  } else {
+                    containingClass + COMPAT_SUFFIX
                   }
+                val fieldName = allowedValue.name
+                provided.removeIf {
+                  it is PsiField &&
+                    it.name == fieldName &&
+                    it.containingClass?.name == equivalentName &&
+                    it.containingClass?.qualifiedName?.startsWith(ANDROIDX_PKG_PREFIX) !=
+                      allowedValue.containingClass?.qualifiedName?.startsWith(ANDROIDX_PKG_PREFIX)
                 }
               }
-              if (provided.isEmpty()) {
-                return
-              } else if (allowedValues.size > provided.size) {
-                // Some overlap: list the unexpected constants
-                unmatched = provided
-                if (provided.size == 1) {
-                  // If there's just a difference of one constant, check to see if we have
-                  // a trivial scenario where we've made sure the constant isn't exactly that
-                  // value. (This is just checking the most basic scenario; there are a bunch
-                  // of ways this comparison be done, by value comparisons, by early returns, by
-                  // earlier switch cases etc.)
-                  val condition = argument.getParentOfType<UIfExpression>()?.condition?.skipParenthesizedExprDown() as? UBinaryExpression
-                  if (
-                    (condition?.operator == IDENTITY_NOT_EQUALS || condition?.operator == NOT_EQUALS) &&
-                      provided[0] == getResolvedValue(condition.rightOperand, argument)
-                  ) {
-                    if (condition.leftOperand.asSourceString() == argument.asSourceString()) {
-                      return
-                    }
-                    if (condition.leftOperand.sourcePsi?.text == argument.sourcePsi?.text) {
-                      return
-                    }
-                    //noinspection LintImplPsiEquals
-                    if (condition.leftOperand.tryResolve() == value) {
-                      return
-                    }
+            }
+            if (provided.isEmpty()) {
+              return
+            } else if (allowedValues.size > provided.size) {
+              // Some overlap: list the unexpected constants
+              unmatched = provided
+              if (provided.size == 1) {
+                // If there's just a difference of one constant, check to see if we have
+                // a trivial scenario where we've made sure the constant isn't exactly that
+                // value. (This is just checking the most basic scenario; there are a bunch
+                // of ways this comparison be done, by value comparisons, by early returns, by
+                // earlier switch cases etc.)
+                val condition = argument.getParentOfType<UIfExpression>()?.condition?.skipParenthesizedExprDown() as? UBinaryExpression
+                if (
+                  (condition?.operator == IDENTITY_NOT_EQUALS || condition?.operator == NOT_EQUALS) &&
+                    provided[0] == getResolvedValue(condition.rightOperand, argument)
+                ) {
+                  if (condition.leftOperand.asSourceString() == argument.asSourceString()) {
+                    return
+                  }
+                  if (condition.leftOperand.sourcePsi?.text == argument.sourcePsi?.text) {
+                    return
+                  }
+                  //noinspection LintImplPsiEquals
+                  if (condition.leftOperand.tryResolve() == value) {
+                    return
                   }
                 }
               }
             }
           }
         }
+      }
 
-        if (!hadTypeDef && resolvedArgument is PsiMethod) {
-          // Called some random method which has not been annotated.
-          // Let's peek inside to see if we can figure out more about it; if not,
-          // we don't want to flag it since it could get noisy with false
-          // positives.
-          val uMethod = resolvedArgument.toUElement()
-          if (uMethod is UMethod) {
-            val body = uMethod.uastBody
-            val retValue =
-              if (body is UBlockExpression) {
-                if (body.expressions.size == 1) {
-                  (body.expressions[0].skipParenthesizedExprDown() as? UReturnExpression)?.returnExpression
-                } else {
-                  null
-                }
+      if (!hadTypeDef && resolvedArgument is PsiMethod) {
+        // Called some random method that has not been annotated.
+        // Let's peek inside to see if we can figure out more about it; if not,
+        // we don't want to flag it since it could get noisy with false
+        // positives.
+        val uMethod = resolvedArgument.toUElement()
+        if (uMethod is UMethod) {
+          val body = uMethod.uastBody
+          val retValue =
+            if (body is UBlockExpression) {
+              if (body.expressions.size == 1) {
+                (body.expressions[0].skipParenthesizedExprDown() as? UReturnExpression)?.returnExpression
               } else {
-                body
+                null
               }
-            if (retValue is UReferenceExpression) {
-              // Constant reference
-              val const = retValue.resolve() ?: return
-              if (const is PsiField) {
-                checkTypeDefConstant(context, annotation, retValue, errorNode, flag, const, usageInfo)
-              }
-              return
-            } else if (retValue !is ULiteralExpression) {
-              // Not a reference and not a constant literal: some more complicated
-              // logic; don't try to flag this for fear of false positives
-              return
+            } else {
+              body
             }
-          }
-        }
-      }
-
-      val fieldInitialization = skipParenthesizedExprUp((argument as? ULiteralExpression)?.uastParent) as? UField
-      val initializerExpression = allowed as UCallExpression
-      val initializers = initializerExpression.valueArguments
-      var psiValue: PsiElement? = null
-      if (value is PsiElement) {
-        psiValue = value
-      }
-
-      for (initializer in initializers) {
-        val expression = initializer.skipParenthesizedExprDown()
-        // Is this a literal string initialization in a field? If so,
-        // see if that field is a member of the allowed constants (e.g.
-        // a constant declaration intended to be used in a typedef itself)
-        if (fieldInitialization != null && expression is UReferenceExpression) {
-          val resolved = expression.resolve()
-          if (resolved != null && resolved.isEquivalentTo(fieldInitialization.javaPsi)) {
-            return
-          }
-        }
-
-        if (expression is ULiteralExpression) {
-          if (value == expression.value) {
-            return
-          }
-        } else if (psiValue == null) {
-          // We're checking here such that we can assume psiValue is not null below
-          continue
-        } else if (expression is UReferenceExpression) {
-          val resolved = expression.resolve()
-          if (resolved != null && resolved.isEquivalentTo(psiValue)) {
-            return
-          }
-        }
-
-        val sourcePsi = expression.sourcePsi as? KtElement
-        if (sourcePsi != null) {
-          analyze(sourcePsi) {
-            val calleeSymbol = sourcePsi.resolveToCall()?.singleFunctionCallOrNull()?.symbol
-            // e.g., CONST.toLong(), we should compare with CONST, not the entire expression.
-            if (isPrimitiveTypeConvertingMethod(calleeSymbol) || isPrimitiveTypeReturningMethod(calleeSymbol)) {
-              val receiver = (expression as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
-              val resolvedReceiver = (receiver as? UResolvable)?.resolve()
-              if (resolvedReceiver != null && resolvedReceiver.isEquivalentTo(psiValue)) {
-                return
-              }
+          if (retValue is UReferenceExpression) {
+            // Constant reference
+            val const = retValue.resolve() ?: return
+            if (const is PsiField) {
+              checkTypeDefConstant(context, annotation, retValue, errorNode, flag, const, usageInfo)
             }
+            return
+          } else if (retValue !is ULiteralExpression) {
+            // Not a reference and not a constant literal: some more complicated
+            // logic; don't try to flag this for fear of false positives
+            return
           }
         }
       }
+    }
 
-      // Check field initializers provided it's not a class field, in which case
-      // we'd be reading out literal values which we don't want to do
-      if (value is PsiField && rangeAnnotation == null) {
-        val initializer = UastFacade.getInitializerBody(value)?.skipParenthesizedExprDown()
-        if (initializer != null && initializer !is ULiteralExpression && initializer.sourcePsi !is PsiLiteralExpression) {
-          checkTypeDefConstant(context, annotation, initializer, errorNode, flag, usageInfo)
+    val initializers = (allowedArray as? UCallExpression)?.valueArguments ?: return
+
+    // This is for the edge case where the annotation was triggered by a field initialization,
+    // where the field itself is one of the allowed constants, and the field itself is annotated:
+    //
+    // @MyTypeDef
+    // public static final String FOO = "foo";
+    //                                  ^^^^^
+    // @StringDef({FOO})
+    // public @interface MyTypeDef {}
+    val fieldBeingInitialized = skipParenthesizedExprUp((argument as? ULiteralExpression)?.uastParent) as? UField
+
+    for (allowedExpression in initializers.map { it.skipParenthesizedExprDown() }) {
+      // See fieldBeingInitialized above.
+      // If `argument` is actually initializing a field, and if the allowedExpression is a reference to this field then return.
+      if (fieldBeingInitialized != null && allowedExpression is UReferenceExpression) {
+        val resolved = allowedExpression.resolve()
+        if (resolved != null && resolved.isEquivalentTo(fieldBeingInitialized.javaPsi)) {
           return
         }
       }
 
-      if (annotation.javaPsi is PsiCompiledElement) {
-        // If we for some reason have a compiled annotation, don't flag the error
-        // since we can't represent IntDef data on these annotations
+      if (allowedExpression is ULiteralExpression && value == allowedExpression.value) {
         return
       }
 
-      // noinspection LintImplPsiEquals
-      if (value is PsiVariable && argument is UReferenceExpression && argument.resolve() == value && variableIsChecked(argument, value)) {
-        return
+      if (value !is PsiElement) {
+        continue
       }
 
-      reportTypeDef(context, argument, errorNode, flag, initializers, usageInfo, annotation, unmatched)
+      if (allowedExpression is UReferenceExpression) {
+        val resolved = allowedExpression.resolve()
+        if (resolved != null && resolved.isEquivalentTo(value)) {
+          return
+        }
+      }
+
+      val sourcePsi = allowedExpression.sourcePsi as? KtElement
+      if (sourcePsi != null) {
+        analyze(sourcePsi) {
+          val calleeSymbol = sourcePsi.resolveToCall()?.singleFunctionCallOrNull()?.symbol
+          // e.g., CONST.toLong(), we should compare with CONST, not the entire expression.
+          if (isPrimitiveTypeConvertingMethod(calleeSymbol) || isPrimitiveTypeReturningMethod(calleeSymbol)) {
+            val receiver = (allowedExpression as? UQualifiedReferenceExpression)?.receiver?.skipParenthesizedExprDown()
+            val resolvedReceiver = (receiver as? UResolvable)?.resolve()
+            if (resolvedReceiver != null && resolvedReceiver.isEquivalentTo(value)) {
+              return
+            }
+          }
+        }
+      }
     }
+    // End loop; could not match the value to any allowed expression from the annotation.
+
+    // Original comment: Check field initializers provided it's not a class field, in which case
+    // we'd be reading out literal values which we don't want to do.
+    //
+    // Paul: I don't really understand the original comment above; this seems to only be used by
+    // testIntDefMultiple, where value is a field like:
+    // private static final int[] VALID_ARRAY = {VALUE_A, VALUE_B};
+    // Within the call to checkTypeDefConstant, there is a case for when the argument
+    // is an array initializer: each element is checked.
+    if (value is PsiField && rangeAnnotation == null) {
+      val initializer = UastFacade.getInitializerBody(value)?.skipParenthesizedExprDown()
+      if (initializer != null && initializer !is ULiteralExpression && initializer.sourcePsi !is PsiLiteralExpression) {
+        checkTypeDefConstant(context, annotation, initializer, errorNode, flag, usageInfo)
+        return
+      }
+    }
+
+    // Note that this condition is false for a compiled annotation if the library comes with an
+    // annotations.zip file. This is very common for multi-module projects in AGP 9+. In this case,
+    // a "fake" Java source file is created to hold the annotation, and it is parsed, which can be
+    // confusing. I believe we have enough info to use the annotation, so can continue to report.
+    // But the fact that it is parsed as Java can lead to challenges. For example, if one of the
+    // allowed constants is in a companion object, the reference to the constant can resolve
+    // differently vs. a reference to the same constant from a Kotlin source file.
+    if (annotation.javaPsi is PsiCompiledElement) {
+      // If we for some reason have a compiled annotation, don't flag the error
+      // since we can't represent IntDef data on these annotations.
+      return
+    }
+
+    // noinspection LintImplPsiEquals
+    if (value is PsiVariable && argument is UReferenceExpression && argument.resolve() == value && variableIsChecked(argument, value)) {
+      return
+    }
+
+    reportTypeDef(context, argument, errorNode, flag, initializers, usageInfo, annotation, unmatched)
   }
 
   /**
