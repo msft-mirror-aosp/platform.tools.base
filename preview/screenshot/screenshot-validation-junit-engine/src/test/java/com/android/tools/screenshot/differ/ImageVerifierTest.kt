@@ -18,7 +18,6 @@ package com.android.tools.screenshot.differ
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.io.FileNotFoundException
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertThrows
 import org.junit.Rule
@@ -38,7 +37,7 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
     val error =
-      assertThrows(FileNotFoundException::class.java) {
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
         imageVerifier.verify(File(tempDir.root, "newImagePath"), File(createImageFile("circle", refDir)), diffImage, tempDir.root)
       }
     assertThat(error).hasMessageThat().contains("Preview image file does not exist (newImagePath)")
@@ -51,7 +50,7 @@ class ImageVerifierTest {
     val diffImage = File(diffDir, "diff.png")
     val newImagePath = createImageFile("circle", newDir)
     val error =
-      assertThrows(FileNotFoundException::class.java) {
+      assertThrows(ScreenshotImageNotFoundException::class.java) {
         imageVerifier.verify(File(newImagePath), File(tempDir.root, "referenceImagePath"), diffImage, tempDir.root)
       }
     assertThat(error).hasMessageThat().contains("Reference image file does not exist (referenceImagePath)")
@@ -111,7 +110,7 @@ class ImageVerifierTest {
     val imageVerifier = ImageVerifier(PixelPerfect())
     val diffImage = File(diffDir, "diff.png")
     val error =
-      assertThrows(ImageVerifier.ImageComparisonAssertionError::class.java) {
+      assertThrows(ImageComparisonAssertionError::class.java) {
         imageVerifier.verify(
           File(createImageFile("horizontal_rectangle", newDir)),
           File(createImageFile("vertical_rectangle", refDir)),

@@ -20,6 +20,7 @@ import com.android.tools.render.common.PreviewScreenshotResult
 import com.android.tools.screenshot.PreviewScreenshotExecutionContext
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput
 import com.android.tools.screenshot.PreviewScreenshotTestEngineInput.ImageDifferInput
+import com.android.tools.screenshot.differ.ImageComparisonAssertionError
 import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
@@ -81,7 +82,7 @@ class PreviewScreenshotDescriptor(
         verificationResult = imageVerifier.verify(newImageFile, refImageFile, diffImageFile, context.projectRoot)
 
         if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
-          throw ImageVerifier.ImageComparisonAssertionError(
+          throw ImageComparisonAssertionError(
             refImageFile.relativeTo(context.projectRoot).path,
             newImageFile.relativeTo(context.projectRoot).path,
             verificationResult.diffPercent,

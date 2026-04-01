@@ -31,11 +31,11 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
     diffOutputFile.parentFile.mkdirs()
 
     if (!newImageFile.exists()) {
-      throw FileNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
+      throw ScreenshotImageNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
     }
 
     if (!referenceImageFile.exists()) {
-      throw FileNotFoundException("Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).")
+      throw ScreenshotImageNotFoundException("Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).")
     }
 
     val actual = ImageIO.read(newImageFile)
@@ -61,21 +61,27 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
     val diffPercentValue: Double? = diff.percentDiff
     return VerificationResult(diff, diffPercentValue)
   }
+}
 
-  class ImageComparisonAssertionError(
-    val expectedImagePath: String,
-    val actualImagePath: String,
-    val diffPercentage: Double? = null,
-    val diffImagePath: String? = null,
-    message: String = "Image does not match.",
-  ) : AssertionError(message) {
-    override val message: String
-      get() =
-        super.message +
-          "\n" +
-          "Expected: $expectedImagePath\n" +
-          "Actual: $actualImagePath\n" +
-          (diffPercentage?.let { "Difference: ${"%.2f".format(it*100)}%\n" } ?: "") +
-          (diffImagePath?.let { "Diff Image: $it\n" } ?: "")
-  }
+class ImageComparisonAssertionError(
+  val expectedImagePath: String,
+  val actualImagePath: String,
+  val diffPercentage: Double? = null,
+  val diffImagePath: String? = null,
+  message: String = "Image does not match.",
+) : AssertionError(message) {
+  override fun fillInStackTrace(): Throwable = this
+
+  override val message: String
+    get() =
+      super.message +
+        "\n" +
+        "Expected: $expectedImagePath\n" +
+        "Actual: $actualImagePath\n" +
+        (diffPercentage?.let { "Difference: ${"%.2f".format(it * 100)}%\n" } ?: "") +
+        (diffImagePath?.let { "Diff Image: $it\n" } ?: "")
+}
+
+class ScreenshotImageNotFoundException(message: String) : FileNotFoundException(message) {
+  override fun fillInStackTrace(): Throwable = this
 }
