@@ -272,16 +272,9 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
         val testSuiteCoverageFiles = mutableListOf<File>()
         parameters.testSuiteCoverageData.files.forEach { directory ->
-          if (directory.exists()) {
-            val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
-            if (metadataFile.exists()) {
-              val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
-              val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
-              val coverageFiles =
-                directory.listFiles { file -> file.extension == "ec" || file.extension == "exec" }?.toList() ?: emptyList()
-              generateXmlReport(coverageFiles, testSuiteName)
-              testSuiteCoverageFiles.addAll(coverageFiles)
-            }
+          getTestSuiteCoverageFiles(directory)?.let { (testSuiteName, coverageFiles) ->
+            generateXmlReport(coverageFiles, testSuiteName)
+            testSuiteCoverageFiles.addAll(coverageFiles)
           }
         }
 
@@ -308,6 +301,26 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
        */
       fun formatProjectName(projectName: String): String {
         return projectName.split(':').filter { it.isNotEmpty() }.joinToString("") { part -> part.replaceFirstChar { it.uppercase() } }
+      }
+
+      /**
+       * Get the test suite name and the list of coverage files for the given directory.
+       *
+       * @param directory The directory to look for coverage files.
+       * @return A pair of test suite name and a list of coverage files, or null if the directory does not exist or does not contain the
+       *   metadata file.
+       */
+      fun getTestSuiteCoverageFiles(directory: File): Pair<String, List<File>>? {
+        if (directory.exists()) {
+          val metadataFile = File(directory, TEST_SUITE_METADATA_FILE)
+          if (metadataFile.exists()) {
+            val metadata = TestSuiteTestTask.parseMetadata(metadataFile)
+            val testSuiteName = metadata[TEST_SUITE_METADATA_SUITE_KEY] ?: "unknown_suite"
+            val coverageFiles = directory.walkTopDown().filter { file -> file.extension == "ec" || file.extension == "exec" }.toList()
+            return Pair(testSuiteName, coverageFiles)
+          }
+        }
+        return null
       }
 
       /**
