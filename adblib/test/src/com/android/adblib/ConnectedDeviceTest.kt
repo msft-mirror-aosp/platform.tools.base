@@ -1459,6 +1459,33 @@ class ConnectedDeviceTest {
   }
 
   @Test
+  fun testPackageManagerClearSuccess(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act: Clear existing package (i.e. anything other than ShellConstants.NON_INSTALLED_APP_ID)
+    connectedDevice.packageManager.clear("com.app1")
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("clear com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerClearFailure(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.clear(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
   fun testPackageManagerUninstallFailureApi28AndAbove(): Unit = runBlockingWithTimeout {
     // Prepare
     val connectedDevice = addFakeConnectedDevice()

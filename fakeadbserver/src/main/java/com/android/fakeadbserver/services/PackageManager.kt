@@ -93,6 +93,19 @@ class PackageManager(private val deviceState: DeviceState) : Service {
           shellCommandOutput.writeExitCode(0)
         }
       }
+      cmd.startsWith("clear") -> {
+        if (args.size == 1) {
+          errorReporting.reportError(shellCommandOutput, "package name not specified")
+          return
+        }
+        val applicationId = args.last()
+        if (applicationId == ShellConstants.NON_INSTALLED_APP_ID) {
+          errorReporting.reportError(shellCommandOutput, "Failure [DELETE_FAILED_INTERNAL_ERROR]")
+        } else {
+          shellCommandOutput.writeStdout("Success")
+          shellCommandOutput.writeExitCode(0)
+        }
+      }
       cmd == "path" -> {
         val appId = args[1]
         shellCommandOutput.writeStdout("/data/app/$appId/base.apk")

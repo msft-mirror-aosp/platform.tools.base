@@ -29,6 +29,14 @@ interface AdbPackageManagerServices {
    * @throws IOException if there was an issue communicating with the device
    */
   suspend fun uninstall(device: DeviceSelector, packageName: String)
+
+  /**
+   * Uses `adb shell pm clear` to clear the app data.
+   *
+   * @throws AdbPackageManagerException if the `pm` command failed
+   * @throws IOException if there was an issue communicating with the device
+   */
+  suspend fun clear(device: DeviceSelector, packageName: String)
 }
 
 /** Exception thrown by functions of [AdbPackageManagerServices] */

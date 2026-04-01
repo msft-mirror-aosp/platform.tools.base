@@ -467,6 +467,35 @@ class PackageManager(val device: ConnectedDevice) {
     }
   }
 
+  /**
+   * Uses `adb shell pm clear` to clear the app data.
+   *
+   * Note: This method retries the command if the device is not ready, see [runPmCommandWhenServiceIsReady] for a detailed description of
+   * error conditions.
+   *
+   * @throws AdbPackageManagerException if the `pm` command failed
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbPackageManagerServices.clear
+   */
+  suspend fun clear(packageName: String) {
+    mapTimeoutToAdbException("clear $packageName") {
+      try {
+        runPmCommandWhenServiceIsReady(
+          timeout = device.session.property(PM_SERVICE_TIMEOUT),
+          retryDelay = device.session.property(PM_SERVICE_RETRY_DELAY),
+        ) {
+          device.session.packageManagerServices.clear(device.selector, packageName)
+        }
+      } catch (cause: AdbPackageManagerException) {
+        if (cause.isCommandNotSupported) {
+          // This should never happen as `pm clear` command is supported since at least API 16.
+          logger.warn("`pm clear' is not supported on this device")
+        }
+        throw cause
+      }
+    }
+  }
+
   /** Returns the result of the [pmCommand]. If necessary, waits for device to come online or for the package service to start running. */
   private suspend fun <R> runPmCommandWhenServiceIsReady(timeout: Duration, retryDelay: Duration, pmCommand: suspend () -> R): R {
     return session.withErrorTimeout(timeout) {

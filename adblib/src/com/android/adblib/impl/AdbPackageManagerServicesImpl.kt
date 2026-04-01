@@ -47,6 +47,18 @@ class AdbPackageManagerServicesImpl(override val session: AdbSession) : AdbPacka
     }
   }
 
+  override suspend fun clear(device: DeviceSelector, packageName: String) {
+    validatePackageName(packageName)
+    val pmCommand = "pm clear $packageName"
+    val result = runPmCommand(device, pmCommand)
+    val output = result.stdout.toString(AdbProtocolUtils.ADB_CHARSET)
+    // On newer devices, `runPmCommand` above throws an exception based on the adb shell error code. But on older devices, we must infer
+    // failure from stdout since both the error code and stderr are missing.
+    if (output.trim() != "Success") {
+      throwPmCommandError(device = device, pmCommand = pmCommand, result = result, errorOutput = output)
+    }
+  }
+
   private suspend fun runPmCommand(device: DeviceSelector, pmCommand: String): ByteArrayShellCollector.CommandResult {
     return deviceServices.shellCommand(device, pmCommand).withCollector(ByteArrayShellCollector()).execute().first().also {
       commandResult: ByteArrayShellCollector.CommandResult ->
