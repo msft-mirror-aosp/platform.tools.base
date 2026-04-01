@@ -320,10 +320,8 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
     intermediateTextReport.orNull?.let { arguments.add("--text", it) }
     if (htmlReportEnabled.get()) {
-      arguments.add("--html", htmlReportOutputFile.get())
-      if (useHtmlV2.get()) {
-        arguments += "--html-v2"
-      }
+      val htmlFlag = if (useHtmlV2.get()) "--html-v2" else "--html"
+      arguments.add(htmlFlag, htmlReportOutputFile.get())
     }
     if (xmlReportEnabled.get()) {
       arguments.add("--xml", xmlReportOutputFile.get())

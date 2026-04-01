@@ -106,8 +106,9 @@ class AndroidLintTaskTest {
     task.offline.set(true)
     task.useHtmlV2.set(true)
 
-    val commandLineArguments = task.generateCommandLineArguments().joinToString(" ")
+    val commandLineArguments = task.generateCommandLineArguments()
     assertThat(commandLineArguments).contains("--html-v2")
+    assertThat(commandLineArguments).doesNotContain("--html")
   }
 
   @Test
