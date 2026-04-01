@@ -19,6 +19,7 @@ package com.android.tools.androidtest.testengine
 import com.google.common.truth.Truth.assertThat
 import java.io.File
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -26,7 +27,6 @@ import org.junit.rules.TemporaryFolder
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
-import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 
@@ -172,19 +172,21 @@ class AdbControllerTest {
   @Test
   fun runCommand_timeout() {
     val process = mock<Process>()
+    val processFinished = AtomicBoolean(false)
+    doAnswer { if (processFinished.get()) 137 else throw IllegalThreadStateException("Process still alive") }.whenever(process).exitValue()
+
     doAnswer {
-        doReturn(137).whenever(process).exitValue()
+        processFinished.set(true)
         false
       }
       .whenever(process)
       .waitFor(any<Long>(), any<TimeUnit>())
     doReturn("".byteInputStream()).whenever(process).inputStream
     doReturn("".byteInputStream()).whenever(process).errorStream
-    doThrow(IllegalThreadStateException("Process still alive")).whenever(process).exitValue()
 
     // When waitFor() is called, make exitValue() return a value instead of throwing.
     doAnswer {
-        doReturn(137).whenever(process).exitValue()
+        processFinished.set(true)
         137
       }
       .whenever(process)
@@ -200,19 +202,21 @@ class AdbControllerTest {
   @Test
   fun runAdbShellCommandToOutputStream_timeout() {
     val process = mock<Process>()
+    val processFinished = AtomicBoolean(false)
+    doAnswer { if (processFinished.get()) 137 else throw IllegalThreadStateException("Process still alive") }.whenever(process).exitValue()
+
     doAnswer {
-        doReturn(137).whenever(process).exitValue()
+        processFinished.set(true)
         false
       }
       .whenever(process)
       .waitFor(any<Long>(), any<TimeUnit>())
     doReturn("".byteInputStream()).whenever(process).inputStream
     doReturn("".byteInputStream()).whenever(process).errorStream
-    doThrow(IllegalThreadStateException("Process still alive")).whenever(process).exitValue()
 
     // When waitFor() is called, make exitValue() return a value instead of throwing.
     doAnswer {
-        doReturn(137).whenever(process).exitValue()
+        processFinished.set(true)
         137
       }
       .whenever(process)
