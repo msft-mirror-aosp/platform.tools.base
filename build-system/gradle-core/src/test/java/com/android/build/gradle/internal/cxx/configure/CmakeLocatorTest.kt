@@ -53,6 +53,7 @@ class CmakeLocatorTest {
     var downloadRemote: Boolean = false,
     var result: String? = null,
     var downloadAttempts: Int = 0,
+    var requestedDownloadVersion: String? = null,
   )
 
   private fun findCmakePath(
@@ -80,8 +81,9 @@ class CmakeLocatorTest {
             encounter.sdkPackagesRetrieved = true
             repositoryPackages()
           },
-          downloader = {
+          downloader = { requestedVersion ->
             encounter.downloadAttempts = encounter.downloadAttempts + 1
+            encounter.requestedDownloadVersion = requestedVersion
             downloader()
           },
         )
@@ -488,6 +490,20 @@ class CmakeLocatorTest {
   @Test
   fun sdkCmakeAutoInstallSuccess3() {
     sdkCmakeAutoInstallSuccessTestCase("$defaultCmakeVersion-rc1")
+  }
+
+  @Test
+  fun sdkCmakeAutoInstallSuccessForArbitraryVersion() {
+    val repositoryPackages = mutableListOf<LocalPackage>()
+    val encounter =
+      findCmakePath(
+        cmakeVersionFromDsl = "4.1.0",
+        repositoryPackages = { repositoryPackages },
+        downloader = { repositoryPackages.add(fakeLocalCmakeOf("4.1.0", "4.1.0")) },
+      )
+    assertThat(encounter.downloadAttempts).isEqualTo(1)
+    assertThat(encounter.requestedDownloadVersion).isEqualTo("4.1.0")
+    assertThat(encounter.result).isEqualTo("/sdk/cmake/4.1.0")
   }
 
   /**
