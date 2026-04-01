@@ -138,6 +138,7 @@ data class ProjectTemplateData(
   val overridePathCheck: Boolean? = false, // To disable android plugin checking for ascii in paths (windows tests)
   val isNewProject: Boolean,
   val kotlinSupport: TemplateKotlinSupport = TemplateKotlinSupport.IMPLICIT_BUILT_IN_KOTLIN,
+  val dslLanguage: DslLanguage,
 ) : TemplateData() {
   @Deprecated("Replaced with agpVersion", replaceWith = ReplaceWith("agpVersion"))
   val gradlePluginVersion: GradlePluginVersion
