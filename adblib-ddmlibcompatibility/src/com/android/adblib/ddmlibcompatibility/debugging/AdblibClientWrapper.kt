@@ -40,7 +40,7 @@ import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.proxyStatus
-import com.android.adblib.tools.debugging.sendDdmsExit
+import com.android.adblib.tools.debugging.sendVmExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
 import com.android.adblib.tools.debugging.viewHierarchy
@@ -212,8 +212,8 @@ internal class AdblibClientWrapper(private val trackerHost: ProcessTrackerHost, 
   }
 
   override fun kill() {
-    // Sends a DDMS EXIT packet to the VM
-    runBlockingLegacy { jdwpProcess.sendDdmsExit(1) }
+    // Sends a VM_EXIT packet to the VM
+    runBlockingLegacy { jdwpProcess.sendVmExit(1) }
   }
 
   /**
