@@ -43,7 +43,7 @@ interface ApplicationDeclarativeDefinition :
    *
    * @see BuildType
    */
-  @get:HiddenInDefinition @get:Incubating val buildTypes: NamedDomainObjectContainer<DeclarativeApplicationBuildType>
+  @get:Incubating val buildTypes: NamedDomainObjectContainer<DeclarativeApplicationBuildType>
 
   /**
    * Shortcut extension method to allow easy access to the predefined `debug` [ApplicationBuildType]

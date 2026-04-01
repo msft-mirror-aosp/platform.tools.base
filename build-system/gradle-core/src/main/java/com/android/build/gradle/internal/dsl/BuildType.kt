@@ -57,6 +57,9 @@ constructor(name: String, private val dslServices: DslServices, componentType: C
   fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {
     configure.invoke(dependencies)
   }
+
+  override val isUseProguard: Boolean?
+    get() = false
 }
 
 /** DSL object to configure build types. */

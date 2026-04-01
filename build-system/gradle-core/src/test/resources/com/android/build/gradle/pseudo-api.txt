@@ -1329,6 +1329,7 @@ com.android.build.gradle.internal.dsl.DeclarativeBuildType.<init>: com.android.b
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.access$getDslServices$p: com.android.build.gradle.internal.services.DslServices (com.android.build.gradle.internal.dsl.DeclarativeBuildType)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.dependencies: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BuildTypeDependenciesExtension, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.DeclarativeBuildType.getDependencies: com.android.build.api.dsl.BuildTypeDependenciesExtension ()
+com.android.build.gradle.internal.dsl.DeclarativeBuildType.isUseProguard: java.lang.Boolean ()
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory implements org.gradle.api.NamedDomainObjectFactory
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.<init>: com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory (com.android.build.gradle.internal.services.DslServices, com.android.builder.core.ComponentType)
 com.android.build.gradle.internal.dsl.DeclarativeBuildTypeFactory.create: com.android.build.gradle.internal.dsl.DeclarativeBuildType (java.lang.String)
