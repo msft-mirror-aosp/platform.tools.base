@@ -244,7 +244,6 @@ com.android.build.gradle.integration.connected.databinding.DataBindingIntegratio
 com.android.build.gradle.integration.connected.dependencies.TestWithSameDepAsAppConnectedTest
 com.android.build.gradle.integration.connected.feature.DynamicFeatureConnectedTest
 com.android.build.gradle.integration.connected.library.AdditionalTestOutputOverrideConnectedTest
-com.android.build.gradle.integration.connected.library.ApiConnectedTest
 com.android.build.gradle.integration.connected.library.AttrOrderConnectedTest
 com.android.build.gradle.integration.connected.library.FlavoredlibConnectedTest
 com.android.build.gradle.integration.connected.library.FlavorlibConnectedTest
