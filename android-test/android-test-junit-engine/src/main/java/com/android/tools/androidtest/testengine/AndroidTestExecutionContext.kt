@@ -50,23 +50,29 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   private val config = request.configurationParameters
 
   private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null, deviceSerial: String? = null): String? {
-    if (deviceSerial != null) {
-      val deviceSpecificKey = "$key[$deviceSerial]"
-      val value =
-        config.get(deviceSpecificKey).orElse(null) ?: System.getProperty(deviceSpecificKey) ?: AgpTestSuiteInput.get(deviceSpecificKey)
-      if (value != null) {
-        return value
-      }
+    if (key.isNotEmpty()) {
+      if (deviceSerial != null) {
+        val deviceSpecificKey = "$key[$deviceSerial]"
+        val value =
+          config.get(deviceSpecificKey).orElse(null) ?: System.getProperty(deviceSpecificKey) ?: AgpTestSuiteInput.get(deviceSpecificKey)
+        if (value != null) {
+          return value
+        }
 
-      if (agpTestInput != null) {
-        val agpDeviceSpecificKey = "${agpTestInput.key}[$deviceSerial]"
-        val agpValue = AgpTestSuiteInput.get(agpDeviceSpecificKey)
-        if (agpValue != null) {
-          return agpValue
+        if (agpTestInput != null) {
+          val agpDeviceSpecificKey = "${agpTestInput.key}[$deviceSerial]"
+          val agpValue = AgpTestSuiteInput.get(agpDeviceSpecificKey)
+          if (agpValue != null) {
+            return agpValue
+          }
         }
       }
+      val valueFromKey = config.get(key).orElse(null) ?: System.getProperty(key) ?: AgpTestSuiteInput.get(key)
+      if (valueFromKey != null) {
+        return valueFromKey
+      }
     }
-    return config.get(key).orElse(null) ?: System.getProperty(key) ?: agpTestInput?.get() ?: AgpTestSuiteInput.get(key)
+    return agpTestInput?.get()
   }
 
   val adb: File =
@@ -106,6 +112,11 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val additionalTestOutputDirOnHost: File? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_HOST)?.let { File(it) }
   val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
   val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
+  val isTestCoverageEnabled: Boolean = get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)?.toBoolean() ?: false
+
+  val coverageDirOnHost: File? = get("", AgpTestSuiteInput.COVERAGE_DIR)?.let { File(it, "coverage_data") }
+  val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)
+  val coverageDirOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE)
 
   fun getTestedApks(deviceSerial: String? = null): List<File> = resolveApks(get(TESTED_APKS, AgpTestSuiteInput.TESTED_APKS, deviceSerial))
 

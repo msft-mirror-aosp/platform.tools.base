@@ -36,12 +36,16 @@ class AndroidAdditionalTestOutputCollector(
   private val testedApplicationId: String,
   private val testPackageId: String = "",
   private val useTestStorageService: Boolean,
+  private val runAsPackageName: String? = null,
   private val logger: Logger = Logger.getLogger(AndroidAdditionalTestOutputCollector::class.java.name),
 ) {
 
   companion object {
     /** AndroidX Test Storage service's output directory on device. */
     const val TEST_STORAGE_SERVICE_OUTPUT_DIR = "/sdcard/googletest/test_outputfiles"
+
+    /** AndroidX Test Storage service's internal output directory on device. */
+    const val TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR = "/sdcard/googletest/internal_use/"
 
     const val ADDITIONAL_TEST_OUTPUT_MIN_API_LEVEL = 16
 
@@ -84,6 +88,80 @@ class AndroidAdditionalTestOutputCollector(
           listOf("appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow"),
         )
       }
+    }
+  }
+
+  /**
+   * Pulls a single file from the device to the host.
+   *
+   * If the file is located in a package-private directory (starting with "/data/"), it cannot be pulled directly by `adb pull` on
+   * non-rooted devices. In this case, we use `run-as <package_name>` to copy the file to a world-readable temporary directory in
+   * "/data/local/tmp/" first, and then pull it from there.
+   *
+   * This is a proven pattern used in other UTP plugins (like the Coverage plugin) to bypass permission restrictions.
+   */
+  fun pullFile(deviceFilePath: String, hostFilePath: File) {
+    if (!deviceFilePath.startsWith("/data/")) {
+      val pullResult = adbController.pull(deviceSerial, deviceFilePath, hostFilePath.absolutePath)
+      if (pullResult.exitCode != 0) {
+        logger.warning(
+          "Failed to pull file from device: $deviceFilePath to $hostFilePath. exitCode=${pullResult.exitCode}, error=${pullResult.errorOutput}"
+        )
+      }
+      return
+    }
+
+    val tmpDir = "/data/local/tmp/collector-${java.util.UUID.randomUUID()}"
+    adbController.runAdbShellCommand(deviceSerial, listOf("mkdir", "-p", tmpDir))
+    adbController.runAdbShellCommand(deviceSerial, listOf("chmod", "777", tmpDir))
+    try {
+      val fileName = File(deviceFilePath).name
+      val tmpFilePath = "$tmpDir/$fileName"
+      // Use cat with run-as to copy the file to a location accessible by adb pull.
+      // We only need run-as for files in /data/
+      val result =
+        if (!runAsPackageName.isNullOrBlank() && deviceFilePath.startsWith("/data/")) {
+          adbController.runAdbShellCommand(
+            deviceSerial,
+            listOf("run-as", runAsPackageName, "sh", "-c", "cat \"$deviceFilePath\" > \"$tmpFilePath\""),
+          )
+        } else {
+          adbController.runAdbShellCommand(deviceSerial, listOf("sh", "-c", "cat \"$deviceFilePath\" > \"$tmpFilePath\""))
+        }
+      if (result.exitCode != 0) {
+        logger.warning("Failed to copy file to tmp on device: $deviceFilePath. exitCode=${result.exitCode}, error=${result.errorOutput}")
+        return
+      }
+      adbController.runAdbShellCommand(deviceSerial, listOf("chmod", "777", tmpFilePath))
+      val pullResult = adbController.pull(deviceSerial, tmpFilePath, hostFilePath.absolutePath)
+      if (pullResult.exitCode != 0) {
+        logger.warning(
+          "Failed to pull file from device: $tmpFilePath to $hostFilePath. exitCode=${pullResult.exitCode}, error=${pullResult.errorOutput}"
+        )
+      }
+    } finally {
+      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", tmpDir))
+    }
+  }
+
+  /** Pulls all files in a directory from the device to the host. */
+  fun pullDirectory(deviceDirPath: String, hostDirPath: File, extension: String? = null) {
+    val result = runShellCommandWithRunAs(listOf("sh", "-c", "ls \"$deviceDirPath\" | cat"))
+    if (result.exitCode != 0) {
+      logger.warning("Failed to list directory on device: $deviceDirPath. exitCode=${result.exitCode}, error=${result.errorOutput}")
+      return
+    }
+    val fileNames = result.output.lines().filter { it.isNotBlank() && (extension == null || it.endsWith(extension)) }
+    fileNames.forEach { fileName -> pullFile("$deviceDirPath/$fileName", File(hostDirPath, fileName)) }
+  }
+
+  private fun runShellCommandWithRunAs(commands: List<String>): AdbController.CommandResult {
+    return if (!runAsPackageName.isNullOrBlank()) {
+      // We wrap the command in double quotes to handle spaces and redirection correctly.
+      val wrappedCommand = commands.joinToString(" ") { if (it == ">" || it == "|" || it == ">>") it else "\"$it\"" }
+      adbController.runAdbShellCommand(deviceSerial, listOf("run-as", runAsPackageName, "sh", "-c", wrappedCommand))
+    } else {
+      adbController.runAdbShellCommand(deviceSerial, commands)
     }
   }
 

@@ -74,4 +74,13 @@ object AndroidTestConfigurationKeys {
 
   /** Whether to use the test storage service. */
   const val USE_TEST_STORAGE_SERVICE = "android-test.use-test-storage-service"
+
+  /** Whether test coverage is enabled. */
+  const val IS_TEST_COVERAGE_ENABLED = "android-test.is-test-coverage-enabled"
+
+  /** Path to the single code coverage file on device. */
+  const val COVERAGE_FILE_ON_DEVICE = "android-test.coverage-file-on-device"
+
+  /** Path to the multiple code coverage files directory on device. */
+  const val COVERAGE_DIR_ON_DEVICE = "android-test.coverage-dir-on-device"
 }

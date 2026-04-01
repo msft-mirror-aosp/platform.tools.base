@@ -686,6 +686,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         "android-test.use-test-storage-service",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("useTestStorageService", "false") },
       )
+      task.engineInputProperties.put("android-test.is-test-coverage-enabled", testData.testCoverageEnabled.map { it.toString() })
+      task.engineInputProperties.put(
+        "android-test.coverage-file-on-device",
+        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageFile", "") },
+      )
+      task.engineInputProperties.put(
+        "android-test.coverage-dir-on-device",
+        testData.instrumentationRunnerArguments.map { it.getOrDefault("coverageDir", "") },
+      )
 
       if (testData is BundleTestDataImpl) {
         task.apkBundle.from(testData.apkBundle)

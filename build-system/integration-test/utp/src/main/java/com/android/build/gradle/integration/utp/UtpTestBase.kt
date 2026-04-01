@@ -373,9 +373,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverage() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
     rule.build.androidApplication().reconfigure { enableCodeCoverage() }
 
@@ -458,9 +455,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverage() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -908,9 +902,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure {
@@ -934,9 +925,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverageWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure {
