@@ -613,6 +613,21 @@ class CheckAarMetadataTaskTest {
   }
 
   @Test
+  fun testDisableCompileSdkForTests() {
+    addAarWithPossiblyInvalidAarMetadataToAppProject(
+      aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,
+      aarMetadataVersion = AarMetadataTask.AAR_METADATA_VERSION,
+      forceCompileSdkPreview = "UpsideDownCakePrivacySandbox",
+    )
+
+    // With the test flag enabled, the main task should still fail
+    project.executor().with(BooleanOption.DISABLE_COMPILE_SDK_CHECKS_TESTS, true).expectFailure().run(":app:checkDebugAarMetadata")
+
+    // But the Android Test task should pass
+    project.executor().with(BooleanOption.DISABLE_COMPILE_SDK_CHECKS_TESTS, true).run(":app:checkDebugAndroidTestAarMetadata")
+  }
+
+  @Test
   fun testCheckingCoreLibraryDesugaring() {
     addAarWithPossiblyInvalidAarMetadataToAppProject(
       aarFormatVersion = AarMetadataTask.AAR_FORMAT_VERSION,

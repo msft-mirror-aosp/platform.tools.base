@@ -104,6 +104,7 @@ class BooleanOptionTest {
         BooleanOption.PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES,
         BooleanOption.VERIFY_AAR_CLASSES,
         BooleanOption.DISABLE_COMPILE_SDK_CHECKS,
+        BooleanOption.DISABLE_COMPILE_SDK_CHECKS_TESTS,
         BooleanOption.SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS,
         BooleanOption.FUSED_LIBRARY_PUBLICATION_ONLY_MODE,
         BooleanOption.LINT_BASELINE_OMIT_LINE_NUMBERS,
