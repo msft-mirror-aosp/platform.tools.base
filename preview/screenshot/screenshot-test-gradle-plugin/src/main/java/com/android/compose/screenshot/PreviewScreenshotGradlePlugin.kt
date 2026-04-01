@@ -329,6 +329,7 @@ class PreviewScreenshotGradlePlugin : Plugin<Project> {
     val buildDir = project.layout.buildDirectory
     configure { task ->
       getTestEngineInput(task).apply {
+        projectRoot.set(project.rootDir.absolutePath)
         threshold.set(screenshotExtension.imageDifferenceThreshold)
         namespace.set(variant.namespace)
         layoutlibDataDir.setFrom(layoutlibDataFromMaven.layoutlibDataDirectory)

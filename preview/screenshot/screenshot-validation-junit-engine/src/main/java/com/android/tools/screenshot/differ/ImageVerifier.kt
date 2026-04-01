@@ -24,30 +24,28 @@ data class VerificationResult(val diffResult: ImageDiffer.DiffResult, val diffPe
 
 class ImageVerifier(private val imageDiffer: ImageDiffer) {
 
-  fun verify(newImagePath: String, referenceImagePath: String, diffImageOutputPath: String): VerificationResult {
-    val diffFile = File(diffImageOutputPath)
-    if (diffFile.exists()) {
-      diffFile.delete()
+  fun verify(newImageFile: File, referenceImageFile: File, diffOutputFile: File, projectRoot: File): VerificationResult {
+    if (diffOutputFile.exists()) {
+      diffOutputFile.delete()
     }
-    diffFile.parentFile.mkdirs()
+    diffOutputFile.parentFile.mkdirs()
 
-    val newImageFile = File(newImagePath)
     if (!newImageFile.exists()) {
-      throw FileNotFoundException("Preview image file does not exist ($newImagePath).")
+      throw FileNotFoundException("Preview image file does not exist (${newImageFile.relativeTo(projectRoot).path}).")
     }
 
-    val refImageFile = File(referenceImagePath)
-    if (!refImageFile.exists()) {
-      throw FileNotFoundException("Reference image file does not exist ($referenceImagePath).")
+    if (!referenceImageFile.exists()) {
+      throw FileNotFoundException("Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).")
     }
 
     val actual = ImageIO.read(newImageFile)
-    val reference = ImageIO.read(refImageFile)
+    val reference = ImageIO.read(referenceImageFile)
 
     if (actual.width != reference.width || actual.height != reference.height) {
       throw ImageComparisonAssertionError(
-        referenceImagePath,
-        newImagePath,
+        referenceImageFile.relativeTo(projectRoot).path,
+        newImageFile.relativeTo(projectRoot).path,
+        diffImagePath = diffOutputFile.relativeTo(projectRoot).path,
         message =
           "Size Mismatch. Reference image size: ${reference.width}x${reference.height}." +
             " Rendered image size: ${actual.width}x${actual.height}",
@@ -56,7 +54,7 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
 
     val diff = imageDiffer.diff(actual, reference)
     if (diff.highlights != null) {
-      ImageIO.write(diff.highlights, "png", diffFile)
+      ImageIO.write(diff.highlights, "png", diffOutputFile)
     }
 
     // Extract percentDiff from the diff result

@@ -28,5 +28,6 @@ data class PreviewScreenshotExecutionContext(
   val previewImageOutputDir: File,
   val previewDiffImageOutputDir: File,
   val referenceImageDir: File,
+  val projectRoot: File,
   val renderer: Renderer? = null,
 ) : EngineExecutionContext
