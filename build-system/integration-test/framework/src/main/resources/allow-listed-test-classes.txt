@@ -587,7 +587,6 @@ com.android.build.gradle.integration.testing.SeparateTestModuleTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithAppDependenciesTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithMinifiedAppTest
 com.android.build.gradle.integration.testing.SeparateTestModuleWithVariantsTest
-com.android.build.gradle.integration.testing.SeparateTestWithAarDependencyTest
 com.android.build.gradle.integration.testing.SeparateTestWithDependenciesTest
 com.android.build.gradle.integration.testing.SeparateTestWithMinificationButNoObfuscationTest
 com.android.build.gradle.integration.testing.SeparateTestWithoutMinificationWithDependenciesTest

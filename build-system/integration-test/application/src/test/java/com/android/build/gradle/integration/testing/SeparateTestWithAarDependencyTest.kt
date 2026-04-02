@@ -16,60 +16,72 @@
 
 package com.android.build.gradle.integration.testing
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.testutils.apk.Apk
-import org.junit.Before
+import com.android.build.gradle.options.BooleanOption
+import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
 class SeparateTestWithAarDependencyTest : ModelComparator() {
 
-  @get:Rule val project = GradleTestProject.builder().fromTestProject("separateTestModule").disableBuiltInKotlin().create()
-
-  @Before
-  fun setUp() {
-    TestFileUtils.appendToFile(
-      project.getSubproject(":app").buildFile,
-      """
-                apply plugin: "com.android.application"
-                android {
-                    compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}
-                    buildToolsVersion "${GradleTestProject.DEFAULT_BUILD_TOOL_VERSION}"
-                    defaultConfig {
-                         minSdkVersion $SUPPORT_LIB_MIN_SDK
-                    }
-                    dependencies {
-                        api 'androidx.appcompat:appcompat:1.6.1'
-                        api 'androidx.legacy:legacy-support-v4:1.0.0'
-                        api 'androidx.media:media:1.6.0'
-                    }
-                }
-            """
-        .trimIndent(),
-    )
-  }
+  @get:Rule
+  val project =
+    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().fromProject("separateTestModule") {
+      gradleProperties { add(BooleanOption.BUILT_IN_KOTLIN, false) }
+      androidApplication(":app") {
+        android {
+          namespace = "com.android.tests.basic"
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+          defaultConfig { minSdk = SUPPORT_LIB_MIN_SDK }
+        }
+        dependencies {
+          api("androidx.appcompat:appcompat:1.6.1")
+          api("androidx.legacy:legacy-support-v4:1.0.0")
+          api("androidx.media:media:1.6.0")
+        }
+      }
+      androidTest(":test") {
+        android {
+          namespace = "com.example.android.testing.blueprint.test"
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+          targetProjectPath = ":app"
+        }
+        dependencies {
+          implementation("junit:junit:4.12")
+          implementation("androidx.test:runner:1.4.0-alpha06")
+          implementation("androidx.test:rules:1.4.0-alpha06")
+        }
+      }
+      androidLibrary(":lib") {
+        android {
+          namespace = "com.android.tests.lib"
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
+          defaultConfig { minSdk = SUPPORT_LIB_MIN_SDK }
+        }
+      }
+    }
 
   @Test
   fun `test VariantDependencies model`() {
-    val result = project.modelV2().fetchModels(variantName = "debug")
+    val result = project.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":test") }, goldenFile = "test_VariantDependencies")
   }
 
   @Test
   fun checkTestApk() {
-    project.executor().run("assembleDebug")
-    val apk: Apk = project.getSubproject("test").getApk(GradleTestProject.ApkType.DEBUG)
+    project.build.executor.run("assembleDebug")
 
-    assertThatApk(apk).named("Test app shouldn't contain app code").doesNotContainClass("Lcom/android/tests/basic/Main;")
-    assertThatApk(apk).named("Test app shouldn't contain app layout").doesNotContainResource("layout/main.xml")
-    assertThatApk(apk).named("Test app shouldn't contain app dependency code").doesNotContainClass("Landroid/support/v7/app/ActionBar;")
-    assertThatApk(apk)
-      .named("Test app shouldn't contain app dependency resources")
-      .doesNotContainResource("layout/abc_action_bar_title_item.xml")
+    val apkFile = project.build.androidTest(":test").getApkLocationForCopy(ApkSelector.DEBUG).toFile()
+    val apkSubject = assertThatApk(apkFile)
+    apkSubject.named("Test app shouldn't contain app code").doesNotContainClass("Lcom/android/tests/basic/Main;")
+    apkSubject.named("Test app shouldn't contain app layout").doesNotContainResource("layout/main.xml")
+    apkSubject.named("Test app shouldn't contain app dependency code").doesNotContainClass("Landroid/support/v7/app/ActionBar;")
+    apkSubject.named("Test app shouldn't contain app dependency resources").doesNotContainResource("layout/abc_action_bar_title_item.xml")
   }
 }

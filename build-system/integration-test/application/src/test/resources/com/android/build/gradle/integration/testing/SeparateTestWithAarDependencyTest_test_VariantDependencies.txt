@@ -2,7 +2,7 @@
    - name                 = "debug"
    > mainArtifact:
       > compileDependencies:
-         > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|separateTestModule:app:unspecified:
+         > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified:
             - requestedCoordinates = (null)
             > dependencies:
                > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1:
@@ -363,16 +363,13 @@
                - androidx.media|media|1.6.0|org.gradle.status>release|androidx.media:media:1.6.0:
                   - dependencies = "*visited*"
             < dependencies
-         < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|separateTestModule:app:unspecified
+         < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified
          - junit|junit|4.12|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|junit:junit:4.12:
             - requestedCoordinates = (null)
             - dependencies:
                - org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.hamcrest:hamcrest-core:1.3:
                   - requestedCoordinates = (null)
                   - dependencies         = []
-         - com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:28.0.0:
-            - requestedCoordinates = (null)
-            - dependencies         = []
          > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.test:runner:1.4.0-alpha06:
             - requestedCoordinates = (null)
             > dependencies:
@@ -408,9 +405,6 @@
                - org.hamcrest|hamcrest-core|1.3|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.hamcrest:hamcrest-core:1.3:
                   - requestedCoordinates = (null)
                   - dependencies         = []
-         - com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:28.0.0:
-            - requestedCoordinates = (null)
-            - dependencies         = []
          > androidx.test|runner|1.4.0-alpha06|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.test:runner:1.4.0-alpha06:
             - requestedCoordinates = (null)
             > dependencies:
@@ -446,7 +440,7 @@
    - unitTestArtifact     = (null)
    - testFixturesArtifact = (null)
    > libraries:
-      > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|separateTestModule:app:unspecified:
+      > :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified:
          - type               = PROJECT
          - artifact           = (null)
          > projectInfo:
@@ -460,12 +454,12 @@
                * "com.android.build.gradle.internal.attributes.VariantAttr -> debug"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * "separateTestModule:app:unspecified"
+               * "project:app:unspecified"
          < projectInfo
          - libraryInfo        = (null)
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|separateTestModule:app:unspecified
+      < :|:app|debug|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>debug, org.gradle.usage>java-api|project:app:unspecified
       > androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0:
          - type        = ANDROID_LIBRARY
          - artifact    = {LOCAL_REPO}/androidx/activity/activity/1.6.0/activity-1.6.0.aar{F}
@@ -2045,50 +2039,6 @@
             - symbolFile          = {GRADLE_CACHE}/{CHECKSUM}/transformed/viewpager-1.0.0/R.txt{F}
          < androidLibraryData
       < androidx.viewpager|viewpager|1.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.viewpager:viewpager:1.0.0
-      > com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:28.0.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/com/android/support/support-annotations/28.0.0/support-annotations-28.0.0.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "com.android.support"
-            - name           = "support-annotations"
-            - version        = "28.0.0"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
-            - capabilities:
-               * "com.android.support:support-annotations:28.0.0"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.android.support:support-annotations:28.0.0
-      > com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:28.0.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/com/android/support/support-annotations/28.0.0/support-annotations-28.0.0.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "com.android.support"
-            - name           = "support-annotations"
-            - version        = "28.0.0"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "com.android.support:support-annotations:28.0.0"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < com.android.support|support-annotations|28.0.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|com.android.support:support-annotations:28.0.0
       > com.google.code.findbugs|jsr305|2.0.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|com.google.code.findbugs:jsr305:2.0.1:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/com/google/code/findbugs/jsr305/2.0.1/jsr305-2.0.1.jar{F}
