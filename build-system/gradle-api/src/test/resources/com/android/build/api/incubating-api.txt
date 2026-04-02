@@ -703,6 +703,7 @@ https://issuetracker.google.com/497537804
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType, kotlin.Unit>)
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAndroidResources: com.android.build.api.dsl.ApplicationAndroidResources ()
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAssetPacks: java.util.Set<java.lang.String> ()
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBuildFeatures: com.android.build.api.dsl.ApplicationBuildFeatures ()
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> ()
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getBundle: com.android.build.api.dsl.Bundle ()
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getCompileOptions: com.android.build.api.dsl.CompileOptions ()

@@ -89,7 +89,7 @@ constructor(objectFactory: ObjectFactory, providerFactory: ProviderFactory, layo
   override val androidResources: ApplicationAndroidResources =
     dslServices.newDecoratedInstance(ApplicationAndroidResourcesImpl::class.java, dslServices)
 
-  private val buildFeatures: ApplicationBuildFeatures =
+  override val buildFeatures: ApplicationBuildFeatures =
     dslServices.newDecoratedInstance(ApplicationBuildFeaturesImpl::class.java, dslServices)
 
   override val compileOptions: CompileOptions =

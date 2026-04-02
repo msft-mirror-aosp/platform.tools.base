@@ -229,6 +229,7 @@ com.android.build.gradle.internal.dsl.ApplicationBuildFeaturesImpl.setMlModelBin
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType, kotlin.Unit>)
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getAndroidResources: com.android.build.api.dsl.ApplicationAndroidResources ()
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getAssetPacks: java.util.Set<java.lang.String> ()
+com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getBuildFeatures: com.android.build.api.dsl.ApplicationBuildFeatures ()
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> ()
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getBundle: com.android.build.api.dsl.Bundle ()
 com.android.build.gradle.internal.dsl.ApplicationDeclarativeDefinitionImpl.getCompileOptions: com.android.build.api.dsl.CompileOptions ()

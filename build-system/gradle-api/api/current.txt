@@ -607,6 +607,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ApplicationAndroidResources getAndroidResources();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Set<java.lang.String> getAssetPacks();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ApplicationBuildFeatures getBuildFeatures();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> getBuildTypes();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.Bundle getBundle();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.CompileOptions getCompileOptions();
@@ -631,6 +632,7 @@ package com.android.build.api.dsl {
     method @org.gradle.api.Incubating public void release(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType,kotlin.Unit> action);
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ApplicationAndroidResources androidResources;
     property @org.gradle.api.Incubating public abstract java.util.Set<java.lang.String> assetPacks;
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.ApplicationBuildFeatures buildFeatures;
     property @org.gradle.api.Incubating public abstract org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> buildTypes;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.Bundle bundle;
     property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.CompileOptions compileOptions;
