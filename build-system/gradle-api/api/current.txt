@@ -586,6 +586,8 @@ package com.android.build.api.dsl {
   }
 
   public interface ApplicationBuildType extends com.android.build.api.dsl.BuildType com.android.build.api.dsl.ApplicationVariantDimension {
+    method @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.BaselineProfile getBaselineProfile();
     method @InaccessibleFromKotlin public com.android.build.api.dsl.Optimization getOptimization();
     method @InaccessibleFromKotlin @org.gradle.api.model.ReplacedBy("getCrunchPngs") public Boolean? isCrunchPngs();
     method @InaccessibleFromKotlin public boolean isDebuggable();
@@ -596,6 +598,7 @@ package com.android.build.api.dsl {
     method @InaccessibleFromKotlin public void setDebuggable(boolean);
     method @InaccessibleFromKotlin public void setDefault(boolean);
     method @InaccessibleFromKotlin public void setProfileable(boolean);
+    property @org.gradle.api.Incubating public abstract com.android.build.api.dsl.BaselineProfile baselineProfile;
     property @org.gradle.api.model.ReplacedBy("getCrunchPngs") public abstract Boolean? isCrunchPngs;
     property public abstract boolean isDebuggable;
     property public abstract boolean isDefault;
@@ -2149,7 +2152,7 @@ package com.android.build.api.dsl {
   }
 
   public interface Optimization {
-    method @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
+    method @Deprecated @org.gradle.api.Incubating public void baselineProfile(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile,kotlin.Unit> action);
     method @InaccessibleFromKotlin public boolean getEnable();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public org.gradle.api.provider.SetProperty<java.lang.String> getPackageScope();
     method public void keepRules(kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.KeepRules,kotlin.Unit> action);

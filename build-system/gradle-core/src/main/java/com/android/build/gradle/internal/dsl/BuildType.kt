@@ -17,6 +17,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationBuildType
+import com.android.build.api.dsl.BaselineProfile
 import com.android.build.api.dsl.BuildTypeDependenciesExtension
 import com.android.build.api.dsl.DeclarativeApplicationBuildType
 import com.android.build.api.dsl.DeclarativeLibraryBuildType
@@ -130,6 +131,16 @@ constructor(
   abstract override var renderscriptOptimLevel: Int
 
   abstract override var isProfileable: Boolean
+
+  override val baselineProfile: BaselineProfile = dslServices.newDecoratedInstance(BaselineProfileImpl::class.java, dslServices)
+
+  override fun baselineProfile(action: BaselineProfile.() -> Unit) {
+    action.invoke(baselineProfile)
+  }
+
+  fun baselineProfile(action: Action<BaselineProfile>) {
+    action.execute(baselineProfile)
+  }
 
   @Deprecated("This property is deprecated. Changing its value has no effect (AGP produced artifacts are already aligned).")
   override var isZipAlignEnabled: Boolean

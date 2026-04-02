@@ -786,3 +786,6 @@ https://issuetracker.google.com/497537804
   * com.android.build.api.dsl.TestedDeclarativeDefinition.getTestNamespace: java.lang.String ()
   * com.android.build.api.dsl.TestedDeclarativeDefinition.setTestBuildType: void (java.lang.String)
   * com.android.build.api.dsl.TestedDeclarativeDefinition.setTestNamespace: void (java.lang.String)
+https://issuetracker.google.com/498938267
+  * com.android.build.api.dsl.ApplicationBuildType.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
+  * com.android.build.api.dsl.ApplicationBuildType.getBaselineProfile: com.android.build.api.dsl.BaselineProfile ()

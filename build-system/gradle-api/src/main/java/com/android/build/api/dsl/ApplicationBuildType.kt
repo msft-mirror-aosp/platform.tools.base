@@ -16,6 +16,7 @@
 
 package com.android.build.api.dsl
 
+import org.gradle.api.Incubating
 import org.gradle.api.model.ReplacedBy
 
 /**
@@ -62,4 +63,9 @@ interface ApplicationBuildType : BuildType, ApplicationVariantDimension {
   @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override val optimization: Optimization
 
   @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION") override fun optimization(action: Optimization.() -> Unit)
+
+  /** Configure baseline profile properties */
+  @get:Incubating val baselineProfile: BaselineProfile
+
+  @Incubating fun baselineProfile(action: BaselineProfile.() -> Unit)
 }

@@ -5,6 +5,7 @@ are announced on go/as-release-notes.
 -------------------------------------------------------------------------
 Deprecated from AGP 9.2.0
   * com.android.build.api.dsl.KeepRules.getFiles: org.gradle.api.provider.SetProperty<java.io.File> ()
+  * com.android.build.api.dsl.Optimization.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
 Deprecated from AGP 9.1.0
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget implements com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
   * com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget$DefaultImpls.getPreset: org.jetbrains.kotlin.gradle.plugin.KotlinTargetPreset (com.android.build.api.dsl.DeprecatedKotlinMultiplatformAndroidLibraryTarget)
