@@ -96,6 +96,10 @@ class KotlinDslTest {
       version = release(36)
       assertThat(version?.apiLevel).isEqualTo(36)
     }
+    assertThat(android.compileSdkHash).isEqualTo("android-36")
+
+    android.compileSdk { version = release(37) }
+    assertThat(android.compileSdkHash).isEqualTo("android-37.0")
 
     android.compileSdk {
       version =

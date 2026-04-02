@@ -250,6 +250,9 @@ internal class SdkUtilsKtTest {
   @Test
   fun `compile data to hash`() {
     Truth.assertThat(CompileSdkVersionImpl(36).toHash()).isEqualTo("android-36")
+    Truth.assertThat(CompileSdkVersionImpl(37).toHash()).isEqualTo("android-37.0")
+    Truth.assertThat(CompileSdkVersionImpl(37, minorApiLevel = 0).toHash()).isEqualTo("android-37.0")
+    Truth.assertThat(CompileSdkVersionImpl(37, minorApiLevel = 1).toHash()).isEqualTo("android-37.1")
     Truth.assertThat(CompileSdkVersionImpl(36, sdkExtension = 12).toHash()).isEqualTo("android-36-ext12")
     Truth.assertThat(CompileSdkVersionImpl(36, minorApiLevel = 3).toHash()).isEqualTo("android-36.3")
     Truth.assertThat(CompileSdkVersionImpl(36, sdkExtension = 12, minorApiLevel = 3).toHash()).isEqualTo("android-36.3-ext12")

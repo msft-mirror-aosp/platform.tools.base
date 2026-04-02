@@ -67,13 +67,13 @@ abstract class CompileSdkSpecImpl @Inject constructor(private val dslService: Ds
     return CompileSdkVersionImpl(canaryDate = date)
   }
 
-  override fun beta(version: Int, action: (com.android.build.api.dsl.CompileSdkBetaSpec.() -> Unit)): CompileSdkVersion {
+  override fun beta(version: Int, action: (CompileSdkBetaSpec.() -> Unit)): CompileSdkVersion {
     val betaSpec = dslService.newDecoratedInstance(CompileSdkBetaSpecImpl::class.java, dslService)
     action.invoke(betaSpec)
     return CompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
   }
 
-  fun beta(version: Int, action: Action<com.android.build.api.dsl.CompileSdkBetaSpec>): CompileSdkVersion {
+  fun beta(version: Int, action: Action<CompileSdkBetaSpec>): CompileSdkVersion {
     val betaSpec = dslService.newDecoratedInstance(CompileSdkBetaSpecImpl::class.java, dslService)
     action.execute(betaSpec)
     return CompileSdkVersionImpl(apiLevel = version, minorApiLevel = betaSpec.minorApiLevel, betaVersion = betaSpec.betaVersion)
@@ -117,7 +117,11 @@ internal data class CompileSdkVersionImpl(
       return "$vendorName:$addonName:$apiLevel"
     }
     var compileSdkString = "android-$apiLevel"
-    if (minorApiLevel != null) {
+    // since api level 37, minor version is included in platform hash even for .0(e.g. $SDK/platforms/android-37.0)
+    // in this case, when compile sdk is set using release(version: Int), the minorApiLevel is essentially 0
+    if (apiLevel >= 37 && minorApiLevel == null) {
+      compileSdkString += ".0"
+    } else if (minorApiLevel != null) {
       compileSdkString += ".$minorApiLevel"
     }
     if (sdkExtension != null) {
