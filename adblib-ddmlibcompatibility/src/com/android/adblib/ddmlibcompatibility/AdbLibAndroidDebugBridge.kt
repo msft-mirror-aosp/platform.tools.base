@@ -726,11 +726,10 @@ class AdbLibAndroidDebugBridge(
         }
       } catch (t: Throwable) {
         when (t) {
-          // `InterruptedException` can be thrown from `runBlocking`, and we simply ignore it,
-          // matching the behavior in `AndroidDebugBridgeImpl`, where
-          // `ClosedByInterruptException` is also caught and ignored
+          // `IOException` and `InterruptedException` can be thrown from `runBlockingLegacy`, and we simply ignore them
+          // to match the behavior in legacy `AndroidDebugBridge`.
           is InterruptedException,
-          is TimeoutException -> {
+          is IOException -> {
             logger.warn(t, "Exception while getting a socketAddress")
           }
 
@@ -951,12 +950,16 @@ class AdbLibAndroidDebugBridge(
     timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
     block: suspend CoroutineScope.() -> R,
   ): R {
-    return runBlocking {
-      if (timeout == INFINITE_DURATION) {
-        block()
-      } else {
-        session.withErrorTimeout(timeout) { block() }
+    try {
+      return runBlocking {
+        if (timeout == INFINITE_DURATION) {
+          block()
+        } else {
+          session.withErrorTimeout(timeout) { block() }
+        }
       }
+    } catch (e: TimeoutException) {
+      throw IOException("Operation timed out", e)
     }
   }
 

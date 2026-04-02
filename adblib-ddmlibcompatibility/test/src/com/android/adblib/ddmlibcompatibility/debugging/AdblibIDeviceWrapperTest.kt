@@ -20,6 +20,7 @@ import com.android.adblib.waitUntilState
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
+import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.PROP_DEVICE_DENSITY
 import com.android.ddmlib.IUserDataMap
@@ -326,20 +327,29 @@ class AdblibIDeviceWrapperTest {
   }
 
   @Test
-  fun executeShellCommandThrowsTimeoutExceptionIfInactive() = runBlockingWithTimeout {
+  fun executeShellCommandThrowsIOExceptionIfInactive() = runBlockingWithTimeout {
     // Prepare
     val (connectedDevice, _) = createConnectedDevice("device1")
     val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
     val listReceiver = ListReceiver()
-    exceptionRule.expect(TimeoutException::class.java)
-    exceptionRule.expectMessage("Command `logcat -v long` has been inactive for more than 1000 millis")
 
-    // Act
-    // Logcat command never exits, and so this should timeout due to no output after one second
-    adblibIDeviceWrapper.executeShellCommand("logcat -v long", listReceiver, maxTimeToOutputResponse = 1000, TimeUnit.MILLISECONDS)
+    try {
+      // Act
+      // Logcat command never exits, and so this should timeout due to no output after one second
+      adblibIDeviceWrapper.executeShellCommand("logcat -v long", listReceiver, maxTimeToOutputResponse = 1000, TimeUnit.MILLISECONDS)
 
-    // Assert
-    fail("Should not reach")
+      fail("Expected IOException to be thrown")
+    } catch (e: IOException) {
+      // Assert
+      assertEquals("Operation timed out", e.message)
+
+      val cause = e.cause!!
+      assertTrue(cause is TimeoutException)
+      assertEquals("Command `logcat -v long` has been inactive for more than 1000 millis", cause.message)
+    } catch (t: Throwable) {
+      // Assert
+      fail("Unexpected exception thrown: $t")
+    }
   }
 
   @Test
@@ -543,6 +553,21 @@ class AdblibIDeviceWrapperTest {
 
     // Assert
     assertTrue(supportsShellV2)
+  }
+
+  @Test
+  fun supportsFeature_doesNotThrow_onTimeout() = runBlockingWithTimeout {
+    // Prepare
+    // We need to trigger a timeout. We do it by introducing a fake delay of 10 seconds.
+    val (connectedDevice, _) = createConnectedDevice("device1", delayStdout = 10.toDuration(DurationUnit.SECONDS))
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act: There will be a timeout after 5 seconds, as that's what `runBlockingLegacy` is using.
+    assertEquals(5000, DdmPreferences.getTimeOut())
+    val supportsShellV2 = adblibIDeviceWrapper.supportsFeature(IDevice.Feature.SHELL_V2)
+
+    // Assert
+    assertFalse(supportsShellV2)
   }
 
   @Test

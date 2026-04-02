@@ -321,10 +321,6 @@ internal class AdblibIDeviceWrapper(
         // ignore to match the behavior in the `DeviceImpl`
         logger.warn(e, "Error querying `availableFeatures`")
         emptySet()
-      } catch (e: TimeoutException) {
-        // ignore to match the behavior in the `DeviceImpl`
-        logger.warn(e, "Error querying `availableFeatures`")
-        emptySet()
       }
 
     return iDeviceSharedImpl.supportsFeature(feature, availableFeatures)
@@ -847,7 +843,7 @@ internal class AdblibIDeviceWrapper(
    * Similar to [runBlocking] but with a custom [timeout], and dealing with `InterruptedException` by converting them into `IOException` as
    * `IDevice` interface checked exceptions don't include throwing `InterruptedException`
    *
-   * @throws TimeoutException if [block] take more than [timeout] to execute
+   * @throws IOException that wraps `TimeoutException` if [block] take more than [timeout] to execute
    * @throws IOException that wraps `InterruptedException`, if encountered
    */
   private fun <R> runBlockingLegacy(
@@ -862,6 +858,8 @@ internal class AdblibIDeviceWrapper(
           connectedDevice.session.withErrorTimeout(timeout) { block() }
         }
       }
+    } catch (e: TimeoutException) {
+      throw IOException("Operation timed out", e)
     } catch (e: InterruptedException) {
       // We wrap `InterruptedException` in `IOException` to maintain the contract
       // defined by `IDevice` interface where no `InterruptedException` is ever thrown
