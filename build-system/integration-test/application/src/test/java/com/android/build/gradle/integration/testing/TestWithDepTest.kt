@@ -20,8 +20,6 @@ import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
@@ -29,8 +27,7 @@ class TestWithDepTest : ModelComparator() {
 
   @get:Rule
   val project =
-    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().from {
-      gradleProperties { add(BooleanOption.BUILT_IN_KOTLIN, false) }
+    GradleRule.configure().from {
       androidApplication(":app", createMinimumProject = false) {
         android {
           namespace = "com.android.tests.basic"
@@ -85,7 +82,7 @@ class TestWithDepTest : ModelComparator() {
 
   @Test
   fun `test VariantDependencies model`() {
-    val result = project.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+    val result = project.build.modelBuilder.fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":app") }, goldenFile = "VariantDependencies")
   }
