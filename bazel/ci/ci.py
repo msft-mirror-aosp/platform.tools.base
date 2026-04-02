@@ -173,7 +173,9 @@ def main():
       ci.run(studio_nightly.studio_nightly)
     case 'studio-autobot':
       pass  # No-op. To be filled in later.
-    case 'uitools_evals':
+    case 'studio-evals':
+        ci.run(studio_evals.studio_evals)
+    case 'uitools_evals': # deprecated, to be removed
       ci.run(studio_evals.studio_evals)
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')
