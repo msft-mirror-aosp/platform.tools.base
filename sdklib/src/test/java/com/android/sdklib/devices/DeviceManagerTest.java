@@ -139,6 +139,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -303,6 +304,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -381,6 +383,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -542,8 +545,9 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
                         "XR Headset",
+                        "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -616,6 +620,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -777,8 +782,9 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
                         "XR Headset",
+                        "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -1194,6 +1200,7 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_large\n"
                             + "Warning: Unsupported device xr_headset_device\n"
                             + "Warning: Unsupported device ai_glasses_device\n"
+                            + "Warning: Unsupported device ai_glasses_displayless\n"
                             + "Warning: Unsupported device xr_glasses_device\n");
     }
 

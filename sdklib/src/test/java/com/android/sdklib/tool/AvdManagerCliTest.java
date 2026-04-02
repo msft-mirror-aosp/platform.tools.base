@@ -16,6 +16,8 @@
 
 package com.android.sdklib.tool;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -414,8 +416,12 @@ public class AvdManagerCliTest {
     @Test
     public void listDevices() {
         mCli.run(new String[] {"list", "devices", "-c"});
-        assertEquals(
-                ImmutableList.of(
+        assertThat(
+                        mLogger.getMessages().stream()
+                                .filter(s -> s.startsWith("P"))
+                                .collect(Collectors.toList()))
+                .containsExactly(
+                        "P ai_glasses_displayless\n",
                         "P ai_glasses_device\n",
                         "P automotive_1024p_landscape\n",
                         "P automotive_1080p_landscape\n",
@@ -507,10 +513,9 @@ public class AvdManagerCliTest {
                         "P 7.6in Foldable\n",
                         "P 8in Foldable\n",
                         "P 10.1in WXGA (Tablet)\n",
-                        "P 13.5in Freeform\n"),
-                mLogger.getMessages().stream()
-                        .filter(s -> s.startsWith("P"))
-                        .collect(Collectors.toList()));
+                        "P 13.5in Freeform\n")
+                .inOrder();
+
         assertTrue(mLogger.getMessages().contains("P wearos_small_round\n"));
         assertTrue(mLogger.getMessages().contains("P Nexus 6P\n"));
         assertTrue(mLogger.getMessages().contains("P tv_1080p\n"));
@@ -524,19 +529,17 @@ public class AvdManagerCliTest {
                         avdPath.toString(),
                         null);
         mCli.run(new String[] {"list", "devices"});
-        assertTrue(
-                Joiner.on("")
-                        .join(mLogger.getMessages())
-                        .contains(
-                                "P ---------\n"
-                                        + "P id: 80 or \"4in WVGA (Nexus S)\"\n"
-                                        + "P     Name: 4\" WVGA (Nexus S)\n"
-                                        + "P     OEM : Generic\n"
-                                        + "P ---------\n"
-                                        + "P id: 81 or \"4.65in 720p (Galaxy Nexus)\"\n"
-                                        + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
-                                        + "P     OEM : Generic\n"
-                                        + "P ---------"));
+        assertThat(Joiner.on("").join(mLogger.getMessages()))
+                .contains(
+                        "P ---------\n"
+                                + "P id: 81 or \"4in WVGA (Nexus S)\"\n"
+                                + "P     Name: 4\" WVGA (Nexus S)\n"
+                                + "P     OEM : Generic\n"
+                                + "P ---------\n"
+                                + "P id: 82 or \"4.65in 720p (Galaxy Nexus)\"\n"
+                                + "P     Name: 4.65\" 720p (Galaxy Nexus)\n"
+                                + "P     OEM : Generic\n"
+                                + "P ---------");
     }
 
     @Test
