@@ -36,9 +36,7 @@ import com.android.build.gradle.internal.services.R8D8ThreadPoolBuildService
 import com.android.build.gradle.internal.services.R8MaxParallelTasksBuildService
 import com.android.build.gradle.internal.services.TaskCreationServices
 import com.android.build.gradle.internal.services.doClose
-import com.android.build.gradle.internal.utils.LibraryArtifactType
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
-import com.android.build.gradle.internal.utils.getFilteredFiles
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.IntegerOption
@@ -464,20 +462,6 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         .trimMargin()
     )
 
-    val keepRulesTree =
-      when {
-        componentType.orNull?.isAar == true -> {
-          checkAarKeepRulesDirectories(aarKeepRulesDirectories, projectLayout.projectDirectory.asFile)
-          aarKeepRulesFiles.asFileTree
-        }
-        else -> {
-          checkKeepRulesDirectories(keepRulesDirectories, projectLayout.projectDirectory.asFile)
-          keepRulesFiles.asFileTree
-        }
-      }
-
-    val finalListOfConfigurationFiles = projectLayout.files(configurationFiles, generatedProguardFile.asFileTree, keepRulesTree)
-
     // If inputArtProfile exists but artProfileRewriting is false, we need to copy it over
     // to outputArtProfile.
     val inputArtProfileFile = inputArtProfile.orNull?.asFile
@@ -508,18 +492,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       )
       it.mainDexListOutput.set(mainDexListOutput.orNull?.asFile)
       it.proguardConfigurationFiles.set(
-        reconcileDefaultProguardFile(
-          getFilteredFiles(
-            ignoreFromInKeepRules.get(),
-            ignoreFromAllExternalDependenciesInKeepRules.get(),
-            libraryKeepRules,
-            finalListOfConfigurationFiles,
-            LoggerWrapper.getLogger(R8Task::class.java),
-            LibraryArtifactType.KEEP_RULES,
-          ),
-          extractedDefaultProguardFile,
-          failOnMissingProguardFiles.get(),
-        )
+        reconcileDefaultProguardFile(obtainKeepRules(), extractedDefaultProguardFile, failOnMissingProguardFiles.get())
       )
       it.inputProguardMapping.set(
         if (testedMappingFile.isEmpty) {
