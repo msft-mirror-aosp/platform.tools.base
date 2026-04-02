@@ -49,6 +49,8 @@ public class AndroidArtifacts {
     // zip of apks for publishing single or multi-apks to a repo.
     private static final String TYPE_APK_ZIP = "zip";
 
+    private static final String TYPE_EXTRACTED_LAYOUTLIB = "android-extracted-layoutlib";
+
     // type for processed jars (the jars may need to be processed, e.g. jetified to AndroidX, before
     // they can be used)
     private static final String TYPE_PROCESSED_JAR = "processed-jar";
@@ -487,6 +489,8 @@ public class AndroidArtifacts {
         APK(TYPE_APK),
         // zip of apks for publishing single or multi-apks to a repo.
         APK_ZIP(TYPE_APK_ZIP),
+
+        EXTRACTED_LAYOUTLIB(TYPE_EXTRACTED_LAYOUTLIB),
 
         // intermediate bundle that only contains one module. This is to be input into bundle-tool
         MODULE_BUNDLE(TYPE_MODULE_BUNDLE),

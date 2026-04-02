@@ -48,6 +48,7 @@ import com.android.build.gradle.internal.dependency.JacocoTransform
 import com.android.build.gradle.internal.dependency.JavaResCompressionFromExplodedAarTransform
 import com.android.build.gradle.internal.dependency.JavaResCompressionTransform
 import com.android.build.gradle.internal.dependency.JetifyTransform
+import com.android.build.gradle.internal.dependency.LayoutlibExtractor
 import com.android.build.gradle.internal.dependency.LibrarySymbolTableTransform
 import com.android.build.gradle.internal.dependency.MockableJarTransform
 import com.android.build.gradle.internal.dependency.ModelArtifactCompatibilityRule.Companion.setUp
@@ -157,6 +158,12 @@ class DependencyConfigurator(private val project: Project, private val projectSe
       ExtractAarTransform::class.java,
       AndroidArtifacts.ArtifactType.LOCAL_AAR_FOR_LINT,
       AndroidArtifacts.ArtifactType.LOCAL_EXPLODED_AAR_FOR_LINT,
+    )
+
+    registerTransform(
+      LayoutlibExtractor::class.java,
+      ArtifactTypeDefinition.JAR_TYPE,
+      AndroidArtifacts.ArtifactType.EXTRACTED_LAYOUTLIB.type
     )
     dependencies.registerTransform(MockableJarTransform::class.java) { spec: TransformSpec<MockableJarTransform.Parameters> ->
       // Query for JAR instead of PROCESSED_JAR as android.jar doesn't need processing
