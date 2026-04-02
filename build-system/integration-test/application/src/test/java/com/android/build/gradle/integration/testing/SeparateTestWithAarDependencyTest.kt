@@ -22,8 +22,6 @@ import com.android.build.gradle.integration.common.fixture.project.ApkSelector
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
 
@@ -31,8 +29,7 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
 
   @get:Rule
   val project =
-    GradleRule.configure().disableBrokenBuiltInKotlinOptOutChecks().fromProject("separateTestModule") {
-      gradleProperties { add(BooleanOption.BUILT_IN_KOTLIN, false) }
+    GradleRule.fromProject("separateTestModule") {
       androidApplication(":app") {
         android {
           namespace = "com.android.tests.basic"
@@ -68,7 +65,7 @@ class SeparateTestWithAarDependencyTest : ModelComparator() {
 
   @Test
   fun `test VariantDependencies model`() {
-    val result = project.build.modelBuilder.ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
+    val result = project.build.modelBuilder.fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":test") }, goldenFile = "test_VariantDependencies")
   }
