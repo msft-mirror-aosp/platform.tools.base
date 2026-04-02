@@ -27,8 +27,15 @@ import com.android.utils.FileUtils
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class D8StartupProfileDexOptimizationTest {
+@RunWith(Parameterized::class)
+class D8StartupProfileDexOptimizationTest(val enableKotlin: Boolean) {
+
+  companion object {
+    @JvmStatic @Parameterized.Parameters(name = "kotlin_{0}") fun parameters() = listOf(false, true)
+  }
 
   private val app =
     HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app").also {
@@ -86,6 +93,7 @@ class D8StartupProfileDexOptimizationTest {
       it.appendToBuild(
         """
                 android.defaultConfig.minSdkVersion = 26
+                android.enableKotlin = $enableKotlin
                 androidComponents {
                     onVariants(selector().withName("release"), { variant ->
                         variant.experimentalProperties.put(
@@ -103,11 +111,7 @@ class D8StartupProfileDexOptimizationTest {
 
   @JvmField
   @Rule
-  val project =
-    GradleTestProject.builder()
-      .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build())
-      .disableBuiltInKotlin()
-      .create()
+  val project = GradleTestProject.builder().fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).build()).create()
 
   @Test
   fun testStartupProfile() {
@@ -140,6 +144,22 @@ class D8StartupProfileDexOptimizationTest {
     project.execute("clean", "assembleRelease")
     apk = project.getSubproject("app").getApk(GradleTestProject.ApkType.RELEASE)
     Truth.assertThat(apk.allDexes).hasSize(1)
-    Truth.assertThat(apk.mainDexFile.get().classes).hasSize(7)
+    val expectedKeys =
+      listOf(
+        "Lcom/example/app/Bar;",
+        "Lcom/example/app/Foo;",
+        "Lcom/example/app/HelloWorld;",
+        "Lcom/example/app/R\$id;",
+        "Lcom/example/app/R\$layout;",
+        "Lcom/example/app/R\$string;",
+        "Lcom/example/app/R;",
+      )
+    if (enableKotlin) {
+      Truth.assertThat(apk.mainDexFile.get().classes.keys).containsAtLeastElementsIn(expectedKeys)
+      Truth.assertThat(apk.mainDexFile.get().classes.keys.filter { !it.startsWith("Lkotlin/") }.filter { !it.contains("/annotations/") })
+        .containsExactlyElementsIn(expectedKeys)
+    } else {
+      Truth.assertThat(apk.mainDexFile.get().classes.keys).containsExactlyElementsIn(expectedKeys)
+    }
   }
 }
