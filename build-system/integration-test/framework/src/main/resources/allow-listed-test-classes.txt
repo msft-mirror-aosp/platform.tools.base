@@ -594,7 +594,6 @@ com.android.build.gradle.integration.testing.testFixtures.TestFixturesKotlinTest
 com.android.build.gradle.integration.testing.testFixtures.TestFixturesTest
 com.android.build.gradle.integration.testing.TestingSupportLibraryTest
 com.android.build.gradle.integration.testing.TestOptionsExecutionTest
-com.android.build.gradle.integration.testing.TestWithDepTest
 com.android.build.gradle.integration.testing.unit.UnitTestingAndroidResourcesTest
 com.android.build.gradle.integration.testing.unit.UnitTestingAssembleTest
 com.android.build.gradle.integration.testing.unit.UnitTestingBuildTypesSupportTest

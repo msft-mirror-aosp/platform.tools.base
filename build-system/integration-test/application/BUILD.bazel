@@ -172,7 +172,6 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/testDependency",
     "//tools/base/build-system/integration-test:test-projects/testFixturesApp",
     "//tools/base/build-system/integration-test:test-projects/testFixturesKotlinApp",
-    "//tools/base/build-system/integration-test:test-projects/testWithDep",
     "//tools/base/build-system/integration-test:test-projects/tictactoe",
     "//tools/base/build-system/integration-test:test-projects/unitTesting",
     "//tools/base/build-system/integration-test:test-projects/unitTestingAndroidResources",
