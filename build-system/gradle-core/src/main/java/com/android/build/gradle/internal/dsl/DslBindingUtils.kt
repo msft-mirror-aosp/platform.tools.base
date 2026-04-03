@@ -50,54 +50,52 @@ object DslBindingUtils {
           }
         if (baseName.isEmpty()) continue
 
-        try {
-          val value = method.invoke(source)
-          val targetGetter = target.javaClass.methods.find { it.name == name && it.parameterCount == 0 }
-          val targetValue = targetGetter?.invoke(target)
-          val setterName = "set$baseName"
-          val setter = target.javaClass.methods.find { it.name == setterName && it.parameterCount == 1 }
-          if (setter != null) {
-            if (targetGetter == null || value != targetValue) {
-              setter.invoke(target, value)
+        val value = method.invoke(source)
+        val targetGetter = target.javaClass.methods.find { it.name == name && it.parameterCount == 0 }
+        val targetValue = targetGetter?.invoke(target)
+        val setterName = "set$baseName"
+        val setter = target.javaClass.methods.find { it.name == setterName && it.parameterCount == 1 }
+        if (setter != null) {
+          if (targetGetter == null || value != targetValue) {
+            setter.invoke(target, value)
+          }
+        } else {
+          if (value != null && targetValue != null) {
+            when {
+              value is NamedDomainObjectContainer<*> && targetValue is NamedDomainObjectContainer<*> -> {
+                for (sourceElement in value) {
+                  val sourceName = (sourceElement as Named).name
+                  val targetElement = targetValue.maybeCreate(sourceName)
+                  if (targetElement != null) {
+                    copyProperties(sourceElement, targetElement)
+                  }
+                }
+              }
+              value is DependencyCollector && targetValue is DependencyCollector -> {
+                value.dependencies.get().forEach { targetValue.add(it) }
+                value.dependencyConstraints.get().forEach { targetValue.addConstraint(it) }
+              }
+              (value is List<*> || value is Set<*>) && targetValue is MutableCollection<*> -> {
+                @Suppress("UNCHECKED_CAST") (targetValue as MutableCollection<Any>).addAll(value as Collection<Any>)
+              }
+              value.javaClass.name.startsWith("com.android.build.api.dsl.") -> {
+                copyProperties(value, targetValue)
+              }
+              value.javaClass.name == "org.gradle.api.NamedDomainObjectContainer" -> {
+                copyProperties(value, targetValue)
+              }
+              else -> {
+                if (value != targetValue) {
+                  setField(target, baseName, value)
+                }
+              }
             }
           } else {
-            if (value != null && targetValue != null) {
-              when {
-                value is NamedDomainObjectContainer<*> && targetValue is NamedDomainObjectContainer<*> -> {
-                  for (sourceElement in value) {
-                    val sourceName = (sourceElement as Named).name
-                    val targetElement = targetValue.maybeCreate(sourceName)
-                    if (targetElement != null) {
-                      copyProperties(sourceElement, targetElement)
-                    }
-                  }
-                }
-                value is DependencyCollector && targetValue is DependencyCollector -> {
-                  value.dependencies.get().forEach { targetValue.add(it) }
-                  value.dependencyConstraints.get().forEach { targetValue.addConstraint(it) }
-                }
-                (value is List<*> || value is Set<*>) && targetValue is MutableCollection<*> -> {
-                  @Suppress("UNCHECKED_CAST") (targetValue as MutableCollection<Any>).addAll(value as Collection<Any>)
-                }
-                value.javaClass.name.startsWith("com.android.build.api.dsl.") -> {
-                  copyProperties(value, targetValue)
-                }
-                value.javaClass.name == "org.gradle.api.NamedDomainObjectContainer" -> {
-                  copyProperties(value, targetValue)
-                }
-                else -> {
-                  if (value != targetValue) {
-                    setField(target, baseName, value)
-                  }
-                }
-              }
-            } else {
-              if (targetGetter == null || value != targetValue) {
-                setField(target, baseName, value)
-              }
+            if (targetGetter == null || value != targetValue) {
+              setField(target, baseName, value)
             }
           }
-        } catch (_: Exception) {}
+        }
       }
     }
   }
