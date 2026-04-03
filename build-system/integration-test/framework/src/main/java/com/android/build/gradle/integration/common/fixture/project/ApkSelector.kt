@@ -100,6 +100,7 @@ internal data class ApkSelectorImp(
     ApkSelectorImp(this.name, buildType, testSuite, flavors, isSigned, filter, suffix, fromIntermediates = true)
 
   override fun getFileName(projectName: String): String {
+    if (name != null) return name
     val segments = mutableListOf<String>()
 
     segments.add(projectName)
