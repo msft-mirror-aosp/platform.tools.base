@@ -535,7 +535,6 @@ com.android.build.gradle.integration.packaging.AccentCharacterAndProguardTest
 com.android.build.gradle.integration.packaging.ApkCreatedByTest
 com.android.build.gradle.integration.packaging.ApkLocationTest
 com.android.build.gradle.integration.packaging.ApkMetadataTest
-com.android.build.gradle.integration.packaging.ApkOutputFileChangeTest
 com.android.build.gradle.integration.packaging.AssetPackagingTest
 com.android.build.gradle.integration.packaging.BundleMetadataTest
 com.android.build.gradle.integration.packaging.BundleOptionsTest

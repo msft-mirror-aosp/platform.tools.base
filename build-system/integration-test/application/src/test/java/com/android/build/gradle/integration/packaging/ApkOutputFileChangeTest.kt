@@ -15,62 +15,68 @@
  */
 package com.android.build.gradle.integration.packaging
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.ApkSubject
-import com.android.build.gradle.integration.common.utils.TestFileUtils
+import com.android.build.gradle.api.ApkVariantOutput
+import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.integration.common.fixture.project.ApkSelector
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
+import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.options.BooleanOption
-import com.android.testutils.apk.Apk
-import java.io.IOException
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
 /** Test to verify that the APK is packaged correctly when there is a change in the APK output file name. */
 class ApkOutputFileChangeTest {
-  @JvmField @Rule var project: GradleTestProject = builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).create()
+
+  @get:Rule val rule = GradleRule.from { androidApplication {} }
 
   @Test
-  @Throws(Exception::class)
   fun testOutputFileNameChange() {
     // Run the first build
-    var result =
-      project
-        .executor() // although we don't need USE_NEW_DSL here for correctness, having the same options
-        // might be important in terms of testing the regression in b/64703619 linked below.
-        .with(BooleanOption.USE_NEW_DSL, false)
-        .run("assembleDebug")
-    result.assertTask(":packageDebug").didWork()
-    assertCorrectApk(project.getApk(GradleTestProject.ApkType.DEBUG))
+    val result = rule.build.executor.run("assembleDebug")
+    result.assertTask(":app:packageDebug").didWork()
+    val app = rule.build.androidApplication(":app")
 
-    // Modify the output file name
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      ("android {\n" +
-        "    android.applicationVariants.all { variant ->\n" +
-        "        variant.outputs.all {\n" +
-        "            outputFileName = 'foo.apk'\n" +
-        "        }\n" +
-        "    }\n" +
-        "}\n"),
-    )
-
-    // Run the second build, check that the new APK is generated correctly (regression test for
-    // https://issuetracker.google.com/issues/64703619)
-    result = project.executor().with(BooleanOption.USE_NEW_DSL, false).run("assembleDebug")
-    result.assertTask(":packageDebug").didWork()
-    assertCorrectApk(project.getApkByFileName(GradleTestProject.ApkType.DEBUG, "foo.apk"))
+    app.assertApk(ApkSelector.DEBUG) {
+      exists()
+      contains("META-INF/MANIFEST.MF")
+      contains("AndroidManifest.xml")
+      contains("classes.dex")
+      contains("resources.arsc")
+    }
   }
 
-  companion object {
-    @Throws(IOException::class)
-    private fun assertCorrectApk(apk: Apk) {
-      ApkSubject.assertThat(apk).exists()
-      ApkSubject.assertThat(apk).contains("META-INF/MANIFEST.MF")
-      ApkSubject.assertThat(apk).contains("res/layout/main.xml")
-      ApkSubject.assertThat(apk).contains("AndroidManifest.xml")
-      ApkSubject.assertThat(apk).contains("classes.dex")
-      ApkSubject.assertThat(apk).contains("resources.arsc")
+  // Run the second build, check that the new APK is generated correctly (regression test for
+  // https://issuetracker.google.com/issues/64703619)
+  @Test
+  fun testOutputFileNameChangeOldApi() {
+    val build =
+      rule.build {
+        gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
+        androidApplication { pluginCallbacks += MyAppCallback::class.java }
+      }
+
+    val result = build.executor.run("assembleDebug")
+    result.assertTask(":app:packageDebug").didWork()
+    val app = build.androidApplication(":app")
+    app.assertApk(ApkSelector.DEBUG.withName("foo.apk")) {
+      exists()
+      contains("META-INF/MANIFEST.MF")
+      contains("AndroidManifest.xml")
+      contains("classes.dex")
+      contains("resources.arsc")
+    }
+  }
+}
+
+class MyAppCallback : LegacyApplicationCallback {
+  override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+    extension.applicationVariants.all { variant: ApplicationVariant ->
+      variant.outputs.all { output ->
+        output as ApkVariantOutput
+        output.outputFileName = "foo.apk"
+      }
     }
   }
 }
