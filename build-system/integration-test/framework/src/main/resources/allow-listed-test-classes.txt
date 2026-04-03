@@ -187,7 +187,6 @@ com.android.build.gradle.integration.application.VectorDrawableTest_Library
 com.android.build.gradle.integration.application.WindowsSystemDependencyTest
 com.android.build.gradle.integration.automatic.CheckAll
 com.android.build.gradle.integration.baselineprofiles.ArtProfileBaselineTest
-com.android.build.gradle.integration.baselineprofiles.ArtProfileExternalDependenciesTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileMultipleLibrariesTest
 com.android.build.gradle.integration.baselineprofiles.ArtProfileSingleLibraryTest
 com.android.build.gradle.integration.baselineprofiles.D8StartupProfileDexOptimizationTest
