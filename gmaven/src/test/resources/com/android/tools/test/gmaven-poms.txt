@@ -384,6 +384,7 @@ com.android.tools.analytics-library:shared
     com.google.guava:guava (runtime)
     net.java.dev.jna:jna-platform (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
 com.android.tools.analytics-library:testing
   pomName=Android Tools Analytics Testing Library
