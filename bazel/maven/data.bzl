@@ -1448,6 +1448,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
+    "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
     "org.jetbrains:markdown-jvm:0.7.3",
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
