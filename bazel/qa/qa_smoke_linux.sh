@@ -48,7 +48,6 @@ if [[ $lsb_release == "crostini" ]]; then
     --jobs=4 \
     --worker_verbose=true \
     --invocation_id=${test_invocation_id} \
-    --define=meta_android_build_number=${build_number} \
     --build_event_binary_file="${dist_dir:-/tmp}/bazel-${build_number}.bes" \
     --build_tag_filters=${target_filters} \
     --build_metadata=ab_build_id="${build_number}" \
@@ -99,7 +98,6 @@ else #Executes normally on linux as before
     --keep_going \
     ${config_options} --config=ants \
     --invocation_id=${invocation_id} \
-    --define=meta_android_build_number=${build_number} \
     --build_tag_filters=${target_filters} \
     --test_tag_filters=${target_filters} \
     --build_metadata=ab_build_id="${build_number}" \

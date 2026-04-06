@@ -225,8 +225,6 @@ def build_flags(
 
       '--build_manual_tests',
 
-      f'--define=meta_android_build_number={build_env.build_number}',
-
       f'--profile={profile_path}',
 
       f'--test_tag_filters={test_tag_filters}',
