@@ -92,6 +92,8 @@ abstract class PreviewScreenshotValidationTask : Test() {
       testEngineInput.configureCommonJvmArgs(::jvmArgs)
       jvmArgs("-DPreviewScreenshotTestEngineInput.configFile=${configFile.absolutePath}")
       FileUtils.cleanOutputDir(reports.junitXml.outputLocation.get().asFile)
+      FileUtils.cleanOutputDir(testEngineInput.previewImageOutputDir.get().asFile)
+      FileUtils.cleanOutputDir(testEngineInput.diffImageOutputDir.get().asFile)
 
       try {
         super.executeTests()
