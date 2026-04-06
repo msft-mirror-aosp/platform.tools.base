@@ -216,7 +216,7 @@ class AvdBuilderTest {
     val testSystemImages = TestSystemImages(sdkHandler)
     val android33ext4 = testSystemImages.api33ext4.image
 
-    val device = deviceManager.getDevice("resizable", "Generic")!!
+    val device = deviceManager.getDevice("ai_glasses_device", "Google")!!
     val avdBuilder = avdManager.createAvdBuilder(device)
     avdBuilder.systemImage = android33ext4
     val backgroundFile = root.resolve("tmp").resolve("img1.png")

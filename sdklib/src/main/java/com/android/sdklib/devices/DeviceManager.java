@@ -15,6 +15,7 @@
  */
 package com.android.sdklib.devices;
 
+import static com.android.sdklib.devices.Device.isAiGlasses;
 import static com.android.sdklib.devices.Device.isAutomotive;
 import static com.android.sdklib.devices.Device.isAutomotiveDistantDisplay;
 import static com.android.sdklib.devices.Device.isRollable;
@@ -794,6 +795,9 @@ public class DeviceManager {
             props.put(ConfigKey.DISTANT_DISPLAY_FLAG, "0");
         }
 
+        if (isAiGlasses(d)) {
+            props.put(ConfigKey.LCD_TRANSPARENT, "yes");
+        }
         return props;
     }
 
