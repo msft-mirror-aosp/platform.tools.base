@@ -89,10 +89,20 @@ public class Complication extends WearComponent {
             return new ActivationCommands(
                     getSetUpAmDebugAppActivationCommand(),
                     getSetUpDebugSurfaceDebugAppActivationCommand(),
-                    getAddComplicationActivationCommand(params));
+                    getAddComplicationActivationCommand(params),
+                    getShowWatchFaceActivationCommand());
         } else {
-            return new ActivationCommands(getAddComplicationActivationCommand(params));
+            return new ActivationCommands(
+                    getAddComplicationActivationCommand(params),
+                    getShowWatchFaceActivationCommand());
         }
+    }
+
+    private ActivationCommand getShowWatchFaceActivationCommand() {
+        return new ActivationCommand(
+                WatchFace.ShellCommand.SHOW_WATCH_FACE,
+                "Showing Watch Face",
+                new BroadcastResultChecker(null, msg -> logger.warning(msg)));
     }
 
     private ActivationCommand getAddComplicationActivationCommand(ComplicationParams params) {

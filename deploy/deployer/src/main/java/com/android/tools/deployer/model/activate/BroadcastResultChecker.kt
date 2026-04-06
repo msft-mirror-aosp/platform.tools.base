@@ -17,9 +17,12 @@ package com.android.tools.deployer.model.activate
 
 import java.util.function.Consumer
 import java.util.regex.Pattern
+import kotlin.jvm.JvmOverloads
 
-class BroadcastResultChecker(onWarning: Consumer<String>? = null, onError: Consumer<String>? = null) :
-  ActivationCommandResultChecker(onWarning, onError) {
+open class BroadcastResultChecker
+@JvmOverloads
+constructor(onWarning: Consumer<String>? = null, onError: Consumer<String>? = null, context: ActivationContext = ActivationContext()) :
+  ActivationCommandResultChecker(onWarning, onError, context) {
 
   private var resultCode = -1
   private val resultCodePattern = Pattern.compile("result=(\\d+)")
