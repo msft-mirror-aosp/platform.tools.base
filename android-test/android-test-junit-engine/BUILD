@@ -45,6 +45,7 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
         "@maven//:junit.junit",
         "@maven//:org.jetbrains.kotlin.kotlin-test",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.junit.platform.junit-platform-engine",
         "@maven//:org.mockito.kotlin.mockito-kotlin",
         "@maven//:org.mockito.mockito-core",

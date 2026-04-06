@@ -56,7 +56,7 @@ class AdbApkInstaller(
   }
 
   companion object {
-    private val packageNameRegex = "package:\\sname='(\\S*)'.*$".toRegex()
+    private val packageNameRegex = "package:\\sname='([^']*)'.*$".toRegex()
   }
 
   /**

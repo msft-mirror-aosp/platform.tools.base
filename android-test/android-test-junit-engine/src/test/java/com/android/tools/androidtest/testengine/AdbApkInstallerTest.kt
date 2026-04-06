@@ -236,6 +236,22 @@ class AdbApkInstallerTest {
   }
 
   @Test
+  fun `uninstallApk success with complex badging output`() {
+    val helper = createHelper(deviceApiLevel = 30)
+    mockCommand(
+      "aapt2 dump badging",
+      0,
+      "package: name='com.example.app' versionCode='123' versionName='1.2.3' compileSdkVersion='34' compileSdkVersionCodename='14'",
+    )
+    mockCommand("uninstall", exitCode = 0)
+
+    helper.uninstallApk(apk1)
+
+    val executedUninstall = executedCommands["uninstall"]?.first()!!
+    assertThat(executedUninstall).contains("uninstall com.example.app")
+  }
+
+  @Test
   fun `uninstallApk success finds package and uninstalls`() {
     val helper = createHelper(deviceApiLevel = 30)
     mockAapt("com.example.app")
