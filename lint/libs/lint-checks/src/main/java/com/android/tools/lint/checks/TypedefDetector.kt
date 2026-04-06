@@ -41,6 +41,7 @@ import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotation
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.getAnnotationValue
 import com.android.tools.lint.detector.api.UastLintUtils.Companion.isMinusOne
 import com.intellij.psi.PsiArrayType
+import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiCompiledElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiField
@@ -51,11 +52,15 @@ import com.intellij.psi.PsiModifierListOwner
 import com.intellij.psi.PsiTypes
 import com.intellij.psi.PsiVariable
 import com.intellij.psi.impl.PsiJavaParserFacadeImpl
+import com.intellij.util.containers.sequenceOfNotNull
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.resolution.singleFunctionCallOrNull
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
 import org.jetbrains.kotlin.analysis.api.symbols.KaFunctionSymbol
+import org.jetbrains.kotlin.analysis.api.symbols.KaNamedClassSymbol
+import org.jetbrains.kotlin.analysis.utils.classId
 import org.jetbrains.kotlin.psi.KtElement
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UBinaryExpression
@@ -447,7 +452,7 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
                 val condition = argument.getParentOfType<UIfExpression>()?.condition?.skipParenthesizedExprDown() as? UBinaryExpression
                 if (
                   (condition?.operator == IDENTITY_NOT_EQUALS || condition?.operator == NOT_EQUALS) &&
-                    provided[0] == getResolvedValue(condition.rightOperand, argument)
+                    provided[0] in getResolvedValuesForExpression(condition.rightOperand, argument)
                 ) {
                   if (condition.leftOperand.asSourceString() == argument.asSourceString()) {
                     return
@@ -513,12 +518,18 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     val fieldBeingInitialized = skipParenthesizedExprUp((argument as? ULiteralExpression)?.uastParent) as? UField
 
     for (allowedExpression in initializers.map { it.skipParenthesizedExprDown() }) {
+      // We may get multiple resolved elements: some constants in companion objects result in
+      // multiple PsiFields at the JVM level, so we must consider all of them as allowed values.
+      val resolvedElements =
+        (allowedExpression as? UReferenceExpression)?.resolve().asSeqWithDuplicatedConstants(argument.sourcePsi).toList()
+
       // See fieldBeingInitialized above.
       // If `argument` is actually initializing a field, and if the allowedExpression is a reference to this field then return.
       if (fieldBeingInitialized != null && allowedExpression is UReferenceExpression) {
-        val resolved = allowedExpression.resolve()
-        if (resolved != null && resolved.isEquivalentTo(fieldBeingInitialized.javaPsi)) {
-          return
+        for (resolved in resolvedElements) {
+          if (resolved.isEquivalentTo(fieldBeingInitialized.javaPsi)) {
+            return
+          }
         }
       }
 
@@ -531,9 +542,10 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
       }
 
       if (allowedExpression is UReferenceExpression) {
-        val resolved = allowedExpression.resolve()
-        if (resolved != null && resolved.isEquivalentTo(value)) {
-          return
+        for (resolved in resolvedElements) {
+          if (resolved.isEquivalentTo(value)) {
+            return
+          }
         }
       }
 
@@ -648,24 +660,118 @@ class TypedefDetector : AbstractAnnotationDetector(), SourceCodeScanner {
     return isChecked
   }
 
+  /**
+   * Returns a sequence containing [this] plus other PsiFields that are the same as [this] (if there are any), or emptySequence() if [this]
+   * is null.
+   *
+   * A constant in a companion object in an interface results in multiple PsiFields. For example:
+   * ```kt
+   * // Also works for annotation class, which is essentially an interface.
+   * interface MyInterface {
+   *   companion object {
+   *     const val CONST_1 = 1
+   *   }
+   * }
+   * ```
+   *
+   * At the JVM level, the constant ends up duplicated: as a field within the companion class, and as a field within MyInterface, both
+   * initialized to 1.
+   *
+   * It is possible to refer to both fields in Java. Even in a Kotlin-only codebase, annotations can be recovered from compiled modules via
+   * annotations.zip (not just from the Android SDK); these are parsed as Java, and typically will resolve to the field in the interface,
+   * while most other references will resolve to the field within the companion class.
+   *
+   * Thus, we must consider both fields as allowed values.
+   */
+  private fun PsiElement?.asSeqWithDuplicatedConstants(useSiteElement: PsiElement?): Sequence<PsiElement> {
+
+    fun PsiClass.isCompanion(useSiteElement: PsiElement): Boolean {
+      return analyzeFromPsi(useSiteElement) {
+        val classId = classId ?: return false
+        val namedClass = findClass(classId) as? KaNamedClassSymbol ?: return false
+        namedClass.classKind == KaClassKind.COMPANION_OBJECT
+      }
+    }
+
+    fun PsiClass.mightBeCompanion(): Boolean {
+      if (!this.hasModifierProperty(PsiModifier.STATIC)) return false
+      if (!this.hasModifierProperty(PsiModifier.FINAL)) return false
+      if (this.isInterface) return false
+      if (this.isAnnotationType) return false
+      if (this.isEnum) return false
+      return true
+    }
+
+    fun PsiField.getSimilarConstFieldFrom(psiClass: PsiClass): PsiField? {
+      val similarField = psiClass.findFieldByName(this.name, false) ?: return null
+      if (similarField.type != this.type) return null
+      if (!similarField.hasModifierProperty(PsiModifier.STATIC)) return null
+      if (!similarField.hasModifierProperty(PsiModifier.FINAL)) return null
+      return similarField
+    }
+
+    fun PsiField.getOuterDuplicate(useSiteElement: PsiElement): PsiField? {
+      val innerClass = this.containingClass ?: return null
+      val outerClass = innerClass.containingClass ?: return null
+      if (!outerClass.isInterface) return null
+      if (!innerClass.mightBeCompanion()) return null
+      val field = this.getSimilarConstFieldFrom(outerClass) ?: return null
+      // We assume this is somewhat expensive, so we do it last.
+      if (!innerClass.isCompanion(useSiteElement)) return null
+      return field
+    }
+
+    fun PsiField.getInnerDuplicate(useSiteElement: PsiElement): PsiField? {
+      val outerClass = this.containingClass ?: return null
+      if (!outerClass.isInterface) return null
+      for (innerClass in outerClass.innerClasses) {
+        if (!innerClass.mightBeCompanion()) continue
+        val innerField = this.getSimilarConstFieldFrom(innerClass) ?: continue
+        // We assume this is somewhat expensive, so we do it last.
+        if (!innerClass.isCompanion(useSiteElement)) continue
+        return innerField
+      }
+      return null
+    }
+
+    fun PsiField.mightBeDuplicatedInBytecode(): Boolean {
+      // If we are dealing with Kotlin source then we don't need to worry about this
+      // because the light classes use the Kotlin origin when checking equality.
+      if (this !is PsiCompiledElement) return false
+      // Constants will have these modifiers.
+      if (!this.hasModifierProperty(PsiModifier.STATIC)) return false
+      if (!this.hasModifierProperty(PsiModifier.FINAL)) return false
+      val containingClass = this.containingClass ?: return false
+      // Compiled Kotlin will have the Metadata annotation.
+      return containingClass.hasAnnotation("kotlin.Metadata")
+    }
+
+    if (this == null) return emptySequence()
+    val field = this as? PsiField ?: return sequenceOf(this)
+    if (useSiteElement == null || !field.mightBeDuplicatedInBytecode()) return sequenceOf(this)
+    // We don't know if this is the field in the companion object or the containing interface,
+    // so we try both.
+    return sequenceOf(this, field.getOuterDuplicate(useSiteElement), field.getInnerDuplicate(useSiteElement)).filterNotNull()
+  }
+
   /** Returns PsiFields or constant values (ints or Strings) */
   private fun getResolvedValues(allowed: UExpression, context: UElement): MutableList<Any> {
     if (allowed.isArrayInitializer()) {
       val initializerExpression = allowed as UCallExpression
       val initializers = initializerExpression.valueArguments
-      return initializers.mapNotNull { getResolvedValue(it, context) }.toMutableList()
+      return initializers.flatMap { getResolvedValuesForExpression(it, context) }.toMutableList()
     }
     // TODO -- worry about other types?
 
     return mutableListOf()
   }
 
-  private fun getResolvedValue(expression: UExpression, context: UElement): Any? {
+  private fun getResolvedValuesForExpression(expression: UExpression, context: UElement): Sequence<Any> {
     return when (expression) {
-      is ULiteralExpression -> expression.value
-      is UReferenceExpression -> expression.resolve()
-      is UParenthesizedExpression -> getResolvedValue(expression.expression, context)
-      else -> null
+      is ULiteralExpression -> sequenceOfNotNull(expression.value)
+      is UReferenceExpression -> expression.resolve().asSeqWithDuplicatedConstants(context.sourcePsi)
+      is UParenthesizedExpression -> getResolvedValuesForExpression(expression.expression, context)
+      else -> emptySequence()
     }
   }
 
