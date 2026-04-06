@@ -47,6 +47,7 @@ def studio_win(build_env: bazel.BuildEnv):
       f'--test_tag_filters={test_tag_filters}',
 
       '--tool_tag=studio_win.cmd',
+      f'--embed_label={build_env.build_number}',
       '--jobs=500',
 
       '--bes_keywords=cinder',
