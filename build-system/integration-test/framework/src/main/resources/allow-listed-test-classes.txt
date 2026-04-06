@@ -180,7 +180,6 @@ com.android.build.gradle.integration.application.VariantApiArtifactAccessTest
 com.android.build.gradle.integration.application.VariantApiCompatTest
 com.android.build.gradle.integration.application.VariantApiCustomizationTest
 com.android.build.gradle.integration.application.VariantApiPropertiesTest
-com.android.build.gradle.integration.application.VariantFilteringTest
 com.android.build.gradle.integration.application.VariantsApiTest
 com.android.build.gradle.integration.application.VectorDrawableTest
 com.android.build.gradle.integration.application.VectorDrawableTest_Library
