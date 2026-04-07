@@ -48,10 +48,10 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            build.gradle:7: Error: Avoid setting shrinkResources = false [NotShrinkingResources]
+            build.gradle:7: Warning: Avoid setting shrinkResources = false [NotShrinkingResources]
                   shrinkResources = false
                                     ~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warning
         """
       )
       .expectFixDiffs(
@@ -89,10 +89,10 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-            build.gradle.kts:9: Error: Avoid setting isShrinkResources = false [NotShrinkingResources]
+            build.gradle.kts:9: Warning: Avoid setting isShrinkResources = false [NotShrinkingResources]
                   isShrinkResources = false
                                       ~~~~~
-            1 errors, 0 warnings
+            0 errors, 1 warning
         """
       )
       .expectFixDiffs(
@@ -127,10 +127,10 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          build.gradle:6: Error: If enabling minification, also set shrinkResources = true [NotShrinkingResources]
+          build.gradle:6: Warning: If enabling minification, also set shrinkResources = true [NotShrinkingResources]
                 minifyEnabled = true
                 ~~~~~~~~~~~~~~~~~~~~
-          1 errors, 0 warnings
+          0 errors, 1 warning
         """
       )
       .expectFixDiffs(
@@ -189,10 +189,10 @@ class R8GradleConfigDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-          build.gradle.kts:8: Error: If enabling minification, also set isShrinkResources = true [NotShrinkingResources]
+          build.gradle.kts:8: Warning: If enabling minification, also set isShrinkResources = true [NotShrinkingResources]
                 isMinifyEnabled = true
                 ~~~~~~~~~~~~~~~~~~~~~~
-          1 errors, 0 warnings
+          0 errors, 1 warning
         """
       )
       .expectFixDiffs(

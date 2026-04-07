@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Context
 import com.android.tools.lint.detector.api.Detector
@@ -36,6 +37,7 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
   private fun String.matchesBooleanPropertyName(context: GradleContext, expected: String): Boolean {
     require(!expected.startsWith("is"))
     require(!expected.first().isTitleCase())
+
     return if (context.ktsContext == null) {
       this == expected
     } else {
@@ -71,6 +73,10 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
             message = "Avoid setting $shrinkPropertyName = false",
             fix().replace().pattern("false").with("true").build(),
           )
+        if (!LintClient.isStudio) {
+          // Downgrade to warning if not in Studio, since this is very bad for perf, but app will still run
+          incident.overrideSeverity(Severity.WARNING)
+        }
         context.client.report(context, incident)
       }
     }
@@ -99,6 +105,9 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
           message = "If enabling minification, also set $shrinkPropertyName = true",
           fix().replace().pattern("true").with("true\n$indentPrefix$shrinkPropertyName = true").build(),
         )
+      if (!LintClient.isStudio) {
+        incident.overrideSeverity(Severity.WARNING)
+      }
       context.client.report(context, incident)
     }
   }
@@ -113,7 +122,7 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
             "since it enables considerable download and storage savings, and optimizes your app's resource table.",
         category = Category.PERFORMANCE,
         priority = 2,
-        severity = Severity.ERROR,
+        severity = Severity.WARNING,
         implementation = Implementation(R8GradleConfigDetector::class.java, Scope.GRADLE_SCOPE),
         moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
         androidSpecific = true,
