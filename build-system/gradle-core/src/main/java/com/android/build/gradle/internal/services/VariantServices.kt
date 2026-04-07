@@ -238,7 +238,7 @@ interface VariantServices : BaseServices {
    * During configuration the property will be marked as [Property.disallowUnsafeRead] to disallow unsafe reads (which will also finalize
    * the value on read).
    */
-  fun <T> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>>
+  fun <T : Any> setProviderOf(type: Class<T>, value: Provider<out Iterable<T>>): Provider<Set<T>>
 
   /**
    * Creates a memoized [Provider] of [Set] around the provided [Iterable] of values.
@@ -246,7 +246,7 @@ interface VariantServices : BaseServices {
    * During configuration the property will be marked as [Property.disallowUnsafeRead] to disallow unsafe reads (which will also finalize
    * the value on read).
    */
-  fun <T> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>>
+  fun <T : Any> setProviderOf(type: Class<T>, value: Iterable<T>?): Provider<Set<T>>
 
   fun <T : Any> provider(callable: Callable<T?>): Provider<T>
 
