@@ -19,6 +19,11 @@ import static com.android.tools.deployer.InstallerResponseHandler.RedefinitionCa
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.InstallerResponseHandler.SuccessStatus;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.DexClass;
 import com.android.tools.idea.protobuf.ByteString;

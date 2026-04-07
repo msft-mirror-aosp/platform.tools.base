@@ -15,6 +15,8 @@
  */
 package com.android.tools.deployer;
 
+import com.android.tools.deployer.common.PatchGenerator;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;

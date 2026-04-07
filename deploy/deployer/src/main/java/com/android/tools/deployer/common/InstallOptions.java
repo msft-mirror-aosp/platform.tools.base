@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.ddmlib.IDevice;
-import com.android.tools.deployer.tasks.Canceller;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +26,11 @@ public final class InstallOptions {
     public static final InstallOptions STUDIO_DEFAULTS =
             InstallOptions.builder().setAllowDebuggable().build();
     public static final InstallOptions MOBILE_INSTALL_DEFAULTS =
-            InstallOptions.builder().setAllowDebuggable().setAllowDowngrade().setGrantAllPermissions().build();
+            InstallOptions.builder()
+                    .setAllowDebuggable()
+                    .setAllowDowngrade()
+                    .setGrantAllPermissions()
+                    .build();
 
     // This value comes from the framework and should not be changed.
     public static final String CURRENT_USER = "current";
@@ -99,7 +102,8 @@ public final class InstallOptions {
             return this;
         }
 
-        // Grants all runtime permissions listed in the application manifest to the application upon install.
+        // Grants all runtime permissions listed in the application manifest to the application upon
+        // install.
         public Builder setGrantAllPermissions() {
             flags.add("-g");
             return this;

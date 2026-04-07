@@ -13,16 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.install;
 
-
-import static com.android.tools.deployer.InstallStatus.OK;
-import static com.android.tools.deployer.InstallStatus.SKIPPED_INSTALL;
+import static com.android.tools.deployer.common.InstallStatus.OK;
+import static com.android.tools.deployer.common.InstallStatus.SKIPPED_INSTALL;
 
 import com.android.annotations.NonNull;
 import com.android.ddmlib.InstallReceiver;
 import com.android.sdklib.AndroidVersion;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.ApkDiffer;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.InstallOptions;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.PatchSet;
+import com.android.tools.deployer.common.PatchSetGenerator;
+import com.android.tools.deployer.common.Timeouts;
+import com.android.tools.deployer.common.UIService;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
@@ -88,7 +99,7 @@ public class ApkInstaller {
             @NonNull DeploymentPlan plan,
             DeployerOption deployOptions,
             InstallOptions installOptions,
-            Deployer.InstallMode installMode,
+            InstallMode installMode,
             Collection<DeployMetric> metrics)
             throws DeployerException {
         DeltaInstallResult deltaInstallResult =
@@ -119,7 +130,7 @@ public class ApkInstaller {
                     if (installReceiver.isSuccessfullyCompleted()) {
                         metric.finish(DeltaInstallStatus.SUCCESS.name(), metrics);
                     } else {
-                        result = toInstallerResult(installReceiver);
+                        result = AdbClient.toInstallerResult(installReceiver);
                         metric.finish(
                                 DeltaInstallStatus.ERROR.name() + "." + result.status.name(),
                                 metrics);
@@ -163,7 +174,8 @@ public class ApkInstaller {
                 {
                     logger.info("Deltapush failed: " + deltaInstallResult.status.name());
                     logger.info("Falling back to standard full install");
-                    // Delta install could not be attempted (app not install or delta above limit or API
+                    // Delta install could not be attempted (app not install or delta above limit or
+                    // API
                     // not supported),
                     DeployMetric deltaNotPatchableMetric =
                             new DeployMetric("DELTAINSTALL", deltaInstallStart);
@@ -264,9 +276,9 @@ public class ApkInstaller {
             DeployerOption deployerOption,
             InstallOptions installOptions,
             boolean allowReinstall,
-            Deployer.InstallMode installMode)
+            InstallMode installMode)
             throws DeployerException {
-        if (installMode == Deployer.InstallMode.FULL) {
+        if (installMode == InstallMode.FULL) {
             return new DeltaInstallResult(DeltaInstallStatus.DISABLED);
         }
 
@@ -310,7 +322,7 @@ public class ApkInstaller {
 
         PatchSet patchSet =
                 new PatchSetGenerator(
-                                installMode == Deployer.InstallMode.DELTA_NO_SKIP
+                                installMode == InstallMode.DELTA_NO_SKIP
                                         ? PatchSetGenerator.WhenNoChanges.GENERATE_PATCH_ANYWAY
                                         : PatchSetGenerator.WhenNoChanges.GENERATE_EMPTY_PATCH,
                                 logger)
@@ -396,7 +408,7 @@ public class ApkInstaller {
         return DeltaInstallStatus.SUCCESS;
     }
 
-    public static boolean canInherit(int apkCount, List<FileDiff> diff, Deployer.InstallMode mode) {
+    public static boolean canInherit(int apkCount, List<FileDiff> diff, InstallMode mode) {
         boolean inherit = apkCount > 1;
         if (inherit) {
             for (FileDiff fileDiff : diff) {
@@ -412,30 +424,10 @@ public class ApkInstaller {
         // We enable inherit just to get around this specific case. However, a much better solution
         // is find something that does not require DELTA_NO_SKIP.
         // is find something that does not require DELTA_NO_SKIP.
-        if (mode == Deployer.InstallMode.DELTA_NO_SKIP) {
+        if (mode == InstallMode.DELTA_NO_SKIP) {
             inherit = inherit && !diff.isEmpty();
         }
         return inherit;
-    }
-
-    public static AdbClient.InstallResult toInstallerResult(InstallReceiver r) {
-        return toInstallerResult(r.getErrorCode(), r.getErrorMessage());
-    }
-
-    public static AdbClient.InstallResult toInstallerResult(String errorCode, String reason) {
-        try {
-            return new AdbClient.InstallResult(InstallStatus.valueOf(errorCode), reason);
-        } catch (IllegalArgumentException i) {
-            try {
-                int numericValue = Integer.parseInt(errorCode);
-                return new AdbClient.InstallResult(
-                        InstallStatus.numericErrorCodeToStatus(numericValue), reason);
-            } catch (NumberFormatException n) {
-                return new AdbClient.InstallResult(InstallStatus.UNKNOWN_ERROR, reason);
-            }
-        } catch (Exception e) {
-            return new AdbClient.InstallResult(InstallStatus.UNKNOWN_ERROR, reason);
-        }
     }
 
     public static String message(AdbClient.InstallResult result) {

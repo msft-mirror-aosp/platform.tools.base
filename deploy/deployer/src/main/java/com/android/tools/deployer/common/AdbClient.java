@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.adblib.AdbDeviceServices;
 import com.android.adblib.AdbSession;
@@ -90,13 +90,13 @@ public class AdbClient {
         public final String reason;
         public final InstallMetrics metrics;
 
-        InstallResult(InstallStatus status, String reason) {
+        public InstallResult(InstallStatus status, String reason) {
             this.status = status;
             this.reason = reason;
             metrics = null;
         }
 
-        InstallResult(InstallStatus status, String reason, InstallMetrics metrics) {
+        public InstallResult(InstallStatus status, String reason, InstallMetrics metrics) {
             this.status = status;
             this.reason = reason;
             this.metrics = metrics;
@@ -210,7 +210,7 @@ public class AdbClient {
     private InstallResult makeInstallResult(String code, String message, Throwable t) {
         if (code != null) {
             try {
-                return ApkInstaller.toInstallerResult(code, message);
+                return toInstallerResult(code, message);
             } catch (IllegalArgumentException | NullPointerException ignored) {
                 logger.warning("Unrecognized Installation Failure: %s\n%s\n", code, message);
             }
@@ -223,6 +223,24 @@ public class AdbClient {
             }
         }
         return new InstallResult(InstallStatus.UNKNOWN_ERROR, "Unknown Error");
+    }
+
+    public static InstallResult toInstallerResult(com.android.ddmlib.InstallReceiver r) {
+        return toInstallerResult(r.getErrorCode(), r.getErrorMessage());
+    }
+
+    public static InstallResult toInstallerResult(String errorCode, String reason) {
+        try {
+            return new InstallResult(InstallStatus.valueOf(errorCode), reason);
+        } catch (IllegalArgumentException i) {
+            try {
+                int numericValue = Integer.parseInt(errorCode);
+                return new InstallResult(
+                        InstallStatus.numericErrorCodeToStatus(numericValue), reason);
+            } catch (NumberFormatException n) {
+                return new InstallResult(InstallStatus.UNKNOWN_ERROR, reason);
+            }
+        }
     }
 
     private static long toNanos(@NonNull Instant instant) {
@@ -460,14 +478,13 @@ public class AdbClient {
     }
 
     // TODO: Returning a String is not enough since it delegates parsing that String to the caller.
-    // This method should return an AbortSessionResponse object, built on top of a ShellResponse object
+    // This method should return an AbortSessionResponse object, built on top of a ShellResponse
+    // object
     // with a status code and the raw output string. Parsing the string output should be done in
     // AbortSessionResponse.
     public String abortSession(String sessionId) {
         String prefix =
-                device.getVersion().isAtLeast(AndroidVersion.VersionCodes.N)
-                        ? "cmd package"
-                        : "pm";
+                device.getVersion().isAtLeast(AndroidVersion.VersionCodes.N) ? "cmd package" : "pm";
 
         String[] command = {prefix, "install-abandon", sessionId};
 

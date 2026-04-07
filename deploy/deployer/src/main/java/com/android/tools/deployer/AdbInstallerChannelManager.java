@@ -18,6 +18,7 @@ package com.android.tools.deployer;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.SimpleConnectedSocket;
 import com.android.ddmlib.TimeoutException;
+import com.android.tools.deployer.common.AdbClient;
 import com.android.utils.ILogger;
 
 import java.io.IOException;

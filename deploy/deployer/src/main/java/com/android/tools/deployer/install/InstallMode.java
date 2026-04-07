@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
 
-public interface UIService {
+package com.android.tools.deployer.install;
 
-    boolean prompt(String result);
-
-    void message(String message);
+public enum InstallMode {
+    DELTA, // If an application is already installed on the a device, send only what has changed.
+    DELTA_NO_SKIP, // Delta install but don't skip installation should there be no changes.
+    FULL // Send application full apk regardless of the device state.
 }

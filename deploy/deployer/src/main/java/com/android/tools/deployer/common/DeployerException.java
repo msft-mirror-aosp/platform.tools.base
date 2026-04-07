@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deploy.proto.Deploy;
 
@@ -30,7 +30,8 @@ import java.util.List;
  */
 public class DeployerException extends Exception {
 
-    // TODO(b/117673388): Add "Learn More" hyperlink/call to action when we finally have the webpage up.
+    // TODO(b/117673388): Add "Learn More" hyperlink/call to action when we finally have the webpage
+    // up.
     public enum ResolutionAction {
         // No possible resolution action exists.
         NONE,

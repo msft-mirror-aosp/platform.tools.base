@@ -15,11 +15,14 @@
  */
 package com.android.tools.deployer;
 
-import static com.android.tools.deployer.PatchSet.Status.SizeThresholdExceeded;
+import static com.android.tools.deployer.common.PatchSet.Status.SizeThresholdExceeded;
 
 import static java.util.Collections.singletonList;
 
 import com.android.testutils.TestUtils;
+import com.android.tools.deployer.common.PatchGenerator;
+import com.android.tools.deployer.common.PatchSet;
+import com.android.tools.deployer.common.PatchSetGenerator;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkParser;
 import com.android.tools.deployer.model.component.ApkParserException;

@@ -17,6 +17,13 @@ package com.android.tools.deployer;
 
 import com.android.annotations.NonNull;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.ApplicationDumper;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeployerOption;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.Installer;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.App;

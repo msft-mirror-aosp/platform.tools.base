@@ -13,17 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.annotations.NonNull;
 import com.android.ddmlib.IDevice;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ApkVerifierTracker {
-    @VisibleForTesting static final String SKIP_VERIFICATION_OPTION = "--skip-verification";
+    @VisibleForTesting public static final String SKIP_VERIFICATION_OPTION = "--skip-verification";
     @VisibleForTesting static final long TIME_BETWEEN_VERIFICATIONS_MS = TimeUnit.HOURS.toMillis(1);
 
     // (DeviceSerial + ":" + PackageName) -> LastVerifyTimeMs
@@ -50,7 +52,7 @@ public class ApkVerifierTracker {
      * @return the option string that should be used for skipping if available, or null otherwise
      */
     @VisibleForTesting
-    static String getSkipVerificationInstallationFlag(
+    public static String getSkipVerificationInstallationFlag(
             @NonNull IDevice device, @NonNull String packageName, long currentTimeMs) {
         // In R, ADB reports both real package name (instead of process name) and also allows
         // the user to skip app verification on install. We use the real package name flag
@@ -75,7 +77,7 @@ public class ApkVerifierTracker {
 
     /** Test-only function to clear the last verified time. */
     @VisibleForTesting
-    static void clear() {
+    public static void clear() {
         lastVerifiedTimeMap.clear();
     }
 

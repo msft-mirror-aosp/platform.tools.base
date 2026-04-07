@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deployer.model.Apk;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSortedMap;
+
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

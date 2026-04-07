@@ -90,18 +90,82 @@ kotlin_library(
 )
 
 kotlin_library(
+    name = "tools.deployer.common",
+    srcs = [
+        "src/main/java/com/android/tools/deployer/common/AdbClient.java",
+        "src/main/java/com/android/tools/deployer/common/ApkDiffer.java",
+        "src/main/java/com/android/tools/deployer/common/ApkMap.java",
+        "src/main/java/com/android/tools/deployer/common/ApkVerifierTracker.java",
+        "src/main/java/com/android/tools/deployer/common/ApplicationDumper.java",
+        "src/main/java/com/android/tools/deployer/common/Canceller.java",
+        "src/main/java/com/android/tools/deployer/common/ChangeType.java",
+        "src/main/java/com/android/tools/deployer/common/DeployMetric.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerException.java",
+        "src/main/java/com/android/tools/deployer/common/DeployerOption.java",
+        "src/main/java/com/android/tools/deployer/common/DeploymentCacheDatabase.java",
+        "src/main/java/com/android/tools/deployer/common/InstallOptions.java",
+        "src/main/java/com/android/tools/deployer/common/InstallStatus.java",
+        "src/main/java/com/android/tools/deployer/common/Installer.java",
+        "src/main/java/com/android/tools/deployer/common/JvmtiErrorCode.java",
+        "src/main/java/com/android/tools/deployer/common/OverlayId.java",
+        "src/main/java/com/android/tools/deployer/common/PatchGenerator.java",
+        "src/main/java/com/android/tools/deployer/common/PatchSet.java",
+        "src/main/java/com/android/tools/deployer/common/PatchSetGenerator.java",
+        "src/main/java/com/android/tools/deployer/common/Timeouts.java",
+        "src/main/java/com/android/tools/deployer/common/UIService.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":java_version",
+        ":tools.deployer.model",
+        "//tools/base/adblib",
+        "//tools/base/adblib-tools:adblib.tools",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "//tools/base/tracer:tools.tracer",
+        "@maven//:com.google.guava.guava",
+        "@maven//:org.jetbrains.annotations",
+    ],
+)
+
+kotlin_library(
+    name = "tools.deployer.install",
+    srcs = [
+        "src/main/java/com/android/tools/deployer/install/ApkInstaller.java",
+        "src/main/java/com/android/tools/deployer/install/InstallMode.java",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools.deployer.common",
+        ":tools.deployer.model",
+        "//tools/base/bazel:studio-proto",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/deploy/proto:deploy_java_proto",
+        "@maven//:com.google.guava.guava",
+        "@maven//:org.jetbrains.annotations",
+    ],
+)
+
+kotlin_library(
     name = "tools.deployer",
-    srcs = glob([
-        "src/main/java/com/android/tools/deployer/*.java",
-        "src/main/java/com/android/tools/deployer/*.kt",
-        "src/main/java/com/android/tools/deployer/tasks/*.java",
-    ]),
+    srcs = glob(
+        [
+            "src/main/java/com/android/tools/deployer/*.java",
+            "src/main/java/com/android/tools/deployer/*.kt",
+            "src/main/java/com/android/tools/deployer/tasks/*.java",
+        ],
+    ),
     # Embed android installer in the jar (x86, x86_64, arm7, arm64)
     resources = ["//tools/base/deploy/installer:android-installer"],
     visibility = ["//visibility:public"],
     exports = [":tools.deployer.model"],
     deps = [
         ":java_version",
+        ":tools.deployer.common",
+        ":tools.deployer.install",
         ":tools.deployer.model",
         "//prebuilts/r8",
         "//tools/base/adblib",
@@ -268,6 +332,8 @@ java_library(
     ],
     deps = [
         ":tools.deployer",
+        ":tools.deployer.common",
+        ":tools.deployer.install",
         "//tools/base/adblib",
         "//tools/base/adblib:adblib.tests.testlib",
         "//tools/base/adblib-ddmlibcompatibility:adblib.ddmlibcompatibility.tests.testlib",
@@ -349,6 +415,8 @@ coverage_java_test(
     deps = [
         ":java_version",
         ":tools.deployer",
+        ":tools.deployer.common",
+        ":tools.deployer.install",
         ":tools.deployer.model",
         "//prebuilts/r8",
         "//tools/base/adblib",
@@ -408,6 +476,8 @@ kotlin_test(
         ":deployer.runner.testlib",
         ":java_version",
         ":tools.deployer",
+        ":tools.deployer.common",
+        ":tools.deployer.install",
         "//tools/base/bazel:studio-proto",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
@@ -431,6 +501,8 @@ kotlin_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.deployer",
+        ":tools.deployer.common",
+        ":tools.deployer.install",
         ":tools.deployer.model",
         "//tools/base/common:tools.common",
         "//tools/base/testutils:tools.testutils",

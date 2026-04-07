@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import java.util.concurrent.TimeUnit;
 
@@ -35,15 +35,15 @@ public class Timeouts {
     static final long CMD_COMPOSE_STATUS = T_5_SECONDS;
     static final long CMD_INSTALL_COROUTINE = T_5_SECONDS;
     static final long CMD_NETTEST = T_5_MINUTES;
-    static final long CMD_TIMEOUT = T_5_SECONDS;
+    public static final long CMD_TIMEOUT = T_5_SECONDS;
     static final long CMD_RESTART_ACTIVITY_MS = T_5_SECONDS;
     static final long CMD_FIND_DEX_MS = T_5_SECONDS;
 
-    static final long SHELL_MKDIR = T_5_SECONDS;
-    static final long SHELL_RMFR = T_5_SECONDS;
-    static final long SHELL_CHMOD = T_5_SECONDS;
-    static final long SHELL_CHOWN = T_5_SECONDS;
-    static final long SHELL_AM_STOP = T_5_SECONDS;
-    static final long SHELL_ABORT_INSTALL_MS = T_5_SECONDS;
-    static final long SHELL_BASELINE_PROFILE_STATUS = T_5_SECONDS;
+    public static final long SHELL_MKDIR = T_5_SECONDS;
+    public static final long SHELL_RMFR = T_5_SECONDS;
+    public static final long SHELL_CHMOD = T_5_SECONDS;
+    public static final long SHELL_CHOWN = T_5_SECONDS;
+    public static final long SHELL_AM_STOP = T_5_SECONDS;
+    public static final long SHELL_ABORT_INSTALL_MS = T_5_SECONDS;
+    public static final long SHELL_BASELINE_PROFILE_STATUS = T_5_SECONDS;
 }

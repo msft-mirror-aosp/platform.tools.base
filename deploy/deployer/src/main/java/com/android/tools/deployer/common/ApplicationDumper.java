@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
@@ -54,6 +54,7 @@ public class ApplicationDumper {
 
         return packageName;
     }
+
     /*
      * This method retrieves information on the application to be swapped; specifically, process ids
      * and currently installed files.
@@ -88,7 +89,8 @@ public class ApplicationDumper {
             }
 
             if (!apk.packageName.equals(packageName)) {
-                // This is intentionally a swap failure, not a dump failure; we just discover it during dump.
+                // This is intentionally a swap failure, not a dump failure; we just discover it
+                // during dump.
                 throw DeployerException.swapMultiplePackages();
             }
 
@@ -117,7 +119,7 @@ public class ApplicationDumper {
         return new Dump(GetApks(response.getPackages(0)), GetPids(response), GetArch(response));
     }
 
-    static void throwDumpError(List<String> packages, Deploy.DumpResponse response)
+    public static void throwDumpError(List<String> packages, Deploy.DumpResponse response)
             throws DeployerException {
         switch (response.getStatus()) {
             case ERROR_PACKAGE_NOT_FOUND:

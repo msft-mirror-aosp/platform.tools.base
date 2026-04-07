@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.annotations.NonNull;
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.Version;
 import com.android.utils.ILogger;
 import com.android.utils.NullLogger;
 

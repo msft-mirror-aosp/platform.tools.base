@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.idea.protobuf.ByteString;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;

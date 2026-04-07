@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 /** All possible JVMTI error codes, in enum form. Sourced from art/openjdkjvmti/include/jvmti.h */
 public enum JvmtiErrorCode {

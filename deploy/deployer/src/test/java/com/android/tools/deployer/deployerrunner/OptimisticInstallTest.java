@@ -21,12 +21,12 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.testutils.AssumeUtil;
 import com.android.testutils.TestUtils;
-import com.android.tools.deployer.DeployMetric;
 import com.android.tools.deployer.DeployerRunner;
 import com.android.tools.deployer.DeployerTestUtils;
-import com.android.tools.deployer.DeploymentCacheDatabase;
 import com.android.tools.deployer.SqlApkFileDatabase;
-import com.android.tools.deployer.UIService;
+import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.UIService;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;
 import com.android.tools.deployer.rules.FakeDeviceConnection;

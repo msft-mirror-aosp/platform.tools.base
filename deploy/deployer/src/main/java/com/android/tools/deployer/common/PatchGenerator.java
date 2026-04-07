@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.tracer.Trace;
 import com.android.utils.ILogger;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -32,17 +33,17 @@ import java.util.List;
 public class PatchGenerator {
 
     public static class Patch {
-        enum Status {
+        public enum Status {
             Ok,
             SizeThresholdExceeded
         };
 
-        final Status status;
+        public final Status status;
 
-        final ByteBuffer data;
-        final ByteBuffer instructions;
-        final String sourcePath; // Path to apk used as source of clean data on the device.
-        final long destinationSize; // Size of apk to generate on the device.
+        public final ByteBuffer data;
+        public final ByteBuffer instructions;
+        public final String sourcePath; // Path to apk used as source of clean data on the device.
+        public final long destinationSize; // Size of apk to generate on the device.
 
         Patch(ByteBuffer data, ByteBuffer instructions, String sourcePath, long destinationSize) {
             this.data = data;

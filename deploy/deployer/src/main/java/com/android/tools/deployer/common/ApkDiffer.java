@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.FileDiff;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,7 +87,8 @@ public class ApkDiffer {
             throw DeployerException.apkNameMismatch();
         }
 
-        // Traverse local and remote list of crcs in order to detect what has changed in a local apk.
+        // Traverse local and remote list of crcs in order to detect what has changed in a local
+        // apk.
         List<FileDiff> diffs = new ArrayList<>();
         for (ApkEntry newFile : newFiles) {
             ApkEntry oldFile = oldMap.get(newFile.getApk().name).get(newFile.getName());

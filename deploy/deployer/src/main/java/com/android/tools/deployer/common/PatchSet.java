@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tools.deployer;
+package com.android.tools.deployer.common;
 
 import com.android.tools.deploy.proto.Deploy;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class PatchSet {
-    enum Status {
+    public enum Status {
         Ok, // PatchSet is valid
         NoChanges, // The previous and current apk lists are identical.
         Invalid, // An unknown error occurred during generation of the patches.
