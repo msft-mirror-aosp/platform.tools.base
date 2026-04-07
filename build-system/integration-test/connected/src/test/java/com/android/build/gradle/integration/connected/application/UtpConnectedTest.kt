@@ -28,7 +28,7 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -39,8 +39,9 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   private val connectedAndroidTestWithUtpBenchmark: Benchmark =
     Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 
+  @Rule @JvmField val EMULATOR = getEmulator()
+
   companion object {
-    @ClassRule @JvmField val EMULATOR = getEmulator()
     private const val DEVICE_NAME = "emulator-5554 - 13"
     private const val TEST_OUTPUT_ROOT_DIR = "build/outputs/androidTest-results/connected/debug"
     private const val DEVICE_OUTPUT_DIR = "$TEST_OUTPUT_ROOT_DIR/$DEVICE_NAME"
@@ -158,6 +159,45 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
     assertThat(project.resolve(testResultPbPath)).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
+  }
+
+  @Test
+  @Throws(Exception::class)
+  fun androidTestWithOrchestratorAndCodeCoverageAndCorruptedLeftover() {
+    selectModule("app")
+
+    rule.build.androidApplication().reconfigure {
+      android.testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"
+      android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
+      android.defaultConfig.testInstrumentationRunnerArguments["clearPackageData"] = "true"
+
+      dependencies {
+        add("androidTestUtil", "androidx.test:orchestrator:$ANDROIDX_TEST_VERSION")
+        add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION")
+      }
+      android.buildTypes.apply { named("debug") { it.enableAndroidTestCoverage = true } }
+    }
+
+    val adb = SdkHelper.getAdb().absolutePath
+    val coverageDir = "/sdcard/googletest/internal_use/data/data/com.example.android.kotlin/coverage_data"
+    val corruptedFile = "$coverageDir/corrupted.ec"
+
+    // Manually create a corrupted leftover file on device.
+    // We create it after the emulator rule has started the emulator.
+    ProcessBuilder(adb, "shell", "mkdir", "-p", coverageDir).start().waitFor(1, TimeUnit.MINUTES)
+    ProcessBuilder(adb, "shell", "echo", "not-a-jacoco-file", ">", corruptedFile).start().waitFor(1, TimeUnit.MINUTES)
+
+    // Run the test. The plugin should clean up the directory before pulling files.
+    // If it doesn't, JacocoReportTask will fail with "Unknown block type".
+    executor.run(testTaskName)
+
+    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(project.resolve(testCoverageXmlPath)).exists()
+
+    // Verify the corrupted file is gone from the device.
+    val checkProcess = ProcessBuilder(adb, "shell", "ls", corruptedFile).start()
+    checkProcess.waitFor(1, TimeUnit.MINUTES)
+    assertThat(checkProcess.exitValue()).isNotEqualTo(0)
   }
 
   @Test

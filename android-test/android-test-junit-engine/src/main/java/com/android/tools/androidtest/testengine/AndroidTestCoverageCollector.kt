@@ -37,8 +37,6 @@ class AndroidTestCoverageCollector(
   /** Prepares directories on host and device before test execution. */
   fun prepare() {
     logger.info("Preparing code coverage collector. hostDir=$coverageDirOnHost, singleFile=$coverageFileOnDevice, dir=$coverageDirOnDevice")
-    coverageDirOnHost?.let { createEmptyDirectoryOnHost(it) }
-    cleanPreviousCodeCoverageOnDevice()
 
     val isTestServiceInstalled = isTestServiceInstalled()
     if (useTestStorageService && !isTestServiceInstalled) {
@@ -57,6 +55,9 @@ class AndroidTestCoverageCollector(
         )
       }
     }
+
+    coverageDirOnHost?.let { createEmptyDirectoryOnHost(it) }
+    cleanPreviousCodeCoverageOnDevice()
   }
 
   /** Creates an empty directory. If a directory exists at the given path, it removes all contents in the directory. */
@@ -69,11 +70,24 @@ class AndroidTestCoverageCollector(
 
   /** Removes code coverages data on device from previous runs if exists. */
   private fun cleanPreviousCodeCoverageOnDevice() {
+    val storageDir = AndroidAdditionalTestOutputCollector.TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR.removeSuffix("/")
     if (!coverageFileOnDevice.isNullOrBlank()) {
-      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-f", coverageFileOnDevice))
+      val devicePath =
+        if (effectiveUseTestStorageService) {
+          "$storageDir/${coverageFileOnDevice.removePrefix("/")}"
+        } else {
+          coverageFileOnDevice
+        }
+      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-f", devicePath))
     } else if (!coverageDirOnDevice.isNullOrBlank()) {
-      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", coverageDirOnDevice))
-      adbController.runAdbShellCommand(deviceSerial, listOf("mkdir", "-p", coverageDirOnDevice))
+      val devicePath =
+        if (effectiveUseTestStorageService) {
+          "$storageDir/${coverageDirOnDevice.removePrefix("/")}"
+        } else {
+          coverageDirOnDevice
+        }
+      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", devicePath))
+      adbController.runAdbShellCommand(deviceSerial, listOf("mkdir", "-p", devicePath))
     }
   }
 

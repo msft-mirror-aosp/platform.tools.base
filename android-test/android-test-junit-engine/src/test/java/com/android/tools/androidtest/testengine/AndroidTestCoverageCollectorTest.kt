@@ -28,6 +28,7 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 
@@ -70,7 +71,11 @@ class AndroidTestCoverageCollectorTest {
 
     collector.prepare()
 
-    verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-f", coverageFileOnDevice)), anyOrNull())
+    val inOrder = inOrder(adbController)
+    inOrder
+      .verify(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("pm", "list", "packages", "androidx.test.services")), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-f", coverageFileOnDevice)), anyOrNull())
     assertThat(coverageDirOnHost.exists()).isTrue()
   }
 
@@ -92,8 +97,12 @@ class AndroidTestCoverageCollectorTest {
 
     collector.prepare()
 
-    verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-rf", coverageDirOnDevice)), anyOrNull())
-    verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("mkdir", "-p", coverageDirOnDevice)), anyOrNull())
+    val inOrder = inOrder(adbController)
+    inOrder
+      .verify(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("pm", "list", "packages", "androidx.test.services")), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-rf", coverageDirOnDevice)), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("mkdir", "-p", coverageDirOnDevice)), anyOrNull())
   }
 
   @Test
@@ -120,6 +129,44 @@ class AndroidTestCoverageCollectorTest {
         eq(listOf("appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow")),
         anyOrNull(),
       )
+  }
+
+  @Test
+  fun prepare_cleansCorrectDirWhenTestStorageServiceIsEffective() {
+    val coverageDirOnDevice = "/data/data/pkg/coverage_data/"
+    val collector =
+      AndroidTestCoverageCollector(
+        adbController,
+        deviceSerial,
+        coverageDirOnHost,
+        coverageFileOnDevice = null,
+        coverageDirOnDevice = coverageDirOnDevice,
+        useTestStorageService = true,
+        additionalOutputCollector,
+      )
+
+    mockAdbResponse(listOf("pm", "list", "packages", "androidx.test.services"), "package:androidx.test.services")
+    mockAdbResponse(listOf("getprop", "ro.build.version.sdk"), "30")
+
+    collector.prepare()
+
+    val storageDir = AndroidAdditionalTestOutputCollector.TEST_STORAGE_SERVICE_INTERNAL_OUTPUT_DIR.removeSuffix("/")
+    val prefixedPath = "$storageDir/data/data/pkg/coverage_data/"
+
+    val inOrder = inOrder(adbController)
+    inOrder
+      .verify(adbController)
+      .runAdbShellCommand(eq(deviceSerial), eq(listOf("pm", "list", "packages", "androidx.test.services")), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("getprop", "ro.build.version.sdk")), anyOrNull())
+    inOrder
+      .verify(adbController)
+      .runAdbShellCommand(
+        eq(deviceSerial),
+        eq(listOf("appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow")),
+        anyOrNull(),
+      )
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("rm", "-rf", prefixedPath)), anyOrNull())
+    inOrder.verify(adbController).runAdbShellCommand(eq(deviceSerial), eq(listOf("mkdir", "-p", prefixedPath)), anyOrNull())
   }
 
   @Test

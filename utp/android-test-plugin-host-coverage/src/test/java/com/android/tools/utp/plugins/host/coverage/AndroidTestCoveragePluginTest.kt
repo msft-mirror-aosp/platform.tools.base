@@ -29,7 +29,6 @@ import com.google.testing.platform.proto.api.core.TestArtifactProto.Artifact
 import com.google.testing.platform.proto.api.core.TestResultProto.TestResult
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import com.google.testing.platform.runtime.android.device.AndroidDeviceProperties
-import java.time.Duration
 import java.util.function.Supplier
 import java.util.logging.Logger
 import org.junit.Before
@@ -39,7 +38,6 @@ import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
 import org.mockito.ArgumentMatchers.anyList
 import org.mockito.ArgumentMatchers.contains
-import org.mockito.ArgumentMatchers.nullable
 import org.mockito.Mock
 import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.inOrder
@@ -48,6 +46,7 @@ import org.mockito.Mockito.verifyNoMoreInteractions
 import org.mockito.Mockito.`when`
 import org.mockito.junit.MockitoJUnit
 import org.mockito.junit.MockitoRule
+import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.argThat
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
@@ -71,16 +70,11 @@ class AndroidTestCoveragePluginTest {
 
   @Before
   fun setUpMocks() {
-    `when`(mockDeviceController.execute(anyList(), nullable(Duration::class.java))).then { commandResult }
+    `when`(mockDeviceController.execute(anyList(), anyOrNull())).then { commandResult }
   }
 
   private fun installTestStorageService() {
-    `when`(
-        mockDeviceController.execute(
-          eq(listOf("shell", "pm", "list", "packages", "androidx.test.services")),
-          nullable(Duration::class.java),
-        )
-      )
+    `when`(mockDeviceController.execute(eq(listOf("shell", "pm", "list", "packages", "androidx.test.services")), anyOrNull()))
       .thenReturn(CommandResult(0, listOf("package:androidx.test.services")))
 
     val mockDevice = mock<Device>()
@@ -144,11 +138,13 @@ class AndroidTestCoveragePluginTest {
     }
 
     inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -f \"${coverageFile}\""))
-      verify(mockDeviceController).execute(listOf("shell", "mkdir -p \"${tmpDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "cat \"${coverageFile}\" > \"${tmpDir}/coverage.ec\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "rm", "-f", "\"${coverageFile}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController)
+        .execute(eq(listOf("shell", "run-as", TESTED_APP, "cat", "\"${coverageFile}\"", ">", "\"${tmpDir}/coverage.ec\"")), anyOrNull())
       verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage.ec", "${outputDir}/coverage.ec"))
-      verify(mockDeviceController).execute(listOf("shell", "rm -rf \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
@@ -170,14 +166,20 @@ class AndroidTestCoveragePluginTest {
       useTestStorageService = true
     }
 
+    val storageDir = TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")
+    val prefixedPath = "${storageDir}/${coverageFile.removePrefix("/")}"
+
     inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -f \"${coverageFile}\""))
-      verify(mockDeviceController).execute(listOf("shell", "appops set androidx.test.services MANAGE_EXTERNAL_STORAGE allow"))
-      verify(mockDeviceController).execute(listOf("shell", "mkdir -p \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "pm", "list", "packages", "androidx.test.services")), anyOrNull())
+      verify(mockDeviceController).getDevice()
       verify(mockDeviceController)
-        .execute(listOf("shell", "cat \"${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${coverageFile}\" > \"${tmpDir}/coverage.ec\""))
+        .execute(eq(listOf("shell", "appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-f", "\"${prefixedPath}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "cat", "\"${prefixedPath}\"", ">", "\"${tmpDir}/coverage.ec\"")), anyOrNull())
       verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage.ec", "${outputDir}/coverage.ec"))
-      verify(mockDeviceController).execute(listOf("shell", "rm -rf \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
@@ -190,12 +192,7 @@ class AndroidTestCoveragePluginTest {
     val tmpDir = "/data/local/tmp/UUID-coverage_data"
     val outputDir = "coverageOutputDir/deviceName/"
 
-    `when`(
-        mockDeviceController.execute(
-          eq(listOf("shell", "run-as", TESTED_APP, "ls \"${coverageDir}\" | cat")),
-          nullable(Duration::class.java),
-        )
-      )
+    `when`(mockDeviceController.execute(eq(listOf("shell", "run-as", TESTED_APP, "ls", "\"${coverageDir}\"", "|", "cat")), anyOrNull()))
       .thenReturn(CommandResult(0, listOf("coverage1.ec", "coverage2.ec", "non_cov_file")))
 
     runAndroidTestCoveragePlugin() {
@@ -205,16 +202,20 @@ class AndroidTestCoveragePluginTest {
     }
 
     inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -rf \"${coverageDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "mkdir -p \"${coverageDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "mkdir -p \"${tmpDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "ls \"${coverageDir}\" | cat"))
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "rm", "-rf", "\"${coverageDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "mkdir", "-p", "\"${coverageDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "ls", "\"${coverageDir}\"", "|", "cat")), anyOrNull())
       for (i in 1..2) {
         verify(mockDeviceController)
-          .execute(listOf("shell", "run-as", TESTED_APP, "cat \"${coverageDir}/coverage$i.ec\" > \"${tmpDir}/coverage$i.ec\""))
+          .execute(
+            eq(listOf("shell", "run-as", TESTED_APP, "cat", "\"${coverageDir}/coverage$i.ec\"", ">", "\"${tmpDir}/coverage$i.ec\"")),
+            anyOrNull(),
+          )
         verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage$i.ec", "${outputDir}/coverage$i.ec"))
       }
-      verify(mockDeviceController).execute(listOf("shell", "rm -rf \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
@@ -229,12 +230,10 @@ class AndroidTestCoveragePluginTest {
 
     installTestStorageService()
 
-    `when`(
-        mockDeviceController.execute(
-          eq(listOf("shell", "ls \"${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${coverageDir}\" | cat")),
-          nullable(Duration::class.java),
-        )
-      )
+    val storageDir = TEST_STORAGE_SERVICE_OUTPUT_DIR.removeSuffix("/")
+    val prefixedPath = "${storageDir}/${coverageDir.removePrefix("/")}"
+
+    `when`(mockDeviceController.execute(eq(listOf("shell", "ls", "\"${prefixedPath}\"", "|", "cat")), anyOrNull()))
       .thenReturn(CommandResult(0, listOf("coverage1.ec", "coverage2.ec", "non_cov_file")))
 
     runAndroidTestCoveragePlugin() {
@@ -245,19 +244,21 @@ class AndroidTestCoveragePluginTest {
     }
 
     inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -rf \"${coverageDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "mkdir -p \"${coverageDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "appops set androidx.test.services MANAGE_EXTERNAL_STORAGE allow"))
-      verify(mockDeviceController).execute(listOf("shell", "mkdir -p \"${tmpDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "ls \"${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${coverageDir}\" | cat"))
+      verify(mockDeviceController).execute(eq(listOf("shell", "pm", "list", "packages", "androidx.test.services")), anyOrNull())
+      verify(mockDeviceController).getDevice()
+      verify(mockDeviceController)
+        .execute(eq(listOf("shell", "appops", "set", "androidx.test.services", "MANAGE_EXTERNAL_STORAGE", "allow")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${prefixedPath}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${prefixedPath}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "ls", "\"${prefixedPath}\"", "|", "cat")), anyOrNull())
       for (i in 1..2) {
         verify(mockDeviceController)
-          .execute(
-            listOf("shell", "cat \"${TEST_STORAGE_SERVICE_OUTPUT_DIR}/${coverageDir}/coverage$i.ec\"" + " > \"${tmpDir}/coverage$i.ec\"")
-          )
+          .execute(eq(listOf("shell", "cat", "\"${prefixedPath}/coverage$i.ec\"", ">", "\"${tmpDir}/coverage$i.ec\"")), anyOrNull())
         verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage$i.ec", "${outputDir}/coverage$i.ec"))
       }
-      verify(mockDeviceController).execute(listOf("shell", "rm -rf \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
@@ -293,16 +294,19 @@ class AndroidTestCoveragePluginTest {
       useTestStorageService = true
     }
 
-    inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -f \"${coverageFile}\""))
-      verify(mockDeviceController).execute(listOf("shell", "mkdir -p \"${tmpDir}\""))
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "cat \"${coverageFile}\" > \"${tmpDir}/coverage.ec\""))
+    inOrder(mockDeviceController, mockLogger).apply {
+      verify(mockDeviceController).execute(eq(listOf("shell", "pm", "list", "packages", "androidx.test.services")), anyOrNull())
+      verify(mockLogger).warning(contains("TestStorageService is not installed"))
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "rm", "-f", "\"${coverageFile}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "mkdir", "-p", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController).execute(eq(listOf("shell", "chmod", "777", "\"${tmpDir}\"")), anyOrNull())
+      verify(mockDeviceController)
+        .execute(eq(listOf("shell", "run-as", TESTED_APP, "cat", "\"${coverageFile}\"", ">", "\"${tmpDir}/coverage.ec\"")), anyOrNull())
       verify(mockDeviceController).pull(createTestArtifact("${tmpDir}/coverage.ec", "${outputDir}/coverage.ec"))
-      verify(mockDeviceController).execute(listOf("shell", "rm -rf \"${tmpDir}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "rm", "-rf", "\"${tmpDir}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
-    verify(mockLogger).warning(contains("TestStorageService is not installed"))
     verifyNoMoreInteractions(mockLogger)
   }
 
@@ -318,7 +322,7 @@ class AndroidTestCoveragePluginTest {
     }
 
     inOrder(mockDeviceController).apply {
-      verify(mockDeviceController).execute(listOf("shell", "run-as", TESTED_APP, "rm -f \"${coverageFile}\""))
+      verify(mockDeviceController).execute(eq(listOf("shell", "run-as", TESTED_APP, "rm", "-f", "\"${coverageFile}\"")), anyOrNull())
       verifyNoMoreInteractions()
     }
 
