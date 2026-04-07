@@ -23,7 +23,9 @@ import com.android.build.api.dsl.DependenciesExtension
 import com.android.build.api.variant.AndroidApplicationModuleModel
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.features.binding.Definition
+import org.gradle.api.internal.plugins.Definition
+
+// import org.gradle.features.binding.Definition
 
 @Incubating
 interface DeclarativeApplicationExtension : ApplicationExtension, Definition<AndroidApplicationModuleModel> {

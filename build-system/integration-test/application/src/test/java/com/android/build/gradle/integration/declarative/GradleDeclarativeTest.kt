@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProjectBuil
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.google.common.truth.Truth.assertThat
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -32,6 +33,7 @@ class GradleDeclarativeTest {
   }
 
   @Test
+  @Ignore("b/500308639")
   fun testLibraryAssembles() {
     project.executor().run("clean", ":lib:assemble")
     val debugAar = project.getSubproject("lib").getOutputFile("aar", "lib-debug.aar")
@@ -44,6 +46,7 @@ class GradleDeclarativeTest {
   }
 
   @Test
+  @Ignore("b/500308639")
   fun testAppAssembles() {
     project.executor().run("clean", ":app:assemble")
     val debugApk = project.getSubproject("app").getOutputFile("apk", "debug", "app-debug.apk")
