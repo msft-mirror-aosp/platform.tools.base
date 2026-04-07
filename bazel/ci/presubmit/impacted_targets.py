@@ -295,6 +295,10 @@ def query_baseline_targets(
 ) -> List[str]:
   """Queries the targets that match the given filters.
 
+  The cquery command is used to resolve select() clauses with platform
+  specific constraints like @platforms//os:linux. This is frequently used on
+  the target_compatible_with attribute.
+
   Args:
     build_env: The build environment.
     base_targets: The base set of targets used for filtering.
@@ -330,4 +334,9 @@ def query_baseline_targets(
       + ' except '
       + ' except '.join(exclude_query)
   )
-  return build_env.bazel_query(query).stdout.decode('utf-8').splitlines()
+  output = build_env.bazel_cquery(query).stdout.decode('utf-8').splitlines()
+  # Filter out the configuration suffix from the target labels.
+  baseline_targets = []
+  for line in output:
+    baseline_targets.append(line.split(' ', 1)[0])
+  return baseline_targets

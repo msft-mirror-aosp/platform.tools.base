@@ -63,7 +63,7 @@ class PresubmitTest(parameterized.TestCase):
           tags=[],
           failed_tests=[],
           impacted_targets=['target1', 'target2', 'target3', 'target4'],
-          query_targets=['target2', 'target3'],
+          cquery_targets=['target2 (configA)', 'target3 (configB)'],
           expected_targets=['target2', 'target3'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
@@ -79,7 +79,7 @@ class PresubmitTest(parameterized.TestCase):
           tags=[('Presubmit-Test', 'default')],
           failed_tests=[],
           impacted_targets=['target1', 'target2'],
-          query_targets=['target2'],
+          cquery_targets=['target2 (configB)'],
           expected_targets=['base_target1', 'base_target2'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=default_explicit',
@@ -92,7 +92,7 @@ class PresubmitTest(parameterized.TestCase):
           tags=[('Presubmit-Test', 'studio-other:target3')],
           failed_tests=[],
           impacted_targets=['target1', 'target2'],
-          query_targets=['target2'],
+          cquery_targets=['target2 (configB)'],
           expected_targets=['target2'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
@@ -111,7 +111,7 @@ class PresubmitTest(parameterized.TestCase):
           ],
           failed_tests=[],
           impacted_targets=['target1', 'target2'],
-          query_targets=['target2'],
+          cquery_targets=['target2 (configA)'],
           expected_targets=['target2', 'target3', 'target4'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=impacted_targets',
@@ -130,7 +130,7 @@ class PresubmitTest(parameterized.TestCase):
           ],
           failed_tests=['target1', 'target2'],
           impacted_targets=[],
-          query_targets=[],
+          cquery_targets=[],
           expected_targets=['target1', 'target2', 'target3', 'target4'],
           expected_flags=[
               '--flaky_test_attempts=target1@2',
@@ -145,7 +145,7 @@ class PresubmitTest(parameterized.TestCase):
           tags=[],
           failed_tests=[],
           impacted_targets=[],
-          query_targets=[],
+          cquery_targets=[],
           expected_targets=['base_target1', 'base_target2'],
           expected_flags=[
               '--build_metadata=selective_presubmit_strategy=default_fallback',
@@ -159,7 +159,7 @@ class PresubmitTest(parameterized.TestCase):
       gerrit_project,
       failed_tests,
       impacted_targets,
-      query_targets,
+      cquery_targets,
       expected_targets,
       expected_flags,
   ):
@@ -174,8 +174,8 @@ class PresubmitTest(parameterized.TestCase):
 
     self._mock_generate_hash_file('hash-file')
     self._mock_get_impacted_targets(impacted_targets)
-    self.build_env.bazel_query.return_value.stdout = '\n'.join(
-        query_targets
+    self.build_env.bazel_cquery.return_value.stdout = '\n'.join(
+        cquery_targets
     ).encode('utf-8')
 
     parent_hash_path = self.build_env.tmp_path / 'parent.json'
@@ -208,7 +208,7 @@ class PresubmitTest(parameterized.TestCase):
     )
 
     if result.strategy == 'impacted_targets':
-      self.build_env.bazel_query.assert_called_with(
+      self.build_env.bazel_cquery.assert_called_with(
           'base_target1 union attr(tags, "includefilter", base_target1) union'
           ' base_target2 union attr(tags, "includefilter", base_target2) except'
           ' attr(tags, "excludefilter", base_target1) except attr(tags,'
