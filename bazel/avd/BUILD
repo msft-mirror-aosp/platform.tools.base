@@ -22,8 +22,8 @@ java_library(
 avd(
     name = "default_avd",
     image = select({
-        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_default_arm64//:arm64-android-33-images",
-        "//conditions:default": "@system_image_android-33_aosp_atd_x86_64//:x86_64-android-33AospAtd-images",
+        "//tools/base/bazel/platforms:macos-arm64": "//prebuilts/studio/sdk:system_image_android-33_default",
+        "//conditions:default": "//prebuilts/studio/sdk:system_image_android-33_aosp_atd",
     }),
     target_compatible_with = select({
         "@platforms//os:osx": [],
@@ -35,28 +35,28 @@ avd(
 
 avd(
     name = "avd_35",
-    image = "@system_image_android-35_default_x86_64//:x86_64-android-35-images",
+    image = "//prebuilts/studio/sdk:system_image_android-35_default",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )
 
 avd(
     name = "avd_34",
-    image = "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
+    image = "//prebuilts/studio/sdk:system_image_android-34_aosp_atd",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )
 
 avd(
     name = "avd_32",
-    image = "@system_image_android-32_aosp_atd_x86_64//:x86_64-android-32AospAtd-images",
+    image = "//prebuilts/studio/sdk:system_image_android-32_aosp_atd",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )
 
 avd(
     name = "avd_30",
-    image = "@system_image_android-30_default_x86_64//:x86_64-android-30-images",
+    image = "//prebuilts/studio/sdk:system_image_android-30_default",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )

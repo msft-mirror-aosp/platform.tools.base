@@ -354,6 +354,15 @@ filegroup(
 )
 
 alias(
+    name = "system_image_android-30_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-30_default_arm64//:arm64-android-30-images",
+        "//conditions:default": "@system_image_android-30_default_x86_64//:x86_64-android-30-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "system_image_android-31_default",
     actual = select({
         "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-31_default_arm64//:arm64-android-31-images",
@@ -363,10 +372,64 @@ alias(
 )
 
 alias(
+    name = "system_image_android-32_aosp_atd",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-32_aosp_atd_arm64//:arm64-android-32AospAtd-images",
+        "//conditions:default": "@system_image_android-32_aosp_atd_x86_64//:x86_64-android-32AospAtd-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
     name = "system_image_android-33_default",
     actual = select({
         "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_default_arm64//:arm64-android-33-images",
         "//conditions:default": "@system_image_android-33_default_x86_64//:x86_64-android-33-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-33_aosp_atd",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33_aosp_atd_arm64//:arm64-android-33AospAtd-images",
+        "//conditions:default": "@system_image_android-33_aosp_atd_x86_64//:x86_64-android-33AospAtd-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-33PlayStore_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-33PlayStore_default_arm64//:arm64-android-33PlayStore-images",
+        "//conditions:default": "@system_image_android-33PlayStore_default_x86_64//:x86_64-android-33PlayStore-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-34_aosp_atd",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-34_aosp_atd_arm64//:arm64-android-34AospAtd-images",
+        "//conditions:default": "@system_image_android-34_aosp_atd_x86_64//:x86_64-android-34AospAtd-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-35_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-35_default_arm64//:arm64-android-35-images",
+        "//conditions:default": "@system_image_android-35_default_x86_64//:x86_64-android-35-images",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "system_image_android-35PlayStore_default",
+    actual = select({
+        "//tools/base/bazel/platforms:macos-arm64": "@system_image_android-35PlayStore_default_arm64//:arm64-android-35PlayStore-images",
+        "//conditions:default": "@system_image_android-35PlayStore_default_x86_64//:x86_64-android-35PlayStore-images",
     }),
     visibility = ["//visibility:public"],
 )
