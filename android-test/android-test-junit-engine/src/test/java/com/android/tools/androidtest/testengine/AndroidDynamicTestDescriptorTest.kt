@@ -107,8 +107,118 @@ class AndroidDynamicTestDescriptorTest {
       )
     descriptor.resultDeferred.complete(result)
 
-    assertThrows(org.opentest4j.TestAbortedException::class.java) {
-      descriptor.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
-    }
+    val exception =
+      assertThrows(org.opentest4j.TestAbortedException::class.java) {
+        descriptor.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exception.message).isEqualTo("org.junit.AssumptionViolatedException: assumption failed")
+  }
+
+  @Test
+  fun `execute throws TestAbortedException for IGNORED status`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("test", "com.example.Test.testMethod")
+    val descriptor = AndroidDynamicTestDescriptor(uniqueId, "testMethod", "com.example.Test", "testMethod")
+    val context = createMockContext()
+
+    val result =
+      TestResult(
+        testIdentifier = TestIdentifier("com.example", "Test", "testMethod"),
+        status = AmInstrumentationParser.STATUS_CODE_IGNORED,
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        stackTrace = "Test ignored due to some reason",
+        statusBundle = emptyMap(),
+      )
+    descriptor.resultDeferred.complete(result)
+
+    val exception =
+      assertThrows(org.opentest4j.TestAbortedException::class.java) {
+        descriptor.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exception.message).isEqualTo("Test ignored due to some reason")
+  }
+
+  @Test
+  fun `execute throws RuntimeException for unknown status`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("test", "com.example.Test.testMethod")
+    val descriptor = AndroidDynamicTestDescriptor(uniqueId, "testMethod", "com.example.Test", "testMethod")
+    val context = createMockContext()
+
+    val result =
+      TestResult(
+        testIdentifier = TestIdentifier("com.example", "Test", "testMethod"),
+        status = 999, // Unknown status
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        stackTrace = "Unknown error occurred",
+        statusBundle = emptyMap(),
+      )
+    descriptor.resultDeferred.complete(result)
+
+    val exception =
+      assertThrows(RuntimeException::class.java) {
+        descriptor.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exception.message).isEqualTo("Unknown error occurred")
+  }
+
+  @Test
+  fun `execute uses default messages when stackTrace is null`() {
+    val uniqueId = UniqueId.forEngine("android-test-engine").append("test", "com.example.Test.testMethod")
+    val context = createMockContext()
+
+    // Test ASSUMPTION_FAILURE default message
+    val descriptorAssumption = AndroidDynamicTestDescriptor(uniqueId, "testMethod", "com.example.Test", "testMethod")
+    descriptorAssumption.resultDeferred.complete(
+      TestResult(
+        testIdentifier = TestIdentifier("com.example", "Test", "testMethod"),
+        status = AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE,
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        stackTrace = null,
+        statusBundle = emptyMap(),
+      )
+    )
+    val exAssumption =
+      assertThrows(org.opentest4j.TestAbortedException::class.java) {
+        descriptorAssumption.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exAssumption.message).isEqualTo("Assumption failed")
+
+    // Test IGNORED default message
+    val descriptorIgnored = AndroidDynamicTestDescriptor(uniqueId, "testMethod", "com.example.Test", "testMethod")
+    descriptorIgnored.resultDeferred.complete(
+      TestResult(
+        testIdentifier = TestIdentifier("com.example", "Test", "testMethod"),
+        status = AmInstrumentationParser.STATUS_CODE_IGNORED,
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        stackTrace = null,
+        statusBundle = emptyMap(),
+      )
+    )
+    val exIgnored =
+      assertThrows(org.opentest4j.TestAbortedException::class.java) {
+        descriptorIgnored.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exIgnored.message).isEqualTo("Test ignored")
+
+    // Test Unknown status default message
+    val descriptorUnknown = AndroidDynamicTestDescriptor(uniqueId, "testMethod", "com.example.Test", "testMethod")
+    descriptorUnknown.resultDeferred.complete(
+      TestResult(
+        testIdentifier = TestIdentifier("com.example", "Test", "testMethod"),
+        status = 999,
+        startTime = Instant.now(),
+        endTime = Instant.now(),
+        stackTrace = null,
+        statusBundle = emptyMap(),
+      )
+    )
+    val exUnknown =
+      assertThrows(RuntimeException::class.java) {
+        descriptorUnknown.execute(context, mock(org.junit.platform.engine.support.hierarchical.Node.DynamicTestExecutor::class.java))
+      }
+    assertThat(exUnknown.message).isEqualTo("Test failed with status 999")
   }
 }
