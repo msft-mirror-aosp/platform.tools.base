@@ -30,7 +30,9 @@ interface Optimization {
   fun keepRules(action: KeepRules.() -> Unit)
 
   /** Configure baseline profile properties */
-  @Incubating @Deprecated("Use buildType.baselineProfile{}") fun baselineProfile(action: BaselineProfile.() -> Unit)
+  @Incubating
+  @Deprecated("Use buildType.baselineProfile{}", level = DeprecationLevel.ERROR)
+  fun baselineProfile(action: BaselineProfile.() -> Unit)
 
   /**
    * Specifies whether to enable code shrinking and resource optimization. Property works for applications only. For other types it will be

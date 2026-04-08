@@ -72,9 +72,7 @@ class ArtProfileExternalDependenciesTest {
     assertThat(mergedFile.readText()).contains("HSPLandroidx/compose/")
     assertThat(mergedFile.readText()).contains("HSPLandroidx/fragment/")
 
-    app.reconfigure {
-      android { buildTypes.named("release") { it.optimization { baselineProfile { ignoreFrom.add(fragmentDependency) } } } }
-    }
+    app.reconfigure { android { buildTypes.named("release") { it.baselineProfile { ignoreFrom.add(fragmentDependency) } } } }
 
     rule.build.executor.run("assembleRelease")
 
@@ -86,9 +84,7 @@ class ArtProfileExternalDependenciesTest {
   @Test
   fun testIgnoreFromAllExternalDependencies() {
     val app = rule.build.androidApplication(":app")
-    app.reconfigure {
-      android { buildTypes.named("release") { it.optimization { baselineProfile { ignoreFromAllExternalDependencies = true } } } }
-    }
+    app.reconfigure { android { buildTypes.named("release") { it.baselineProfile { ignoreFromAllExternalDependencies = true } } } }
 
     rule.build.executor.run("assembleRelease")
 
@@ -113,11 +109,9 @@ class ArtProfileExternalDependenciesTest {
     app.reconfigure {
       android {
         buildTypes.named("release") {
-          it.optimization {
-            baselineProfile {
-              ignoreFrom.add("Unknown Dependency 1")
-              ignoreFrom.add("Unknown Dependency 2")
-            }
+          it.baselineProfile {
+            ignoreFrom.add("Unknown Dependency 1")
+            ignoreFrom.add("Unknown Dependency 2")
           }
         }
       }
