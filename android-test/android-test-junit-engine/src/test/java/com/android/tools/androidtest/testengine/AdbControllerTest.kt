@@ -48,9 +48,32 @@ class AdbControllerTest {
         on { it.exitValue() } doReturn exitCode
         on { it.inputStream } doReturn output.byteInputStream()
         on { it.errorStream } doReturn error.byteInputStream()
+        on { it.waitFor() } doReturn exitCode
         on { it.waitFor(any(), any()) } doReturn true
       }
     return AdbController(adb, processBuilder = { mock { on { start() } doReturn process } })
+  }
+
+  @Test
+  fun runAdbShellCommandToOutputStream_success() {
+    val output = "success-output"
+    val controller = createAdbController(0, output = output)
+    val outputStream = java.io.ByteArrayOutputStream()
+
+    val exitCode = controller.runAdbShellCommandToOutputStream("serial", listOf("ls"), outputStream)
+
+    assertThat(exitCode).isEqualTo(0)
+    assertThat(outputStream.toString()).isEqualTo(output)
+  }
+
+  @Test
+  fun runAdbShellCommandToOutputStream_failure() {
+    val controller = createAdbController(1, error = "some-error")
+    val outputStream = java.io.ByteArrayOutputStream()
+
+    val exitCode = controller.runAdbShellCommandToOutputStream("serial", listOf("ls"), outputStream)
+
+    assertThat(exitCode).isEqualTo(1)
   }
 
   @Test
