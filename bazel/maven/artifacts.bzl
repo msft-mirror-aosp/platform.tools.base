@@ -184,7 +184,7 @@ ARTIFACTS = [
     "org.fusesource.jansi:jansi:2.4.3",
     "org.glassfish.jaxb:jaxb-runtime:2.3.2",
     "org.glassfish.jaxb:jaxb-xjc:2.3.2",
-    "org.gradle:gradle-tooling-api:9.4.1",
+    "org.gradle:gradle-tooling-api:9.5.0-milestone-7",
     "org.hamcrest:hamcrest:2.2",
     "org.hamcrest:hamcrest-core:1.3",
     "org.hamcrest:hamcrest-library:1.3",

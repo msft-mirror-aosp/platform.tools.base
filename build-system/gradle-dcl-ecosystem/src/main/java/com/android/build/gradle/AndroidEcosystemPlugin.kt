@@ -19,9 +19,7 @@ package com.android.build.gradle
 import org.gradle.api.Incubating
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
-import org.gradle.api.internal.plugins.software.RegistersProjectFeatures
-
-// import org.gradle.features.annotations.RegistersProjectFeatures
+import org.gradle.features.annotations.RegistersProjectFeatures
 
 @Incubating
 @RegistersProjectFeatures(

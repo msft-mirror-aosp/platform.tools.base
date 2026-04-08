@@ -1319,7 +1319,7 @@ com.android.build.gradle.internal.dsl.DataBindingOptions.isEnabledForTests: bool
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnable: void (boolean)
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabled: void (boolean)
 com.android.build.gradle.internal.dsl.DataBindingOptions.setEnabledForTests: void (boolean)
-com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension implements com.android.build.api.dsl.ApplicationExtension, org.gradle.api.internal.plugins.Definition
+com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension implements com.android.build.api.dsl.ApplicationExtension, org.gradle.features.binding.Definition
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationBuildType> ()
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
 com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeApplicationFlavor> ()
