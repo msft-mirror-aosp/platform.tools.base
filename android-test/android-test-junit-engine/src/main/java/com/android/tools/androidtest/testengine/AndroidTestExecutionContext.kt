@@ -113,6 +113,7 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
   val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
   val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
   val isTestCoverageEnabled: Boolean = get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)?.toBoolean() ?: false
+  val forceAotCompilation: Boolean = get(AndroidTestConfigurationKeys.FORCE_AOT_COMPILATION)?.toBoolean() ?: false
 
   val coverageDirOnHost: File? = get("", AgpTestSuiteInput.COVERAGE_DIR)?.let { File(it, "coverage_data") }
   val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)

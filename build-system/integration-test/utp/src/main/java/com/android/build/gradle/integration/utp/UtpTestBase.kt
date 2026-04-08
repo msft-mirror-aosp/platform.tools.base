@@ -51,8 +51,8 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   }
 
   lateinit var testTaskName: String
-  lateinit var testResultXmlPath: String
   lateinit var testReportPath: String
+  lateinit var testResultXmlPath: String
   lateinit var testResultPbPath: String
   lateinit var testCoverageXmlPath: String
   lateinit var testLogcatPath: String
@@ -882,9 +882,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithForceCompilation() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure { enableForceCompilation() }
@@ -893,8 +890,9 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
     assertThat(project.resolve(testReportPath)).exists()
     assertThat(project.resolve(testResultPbPath)).exists()
-    result.assertOutputContains("Running force AOT compilation for com.example.android.kotlin")
-    result.assertOutputContains("Running force AOT compilation for com.example.android.kotlin.test")
+
+    result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin")
+    result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin.test")
   }
 
   /** TODO: Enable the test once b/261739458 is fixed. */

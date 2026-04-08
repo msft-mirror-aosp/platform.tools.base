@@ -83,4 +83,7 @@ object AndroidTestConfigurationKeys {
 
   /** Path to the multiple code coverage files directory on device. */
   const val COVERAGE_DIR_ON_DEVICE = "android-test.coverage-dir-on-device"
+
+  /** Whether to force AOT compilation after installation. */
+  const val FORCE_AOT_COMPILATION = "android-test.force-aot-compilation"
 }

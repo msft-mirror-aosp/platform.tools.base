@@ -657,6 +657,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         "android-test.uninstall-after-tests",
         (!globalConfig.services.projectOptions.get(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN)).toString(),
       )
+      task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
 
       val variantName = creationConfig.mainVariant.name
       var buildTarget: String
