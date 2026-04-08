@@ -1884,6 +1884,7 @@ class UseKtxDetectorTest : AbstractCheckTest() {
 
             fun test() {
               val html = TextUtils.htmlEncode("Is x > y ?")
+              html!!
               val digits = TextUtils.isDigitsOnly(html)
               val length = android.text.TextUtils.getTrimmedLength(html)
               TextUtils.isDigitsOnly(html).not()
@@ -1898,13 +1899,13 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         src/test/pkg/test.kt:5: Warning: Use the KTX extension function String.htmlEncode instead? [UseKtx]
           val html = TextUtils.htmlEncode("Is x > y ?")
                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:6: Warning: Use the KTX extension function CharSequence.isDigitsOnly instead? [UseKtx]
+        src/test/pkg/test.kt:7: Warning: Use the KTX extension function CharSequence.isDigitsOnly instead? [UseKtx]
           val digits = TextUtils.isDigitsOnly(html)
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:7: Warning: Use the KTX extension function CharSequence.trimmedLength instead? [UseKtx]
+        src/test/pkg/test.kt:8: Warning: Use the KTX extension function CharSequence.trimmedLength instead? [UseKtx]
           val length = android.text.TextUtils.getTrimmedLength(html)
                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/test.kt:8: Warning: Use the KTX extension function CharSequence.isDigitsOnly instead? [UseKtx]
+        src/test/pkg/test.kt:9: Warning: Use the KTX extension function CharSequence.isDigitsOnly instead? [UseKtx]
           TextUtils.isDigitsOnly(html).not()
           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 4 warnings
@@ -1918,22 +1919,22 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         @@ -5 +6 @@
         -  val html = TextUtils.htmlEncode("Is x > y ?")
         +  val html = "Is x > y ?".htmlEncode()
-        Autofix for src/test/pkg/test.kt line 6: Replace with the isDigitsOnly extension function:
+        Autofix for src/test/pkg/test.kt line 7: Replace with the isDigitsOnly extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.isDigitsOnly
-        @@ -6 +7 @@
+        @@ -7 +8 @@
         -  val digits = TextUtils.isDigitsOnly(html)
         +  val digits = html.isDigitsOnly()
-        Autofix for src/test/pkg/test.kt line 7: Replace with the trimmedLength extension function:
+        Autofix for src/test/pkg/test.kt line 8: Replace with the trimmedLength extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.trimmedLength
-        @@ -7 +8 @@
+        @@ -8 +9 @@
         -  val length = android.text.TextUtils.getTrimmedLength(html)
         +  val length = html.trimmedLength()
-        Autofix for src/test/pkg/test.kt line 8: Replace with the isDigitsOnly extension function:
+        Autofix for src/test/pkg/test.kt line 9: Replace with the isDigitsOnly extension function:
         @@ -2,0 +3 @@
         +import androidx.core.text.isDigitsOnly
-        @@ -8 +9 @@
+        @@ -9 +10 @@
         -  TextUtils.isDigitsOnly(html).not()
         +  html.isDigitsOnly().not()
         """
@@ -2185,6 +2186,72 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         -            true
         -        )
         +        scaledVideoBitmap = videoBitmap.scale((videoBitmap.width / originalScale).toInt(), (videoBitmap.height / originalScale).toInt())
+        """
+      )
+  }
+
+  fun testNullAndCastBitmap() {
+    // See: https://issuetracker.google.com/492246721
+    lint()
+      .files(
+        java(
+            """
+            package test.pkg;
+
+            import android.graphics.Bitmap;
+
+            public class Util {
+              public static Bitmap giveBitmap() {
+                return null;
+              }
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package test.pkg
+
+            import android.content.Context
+            import android.graphics.Bitmap
+            import android.graphics.drawable.BitmapDrawable
+
+            fun foo(context: Context, bitmap: Bitmap) {
+              BitmapDrawable(context.resources, null as? Bitmap) // no warning due to nullability
+              BitmapDrawable(context.resources, Util.giveBitmap()) // no warning due to flexible nullability
+              BitmapDrawable(context.resources, bitmap) // WARN 1
+              BitmapDrawable(context.resources, bitmap as Bitmap) // WARN 2, and quick-fix includes parens
+            }
+            """
+          )
+          .indented(),
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:10: Warning: Use the KTX extension function Bitmap.toDrawable instead? [UseKtx]
+          BitmapDrawable(context.resources, bitmap) // WARN 1
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        src/test/pkg/test.kt:11: Warning: Use the KTX extension function Bitmap.toDrawable instead? [UseKtx]
+          BitmapDrawable(context.resources, bitmap as Bitmap) // WARN 2, and quick-fix includes parens
+          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        0 errors, 2 warnings
+        """
+      )
+      .expectFixDiffs(
+        """
+        Autofix for src/test/pkg/test.kt line 10: Replace with the toDrawable extension function:
+        @@ -5,0 +6 @@
+        +import androidx.core.graphics.drawable.toDrawable
+        @@ -10 +11 @@
+        -  BitmapDrawable(context.resources, bitmap) // WARN 1
+        +  bitmap.toDrawable(context.resources) // WARN 1
+        Autofix for src/test/pkg/test.kt line 11: Replace with the toDrawable extension function:
+        @@ -5,0 +6 @@
+        +import androidx.core.graphics.drawable.toDrawable
+        @@ -11 +12 @@
+        -  BitmapDrawable(context.resources, bitmap as Bitmap) // WARN 2, and quick-fix includes parens
+        +  (bitmap as Bitmap).toDrawable(context.resources) // WARN 2, and quick-fix includes parens
         """
       )
   }
@@ -2629,10 +2696,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
             import android.view.View
             import java.util.Locale
 
-            fun localeTest() {
-                if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+            fun localeTest(locale: Locale) {
+                if (TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
                 }
-                val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
+                val dir = getLayoutDirectionFromLocale(locale) // WARN 2
+                val dir2 = TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) // no warning due to nullability
             }
             """
           )
@@ -2642,11 +2710,11 @@ class UseKtxDetectorTest : AbstractCheckTest() {
       .expect(
         """
         src/test/pkg/test.kt:9: Warning: Use the KTX extension property Locale.layoutDirection instead? [UseKtx]
-            if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
-                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            if (TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/test.kt:11: Warning: Use the KTX extension property Locale.layoutDirection instead? [UseKtx]
-            val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
-                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+            val dir = getLayoutDirectionFromLocale(locale) // WARN 2
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         0 errors, 2 warnings
         """
       )
@@ -2656,14 +2724,14 @@ class UseKtxDetectorTest : AbstractCheckTest() {
         @@ -5,0 +6 @@
         +import androidx.core.text.layoutDirection
         @@ -9 +10 @@
-        -    if (TextUtils.getLayoutDirectionFromLocale(Locale.getDefault()) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
-        +    if (Locale.getDefault().layoutDirection == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+        -    if (TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_LTR) { // WARN 1
+        +    if (locale.layoutDirection == View.LAYOUT_DIRECTION_LTR) { // WARN 1
         Autofix for src/test/pkg/test.kt line 11: Replace with the layoutDirection extension property:
         @@ -5,0 +6 @@
         +import androidx.core.text.layoutDirection
         @@ -11 +12 @@
-        -    val dir = getLayoutDirectionFromLocale(Locale.getDefault()) // WARN 2
-        +    val dir = Locale.getDefault().layoutDirection // WARN 2
+        -    val dir = getLayoutDirectionFromLocale(locale) // WARN 2
+        +    val dir = locale.layoutDirection // WARN 2
         """
       )
   }
