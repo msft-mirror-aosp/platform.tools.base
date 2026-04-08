@@ -139,7 +139,7 @@ object XMLTransformer {
   ) {
     val projectCoverage =
       aggregatedVariantCoverages.getOrPut(context.variantName) {
-        VariantCoverage(context.variantName, CoverageInfo(0, 0, 0), CoverageInfo(0, 0, 0))
+        VariantCoverage(context.variantName, CoverageInfo(null, 0, 0), CoverageInfo(null, 0, 0))
       }
     val newCovered = projectCoverage.instruction.covered + overallCoverage.instruction.covered
     val newTotal = projectCoverage.instruction.total + overallCoverage.instruction.total

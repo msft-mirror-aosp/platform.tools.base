@@ -233,7 +233,7 @@ const UIUtils = {
     },
 
     getCoverageClass(percentage) {
-        if (percentage === '--') return 'text-gray-500';
+        if (percentage === '--' || percentage === null || percentage === undefined) return 'text-gray-500';
         if (percentage >= 80) return 'text-green-600';
         if (percentage >= 60) return 'text-yellow-600';
         return 'text-red-600';
@@ -1089,9 +1089,9 @@ const CoverageReportApp = {
 
         if (found) {
             return {
-                instrPercent: found.instruction.percent + '%',
+                instrPercent: (found.instruction.percent === null || found.instruction.percent === undefined) ? '--' : found.instruction.percent + '%',
                 instrRatio: `${found.instruction.covered}/${found.instruction.total}`,
-                branchPercent: found.branch.percent + '%',
+                branchPercent: (found.branch.percent === null || found.branch.percent === undefined) ? '--' : found.branch.percent + '%',
                 branchRatio: `${found.branch.covered}/${found.branch.total}`,
                 instrColor: UIUtils.getCoverageClass(found.instruction.percent),
                 branchColor: UIUtils.getCoverageClass(found.branch.percent)

@@ -26,8 +26,8 @@ import org.xml.sax.InputSource
 class XMLParsingUtilsTest {
 
   @Test
-  fun `calculatePercent with zero total returns zero`() {
-    Truth.assertThat(calculatePercent(covered = 50, total = 0)).isEqualTo(0)
+  fun `calculatePercent with zero total returns null`() {
+    Truth.assertThat(calculatePercent(covered = 50, total = 0)).isNull()
   }
 
   @Test

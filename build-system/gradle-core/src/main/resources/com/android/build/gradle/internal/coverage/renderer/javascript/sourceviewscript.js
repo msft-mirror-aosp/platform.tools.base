@@ -466,10 +466,11 @@ const SourceViewApp = {
         const summaryGroup = fileReport.variantCoverageSummary.find(s => s.variantName === variantName);
         const summaryStats = this.resolveCoverageForGroup(summaryGroup);
 
-        const percent = summaryStats ? summaryStats.instruction.percent : 0;
+        const percentValue = summaryStats ? summaryStats.instruction.percent : null;
+        const percentDisplay = (percentValue === null || percentValue === undefined) ? '--' : percentValue + '%';
         const covered = summaryStats ? summaryStats.instruction.covered : 0;
         const total = summaryStats ? summaryStats.instruction.total : 0;
-        const colorClass = UIUtils.getCoverageClass(percent);
+        const colorClass = UIUtils.getCoverageClass(percentValue);
 
         const tbody = fileReport.linesCoverages.map(line => {
             const { lineNumber, lineText, variantCoverageDetails } = line;
@@ -510,7 +511,7 @@ const SourceViewApp = {
                 <div class="variant-header">
                     <div>${variantName}</div>
                     <div class="flex items-baseline gap-2 mt-1">
-                        <span class="font-bold ${colorClass}">${percent}%</span>
+                        <span class="font-bold ${colorClass}">${percentDisplay}</span>
                         <span class="text-xs text-gray-500 font-normal">${covered}/${total} Lines</span>
                     </div>
                 </div>
