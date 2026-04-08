@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.integration.testing
 
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_MIN_SDK
 import com.android.build.gradle.integration.common.fixture.model.ModelComparator
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import org.junit.Rule
 import org.junit.Test
 
@@ -28,55 +26,13 @@ class TestWithDepTest : ModelComparator() {
   @get:Rule
   val project =
     GradleRule.configure().from {
-      androidApplication(":app", createMinimumProject = false) {
-        android {
-          namespace = "com.android.tests.basic"
-          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
-          defaultConfig {
-            minSdk = SUPPORT_LIB_MIN_SDK
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-          }
-        }
+      androidApplication(":app") {
         dependencies {
           androidTestImplementation("com.google.guava:guava:19.0")
           androidTestImplementation("junit:junit:4.12")
           androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
           androidTestImplementation("androidx.test:rules:1.4.0-alpha06")
         }
-        files.add(
-          "src/main/AndroidManifest.xml",
-          """
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application />
-          </manifest>
-          """
-            .trimIndent(),
-        )
-        files.add(
-          "src/main/java/com/android/tests/basic/Main.java",
-          """
-          package com.android.tests.basic;
-          import android.app.Activity;
-          public class Main extends Activity {}
-          """
-            .trimIndent(),
-        )
-        files.add(
-          "src/androidTest/java/com/android/tests/basic/MainTest.java",
-          """
-          package com.android.tests.basic;
-          import org.junit.Test;
-          import com.google.common.collect.ImmutableList;
-          public class MainTest {
-              @Test
-              public void testGuava() {
-                  ImmutableList.of(1);
-              }
-          }
-          """
-            .trimIndent(),
-        )
       }
     }
 
