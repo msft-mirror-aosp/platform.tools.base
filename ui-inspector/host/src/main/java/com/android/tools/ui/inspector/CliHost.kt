@@ -19,7 +19,6 @@ package com.android.tools.ui.inspector
 import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
-import com.android.adblib.DeviceSelector
 import com.android.adblib.tools.createStandaloneSession
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
@@ -55,13 +54,15 @@ class DumpUiCommand : Callable<Int> {
 
     val adbSession = sessionFactory()
 
-    runBlocking {
-      val deviceSelector = DeviceSelector.fromSerialNumber(serial)
-      val serialNumber = adbSession.hostServices.getSerialNo(deviceSelector, true)
-      System.err.println("Connected to device: $serialNumber")
-    }
+    try {
+      val injectionManager = InjectionManager(adbSession)
 
-    return EXIT_OK
+      runBlocking { injectionManager.injectAndAttach(serial, packageName) }
+      return EXIT_OK
+    } catch (e: Exception) {
+      System.err.println("Error: ${e.message}")
+      return EXIT_ERROR
+    }
   }
 }
 

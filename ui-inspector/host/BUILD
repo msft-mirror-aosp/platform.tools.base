@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 
 # managed by go/iml_to_build
@@ -18,4 +19,13 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@maven//:info.picocli.picocli",
     ],
+)
+
+java_binary(
+    name = "cli",
+    # Needed during development to make the agent available in runfiles when running via 'bazel run'
+    data = ["//tools/base/ui-inspector/agent/native:lib_ui_inspector_agent.so"],
+    main_class = "com.android.tools.ui.inspector.CliHostKt",
+    visibility = ["//visibility:public"],
+    runtime_deps = [":studio.android.sdktools.ui-inspector"],
 )
