@@ -18,6 +18,7 @@ package com.android.tools.lint.checks
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiParameter
 import org.jetbrains.kotlin.analysis.api.KaImplementationDetail
+import org.jetbrains.kotlin.analysis.api.KaPlatformInterface
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.platform.projectStructure.KotlinProjectStructureProvider
@@ -50,7 +51,7 @@ import org.jetbrains.uast.toUElementOfType
  * [org.jetbrains.kotlin.analysis.api.analyze], but also allows the use of a Java element. And unlike the version of analyze that takes a
  * KaModule, this function does not use `crossinline` on [action].
  */
-@OptIn(KaImplementationDetail::class)
+@OptIn(KaImplementationDetail::class, KaPlatformInterface::class)
 internal inline fun <R> analyzeFromPsi(element: PsiElement, action: KaSession.() -> R): R {
   val useSiteModule = KotlinProjectStructureProvider.getInstance(element.project).getModule(element, useSiteModule = null)
   val sessionProvider = KaSessionProvider.getInstance(useSiteModule.project)
