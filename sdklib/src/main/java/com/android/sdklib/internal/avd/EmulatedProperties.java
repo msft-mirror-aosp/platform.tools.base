@@ -59,7 +59,12 @@ public class EmulatedProperties {
     public static final int RECOMMENDED_NUMBER_OF_CORES =
             max(2, min(4, Runtime.getRuntime().availableProcessors() / 2));
 
-    public static final Storage DEFAULT_INTERNAL_STORAGE = new Storage(6, Storage.Unit.GiB);
+    /**
+     * The default internal storage capacity if we know nothing about the device. Prefer
+     * defaultInternalStorage(Device) otherwise.
+     */
+    public static final Storage DEFAULT_INTERNAL_STORAGE = new Storage(10, Storage.Unit.GiB);
+
     public static final Storage DEFAULT_HEAP = new Storage(16, Storage.Unit.MiB);
     public static final AvdNetworkSpeed DEFAULT_NETWORK_SPEED = AvdNetworkSpeed.FULL;
     public static final AvdNetworkLatency DEFAULT_NETWORK_LATENCY = AvdNetworkLatency.NONE;
@@ -218,6 +223,9 @@ public class EmulatedProperties {
     }
 
     public static Storage defaultInternalStorage(@NonNull Device device) {
+        if (Device.isWear(device) || Device.isAiGlasses(device) || Device.isTv(device)) {
+            return new Storage(6, Storage.Unit.GiB);
+        }
         return DEFAULT_INTERNAL_STORAGE;
     }
 
