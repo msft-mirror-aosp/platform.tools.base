@@ -12,6 +12,7 @@ iml_module(
     visibility = ["//visibility:public"],
     deps = [
         "//tools/base/adblib:studio.android.sdktools.adblib",
+        "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/common:studio.android.sdktools.common",
         "@intellij//:com.intellij.java",
         "@intellij//:intellij-sdk",

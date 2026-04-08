@@ -16,8 +16,14 @@
 
 package com.android.tools.ui.inspector
 
+import com.android.adblib.AdbLogger
+import com.android.adblib.AdbLoggerFactory
+import com.android.adblib.AdbSession
+import com.android.adblib.DeviceSelector
+import com.android.adblib.tools.createStandaloneSession
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
+import kotlinx.coroutines.runBlocking
 import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
@@ -39,8 +45,22 @@ class DumpUiCommand : Callable<Int> {
   @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
   @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
 
+  companion object {
+    /** Factory for creating [AdbSession]. Can be overridden in tests. */
+    var sessionFactory: () -> AdbSession = { createStandaloneSession(NO_LOGGING) }
+  }
+
   override fun call(): Int {
     System.err.println("Executing dump-ui for package: $packageName on device: $serial")
+
+    val adbSession = sessionFactory()
+
+    runBlocking {
+      val deviceSelector = DeviceSelector.fromSerialNumber(serial)
+      val serialNumber = adbSession.hostServices.getSerialNo(deviceSelector, true)
+      System.err.println("Connected to device: $serialNumber")
+    }
+
     return EXIT_OK
   }
 }
@@ -49,3 +69,20 @@ fun main(args: Array<String>) {
   val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute(*args)
   exitProcess(exitCode)
 }
+
+/** A logger factory that silences all adblib logs to keep the CLI output clean. */
+private val NO_LOGGING =
+  object : AdbLoggerFactory {
+    override val logger =
+      object : AdbLogger() {
+        override val minLevel = Level.ERROR
+
+        override fun log(level: Level, message: String) = Unit
+
+        override fun log(level: Level, exception: Throwable?, message: String) = Unit
+      }
+
+    override fun createLogger(cls: Class<*>) = logger
+
+    override fun createLogger(category: String) = logger
+  }
