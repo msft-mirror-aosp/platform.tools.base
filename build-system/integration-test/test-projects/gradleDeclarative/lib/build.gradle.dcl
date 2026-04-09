@@ -59,7 +59,7 @@ androidLibrary {
         implementation("org.apache.commons:commons-lang3:3.13.0")
         implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.24")
         implementation("com.google.guava:guava:33.3.1-jre")
-
+        implementation(platform("org.ow2.asm:asm-bom:9.7"))
         testImplementation("junit:junit:4.13.2")
         androidTestImplementation("androidx.test:runner:1.4.0-alpha06")
         androidTestImplementation("androidx.test:rules:1.4.0-alpha06")

@@ -19,10 +19,11 @@ package com.android.build.api.dsl
 import org.gradle.api.Incubating
 import org.gradle.api.artifacts.dsl.DependencyCollector
 import org.gradle.api.artifacts.dsl.GradleDependencies
+import org.gradle.api.plugins.jvm.PlatformDependencyModifiers
 
 @Incubating
 /** @suppress */
-interface DependenciesExtension : GradleDependencies {
+interface DependenciesExtension : GradleDependencies, PlatformDependencyModifiers {
   // main configurations
   @get:Incubating val api: DependencyCollector
   @get:Incubating val implementation: DependencyCollector

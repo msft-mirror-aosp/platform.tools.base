@@ -750,7 +750,6 @@ https://issuetracker.google.com/497537804
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType> ()
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryFlavor> ()
-  * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies
   * com.android.build.api.dsl.DependenciesExtension.getAndroidTestImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
@@ -789,3 +788,5 @@ https://issuetracker.google.com/497537804
 https://issuetracker.google.com/498938267
   * com.android.build.api.dsl.ApplicationBuildType.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
   * com.android.build.api.dsl.ApplicationBuildType.getBaselineProfile: com.android.build.api.dsl.BaselineProfile ()
+https://issuetracker.google.com/501095983
+  * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies, org.gradle.api.plugins.jvm.PlatformDependencyModifiers

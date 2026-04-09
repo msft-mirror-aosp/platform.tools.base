@@ -1320,7 +1320,7 @@ package com.android.build.api.dsl {
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.DefaultInputsForAgpTestSuites JOURNEYS_TEST;
   }
 
-  @org.gradle.api.Incubating public interface DependenciesExtension extends org.gradle.api.artifacts.dsl.GradleDependencies {
+  @org.gradle.api.Incubating public interface DependenciesExtension extends org.gradle.api.artifacts.dsl.GradleDependencies org.gradle.api.plugins.jvm.PlatformDependencyModifiers {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getAndroidTestImplementation();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getApi();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getImplementation();
