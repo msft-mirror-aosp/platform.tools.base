@@ -20,6 +20,7 @@ import com.android.adblib.AdbSession
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.ShellCommandOutput
+import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
 import com.android.adblib.syncSend
 import java.nio.file.Path
@@ -47,6 +48,15 @@ private const val DEVICE_TMP_AGENT_PATH = "/data/local/tmp/$AGENT_FILE_NAME"
 /** The temporary path on the device where the service jar is first pushed. */
 private const val DEVICE_TMP_SERVICE_JAR_PATH = "/data/local/tmp/$SERVICE_JAR_FILE_NAME"
 
+/** The name of the payload jar file. */
+private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
+
+/** The relative path to the payload jar in the runfiles. */
+private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/inspector/$PAYLOAD_JAR_FILE_NAME"
+
+/** The temporary path on the device where the payload jar is first pushed. */
+private const val DEVICE_TMP_PAYLOAD_JAR_PATH = "/data/local/tmp/$PAYLOAD_JAR_FILE_NAME"
+
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
 
@@ -60,6 +70,7 @@ class InjectionManager(
   private val adbSession: AdbSession,
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
+  private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
 ) {
 
   /**
@@ -67,23 +78,51 @@ class InjectionManager(
    *
    * @param serial The device serial number.
    * @param packageName The package name of the app to attach the agent to.
+   * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
-  suspend fun injectAndAttach(serial: String, packageName: String) = coroutineScope {
+  suspend fun injectAndAttach(serial: String, packageName: String): String = coroutineScope {
     val deviceSelector = DeviceSelector.fromSerialNumber(serial)
 
     val deviceAbi = getDeviceAbi(deviceSelector)
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
+    val payloadJarLocalPath = getPayloadJarLocalPath()
 
+    val pidDeferred = async { getPid(deviceSelector, packageName) }
     val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
     val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
+    val payloadPush = async { pushFileToDevice(deviceSelector, payloadJarLocalPath, DEVICE_TMP_PAYLOAD_JAR_PATH) }
 
     val agentRemoteTmpPath = agentPush.await()
     val serviceJarRemoteTmpPath = jarPush.await()
+    val payloadRemoteTmpPath = payloadPush.await()
 
-    copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath)
+    copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath, payloadRemoteTmpPath)
 
-    attachAgent(deviceSelector, packageName)
+    val pid = pidDeferred.await()
+    attachAgent(deviceSelector, packageName, pid)
+
+    setupAdbForward(deviceSelector, pid)
+  }
+
+  /** Sets up adb port forwarding to the agent. */
+  private suspend fun setupAdbForward(deviceSelector: DeviceSelector, pid: String): String {
+    val localSpec = SocketSpec.Tcp()
+    val remoteSpec = SocketSpec.LocalAbstract("ui_inspector_$pid")
+    val port = adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec)
+    return port ?: throw IllegalStateException("Failed to set up adb forward")
+  }
+
+  /** Queries the device for the PID of the specified package. */
+  private suspend fun getPid(deviceSelector: DeviceSelector, packageName: String): String {
+    val output = runShellCommand(deviceSelector, "pidof $packageName").stdout.trim()
+    if (output.isEmpty()) {
+      throw IllegalStateException("Failed to find PID for package $packageName. Please make sure the app is running on the device.")
+    }
+    // pidof can return multiple PIDs if there are multiple processes.
+    // We take the first one, which is usually the main process.
+    // TODO: Handle multi-process apps more robustly.
+    return output.split(" ")[0]
   }
 
   /** Queries the device for its CPU ABI. */
@@ -108,23 +147,33 @@ class InjectionManager(
     return serviceJarPath
   }
 
-  /** Copies files from staging to app directory and sets permissions in a single atomic operation. */
+  /** Resolves the local path to the payload jar. */
+  private fun getPayloadJarLocalPath(): Path {
+    if (!payloadJarPath.toFile().exists()) {
+      throw IllegalStateException("Payload JAR not found at $payloadJarPath")
+    }
+    return payloadJarPath
+  }
+
   private suspend fun copyAndSetupFiles(
     deviceSelector: DeviceSelector,
     packageName: String,
     agentRemoteTmpPath: String,
     serviceJarRemoteTmpPath: String,
+    payloadRemoteTmpPath: String,
   ) {
     val setupCmd =
       "run-as $packageName sh -c '" +
         // Delete previous versions of the files
-        "rm -f $AGENT_FILE_NAME $SERVICE_JAR_FILE_NAME && " +
+        "rm -f $AGENT_FILE_NAME $SERVICE_JAR_FILE_NAME $PAYLOAD_JAR_FILE_NAME && " +
         // Copy new versions from tmp
         "cat $agentRemoteTmpPath > $AGENT_FILE_NAME && " +
         "cat $serviceJarRemoteTmpPath > $SERVICE_JAR_FILE_NAME && " +
+        "cat $payloadRemoteTmpPath > $PAYLOAD_JAR_FILE_NAME && " +
         // Set permissions to 444
         "chmod 444 $AGENT_FILE_NAME && " +
-        "chmod 444 $SERVICE_JAR_FILE_NAME'"
+        "chmod 444 $SERVICE_JAR_FILE_NAME && " +
+        "chmod 444 $PAYLOAD_JAR_FILE_NAME'"
     runShellCommand(deviceSelector, setupCmd)
   }
 
@@ -143,11 +192,11 @@ class InjectionManager(
     return remoteTmpPath
   }
 
-  /** Attaches the agent to the running application via JVMTI. */
-  private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String) {
+  private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String, pid: String) {
     val appPath = "/data/data/$packageName/$AGENT_FILE_NAME"
     val appJarPath = "/data/data/$packageName/$SERVICE_JAR_FILE_NAME"
-    val attachCmd = "cmd activity attach-agent $packageName $appPath=$appJarPath"
+    val appPayloadJarPath = "/data/data/$packageName/$PAYLOAD_JAR_FILE_NAME"
+    val attachCmd = "cmd activity attach-agent $packageName \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
     runShellCommand(deviceSelector, attachCmd)
   }
 

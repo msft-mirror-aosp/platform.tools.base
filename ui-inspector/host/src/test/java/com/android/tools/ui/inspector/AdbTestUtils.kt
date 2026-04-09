@@ -18,6 +18,7 @@ package com.android.tools.ui.inspector
 
 import com.android.adblib.AdbDeviceServices
 import com.android.adblib.AdbDeviceSyncServices
+import com.android.adblib.AdbHostServices
 import com.android.adblib.AdbInputChannel
 import com.android.adblib.AdbOutputChannel
 import com.android.adblib.AdbSession
@@ -27,18 +28,31 @@ import com.android.adblib.DirectoryEntryV2
 import com.android.adblib.FileStat
 import com.android.adblib.FileStatV2
 import com.android.adblib.RemoteFileMode
+import com.android.adblib.SocketSpec
 import com.android.adblib.SyncProgress
 import com.android.adblib.testing.FakeAdbDeviceServices
+import com.android.adblib.testing.FakeAdbHostServices
 import com.android.adblib.testing.FakeAdbSession
 import java.nio.file.attribute.FileTime
 import kotlinx.coroutines.flow.Flow
 
-/**
- * A custom [AdbSession] for testing that allows overriding [deviceServices].
- *
- * This is needed because [FakeAdbSession] does not allow overriding [deviceServices] directly with a custom implementation.
- */
-class TestAdbSession(val delegate: FakeAdbSession, override val deviceServices: AdbDeviceServices) : AdbSession by delegate
+/** A custom [AdbSession] for testing that allows overriding [deviceServices] and [hostServices]. */
+class TestAdbSession(
+  val delegate: FakeAdbSession,
+  override val deviceServices: AdbDeviceServices = delegate.deviceServices,
+  override val hostServices: AdbHostServices = delegate.hostServices,
+) : AdbSession by delegate
+
+/** A custom [AdbHostServices] for testing that provides a fake implementation of [forward]. */
+class TestAdbHostServices(val delegate: FakeAdbHostServices) : AdbHostServices by delegate {
+  var forwardedPort: String? = "12345"
+  val recordedForwardCalls = mutableListOf<Triple<DeviceSelector, SocketSpec, SocketSpec>>()
+
+  override suspend fun forward(device: DeviceSelector, local: SocketSpec, remote: SocketSpec, rebind: Boolean): String? {
+    recordedForwardCalls.add(Triple(device, local, remote))
+    return forwardedPort
+  }
+}
 
 /**
  * A custom [AdbDeviceServices] for testing that provides a fake implementation of [sync].

@@ -112,23 +112,33 @@ descends from the app class loader.
 The main class of `ui-inspector-service.jar` is `InspectorService`,
 which:
 
-* Creates a socket connected to
-  `localabstract:layout_inspector_cli_<pid>`.
+* Receives the path to
+  the payload JAR (passed from C++).
 * Finds the app class loader.
 * Creates a new `DexClassLoader` (as a child of the app class loader) to
-  load the inspector's dex.
-* Finds `InspectorLauncher` in the new class loader, and launches it by
-  providing the socket and `ArtTooling` instance.
+  load the payload JAR (`lib_ui_inspector_payload.jar`).
+* Finds `InspectorLauncher` in the new class loader, and invokes its
+  entry point.
 
 #### InspectorLauncher (agent/inspector)
 
-This class is responsible for launching the inspectors. It will handle:
+This class is the entry point of the payload. Loading this class and its
+dependencies via a separate `DexClassLoader` is necessary to avoid
+loading interfaces like `androidx.appinspection` into the Bootstrap
+ClassLoader, preventing potential version conflicts if the app or other
+tools (like Android Studio's App Inspection) also use those libraries in
+the same process.
 
-* Resolution of the compose inspector version.
-* Creations of executors used by the inspectors.
-* Create abstraction over the socket, to hide the detail from the
-  inspectors.
-* Instantiation of view and compose inspectors.
+It is responsible for:
+
+* Spawning a background coroutine/thread.
+* Creating a `LocalServerSocket` bound to
+  `localabstract:ui_inspector_<pid>`.
+* Entering a loop to accept connections from the
+  Host CLI.
+* Processing commands and interacting with the app's UI hierarchy.
+* Instantiating View and Compose inspectors (reused from Layout
+  Inspector).
 
 #### ViewInspector (agent/inspector)
 

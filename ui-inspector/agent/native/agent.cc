@@ -16,30 +16,56 @@
 
 #include <jni.h>
 #include <jvmti.h>
+#include <optional>
 #include <string>
+#include <vector>
 #include "tools/base/transport/native/jvmti/hidden_api_silencer.h"
 #include "tools/base/transport/native/jvmti/jvmti_helper.h"
 #include "tools/base/transport/native/utils/log.h"
+#include "tools/base/transport/native/utils/tokenizer.h"
 
 namespace {
 constexpr const char* kLogTag = "studio.ui-inspector";
 constexpr const char* kInspectorServiceClassName =
     "com/android/tools/ui/inspector/service/InspectorService";
 constexpr const char* kInitializeMethodName = "initialize";
-constexpr const char* kInitializeMethodSignature = "(Ljava/lang/String;)V";
+constexpr const char* kInitializeMethodSignature =
+    "(Ljava/lang/String;Ljava/lang/String;)I";
+
+// Options passed to the agent on attach.
+struct AgentOptions {
+  std::string service_jar;
+  std::string payload_jar;
+  std::string pid;
+};
+
+// Parses options in format: service_jar;payload_jar;pid
+std::optional<AgentOptions> parseOptions(const char* options) {
+  if (options == nullptr || strlen(options) == 0) return std::nullopt;
+
+  std::vector<std::string> args = profiler::Tokenizer::GetTokens(options, ";");
+  if (args.size() != 3) return std::nullopt;
+
+  return AgentOptions{args[0], args[1], args[2]};
+}
 }  // namespace
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
                                                  void* reserved) {
   profiler::Log::I(kLogTag, "UI Inspector Agent attaching...");
 
-  if (options == nullptr || strlen(options) == 0) {
+  // Parse options
+  auto options_opt = parseOptions(options);
+  if (!options_opt) {
     profiler::Log::E(
-        kLogTag, "Agent requires options pointing to ui-inspector-service.jar");
-    return JNI_OK;  // Return OK to avoid ART retrying attachment
+        kLogTag,
+        "Invalid options format. Expected: service_jar;payload_jar;pid");
+    return JNI_OK;
   }
 
-  std::string service_jar_path = std::string(options);
+  std::string service_jar_path = options_opt->service_jar;
+  std::string payload_jar_path = options_opt->payload_jar;
+  std::string pid = options_opt->pid;
 
   JNIEnv* env = profiler::GetThreadLocalJNI(vm);
   if (env == nullptr) {
@@ -84,9 +110,22 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   }
 
   // Call initialize
-  jstring args = env->NewStringUTF("Hello from Agent C++");
-  env->CallStaticVoidMethod(serviceClass, initMethod, args);
+  jstring arg1 = env->NewStringUTF(payload_jar_path.c_str());
+  jstring arg2 = env->NewStringUTF(pid.c_str());
 
-  profiler::Log::I(kLogTag, "Agent attached successfully!");
+  jint result = env->CallStaticIntMethod(serviceClass, initMethod, arg1, arg2);
+
+  if (env->ExceptionCheck()) {
+    profiler::Log::E(kLogTag, "Exception in %s.%s", kInspectorServiceClassName,
+                     kInitializeMethodName);
+    env->ExceptionDescribe();
+    env->ExceptionClear();
+  } else if (result != 0) {
+    profiler::Log::E(kLogTag, "%s.%s failed with code %d",
+                     kInspectorServiceClassName, kInitializeMethodName, result);
+  } else {
+    profiler::Log::I(kLogTag, "Agent attached successfully!");
+  }
+
   return JNI_OK;
 }

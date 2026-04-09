@@ -36,7 +36,8 @@ class InjectionManagerTest {
 
   private lateinit var fakeSession: FakeAdbSession
   private lateinit var testDeviceServices: TestAdbDeviceServices
-  private lateinit var testSession: TestAdbSession
+  private lateinit var testHostServices: TestAdbHostServices
+  private lateinit var testSession: com.android.adblib.AdbSession
   private lateinit var dummyAgent: Path
   private lateinit var dummyJar: Path
   private lateinit var agentPathResolver: (String) -> Path
@@ -48,57 +49,73 @@ class InjectionManagerTest {
   fun setUp() {
     fakeSession = FakeAdbSession()
     testDeviceServices = TestAdbDeviceServices(fakeSession.deviceServices)
-    testSession = TestAdbSession(fakeSession, testDeviceServices)
+    testHostServices = TestAdbHostServices(fakeSession.hostServices)
+    testSession = TestAdbSession(fakeSession, testDeviceServices, testHostServices)
 
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
     dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
     dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
+    val dummyPayload = tempFolder.newFile("lib_ui_inspector_payload.jar").toPath()
 
     agentPathResolver = { abi -> dummyAgent }
   }
 
   @Test
   fun testInjectAndAttach() = runTest {
-    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar)
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
     val setupCmd =
       "run-as $packageName sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar && " +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
         "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
         "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
         "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar'"
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
     fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "cmd activity attach-agent $packageName /data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar",
+      "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
 
-    injectionManager.injectAndAttach(deviceSerial, packageName)
+    val port = injectionManager.injectAndAttach(deviceSerial, packageName)
+    assertThat(port).isEqualTo("12345")
 
     // Verify that syncSend was called with correct parameters
-    assertThat(testDeviceServices.recordedSyncSends).hasSize(2)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(3)
     val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(paths.sorted()).containsExactly("/data/local/tmp/lib_ui_inspector_agent.so", "/data/local/tmp/lib_ui_inspector_service.jar")
+    assertThat(paths.sorted())
+      .containsExactly(
+        "/data/local/tmp/lib_ui_inspector_agent.so",
+        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_payload.jar",
+      )
   }
 
   @Test
   fun testInjectAndAttach_CommandFails() = runTest {
-    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar)
+    val dummyPayload = tempFolder.root.toPath().resolve("lib_ui_inspector_payload.jar")
+    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar, dummyPayload)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, "pidof $packageName", "1234\n")
 
     val setupCmd =
       "run-as com.example sh -c '" +
-        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar && " +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar lib_ui_inspector_payload.jar && " +
         "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
         "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_payload.jar > lib_ui_inspector_payload.jar && " +
         "chmod 444 lib_ui_inspector_agent.so && " +
-        "chmod 444 lib_ui_inspector_service.jar'"
+        "chmod 444 lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_payload.jar'"
 
     // Configure this command to FAIL!
     fakeSession.deviceServices.configureShellCommand(
@@ -118,8 +135,13 @@ class InjectionManagerTest {
 
     // Verify that both files were pushed to /data/local/tmp before the setup command failed.
     // The push operations occur concurrently and complete before the copy/setup step is executed.
-    assertThat(testDeviceServices.recordedSyncSends).hasSize(2)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(3)
     val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
-    assertThat(paths.sorted()).containsExactly("/data/local/tmp/lib_ui_inspector_agent.so", "/data/local/tmp/lib_ui_inspector_service.jar")
+    assertThat(paths.sorted())
+      .containsExactly(
+        "/data/local/tmp/lib_ui_inspector_agent.so",
+        "/data/local/tmp/lib_ui_inspector_service.jar",
+        "/data/local/tmp/lib_ui_inspector_payload.jar",
+      )
   }
 }
