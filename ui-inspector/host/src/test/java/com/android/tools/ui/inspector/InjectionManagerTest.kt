@@ -21,11 +21,11 @@ import com.android.adblib.DeviceList
 import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
+import com.google.common.truth.Truth.assertThat
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -84,9 +84,9 @@ class InjectionManagerTest {
     injectionManager.injectAndAttach(deviceSerial, packageName)
 
     // Verify that syncSend was called with correct parameters
-    assertEquals(1, testDeviceServices.recordedSyncSends.size)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(1)
     val syncCall = testDeviceServices.recordedSyncSends[0]
-    assertEquals("/data/local/tmp/lib_ui_inspector_agent.so", syncCall.remoteFilePath)
+    assertThat(syncCall.remoteFilePath).isEqualTo("/data/local/tmp/lib_ui_inspector_agent.so")
   }
 
   @Test
@@ -107,15 +107,15 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(deviceSerial, packageName)
       fail("Expected IllegalStateException was not thrown")
     } catch (e: IllegalStateException) {
-      assertEquals(
-        "Command 'run-as com.example sh -c 'cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so'' failed with exit code 1. Stderr: Package is not debuggable",
-        e.message,
-      )
+      assertThat(e.message)
+        .isEqualTo(
+          "Command 'run-as com.example sh -c 'cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so'' failed with exit code 1. Stderr: Package is not debuggable"
+        )
     }
 
     // Verify that syncSend was called even if a later step failed
-    assertEquals(1, testDeviceServices.recordedSyncSends.size)
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(1)
     val syncCall = testDeviceServices.recordedSyncSends[0]
-    assertEquals("/data/local/tmp/lib_ui_inspector_agent.so", syncCall.remoteFilePath)
+    assertThat(syncCall.remoteFilePath).isEqualTo("/data/local/tmp/lib_ui_inspector_agent.so")
   }
 }

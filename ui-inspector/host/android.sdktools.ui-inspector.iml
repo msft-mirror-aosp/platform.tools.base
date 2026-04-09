@@ -27,5 +27,6 @@
     <orderEntry type="module" module-name="android.sdktools.adblib" />
     <orderEntry type="module" module-name="android.sdktools.adblib.tools" />
     <orderEntry type="library" name="picocli" level="project" />
+    <orderEntry type="library" scope="TEST" name="truth" level="project" />
   </component>
 </module>

@@ -16,8 +16,8 @@
 
 package com.android.tools.ui.inspector
 
+import com.google.common.truth.Truth.assertThat
 import org.junit.After
-import org.junit.Assert.assertEquals
 import org.junit.Test
 import picocli.CommandLine
 
@@ -33,12 +33,12 @@ class CliHostTest {
   @Test
   fun testNoArgsReturnsError() {
     val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute()
-    assertEquals(1, exitCode)
+    assertThat(exitCode).isEqualTo(1)
   }
 
   @Test
   fun testDumpUiMissingArgsReturnsError() {
     val exitCode = CommandLine(UiInspectorCommand()).addSubcommand("dump-ui", DumpUiCommand()).execute("dump-ui")
-    assertEquals(2, exitCode)
+    assertThat(exitCode).isEqualTo(2)
   }
 }

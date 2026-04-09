@@ -8,6 +8,7 @@ iml_module(
     iml_files = ["android.sdktools.ui-inspector.iml"],
     test_deps = [
         "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
     ],
     test_srcs = ["src/test/java"],
     visibility = ["//visibility:public"],
