@@ -1,6 +1,6 @@
 # A set of trace points for DeployerRunnerTest.
 
-OutputEnvVar: TEST_UNDECLARED_OUTPUTS_DIR
+TraceOutputDirectoryEnvVar: TEST_UNDECLARED_OUTPUTS_DIR
 
 # Main configuration step
 Trace: org.gradle.configuration.DefaultBuildConfigurer::configure
