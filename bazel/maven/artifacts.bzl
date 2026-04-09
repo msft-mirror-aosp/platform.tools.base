@@ -181,6 +181,7 @@ ARTIFACTS = [
     "org.eclipse.elk:org.eclipse.elk.graph:0.3.0",
     "org.eclipse.emf:org.eclipse.emf.common:2.12.0",
     "org.eclipse.emf:org.eclipse.emf.ecore:2.12.0",
+    "org.fusesource.jansi:jansi:2.4.3",
     "org.glassfish.jaxb:jaxb-runtime:2.3.2",
     "org.glassfish.jaxb:jaxb-xjc:2.3.2",
     "org.gradle:gradle-tooling-api:9.4.1",

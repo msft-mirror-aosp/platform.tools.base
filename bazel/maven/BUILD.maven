@@ -11528,6 +11528,29 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.fusesource.jansi.jansi_2.4.3",
+    pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/2.4.3",
+    parent = "org.fusesource.fusesource-pom_1.12",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.fusesource.jansi.jansi",
+    classifiers = [],
+    parent = "org.fusesource.fusesource-pom_1.12",
+    jars = [
+        "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/2.4.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.glassfish.jaxb.codemodel_2.3.2",
     pom = "repository/org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2.pom",
     repo_root_path = "repository",
