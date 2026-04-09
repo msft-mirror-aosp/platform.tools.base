@@ -320,7 +320,7 @@ private constructor(
       hardwareConfig = builder.configProperties(),
       userSettings = builder.userSettings,
       bootProps = builder.device.bootProps,
-      environment = builder.environment(),
+      environment = builder.environmentProperties(),
       deviceHasPlayStore = builder.device.hasPlayStore(),
       removePrevious = false,
       editExisting = true,
@@ -467,34 +467,30 @@ private constructor(
         writeIniFile(bootPropsFile, bootProps, false)
       }
 
-      val updatedEnvironment: Map<String, String>
       val environmentIniPath: Path = avdFolder.resolve(ENVIRONMENT_INI)
-      if (environment != null && environment.isNotEmpty()) {
-        updatedEnvironment = environment.toMutableMap()
-        // The environment will contain either image or video, not both.
-        copyEnvironment(updatedEnvironment, EnvironmentKey.IMAGE, avdFolder)
-        copyEnvironment(updatedEnvironment, EnvironmentKey.VIDEO, avdFolder)
-        writeIniFile(environmentIniPath, updatedEnvironment, false)
-      } else {
-        updatedEnvironment = mutableMapOf()
-        environmentIniPath.deleteIfExists()
-        deleteContentOf(avdFolder.resolve(ENVIRONMENT_DIR))
+      when {
+        environment == null -> {
+          // Note that environment is a special case: we write it only on creation, and we don't attempt to read it on editing, so null is a
+          // normal case for updates -- it doesn't mean that the user selected "no environment" and thus we should delete the file. It is
+          // the emulator's responsibility to update it after creation.
+        }
+        environment.isEmpty() -> environmentIniPath.deleteIfExists()
+        else -> writeIniFile(environmentIniPath, environment, false)
       }
 
-      val oldAvdInfo = getAvd(avdName, false /*validAvdOnly*/)
+      val oldAvdInfo = getAvd(avdName, validAvdOnly = false)
 
       if (newAvdInfo == null) {
         newAvdInfo =
           createAvdInfoObject(
-            systemImage,
-            removePrevious,
-            editExisting,
-            iniFile,
-            avdFolder,
-            oldAvdInfo,
-            configValues,
-            userSettings ?: mutableMapOf(),
-            updatedEnvironment,
+            systemImage = systemImage,
+            removePrevious = removePrevious,
+            editExisting = editExisting,
+            metadataIniFile = iniFile,
+            avdFolder = avdFolder,
+            oldAvdInfo = oldAvdInfo,
+            values = configValues,
+            userSettings = userSettings ?: mutableMapOf(),
           )
       }
 
@@ -540,40 +536,6 @@ private constructor(
     require(keys.count(environment::containsKey) <= 1) { "Expected at most one of ${keys.joinToString()}" }
   }
 
-  /**
-   * Copies a background file (image or video) to the AVD directory. Updates the environment to use the path relative to the AVD directory.
-   *
-   * @param environment the environment configuration
-   * @param key the EnvironmentKey to check and update
-   * @param avdFolder the AVD's data folder
-   * @throws AvdManagerException if the copy fails
-   */
-  @Throws(AvdManagerException::class)
-  private fun copyEnvironment(environment: MutableMap<String, String>, key: String, avdFolder: Path) {
-    val value = environment[key]
-    if (value != null) {
-      val source = avdFolder.fileSystem.getPath(value)
-      if (source.isAbsolute) {
-        // An absolute path indicates an environment file that should be copied to the AVD folder.
-        val environmentDir = avdFolder.resolve(ENVIRONMENT_DIR)
-        Files.createDirectories(environmentDir)
-        deleteContentOf(environmentDir)
-        val destination = environmentDir.resolve(source.fileName)
-        try {
-          if (source != destination) {
-            FileUtils.copyFile(source, destination)
-          }
-          environment[key] = avdFolder.relativize(destination).toString()
-        } catch (e: IOException) {
-          throw AvdManagerException("Unable to copy background to AVD directory", e)
-        }
-      } else if (!Files.exists(avdFolder.resolve(source))) {
-        // A relative path means that the environment should already be present.
-        log.warning("$key $source not present in $avdFolder")
-      }
-    }
-  }
-
   /** Checks if the given file is one of the files created at the AVD creation time. */
   fun isFoundationalAvdFile(file: Path, avd: AvdInfo): Boolean {
     val avdFolder = avd.dataFolderPath
@@ -585,11 +547,9 @@ private constructor(
       relative == SDCARD_IMG ||
       relative == USER_SETTINGS_INI ||
       relative == BOOT_PROP ||
-      relative == ENVIRONMENT_DIR ||
+      relative == ENVIRONMENTS_DIR ||
       relative == ENVIRONMENT_INI ||
-      relative == USERDATA_IMG ||
-      relative == avd.environment[EnvironmentKey.IMAGE] ||
-      relative == avd.environment[EnvironmentKey.VIDEO]
+      relative == USERDATA_IMG
   }
 
   /**
@@ -619,7 +579,6 @@ private constructor(
       val configIni: Path = destAvdFolder.resolve(CONFIG_INI)
       var configVals = parseIniFile(PathFileWrapper(configIni), log) ?: mutableMapOf()
       val userSettingsVals = parseUserSettingsFile(destAvdFolder, log)
-      val environment = parseEnvironmentFile(destAvdFolder, log)
       configVals[ConfigKey.AVD_ID] = newAvdName
       configVals[ConfigKey.DISPLAY_NAME] = newAvdName
       writeIniFile(configIni, configVals, true)
@@ -644,7 +603,6 @@ private constructor(
         systemImage = systemImage,
         properties = configVals,
         userSettings = userSettingsVals,
-        environment = environment,
         status = AvdStatus.OK,
       )
     } catch (e: AndroidLocationsException) {
@@ -867,7 +825,6 @@ private constructor(
             systemImage = avdInfo.systemImage,
             properties = avdInfo.properties,
             userSettings = avdInfo.userSettings,
-            environment = avdInfo.environment,
             status = AvdStatus.OK,
           )
         replaceAvd(avdInfo, info)
@@ -899,7 +856,6 @@ private constructor(
             systemImage = avdInfo.systemImage,
             properties = avdInfo.properties,
             userSettings = avdInfo.userSettings,
-            environment = avdInfo.environment,
             status = AvdStatus.OK,
           )
         replaceAvd(avdInfo, info)
@@ -1117,8 +1073,7 @@ private constructor(
     }
 
     val userSettings = parseUserSettingsFile(avdFolder, log)
-    val environment = parseEnvironmentFile(avdFolder, log)
-    val info = AvdInfo(metadataIniFile, avdFolder, sysImage, properties, userSettings, environment, status)
+    val info = AvdInfo(metadataIniFile, avdFolder, sysImage, properties, userSettings, status)
 
     if (updateHashV2) {
       try {
@@ -1408,7 +1363,6 @@ private constructor(
     oldAvdInfo: AvdInfo?,
     values: Map<String, String>,
     userSettings: Map<String, String>,
-    environment: Map<String, String>,
   ): AvdInfo {
     // create the AvdInfo object, and add it to the list
 
@@ -1419,7 +1373,6 @@ private constructor(
         systemImage = systemImage,
         properties = values,
         userSettings = userSettings,
-        environment = environment,
         status = AvdStatus.OK,
       )
 
@@ -1448,7 +1401,6 @@ private constructor(
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
 
     private const val BOOT_PROP = "boot.prop"
-    @Deprecated("Environment image files should not be copied to AVD directory.") const val ENVIRONMENT_DIR = "environment"
     const val ENVIRONMENTS_DIR = "environments"
     const val ENVIRONMENT_INI = "environment.ini"
     const val CONFIG_INI: String = "config.ini"
@@ -1465,17 +1417,6 @@ private constructor(
     @JvmStatic
     fun createInstance(sdkHandler: AndroidSdkHandler, baseAvdFolder: Path, deviceManager: DeviceManager, log: ILogger): AvdManager {
       return AvdManager(sdkHandler, baseAvdFolder, deviceManager, log)
-    }
-
-    fun parseEnvironmentFile(dataFolder: Path, logger: ILogger?): Map<String, String> {
-      val environmentPath = PathFileWrapper(dataFolder.resolve(ENVIRONMENT_INI))
-      if (environmentPath.exists()) {
-        // We always write this in UTF-8.
-        parseIniFileImpl(environmentPath, logger, Charsets.UTF_8)?.let {
-          return it
-        }
-      }
-      return mutableMapOf()
     }
 
     /**
