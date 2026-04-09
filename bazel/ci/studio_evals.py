@@ -7,6 +7,7 @@ from tools.base.bazel.ci import studio
 _TARGETS = [
     '//tools/vendor/google/ml/aiplugin/android/uitools-evals/...',
     '//tools/vendor/google/ml/aiplugin/android/upgrade-evals/...',
+    '//tools/vendor/google/ml/aiplugin/android/rag-evals/...',
 ]
 
 _FLAGS = [
@@ -32,6 +33,12 @@ def _get_uitools_evals_tests(build_env: bazel.BuildEnv) -> List[str]:
   target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   return target_tests
 
+def _get_rag_evals_tests(build_env: bazel.BuildEnv) -> List[str]:
+  """Queries bazel for rag evals tests."""
+  query = [f'attr(tags, "rag_eval", {" + ".join(_TARGETS)})']
+  target_tests = build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
+  return target_tests
+
 def studio_evals(build_env: bazel.BuildEnv):
   """Runs studio evals tests."""
   flags = _FLAGS + [
@@ -40,6 +47,7 @@ def studio_evals(build_env: bazel.BuildEnv):
   ]
   target_tests = _get_uitools_evals_tests(build_env)
   target_tests.extend(_get_upgrade_bot_evals_tests(build_env))
+  target_tests.extend(_get_rag_evals_tests(build_env))
   test_result = studio.run_tests(build_env, flags, target_tests)
 
   if not studio.is_build_successful(test_result):
