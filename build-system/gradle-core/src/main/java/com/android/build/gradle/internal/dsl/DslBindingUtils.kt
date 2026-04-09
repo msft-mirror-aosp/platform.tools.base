@@ -39,6 +39,7 @@ object DslBindingUtils {
   fun copyProperties(source: Any, target: Any) {
     for (method in source.javaClass.methods) {
       val name = method.name
+
       if (method.parameterCount == 0 && (name.startsWith("get") || name.startsWith("is"))) {
         if (name == "getClass" || name == "getMetaClass") continue
 
@@ -78,7 +79,8 @@ object DslBindingUtils {
               (value is List<*> || value is Set<*>) && targetValue is MutableCollection<*> -> {
                 @Suppress("UNCHECKED_CAST") (targetValue as MutableCollection<Any>).addAll(value as Collection<Any>)
               }
-              value.javaClass.name.startsWith("com.android.build.api.dsl.") -> {
+              value.javaClass.name.startsWith("com.android.build.api.dsl.") ||
+                value.javaClass.interfaces.any { it.name.startsWith("com.android.build.api.dsl.") } -> {
                 copyProperties(value, targetValue)
               }
               value.javaClass.name == "org.gradle.api.NamedDomainObjectContainer" -> {
