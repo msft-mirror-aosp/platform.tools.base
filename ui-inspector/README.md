@@ -1,0 +1,253 @@
+# UI Inspector CLI
+
+## What Layout Inspector can offer to the AI agent
+
+Layout Inspector can provide detailed information about the app’s UI
+hierarchy. In particular, it can provide compose information that is not
+obtainable with any other tool. This includes composable hierarchy,
+parameters, modifiers, and file locations.
+
+The AI agent could use this information for debugging purposes and to
+navigate the app.
+
+## Current limitations
+
+Layout Inspector is currently designed as a singleton within a Project.
+It doesn’t support connecting to multiple devices at the same time or to
+multiple apps on the same device.
+
+Layout Inspector is currently constructed using App Inspection and the
+Transport layer. Transport, however, introduces a significant and heavy
+dependency with extensive functionality that the Layout Inspector does
+not actually require. This dependency remains a persistent source of
+difficult-to-resolve bugs, which can result in intermittent connection
+reliability. Although most connectivity problems have been addressed
+over time, certain issues remain unresolved or continue to emerge.
+
+A substantial refactoring of the codebase would be required in order to
+expose a reliable tool to the agent.
+
+Furthermore, having a strong dependency on Transport prevents Layout
+Inspector from being used outside of Android Studio. A lot of
+development now happens in CLIs and non-specialized tools. Android
+developers using these would benefit from an Android UI inspector tool.
+
+## UI Inspector CLI proposal
+
+This doc is a proposal for a new version of Layout Inspector (UI
+Inspector) which builds on-top of what we have learned over the years
+and is designed to be used by an AI agent.
+
+The MVP for such a tool would be a basic CLI that, given a device serial
+number and app package, dumps the UI tree including views and
+composables.
+
+```bash
+ui-inspector dump-ui --serial 123 --package com.my.app
+```
+
+> TODO: add json output example
+
+Developing an MVP first will enable us to establish the tool's core
+architecture and identify any unexpected challenges. Should this initial
+phase prove successful, we can expand the CLI by incorporating
+additional Layout Inspector features. Eventually, this could evolve into
+a unified backend serving both the CLI and the Layout Inspector
+interface within Android Studio.
+
+## High level design
+
+The CLI would be made of two main parts, the host and the agent. The
+host is running on the user’s machine and the agent on the device.
+
+### Host-agent communication
+
+The agent acts as the server, when it launches it creates a socket bound
+to `localabstract:layout_inspector_cli_<pid>`.
+
+The host runs the following command to map a local port on the user’s
+machine to the device’s socket:
+
+```bash
+adb -s <device> forward tcp:<localHostPort> localabstract:layout_inspector_cli_<pid>
+```
+
+Then connects to `<localHostPort>`.
+
+The data exchanged over the socket is serialized using protocol buffers.
+
+### Agent
+
+The agent is structured into three distinct layers to bypass Android's
+class loader restrictions. The design principle is a replica of what App
+Inspection already does, slightly adapted to our use case.
+
+#### JVMTI entry point (agent/native)
+
+`agent.cc` is the entry point for the agent. The host launches it by
+using the attach-agent command:
+`adb shell cmd activity attach-agent <package-name>`.
+The Android runtime loads the respective native `.so` library and
+invokes its `Agent_OnAttach` function.
+
+The agent uses JVMTI to inject all the other inspector classes into the
+app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
+`bootstrap.jar` directly into the JVM. By doing this the contents of
+`bootstrap.jar` will be available to the bootstrap classloader.
+
+Finally, using JNI, the native code locates the injected
+`InspectorService.java` (which is part of `bootstrap.jar`) and calls its
+static `initialize` method.
+
+#### Bootstrap loader (agent/bootstrap)
+
+The contents of `bootstrap.jar` act as a bridge between the bootstrap
+classloader and the app classloader. The bridge is necessary because in
+order to have access to the application classes `view-inspector.jar` and
+`compose-inspector.jar` need to be loaded with a class loader that
+descends from the app class loader.
+
+The main class of `bootstrap.jar` is `InspectorService`, which:
+
+* Creates a socket connected to
+  `localabstract:layout_inspector_cli_<pid>`.
+* Finds the app class loader.
+* Creates a new `DexClassLoader` (as a child of the app class loader) to
+  load the inspector's dex.
+* Finds `InspectorLauncher` in the new class loader, and launches it by
+  providing the socket and `ArtTooling` instance.
+
+#### InspectorLauncher (agent/inspector)
+
+This class is responsible for launching the inspectors. It will handle:
+
+* Resolution of the compose inspector version.
+* Creations of executors used by the inspectors.
+* Create abstraction over the socket, to hide the detail from the
+  inspectors.
+* Instantiation of view and compose inspectors.
+
+#### ViewInspector (agent/inspector)
+
+This is the actual view inspector. It’s part of the dex that was loaded
+by `InspectorService`.
+
+### Host
+
+The host gets the device serial number and package name from the command
+invocation.
+It runs `adb devices` and `adb shell getprop` to find the device and
+hardware characteristics of the device.
+
+Selects the appropriate `.so` and payload `.jar` files matching the
+target devices and pushes them directly to the Android staging directory
+on the device (`/data/local/tmp`).
+
+It then starts the injection sequence:
+
+* Runs `adb shell run-as <package> cp` to move files from
+  `/data/local/tmp` to the app memory space `/data/data/<package>/`.
+* Uses `run-as <package>` to `chmod` the binaries, ensuring that `.so`
+  has read/execute parameters and `.jar` are read-only (444), since the
+  Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
+  extensions from a writable app-data location.
+* Creates the adb tunnel and triggers payload injection via
+  `adb shell cmd activity attach-agent <package> /data/data/<package>/<agent_so>=<args>`.
+
+## Compose Inspector
+
+Because the compose inspector jar is shipped with the compose library it
+would be ideal to be able to reuse the existing jar, otherwise we
+wouldn't be able to support older versions of compose.
+
+For this reason `InspectorLauncher` needs to bundle the
+`androidx.appinspection` interfaces and create its own implementation,
+then invoke the inspector factory to get the app inspection compose
+inspector.
+
+### jar resolution
+
+The host will accept a `--compose-inspector <compose-inspector.jar>`, so
+callers can specify which compose inspector jar it should use. This will
+be useful when the CLI is used from Android Studio or if a user wants to
+use a specific jar, like a snapshot version.
+
+* **From Android Studio:** the CLI could expose a `get-compose-version`
+  command that would return the version of compose running in the app.
+  Then Android Studio could use the build system (as we currently do) to
+  resolve the jar before invoking commands in the CLI that require
+  compose.
+
+When the flag is not provided the host needs to handle the resolution of
+the compose inspector jar:
+
+* Upon a successful connection with the agent, the host sends a
+  `GetVersionCommand`.
+* The agent resolves the `androidx.compose.ui:ui` version:
+    * First checks if compose is present, by using reflection to see
+      if...
+    * Then checks `META-INF/androidx.compose.ui_ui.version` to get the
+      actual version number.
+* Upon receiving the `GetVersionResponse` with the version number, the
+  host connects to Google’s public Maven, downloads the `.aar` and
+  unpacks the internal `inspector.jar`.
+* In case the user’s machine does not have access to public maven, the
+  CLI will also provide a flag to specify an alternative maven repo.
+
+The host should check local caches on the user's machine (like gradle
+cache) and have its own cache where it can store the downloaded jars.
+
+## UI Inspector daemon
+
+This CLI tool could be invoked many times for the same instance of an
+app. It would be a waste to re-inject the agent every time. For this
+reason we should inject the agent once and keep it running, so future
+commands can just re-connect to it.
+
+Before running a command the host would:
+
+* Discover the PID of the app.
+* Run `adb forward tcp:<host_port> localabstract:cli_<PID>`.
+* Attempt connection to `tcp:<host_port>`.
+* Send `PING`.
+* If `PONG`: warm hit.
+* If connection failed or no `PONG`: run `attach-agent` from scratch.
+
+To prevent resource leaks if a device is unplugged, the agent can
+implement a timeout. If no message is received within the timeout the
+agent is terminated.
+
+## Retrieving view attributes and composables parameters
+
+We can implement two ways of getting these:
+
+* Add flag to the `dump-ui` command to include attributes and parameters
+  in the single shot dump.
+* Add a separate `get-params` command that given a view/composable id
+  can retrieve them. Here the user would need to first invoke `dump-ui`
+  to get the id.
+
+## Retrieving recomposition counts and state reads
+
+This is outside the scope of the MVP, but since the agent is persistent
+on the device we should implement start and stop commands (for example
+`start-observing-recompositions` / `stop-observing-recompositions`).
+
+## Open questions
+
+* Should the compose inspector and view inspector communicate on device,
+  or going through the host as we currently do in Layout Inspector?
+  Going through the host has the advantage that most of the command
+  parsing and ui tree building logic would run there instead of on
+  device. The obvious downside is that an extra round trip to the device
+  would be necessary.
+* Where should the code for the agent package live? Moving it to
+  `androidx` has the advantage of having testing infrastructure. TODO:
+  verify what we can realistically test.
+
+## Future of Layout Inspector - integrating CLI code into Android Studio
+
+If this works well in the future we could consider migrating the current
+Layout Inspector UI to use the same backend as the CLI.
+
+Studio would become the host and hold the socket connection.
