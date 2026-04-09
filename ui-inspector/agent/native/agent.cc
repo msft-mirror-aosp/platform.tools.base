@@ -16,25 +16,77 @@
 
 #include <jni.h>
 #include <jvmti.h>
+#include <string>
+#include "tools/base/transport/native/jvmti/hidden_api_silencer.h"
 #include "tools/base/transport/native/jvmti/jvmti_helper.h"
 #include "tools/base/transport/native/utils/log.h"
 
 namespace {
 constexpr const char* kLogTag = "studio.ui-inspector";
+constexpr const char* kInspectorServiceClassName =
+    "com/android/tools/ui/inspector/service/InspectorService";
+constexpr const char* kInitializeMethodName = "initialize";
+constexpr const char* kInitializeMethodSignature = "(Ljava/lang/String;)V";
 }  // namespace
 
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
                                                  void* reserved) {
-  // Ensure thread is attached to JVM (crucial on Android)
-  profiler::GetThreadLocalJNI(vm);
+  profiler::Log::I(kLogTag, "UI Inspector Agent attaching...");
 
-  jvmtiEnv* jvmti = profiler::CreateJvmtiEnv(vm);
-  if (jvmti == nullptr) {
-    profiler::Log::E(kLogTag, "Failed to initialize JVMTI env.");
+  if (options == nullptr || strlen(options) == 0) {
+    profiler::Log::E(
+        kLogTag, "Agent requires options pointing to ui-inspector-service.jar");
     return JNI_OK;  // Return OK to avoid ART retrying attachment
   }
 
-  profiler::Log::I(kLogTag, "Hello World from UI Inspector Agent!");
+  std::string service_jar_path = std::string(options);
 
+  JNIEnv* env = profiler::GetThreadLocalJNI(vm);
+  if (env == nullptr) {
+    profiler::Log::E(kLogTag, "Could not attach to current thread.");
+    return JNI_OK;
+  }
+
+  jvmtiEnv* jvmti = profiler::CreateJvmtiEnv(vm);
+  if (jvmti == nullptr) {
+    profiler::Log::E(kLogTag, "Could not get JVMTI env.");
+    return JNI_OK;
+  }
+
+  // Bypass hidden API enforcement policy to access internal framework classes
+  // for UI inspection
+  static profiler::HiddenApiSilencer hiddenApiSilencer(jvmti);
+
+  profiler::Log::I(kLogTag, "Adding jar to bootstrap search path: %s",
+                   service_jar_path.c_str());
+  if (jvmti->AddToBootstrapClassLoaderSearch(service_jar_path.c_str()) !=
+      JVMTI_ERROR_NONE) {
+    profiler::Log::E(kLogTag,
+                     "Failed to add jar to bootstrap classloader search");
+    return JNI_OK;
+  }
+
+  // Find InspectorService
+  jclass serviceClass = env->FindClass(kInspectorServiceClassName);
+  if (env->ExceptionCheck() || serviceClass == nullptr) {
+    profiler::Log::E(kLogTag, "Failed to find %s", kInspectorServiceClassName);
+    env->ExceptionDescribe();
+    return JNI_OK;
+  }
+
+  // Get initialize method
+  jmethodID initMethod = env->GetStaticMethodID(
+      serviceClass, kInitializeMethodName, kInitializeMethodSignature);
+  if (env->ExceptionCheck() || initMethod == nullptr) {
+    profiler::Log::E(kLogTag, "Failed to find %s method",
+                     kInitializeMethodName);
+    return JNI_OK;
+  }
+
+  // Call initialize
+  jstring args = env->NewStringUTF("Hello from Agent C++");
+  env->CallStaticVoidMethod(serviceClass, initMethod, args);
+
+  profiler::Log::I(kLogTag, "Agent attached successfully!");
   return JNI_OK;
 }

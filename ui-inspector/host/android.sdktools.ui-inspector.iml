@@ -28,5 +28,6 @@
     <orderEntry type="module" module-name="android.sdktools.adblib.tools" />
     <orderEntry type="library" name="picocli" level="project" />
     <orderEntry type="library" scope="TEST" name="truth" level="project" />
+    <orderEntry type="library" scope="TEST" name="jetbrains.kotlinx.coroutines.test" level="project" />
   </component>
 </module>

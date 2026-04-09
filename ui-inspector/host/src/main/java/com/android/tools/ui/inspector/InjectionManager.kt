@@ -25,15 +25,27 @@ import com.android.adblib.syncSend
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 
 /** The name of the agent binary file. */
 private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
 
+/** The name of the service jar file. */
+private const val SERVICE_JAR_FILE_NAME = "lib_ui_inspector_service.jar"
+
 /** The relative path to the agent directory in the source tree or runfiles. */
 private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT_FILE_NAME"
 
+/** The relative path to the service jar in the runfiles. */
+private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
+
+// TODO: Consider using unique names or subdirectories to avoid race conditions if multiple instances run concurrently on the same device.
 /** The temporary path on the device where the agent is first pushed. */
 private const val DEVICE_TMP_AGENT_PATH = "/data/local/tmp/$AGENT_FILE_NAME"
+
+/** The temporary path on the device where the service jar is first pushed. */
+private const val DEVICE_TMP_SERVICE_JAR_PATH = "/data/local/tmp/$SERVICE_JAR_FILE_NAME"
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
@@ -44,7 +56,11 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  * @param adbSession The [AdbSession] to use for device communication.
  * @param agentPathResolver A function that takes a device ABI string and returns the [Path] to the agent binary on the host.
  */
-class InjectionManager(private val adbSession: AdbSession, private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER) {
+class InjectionManager(
+  private val adbSession: AdbSession,
+  private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
+  private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
+) {
 
   /**
    * Push the agent to the device and attach it to the specified app.
@@ -52,14 +68,21 @@ class InjectionManager(private val adbSession: AdbSession, private val agentPath
    * @param serial The device serial number.
    * @param packageName The package name of the app to attach the agent to.
    */
-  suspend fun injectAndAttach(serial: String, packageName: String) {
+  suspend fun injectAndAttach(serial: String, packageName: String) = coroutineScope {
     val deviceSelector = DeviceSelector.fromSerialNumber(serial)
 
     val deviceAbi = getDeviceAbi(deviceSelector)
     val agentLocalPath = getAgentLocalPath(deviceAbi)
-    val agentRemoteTmpPath = pushAgentToDevice(deviceSelector, agentLocalPath)
-    copyAgentToAppDir(deviceSelector, packageName, agentRemoteTmpPath)
-    setAgentPermissions(deviceSelector, packageName)
+    val serviceJarLocalPath = getServiceJarLocalPath()
+
+    val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
+    val jarPush = async { pushFileToDevice(deviceSelector, serviceJarLocalPath, DEVICE_TMP_SERVICE_JAR_PATH) }
+
+    val agentRemoteTmpPath = agentPush.await()
+    val serviceJarRemoteTmpPath = jarPush.await()
+
+    copyAndSetupFiles(deviceSelector, packageName, agentRemoteTmpPath, serviceJarRemoteTmpPath)
+
     attachAgent(deviceSelector, packageName)
   }
 
@@ -77,9 +100,37 @@ class InjectionManager(private val adbSession: AdbSession, private val agentPath
     return localPath
   }
 
-  /** Pushes the agent binary to a temporary location on the device. */
-  private suspend fun pushAgentToDevice(deviceSelector: DeviceSelector, localPath: Path): String {
-    val remoteTmpPath = DEVICE_TMP_AGENT_PATH
+  /** Resolves the local path to the service jar. */
+  private fun getServiceJarLocalPath(): Path {
+    if (!serviceJarPath.toFile().exists()) {
+      throw IllegalStateException("Service JAR not found at $serviceJarPath")
+    }
+    return serviceJarPath
+  }
+
+  /** Copies files from staging to app directory and sets permissions in a single atomic operation. */
+  private suspend fun copyAndSetupFiles(
+    deviceSelector: DeviceSelector,
+    packageName: String,
+    agentRemoteTmpPath: String,
+    serviceJarRemoteTmpPath: String,
+  ) {
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        // Delete previous versions of the files
+        "rm -f $AGENT_FILE_NAME $SERVICE_JAR_FILE_NAME && " +
+        // Copy new versions from tmp
+        "cat $agentRemoteTmpPath > $AGENT_FILE_NAME && " +
+        "cat $serviceJarRemoteTmpPath > $SERVICE_JAR_FILE_NAME && " +
+        // Set permissions to 444
+        "chmod 444 $AGENT_FILE_NAME && " +
+        "chmod 444 $SERVICE_JAR_FILE_NAME'"
+    runShellCommand(deviceSelector, setupCmd)
+  }
+
+  /** Pushes a file to a temporary location on the device. */
+  // TODO: Add a check to verify file hash on device before pushing to avoid redundant pushes if the file is already there.
+  private suspend fun pushFileToDevice(deviceSelector: DeviceSelector, localPath: Path, remoteTmpPath: String): String {
     // App needs read permission to copy it from /data/local/tmp (run-as uses a different user)
     val permissions =
       RemoteFileMode.fromPosixPermissions(
@@ -92,20 +143,11 @@ class InjectionManager(private val adbSession: AdbSession, private val agentPath
     return remoteTmpPath
   }
 
-  /** Copies the agent from the temporary location to the app's private data directory. */
-  private suspend fun copyAgentToAppDir(deviceSelector: DeviceSelector, packageName: String, remoteTmpPath: String) {
-    runShellCommand(deviceSelector, "run-as $packageName sh -c 'cat $remoteTmpPath > $AGENT_FILE_NAME'")
-  }
-
-  /** Sets read-only permissions on the agent binary in the app's directory. */
-  private suspend fun setAgentPermissions(deviceSelector: DeviceSelector, packageName: String) {
-    runShellCommand(deviceSelector, "run-as $packageName chmod 444 $AGENT_FILE_NAME")
-  }
-
   /** Attaches the agent to the running application via JVMTI. */
   private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String) {
     val appPath = "/data/data/$packageName/$AGENT_FILE_NAME"
-    val attachCmd = "cmd activity attach-agent $packageName $appPath"
+    val appJarPath = "/data/data/$packageName/$SERVICE_JAR_FILE_NAME"
+    val attachCmd = "cmd activity attach-agent $packageName $appPath=$appJarPath"
     runShellCommand(deviceSelector, attachCmd)
   }
 

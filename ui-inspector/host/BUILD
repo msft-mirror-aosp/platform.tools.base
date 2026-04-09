@@ -7,6 +7,7 @@ iml_module(
     srcs = ["src/main/java"],
     iml_files = ["android.sdktools.ui-inspector.iml"],
     test_deps = [
+        "//tools/adt/idea/.idea/libraries:jetbrains.kotlinx.coroutines.test",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
     ],
@@ -25,7 +26,10 @@ iml_module(
 java_binary(
     name = "cli",
     # Needed during development to make the agent available in runfiles when running via 'bazel run'
-    data = ["//tools/base/ui-inspector/agent/native:lib_ui_inspector_agent.so"],
+    data = [
+        "//tools/base/ui-inspector/agent/native:lib_ui_inspector_agent.so",
+        "//tools/base/ui-inspector/agent/service:lib_ui_inspector_service",
+    ],
     main_class = "com.android.tools.ui.inspector.CliHostKt",
     visibility = ["//visibility:public"],
     runtime_deps = [":studio.android.sdktools.ui-inspector"],

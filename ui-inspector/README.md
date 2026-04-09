@@ -84,11 +84,11 @@ Inspection already does, slightly adapted to our use case.
 
 #### JVMTI entry point (agent/native)
 
-`agent.cc` is the entry point for the agent. The host launches it by
-using the attach-agent command:
-`adb shell cmd activity attach-agent <package-name>`.
-The Android runtime loads the respective native `.so` library and
-invokes its `Agent_OnAttach` function.
+The agent uses JVMTI to inject all the other inspector classes into the
+app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
+`ui-inspector-service.jar` directly into the JVM. By doing this the
+contents of `ui-inspector-service.jar` will be available to the
+bootstrap classloader.
 
 The agent uses JVMTI to inject all the other inspector classes into the
 app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
@@ -96,18 +96,21 @@ app. This is done by using `AddToBootstrapClassLoaderSearch()` to load
 `bootstrap.jar` will be available to the bootstrap classloader.
 
 Finally, using JNI, the native code locates the injected
-`InspectorService.java` (which is part of `bootstrap.jar`) and calls its
+`InspectorService.java` (which is part of `ui-inspector-service.jar`)
+and calls its
 static `initialize` method.
 
-#### Bootstrap loader (agent/bootstrap)
+#### Service loader (agent/service)
 
-The contents of `bootstrap.jar` act as a bridge between the bootstrap
+The contents of `ui-inspector-service.jar` act as a bridge between the
+bootstrap
 classloader and the app classloader. The bridge is necessary because in
 order to have access to the application classes `view-inspector.jar` and
 `compose-inspector.jar` need to be loaded with a class loader that
 descends from the app class loader.
 
-The main class of `bootstrap.jar` is `InspectorService`, which:
+The main class of `ui-inspector-service.jar` is `InspectorService`,
+which:
 
 * Creates a socket connected to
   `localabstract:layout_inspector_cli_<pid>`.
@@ -152,7 +155,7 @@ It then starts the injection sequence:
   Dalvik classloader prevents loading dynamic dalvik bytecode `.dex`
   extensions from a writable app-data location.
 * Creates the adb tunnel and triggers payload injection via
-  `adb shell cmd activity attach-agent <package> /data/data/<package>/<agent_so>=<args>`.
+  `adb shell cmd activity attach-agent <package> /data/data/<package>/<agent_so>=/data/data/<package>/ui-inspector-service.jar`.
 
 ## Compose Inspector
 

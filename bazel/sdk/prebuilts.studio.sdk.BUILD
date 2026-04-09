@@ -1,3 +1,4 @@
+load("@rules_java//java:defs.bzl", "java_import")
 load("//tools/base/bazel/sdk:sdk_utils.bzl", "platform_filegroup", "sdk_glob")
 
 filegroup(
@@ -210,6 +211,7 @@ java_import(
         "//tools/base/dynamic-layout-inspector/agent:__subpackages__",
         "//tools/base/experimental/live-sql-inspector:__pkg__",
         "//tools/base/profiler/app:__pkg__",
+        "//tools/base/ui-inspector/agent/service:__pkg__",
     ],
 )
 

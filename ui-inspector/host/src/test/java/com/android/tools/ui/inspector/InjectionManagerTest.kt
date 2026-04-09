@@ -22,22 +22,24 @@ import com.android.adblib.DeviceSelector
 import com.android.adblib.DeviceState
 import com.android.adblib.testing.FakeAdbSession
 import com.google.common.truth.Truth.assertThat
-import java.nio.file.Files
 import java.nio.file.Path
-import kotlinx.coroutines.runBlocking
-import org.junit.After
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class InjectionManagerTest {
+
+  @get:Rule val tempFolder = TemporaryFolder()
 
   private lateinit var fakeSession: FakeAdbSession
   private lateinit var testDeviceServices: TestAdbDeviceServices
   private lateinit var testSession: TestAdbSession
-  private lateinit var tempDir: Path
   private lateinit var dummyAgent: Path
-  private lateinit var injectionManager: InjectionManager
+  private lateinit var dummyJar: Path
+  private lateinit var agentPathResolver: (String) -> Path
 
   private val deviceSerial = "123"
   private val packageName = "com.example"
@@ -50,54 +52,58 @@ class InjectionManagerTest {
 
     fakeSession.hostServices.devices = DeviceList(listOf(DeviceInfo(deviceSerial, DeviceState.ONLINE)), emptyList())
 
-    tempDir = Files.createTempDirectory("agent_test")
-    dummyAgent = tempDir.resolve("lib_ui_inspector_agent.so")
-    Files.createFile(dummyAgent)
+    dummyAgent = tempFolder.newFile("lib_ui_inspector_agent.so").toPath()
+    dummyJar = tempFolder.newFile("lib_ui_inspector_service.jar").toPath()
 
-    val agentPathResolver: (String) -> Path = { abi -> dummyAgent }
-    injectionManager = InjectionManager(testSession, agentPathResolver)
-  }
-
-  @After
-  fun tearDown() {
-    Files.deleteIfExists(dummyAgent)
-    Files.deleteIfExists(tempDir)
+    agentPathResolver = { abi -> dummyAgent }
   }
 
   @Test
-  fun testInjectAndAttach() = runBlocking {
+  fun testInjectAndAttach() = runTest {
+    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     // Mock expected shell commands for the injection flow
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar'"
+    fakeSession.deviceServices.configureShellCommand(deviceSelector, setupCmd, "")
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "run-as $packageName sh -c 'cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so'",
-      "",
-    )
-    fakeSession.deviceServices.configureShellCommand(deviceSelector, "run-as $packageName chmod 444 lib_ui_inspector_agent.so", "")
-    fakeSession.deviceServices.configureShellCommand(
-      deviceSelector,
-      "cmd activity attach-agent $packageName /data/data/$packageName/lib_ui_inspector_agent.so",
+      "cmd activity attach-agent $packageName /data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar",
       "",
     )
 
     injectionManager.injectAndAttach(deviceSerial, packageName)
 
     // Verify that syncSend was called with correct parameters
-    assertThat(testDeviceServices.recordedSyncSends).hasSize(1)
-    val syncCall = testDeviceServices.recordedSyncSends[0]
-    assertThat(syncCall.remoteFilePath).isEqualTo("/data/local/tmp/lib_ui_inspector_agent.so")
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(2)
+    val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
+    assertThat(paths.sorted()).containsExactly("/data/local/tmp/lib_ui_inspector_agent.so", "/data/local/tmp/lib_ui_inspector_service.jar")
   }
 
   @Test
-  fun testInjectAndAttach_CommandFails() = runBlocking {
+  fun testInjectAndAttach_CommandFails() = runTest {
+    val injectionManager = InjectionManager(testSession, agentPathResolver, dummyJar)
     val deviceSelector = DeviceSelector.fromSerialNumber(deviceSerial)
     fakeSession.deviceServices.configureShellCommand(deviceSelector, "getprop ro.product.cpu.abi", "arm64-v8a\n")
+
+    val setupCmd =
+      "run-as com.example sh -c '" +
+        "rm -f lib_ui_inspector_agent.so lib_ui_inspector_service.jar && " +
+        "cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so && " +
+        "cat /data/local/tmp/lib_ui_inspector_service.jar > lib_ui_inspector_service.jar && " +
+        "chmod 444 lib_ui_inspector_agent.so && " +
+        "chmod 444 lib_ui_inspector_service.jar'"
 
     // Configure this command to FAIL!
     fakeSession.deviceServices.configureShellCommand(
       deviceSelector,
-      "run-as com.example sh -c 'cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so'",
+      setupCmd,
       stdout = "",
       stderr = "Package is not debuggable",
       exitCode = 1,
@@ -107,15 +113,13 @@ class InjectionManagerTest {
       injectionManager.injectAndAttach(deviceSerial, packageName)
       fail("Expected IllegalStateException was not thrown")
     } catch (e: IllegalStateException) {
-      assertThat(e.message)
-        .isEqualTo(
-          "Command 'run-as com.example sh -c 'cat /data/local/tmp/lib_ui_inspector_agent.so > lib_ui_inspector_agent.so'' failed with exit code 1. Stderr: Package is not debuggable"
-        )
+      assertThat(e.message).isEqualTo("Command '$setupCmd' failed with exit code 1. Stderr: Package is not debuggable")
     }
 
-    // Verify that syncSend was called even if a later step failed
-    assertThat(testDeviceServices.recordedSyncSends).hasSize(1)
-    val syncCall = testDeviceServices.recordedSyncSends[0]
-    assertThat(syncCall.remoteFilePath).isEqualTo("/data/local/tmp/lib_ui_inspector_agent.so")
+    // Verify that both files were pushed to /data/local/tmp before the setup command failed.
+    // The push operations occur concurrently and complete before the copy/setup step is executed.
+    assertThat(testDeviceServices.recordedSyncSends).hasSize(2)
+    val paths = testDeviceServices.recordedSyncSends.map { it.remoteFilePath }
+    assertThat(paths.sorted()).containsExactly("/data/local/tmp/lib_ui_inspector_agent.so", "/data/local/tmp/lib_ui_inspector_service.jar")
   }
 }

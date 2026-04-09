@@ -55,9 +55,10 @@ class DumpUiCommand : Callable<Int> {
     val adbSession = sessionFactory()
 
     try {
-      val injectionManager = InjectionManager(adbSession)
-
-      runBlocking { injectionManager.injectAndAttach(serial, packageName) }
+      runBlocking {
+        val injectionManager = InjectionManager(adbSession)
+        injectionManager.injectAndAttach(serial, packageName)
+      }
       return EXIT_OK
     } catch (e: Exception) {
       System.err.println("Error: ${e.message}")
