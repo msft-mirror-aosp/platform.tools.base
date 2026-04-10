@@ -17,6 +17,7 @@ iml_module(
         "//tools/base/adblib:studio.android.sdktools.adblib",
         "//tools/base/adblib-tools:studio.android.sdktools.adblib.tools",
         "//tools/base/common:studio.android.sdktools.common",
+        "//tools/base/ui-inspector/common",
         "@intellij//:com.intellij.java",
         "@intellij//:intellij-sdk",
         "@maven//:info.picocli.picocli",

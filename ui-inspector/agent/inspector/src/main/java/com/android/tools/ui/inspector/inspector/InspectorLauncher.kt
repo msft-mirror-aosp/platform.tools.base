@@ -17,8 +17,9 @@
 package com.android.tools.ui.inspector.inspector
 
 import android.net.LocalServerSocket
-import android.net.LocalSocket
 import android.util.Log
+import com.android.tools.ui.inspector.common.ProtocolConstants
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -35,11 +36,19 @@ object InspectorLauncher {
    */
   @JvmStatic
   fun start(pid: String) {
-    CoroutineScope(Dispatchers.IO).launch { runServer(pid) }
+    CoroutineScope(Dispatchers.IO).launch {
+      try {
+        runServer(pid)
+      } catch (t: Throwable) {
+        // Catching Throwable prevents any unhandled exception or error in the agent
+        // from bringing down the entire application process.
+        Log.e(TAG, "Uncaught exception in inspector", t)
+      }
+    }
   }
 
   private suspend fun runServer(pid: String) = coroutineScope {
-    val socketName = "ui_inspector_$pid"
+    val socketName = ProtocolConstants.getSocketName(pid)
 
     try {
       LocalServerSocket(socketName).use { serverSocket ->
@@ -47,40 +56,15 @@ object InspectorLauncher {
 
         while (isActive) {
           val socket = serverSocket.accept()
-          handleClient(socket)
+          ClientHandler(socket).handle()
         }
       }
-    } catch (e: java.io.IOException) {
+    } catch (e: IOException) {
       if (e.message?.contains("Address already in use") == true) {
         Log.i(TAG, "Server is already running on $socketName")
       } else {
         Log.e(TAG, "Error in server loop", e)
       }
-    } catch (e: Exception) {
-      Log.e(TAG, "Error in server loop", e)
-    }
-  }
-
-  private fun handleClient(socket: LocalSocket) {
-    Log.i(TAG, "Client connected!")
-    try {
-      socket.use { s ->
-        val inputStream = s.inputStream
-        val outputStream = s.outputStream
-
-        val buffer = ByteArray(1024)
-        val read = inputStream.read(buffer)
-        if (read > 0) {
-          val message = String(buffer, 0, read)
-          Log.i(TAG, "Received message: $message")
-
-          val response = "Hello from agent!"
-          outputStream.write(response.toByteArray())
-          outputStream.flush()
-        }
-      }
-    } catch (e: Exception) {
-      Log.e(TAG, "Error handling client", e)
     }
   }
 }

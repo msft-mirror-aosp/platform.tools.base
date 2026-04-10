@@ -84,6 +84,11 @@ class InjectionManagerTest {
       "cmd activity attach-agent $packageName \"/data/data/$packageName/lib_ui_inspector_agent.so=/data/data/$packageName/lib_ui_inspector_service.jar;/data/data/$packageName/lib_ui_inspector_payload.jar;1234\"",
       "",
     )
+    fakeSession.deviceServices.configureShellCommand(
+      deviceSelector,
+      "cat /proc/net/unix | grep ui_inspector_1234 || true",
+      "ui_inspector_1234\n",
+    )
 
     val port = injectionManager.injectAndAttach(deviceSerial, packageName)
     assertThat(port).isEqualTo("12345")

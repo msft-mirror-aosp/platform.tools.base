@@ -11,6 +11,7 @@ kotlin_library(
     ]),
     deps = [
         "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//tools/base/ui-inspector/common",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
@@ -19,6 +20,7 @@ dex_library(
     name = "lib_ui_inspector_payload",
     jars = [
         ":ui_inspector_payload_src",
+        "//tools/base/ui-inspector/common",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],

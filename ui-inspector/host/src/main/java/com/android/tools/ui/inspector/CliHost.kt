@@ -57,7 +57,14 @@ class DumpUiCommand : Callable<Int> {
     try {
       runBlocking {
         val injectionManager = InjectionManager(adbSession)
-        injectionManager.injectAndAttach(serial, packageName)
+        val port = injectionManager.injectAndAttach(serial, packageName)
+
+        println("Agent injected successfully. Port forwarded to $port")
+
+        CommandSender("localhost", port.toInt()).use { sender ->
+          val response = sender.sendMessage("Hello from CLI!")
+          println("Received response: $response")
+        }
       }
       return EXIT_OK
     } catch (e: Exception) {

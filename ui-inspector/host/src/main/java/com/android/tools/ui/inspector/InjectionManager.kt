@@ -23,11 +23,13 @@ import com.android.adblib.ShellCommandOutput
 import com.android.adblib.SocketSpec
 import com.android.adblib.shellAsText
 import com.android.adblib.syncSend
+import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermission
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 
 /** The name of the agent binary file. */
 private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
@@ -102,15 +104,39 @@ class InjectionManager(
     val pid = pidDeferred.await()
     attachAgent(deviceSelector, packageName, pid)
 
-    setupAdbForward(deviceSelector, pid)
+    val socketName = ProtocolConstants.getSocketName(pid)
+    waitForAgentSocket(deviceSelector, socketName)
+
+    setupAdbForward(deviceSelector, socketName)
   }
 
   /** Sets up adb port forwarding to the agent. */
-  private suspend fun setupAdbForward(deviceSelector: DeviceSelector, pid: String): String {
+  private suspend fun setupAdbForward(deviceSelector: DeviceSelector, socketName: String): String {
     val localSpec = SocketSpec.Tcp()
-    val remoteSpec = SocketSpec.LocalAbstract("ui_inspector_$pid")
+    val remoteSpec = SocketSpec.LocalAbstract(socketName)
     val port = adbSession.hostServices.forward(deviceSelector, localSpec, remoteSpec)
     return port ?: throw IllegalStateException("Failed to set up adb forward")
+  }
+
+  /**
+   * Waits for the abstract socket to appear in /proc/net/unix. Since the agent acts as the server, we must wait for it to create the socket
+   * before the host can connect to it.
+   */
+  private suspend fun waitForAgentSocket(deviceSelector: DeviceSelector, socketName: String) {
+    val maxAttempts = 10
+    var attempts = 0
+    var delayMs = 100L
+    while (attempts < maxAttempts) {
+      val cmd = "cat /proc/net/unix | grep $socketName || true"
+      val output = runShellCommand(deviceSelector, cmd).stdout
+      if (output.contains(socketName)) {
+        return
+      }
+      attempts++
+      delay(delayMs)
+      delayMs = (delayMs * 2).coerceAtMost(1000L)
+    }
+    throw IllegalStateException("Timed out waiting for agent socket $socketName")
   }
 
   /** Queries the device for the PID of the specified package. */
