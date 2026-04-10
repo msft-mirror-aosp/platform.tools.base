@@ -14,427 +14,278 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.devices;
+package com.android.sdklib.devices
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.resources.Keyboard;
-import com.android.resources.Navigation;
-import com.android.resources.UiMode;
+import com.android.resources.Keyboard
+import com.android.resources.Navigation
+import com.android.resources.UiMode
+import com.google.common.base.Objects
+import com.google.common.collect.ImmutableList
+import java.io.File
+import java.util.EnumSet
 
-import com.google.common.base.Objects;
-import com.google.common.collect.ImmutableList;
+class Hardware {
+  var screen: Screen? = null
+  var environment: Environment? = null
+  var touchpad: Touchpad? = null
+  var hinge: Hinge? = null
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+  private val _networking = EnumSet.noneOf(Network::class.java)
+  val networking: Set<Network>
+    get() = _networking
 
-public class Hardware {
-    private Screen mScreen;
-    private Environment mEnvironment;
-    private Touchpad mTouchpad;
-    private Hinge mHinge;
-    private EnumSet<Network> mNetworking = EnumSet.noneOf(Network.class);
-    private EnumSet<Sensor> mSensors = EnumSet.noneOf(Sensor.class);
-    private boolean mMic;
-    private List<Camera> mCameras = new ArrayList<Camera>(2);
-    private Keyboard mKeyboard;
-    private Navigation mNav;
-    private Storage mRam;
-    private ButtonType mButtons;
-    private List<Storage> mInternalStorage = new ArrayList<Storage>();
-    private List<Storage> mRemovableStorage = new ArrayList<Storage>();
-    private String mCpu;
-    private String mGpu;
-    private List<Abi> mAbis = new ArrayList<>();
-    private List<Abi> mTranslatedAbis = new ArrayList<>();
-    private EnumSet<UiMode> mUiModes = EnumSet.noneOf(UiMode.class);
-    private PowerType mPluggedIn;
-    private File mSkinFile;
-    // Set default value to be false, DeviceParser will change it to true
-    // when devices has <removable-storage>
-    private boolean mSdCard = false;
+  private val _sensors = EnumSet.noneOf(Sensor::class.java)
+  val sensors: Set<Sensor>
+    get() = _sensors
 
-    public void setSkinFile(@Nullable File skinFile) {
-      mSkinFile = skinFile;
+  @get:JvmName("hasMic") var hasMic: Boolean = false
+
+  private val _cameras = mutableListOf<Camera>()
+  val cameras: List<Camera>
+    get() = _cameras
+
+  var keyboard: Keyboard? = null
+  var nav: Navigation? = null
+  var ram: Storage? = null
+  var buttonType: ButtonType? = null
+
+  private val _internalStorage = mutableListOf<Storage>()
+  val internalStorage: List<Storage>
+    get() = _internalStorage
+
+  private val _removableStorage = mutableListOf<Storage>()
+  val removableStorage: List<Storage>
+    get() = _removableStorage
+
+  var cpu: String? = null
+  var gpu: String? = null
+
+  private val _abis = mutableListOf<Abi>()
+  val supportedAbis: List<Abi>
+    get() = ImmutableList.copyOf(_abis)
+
+  private val _translatedAbis = mutableListOf<Abi>()
+  val translatedAbis: List<Abi>
+    get() = ImmutableList.copyOf(_translatedAbis)
+
+  private val _uiModes = EnumSet.noneOf(UiMode::class.java)
+  val supportedUiModes: Set<UiMode>
+    get() = _uiModes
+
+  var chargeType: PowerType? = null
+  var skinFile: File? = null
+
+  // Set default value to be false, DeviceParser will change it to true
+  // when devices has <removable-storage>
+  @get:JvmName("hasSdCard") var sdCard: Boolean = false
+
+  fun addNetwork(network: Network) {
+    _networking.add(network)
+  }
+
+  fun addAllNetworks(networks: Collection<Network>) {
+    _networking.addAll(networks)
+  }
+
+  fun addSensor(sensor: Sensor) {
+    _sensors.add(sensor)
+  }
+
+  fun addAllSensors(sensors: Collection<Sensor>) {
+    _sensors.addAll(sensors)
+  }
+
+  fun addCamera(camera: Camera) {
+    _cameras.add(camera)
+  }
+
+  fun addAllCameras(cameras: Collection<Camera>) {
+    _cameras.addAll(cameras)
+  }
+
+  fun getCamera(index: Int): Camera = _cameras[index]
+
+  fun getCamera(location: CameraLocation): Camera? = _cameras.find { it.location == location }
+
+  fun addInternalStorage(storage: Storage) {
+    _internalStorage.add(storage)
+  }
+
+  fun addAllInternalStorage(storages: Collection<Storage>) {
+    _internalStorage.addAll(storages)
+  }
+
+  fun addRemovableStorage(storage: Storage) {
+    _removableStorage.add(storage)
+  }
+
+  fun addAllRemovableStorage(storages: Collection<Storage>) {
+    _removableStorage.addAll(storages)
+  }
+
+  fun addSupportedAbi(abi: Abi) {
+    if (!_abis.contains(abi)) {
+      _abis.add(abi)
     }
+  }
 
-    @Nullable
-    public File getSkinFile() {
-        return mSkinFile;
-    }
+  fun addAllSupportedAbis(abis: Collection<Abi>) {
+    abis.forEach { addSupportedAbi(it) }
+  }
 
-    @NonNull
-    public Set<Network> getNetworking() {
-        return mNetworking;
-    }
+  fun addTranslatedAbi(abi: Abi) {
+    _translatedAbis.add(abi)
+  }
 
-    public void addNetwork(@NonNull Network n) {
-        mNetworking.add(n);
-    }
+  fun addAllTranslatedAbis(abis: Collection<Abi>) {
+    _translatedAbis.addAll(abis)
+  }
 
-    public void addAllNetworks(@NonNull Collection<Network> ns) {
-        mNetworking.addAll(ns);
-    }
+  fun addSupportedUiMode(uiMode: UiMode) {
+    _uiModes.add(uiMode)
+  }
 
-    @NonNull
-    public Set<Sensor> getSensors() {
-        return mSensors;
-    }
+  fun addAllSupportedUiModes(uiModes: Collection<UiMode>) {
+    _uiModes.addAll(uiModes)
+  }
 
-    public void addSensor(@NonNull Sensor sensor) {
-        mSensors.add(sensor);
+  /**
+   * Returns a copy of the object that shares no state with it, but is initialized to equivalent values.
+   *
+   * @return A copy of the object.
+   */
+  fun deepCopy(): Hardware {
+    val hw = Hardware()
+    hw.screen = screen?.deepCopy()
+    hw.environment = environment?.deepCopy()
+    hw.touchpad = touchpad?.deepCopy()
+    hw.hinge = hinge?.deepCopy()
+    hw._networking.addAll(_networking)
+    hw._sensors.addAll(_sensors)
+    hw.hasMic = hasMic
+    for (c in _cameras) {
+      hw._cameras.add(c.deepCopy())
     }
+    hw.keyboard = keyboard
+    hw.nav = nav
+    hw.ram = ram
+    hw.buttonType = buttonType
+    hw._internalStorage.addAll(_internalStorage)
+    hw._removableStorage.addAll(_removableStorage)
+    hw.cpu = cpu
+    hw.gpu = gpu
+    hw._abis.addAll(_abis)
+    hw._translatedAbis.addAll(_translatedAbis)
+    hw._uiModes.addAll(_uiModes)
+    hw.chargeType = chargeType
+    hw.skinFile = skinFile
+    hw.sdCard = sdCard
+    return hw
+  }
 
-    public void addAllSensors(@NonNull Collection<Sensor> sensors) {
-        mSensors.addAll(sensors);
+  override fun equals(other: Any?): Boolean {
+    if (this === other) {
+      return true
     }
+    if (other !is Hardware) {
+      return false
+    }
+    return screen == other.screen &&
+      environment == other.environment &&
+      touchpad == other.touchpad &&
+      hinge == other.hinge &&
+      _networking == other._networking &&
+      _sensors == other._sensors &&
+      hasMic == other.hasMic &&
+      sdCard == other.sdCard &&
+      _cameras == other._cameras &&
+      keyboard == other.keyboard &&
+      nav == other.nav &&
+      ram == other.ram &&
+      buttonType == other.buttonType &&
+      _internalStorage == other._internalStorage &&
+      _removableStorage == other._removableStorage &&
+      cpu == other.cpu &&
+      gpu == other.gpu &&
+      _abis == other._abis &&
+      _translatedAbis == other._translatedAbis &&
+      _uiModes == other._uiModes &&
+      chargeType == other.chargeType &&
+      skinFile?.path == other.skinFile?.path
+  }
 
-    public boolean hasMic() {
-        return mMic;
-    }
+  override fun hashCode(): Int {
+    return Objects.hashCode(
+      screen,
+      environment,
+      touchpad,
+      hinge,
+      _networking,
+      _sensors,
+      hasMic,
+      sdCard,
+      _cameras,
+      keyboard,
+      nav,
+      ram,
+      buttonType,
+      _internalStorage,
+      _removableStorage,
+      cpu,
+      gpu,
+      _abis,
+      _translatedAbis,
+      _uiModes,
+      chargeType,
+      skinFile,
+    )
+  }
 
-    public void setHasMic(boolean hasMic) {
-        mMic = hasMic;
-    }
-
-    @NonNull
-    public List<Camera> getCameras() {
-        return mCameras;
-    }
-
-    public void addCamera(@NonNull Camera c) {
-        mCameras.add(c);
-    }
-
-    public void addAllCameras(@NonNull Collection<Camera> cs) {
-        mCameras.addAll(cs);
-    }
-
-    @NonNull
-    public Camera getCamera(int i) {
-        return mCameras.get(i);
-    }
-
-    @Nullable
-    public Camera getCamera(@NonNull CameraLocation location) {
-        for (Camera c : mCameras) {
-            if (location == c.getLocation()) {
-                return c;
-            }
-        }
-        return null;
-    }
-
-    public Keyboard getKeyboard() {
-        return mKeyboard;
-    }
-
-    public void setKeyboard(@NonNull Keyboard keyboard) {
-        mKeyboard = keyboard;
-    }
-
-    public Navigation getNav() {
-        return mNav;
-    }
-
-    public void setNav(@NonNull Navigation n) {
-        mNav = n;
-    }
-
-    public Storage getRam() {
-        return mRam;
-    }
-
-    public void setRam(@NonNull Storage ram) {
-        mRam = ram;
-    }
-
-    public ButtonType getButtonType() {
-        return mButtons;
-    }
-
-    public void setButtonType(@NonNull ButtonType bt) {
-        mButtons = bt;
-    }
-
-    @NonNull
-    public List<Storage> getInternalStorage() {
-        return mInternalStorage;
-    }
-
-    public void addInternalStorage(@NonNull Storage is) {
-        mInternalStorage.add(is);
-    }
-
-    public void addAllInternalStorage(@NonNull Collection<Storage> is) {
-        mInternalStorage.addAll(is);
-    }
-
-    public boolean hasSdCard() {
-        return mSdCard;
-    }
-
-    public void setSdCard(boolean sdcard) {
-        this.mSdCard = sdcard;
-    }
-
-    @NonNull
-    public List<Storage> getRemovableStorage() {
-        return mRemovableStorage;
-    }
-
-    public void addRemovableStorage(@NonNull Storage rs) {
-        mRemovableStorage.add(rs);
-    }
-
-    public void addAllRemovableStorage(@NonNull Collection<Storage> rs) {
-        mRemovableStorage.addAll(rs);
-    }
-
-    public String getCpu() {
-        return mCpu;
-    }
-
-    public void setCpu(@NonNull String cpuName) {
-        mCpu = cpuName;
-    }
-
-    public String getGpu() {
-        return mGpu;
-    }
-
-    public void setGpu(@NonNull String gpuName) {
-        mGpu = gpuName;
-    }
-
-    @NonNull
-    public List<Abi> getSupportedAbis() {
-        return ImmutableList.copyOf(mAbis);
-    }
-
-    public void addSupportedAbi(@NonNull Abi abi) {
-        if (!mAbis.contains(abi)) {
-            mAbis.add(abi);
-        }
-    }
-
-    public void addAllSupportedAbis(@NonNull Collection<Abi> abis) {
-        abis.forEach(this::addSupportedAbi);
-    }
-
-    @NonNull
-    public List<Abi> getTranslatedAbis() {
-        return ImmutableList.copyOf(mTranslatedAbis);
-    }
-
-    public void addTranslatedAbi(@NonNull Abi abi) {
-        mTranslatedAbis.add(abi);
-    }
-
-    public void addAllTranslatedAbis(@NonNull Collection<Abi> abis) {
-        mTranslatedAbis.addAll(abis);
-    }
-
-    @NonNull
-    public Set<UiMode> getSupportedUiModes() {
-        return mUiModes;
-    }
-
-    public void addSupportedUiMode(@NonNull UiMode uiMode) {
-        mUiModes.add(uiMode);
-    }
-
-    public void addAllSupportedUiModes(@NonNull Collection<UiMode> uiModes) {
-        mUiModes.addAll(uiModes);
-    }
-
-    public PowerType getChargeType() {
-        return mPluggedIn;
-    }
-
-    public void setChargeType(@NonNull PowerType chargeType) {
-        mPluggedIn = chargeType;
-    }
-
-    public Screen getScreen() {
-        return mScreen;
-    }
-
-    public void setScreen(@NonNull Screen s) {
-        mScreen = s;
-    }
-
-    @Nullable
-    public Environment getEnvironment() {
-        return mEnvironment;
-    }
-
-    public void setEnvironment(@Nullable Environment environment) {
-        mEnvironment = environment;
-    }
-
-    public Touchpad getTouchpad() {
-        return mTouchpad;
-    }
-
-    public void setTouchpad(Touchpad mTouchpad) {
-        this.mTouchpad = mTouchpad;
-    }
-
-    public Hinge getHinge() {
-        return mHinge;
-    }
-
-    public void setHinge(Hinge mHinge) {
-        this.mHinge = mHinge;
-    }
-
-    /**
-     * Returns a copy of the object that shares no state with it, but is initialized to equivalent
-     * values.
-     *
-     * @return A copy of the object.
-     */
-    @NonNull
-    public Hardware deepCopy() {
-        Hardware hw = new Hardware();
-        hw.mScreen = mScreen != null ? mScreen.deepCopy() : null;
-        hw.mEnvironment = mEnvironment != null ? mEnvironment.deepCopy() : null;
-        hw.mTouchpad = mTouchpad != null ? mTouchpad.deepCopy() : null;
-        hw.mHinge = mHinge != null ? mHinge.deepCopy() : null;
-        hw.mNetworking = mNetworking.clone();
-        hw.mSensors = mSensors.clone();
-        // Get the constant boolean value
-        hw.mMic = mMic;
-        hw.mCameras = new ArrayList<Camera>();
-        for (Camera c : mCameras) {
-            hw.mCameras.add(c.deepCopy());
-        }
-        hw.mKeyboard = mKeyboard;
-        hw.mNav = mNav;
-        hw.mRam = mRam;
-        hw.mButtons = mButtons;
-        hw.mInternalStorage = new ArrayList<>(mInternalStorage);
-        hw.mRemovableStorage = new ArrayList<>(mRemovableStorage);
-        hw.mCpu = mCpu;
-        hw.mGpu = mGpu;
-        hw.mAbis = new ArrayList<>(mAbis);
-        hw.mTranslatedAbis = new ArrayList<>(mTranslatedAbis);
-        hw.mUiModes = mUiModes.clone();
-        hw.mPluggedIn = mPluggedIn;
-        hw.mSkinFile = mSkinFile;
-        hw.mSdCard = mSdCard;
-        return hw;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == this) {
-            return true;
-        }
-        if (!(o instanceof Hardware)) {
-            return false;
-        }
-        Hardware hw = (Hardware) o;
-        return Objects.equal(mScreen, hw.getScreen())
-                && Objects.equal(mEnvironment, hw.getEnvironment())
-                && Objects.equal(mTouchpad, hw.getTouchpad())
-                && Objects.equal(mNetworking, hw.getNetworking())
-                && Objects.equal(mSensors, hw.getSensors())
-                && mMic == hw.hasMic()
-                && mSdCard == hw.hasSdCard()
-                && Objects.equal(mCameras, hw.getCameras())
-                && Objects.equal(mKeyboard, hw.getKeyboard())
-                && Objects.equal(mNav, hw.getNav())
-                && Objects.equal(mRam, hw.getRam())
-                && Objects.equal(mButtons, hw.getButtonType())
-                && Objects.equal(mInternalStorage, hw.getInternalStorage())
-                && Objects.equal(mRemovableStorage, hw.getRemovableStorage())
-                && Objects.equal(mCpu, hw.getCpu())
-                && Objects.equal(mGpu, hw.getGpu())
-                && Objects.equal(mAbis, hw.getSupportedAbis())
-                && Objects.equal(mTranslatedAbis, hw.getTranslatedAbis())
-                && Objects.equal(mUiModes, hw.getSupportedUiModes())
-                && Objects.equal(mPluggedIn, hw.getChargeType())
-                && Objects.equal(mSkinFile, hw.getSkinFile());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(
-                mScreen,
-                mEnvironment,
-                mTouchpad,
-                mNetworking,
-                mSensors,
-                mMic,
-                mSdCard,
-                mCameras,
-                mKeyboard,
-                mNav,
-                mRam,
-                mButtons,
-                mInternalStorage,
-                mRemovableStorage,
-                mCpu,
-                mGpu,
-                mAbis,
-                mTranslatedAbis,
-                mUiModes,
-                mPluggedIn,
-                mSkinFile);
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hardware <mScreen=");
-        sb.append(mScreen);
-        sb.append(", mEnvironment=");
-        sb.append(mEnvironment);
-        sb.append(", mTouchpad=");
-        sb.append(mTouchpad);
-        sb.append(", mNetworking=");
-        sb.append(mNetworking);
-        sb.append(", mSensors=");
-        sb.append(mSensors);
-        sb.append(", mMic=");
-        sb.append(mMic);
-        sb.append(", mSdCard=");
-        sb.append(mSdCard);
-        sb.append(", mCameras=");
-        sb.append(mCameras);
-        sb.append(", mKeyboard=");
-        sb.append(mKeyboard);
-        sb.append(", mNav=");
-        sb.append(mNav);
-        sb.append(", mRam=");
-        sb.append(mRam);
-        sb.append(", mButtons=");
-        sb.append(mButtons);
-        sb.append(", mInternalStorage=");
-        sb.append(mInternalStorage);
-        sb.append(", mRemovableStorage=");
-        sb.append(mRemovableStorage);
-        sb.append(", mCpu=");
-        sb.append(mCpu);
-        sb.append(", mGpu=");
-        sb.append(mGpu);
-        sb.append(", mAbis=");
-        sb.append(mAbis);
-        sb.append(", mTranslatedAbis=");
-        sb.append(mTranslatedAbis);
-        sb.append(", mUiModes=");
-        sb.append(mUiModes);
-        sb.append(", mPluggedIn=");
-        sb.append(mPluggedIn);
-        sb.append(", mSkinFile=");
-        sb.append(mSkinFile);
-        sb.append(">");
-        return sb.toString();
-    }
+  override fun toString(): String {
+    val sb = StringBuilder()
+    sb.append("Hardware <screen=")
+    sb.append(screen)
+    sb.append(", environment=")
+    sb.append(environment)
+    sb.append(", touchpad=")
+    sb.append(touchpad)
+    sb.append(", networking=")
+    sb.append(_networking)
+    sb.append(", sensors=")
+    sb.append(_sensors)
+    sb.append(", mic=")
+    sb.append(hasMic)
+    sb.append(", sdCard=")
+    sb.append(sdCard)
+    sb.append(", cameras=")
+    sb.append(_cameras)
+    sb.append(", keyboard=")
+    sb.append(keyboard)
+    sb.append(", nav=")
+    sb.append(nav)
+    sb.append(", ram=")
+    sb.append(ram)
+    sb.append(", buttons=")
+    sb.append(buttonType)
+    sb.append(", internalStorage=")
+    sb.append(_internalStorage)
+    sb.append(", removableStorage=")
+    sb.append(_removableStorage)
+    sb.append(", cpu=")
+    sb.append(cpu)
+    sb.append(", gpu=")
+    sb.append(gpu)
+    sb.append(", abis=")
+    sb.append(_abis)
+    sb.append(", translatedAbis=")
+    sb.append(_translatedAbis)
+    sb.append(", uiModes=")
+    sb.append(_uiModes)
+    sb.append(", pluggedIn=")
+    sb.append(chargeType)
+    sb.append(", skinFile=")
+    sb.append(skinFile)
+    sb.append(">")
+    return sb.toString()
+  }
 }

@@ -321,14 +321,16 @@ public final class Device {
      * A convenience method to get if the screen for this device is round.
      */
     public boolean isScreenRound() {
-        return getDefaultHardware().getScreen().getScreenRound() == ScreenRound.ROUND;
+        Screen screen = getDefaultHardware().getScreen();
+        return screen != null && screen.getScreenRound() == ScreenRound.ROUND;
     }
 
     /**
      * A convenience method to get the chin size for this device.
      */
     public int getChinSize() {
-        return getDefaultHardware().getScreen().getChin();
+        Screen screen = getDefaultHardware().getScreen();
+        return screen == null ? 0 : screen.getChin();
     }
 
     /**
@@ -668,7 +670,7 @@ public final class Device {
     // TODO: http://b/326289372 -  Declare this in XML
     private static boolean hasTabletScreen(@NonNull Device device) {
         Screen screen = device.getDefaultHardware().getScreen();
-        return screen.getDiagonalLength() >= MINIMUM_TABLET_SIZE && !screen.isFoldable();
+        return screen != null && screen.getDiagonalLength() >= MINIMUM_TABLET_SIZE && !screen.isFoldable();
     }
 
     /** Whether the given device is a wear device */
