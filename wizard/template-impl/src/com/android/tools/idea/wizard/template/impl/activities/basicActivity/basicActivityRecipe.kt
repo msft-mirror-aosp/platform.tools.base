@@ -85,6 +85,7 @@ fun RecipeExecutor.generateBasicActivity(
     hasNoActionBar = true,
     activityThemeName = moduleData.themesData.main.name,
     generateActivityTitle = false,
+    windowSoftInputMode = "adjustResize",
   )
   generateAppBar(moduleData, activityClass, packageName, contentLayoutName, layoutName, useAndroidX = useAndroidX, isMaterial3 = true)
   addViewBindingSupport(moduleData.viewBindingSupport, true)

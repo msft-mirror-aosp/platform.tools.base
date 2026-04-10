@@ -54,7 +54,15 @@ fun RecipeExecutor.viewModelActivityRecipe(
   addAllKotlinDependencies(moduleData)
 
   // TODO: Old templates doesn't set requireTheme as true, check if it's not needed
-  generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    false,
+    generateActivityTitle = false,
+    windowSoftInputMode = "adjustResize",
+  )
 
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")

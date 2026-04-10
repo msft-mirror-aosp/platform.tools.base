@@ -30,10 +30,13 @@ fun androidManifestXml(
   isResizeable: Boolean = false,
   libraryName: String = "",
   taskAffinity: String? = null,
+  windowSoftInputMode: String? = null,
 ): String {
   val appName = if (isNewModule) "app_name" else "title_" + activityToLayout(activityClass)
 
   val generateActivityTitleBlock = renderIf(generateActivityTitle) { "android:label = \"@string/$appName\"" }
+
+  val windowSoftInputModeBlock = renderIf(windowSoftInputMode != null) { """android:windowSoftInputMode="$windowSoftInputMode"""" }
 
   val themeBlock =
     when {
@@ -65,6 +68,7 @@ fun androidManifestXml(
     android:exported="$launcher"
     $generateActivityTitleBlock
     $themeBlock
+    $windowSoftInputModeBlock
     $taskAffinityBlock
     $isResizeableBlock>
     ${commonActivityBody(launcher, isLibraryProject)}
