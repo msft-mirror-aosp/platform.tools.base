@@ -232,6 +232,11 @@ void InitializePerfa(jvmtiEnv* jvmti_env, JNIEnv* jni_env,
 
 jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
                                        jint count) {
+  if (env == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "JNIEnv is null in SendObjectCountNative. Abandoning event.");
+    return JNI_FALSE;
+  }
   if (!Agent::Instance().IsConnectedToDaemon()) {
     Log::I(Log::Tag::PROFILER,
            "Agent not connected to daemon. Abandoning retained object count "
@@ -268,6 +273,11 @@ jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
 }
 
 void JNICALL SendErrorNative(JNIEnv* env, jclass j_class, jint error_code) {
+  if (env == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "JNIEnv is null in SendErrorNative. Abandoning event.");
+    return;
+  }
   if (!Agent::Instance().IsConnectedToDaemon()) {
     Log::I(Log::Tag::PROFILER, "Agent not connected to daemon.");
     return;
@@ -298,6 +308,11 @@ void JNICALL SendErrorNative(JNIEnv* env, jclass j_class, jint error_code) {
 }
 
 void RegisterLeakCanaryNatives(JNIEnv* jni_env) {
+  if (jni_env == nullptr) {
+    Log::E(Log::Tag::PROFILER,
+           "Could not get JNIEnv to register LeakCanary natives.");
+    return;
+  }
   jclass manager_class = jni_env->FindClass(
       "com/android/tools/profiler/support/profilers/LeakCanaryManager");
   if (manager_class == nullptr) {
@@ -366,6 +381,12 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
                (long long)command->stream_id(), command->pid(),
                (long long)command->session_id());
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to handle CHECK_LEAKCANARY_PRESENT "
+                 "command.");
+          return;
+        }
         jclass support_class_raw = jni_env->FindClass(
             "com/android/tools/profiler/support/profilers/"
             "LeakCanaryManager");
@@ -424,6 +445,12 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
                (long long)command->stream_id(), command->pid(),
                (long long)command->session_id());
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
+        if (jni_env == nullptr) {
+          Log::E(Log::Tag::PROFILER,
+                 "Could not get JNIEnv to handle GET_LEAKCANARY_THRESHOLD "
+                 "command.");
+          return;
+        }
         jclass support_class_raw = jni_env->FindClass(
             "com/android/tools/profiler/support/profilers/"
             "LeakCanaryManager");
