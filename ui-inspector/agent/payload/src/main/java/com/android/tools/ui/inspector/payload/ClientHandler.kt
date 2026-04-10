@@ -19,31 +19,56 @@ package com.android.tools.ui.inspector.payload
 import android.net.LocalSocket
 import android.util.Log
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
+import com.android.tools.ui.inspector.payload.appinspection.InspectorMessenger
+import com.android.tools.ui.inspector.payload.appinspection.createAppInspectionConnection
+import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvironment
+import com.android.tools.ui.inspector.payload.inspector.ViewInspector
+import java.io.EOFException
 
-/** Handles a single connection from the host (the client) to the UI Inspector agent. */
+/** Handles a single connection from the host to a UI Inspector agent. */
 class ClientHandler(private val socket: LocalSocket) {
   companion object {
     private const val TAG = "studio.ClientHandler"
+    private const val THREAD_NAME = "ui_inspector_thread"
   }
 
   fun handle() {
-    Log.i(TAG, "Client connected!")
+    val crashListener: (Throwable) -> Unit = { throwable ->
+      // TODO: Temporary crash listener. Eventually we want to report these crashes to the host.
+      Log.e(TAG, "Uncaught exception in inspector", throwable)
+    }
+
+    // TODO: once we have more than one inspector, differentiate thread name
+    val primaryExecutor = HandlerThreadExecutor(THREAD_NAME, crashListener)
+
     try {
       socket.use { s ->
         val inputStream = s.inputStream
         val outputStream = s.outputStream
 
-        // Read framed message
-        val payload = FramingProtocol.readMessage(inputStream)
-        val message = String(payload, Charsets.UTF_8)
-        Log.i(TAG, "Received message: $message")
+        val connection = createAppInspectionConnection(outputStream, crashListener)
+        val environment = createInspectorEnvironment(primaryExecutor, crashListener)
+        val inspector = ViewInspector(connection, environment)
+        val messenger = InspectorMessenger(outputStream, inspector, crashListener)
 
-        // Send framed response
-        val response = "Hello from agent!".toByteArray(Charsets.UTF_8)
-        FramingProtocol.writeMessage(outputStream, response)
+        try {
+          while (true) {
+            val payload = FramingProtocol.readMessage(inputStream)
+            messenger.handleCommand(payload)
+          }
+        } catch (e: EOFException) {
+          Log.i(TAG, "Client disconnected (EOF)")
+        } catch (e: IllegalStateException) {
+          Log.e(TAG, "Framing protocol error", e)
+          crashListener(e)
+        }
       }
     } catch (e: Exception) {
       Log.e(TAG, "Error handling client", e)
+      crashListener(e)
+    } finally {
+      primaryExecutor.quitSafely()
     }
   }
 }
