@@ -59,8 +59,23 @@ crate.spec(
 )
 crate.spec(
     package = "windows",
-    features = ["Win32_Globalization"],
+    features = [
+        "Win32_Foundation",
+        "Win32_Globalization",
+        "Win32_Security",
+        "Win32_System_JobObjects",
+        "Win32_System_Threading",
+    ],
     version = "0.61.1",
+)
+crate.spec(
+    default_features = False,
+    features = [
+        "blocking",
+        "rustls",
+    ],
+    package = "reqwest",
+    version = "0.13.2",
 )
 crate.from_specs()
 use_repo(crate, "crates")
