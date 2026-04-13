@@ -32,14 +32,15 @@ class ExpandArtProfileWildcardsTest {
 
   @get:Rule val tempFolder = TemporaryFolder()
 
-  private val app = HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app")
-  private val lib = HelloWorldApp.forPluginWithNamespace("com.android.library", "com.example.lib")
+  private val app =
+    HelloWorldApp.forPluginWithNamespace("com.android.application", "com.example.app").appendToBuild("android.enableKotlin = false")
+  private val lib =
+    HelloWorldApp.forPluginWithNamespace("com.android.library", "com.example.lib").appendToBuild("android.enableKotlin = false")
 
   @get:Rule
   val project =
     GradleTestProject.builder()
       .fromTestApp(MultiModuleTestProject.builder().subproject(":app", app).subproject(":lib", lib).dependency(app, lib).build())
-      .disableBuiltInKotlin()
       .create()
 
   @Test
