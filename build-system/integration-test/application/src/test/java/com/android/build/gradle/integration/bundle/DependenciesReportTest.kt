@@ -57,7 +57,7 @@ class DependenciesReportTest {
       .dependency(lib, "androidx.collection:collection:1.0.0")
       .fileDependency(lib, "local_in_lib.jar")
       .build()
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
   @Test
   fun testDependenciesFile() {
@@ -95,8 +95,8 @@ class DependenciesReportTest {
       // This collection should include every Library on which a Project has a direct dependency
       val directModuleDependencies = moduleDependenciesList.first().dependencyIndexList.map { depIndex -> libraryList[depIndex] }
 
-      // 3 artifacts -- androidx.core, androidx.fragment, and androidx.collection
-      assertThat(directModuleDependencies.filter { lib -> lib.hasMavenLibrary() }).hasSize(3)
+      // 4 artifacts -- kotlin-stdlib, androidx.core, androidx.fragment, and androidx.collection
+      assertThat(directModuleDependencies.filter { lib -> lib.hasMavenLibrary() }).hasSize(4)
 
       // 2 jars -- local.jar and local_in_lib.jar
       assertThat(directModuleDependencies.filter { lib -> !lib.hasMavenLibrary() }).hasSize(2)
