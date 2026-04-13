@@ -41,7 +41,6 @@ import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtension;
 import com.android.build.gradle.internal.dsl.DeclarativeApplicationExtensionImpl;
 import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
-import com.android.build.gradle.internal.dsl.DslBindingUtils;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
@@ -64,14 +63,8 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.internal.plugins.BindsProjectType;
-import org.gradle.api.internal.plugins.ProjectTypeBinding;
-import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-// import org.gradle.features.annotations.BindsProjectType;
-// import org.gradle.features.binding.ProjectTypeBinding;
-// import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
@@ -80,7 +73,6 @@ import java.util.Objects;
 import javax.inject.Inject;
 
 /** Gradle plugin class for 'application' projects, applied on the base application module */
-@BindsProjectType(AppPlugin.Binding.class)
 public class AppPlugin
         extends AbstractAppPlugin<
                 com.android.build.api.dsl.ApplicationExtension,
@@ -100,30 +92,6 @@ public class AppPlugin
 
     @Override
     protected void pluginSpecificApply(@NonNull Project project) {
-    }
-
-    static class Binding implements ProjectTypeBinding {
-        public void bind(ProjectTypeBindingBuilder builder) {
-            builder.bindProjectType(
-                            "androidApp",
-                            ApplicationDeclarativeDefinition.class,
-                            (context, definition, buildModel) -> {
-                                DeclarativeServices services =
-                                        context.getObjectFactory()
-                                                .newInstance(DeclarativeServices.class);
-
-                                DeclarativeApplicationExtension extension =
-                                        (DeclarativeApplicationExtension)
-                                                Objects.requireNonNull(services)
-                                                        .getProject()
-                                                        .getExtensions()
-                                                        .getByName("android");
-                                DslBindingUtils.copyProperties(definition, extension);
-                            })
-                    .withUnsafeDefinitionImplementationType(
-                            ApplicationDeclarativeDefinitionImpl.class);
-            //                    .withUnsafeApplyAction();
-        }
     }
 
     @NonNull
