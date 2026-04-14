@@ -43,9 +43,9 @@ intellij.remote_platform(
 
 intellij.remote_platform(
     name = "intellij_2026_1",
-    sha256 = "f57d3dba9970c774cf377583629aea540418e677ec6365570e76dea9cb2f3f9b",
-    top_level_dir = "idea-IU-261.22158.277",
-    url = "https://download.jetbrains.com/idea/idea-2026.1.tar.gz",
+    sha256 = "c00d8318492e718c3893cf51fe783f3585214adf48e2c2da2bde47829d70a90e",
+    top_level_dir = "idea-IU-261.23567.28",
+    url = "https://download.jetbrains.com/idea/idea-261.23567.28.tar.gz",
 )
 
 # IMPORTANT: This list of repos should always be kept up to date with the platforms defined above.
