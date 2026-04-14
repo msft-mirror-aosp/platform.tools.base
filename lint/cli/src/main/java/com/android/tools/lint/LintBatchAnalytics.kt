@@ -17,6 +17,7 @@
 package com.android.tools.lint
 
 import com.android.tools.analytics.AnalyticsSettings
+import com.android.tools.analytics.AnalyticsStateManager
 import com.android.tools.analytics.Anonymizer
 import com.android.tools.analytics.CommonMetricsData
 import com.android.tools.analytics.UsageTracker
@@ -60,6 +61,8 @@ class LintBatchAnalytics {
       client.log(failure, "Could not initialize analytics")
       return
     }
+
+    AnalyticsStateManager.dataSharing = AnalyticsSettings.optedIn
 
     if (!AnalyticsSettings.optedIn) {
       return
