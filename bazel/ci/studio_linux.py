@@ -119,6 +119,8 @@ _ARTIFACTS = [
     ('tools/base/layoutlib-api/tools.layoutlib-api.src.jar', 'artifacts'),
     ('tools/base/resource-repository/libtools.resource-repository.jar', 'artifacts'),
     ('tools/base/environment-services/libtools.environment-services.jar', 'artifacts'),
+    ('tools/base/apkparser/tools.binary-resources.jar', 'artifacts'),
+    ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
     ('tools/vendor/google/android/legacy-android-cli.zip', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
