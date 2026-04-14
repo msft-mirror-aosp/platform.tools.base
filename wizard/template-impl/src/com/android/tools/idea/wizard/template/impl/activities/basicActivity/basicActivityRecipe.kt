@@ -53,7 +53,6 @@ fun RecipeExecutor.generateBasicActivity(
 ) {
   val (projectData, srcOut, resOut) = moduleData
   val appCompatVersion = moduleData.apis.appCompatVersion
-  val useAndroidX = moduleData.projectTemplateData.androidXSupport
 
   if (projectData.language == Language.Kotlin) {
     addAllKotlinDependencies(moduleData)
@@ -87,16 +86,16 @@ fun RecipeExecutor.generateBasicActivity(
     generateActivityTitle = false,
     windowSoftInputMode = "adjustResize",
   )
-  generateAppBar(moduleData, activityClass, packageName, contentLayoutName, layoutName, useAndroidX = useAndroidX, isMaterial3 = true)
+  generateAppBar(moduleData, activityClass, packageName, contentLayoutName, layoutName, useAndroidX = true, isMaterial3 = true)
   addViewBindingSupport(moduleData.viewBindingSupport, true)
-  addDependency("com.android.support:appcompat-v7:$appCompatVersion.+")
-  addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.appcompat:appcompat:$appCompatVersion")
+  addDependency("androidx.constraintlayout:constraintlayout:+")
 
   // navHostFragmentId needs to be unique, thus appending contentLayoutName since it's
   // guaranteed to be unique
   val navHostFragmentId = "nav_host_fragment_${contentLayoutName}"
   save(
-    fragmentSimpleXml(navGraphName = navGraphName, navHostFragmentId = navHostFragmentId, useAndroidX = useAndroidX),
+    fragmentSimpleXml(navGraphName = navGraphName, navHostFragmentId = navHostFragmentId),
     moduleData.resDir.resolve("layout/$contentLayoutName.xml"),
   )
   if (moduleData.isNewModule) {
@@ -114,11 +113,9 @@ fun RecipeExecutor.generateBasicActivity(
           isNewProject = moduleData.isNewModule,
           applicationPackage = projectData.applicationPackage,
           packageName = packageName,
-          useAndroidX = useAndroidX,
           activityClass = activityClass,
           layoutName = layoutName,
           menuName = menuName,
-          navHostFragmentId = navHostFragmentId,
           isViewBindingSupported = isViewBindingSupported,
         )
       Language.Kotlin ->
@@ -126,7 +123,6 @@ fun RecipeExecutor.generateBasicActivity(
           isNewProject = moduleData.isNewModule,
           applicationPackage = projectData.applicationPackage,
           packageName = packageName,
-          useAndroidX = useAndroidX,
           activityClass = activityClass,
           layoutName = layoutName,
           menuName = menuName,
@@ -145,7 +141,6 @@ fun RecipeExecutor.generateBasicActivity(
         firstFragmentJava(
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           firstFragmentClass = firstFragmentClass,
           secondFragmentClass = secondFragmentClass,
           firstFragmentLayoutName = firstFragmentLayoutName,
@@ -167,7 +162,6 @@ fun RecipeExecutor.generateBasicActivity(
         secondFragmentJava(
           packageName = packageName,
           applicationPackage = projectData.applicationPackage,
-          useAndroidX = useAndroidX,
           firstFragmentClass = firstFragmentClass,
           secondFragmentClass = secondFragmentClass,
           secondFragmentLayoutName = secondFragmentLayoutName,
@@ -181,11 +175,10 @@ fun RecipeExecutor.generateBasicActivity(
           secondFragmentClass = secondFragmentClass,
           secondFragmentLayoutName = secondFragmentLayoutName,
           isViewBindingSupported = isViewBindingSupported,
-          useAndroidX = useAndroidX,
         )
     }
-  val firstFragmentLayoutContent = fragmentFirstLayout(useAndroidX, firstFragmentClass)
-  val secondFragmentLayoutContent = fragmentSecondLayout(useAndroidX, secondFragmentClass)
+  val firstFragmentLayoutContent = fragmentFirstLayout(firstFragmentClass)
+  val secondFragmentLayoutContent = fragmentSecondLayout(secondFragmentClass)
   save(firstFragmentClassContent, srcOut.resolve("$firstFragmentClass.$ktOrJavaExt"))
   save(secondFragmentClassContent, srcOut.resolve("$secondFragmentClass.$ktOrJavaExt"))
   save(firstFragmentLayoutContent, resOut.resolve("layout/$firstFragmentLayoutName.xml"))
@@ -205,11 +198,11 @@ fun RecipeExecutor.generateBasicActivity(
 
   addDependency("androidx.activity:activity-ktx:+")
   if (generateKotlin) {
-    addDependency("android.arch.navigation:navigation-fragment-ktx:+")
-    addDependency("android.arch.navigation:navigation-ui-ktx:+")
+    addDependency("androidx.navigation:navigation-fragment-ktx:+")
+    addDependency("androidx.navigation:navigation-ui-ktx:+")
   } else {
-    addDependency("android.arch.navigation:navigation-fragment:+")
-    addDependency("android.arch.navigation:navigation-ui:+")
+    addDependency("androidx.navigation:navigation-fragment:+")
+    addDependency("androidx.navigation:navigation-ui:+")
   }
 
   setJavaKotlinCompileOptions(projectData.language == Language.Kotlin)

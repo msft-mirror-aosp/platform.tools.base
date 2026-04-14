@@ -16,7 +16,6 @@
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.src
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -25,7 +24,6 @@ import com.android.tools.idea.wizard.template.renderIf
 fun secondFragmentJava(
   packageName: String,
   applicationPackage: String?,
-  useAndroidX: Boolean,
   firstFragmentClass: String,
   secondFragmentClass: String,
   secondFragmentLayoutName: String,
@@ -46,8 +44,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import ${getMaterialComponentName("android.support.annotation.NonNull", useAndroidX)};
-import ${getMaterialComponentName("android.support.v4.app.Fragment", useAndroidX)};
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, secondFragmentLayoutName, Language.Java)}
 

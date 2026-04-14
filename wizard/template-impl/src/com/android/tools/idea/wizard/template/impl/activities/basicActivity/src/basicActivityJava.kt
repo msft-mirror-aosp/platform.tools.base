@@ -16,7 +16,6 @@
 package com.android.tools.idea.wizard.template.impl.activities.basicActivity.src
 
 import com.android.tools.idea.wizard.template.Language
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -26,11 +25,9 @@ fun basicActivityJava(
   isNewProject: Boolean,
   applicationPackage: String?,
   packageName: String,
-  useAndroidX: Boolean,
   activityClass: String,
   layoutName: String,
   menuName: String,
-  navHostFragmentId: String,
   isViewBindingSupported: Boolean,
 ): String {
   val applicationPackageBlock = renderIf(applicationPackage != null) { "import $applicationPackage.R;" }
@@ -82,8 +79,8 @@ package ${(packageName)};
 
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
-import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)};
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)};
+import com.google.android.material.snackbar.Snackbar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -92,6 +89,7 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.navigation.fragment.NavHostFragment;
 ${importViewBindingClass(isViewBindingSupported, packageName, applicationPackage, layoutName, Language.Java)}
 
 $newProjectImportBlock
@@ -116,9 +114,15 @@ ${renderIf(isViewBindingSupported) {"""
         });
         setSupportActionBar(${findViewById(Language.Java, isViewBindingSupported, id = "toolbar")});
 
-        NavController navController = Navigation.findNavController(this, R.id.${navHostFragmentId});
-        appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
-        NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment_content_main);
+
+        if (navHostFragment != null) {
+            NavController navController = navHostFragment.getNavController();
+
+            appBarConfiguration = new AppBarConfiguration.Builder(navController.getGraph()).build();
+            NavigationUI.setupActionBarWithNavController(this, navController, appBarConfiguration);
+        }
 
         ${findViewById(
           Language.Java,
@@ -136,7 +140,9 @@ $newProjectBlock2
 
     @Override
     public boolean onSupportNavigateUp() {
-        NavController navController = Navigation.findNavController(this, R.id.${navHostFragmentId});
+        NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.nav_host_fragment_content_main);
+        NavController navController = navHostFragment.getNavController();
         return NavigationUI.navigateUp(navController, appBarConfiguration)
                 || super.onSupportNavigateUp();
     }
