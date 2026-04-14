@@ -1,0 +1,163 @@
+/*
+ * Copyright (C) 2026 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.android.tools.lint
+
+import com.android.tools.lint.renderer.LINTSCRIPT_JS
+import com.android.tools.lint.renderer.STYLE_CSS
+import com.android.tools.lint.renderer.data.LintCheck
+import com.android.tools.lint.renderer.data.LintIssue
+import com.android.tools.lint.renderer.data.LintLocation
+import com.android.tools.lint.renderer.data.LintProject
+import com.android.tools.lint.renderer.data.LintReport
+import com.google.gson.GsonBuilder
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class HtmlReporterV2IndexTest {
+
+  @Test
+  fun testGetIndexHtml() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check basic structure
+    assertTrue(html.contains("<!DOCTYPE html>"))
+    assertTrue(html.contains("<html lang=\"en\">"))
+    assertTrue(html.contains("<title>Lint Report</title>"))
+
+    // Check inclusion of CSS and JS
+    assertTrue(html.contains(STYLE_CSS))
+    assertTrue(html.contains(LINTSCRIPT_JS))
+    assertTrue(html.contains(reportData))
+
+    // Check for some of the new CSS classes/rules we added
+    assertTrue(STYLE_CSS.contains(".text-green-600"))
+    assertTrue(STYLE_CSS.contains(".hover\\:underline:hover"))
+    assertTrue(STYLE_CSS.contains(".pl-level-0"))
+    assertTrue(STYLE_CSS.contains(".pl-level-8"))
+
+    // Check for some key JS logic
+    assertTrue(LINTSCRIPT_JS.contains("this.lintReport.issues"))
+    assertTrue(LINTSCRIPT_JS.contains("sort: { by: 'severity', order: 'desc' }"))
+    assertTrue(LINTSCRIPT_JS.contains("this.escapeHTML(locationStr)"))
+
+    // Check HTML structure matches what JS expects
+    assertTrue(html.contains("id=\"project-name\""))
+    assertTrue(html.contains("id=\"total-issues\""))
+    assertTrue(html.contains("id=\"lint-data\""))
+    assertTrue(html.contains("id=\"ExtraIssues\""))
+    assertTrue(html.contains("id=\"MissingIssues\""))
+  }
+
+  @Test
+  fun testGetIndexHtmlWithFullReport() {
+    val report =
+      LintReport(
+        name = "Comprehensive Report",
+        timeStamp = "2026-05-20 12:00:00",
+        issues =
+          listOf(
+            LintIssue(
+              id = "TestIssue",
+              severityDescription = "Error",
+              message = "This is a test message with \"quotes\"",
+              category = "Correctness",
+              priority = 5,
+              summary = "Test summary",
+              explanation = "Test explanation",
+              location = LintLocation("src/Test.kt", 10, 5),
+              secondaryLocations = listOf(LintLocation("src/Other.kt", 20, 1)),
+              wasAutoFixed = true,
+              includedVariants = listOf("debug"),
+              excludedVariants = listOf("release"),
+              vendor = "Android Open Source Project",
+            )
+          ),
+        numberOfIssues = 1,
+        lintVersion = "8.6.0",
+        additionalChecks = listOf(LintCheck(id = "AdditionalId", summary = "Additional summary", category = "Security", vendor = "Google")),
+        disabledChecks = listOf(LintCheck(id = "DisabledId", summary = "Disabled summary", reason = "Explicitly disabled")),
+        projects = listOf(LintProject(name = "app", relativePath = "app/", errorCount = 0, warningCount = 1)),
+      )
+    val json = GsonBuilder().create().toJson(report)
+    val reportData = "const lintReport = $json;"
+    val html = getIndexHtml(reportData)
+
+    assertTrue(html.contains(reportData))
+    assertTrue(html.contains("\"id\":\"TestIssue\""))
+    assertTrue(html.contains("\"severityDescription\":\"Error\""))
+    assertTrue(html.contains("\"message\":\"This is a test message with \\\"quotes\\\"\""))
+    assertTrue(html.contains("\"wasAutoFixed\":true"))
+    assertTrue(html.contains("\"vendor\":\"Android Open Source Project\""))
+    assertTrue(html.contains("src/Test.kt"))
+    assertTrue(html.contains("src/Other.kt"))
+    assertTrue(html.contains("\"id\":\"AdditionalId\""))
+    assertTrue(html.contains("\"id\":\"DisabledId\""))
+    assertTrue(html.contains("\"name\":\"app\""))
+    assertTrue(html.contains("\"lintVersion\":\"8.6.0\""))
+  }
+
+  @Test
+  fun testGetIndexHtmlNoIssues() {
+    val report = LintReport(name = "Lint Report", timeStamp = "2026-05-20", issues = emptyList(), numberOfIssues = 0)
+    val json = GsonBuilder().create().toJson(report)
+    val reportData = "const lintReport = $json;"
+    val html = getIndexHtml(reportData)
+
+    assertTrue(html.contains(reportData))
+    assertTrue(html.contains("\"issues\":[]"))
+  }
+
+  @Test
+  fun testGetIndexHtmlWithMultipleIssues() {
+    val report =
+      LintReport(
+        name = "Multiple Issues Report",
+        timeStamp = "2026-05-20",
+        issues =
+          listOf(
+            LintIssue(
+              id = "Issue1",
+              severityDescription = "Error",
+              message = "Message 1",
+              category = "Correctness",
+              priority = 5,
+              summary = "Summary 1",
+              explanation = "Explanation 1",
+              location = LintLocation("File1.kt", 1, 1),
+            ),
+            LintIssue(
+              id = "Issue2",
+              severityDescription = "Warning",
+              message = "Message 2",
+              category = "Performance",
+              priority = 3,
+              summary = "Summary 2",
+              explanation = "Explanation 2",
+              location = LintLocation("File2.kt", 10, 1),
+            ),
+          ),
+        numberOfIssues = 2,
+      )
+    val json = GsonBuilder().create().toJson(report)
+    val reportData = "const lintReport = $json;"
+    val html = getIndexHtml(reportData)
+
+    assertTrue(html.contains("\"id\":\"Issue1\""))
+    assertTrue(html.contains("\"id\":\"Issue2\""))
+  }
+}

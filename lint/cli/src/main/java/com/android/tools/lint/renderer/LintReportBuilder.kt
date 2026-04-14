@@ -50,8 +50,25 @@ class LintReportBuilder(
   private val urlProvider: (File) -> String?,
 ) {
 
-  fun buildReport(incidents: List<Incident>, extraIssues: List<Issue>, missingIssues: Map<Issue, String>): LintReport {
-    val lintIssues = incidents.map(::createLintIssue)
+  fun buildReport(
+    incidents: List<Incident>,
+    extraIssues: List<Issue>,
+    missingIssues: Map<Issue, String>,
+    maxCount: Int = MAX_COUNT,
+  ): LintReport {
+    val counts = mutableMapOf<Issue, Int>()
+    val lintIssues =
+      incidents
+        .filter { incident ->
+          val count = counts.getOrDefault(incident.issue, 0)
+          if (count < maxCount) {
+            counts[incident.issue] = count + 1
+            true
+          } else {
+            false
+          }
+        }
+        .map(::createLintIssue)
     val additionalChecks = extraIssues.map(::createLintCheck)
     val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }
 
@@ -146,5 +163,10 @@ class LintReportBuilder(
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
     val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
     return zonedDateTime.format(formatter)
+  }
+
+  companion object {
+    /** Maximum number of incidents shown per issue type */
+    const val MAX_COUNT = 50
   }
 }
