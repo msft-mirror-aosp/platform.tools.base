@@ -754,6 +754,127 @@ def iml_test(
         tests = test_names,
     )
 
+def studio_test(name, module, configs, jvm_flags = [], data = [], intellij_platform = DEFAULT_INTELLIJ_PLATFORM, runtime_deps = [], tags = [], tags_linux = [], tags_mac = [], tags_windows = [], **kwargs):
+    """Generates a test suite for Android Studio with multiple platform and configuration variants.
+
+    Macro generates separate test targets for each configuration provided in configs
+    (and optionally for each OS platform, if OS-specific tags are provided) and groups
+    them in a test_suite.
+
+    This macro supports unzipped studio_files target and sets the jvm flag
+    "studio.test.configuration" to the appropriate configuration for the test.
+    Prefer using asdriver AndroidStudioInstalltion for this macro, for out of the box support.
+
+    Args:
+       name: base name of the test suite.
+       module: name of the module under test.
+       configs: list of Studio test configurations.
+       jvm_flags: optional list of JVM flags to pass to the test.
+       data: optional list of data dependencies.
+       intellij_platform: optional name of the IntelliJ platform for the test.
+           Defaults to DEFAULT_INTELLIJ_PLATFORM.
+       runtime_deps: optional libraries to make available to the test at runtime.
+       tags: optional list of tags to categorize the tests. These are applied to all
+           generated test targets.
+       tags_linux: tags specific to the Linux target.
+       tags_mac: tags specific to the macOS target.
+       tags_windows: tags specific to the Windows target.
+       **kwargs: all other arguments passed to the underlying test rule.
+    """
+
+    # If nothing OS-specific was provided, then produce rules depending on config alone
+    if len(tags_linux) == 0 and len(tags_mac) == 0 and len(tags_windows) == 0:
+        create_test_suite_for_config = False
+        all_platform_info = [
+            struct(
+                suffix = "",
+                tags = [],
+                target_condition = "",
+            ),
+        ]
+    else:
+        create_test_suite_for_config = True
+        all_platform_info = [
+            struct(
+                suffix = "_linux",
+                tags = tags_linux,
+                target_condition = "@platforms//os:linux",
+            ),
+            struct(
+                suffix = "_mac",
+                tags = tags_mac,
+                target_condition = "@platforms//os:osx",
+            ),
+            struct(
+                suffix = "_windows",
+                tags = tags_windows,
+                target_condition = "@platforms//os:windows",
+            ),
+        ]
+
+    tests = []
+
+    for config in configs:
+        studio_build_files = "//tools/adt/idea/studio:android-studio.%s_files" % config
+        config_data = data + [studio_build_files]
+
+        studio_test_configuration_flag = "-Dstudio.test.configuration=%s" % config
+        config_jvm_flags = jvm_flags + [studio_test_configuration_flag]
+
+        config_test_names = []
+        studio_config_tag = "studio:%s" % config
+
+        for platform_info in all_platform_info:
+            test_name = name + "_" + config + platform_info.suffix
+            config_test_names.append(test_name)
+
+            all_tags = list(platform_info.tags) + tags
+            all_tags.append(studio_config_tag)
+
+            # Tests tagged with "manual" will still run when triggered
+            # through a test_suite, which is why the test target itself
+            # needs to be tagged with a proper target_compatible_with field.
+            compatibility = ["@platforms//:incompatible"] if "manual" in all_tags else []
+
+            # Check platform compatibility
+            if platform_info.target_condition:
+                target_compatible_with = select({
+                    platform_info.target_condition: compatibility,
+                    "//conditions:default": ["@platforms//:incompatible"],
+                })
+            else:
+                target_compatible_with = compatibility
+
+            _iml_test(
+                name = test_name,
+                module = module,
+                intellij_platform = intellij_platform,
+                jvm_flags = config_jvm_flags,
+                runtime_deps = runtime_deps,
+                tags = all_tags,
+                target_compatible_with = target_compatible_with,
+                data = config_data,
+                **kwargs
+            )
+
+        if create_test_suite_for_config:
+            test_suite_name = name + "_" + config
+            native.test_suite(
+                name = test_suite_name,
+                tags = tags,
+                tests = config_test_names,
+            )
+            tests.append(test_suite_name)
+        else:
+            tests.extend(config_test_names)
+
+    # Test-suit for all tests
+    native.test_suite(
+        name = name,
+        tags = tags,
+        tests = tests,
+    )
+
 # buildifier: disable=native-java-test
 def _iml_test(
         name,
