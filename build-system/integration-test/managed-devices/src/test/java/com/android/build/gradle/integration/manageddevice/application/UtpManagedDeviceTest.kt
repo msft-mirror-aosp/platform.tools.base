@@ -25,7 +25,9 @@ import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdkRule.Companion.withCustomSdkDir
 import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.UtpTestBase
+import org.junit.Assume.assumeFalse
 import org.junit.Rule
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
@@ -61,6 +63,13 @@ class UtpManagedDeviceTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWit
   override fun GradleTaskExecutor.configureGradleTaskExecutor(): GradleTaskExecutor {
     withCustomAndroidSdk(customAndroidSdkRule)
     return this
+  }
+
+  @Test
+  override fun runAndroidTestWithNoTestClasses() {
+    // TODO(b/476442048): Implement built-in test platform for Managed Device.
+    assumeFalse(runWithBuiltInPlatform)
+    super.runAndroidTestWithNoTestClasses()
   }
 
   override fun selectModule(moduleName: String) {

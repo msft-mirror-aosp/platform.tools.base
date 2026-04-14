@@ -792,6 +792,10 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   // Data for the android test results
   object ANDROID_TEST_RESULTS : InternalArtifactType<Directory>(DIRECTORY)
 
+  // Directory containing the list of discovered tests for instrumentation tests.
+  // This is used to skip the TestSuiteTestTask when no tests are found.
+  object ANDROID_TEST_DISCOVERY_LIST : InternalArtifactType<Directory>(DIRECTORY)
+
   override fun getFileSystemLocationName(): String {
     return fileName ?: super.getFileSystemLocationName()
   }

@@ -30,7 +30,6 @@ import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuite
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.readText
-import org.junit.Assume
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -939,10 +938,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   }
 
   @Test
-  fun runAndroidTestWithNoTestClasses() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
+  open fun runAndroidTestWithNoTestClasses() {
     selectModule("emptyAppProject")
 
     val result =
@@ -950,7 +946,11 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
         .withEnableInfoLogging(true) // "No tests found" message is info level.
         .run(testTaskName)
 
-    result.assertOutputContains("No tests found, nothing to do.")
+    if (runWithBuiltInPlatform) {
+      result.assertTask(":emptyAppProject:connectedDebugAndroidTest").wasSkipped()
+    } else {
+      result.assertOutputContains("No tests found, nothing to do.")
+    }
   }
 
   /** Regression test for b/466374462. */
