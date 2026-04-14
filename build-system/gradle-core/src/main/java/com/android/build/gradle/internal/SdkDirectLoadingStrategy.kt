@@ -248,7 +248,7 @@ private class SupportToolsComponents(
           it.parameters.file.set(sdkDirectory.resolve(SdkConstants.FD_TOOLS).resolve("package.xml"))
         }
 
-      val apiLevelLessThan16 = AndroidTargetHash.getVersionFromHash(targetHash)?.apiLevel?.let { it < 16 } ?: false
+      val apiLevelLessThan16 = AndroidTargetHash.getVersionFromHash(targetHash)?.androidApiLevel?.majorVersion?.let { it < 16 } ?: false
 
       // We only require tools/support package to exist if we are targeting api < 16, otherwise
       // the annotations included in the annotations.jar are already inside android.jar.
