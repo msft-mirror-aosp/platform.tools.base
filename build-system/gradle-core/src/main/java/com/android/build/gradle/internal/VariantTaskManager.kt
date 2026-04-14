@@ -646,8 +646,10 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
 
   /** Register report tasks for test results and code coverage reporting */
   protected open fun registerTestAndCodeCoverageReportTasks() {
-    taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
-    taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig, isReportAggregationEnabled))
+    if (isReportAggregationEnabled) {
+      taskFactory.register(CodeCoverageReportTask.CoverageReportCreationAction(globalConfig))
+      taskFactory.register(TestReportTask.TestReportCreationAction(globalConfig))
+    }
   }
 
   /** Register test data collection tasks for test results and code coverage reporting */
@@ -655,13 +657,17 @@ abstract class VariantTaskManager<VariantBuilderT : VariantBuilder, VariantT : V
     variantInfo: ComponentInfo<VariantBuilderT, VariantT>,
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>> = mutableListOf(),
   ) {
-    testResultsCollectionTasks.add(taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant)))
-    taskFactory.register(
-      CodeCoverageCollectionTask.CoverageCollectionCreationAction(
-        CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
-        CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+    if (isReportAggregationEnabled) {
+      testResultsCollectionTasks.add(
+        taskFactory.register(TestResultsCollectionTask.TestResultsCollectionCreationAction(variantInfo.variant))
       )
-    )
+      taskFactory.register(
+        CodeCoverageCollectionTask.CoverageCollectionCreationAction(
+          CodeCoverageCollectionTask.getJacocoAntTaskConfiguration(project, variantInfo.variant),
+          CodeCoverageReportCreationConfigImpl(variantInfo.variant, testComponents),
+        )
+      )
+    }
   }
 
   companion object {

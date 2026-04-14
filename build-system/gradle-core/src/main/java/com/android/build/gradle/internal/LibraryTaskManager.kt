@@ -249,7 +249,7 @@ class LibraryTaskManager(
     testResultsCollectionTasks: MutableList<TaskProvider<TestResultsCollectionTask>>,
   ) {
     super.registerTestAndCodeCoverageCollectionTasks(variantInfo, testResultsCollectionTasks)
-    if (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false) {
+    if (isReportAggregationEnabled && (variantInfo.variant.publishInfo?.components?.isNotEmpty() ?: false)) {
       testResultsCollectionTasks.add(
         taskFactory.register(TestResultsCollectionTask.AggregatedTestResultsCollectionCreationAction(variantInfo.variant))
       )
@@ -265,9 +265,9 @@ class LibraryTaskManager(
 
   override fun registerTestAndCodeCoverageReportTasks() {
     super.registerTestAndCodeCoverageReportTasks()
-    if (variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
-      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig, isReportAggregationEnabled))
-      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig, isReportAggregationEnabled))
+    if (isReportAggregationEnabled && variants.any { it.variant.publishInfo?.components?.isNotEmpty() ?: false }) {
+      taskFactory.register(CodeCoverageReportTask.AggregatedCoverageReportCreationAction(globalConfig))
+      taskFactory.register(TestReportTask.AggregatedTestReportCreationAction(globalConfig))
     }
   }
 

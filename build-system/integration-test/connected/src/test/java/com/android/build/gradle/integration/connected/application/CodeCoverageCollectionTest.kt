@@ -248,7 +248,10 @@ class CodeCoverageCollectionTest {
             kotlin { jvmToolchain(17) }
           }
         }
-        gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
+        gradleProperties {
+          add(BooleanOption.TEST_SUITE_SUPPORT, true)
+          add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true)
+        }
       }
 
   @Test
