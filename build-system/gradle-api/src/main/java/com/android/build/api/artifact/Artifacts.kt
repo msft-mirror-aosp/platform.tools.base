@@ -83,7 +83,7 @@ interface Artifacts {
   fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(
     type: ArtifactTypeT
   ): Collection<RegisteredArtifactWithQualifiers<FileTypeT>>
-    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers
+    where ArtifactTypeT : MultipleArtifact<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers
 
   /**
    * Add an existing [FileTypeT] for the passed [Artifact]. For task generated folder or file, do not use this API but instead use the [use]

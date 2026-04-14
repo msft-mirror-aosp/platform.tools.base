@@ -78,7 +78,7 @@ constructor(val delegate: Artifacts, val stats: GradleBuildVariant.Builder, val 
   override fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(
     type: ArtifactTypeT
   ): Collection<RegisteredArtifactWithQualifiers<FileTypeT>>
-    where ArtifactTypeT : Artifact.Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers {
+    where ArtifactTypeT : MultipleArtifact<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers {
     stats.variantApiAccessBuilder.addVariantPropertiesAccessBuilder().type = VariantPropertiesMethodType.GET_ALL_WITH_ATTRIBUTES_VALUE
     stats.variantApiAccessBuilder.addArtifactAccessBuilder().also {
       it.inputArtifactType = AnalyticsUtil.getVariantApiArtifactType(type.javaClass).number

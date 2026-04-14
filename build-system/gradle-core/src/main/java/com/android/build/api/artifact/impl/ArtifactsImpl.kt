@@ -123,6 +123,10 @@ class ArtifactsImpl(
   fun <FILE_TYPE : FileSystemLocation> getAll(type: Multiple<FILE_TYPE>): Provider<List<FILE_TYPE>> = getArtifactContainer(type).get()
 
   override fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(type: ArtifactTypeT)
+    where ArtifactTypeT : MultipleArtifact<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers =
+    getArtifactContainer(type).getAllWithAttributes()
+
+  fun <FileTypeT : FileSystemLocation, ArtifactTypeT> getAllWithAttributes(type: ArtifactTypeT)
     where ArtifactTypeT : Multiple<FileTypeT>, ArtifactTypeT : Artifact.WithQualifiers = getArtifactContainer(type).getAllWithAttributes()
 
   fun <FileTypeT : FileSystemLocation> add(type: Multiple<FileTypeT>, artifact: FileTypeT, attributes: Map<String, String>? = null) {

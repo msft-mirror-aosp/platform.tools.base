@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.api
 
 import com.android.build.api.artifact.Artifact
 import com.android.build.api.artifact.ArtifactKind
+import com.android.build.api.artifact.impl.ArtifactsImpl
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
@@ -44,7 +45,7 @@ class ArtifactsWithQualifiersTest {
     GradleRule.configure().from { androidApplication(":app") { pluginCallbacks += ArtifactsWithAttributesTestCallback::class.java } }
 
   @Test
-  fun newBuildApp() {
+  fun testGetAllWithAttributes() {
     var result = rule.build.executor.run("clean", "debugSingleTargetConsumer")
     Truth.assertThat(result.didWorkTasks)
       .containsExactly(
@@ -62,6 +63,8 @@ class ArtifactsWithQualifiersTest {
         ":app:debugSingleSuiteConsumer",
         ":app:clean",
       )
+    result = rule.build.executor.run("clean", "debugSingleConsumer")
+    Truth.assertThat(result.didWorkTasks).containsExactly(":app:debugProducerSuite1Target2", ":app:debugSingleConsumer", ":app:clean")
     result = rule.build.executor.run("clean", "debugAllConsumer")
     Truth.assertThat(result.didWorkTasks)
       .containsExactly(
@@ -77,6 +80,60 @@ class ArtifactsWithQualifiersTest {
         ":app:debugAllConsumer",
         ":app:clean",
       )
+  }
+
+  @Test
+  fun testGet() {
+    val result = rule.build.executor.run("clean", "debugGetConsumer")
+    Truth.assertThat(result.didWorkTasks).containsExactly(":app:debugProducerSuite1Target1", ":app:debugGetConsumer")
+  }
+
+  @Test
+  fun testMissingAttributesError() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+          pluginCallbacks += MissingAttributesCallback::class.java
+        }
+      }
+    build.executor
+      .expectFailure()
+      .run(":app:debugConsumer")
+      .assertErrorContains("Cannot find an artifact with matching attributes <SUITE_ID=suite1, TARGET_ID=target3>")
+  }
+
+  @Test
+  fun testUniquenessError() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+          pluginCallbacks += DuplicateAttributesCallback::class.java
+        }
+      }
+    build.executor
+      .expectFailure()
+      .run("help")
+      .assertErrorContains(
+        "An artifact with qualifiers <SUITE_ID=suite1, TARGET_ID=target1> has already been added by Task named `debugProducer1`"
+      )
+  }
+
+  @Test
+  fun testCorrectnessError() {
+    val build =
+      rule.build {
+        androidApplication(":app") {
+          pluginCallbacks -= ArtifactsWithAttributesTestCallback::class.java
+          pluginCallbacks += UndeclaredAttributesCallback::class.java
+        }
+      }
+    val result = build.executor.expectFailure().run("help")
+    result.assertErrorContains(
+      "An artifact with qualifiers <SUITE_ID=suite1, UNDECLARED=target1> is using undeclared qualifier key(s) <UNDECLARED>,"
+    )
+    result.assertErrorContains("possible keys are <SUITE_ID, TARGET_ID>")
   }
 }
 
@@ -129,9 +186,9 @@ class ArtifactsWithAttributesTestCallback : ApplicationComponentCallback {
       }
 
       project.tasks.register(variant.name + "SingleTargetConsumer", ArtifactConsumerTask::class.java) { task ->
-        val artifacts = variant.artifacts.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        val artifacts = artifactsImpl.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
         artifacts.forEach {
-          // it.attributes is Map<String, String>
           val attributes = it.qualifiers
           val deviceId = attributes["TARGET_ID"]
           if (deviceId == "target2") {
@@ -141,9 +198,9 @@ class ArtifactsWithAttributesTestCallback : ApplicationComponentCallback {
       }
 
       project.tasks.register(variant.name + "SingleSuiteConsumer", ArtifactConsumerTask::class.java) { task ->
-        val artifacts = variant.artifacts.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        val artifacts = artifactsImpl.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
         artifacts.forEach {
-          // it.attributes is Map<String, String>
           val attributes = it.qualifiers
           val suiteId = attributes["SUITE_ID"]
           if (suiteId == "suite1") {
@@ -153,9 +210,9 @@ class ArtifactsWithAttributesTestCallback : ApplicationComponentCallback {
       }
 
       project.tasks.register(variant.name + "SingleConsumer", ArtifactConsumerTask::class.java) { task ->
-        val artifacts = variant.artifacts.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        val artifacts = artifactsImpl.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE)
         artifacts.forEach {
-          // it.attributes is Map<String, String>
           val attributes = it.qualifiers
           val suiteId = attributes["SUITE_ID"]
           val targetId = attributes["TARGET_ID"]
@@ -166,7 +223,71 @@ class ArtifactsWithAttributesTestCallback : ApplicationComponentCallback {
       }
 
       project.tasks.register(variant.name + "AllConsumer", ArtifactConsumerTask::class.java) { task ->
-        variant.artifacts.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE).forEach { task.inputFiles.add(it.artifact) }
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        artifactsImpl.getAllWithAttributes(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE).forEach { task.inputFiles.add(it.artifact) }
+      }
+
+      project.tasks.register(variant.name + "GetConsumer", ArtifactConsumerTask::class.java) { task ->
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        task.inputFiles.add(
+          artifactsImpl.get(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE, mapOf("SUITE_ID" to "suite1", "TARGET_ID" to "target1"))
+        )
+      }
+    }
+  }
+}
+
+class DuplicateAttributesCallback : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+      val producer1: TaskProvider<ArtifactProducerTask> =
+        project.tasks.register(variant.name + "Producer1", ArtifactProducerTask::class.java) { it.input.set("1") }
+      variant.artifacts
+        .use(producer1)
+        .wiredWith { it.outputFile }
+        .toAppendTo(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE, mapOf("SUITE_ID" to "suite1", "TARGET_ID" to "target1"))
+
+      val producer2: TaskProvider<ArtifactProducerTask> =
+        project.tasks.register(variant.name + "Producer2", ArtifactProducerTask::class.java) { it.input.set("2") }
+      variant.artifacts
+        .use(producer2)
+        .wiredWith { it.outputFile }
+        .toAppendTo(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE, mapOf("SUITE_ID" to "suite1", "TARGET_ID" to "target1"))
+    }
+  }
+}
+
+class UndeclaredAttributesCallback : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+      val producer: TaskProvider<ArtifactProducerTask> =
+        project.tasks.register(variant.name + "Producer", ArtifactProducerTask::class.java) { it.input.set("1") }
+      variant.artifacts
+        .use(producer)
+        .wiredWith { it.outputFile }
+        .toAppendTo(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE, mapOf("SUITE_ID" to "suite1", "UNDECLARED" to "target1"))
+    }
+  }
+}
+
+class MissingAttributesCallback : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+      val producer: TaskProvider<ArtifactProducerTask> =
+        project.tasks.register(variant.name + "Producer", ArtifactProducerTask::class.java) { it.input.set("1") }
+      variant.artifacts
+        .use(producer)
+        .wiredWith { it.outputFile }
+        .toAppendTo(TestMultipleArtifactType.TEST_SUITE_RESULT_FILE, mapOf("SUITE_ID" to "suite1", "TARGET_ID" to "target1"))
+
+      project.tasks.register(variant.name + "Consumer", ArtifactConsumerTask::class.java) { task ->
+        val artifactsImpl = variant.artifacts as ArtifactsImpl
+        task.inputFiles.add(
+          artifactsImpl.get<RegularFile, TestMultipleArtifactType.TEST_SUITE_RESULT_FILE>(
+            TestMultipleArtifactType.TEST_SUITE_RESULT_FILE,
+            mapOf("SUITE_ID" to "suite1", "TARGET_ID" to "target3"),
+          )
+        )
       }
     }
   }
