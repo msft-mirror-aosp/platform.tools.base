@@ -17,9 +17,10 @@
 package com.android.tools.ui.inspector.service;
 
 import android.os.Looper;
-import android.os.Process;
 import android.util.Log;
+
 import dalvik.system.DexClassLoader;
+
 import java.lang.reflect.Method;
 
 /**
@@ -34,7 +35,8 @@ public class InspectorService {
     public static final int RESULT_EXCEPTION = -1;
 
     private static final String TAG = "studio.InspectorService";
-    private static final String INSPECTOR_LAUNCHER_CLASS_NAME = "com.android.tools.ui.inspector.inspector.InspectorLauncher";
+    private static final String INSPECTOR_LAUNCHER_CLASS_NAME =
+            "com.android.tools.ui.inspector.payload.InspectorLauncher";
     private static final String START_METHOD_NAME = "start";
 
     // TODO: Once we implement the Protobuf protocol for communication, we should adopt a strategy

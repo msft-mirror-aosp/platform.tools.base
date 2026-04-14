@@ -54,7 +54,7 @@ private const val DEVICE_TMP_SERVICE_JAR_PATH = "/data/local/tmp/$SERVICE_JAR_FI
 private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 
 /** The relative path to the payload jar in the runfiles. */
-private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/inspector/$PAYLOAD_JAR_FILE_NAME"
+private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/$PAYLOAD_JAR_FILE_NAME"
 
 /** The temporary path on the device where the payload jar is first pushed. */
 private const val DEVICE_TMP_PAYLOAD_JAR_PATH = "/data/local/tmp/$PAYLOAD_JAR_FILE_NAME"

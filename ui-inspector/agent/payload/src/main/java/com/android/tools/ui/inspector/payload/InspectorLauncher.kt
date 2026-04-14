@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.inspector
+package com.android.tools.ui.inspector.payload
 
 import android.net.LocalServerSocket
 import android.util.Log
