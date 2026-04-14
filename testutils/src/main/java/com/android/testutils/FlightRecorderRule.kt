@@ -26,7 +26,7 @@ import org.junit.runners.model.Statement
  * Initializes [FlightRecorder] before the test and prints its contents if the test fails. Intended for troubleshooting flaky tests. Use as
  * the outermost rule in a chain. When debugging hanging tests use in combination with the [org.junit.rules.Timeout] rule.
  */
-class FlightRecorderRule(private val sizeLimit: Int = 1000, private val printOnSuccess: Boolean = false) : ExternalResource() {
+class FlightRecorderRule(private val sizeLimit: Int = 10000, private val printOnSuccess: Boolean = false) : ExternalResource() {
 
   override fun apply(base: Statement, description: Description): Statement {
     return object : Statement() {
