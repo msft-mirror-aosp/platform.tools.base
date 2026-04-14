@@ -1454,6 +1454,7 @@ _CLASS_JARS = [
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
+    "org.jspecify:jspecify:0.2.0",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",

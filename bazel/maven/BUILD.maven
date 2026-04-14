@@ -1373,6 +1373,46 @@ maven_import(
 )
 
 maven_artifact(
+    name = "com.charleskorn.kaml.kaml-jvm_0.61.0",
+    pom = "repository/com/charleskorn/kaml/kaml-jvm/0.61.0/kaml-jvm-0.61.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/charleskorn/kaml/kaml-jvm/0.61.0",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.7.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
+        "com.squareup.okio.okio-jvm_3.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.charleskorn.kaml.kaml-jvm",
+    classifiers = [],
+    jars = [
+        "repository/com/charleskorn/kaml/kaml-jvm/0.61.0/kaml-jvm-0.61.0.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    deps = [
+        "it.krzeminski.snakeyaml-engine-kmp-jvm",
+        "com.squareup.okio.okio-jvm",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.7.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
+        "com.squareup.okio.okio-jvm_3.9.0",
+    ],
+    pom = "repository/com/charleskorn/kaml/kaml-jvm/0.61.0/kaml-jvm-0.61.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/charleskorn/kaml/kaml-jvm/0.61.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
     pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.pom",
     repo_root_path = "repository",
@@ -1651,6 +1691,73 @@ maven_import(
     pom = "repository/com/fasterxml/aalto-xml/1.3.0/aalto-xml-1.3.0.pom",
     repo_root_path = "repository",
     repo_path = "com/fasterxml/aalto-xml/1.3.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.ajalt.colormath.colormath-jvm_3.5.0",
+    pom = "repository/com/github/ajalt/colormath/colormath-jvm/3.5.0/colormath-jvm-3.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/colormath/colormath-jvm/3.5.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.github.ajalt.colormath.colormath-jvm",
+    classifiers = [],
+    jars = [
+        "repository/com/github/ajalt/colormath/colormath-jvm/3.5.0/colormath-jvm-3.5.0.jar"
+    ],
+    exports = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
+    ],
+    pom = "repository/com/github/ajalt/colormath/colormath-jvm/3.5.0/colormath-jvm-3.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/colormath/colormath-jvm/3.5.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.ajalt.mordant.mordant-jvm_2.7.2",
+    pom = "repository/com/github/ajalt/mordant/mordant-jvm/2.7.2/mordant-jvm-2.7.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/mordant/mordant-jvm/2.7.2",
+    deps = [
+        "com.github.ajalt.colormath.colormath-jvm_3.5.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.markdown-jvm_0.7.3",
+        "net.java.dev.jna.jna_5.14.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.github.ajalt.mordant.mordant-jvm",
+    classifiers = [],
+    jars = [
+        "repository/com/github/ajalt/mordant/mordant-jvm/2.7.2/mordant-jvm-2.7.2.jar"
+    ],
+    exports = [
+        "com.github.ajalt.colormath.colormath-jvm",
+        "org.jetbrains.kotlin.kotlin-stdlib",
+        "org.jetbrains.markdown-jvm",
+        "net.java.dev.jna.jna",
+    ],
+    original_deps = [
+        "com.github.ajalt.colormath.colormath-jvm_3.5.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.markdown-jvm_0.7.3",
+        "net.java.dev.jna.jna_5.14.0",
+    ],
+    pom = "repository/com/github/ajalt/mordant/mordant-jvm/2.7.2/mordant-jvm-2.7.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/mordant/mordant-jvm/2.7.2",
     visibility = ["//visibility:public"],
 )
 
@@ -8449,6 +8556,41 @@ maven_import(
 )
 
 maven_artifact(
+    name = "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
+    pom = "repository/it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1/snakeyaml-engine-kmp-jvm-3.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "com.squareup.okio.okio-jvm_3.9.0",
+        "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "it.krzeminski.snakeyaml-engine-kmp-jvm",
+    classifiers = [],
+    jars = [
+        "repository/it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1/snakeyaml-engine-kmp-jvm-3.0.1.jar"
+    ],
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+        "com.squareup.okio.okio-jvm",
+        "net.thauvin.erik.urlencoder.urlencoder-lib-jvm",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "com.squareup.okio.okio-jvm_3.9.0",
+        "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
+    ],
+    pom = "repository/it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1/snakeyaml-engine-kmp-jvm-3.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "it.unimi.dsi.fastutil_8.4.0",
     pom = "repository/it/unimi/dsi/fastutil/8.4.0/fastutil-8.4.0.pom",
     repo_root_path = "repository",
@@ -8860,10 +9002,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "net.java.dev.jna.jna_5.6.0",
-    pom = "repository/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom",
+    name = "net.java.dev.jna.jna_5.14.0",
+    pom = "repository/net/java/dev/jna/jna/5.14.0/jna-5.14.0.pom",
     repo_root_path = "repository",
-    repo_path = "net/java/dev/jna/jna/5.6.0",
+    repo_path = "net/java/dev/jna/jna/5.14.0",
     visibility = ["//visibility:public"],
 )
 
@@ -8871,12 +9013,12 @@ maven_import(
     name = "net.java.dev.jna.jna",
     classifiers = [],
     jars = [
-        "repository/net/java/dev/jna/jna/5.6.0/jna-5.6.0.jar"
+        "repository/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar"
     ],
     original_deps = [],
-    pom = "repository/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom",
+    pom = "repository/net/java/dev/jna/jna/5.14.0/jna-5.14.0.pom",
     repo_root_path = "repository",
-    repo_path = "net/java/dev/jna/jna/5.6.0",
+    repo_path = "net/java/dev/jna/jna/5.14.0",
     visibility = ["//visibility:public"],
 )
 
@@ -9000,6 +9142,35 @@ maven_import(
     repo_root_path = "repository",
     repo_path = "net/sf/proguard/proguard-gradle/5.2.1",
     srcjar = "repository/net/sf/proguard/proguard-gradle/5.2.1/proguard-gradle-5.2.1-sources.jar",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
+    pom = "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "net.thauvin.erik.urlencoder.urlencoder-lib-jvm",
+    classifiers = [],
+    jars = [
+        "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.jar"
+    ],
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib",
+    ],
+    original_deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
+    ],
+    pom = "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0",
     visibility = ["//visibility:public"],
 )
 
@@ -13925,7 +14096,7 @@ maven_import(
     jars = [
         "repository/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.3/kotlinx-serialization-core-jvm-1.7.3.jar"
     ],
-    deps = [
+    exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
     ],
     original_deps = [
@@ -13988,7 +14159,7 @@ maven_import(
     jars = [
         "repository/org/jetbrains/kotlinx/kotlinx-serialization-json-jvm/1.7.3/kotlinx-serialization-json-jvm-1.7.3.jar"
     ],
-    deps = [
+    exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
         "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm",
     ],
@@ -14021,7 +14192,7 @@ maven_import(
     jars = [
         "repository/org/jetbrains/kotlinx/kotlinx-serialization-json/1.7.3/kotlinx-serialization-json-1.7.3.jar"
     ],
-    deps = [
+    exports = [
         "org.jetbrains.kotlinx.kotlinx-serialization-json-jvm",
     ],
     original_deps = [
@@ -14056,13 +14227,12 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.jetbrains.markdown-jvm_0.2.1",
-    pom = "repository/org/jetbrains/markdown-jvm/0.2.1/markdown-jvm-0.2.1.pom",
+    name = "org.jetbrains.markdown-jvm_0.7.3",
+    pom = "repository/org/jetbrains/markdown-jvm/0.7.3/markdown-jvm-0.7.3.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/markdown-jvm/0.2.1",
+    repo_path = "org/jetbrains/markdown-jvm/0.7.3",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.4.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.4.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14071,19 +14241,17 @@ maven_import(
     name = "org.jetbrains.markdown-jvm",
     classifiers = [],
     jars = [
-        "repository/org/jetbrains/markdown-jvm/0.2.1/markdown-jvm-0.2.1.jar"
+        "repository/org/jetbrains/markdown-jvm/0.7.3/markdown-jvm-0.7.3.jar"
     ],
     exports = [
         "org.jetbrains.kotlin.kotlin-stdlib",
-        "org.jetbrains.kotlin.kotlin-stdlib-common",
     ],
     original_deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.4.10",
-        "org.jetbrains.kotlin.kotlin-stdlib-common_1.4.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
     ],
-    pom = "repository/org/jetbrains/markdown-jvm/0.2.1/markdown-jvm-0.2.1.pom",
+    pom = "repository/org/jetbrains/markdown-jvm/0.7.3/markdown-jvm-0.7.3.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/markdown-jvm/0.2.1",
+    repo_path = "org/jetbrains/markdown-jvm/0.7.3",
     visibility = ["//visibility:public"],
 )
 
@@ -14148,14 +14316,15 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.junit.jupiter.junit-jupiter-api_5.9.2",
-    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.pom",
+    name = "org.junit.jupiter.junit-jupiter-api_5.12.0",
+    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.12.0/junit-jupiter-api-5.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/jupiter/junit-jupiter-api/5.9.2",
+    repo_path = "org/junit/jupiter/junit-jupiter-api/5.12.0",
     deps = [
-        "org.opentest4j.opentest4j_1.2.0",
-        "org.junit.platform.junit-platform-commons_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14164,20 +14333,22 @@ maven_import(
     name = "org.junit.jupiter.junit-jupiter-api",
     classifiers = [],
     jars = [
-        "repository/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.jar"
+        "repository/org/junit/jupiter/junit-jupiter-api/5.12.0/junit-jupiter-api-5.12.0.jar"
     ],
     exports = [
         "org.opentest4j.opentest4j",
         "org.junit.platform.junit-platform-commons",
+        "org.apiguardian.apiguardian-api",
     ],
     original_deps = [
-        "org.opentest4j.opentest4j_1.2.0",
-        "org.junit.platform.junit-platform-commons_1.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
-    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.pom",
+    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.12.0/junit-jupiter-api-5.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/jupiter/junit-jupiter-api/5.9.2",
+    repo_path = "org/junit/jupiter/junit-jupiter-api/5.12.0",
     exclusions_for_parents = {
         "org.codehaus.groovy.groovy-test-junit5": [
             "org.apiguardian.apiguardian-api",
@@ -14188,14 +14359,15 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.junit.jupiter.junit-jupiter-engine_5.9.2",
-    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.pom",
+    name = "org.junit.jupiter.junit-jupiter-engine_5.12.0",
+    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.12.0/junit-jupiter-engine-5.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.9.2",
+    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.12.0",
     deps = [
-        "org.junit.platform.junit-platform-engine_1.9.2",
-        "org.junit.jupiter.junit-jupiter-api_5.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.junit.jupiter.junit-jupiter-api_5.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -14204,22 +14376,22 @@ maven_import(
     name = "org.junit.jupiter.junit-jupiter-engine",
     classifiers = [],
     jars = [
-        "repository/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.jar"
+        "repository/org/junit/jupiter/junit-jupiter-engine/5.12.0/junit-jupiter-engine-5.12.0.jar"
     ],
     exports = [
-        "org.junit.jupiter.junit-jupiter-api",
-    ],
-    deps = [
         "org.junit.platform.junit-platform-engine",
+        "org.junit.jupiter.junit-jupiter-api",
+        "org.apiguardian.apiguardian-api",
     ],
     original_deps = [
-        "org.junit.platform.junit-platform-engine_1.9.2",
-        "org.junit.jupiter.junit-jupiter-api_5.9.2",
-        "org.junit.junit-bom_5.9.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.junit.jupiter.junit-jupiter-api_5.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
     ],
-    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.pom",
+    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.12.0/junit-jupiter-engine-5.12.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.9.2",
+    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.12.0",
     exclusions_for_parents = {
         "org.codehaus.groovy.groovy-test-junit5": [
             "org.apiguardian.apiguardian-api",
@@ -14369,6 +14541,125 @@ maven_import(
     pom = "repository/org/junit/platform/junit-platform-reporting/1.12.0/junit-platform-reporting-1.12.0.pom",
     repo_root_path = "repository",
     repo_path = "org/junit/platform/junit-platform-reporting/1.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-runner_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-runner/1.12.0/junit-platform-runner-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-runner/1.12.0",
+    deps = [
+        "junit.junit_4.13.2",
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.junit.platform.junit-platform-suite-api_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.platform.junit-platform-suite-commons_1.12.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.junit.platform.junit-platform-runner",
+    classifiers = [],
+    jars = [
+        "repository/org/junit/platform/junit-platform-runner/1.12.0/junit-platform-runner-1.12.0.jar"
+    ],
+    exports = [
+        "junit.junit",
+        "org.junit.platform.junit-platform-launcher",
+        "org.junit.platform.junit-platform-suite-api",
+        "org.apiguardian.apiguardian-api",
+    ],
+    deps = [
+        "org.junit.platform.junit-platform-suite-commons",
+    ],
+    original_deps = [
+        "junit.junit_4.13.2",
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.junit.platform.junit-platform-suite-api_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.platform.junit-platform-suite-commons_1.12.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    pom = "repository/org/junit/platform/junit-platform-runner/1.12.0/junit-platform-runner-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-runner/1.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-suite-api_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-suite-api/1.12.0/junit-platform-suite-api-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-suite-api/1.12.0",
+    deps = [
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.junit.platform.junit-platform-suite-api",
+    classifiers = [],
+    jars = [
+        "repository/org/junit/platform/junit-platform-suite-api/1.12.0/junit-platform-suite-api-1.12.0.jar"
+    ],
+    exports = [
+        "org.junit.platform.junit-platform-commons",
+        "org.apiguardian.apiguardian-api",
+    ],
+    original_deps = [
+        "org.junit.platform.junit-platform-commons_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    pom = "repository/org/junit/platform/junit-platform-suite-api/1.12.0/junit-platform-suite-api-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-suite-api/1.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-suite-commons_1.12.0",
+    pom = "repository/org/junit/platform/junit-platform-suite-commons/1.12.0/junit-platform-suite-commons-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-suite-commons/1.12.0",
+    deps = [
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.junit.platform.junit-platform-suite-api_1.12.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.junit.platform.junit-platform-suite-commons",
+    classifiers = [],
+    jars = [
+        "repository/org/junit/platform/junit-platform-suite-commons/1.12.0/junit-platform-suite-commons-1.12.0.jar"
+    ],
+    deps = [
+        "org.junit.platform.junit-platform-launcher",
+        "org.apiguardian.apiguardian-api",
+        "org.junit.platform.junit-platform-engine",
+        "org.junit.platform.junit-platform-suite-api",
+    ],
+    original_deps = [
+        "org.junit.platform.junit-platform-launcher_1.12.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.platform.junit-platform-engine_1.12.0",
+        "org.junit.platform.junit-platform-suite-api_1.12.0",
+        "org.junit.junit-bom_5.12.0",
+    ],
+    pom = "repository/org/junit/platform/junit-platform-suite-commons/1.12.0/junit-platform-suite-commons-1.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-suite-commons/1.12.0",
     visibility = ["//visibility:public"],
 )
 
@@ -71380,20 +71671,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.charleskorn.kaml.kaml-jvm_0.61.0",
-    pom = "repository/com/charleskorn/kaml/kaml-jvm/0.61.0/kaml-jvm-0.61.0.pom",
-    repo_root_path = "repository",
-    repo_path = "com/charleskorn/kaml/kaml-jvm/0.61.0",
-    deps = [
-        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.7.1",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
-        "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
-        "com.squareup.okio.okio-jvm_3.9.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "com.crashlytics.sdk.android.answers_1.3.13",
     pom = "repository/com/crashlytics/sdk/android/answers/1.3.13/answers-1.3.13.pom",
     repo_root_path = "repository",
@@ -71840,31 +72117,6 @@ maven_artifact(
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.22",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.github.ajalt.colormath.colormath-jvm_3.5.0",
-    pom = "repository/com/github/ajalt/colormath/colormath-jvm/3.5.0/colormath-jvm-3.5.0.pom",
-    repo_root_path = "repository",
-    repo_path = "com/github/ajalt/colormath/colormath-jvm/3.5.0",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "com.github.ajalt.mordant.mordant-jvm_2.7.2",
-    pom = "repository/com/github/ajalt/mordant/mordant-jvm/2.7.2/mordant-jvm-2.7.2.pom",
-    repo_root_path = "repository",
-    repo_path = "com/github/ajalt/mordant/mordant-jvm/2.7.2",
-    deps = [
-        "com.github.ajalt.colormath.colormath-jvm_3.5.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
-        "org.jetbrains.markdown-jvm_0.7.3",
-        "net.java.dev.jna.jna_5.14.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82321,19 +82573,6 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
-    pom = "repository/it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1/snakeyaml-engine-kmp-jvm-3.0.1.pom",
-    repo_root_path = "repository",
-    repo_path = "it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
-        "com.squareup.okio.okio-jvm_3.9.0",
-        "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
     name = "it.unimi.dsi.fastutil_7.2.0",
     pom = "repository/it/unimi/dsi/fastutil/7.2.0/fastutil-7.2.0.pom",
     repo_root_path = "repository",
@@ -82514,10 +82753,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "net.java.dev.jna.jna_5.14.0",
-    pom = "repository/net/java/dev/jna/jna/5.14.0/jna-5.14.0.pom",
+    name = "net.java.dev.jna.jna_5.6.0",
+    pom = "repository/net/java/dev/jna/jna/5.6.0/jna-5.6.0.pom",
     repo_root_path = "repository",
-    repo_path = "net/java/dev/jna/jna/5.14.0",
+    repo_path = "net/java/dev/jna/jna/5.6.0",
     visibility = ["//visibility:public"],
 )
 
@@ -82559,17 +82798,6 @@ maven_artifact(
     parent = "net.sf.proguard.proguard-parent_6.0.3",
     deps = [
         "net.sf.proguard.proguard-base_6.0.3",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
-    pom = "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.pom",
-    repo_root_path = "repository",
-    repo_path = "net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0",
-    deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
     ],
     visibility = ["//visibility:public"],
 )
@@ -98665,12 +98893,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.markdown-jvm_0.7.3",
-    pom = "repository/org/jetbrains/markdown-jvm/0.7.3/markdown-jvm-0.7.3.pom",
+    name = "org.jetbrains.markdown-jvm_0.2.1",
+    pom = "repository/org/jetbrains/markdown-jvm/0.2.1/markdown-jvm-0.2.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/markdown-jvm/0.7.3",
+    repo_path = "org/jetbrains/markdown-jvm/0.2.1",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.4.10",
+        "org.jetbrains.kotlin.kotlin-stdlib-common_1.4.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -98766,6 +98995,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-api_5.9.2",
+    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-api/5.9.2",
+    deps = [
+        "org.opentest4j.opentest4j_1.2.0",
+        "org.junit.platform.junit-platform-commons_1.9.2",
+        "org.junit.junit-bom_5.9.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.jupiter.junit-jupiter-engine_5.10.0",
     pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.pom",
     repo_root_path = "repository",
@@ -98802,6 +99044,19 @@ maven_artifact(
         "org.junit.platform.junit-platform-engine_1.7.0",
         "org.junit.jupiter.junit-jupiter-api_5.7.0",
         "org.junit.junit-bom_5.7.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-engine_5.9.2",
+    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.9.2",
+    deps = [
+        "org.junit.platform.junit-platform-engine_1.9.2",
+        "org.junit.jupiter.junit-jupiter-api_5.9.2",
+        "org.junit.junit-bom_5.9.2",
     ],
     visibility = ["//visibility:public"],
 )
