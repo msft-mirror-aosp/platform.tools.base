@@ -26,6 +26,7 @@ val STYLE_CSS =
     --bg-hover: #f3f4f6;
     --bg-selected: #eff6ff;
     --bg-subtle: #f9fafb;
+    --bg-codeblock: #fafafa;
     --bg-green-light: #f0fdf4;
     --bg-red-light: #fef2f2;
     --bg-yellow-light: #fffbeb;
@@ -55,8 +56,16 @@ val STYLE_CSS =
     --border-color: #e5e7eb;
     --border-light: #f1f5f9;
     --border-interactive: #d1d5db;
+    --border-codeblock: #f0f0f0;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    --shadow-inset: inset 0 1px 3px rgb(0 0 0 / 0.05);
+
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --bg-caret: #fff9c4;
+    --bg-lineno: #f5f5f5;
+    --text-lineno: #999999;
+    --border-lineno: #eeeeee;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -150,6 +159,29 @@ header {
 .header-title { font-size: 1.25rem; font-weight: 700; color: var(--text-darkest); letter-spacing: -0.025em; }
 .header-date { font-size: 0.8125rem; color: var(--text-subtle); margin-top: 0.125rem; }
 
-.caretline { background-color: #fff9c4; display: block; width: 100%; border-radius: 2px; }
-.lineno { color: #999999; background-color: #f5f5f5; padding: 0 8px; margin-right: 8px; border-right: 1px solid #eeeeee; user-select: none; }
+.caretline { background-color: var(--bg-caret); display: block; width: 100%; border-radius: 2px; }
+.lineno { color: var(--text-lineno); background-color: var(--bg-lineno); padding: 0 8px; margin-right: 8px; border-right: 1px solid var(--border-lineno); user-select: none; }
+
+.severity-fatal,
+.severity-error { color: var(--text-red-600); font-weight: 600; }
+.severity-warning { color: var(--text-yellow-600); font-weight: 600; }
+.severity-info, .severity-information, .severity-informational { color: var(--text-blue-600); font-weight: 600; }
+.severity-hint { color: var(--text-green-600); font-weight: 600; }
+
+.explanation-row { background-color: var(--bg-subtle); }
+.explanation-content { padding: 1rem 2rem; white-space: normal; color: var(--text-gray-600); }
+
+pre.errorlines {
+    background-color: var(--bg-codeblock);
+    font-family: var(--font-mono);
+    border: 1px solid var(--border-codeblock);
+    line-height: 1.2rem;
+    font-size: 0.85rem;
+    padding: 12px;
+    margin-top: 10px;
+    overflow: auto;
+    white-space: pre;
+    border-radius: 6px;
+    box-shadow: var(--shadow-inset);
+}
 """
