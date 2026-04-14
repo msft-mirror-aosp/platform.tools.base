@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.ToolExecutionOptions
 import com.android.build.gradle.internal.dependency.ShrinkerVersion
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.errors.MessageReceiverImpl
 import com.android.build.gradle.internal.manifest.parseManifest
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
@@ -283,9 +282,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       val artifacts = creationConfig.artifacts
 
       if (creationConfig is VariantCreationConfig) {
-        task.artProfileRewriting.set(
-          creationConfig.experimentalProperties.map { ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it) }
-        )
+        task.artProfileRewriting.set(true)
         if (!creationConfig.debuggable) {
           task.inputProfileForDexStartupOptimization.set(artifacts.get(InternalArtifactType.MERGED_STARTUP_PROFILE))
         }

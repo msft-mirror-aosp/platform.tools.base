@@ -67,9 +67,6 @@ sealed interface ModulePropertyKey<OutputT> {
      */
     SELF_INSTRUMENTING("android.experimental.self-instrumenting", false),
 
-    /** If false - R8 will not be provided with the merged art-profile If true - R8 will rewrite the art-profile */
-    ART_PROFILE_R8_REWRITING("android.experimental.art-profile-r8-rewriting", true),
-
     /** If false - R8 will not attempt to optimize startup dex If true - R8 will optimize first dex for optimal startup performance. */
     R8_DEX_STARTUP_OPTIMIZATION("android.experimental.r8.dex-startup-optimization", true),
 
