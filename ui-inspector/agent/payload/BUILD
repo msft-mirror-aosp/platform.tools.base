@@ -1,5 +1,5 @@
 load("//tools/base/bazel:android.bzl", "dex_library")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
 
@@ -11,6 +11,7 @@ kotlin_library(
     ]),
     deps = [
         "//prebuilts/studio/sdk:platforms/latest_jar",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/base/ui-inspector/common",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
@@ -18,10 +19,27 @@ kotlin_library(
 
 dex_library(
     name = "lib_ui_inspector_payload",
+    aars = [
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+    ],
     jars = [
         ":ui_inspector_payload_src",
         "//tools/base/ui-inspector/common",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+    ],
+)
+
+kotlin_test(
+    name = "payload_tests",
+    srcs = glob(["src/test/java/**/*.kt"]),
+    jvm_flags = ["-Dtest.suite.jar=payload_tests.jar"],
+    test_class = "com.android.testutils.JarTestSuite",
+    deps = [
+        ":ui_inspector_payload_src",
+        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+        "//tools/adt/idea/.idea/libraries:junit4",
+        "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/testutils:tools.testutils",
     ],
 )
