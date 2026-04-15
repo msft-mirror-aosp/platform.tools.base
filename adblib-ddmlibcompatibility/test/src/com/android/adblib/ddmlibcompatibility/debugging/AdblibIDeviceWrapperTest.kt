@@ -1,22 +1,20 @@
 package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbDeviceFailResponseException
-import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
-import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
+import com.android.adblib.ddmlibcompatibility.testutils.createConnectedDevice
+import com.android.adblib.ddmlibcompatibility.testutils.waitForConnectedDevice
 import com.android.adblib.deviceInfo
 import com.android.adblib.scope
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
-import com.android.adblib.waitForDevice
-import com.android.adblib.waitUntilState
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
@@ -1121,37 +1119,7 @@ class AdblibIDeviceWrapperTest {
     deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,
     sdk: AndroidApiLevel = AndroidApiLevel(30),
     delayStdout: Duration = Duration.ZERO,
-  ): Pair<ConnectedDevice, DeviceState> {
-    // Connect a fake device to the server and wait for it to come online.
-    val fakeDevice = fakeAdb.connectDevice(serialNumber, "test1", "test2", "model", sdk, DeviceState.HostConnectionType.USB)
-    fakeDevice.delayStdout = delayStdout
-    // Ensure the initialization sequence OFFLINE -> ONLINE started in
-    // `fakeAdb.connectDevice` is complete, and we have a stable handle to the ConnectedDevice.
-    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, DeviceState.DeviceStatus.ONLINE)
-
-    if (deviceStatus != DeviceState.DeviceStatus.ONLINE) {
-      fakeDevice.deviceStatus = deviceStatus
-      connectedDevice.waitForDeviceState(deviceStatus)
-    }
-
-    return Pair(connectedDevice, fakeDevice)
-  }
-
-  private suspend fun waitForConnectedDevice(
-    session: AdbSession,
-    serialNumber: String,
-    deviceStatus: DeviceState.DeviceStatus,
-  ): ConnectedDevice {
-    val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
-
-    connectedDevice.waitForDeviceState(deviceStatus)
-    return connectedDevice
-  }
-
-  private suspend fun ConnectedDevice.waitForDeviceState(deviceStatus: DeviceState.DeviceStatus) {
-    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
-    waitUntilState(targetState)
-  }
+  ) = fakeAdbRule.createConnectedDevice(serialNumber, deviceStatus, sdk, delayStdout)
 
   private fun createAdblibIDeviceWrapper(connectedDevice: ConnectedDevice, bridge: AndroidDebugBridge): AdblibIDeviceWrapper {
     return AdblibIDeviceWrapper(connectedDevice, bridge, deviceState = { connectedDevice.deviceInfo.deviceState })

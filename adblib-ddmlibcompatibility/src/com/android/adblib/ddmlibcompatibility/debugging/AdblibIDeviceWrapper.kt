@@ -100,7 +100,7 @@ import kotlinx.coroutines.runBlocking
  *   to be updated deterministically when [IDeviceManagerListener.deviceStateChanged] events are invoked by [AdbLibIDeviceManager].
  */
 internal class AdblibIDeviceWrapper(
-  private val connectedDevice: ConnectedDevice,
+  internal val connectedDevice: ConnectedDevice,
   bridge: AndroidDebugBridge,
   private val deviceState: () -> com.android.adblib.DeviceState?,
 ) : IDevice {
