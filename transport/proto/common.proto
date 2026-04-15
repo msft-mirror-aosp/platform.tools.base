@@ -292,6 +292,9 @@ message Device {
   // Should only be set if the pipeline does not support the device.
   // e.g. pre-Lollipop devices.
   string unsupported_reason = 16;
+
+  // Indicates the device's ART mainline module version code.
+  int64 art_version_code = 17;
 }
 
 message Process {
