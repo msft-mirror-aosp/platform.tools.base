@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package com.android.build.gradle.integration.connected.application
 
 import com.android.build.gradle.integration.common.fixture.project.AndroidDynamicFeatureProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.truth.ScannerSubject.Companion.assertThat
 import com.android.build.gradle.integration.common.utils.SdkHelper
 import com.android.build.gradle.integration.connected.utils.getEmulator
-import com.android.build.gradle.integration.utp.UtpTestBase
+import com.android.build.gradle.integration.utp.AndroidTestUtil
+import com.android.build.gradle.integration.utp.applyAndroidTestConfiguration
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.TestUtils
 import com.android.testutils.truth.PathSubject.assertThat
@@ -28,20 +30,55 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/** Connected tests using UTP test executor. */
+/** Connected tests using Android Test executor. */
 @RunWith(Parameterized::class)
-class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBuiltInPlatform) {
+class AndroidConnectedTest(val runWithBuiltInPlatform: Boolean) {
   private val connectedAndroidTestWithUtpBenchmark: Benchmark =
     Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 
   @Rule @JvmField val EMULATOR = getEmulator()
 
+  val ruleBuilder = GradleRule.configure()
+
+  @get:Rule val rule = ruleBuilder.from { applyAndroidTestConfiguration(runWithBuiltInPlatform) }
+
+  private val util =
+    AndroidTestUtil(
+      runWithBuiltInPlatform = runWithBuiltInPlatform,
+      rule = rule,
+      onSelectModule = { moduleName, util ->
+        val moduleTestOutputRootDir = "$moduleName/$TEST_OUTPUT_ROOT_DIR"
+        util.testTaskName = ":$moduleName:connectedAndroidTest"
+        util.testResultXmlPath =
+          if (util.runWithBuiltInPlatform) {
+            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
+          } else {
+            "$moduleTestOutputRootDir/TEST-$DEVICE_NAME-_$moduleName-.xml"
+          }
+        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
+          util.testReportPath = "$moduleName/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
+          util.testLogcatPath = "$moduleName/$LOGCAT_FOR_DYNAMIC_FEATURE"
+        } else {
+          util.testReportPath = "$moduleName/$TEST_REPORT"
+          util.testLogcatPath = "$moduleName/$LOGCAT"
+        }
+        util.testResultPbPath = "$moduleName/$TEST_RESULT_PB"
+        util.testCoverageXmlPath = "$moduleName/$TEST_COV_XML"
+        util.testAdditionalOutputPath = "$moduleName/$TEST_ADDITIONAL_OUTPUT"
+      },
+    )
+
   companion object {
+    @JvmStatic
+    @Parameterized.Parameters(name = "runWithBuiltInPlatform={0}")
+    fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
+
     private const val DEVICE_NAME = "emulator-5554 - 13"
     private const val TEST_OUTPUT_ROOT_DIR = "build/outputs/androidTest-results/connected/debug"
     private const val DEVICE_OUTPUT_DIR = "$TEST_OUTPUT_ROOT_DIR/$DEVICE_NAME"
@@ -57,26 +94,49 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       "build/outputs/connected_android_test_additional_output/debugAndroidTest/connected/$DEVICE_NAME"
   }
 
-  override fun selectModule(moduleName: String) {
-    val moduleTestOutputRootDir = "$moduleName/$TEST_OUTPUT_ROOT_DIR"
-    testTaskName = ":$moduleName:connectedAndroidTest"
-    testResultXmlPath =
-      if (runWithBuiltInPlatform) {
-        "$moduleTestOutputRootDir/TEST-$DEVICE_NAME.xml"
-      } else {
-        "$moduleTestOutputRootDir/TEST-$DEVICE_NAME-_$moduleName-.xml"
-      }
-    if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
-      testReportPath = "$moduleName/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
-      testLogcatPath = "$moduleName/$LOGCAT_FOR_DYNAMIC_FEATURE"
-    } else {
-      testReportPath = "$moduleName/$TEST_REPORT"
-      testLogcatPath = "$moduleName/$LOGCAT"
-    }
-    testResultPbPath = "$moduleName/$TEST_RESULT_PB"
-    testCoverageXmlPath = "$moduleName/$TEST_COV_XML"
-    testAdditionalOutputPath = "$moduleName/$TEST_ADDITIONAL_OUTPUT"
-  }
+  @Test fun androidTestWithCodeCoverage() = util.androidTestWithCodeCoverage()
+
+  @Test fun androidTestWithTestFailures() = util.androidTestWithTestFailures()
+
+  @Test fun androidTest() = util.androidTest()
+
+  @Test fun androidTestWithOrchestrator() = util.androidTestWithOrchestrator()
+
+  @Test fun androidTestWithOrchestratorAndCodeCoverage() = util.androidTestWithOrchestratorAndCodeCoverage()
+
+  @Test fun connectedAndroidTestWithLogcat() = util.connectedAndroidTestWithLogcat()
+
+  @Test fun connectedAndroidTestFromTestOnlyModule() = util.connectedAndroidTestFromTestOnlyModule()
+
+  @Test fun additionalTestOutputWithTestStorageService() = util.additionalTestOutputWithTestStorageService()
+
+  @Test fun additionalTestOutputWithoutTestStorageService() = util.additionalTestOutputWithoutTestStorageService()
+
+  @Test fun additionalTestOutputWithBenchmarkFiles() = util.additionalTestOutputWithBenchmarkFiles()
+
+  @Test fun additionalTestOutputWithBenchmarkV3Files() = util.additionalTestOutputWithBenchmarkV3Files()
+
+  @Test fun androidTestWithDynamicFeature() = util.androidTestWithDynamicFeature()
+
+  @Test fun androidTestWithOrchestratorWithDynamicFeature() = util.androidTestWithOrchestratorWithDynamicFeature()
+
+  @Test fun connectedAndroidTestWithLogcatWithDynamicFeature() = util.connectedAndroidTestWithLogcatWithDynamicFeature()
+
+  @Test
+  fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() =
+    util.connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature()
+
+  @Test fun androidTestWithForceCompilation() = util.androidTestWithForceCompilation()
+
+  @Ignore("b/261739458")
+  @Test
+  fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() = util.androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature()
+
+  @Ignore("b/261739458") @Test fun androidTestWithCodeCoverageWithDynamicFeature() = util.androidTestWithCodeCoverageWithDynamicFeature()
+
+  @Test fun runAndroidTestWithNoTestClasses() = util.runAndroidTestWithNoTestClasses()
+
+  @Test fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() = util.connectedAndroidTestDoesNotOutputNoClassDefFoundError()
 
   @Test
   @Throws(Exception::class)
@@ -84,16 +144,16 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
     val benchmark: Benchmark =
       Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
     val startTime: Long = System.currentTimeMillis()
-    selectModule("app")
+    util.selectModule("app")
     val initScriptPath = TestUtils.resolveWorkspacePath("tools/adt/idea/utp/resources/utp/addGradleAndroidTestListener.gradle")
 
     var testExecutionStartTime: Long = System.currentTimeMillis()
     val result =
-      executor
+      util.executor
         .withArgument("--init-script")
         .withArgument(initScriptPath.toString())
         .withArgument("-P${ENABLE_UTP_TEST_REPORT_PROPERTY}=true")
-        .run(testTaskName)
+        .run(util.testTaskName)
     var testExecutionTime = System.currentTimeMillis() - testExecutionStartTime
     connectedAndroidTestWithUtpBenchmark.log("connectedAndroidTestWithUtpTestResultListenerExecution_time", testExecutionTime)
 
@@ -101,23 +161,23 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(util.project.resolve(util.testReportPath)).exists()
+    assertThat(util.project.resolve(util.testResultPbPath)).exists()
 
     // Run the task again after clean. This time the task configuration is
     // restored from the configuration cache. We expect no crashes.
-    executor.run("clean")
+    util.executor.run("clean")
 
-    assertThat(project.resolve(testReportPath)).doesNotExist()
-    assertThat(project.resolve(testResultPbPath)).doesNotExist()
+    assertThat(util.project.resolve(util.testReportPath)).doesNotExist()
+    assertThat(util.project.resolve(util.testResultPbPath)).doesNotExist()
 
     testExecutionStartTime = System.currentTimeMillis()
     val resultWithConfigCache =
-      executor
+      util.executor
         .withArgument("--init-script")
         .withArgument(initScriptPath.toString())
         .withArgument("-P${ENABLE_UTP_TEST_REPORT_PROPERTY}=true")
-        .run(testTaskName)
+        .run(util.testTaskName)
     testExecutionTime = System.currentTimeMillis() - testExecutionStartTime
     connectedAndroidTestWithUtpBenchmark.log(
       "connectedAndroidTestWithUtpTestResultListenerWithConfigCacheExecution_time",
@@ -128,8 +188,8 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       assertThat(it).contains("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).contains("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(util.project.resolve(util.testReportPath)).exists()
+    assertThat(util.project.resolve(util.testResultPbPath)).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListener_time", timeTaken)
   }
@@ -140,11 +200,11 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
     val benchmark: Benchmark =
       Benchmark.Builder("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled").setProject("Android Studio Gradle").build()
     val startTime: Long = System.currentTimeMillis()
-    selectModule("app")
+    util.selectModule("app")
     val initScriptPath = TestUtils.resolveWorkspacePath("tools/adt/idea/utp/resources/utp/addGradleAndroidTestListener.gradle")
 
     val testExecutionStartTime: Long = System.currentTimeMillis()
-    val result = executor.withArgument("--init-script").withArgument(initScriptPath.toString()).run(testTaskName)
+    val result = util.executor.withArgument("--init-script").withArgument(initScriptPath.toString()).run(util.testTaskName)
     val testExecutionTime = System.currentTimeMillis() - testExecutionStartTime
     connectedAndroidTestWithUtpBenchmark.log(
       "connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabledExecution_time",
@@ -155,8 +215,8 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       assertThat(it).doesNotContain("<UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
       assertThat(it).doesNotContain("</UTP_TEST_RESULT_ON_TEST_RESULT_EVENT>")
     }
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(util.project.resolve(util.testReportPath)).exists()
+    assertThat(util.project.resolve(util.testResultPbPath)).exists()
     val timeTaken = System.currentTimeMillis() - startTime
     benchmark.log("connectedAndroidTestWithUtpTestResultListenerAndTestReportingDisabled_time", timeTaken)
   }
@@ -164,16 +224,16 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverageAndCorruptedLeftover() {
-    selectModule("app")
+    util.selectModule("app")
 
-    rule.build.androidApplication().reconfigure {
+    util.rule.build.androidApplication().reconfigure {
       android.testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"
       android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
       android.defaultConfig.testInstrumentationRunnerArguments["clearPackageData"] = "true"
 
       dependencies {
-        add("androidTestUtil", "androidx.test:orchestrator:$ANDROIDX_TEST_VERSION")
-        add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION")
+        add("androidTestUtil", "androidx.test:orchestrator:${AndroidTestUtil.ANDROIDX_TEST_VERSION}")
+        add("androidTestUtil", "androidx.test.services:test-services:${AndroidTestUtil.ANDROIDX_TEST_VERSION}")
       }
       android.buildTypes.apply { named("debug") { it.enableAndroidTestCoverage = true } }
     }
@@ -189,10 +249,10 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
     // Run the test. The plugin should clean up the directory before pulling files.
     // If it doesn't, JacocoReportTask will fail with "Unknown block type".
-    executor.run(testTaskName)
+    util.executor.run(util.testTaskName)
 
-    assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testCoverageXmlPath)).exists()
+    assertThat(util.project.resolve(util.testReportPath)).exists()
+    assertThat(util.project.resolve(util.testCoverageXmlPath)).exists()
 
     // Verify the corrupted file is gone from the device.
     val checkProcess = ProcessBuilder(adb, "shell", "ls", corruptedFile).start()
@@ -202,31 +262,31 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-    selectModule("lib")
+    util.selectModule("lib")
 
-    val result = executor.withEnableInfoLogging(true).run(testTaskName)
+    val result = util.executor.withEnableInfoLogging(true).run(util.testTaskName)
 
     result.assertOutputContains("Uninstalling com.example.android.kotlin.library.test")
 
     val result2 =
-      executor.with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true).withEnableInfoLogging(true).run(testTaskName)
+      util.executor.with(BooleanOption.ANDROID_TEST_LEAVE_APKS_INSTALLED_AFTER_RUN, true).withEnableInfoLogging(true).run(util.testTaskName)
 
     result2.assertOutputDoesNotContain("Uninstalling com.example.android.kotlin.library.test")
   }
 
   @Test
   fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
-    SecondaryUser().use { additionalTestOutputWithTestStorageService() }
+    SecondaryUser().use { util.additionalTestOutputWithTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithoutTestStorageServiceInSecondaryUser() {
-    SecondaryUser().use { additionalTestOutputWithoutTestStorageService() }
+    SecondaryUser().use { util.additionalTestOutputWithoutTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithBenchmarkFilesInSecondaryUser() {
-    SecondaryUser().use { additionalTestOutputWithBenchmarkFiles() }
+    SecondaryUser().use { util.additionalTestOutputWithBenchmarkFiles() }
   }
 
   /**

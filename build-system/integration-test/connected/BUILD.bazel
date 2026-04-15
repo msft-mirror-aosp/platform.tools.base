@@ -697,7 +697,7 @@ gradle_connected_test(
 )
 
 gradle_connected_test(
-    name = "UtpConnectedTest",
+    name = "AndroidConnectedTest",
     srcs = "src/test/java/com/android/build/gradle/integration/connected/application/",
     data = TEST_DATA + [
         "//tools/adt/idea/utp:resources/utp/addGradleAndroidTestListener.gradle",
