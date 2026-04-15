@@ -815,6 +815,8 @@ public class DeviceManagerTest {
         assertThat(properties.get("hw.touchpad0")).isEqualTo("yes");
         assertThat(properties.get("hw.touchpad0.width")).isEqualTo("1542");
         assertThat(properties.get("hw.touchpad0.height")).isEqualTo("297");
+        assertThat(properties.get("environment.width")).isEqualTo("1200");
+        assertThat(properties.get("environment.height")).isEqualTo("900");
         assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
         assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
     }

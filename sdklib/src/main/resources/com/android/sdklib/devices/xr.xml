@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <d:devices
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xmlns:d="http://schemas.android.com/sdk/devices/8">
+        xmlns:d="http://schemas.android.com/sdk/devices/10">
     <d:device>
         <d:name>XR Headset</d:name>
         <d:id>xr_headset_device</d:id>
@@ -107,6 +107,10 @@
                     <d:screen-type>notouch</d:screen-type>
                 </d:touch>
             </d:screen>
+            <d:environment>
+                <d:width>1200</d:width>
+                <d:height>900</d:height>
+            </d:environment>
             <d:touchpad>
                 <d:width>1542</d:width>
                 <d:height>297</d:height>
