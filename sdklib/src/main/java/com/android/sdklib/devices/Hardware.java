@@ -34,6 +34,7 @@ import java.util.Set;
 
 public class Hardware {
     private Screen mScreen;
+    private Environment mEnvironment;
     private Touchpad mTouchpad;
     private Hinge mHinge;
     private EnumSet<Network> mNetworking = EnumSet.noneOf(Network.class);
@@ -267,6 +268,15 @@ public class Hardware {
         mScreen = s;
     }
 
+    @Nullable
+    public Environment getEnvironment() {
+        return mEnvironment;
+    }
+
+    public void setEnvironment(@Nullable Environment environment) {
+        mEnvironment = environment;
+    }
+
     public Touchpad getTouchpad() {
         return mTouchpad;
     }
@@ -293,6 +303,7 @@ public class Hardware {
     public Hardware deepCopy() {
         Hardware hw = new Hardware();
         hw.mScreen = mScreen != null ? mScreen.deepCopy() : null;
+        hw.mEnvironment = mEnvironment != null ? mEnvironment.deepCopy() : null;
         hw.mTouchpad = mTouchpad != null ? mTouchpad.deepCopy() : null;
         hw.mHinge = mHinge != null ? mHinge.deepCopy() : null;
         hw.mNetworking = mNetworking.clone();
@@ -330,6 +341,7 @@ public class Hardware {
         }
         Hardware hw = (Hardware) o;
         return Objects.equal(mScreen, hw.getScreen())
+                && Objects.equal(mEnvironment, hw.getEnvironment())
                 && Objects.equal(mTouchpad, hw.getTouchpad())
                 && Objects.equal(mNetworking, hw.getNetworking())
                 && Objects.equal(mSensors, hw.getSensors())
@@ -355,6 +367,7 @@ public class Hardware {
     public int hashCode() {
         return Objects.hashCode(
                 mScreen,
+                mEnvironment,
                 mTouchpad,
                 mNetworking,
                 mSensors,
@@ -381,7 +394,9 @@ public class Hardware {
         StringBuilder sb = new StringBuilder();
         sb.append("Hardware <mScreen=");
         sb.append(mScreen);
-        sb.append("mTouchpad=");
+        sb.append(", mEnvironment=");
+        sb.append(mEnvironment);
+        sb.append(", mTouchpad=");
         sb.append(mTouchpad);
         sb.append(", mNetworking=");
         sb.append(mNetworking);

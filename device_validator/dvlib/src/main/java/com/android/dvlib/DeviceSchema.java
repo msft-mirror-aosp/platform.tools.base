@@ -57,7 +57,7 @@ public class DeviceSchema {
      * The latest version of the device XML Schema. Valid version numbers are between 1 and this
      * number, included.
      */
-    public static final int NS_LATEST_VERSION = 9;
+    public static final int NS_LATEST_VERSION = 10;
 
     /** The XML namespace of the latest device XML. */
     public static final String NS_DEVICES_URI = getSchemaUri(NS_LATEST_VERSION);
@@ -177,6 +177,8 @@ public class DeviceSchema {
     public static final String NODE_BLUETOOTH_PROFILES = "bluetooth-profiles";
 
     public static final String NODE_SCREEN = "screen";
+    
+    public static final String NODE_ENVIRONMENT = "environment";
 
     public static final String NODE_SENSORS = "sensors";
 

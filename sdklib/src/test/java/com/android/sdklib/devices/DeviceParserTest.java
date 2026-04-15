@@ -390,6 +390,83 @@ public class DeviceParserTest extends TestCase {
         }
     }
 
+    public void testDevices_v10() throws Exception {
+        String xml = "<?xml version=\"1.0\"?>\n" +
+                "<d:devices\n" +
+                "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n" +
+                "    xmlns:d=\"http://schemas.android.com/sdk/devices/10\">\n" +
+                "  <d:device>\n" +
+                "    <d:name>Glasses Device</d:name>\n" +
+                "    <d:manufacturer>Generic</d:manufacturer>\n" +
+                "    <d:hardware>\n" +
+                "      <d:screen>\n" +
+                "        <d:screen-size>normal</d:screen-size>\n" +
+                "        <d:diagonal-length>5.0</d:diagonal-length>\n" +
+                "        <d:pixel-density>xhdpi</d:pixel-density>\n" +
+                "        <d:screen-ratio>long</d:screen-ratio>\n" +
+                "        <d:dimensions>\n" +
+                "          <d:x-dimension>400</d:x-dimension>\n" +
+                "          <d:y-dimension>400</d:y-dimension>\n" +
+                "        </d:dimensions>\n" +
+                "        <d:xdpi>400.0</d:xdpi>\n" +
+                "        <d:ydpi>400.0</d:ydpi>\n" +
+                "        <d:touch>\n" +
+                "          <d:multitouch>jazz-hands</d:multitouch>\n" +
+                "          <d:mechanism>finger</d:mechanism>\n" +
+                "          <d:screen-type>capacitive</d:screen-type>\n" +
+                "        </d:touch>\n" +
+                "      </d:screen>\n" +
+                "      <d:environment>\n" +
+                "        <d:width>800</d:width>\n" +
+                "        <d:height>1200</d:height>\n" +
+                "      </d:environment>\n" +
+                "      <d:networking>Bluetooth</d:networking>\n" +
+                "      <d:sensors>Accelerometer</d:sensors>\n" +
+                "      <d:mic>true</d:mic>\n" +
+                "      <d:keyboard>nokeys</d:keyboard>\n" +
+                "      <d:nav>nonav</d:nav>\n" +
+                "      <d:ram unit=\"GiB\">1</d:ram>\n" +
+                "      <d:buttons>soft</d:buttons>\n" +
+                "      <d:internal-storage unit=\"GiB\">16</d:internal-storage>\n" +
+                "      <d:cpu>Generic CPU</d:cpu>\n" +
+                "      <d:gpu>Generic GPU</d:gpu>\n" +
+                "      <d:dock></d:dock>\n" +
+                "      <d:power-type>battery</d:power-type>\n" +
+                "    </d:hardware>\n" +
+                "    <d:software>\n" +
+                "      <d:api-level>34</d:api-level>\n" +
+                "      <d:live-wallpaper-support>true</d:live-wallpaper-support>\n" +
+                "      <d:bluetooth-profiles>A2DP</d:bluetooth-profiles>\n" +
+                "      <d:gl-version>2.0</d:gl-version>\n" +
+                "      <d:gl-extensions></d:gl-extensions>\n" +
+                "      <d:status-bar>true</d:status-bar>\n" +
+                "    </d:software>\n" +
+                "    <d:state name=\"Portrait\" default=\"true\">\n" +
+                "      <d:description>Portrait view</d:description>\n" +
+                "      <d:screen-orientation>port</d:screen-orientation>\n" +
+                "      <d:keyboard-state>keyssoft</d:keyboard-state>\n" +
+                "      <d:nav-state>nonav</d:nav-state>\n" +
+                "    </d:state>\n" +
+                "  </d:device>\n" +
+                "</d:devices>";
+        InputStream stream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
+        try {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(1, devices.size());
+            Device device = devices.get("Glasses Device", "Generic");
+            assertNotNull(device);
+            Hardware hw = device.getDefaultHardware();
+            assertNotNull(hw.getScreen());
+            assertEquals(ScreenSize.NORMAL, hw.getScreen().getSize());
+            Environment env = hw.getEnvironment();
+            assertNotNull(env);
+            assertEquals(800, env.getWidth());
+            assertEquals(1200, env.getHeight());
+        } finally {
+            stream.close();
+        }
+    }
+
     public void testApiRange() throws Exception {
         Map<String, String> replacements = new HashMap<String, String>();
         replacements.put("api-level", "1-");
