@@ -62,6 +62,9 @@ class LibWithProvidedAarAsJarTest : ModelComparator() {
 
   @Test
   fun `test VariantDependencies model`() {
+    for (m in listOf("library", "library2")) {
+      TestFileUtils.appendToFile(project.getSubproject(m).buildFile, "android.enableKotlin = false\n")
+    }
     val result = project.modelV2().ignoreSyncIssues(SyncIssue.SEVERITY_WARNING).fetchModels(variantName = "debug")
 
     with(result).compareVariantDependencies(projectAction = { getProject(":library") }, goldenFile = "library_VariantDependencies")

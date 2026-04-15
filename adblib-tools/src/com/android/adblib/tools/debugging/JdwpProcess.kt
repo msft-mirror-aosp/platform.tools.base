@@ -80,6 +80,17 @@ internal fun JdwpProcess.toJdwpProcessInfo() =
   JdwpProcessInfo(device = device, properties = propertiesFlow.value, proxyStatus = jdwpProxySocketServer.proxyStatusFlow.value)
 
 /**
+ * Kills a debuggable process by sending a VM_EXIT packet to the VM.
+ *
+ * See [JDWP VirtualMachine Exit](https://docs.oracle.com/javase/7/docs/platform/jpda/jdwp/jdwp-protocol.html#JDWP_VirtualMachine_Exit)
+ *
+ * If the process has already exited on the device, this method will throw an exception.
+ */
+suspend fun JdwpProcess.sendVmExit(status: Int) {
+  withJdwpSession { sendVmExit(status) }
+}
+
+/**
  * Kills a debuggable process by sending a DDMS EXIT packet to the VM.
  *
  * If the process has already exited on the device, this method will throw an exception.

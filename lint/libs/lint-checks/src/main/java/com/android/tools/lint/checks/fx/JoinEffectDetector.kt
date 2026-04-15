@@ -179,9 +179,25 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
       maybeSavePartialResults(context, program)
       isSummariesCacheValid = true
     }
+
+    // Warnings on calling `⊤` usually go away when other errors are resolved,
+    // so we omit them unless they're the only problems to report
+    val possibleRedundancies = mutableListOf<Error.CallingTop<FX>>()
+    var anyReported = false
     for ((_, sum) in summariesCache) {
-      for (error in dedupErrors(sum.effect.errors!!)) report(context, error)
+      for (error in dedupErrors(sum.effect.errors!!)) {
+        when {
+          error !is Error.CallingTop -> {
+            anyReported = true
+            possibleRedundancies.clear() // no longer need to track deferred ones
+            report(context, error)
+          }
+          !anyReported -> possibleRedundancies.add(error)
+          else -> {}
+        }
+      }
     }
+    for (deferredError in possibleRedundancies) report(context, deferredError)
   }
 
   /**

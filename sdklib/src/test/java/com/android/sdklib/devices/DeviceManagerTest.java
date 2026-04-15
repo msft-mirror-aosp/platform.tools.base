@@ -803,6 +803,7 @@ public class DeviceManagerTest {
         assertThat(devProperties.get("hw.lcd.density")).isEqualTo("420");
         assertThat(devProperties.get("hw.lcd.width")).isEqualTo("1080");
         assertThat(devProperties.get("hw.ramSize")).isEqualTo("4096"); // In MB, without units
+        assertThat(devProperties.get("hw.lcd.transparent")).isNull();
     }
 
     @Test
@@ -815,6 +816,7 @@ public class DeviceManagerTest {
         assertThat(properties.get("hw.touchpad0.width")).isEqualTo("1542");
         assertThat(properties.get("hw.touchpad0.height")).isEqualTo("297");
         assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
+        assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
     }
 
     @Test

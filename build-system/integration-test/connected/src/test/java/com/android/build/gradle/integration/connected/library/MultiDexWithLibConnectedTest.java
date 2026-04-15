@@ -34,8 +34,6 @@ public class MultiDexWithLibConnectedTest {
             GradleTestProject.builder()
                     .fromTestProject("multiDexWithLib")
                     .withHeap("2048M")
-                    .addGradleProperties(
-                            BooleanOption.PRIVACY_SANDBOX_SDK_SUPPORT.getPropertyName() + "=false")
                     .create();
 
     @ClassRule public static final ExternalResource EMULATOR = EmulatorUtils.getEmulator();

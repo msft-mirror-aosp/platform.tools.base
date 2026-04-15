@@ -202,6 +202,7 @@ fun RecipeExecutor.generateBasicActivity(
   mergeXml(navGraphContent, resOut.resolve("navigation/${navGraphName}.xml"))
   mergeXml(stringsXml, resOut.resolve("values/strings.xml"))
 
+  addDependency("androidx.activity:activity-ktx:+")
   if (generateKotlin) {
     addDependency("android.arch.navigation:navigation-fragment-ktx:+")
     addDependency("android.arch.navigation:navigation-ui-ktx:+")

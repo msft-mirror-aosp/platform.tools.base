@@ -313,7 +313,9 @@ abstract class ComponentImpl<DslInfoT : ComponentDslInfo>(
   }
 
   fun isGlobalSyntheticsEnabled(): Boolean {
-    return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS) ?: (!debuggable || isJavaLanguageLevelAbove14())
+    val enableForDebug = internalServices.projectOptions.get(BooleanOption.ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS)
+    val legacyBehavior = !debuggable || isJavaLanguageLevelAbove14()
+    return internalServices.projectOptions.get(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS) ?: (enableForDebug || legacyBehavior)
   }
 
   private fun isJavaLanguageLevelAbove14(): Boolean {

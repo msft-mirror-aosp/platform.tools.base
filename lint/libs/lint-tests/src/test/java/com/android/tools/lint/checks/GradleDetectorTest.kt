@@ -3278,10 +3278,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -9 +9 @@
         -      version = release("35")
         +      version = release(35)
-        Fix for build.gradle.kts line 8: Update targetSdkVersion to 36:
+        Fix for build.gradle.kts line 8: Update targetSdkVersion to 37:
         @@ -8 +8 @@
         -      version = release(35)
-        +      version = release(36)
+        +      version = release(37)
         """
       )
   }
@@ -3330,10 +3330,10 @@ class GradleDetectorTest : AbstractCheckTest() {
         @@ -9 +9 @@
         -      version = release("35")
         +      version = release(35)
-        Fix for build.gradle line 8: Update targetSdkVersion to 36:
+        Fix for build.gradle line 8: Update targetSdkVersion to 37:
         @@ -8 +8 @@
         -      version release(35)
-        +      version release(36)
+        +      version release(37)
         """
       )
   }

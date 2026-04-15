@@ -29,7 +29,6 @@ import com.android.build.api.variant.VariantBuilder
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LintLifecycleExtensionImpl
 import com.android.build.gradle.api.AndroidBasePlugin
-import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.AvdComponentsBuildService
 import com.android.build.gradle.internal.BadPluginException
@@ -604,10 +603,6 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
             ?.name
             ?.let { AnalyticsUtil.toProto(it).number }
             ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
-          ModulePropertyKey.Dependencies[modulePropertyKey]
-            ?.name
-            ?.let { AnalyticsUtil.toProto(it).number }
-            ?.let { builder.optionsBuilder.addModulePropertyKeys(it) }
           ModulePropertyKey.OptionalBoolean[modulePropertyKey]
             ?.name
             ?.let { AnalyticsUtil.toProto(it).number }
@@ -730,7 +725,9 @@ To learn more, go to https://d.android.com/r/tools/java-8-support-message.html
               apiLevel = it.apiLevel,
               minorApiLevel = it.minorApiLevel,
               sdkExtension = it.sdkExtension,
-              codeName = it.codeName,
+              previewCodeName = it.codeName,
+              canaryDate = it.canaryDate,
+              betaVersion = it.betaVersion,
               addonName = it.addonName,
               vendorName = it.vendorName,
             )

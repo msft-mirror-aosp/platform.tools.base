@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.internal.tasks;
 
-import static com.android.build.gradle.internal.publishing.AndroidArtifacts.ArtifactType.ANDROID_PRIVACY_SANDBOX_EXTRACTED_SDK_APKS;
 import static com.android.build.gradle.internal.utils.InstallApkUtilsKt.getDeviceSpec;
 
 import com.android.annotations.NonNull;
@@ -27,14 +26,12 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.build.gradle.internal.SdkComponentsKt;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.component.ApkCreationConfig;
-import com.android.build.gradle.internal.publishing.AndroidArtifacts;
 import com.android.build.gradle.internal.scope.InternalArtifactType;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
 import com.android.build.gradle.internal.testing.ConnectedDeviceProvider;
 import com.android.build.gradle.internal.utils.ApkSources;
 import com.android.build.gradle.internal.utils.DefaultDeviceApkOutput;
 import com.android.build.gradle.internal.utils.DeviceApkOutput;
-import com.android.build.gradle.internal.utils.SdkApkInstallGroup;
 import com.android.buildanalyzer.common.TaskCategory;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
@@ -53,7 +50,6 @@ import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.Optional;
@@ -152,38 +148,24 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                         apkInstallGroup.getApks().stream()
                                 .map(RegularFile::getAsFile)
                                 .collect(Collectors.toList());
-                if (apkInstallGroup instanceof SdkApkInstallGroup) {
-                    SdkApkInstallGroup sdkApkInstallGroup = (SdkApkInstallGroup) apkInstallGroup;
-                    installPrivacySandboxSdkApks(
-                            logger,
-                            device,
+                if (apkFiles.isEmpty()) {
+                    logger.lifecycle(
+                            "Skipping device '{}' for '{}:{}': Could not find build of variant "
+                                    + "which supports density {} and an ABI in {}",
+                            device.getName(),
                             projectPath,
-                            sdkApkInstallGroup.getSourceSdk(),
-                            apkFiles,
-                            extraArgs,
-                            iLogger,
                             variantName,
-                            timeOutInMs);
+                            device.getDensity(),
+                            Joiner.on(", ").join(device.getAbis()));
                 } else {
-                    if (apkFiles.isEmpty()) {
-                        logger.lifecycle(
-                                "Skipping device '{}' for '{}:{}': Could not find build of variant "
-                                        + "which supports density {} and an ABI in {}",
-                                device.getName(),
-                                projectPath,
-                                variantName,
-                                device.getDensity(),
-                                Joiner.on(", ").join(device.getAbis()));
-                    } else {
-                        logger.lifecycle(
-                                "Installing APK '{}' on '{}' for {}:{}",
-                                FileUtils.getNamesAsCommaSeparatedList(apkFiles),
-                                device.getName(),
-                                projectPath,
-                                variantName);
-                        installPackages(device, apkFiles, extraArgs, timeOutInMs, iLogger);
-                        successfulInstallCount++;
-                    }
+                    logger.lifecycle(
+                            "Installing APK '{}' on '{}' for {}:{}",
+                            FileUtils.getNamesAsCommaSeparatedList(apkFiles),
+                            device.getName(),
+                            projectPath,
+                            variantName);
+                    installPackages(device, apkFiles, extraArgs, timeOutInMs, iLogger);
+                    successfulInstallCount++;
                 }
             }
         }
@@ -212,33 +194,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
         }
     }
 
-    private static void installPrivacySandboxSdkApks(
-            @NonNull Logger logger,
-            @NonNull DeviceConnector device,
-            @NonNull String projectPath,
-            @NonNull String sourceSdkPakageName,
-            @NonNull List<File> sdkApkFiles,
-            @NonNull Collection<String> extraArgs,
-            @NonNull ILogger iLogger,
-            @NonNull String variantName,
-            @NonNull int timeOutInMs) {
-        try {
-            logger.lifecycle(
-                    "Installing Privacy Sandbox APK '{}' on '{}' for {}:{}",
-                    FileUtils.getNamesAsCommaSeparatedList(sdkApkFiles),
-                    device.getName(),
-                    projectPath,
-                    variantName);
-            installPackages(device, sdkApkFiles, extraArgs, timeOutInMs, iLogger);
-        } catch (DeviceException e) {
-            logger.error(
-                    String.format(
-                            "Failed to install privacy sandbox SDK APKs from %s",
-                            sourceSdkPakageName),
-                    e);
-            }
-    }
-
     @Input
     public int getTimeOutInMs() {
         return timeOutInMs;
@@ -261,11 +216,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
     public abstract DirectoryProperty getApkDirectory();
-
-    @InputFiles
-    @PathSensitive(PathSensitivity.RELATIVE)
-    @Optional
-    public abstract ConfigurableFileCollection getPrivacySandboxSdksApksFiles();
 
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
@@ -316,7 +266,6 @@ public abstract class InstallVariantTask extends NonIncrementalTask {
                     .getArtifacts()
                     .setTaskInputToFinalProduct(
                             SingleArtifact.APK.INSTANCE, task.getApkDirectory());
-            task.getPrivacySandboxSdksApksFiles().disallowChanges();
 
             Installation installationOptions = creationConfig.getGlobal().getInstallationOptions();
             task.setTimeOutInMs(installationOptions.getTimeOutInMs());

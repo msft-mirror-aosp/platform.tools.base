@@ -78,12 +78,8 @@ const SourceViewApp = {
         this.classData = classData;
         this.context = context;
 
-        if (!classData?.variantSourceFilePaths) {
-            this.elements.sourceViewContainer.innerHTML = `
-                <div class="p-8 text-center text-red-600">
-                    <h3 class="text-lg font-bold">No Source Data</h3>
-                    <p>No source file paths found for ${classData?.name || 'this class'}.</p>
-                </div>`;
+        if (!classData?.variantSourceFilePaths || classData.variantSourceFilePaths.length === 0) {
+            this.render();
             return;
         }
 
@@ -138,7 +134,7 @@ const SourceViewApp = {
     },
 
     render() {
-        const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
+        const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         if (this.state.selectedVariants.length === 0) {
             this.state.selectedVariants = [...availableVariants];
         }
@@ -291,7 +287,7 @@ const SourceViewApp = {
 
     updateVariantButtonText() {
         const selectedCount = this.state.selectedVariants.length;
-        const availableVariants = [...new Set(this.classData.variantSourceFilePaths.map(v => v.variantName))];
+        const availableVariants = [...new Set((this.classData?.variantSourceFilePaths || []).map(v => v.variantName))];
         const allVariantsCount = availableVariants.length;
 
         if (selectedCount === allVariantsCount && allVariantsCount > 0) {
@@ -404,6 +400,24 @@ const SourceViewApp = {
     },
 
     renderAllVariantViews() {
+        if (!this.classData?.variantSourceFilePaths || this.classData.variantSourceFilePaths.length === 0) {
+            const packageName = this.classData?.packageName || this.context.packageName;
+            const sourceFileName = this.classData?.sourceFileName || this.classData?.name;
+            const packagePath = (packageName && packageName !== 'default')
+                ? packageName.replace(/\./g, '/') + '/'
+                : '';
+            const fullSourcePath = packagePath + sourceFileName;
+
+            this.elements.sourceViewContainer.innerHTML = `
+                <div class="flex items-center justify-center w-full h-full text-red-600">
+                    <div class="text-center p-8">
+                        <h3 class="text-lg font-bold">No Source Data</h3>
+                        <p>Source file "${fullSourcePath}" was not found during generation of report</p>
+                    </div>
+                </div>`;
+            return;
+        }
+
         this.elements.sourceViewContainer.innerHTML = this.state.selectedVariants.map(variant => this.renderVariantView(variant)).join('');
     },
 

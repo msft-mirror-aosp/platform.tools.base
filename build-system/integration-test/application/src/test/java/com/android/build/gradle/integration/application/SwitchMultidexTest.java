@@ -40,6 +40,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -107,18 +108,28 @@ public class SwitchMultidexTest {
                 .run("assembleDebug");
         Apk debug = project.getApk("debug");
         assertTrue(debug.getMainDexFile().isPresent());
-        assertThat(debug.getMainDexFile().get())
-                .containsExactlyClassesIn(
-                        ImmutableList.of(
-                                "Landroidx/multidex/MultiDex$V19;",
-                                "Landroidx/multidex/MultiDex;",
-                                "Landroidx/multidex/MultiDexApplication;",
-                                "Landroidx/multidex/MultiDexExtractor$1;",
-                                "Landroidx/multidex/MultiDexExtractor$ExtractedDex;",
-                                "Landroidx/multidex/MultiDexExtractor;",
-                                "Landroidx/multidex/ZipUtil$CentralDirectory;",
-                                "Landroidx/multidex/ZipUtil;",
-                                "Lcom/example/helloworld/HelloWorld;"));
+        List<String> mainDexClasses =
+                debug.getMainDexFile().get().getClasses().keySet().stream()
+                        .filter(
+                                c ->
+                                        !c.startsWith("Lcom/android/tools/r8/")
+                                                && !c.startsWith("Ljava/lang/invoke/")
+                                                && !c.startsWith("Lkotlin/")
+                                                && !c.startsWith("Landroid/")
+                                                && !c.startsWith("Ljava/")
+                                                && !c.startsWith("Ldalvik/"))
+                        .collect(java.util.stream.Collectors.toList());
+        assertThat(mainDexClasses)
+                .containsExactly(
+                        "Landroidx/multidex/MultiDex$V19;",
+                        "Landroidx/multidex/MultiDex;",
+                        "Landroidx/multidex/MultiDexApplication;",
+                        "Landroidx/multidex/MultiDexExtractor$1;",
+                        "Landroidx/multidex/MultiDexExtractor$ExtractedDex;",
+                        "Landroidx/multidex/MultiDexExtractor;",
+                        "Landroidx/multidex/ZipUtil$CentralDirectory;",
+                        "Landroidx/multidex/ZipUtil;",
+                        "Lcom/example/helloworld/HelloWorld;");
 
         Set<String> secondaryClasses = Sets.newHashSet();
         for (Dex dex : debug.getSecondaryDexFiles()) {
@@ -129,10 +140,22 @@ public class SwitchMultidexTest {
             }
         }
 
+        Set<String> filteredSecondaryClasses =
+                secondaryClasses.stream()
+                        .filter(
+                                c ->
+                                        !c.startsWith("Lcom/android/tools/r8/")
+                                                && !c.startsWith("Ljava/lang/invoke/")
+                                                && !c.startsWith("Lkotlin/")
+                                                && !c.startsWith("Landroid/")
+                                                && !c.startsWith("Ljava/")
+                                                && !c.startsWith("Ldalvik/"))
+                        .collect(java.util.stream.Collectors.toSet());
+
         if (project.getIntermediateFile(
                         InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.INSTANCE.getFolderName())
                 .exists()) {
-            assertThat(secondaryClasses)
+            assertThat(filteredSecondaryClasses)
                     .containsExactly(
                             "Landroidx/multidex/R;",
                             "Landroidx/multidex/BuildConfig;",
@@ -143,7 +166,7 @@ public class SwitchMultidexTest {
                             "Lcom/example/helloworld/R$string;",
                             "Lcom/example/helloworld/R;");
         } else {
-            assertThat(secondaryClasses)
+            assertThat(filteredSecondaryClasses)
                     .containsExactly(
                             "Landroidx/multidex/R;",
                             "Landroidx/multidex/BuildConfig;",
@@ -183,10 +206,22 @@ public class SwitchMultidexTest {
             }
         }
 
+        Set<String> filteredClassToDexMapKeys =
+                classToDexMap.keySet().stream()
+                        .filter(
+                                c ->
+                                        !c.startsWith("Lcom/android/tools/r8/")
+                                                && !c.startsWith("Ljava/lang/invoke/")
+                                                && !c.startsWith("Lkotlin/")
+                                                && !c.startsWith("Landroid/")
+                                                && !c.startsWith("Ljava/")
+                                                && !c.startsWith("Ldalvik/"))
+                        .collect(java.util.stream.Collectors.toSet());
+
         if (project.getIntermediateFile(
                         InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.INSTANCE.getFolderName())
                 .exists()) {
-            assertThat(classToDexMap.keySet())
+            assertThat(filteredClassToDexMapKeys)
                     .containsExactly(
                             "Lcom/example/helloworld/A0;",
                             "Lcom/example/helloworld/A1;",
@@ -196,7 +231,7 @@ public class SwitchMultidexTest {
                             "Lcom/example/helloworld/R$string;",
                             "Lcom/example/helloworld/R;");
         } else {
-            assertThat(classToDexMap.keySet())
+            assertThat(filteredClassToDexMapKeys)
                     .containsExactly(
                             "Lcom/example/helloworld/A0;",
                             "Lcom/example/helloworld/A1;",

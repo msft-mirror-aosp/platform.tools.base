@@ -28,8 +28,7 @@ import com.android.tools.perflogger.Benchmark
 import com.google.common.truth.Truth.assertThat
 import java.io.Closeable
 import java.util.concurrent.TimeUnit
-import org.junit.Assume
-import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
@@ -40,8 +39,9 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   private val connectedAndroidTestWithUtpBenchmark: Benchmark =
     Benchmark.Builder("connectedAndroidTestWithUtp").setProject("Android Studio Gradle").build()
 
+  @Rule @JvmField val EMULATOR = getEmulator()
+
   companion object {
-    @ClassRule @JvmField val EMULATOR = getEmulator()
     private const val DEVICE_NAME = "emulator-5554 - 13"
     private const val TEST_OUTPUT_ROOT_DIR = "build/outputs/androidTest-results/connected/debug"
     private const val DEVICE_OUTPUT_DIR = "$TEST_OUTPUT_ROOT_DIR/$DEVICE_NAME"
@@ -81,9 +81,6 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithUtpTestResultListener() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     val benchmark: Benchmark =
       Benchmark.Builder("connectedAndroidTestWithUtpTestResultListener").setProject("Android Studio Gradle").build()
     val startTime: Long = System.currentTimeMillis()
@@ -165,10 +162,46 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
   }
 
   @Test
-  fun connectedAndroidTestShouldUninstallAppsAfterTest() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
+  @Throws(Exception::class)
+  fun androidTestWithOrchestratorAndCodeCoverageAndCorruptedLeftover() {
+    selectModule("app")
 
+    rule.build.androidApplication().reconfigure {
+      android.testOptions.execution = "ANDROIDX_TEST_ORCHESTRATOR"
+      android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
+      android.defaultConfig.testInstrumentationRunnerArguments["clearPackageData"] = "true"
+
+      dependencies {
+        add("androidTestUtil", "androidx.test:orchestrator:$ANDROIDX_TEST_VERSION")
+        add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION")
+      }
+      android.buildTypes.apply { named("debug") { it.enableAndroidTestCoverage = true } }
+    }
+
+    val adb = SdkHelper.getAdb().absolutePath
+    val coverageDir = "/sdcard/googletest/internal_use/data/data/com.example.android.kotlin/coverage_data"
+    val corruptedFile = "$coverageDir/corrupted.ec"
+
+    // Manually create a corrupted leftover file on device.
+    // We create it after the emulator rule has started the emulator.
+    ProcessBuilder(adb, "shell", "mkdir", "-p", coverageDir).start().waitFor(1, TimeUnit.MINUTES)
+    ProcessBuilder(adb, "shell", "echo", "not-a-jacoco-file", ">", corruptedFile).start().waitFor(1, TimeUnit.MINUTES)
+
+    // Run the test. The plugin should clean up the directory before pulling files.
+    // If it doesn't, JacocoReportTask will fail with "Unknown block type".
+    executor.run(testTaskName)
+
+    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(project.resolve(testCoverageXmlPath)).exists()
+
+    // Verify the corrupted file is gone from the device.
+    val checkProcess = ProcessBuilder(adb, "shell", "ls", corruptedFile).start()
+    checkProcess.waitFor(1, TimeUnit.MINUTES)
+    assertThat(checkProcess.exitValue()).isNotEqualTo(0)
+  }
+
+  @Test
+  fun connectedAndroidTestShouldUninstallAppsAfterTest() {
     selectModule("lib")
 
     val result = executor.withEnableInfoLogging(true).run(testTaskName)
@@ -183,25 +216,16 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
 
   @Test
   fun additionalTestOutputWithTestStorageServiceInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithoutTestStorageServiceInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithoutTestStorageService() }
   }
 
   @Test
   fun additionalTestOutputWithBenchmarkFilesInSecondaryUser() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     SecondaryUser().use { additionalTestOutputWithBenchmarkFiles() }
   }
 
@@ -211,24 +235,68 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
    */
   private class SecondaryUser : Closeable {
     companion object {
-      private fun createSecondaryUser(): Int {
-        val process =
-          ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "pm", "create-user", "utpTestUser", "--ephemeral")
-            .start()
+      private fun removeAllSecondaryUsers() {
+        // Ensure we are on user 0 before removing others
+        switchCurrentUser(0)
+
+        val process = ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "pm", "list", "users").start()
         assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
-        val processOutput = process.inputStream.bufferedReader().use { it.readText() }
-        val processError = process.errorStream.bufferedReader().use { it.readText() }
-        val regexToExtractUserId = Regex(pattern = "Success: created user id (?<userId>\\d+)")
-        return requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt()) {
-          "Failed to create secondary user. pm create-user command failed with the output message: $processError"
+        val output = process.inputStream.bufferedReader().use { it.readText() }
+        val userRegex = Regex("""UserInfo\{(\d+):""")
+        userRegex.findAll(output).map { it.groupValues[1].toInt() }.filter { it != 0 }.forEach { userId -> removeUser(userId) }
+      }
+
+      private fun createSecondaryUser(): Int {
+        var processOutput = ""
+        var processError = ""
+        repeat(3) {
+          val process =
+            ProcessBuilder(
+                SdkHelper.getAdb().absolutePath,
+                "-s",
+                "emulator-5554",
+                "shell",
+                "pm",
+                "create-user",
+                "utpTestUser",
+                "--ephemeral",
+              )
+              .start()
+          if (process.waitFor(1, TimeUnit.MINUTES)) {
+            processOutput = process.inputStream.bufferedReader().use { it.readText() }
+            processError = process.errorStream.bufferedReader().use { it.readText() }
+            if (processOutput.contains("Success: created user id")) {
+              val regexToExtractUserId = Regex(pattern = "Success: created user id (?<userId>\\d+)")
+              val userId = requireNotNull(regexToExtractUserId.find(processOutput)?.groups?.get("userId")?.value?.toInt())
+              return userId
+            }
+          }
         }
+        throw IllegalStateException("Failed to create secondary user after 3 attempts. Output: $processOutput, Error: $processError")
       }
 
       private fun switchCurrentUser(userId: Int) {
-        val process =
-          ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "switch-user", "-w", userId.toString())
-            .start()
-        assertThat(process.waitFor(1, TimeUnit.MINUTES)).isTrue()
+        var switched = false
+        repeat(3) {
+          if (switched) return@repeat
+          val process =
+            ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "switch-user", "-w", userId.toString())
+              .start()
+          process.waitFor(1, TimeUnit.MINUTES)
+
+          // Double check current user
+          val checkProcess =
+            ProcessBuilder(SdkHelper.getAdb().absolutePath, "-s", "emulator-5554", "shell", "am", "get-current-user").start()
+          if (checkProcess.waitFor(1, TimeUnit.MINUTES)) {
+            val currentUser = checkProcess.inputStream.bufferedReader().use { it.readText().trim() }
+            if (currentUser == userId.toString()) {
+              switched = true
+            }
+          }
+        }
+        if (!switched) {
+          throw IllegalStateException("Failed to switch to user $userId after 3 attempts")
+        }
       }
 
       private fun removeUser(userId: Int) {
@@ -238,15 +306,14 @@ class UtpConnectedTest(runWithBuiltInPlatform: Boolean) : UtpTestBase(runWithBui
       }
     }
 
-    val secondaryUserId = createSecondaryUser()
-
     init {
+      removeAllSecondaryUsers()
+      val secondaryUserId = createSecondaryUser()
       switchCurrentUser(secondaryUserId)
     }
 
     override fun close() {
-      switchCurrentUser(0) // Switch back to the primary user (userId = 0).
-      removeUser(secondaryUserId)
+      removeAllSecondaryUsers()
     }
   }
 }

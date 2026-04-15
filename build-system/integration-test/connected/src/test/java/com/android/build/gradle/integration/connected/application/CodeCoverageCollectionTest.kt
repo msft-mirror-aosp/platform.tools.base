@@ -146,6 +146,8 @@ class CodeCoverageCollectionTest {
             }
           }
 
+          files { add("src/first/testcase1.txt", "some content") }
+
           dependencies {
             implementation(project(":lib"))
 
@@ -612,54 +614,54 @@ class CodeCoverageCollectionTest {
 
     Truth.assertThat(xmlReportString.contains(expectedSources)).isTrue()
   }
+}
 
-  class CustomEngineDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "Custom Engine Root") {
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+class CustomEngineDescriptor(uniqueId: UniqueId) : AbstractTestDescriptor(uniqueId, "Custom Engine Root") {
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER
+}
+
+class CustomTestDescriptor(uniqueId: UniqueId, testDescriptor: String) : AbstractTestDescriptor(uniqueId, testDescriptor) {
+  override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+}
+
+class CustomJunitEngineForTesting : TestEngine {
+
+  override fun getId(): String {
+    return "[engine:custom-junit-engine-for-tests]"
   }
 
-  class CustomTestDescriptor(uniqueId: UniqueId, testDescriptor: String) : AbstractTestDescriptor(uniqueId, testDescriptor) {
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.TEST
+  override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
+    val engineDescriptor = CustomEngineDescriptor(uniqueId)
+
+    val testId = uniqueId.append("test", "some-test")
+    val testDescriptor = CustomTestDescriptor(testId, "testFunctionName")
+    engineDescriptor.addChild(testDescriptor)
+
+    return engineDescriptor
   }
 
-  class CustomJunitEngineForTesting : TestEngine {
+  override fun execute(request: ExecutionRequest) {
+    val listener: EngineExecutionListener = request.engineExecutionListener
+    val rootDescriptor = request.rootTestDescriptor
 
-    override fun getId(): String {
-      return "[engine:custom-junit-engine-for-tests]"
-    }
+    listener.executionStarted(rootDescriptor)
 
-    override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor {
-      val engineDescriptor = CustomEngineDescriptor(uniqueId)
-
-      val testId = uniqueId.append("test", "some-test")
-      val testDescriptor = CustomTestDescriptor(testId, "testFunctionName")
-      engineDescriptor.addChild(testDescriptor)
-
-      return engineDescriptor
-    }
-
-    override fun execute(request: ExecutionRequest) {
-      val listener: EngineExecutionListener = request.engineExecutionListener
-      val rootDescriptor = request.rootTestDescriptor
-
-      listener.executionStarted(rootDescriptor)
-
-      for (testDescriptor in rootDescriptor.children) {
-        listener.executionStarted(testDescriptor)
-        val testResult =
-          try {
-            val testSucceeded = System.getenv("CUSTOM_ENGINE_SUCCEED")?.toBoolean() ?: true
-            if (testSucceeded) {
-              TestExecutionResult.successful()
-            } else {
-              TestExecutionResult.failed(Exception("Test failed"))
-            }
-          } catch (t: Throwable) {
-            TestExecutionResult.failed(t)
+    for (testDescriptor in rootDescriptor.children) {
+      listener.executionStarted(testDescriptor)
+      val testResult =
+        try {
+          val testSucceeded = System.getenv("CUSTOM_ENGINE_SUCCEED")?.toBoolean() ?: true
+          if (testSucceeded) {
+            TestExecutionResult.successful()
+          } else {
+            TestExecutionResult.failed(Exception("Test failed"))
           }
-        listener.executionFinished(testDescriptor, testResult)
-      }
-
-      listener.executionFinished(rootDescriptor, TestExecutionResult.successful())
+        } catch (t: Throwable) {
+          TestExecutionResult.failed(t)
+        }
+      listener.executionFinished(testDescriptor, testResult)
     }
+
+    listener.executionFinished(rootDescriptor, TestExecutionResult.successful())
   }
 }

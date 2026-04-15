@@ -90,7 +90,6 @@ const val PROPERTY_APK_SELECT_CONFIG = "android.inject.apkselect.config"
 // Invariant paths to all known active device specs.
 const val PROPERTY_APK_SELECT_MULTIPLE_DEVICE_SPECS = "android.inject.apkselect.mutipledevicespecs"
 const val PROPERTY_EXTRACT_INSTANT_APK = "android.inject.bundle.extractinstant"
-const val PROPERTY_SUPPORTS_PRIVACY_SANDBOX = "android.inject.supports-privacy-sandbox"
 
 /**
  * Comma separated list of on-demand dynamic modules or instant app modules names that are selected by the user for installation on the

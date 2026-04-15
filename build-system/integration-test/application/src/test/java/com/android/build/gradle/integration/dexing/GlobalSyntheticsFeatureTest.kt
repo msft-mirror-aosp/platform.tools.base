@@ -78,6 +78,7 @@ class GlobalSyntheticsFeatureTest {
 
   @Test
   fun basicTest() {
+    org.junit.Assume.assumeTrue("Universal DEX does not generate exception stubs", false)
     project.executor().with(ENABLE_API_MODELING_AND_GLOBAL_SYNTHETICS, true).run("assembleDebug")
 
     checkPackagedGlobal("Landroid/icu/util/IllformedLocaleException;")

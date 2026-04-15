@@ -27,10 +27,10 @@ import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
 interface Optimization {
 
   /** Configure keep rules inherited from external library dependencies */
-  @Incubating fun keepRules(action: KeepRules.() -> Unit)
+  fun keepRules(action: KeepRules.() -> Unit)
 
   /** Configure baseline profile properties */
-  @Incubating fun baselineProfile(action: BaselineProfile.() -> Unit)
+  @Incubating @Deprecated("Use buildType.baselineProfile{}") fun baselineProfile(action: BaselineProfile.() -> Unit)
 
   /**
    * Specifies whether to enable code shrinking and resource optimization. Property works for applications only. For other types it will be

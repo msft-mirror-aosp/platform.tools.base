@@ -79,10 +79,12 @@ class MissingCompileSdkVersionTest {
     val missingSdkPackageSyncIssues = syncIssues.filter { it.type == SyncIssue.TYPE_MISSING_SDK_PACKAGE }
     assertThat(missingSdkPackageSyncIssues).hasSize(1)
     val missingSdkIssue = missingSdkPackageSyncIssues.elementAt(0)
-    assertThat(missingSdkIssue.message)
-      .contains("Failed to find target with hash string 'android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}'")
+    val platformHash =
+      if (SdkVersionInfo.HIGHEST_KNOWN_STABLE_API >= 37) "android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}.0"
+      else "android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}"
+    assertThat(missingSdkIssue.message).contains("Failed to find target with hash string '$platformHash'")
 
-    assertThat(modelContainer.androidDsl?.compileTarget).isEqualTo("android-${SdkVersionInfo.HIGHEST_KNOWN_STABLE_API}")
+    assertThat(modelContainer.androidDsl?.compileTarget).isEqualTo(platformHash)
   }
 
   /** Tests that compile version is set to the highest one installed. */

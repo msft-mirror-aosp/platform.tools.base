@@ -513,10 +513,14 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   object LINT_VITAL_INTERMEDIATE_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE)
 
+  object AGGREGATED_LINT_INTERMEDIATE_TEXT_REPORT : InternalArtifactType<RegularFile>(FILE)
+
   // Files holding the corresponding lint invocation's return value
   object LINT_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
 
   object LINT_VITAL_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
+
+  object AGGREGATED_LINT_RETURN_VALUE : InternalArtifactType<RegularFile>(FILE)
 
   // This only exists so that the Lint vital task runs when the assemble or bundle task is run
   object LINT_VITAL_OUTPUT : InternalArtifactType<RegularFile>(FILE)

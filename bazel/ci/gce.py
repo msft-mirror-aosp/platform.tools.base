@@ -113,7 +113,9 @@ def get_gerrit_changes(bid: str) -> List[GerritChange]:
     logging.info('Reading gerrit changes from %s', change_info_path)
     with open(change_info_path) as f:
       data = json.load(f)
+    logging.info('CHANGE_INFO: %s', data)
   else:
+    # TODO(tomrenn): v3 API is being removed. This code path should be removed.
     logging.info('Fetching gerrit changes from GCE')
     result = _curl(
         'GET',
@@ -125,7 +127,10 @@ def get_gerrit_changes(bid: str) -> List[GerritChange]:
   changes = []
   for change in data['changes']:
     # Strip @google.com from the owner email.
-    owner = change['owner']['email'].removesuffix('@google.com')
+    if 'owner' in change:
+      owner = change['owner']['email'].removesuffix('@google.com')
+    else:
+      owner = ''
     file_infos = []
     for file in change['revisions'][0].get('fileInfos', []):
       file_infos.append(

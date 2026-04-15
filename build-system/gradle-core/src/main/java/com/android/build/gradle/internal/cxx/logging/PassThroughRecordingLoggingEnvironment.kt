@@ -16,15 +16,13 @@
 
 package com.android.build.gradle.internal.cxx.logging
 
-import com.android.build.gradle.internal.cxx.json.PlainFileGsonTypeAdaptor
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.ERROR
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.INFO
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.LIFECYCLE
 import com.android.build.gradle.internal.cxx.logging.LoggingMessage.LoggingLevel.WARN
 import com.android.build.gradle.internal.cxx.string.StringEncoder
-import com.google.gson.GsonBuilder
 import com.google.protobuf.GeneratedMessageV3
-import java.io.File
+import com.google.protobuf.util.JsonFormat
 
 /** Cap the number of log records to keep in order to limit memory consumption. */
 private const val MAX_LOG_RECORDS_TO_KEEP = 200
@@ -86,5 +84,7 @@ open class PassThroughRecordingLoggingEnvironment : ThreadLoggingEnvironment() {
 }
 
 /** Render a list of [LoggingMessage] as a JSON string. */
-fun List<LoggingMessage>.toJsonString() =
-  GsonBuilder().registerTypeAdapter(File::class.java, PlainFileGsonTypeAdaptor()).setPrettyPrinting().create().toJson(this)!!
+fun List<LoggingMessage>.toJsonString(): String {
+  val printer = JsonFormat.printer()
+  return joinToString(separator = ",\n", prefix = "[\n", postfix = "\n]") { message -> printer.print(message) }
+}

@@ -17,6 +17,7 @@
 package com.android.compose.screenshot.tasks
 
 import com.android.compose.screenshot.services.AnalyticsService
+import com.android.utils.FileUtils
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Internal
@@ -60,6 +61,8 @@ abstract class PreviewScreenshotUpdateTask : Test() {
       testEngineInput.saveToPropertiesFile(configFile)
       testEngineInput.configureCommonJvmArgs(::jvmArgs)
       jvmArgs("-DPreviewScreenshotTestEngineInput.configFile=${configFile.absolutePath}")
+      FileUtils.cleanOutputDir(testEngineInput.previewImageOutputDir.get().asFile)
+      FileUtils.cleanOutputDir(testEngineInput.diffImageOutputDir.get().asFile)
       super.executeTests()
     }
 }

@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.repository.api.ProgressIndicator;
 import com.android.sdklib.repository.IdDisplay;
 import com.android.sdklib.repository.targets.AndroidTargetManager;
+
 import com.google.common.base.Splitter;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public abstract class AndroidTargetHash {
     /**
      * @deprecated Use {@link AndroidVersion#getPlatformHashString} instead.
      */
+    @Deprecated
     @NonNull
     public static String getPlatformHashString(@NonNull AndroidVersion version) {
         return version.getPlatformHashString();

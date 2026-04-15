@@ -278,9 +278,6 @@ public class AnalyticsUtilTest {
                 ModulePropertyKey.BooleanWithDefault.values()) {
             modulePropertyKeys.add(booleanWithDefault.name());
         }
-        for (ModulePropertyKey.Dependencies dependency : ModulePropertyKey.Dependencies.values()) {
-            modulePropertyKeys.add(dependency.name());
-        }
         for (ModulePropertyKey.OptionalBoolean optionalBoolean :
                 ModulePropertyKey.OptionalBoolean.values()) {
             modulePropertyKeys.add(optionalBoolean.name());

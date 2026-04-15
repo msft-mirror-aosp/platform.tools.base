@@ -80,21 +80,25 @@ class LintReportAggregationTest {
     }
 
   @Test
-  fun testLintReportAggregationEnabled() {
-    val result = rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lintDebug")
+  fun testGlobalLintTaskRunsAggregation() {
+    val result = rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lint")
 
     assertThat(result.tasks).contains(":app:createLocalLintReportDebug")
     assertThat(result.tasks).contains(":app:createAggregatedLintReportDebug")
+    assertThat(result.tasks).contains(":app:lintDebug")
+    assertThat(result.tasks).contains(":app:lintAggregatedDebug")
     assertThat(result.tasks).doesNotContain(":app:lintReportDebug")
   }
 
   @Test
   fun testLintReportAggregationDisabled() {
-    val result = rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, false).run(":app:lintDebug")
+    val result = rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, false).run(":app:lint")
 
     assertThat(result.tasks).contains(":app:lintReportDebug")
+    assertThat(result.tasks).contains(":app:lintDebug")
     assertThat(result.tasks).doesNotContain(":app:createLocalLintReportDebug")
     assertThat(result.tasks).doesNotContain(":app:createAggregatedLintReportDebug")
+    assertThat(result.tasks).doesNotContain(":app:lintAggregatedDebug")
   }
 
   @Test
@@ -128,7 +132,7 @@ class LintReportAggregationTest {
     }
 
     // Run lint on both lib and app with report aggregation enabled
-    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":lib:lintDebug", ":app:lintDebug")
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":lib:lint", ":app:lint")
 
     val libLocalReport = rule.build.directory.resolve("lib/build/reports/local-lint-results-debug.txt")
     val appLocalReport = rule.build.directory.resolve("app/build/reports/local-lint-results-debug.txt")
@@ -157,6 +161,23 @@ class LintReportAggregationTest {
   }
 
   @Test
+  fun testLintReportAggregationAbortOnError() {
+    rule.build.androidApplication(":app").reconfigure {
+      android {
+        lint {
+          error += "AuthLeak"
+          abortOnError = true
+        }
+      }
+    }
+    val result = rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).expectFailure().run(":app:lint")
+
+    assertThat(result.tasks).contains(":app:createAggregatedLintReportDebug")
+    assertThat(result.tasks).contains(":app:lintAggregatedDebug")
+    result.assertOutputContains("AuthLeak")
+  }
+
+  @Test
   fun testAppUpdateLintBaseline() {
     checkLintBaselineUpdate(task = ":app:updateLintBaselineDebug", expectAppBaseline = true, expectLibBaseline = false)
   }
@@ -172,7 +193,7 @@ class LintReportAggregationTest {
   }
 
   private fun verifyLintReportAggregationSeparation() {
-    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lintDebug")
+    rule.build.executor.with(BooleanOption.LINT_REPORT_AGGREGATION, true).run(":app:lint")
     val localReport = rule.build.directory.resolve("app/build/reports/local-lint-results-debug.txt")
     assertThat(localReport).exists()
     // App issue (SdCardPath) should be present

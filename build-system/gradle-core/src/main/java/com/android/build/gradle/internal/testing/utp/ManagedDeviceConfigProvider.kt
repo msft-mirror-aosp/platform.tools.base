@@ -45,6 +45,4 @@ class ManagedDeviceConfigProvider(val device: UtpManagedDevice) : DeviceConfigPr
   override fun getApiCodeName(): String? = null
 
   override fun getApiLevel(): Int = device.api
-
-  override fun getSupportsPrivacySandbox(): Boolean = false
 }

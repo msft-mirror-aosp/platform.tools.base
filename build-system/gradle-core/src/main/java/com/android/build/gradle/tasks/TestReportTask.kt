@@ -94,6 +94,9 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
       task.reportAggregationEnabled.set(isReportAggregationEnabled)
       if (isReportAggregationEnabled) {
         task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
+        task.testResults.disallowChanges()
+      } else {
+        task.testResults.empty().disallowChanges()
       }
       task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
     }

@@ -386,13 +386,4 @@ public class ConnectedDevice extends DeviceConnector {
         }
     }
 
-    @Override
-    public boolean getSupportsPrivacySandbox() {
-        var currentServices = iDevice.services();
-        if (currentServices.isEmpty()) {
-            mLogger.lifecycle("Unexpected: No services running on device %1$s", iDevice.getName());
-        }
-        return iDevice.getVersion().isAtLeast(34)
-                && iDevice.services().containsKey("sdk_sandbox");
-    }
 }

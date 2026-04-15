@@ -45,6 +45,7 @@ import com.android.adblib.tools.debugging.packets.withPayload
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.sendDdmsExit
+import com.android.adblib.tools.debugging.sendVmExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.useAppInfoForProcessProperties
 import com.android.adblib.tools.testutils.AdbLibToolsTestBase
@@ -497,6 +498,20 @@ class JdwpProcessTest : AdbLibToolsTestBase() {
     // Act
     device.jdwpProcessTracker.processesFlow.first { processes -> processes.isNotEmpty() }
     process.sendDdmsExit(1)
+
+    // Assert
+    device.jdwpProcessTracker.processesFlow.first { processes -> processes.isEmpty() }
+    Unit
+  }
+
+  @Test
+  fun sendVmExit() = runBlockingWithTimeout {
+    // Prepare
+    val (_, device, process) = createJdwpProcess()
+
+    // Act
+    device.jdwpProcessTracker.processesFlow.first { processes -> processes.isNotEmpty() }
+    process.sendVmExit(1)
 
     // Assert
     device.jdwpProcessTracker.processesFlow.first { processes -> processes.isEmpty() }

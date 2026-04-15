@@ -38,7 +38,6 @@ import com.google.wireless.android.sdk.stats.DeviceInfo
 import com.google.wireless.android.sdk.stats.DeviceInfo.ApplicationBinaryInterface
 import com.google.wireless.android.sdk.stats.DeviceInfo.MdnsConnectionType
 import java.nio.file.Path
-import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.name
 import kotlin.time.Duration.Companion.seconds
@@ -77,8 +76,7 @@ class LocalEmulatorProvisionerPluginTest {
         scope = session.scope,
         adbSession = session,
         deviceIcons = emptyDeviceIcons,
-        rescanPeriod = Duration.ofMillis(100),
-        refreshAvds = avdManager::rescanAvds,
+        avdScanner = FakeAvdScanner(avdManager, session.scope),
         pluginExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
         handleExtensions = listOf(TestExtension::class providedBy { LocalEmulatorTestExtension() }),
       )

@@ -288,6 +288,7 @@ enum class BooleanOption(
   PRIVACY_SANDBOX_SDK_REQUIRE_SERVICES("android.experimental.privacysandboxsdk.requireServices", true, FeatureStage.Experimental),
   VERIFY_AAR_CLASSES("android.experimental.verifyLibraryClasses", false, FeatureStage.Experimental),
   DISABLE_COMPILE_SDK_CHECKS("android.experimental.disableCompileSdkChecks", false, FeatureStage.Experimental),
+  DISABLE_COMPILE_SDK_CHECKS_TESTS("android.experimental.disableCompileSdkChecks.tests", false, FeatureStage.Experimental),
 
   // Whether to suppress warnings about android:extractNativeLibs set to true in dependencies
   SUPPRESS_EXTRACT_NATIVE_LIBS_WARNINGS("android.experimental.suppressExtractNativeLibsWarnings", false, FeatureStage.Experimental),
@@ -380,6 +381,7 @@ enum class BooleanOption(
     FeatureStage.Experimental,
     futureStage = FutureStage(Version.VERSION_10_0, true, FeatureStage.Experimental),
   ),
+  ENABLE_GLOBAL_SYNTHETICS_FOR_ALL_DEBUG_BUILDS("android.enableGlobalSyntheticsForAllDebugBuilds", true, FeatureStage.Experimental),
 
   /* ------------------------
    * SOFTLY-ENFORCED FEATURES

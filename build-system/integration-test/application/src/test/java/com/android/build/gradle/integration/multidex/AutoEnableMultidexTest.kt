@@ -39,6 +39,7 @@ class AutoEnableMultidexTest {
           appendToBuild(
             """
             android {
+                enableKotlin = false
                 flavorDimensions "generation"
                 productFlavors {
                     legacy { minSdkVersion 19 }
@@ -67,7 +68,6 @@ class AutoEnableMultidexTest {
           }
         }
       )
-      .disableBuiltInKotlin()
       .create()
 
   @Test
@@ -88,8 +88,16 @@ class AutoEnableMultidexTest {
       }
     }
 
+    val appClasses =
+      classToDexMap.keys.filterNot {
+        it.startsWith("Lcom/android/tools/r8/") ||
+          it.startsWith("Lkotlin/") ||
+          it.startsWith("Landroid/") ||
+          it.startsWith("Ljava/") ||
+          it.startsWith("Ldalvik/")
+      }
     if (FileUtils.join(project.intermediatesDir, InternalArtifactType.COMPILE_BUILD_CONFIG_JAR.getFolderName()).exists()) {
-      assertThat(classToDexMap.keys)
+      assertThat(appClasses)
         .containsExactly(
           "Lcom/example/helloworld/A0;",
           "Lcom/example/helloworld/A1;",
@@ -97,7 +105,7 @@ class AutoEnableMultidexTest {
           "Lcom/example/helloworld/R;",
         )
     } else {
-      assertThat(classToDexMap.keys)
+      assertThat(appClasses)
         .containsExactly(
           "Lcom/example/helloworld/A0;",
           "Lcom/example/helloworld/A1;",

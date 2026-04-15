@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTaskExecutor
 import com.android.build.gradle.integration.common.fixture.LoggingLevel
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
 import com.android.build.gradle.integration.common.fixture.project.builder.PluginType
 import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject.assertThat
@@ -41,7 +42,6 @@ class WearTileScreenshotTest {
   val rule =
     GradleRule.configure().withProfileOutput().from {
       androidApplication {
-        applyPlugin(PluginType.KOTLIN_ANDROID)
         applyPlugin(
           PluginType.Custom(
             id = "com.android.compose.screenshot",
@@ -52,6 +52,8 @@ class WearTileScreenshotTest {
         )
 
         android {
+          namespace = "pkg.name"
+          compileSdk = GradleBuildDefinition.DEFAULT_COMPILE_SDK_VERSION
           defaultConfig {
             minSdk = 26
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -196,11 +198,7 @@ class WearTileScreenshotTest {
         }
       }
 
-      gradleProperties {
-        add(BooleanOption.ENABLE_SCREENSHOT_TEST, true)
-        add(BooleanOption.BUILT_IN_KOTLIN, false)
-        add(BooleanOption.USE_NEW_DSL, false)
-      }
+      gradleProperties { add(BooleanOption.ENABLE_SCREENSHOT_TEST, true) }
     }
 
   // custom executor configuration for screenshotTesting (sst)

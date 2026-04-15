@@ -19,6 +19,8 @@ import static com.android.build.gradle.internal.utils.KgpUtils.ANDROID_BUILT_IN_
 
 import com.android.AndroidProjectTypes;
 import com.android.annotations.NonNull;
+import com.android.build.api.dsl.DeclarativeLibraryExtension;
+import com.android.build.api.dsl.LibraryDeclarativeDefinition;
 import com.android.build.api.dsl.LibraryExtension;
 import com.android.build.api.dsl.SdkComponents;
 import com.android.build.api.extension.impl.LibraryAndroidComponentsExtensionImpl;
@@ -27,7 +29,6 @@ import com.android.build.api.variant.AndroidComponentsExtension;
 import com.android.build.api.variant.LibraryAndroidComponentsExtension;
 import com.android.build.api.variant.LibraryVariant;
 import com.android.build.api.variant.LibraryVariantBuilder;
-import com.android.build.gradle.LibraryExtensionInternal;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.LibraryTaskManager;
 import com.android.build.gradle.internal.component.LibraryCreationConfig;
@@ -36,15 +37,15 @@ import com.android.build.gradle.internal.component.TestFixturesCreationConfig;
 import com.android.build.gradle.internal.core.dsl.LibraryVariantDslInfo;
 import com.android.build.gradle.internal.dependency.LibrarySourceSetManager;
 import com.android.build.gradle.internal.dsl.BuildType;
-import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtension;
+import com.android.build.gradle.internal.dsl.DeclarativeLibraryExtensionImpl;
 import com.android.build.gradle.internal.dsl.DeclarativeServices;
 import com.android.build.gradle.internal.dsl.DefaultConfig;
+import com.android.build.gradle.internal.dsl.DslBindingUtils;
+import com.android.build.gradle.internal.dsl.LibraryDeclarativeDefinitionImpl;
 import com.android.build.gradle.internal.dsl.LibraryExtensionImpl;
-import com.android.build.gradle.internal.dsl.LibraryExtensionWrapper;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.build.gradle.internal.dsl.SdkComponentsImpl;
 import com.android.build.gradle.internal.dsl.SigningConfig;
-import com.android.build.gradle.internal.dsl.decorator.DeclarativeDslDecorator;
 import com.android.build.gradle.internal.scope.DelayedActionsExecutor;
 import com.android.build.gradle.internal.services.DslServices;
 import com.android.build.gradle.internal.services.VersionedSdkLoaderService;
@@ -66,11 +67,14 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
+import org.gradle.api.internal.plugins.BindsProjectType;
+import org.gradle.api.internal.plugins.ProjectTypeBinding;
+import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-import org.gradle.features.annotations.BindsProjectType;
-import org.gradle.features.binding.ProjectTypeBinding;
-import org.gradle.features.binding.ProjectTypeBindingBuilder;
+// import org.gradle.features.annotations.BindsProjectType;
+// import org.gradle.features.binding.ProjectTypeBinding;
+// import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
@@ -91,25 +95,24 @@ public class LibraryPlugin
 
     static class Binding implements ProjectTypeBinding {
         public void bind(ProjectTypeBindingBuilder builder) {
-            Class<? extends DeclarativeLibraryExtension> wrapperClass =
-                    new DeclarativeDslDecorator().decorate(LibraryExtensionWrapper.class);
             builder.bindProjectType(
                             "androidLibrary",
-                            DeclarativeLibraryExtension.class,
+                            LibraryDeclarativeDefinition.class,
                             (context, definition, buildModel) -> {
                                 DeclarativeServices services =
                                         context.getObjectFactory()
                                                 .newInstance(DeclarativeServices.class);
-                                LibraryExtensionInternal extension =
-                                        (LibraryExtensionInternal)
+                                DeclarativeLibraryExtension extension =
+                                        (DeclarativeLibraryExtension)
                                                 Objects.requireNonNull(services)
                                                         .getProject()
                                                         .getExtensions()
                                                         .getByName("android");
-                                ((LibraryExtensionWrapper) definition).setDelegate(extension);
+
+                                DslBindingUtils.copyProperties(definition, extension);
                             })
-                    .withUnsafeDefinitionImplementationType(wrapperClass)
-                    .withUnsafeApplyAction();
+                    .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class);
+            //                    .withUnsafeApplyAction();
         }
     }
 
@@ -180,26 +183,33 @@ public class LibraryPlugin
 
             project.getPlugins().apply(ANDROID_BUILT_IN_KOTLIN_PLUGIN_ID);
 
-            // noinspection unchecked,rawtypes: Hacks to make the parameterized types make sense
-            Class<LibraryExtension> instanceType =
-                    (Class) com.android.build.gradle.LibraryExtensionInternal.class;
-            com.android.build.gradle.LibraryExtensionInternal android =
-                    (com.android.build.gradle.LibraryExtensionInternal)
-                            project.getExtensions()
-                                    .create(
-                                            new TypeOf<>() {},
-                                            "android",
-                                            instanceType,
-                                            dslServices,
-                                            bootClasspathConfig,
-                                            buildOutputs,
-                                            dslContainers.getSourceSetManager(),
-                                            libraryExtension,
-                                            stats);
+            DeclarativeLibraryExtensionImpl android =
+                    dslServices.newDecoratedInstance(
+                            DeclarativeLibraryExtensionImpl.class, dslServices, dslContainers);
 
-            initExtensionFromSettings(libraryExtension);
+            project.getExtensions().add(new TypeOf<>() {}, "android", android);
+
+            bootClasspathConfig =
+                    new BootClasspathConfigImpl(
+                            project,
+                            getProjectServices(),
+                            versionedSdkLoaderService,
+                            android,
+                            forUnitTesting);
+
+            com.android.build.gradle.LibraryExtension internalOnly =
+                    dslServices.newInstance(
+                            com.android.build.gradle.LibraryExtension.class,
+                            dslServices,
+                            bootClasspathConfig,
+                            buildOutputs,
+                            dslContainers.getSourceSetManager(),
+                            android,
+                            stats != null ? stats : GradleBuildProject.newBuilder());
+
+            initExtensionFromSettings(android);
             setupDependencies(android);
-            return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
+            return new ExtensionData<>(internalOnly, android, bootClasspathConfig);
         }
 
         if (getProjectServices()
@@ -269,22 +279,22 @@ public class LibraryPlugin
         return new ExtensionData<>(android, libraryExtension, bootClasspathConfig);
     }
 
-    private void setupDependencies(LibraryExtensionInternal android) {
+    private void setupDependencies(DeclarativeLibraryExtension android) {
         project.getConfigurations()
                 .getByName("api")
-                .fromDependencyCollector(android.getDependenciesDcl().getApi());
+                .fromDependencyCollector(android.getDependencies().getApi());
         project.getConfigurations()
                 .getByName("implementation")
-                .fromDependencyCollector(android.getDependenciesDcl().getImplementation());
+                .fromDependencyCollector(android.getDependencies().getImplementation());
 
         project.getConfigurations()
                 .getByName("testImplementation")
-                .fromDependencyCollector(android.getDependenciesDcl().getTestImplementation());
+                .fromDependencyCollector(android.getDependencies().getTestImplementation());
 
         project.getConfigurations()
                 .getByName("androidTestImplementation")
                 .fromDependencyCollector(
-                        android.getDependenciesDcl().getAndroidTestImplementation());
+                        android.getDependencies().getAndroidTestImplementation());
     }
 
     /**

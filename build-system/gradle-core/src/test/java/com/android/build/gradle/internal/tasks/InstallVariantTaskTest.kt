@@ -64,7 +64,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
     whenever(deviceConnector.apiCodeName).thenReturn(deviceVersion.codename)
     whenever(deviceConnector.abis).thenReturn(listOf("x86_64"))
     whenever(deviceConnector.density).thenReturn(-1)
-    whenever(deviceConnector.supportsPrivacySandbox).thenReturn(false)
     logger = FakeLogger()
   }
 
@@ -112,11 +111,6 @@ class InstallVariantTaskTest(private val deviceVersion: AndroidVersion) {
     assertThat(apkArgumentCaptor.allValues).contains(mainOutputFileApk)
     assertThat(optionsArgumentCaptor.allValues).containsExactly(ImmutableSet.of<String>())
     assertThat((timeoutArgumentCaptor.allValues)).containsExactly(4000)
-  }
-
-  private fun getSdkSupportSplitApk(): File {
-    val privacySandboxSupportSplit = temporaryFolder.newFolder("privacy-sandobox-support-split")
-    return File(privacySandboxSupportSplit, "sdk-support.apk")
   }
 
   private fun checkSingleApk(deviceConnector: DeviceConnector) {

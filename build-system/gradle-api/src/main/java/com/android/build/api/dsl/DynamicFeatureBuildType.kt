@@ -17,6 +17,7 @@
 package com.android.build.api.dsl
 
 import org.gradle.api.Incubating
+import org.gradle.api.model.ReplacedBy
 
 /**
  * Build types define certain properties that Gradle uses when building and packaging your app, and are typically configured for different
@@ -46,5 +47,5 @@ interface DynamicFeatureBuildType : BuildType, DynamicFeatureVariantDimension {
    *
    * PNG crunching is enabled by default in the release build type and disabled by default in the debug build type.
    */
-  @get:Incubating @set:Incubating var isCrunchPngs: Boolean?
+  @get:Incubating @set:Incubating @get:ReplacedBy("getCrunchPngs") var isCrunchPngs: Boolean?
 }

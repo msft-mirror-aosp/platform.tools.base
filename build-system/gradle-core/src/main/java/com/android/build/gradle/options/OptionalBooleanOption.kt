@@ -50,6 +50,9 @@ enum class OptionalBooleanOption(override val propertyName: String, val stage: S
    */
   LINT_USE_K2_UAST("android.lint.useK2Uast", ApiStage.Experimental),
 
+  /** Whether lint will print the text report to stdout. */
+  LINT_PRINT_TEXT_REPORT("android.experimental.lint.printTextReport", ApiStage.Experimental),
+
   /* ----------------
    * SOFTLY ENFORCED FEATURES
    */

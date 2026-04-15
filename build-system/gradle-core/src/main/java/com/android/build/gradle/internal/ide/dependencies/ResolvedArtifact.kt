@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.ide.dependencies
 
 import com.android.SdkConstants.EXT_AAR
-import com.android.SdkConstants.EXT_ASAR
 import com.android.SdkConstants.EXT_JAR
 import com.android.builder.dependency.MavenCoordinatesImpl
 import com.android.builder.internal.StringCachingService
@@ -78,7 +77,6 @@ internal constructor(
   enum class DependencyType constructor(val extension: String) {
     JAVA(EXT_JAR),
     ANDROID(EXT_AAR),
-    ANDROID_SANDBOX_SDK(EXT_ASAR),
     RELOCATED_ARTIFACT(""),
     // An artifact without file, but it may contain dependencies.
     NO_ARTIFACT_FILE(""),

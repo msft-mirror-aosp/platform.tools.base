@@ -40,7 +40,16 @@ enum class AgpTestSuiteInput(val key: String) {
   TESTED_APPLICATION_ID("com.android.junit.engine.tested.application.id"),
 
   /** Alias for [AndroidTestConfigurationKeys.RESULTS_DIR]. */
-  RESULTS_DIR("com.android.junit.engine.results.dir");
+  RESULTS_DIR("com.android.junit.engine.results.dir"),
+
+  /** Path to the code coverage directory on host. */
+  COVERAGE_DIR("com.android.junit.engine.coverage.dir"),
+
+  /** Alias for [AndroidTestConfigurationKeys.TEST_UTIL_APKS]. */
+  TEST_UTIL_APKS("com.android.agp.test.TEST_UTIL_APKS"),
+
+  /** Alias for [AndroidTestConfigurationKeys.ANDROID_TEST_EXECUTION_MODE]. */
+  ANDROID_TEST_EXECUTION_MODE("com.android.agp.test.ANDROID_TEST_EXECUTION_MODE");
 
   /** Returns the property value from the input parameters file. */
   fun get(): String? = fileProperties.getProperty(key)

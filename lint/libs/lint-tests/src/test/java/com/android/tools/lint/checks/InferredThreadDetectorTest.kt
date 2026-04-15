@@ -219,6 +219,41 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testNoInferenceIfAnnotated_496344769() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+
+            @AnyThread
+            fun invokeUi(@UiThread ui: () -> Unit) =
+                // wrong here, but not the point. We don't want callers to be concerned with this
+                ui()
+
+            @UiThread fun doUi() { }
+
+            fun main() = invokeUi(::doUi)
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:8: Error: Call must be from @{Main,Ui}Thread, but context is allowing @AnyThread [ThreadConstraint]
+            ui()
+            ~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
   fun testUnsatisfiableStatementSequence() {
     lint()
       .files(
@@ -286,11 +321,54 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         SUPPORT_ANNOTATIONS_JAR,
       )
       .run()
+      // We report it here, because it's the only kind of problems discovered
       .expect(
         """
         src/test/pkg/test.kt:14: Error: Call results in an unsatisfiable thread requirement [ThreadConstraint]
         fun unsat() = doBoth(::ui, ::worker) // ERROR
                       ~~~~~~~~~~~~~~~~~~~~~~
+        1 error
+        """
+          .trimIndent()
+      )
+  }
+
+  fun `test skipping warning to unsatisfiable call`() {
+    lint()
+      .files(
+        kotlin(
+            """
+            package test.pkg
+            import androidx.annotation.AnyThread
+            import androidx.annotation.UiThread
+            import androidx.annotation.WorkerThread
+
+            @UiThread fun ui() { }
+            @WorkerThread fun worker() { }
+            @AnyThread fun any() { }
+
+            fun doBoth(fst: () -> Unit, snd: () -> Unit) { fst(); snd() }
+
+            fun sat() = doBoth(::ui, ::any)
+
+            fun unsat() {
+                ui()
+                worker() // ERROR
+            }
+
+            fun main() = unsat() // Warning on this would be redundant
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/test/pkg/test.kt:16: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
+            worker() // ERROR
+            ~~~~~~~~
         1 error
         """
           .trimIndent()

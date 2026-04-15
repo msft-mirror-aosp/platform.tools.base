@@ -68,6 +68,7 @@ class HostJarTestSuiteJavaResProcessingTest {
             }
           }
           files {
+            add("src/first/java/Dummy.java", "public class Dummy {}")
             add("src/first/resources/some/random/file.txt", "some random text")
             add("src/first/resources/some/random/res.txt", "another text")
           }

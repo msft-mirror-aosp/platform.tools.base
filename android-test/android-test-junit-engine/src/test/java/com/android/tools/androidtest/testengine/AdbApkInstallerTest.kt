@@ -171,6 +171,30 @@ class AdbApkInstallerTest {
   }
 
   @Test
+  fun `installApk constructs correct command with grant permissions`() {
+    val helper = createHelper(deviceApiLevel = 23)
+    mockCommand("install", exitCode = 0)
+
+    val options = AdbApkInstaller.InstallOptions(grantPermissions = true)
+    helper.installApk(apk1, options)
+
+    val executed = executedCommands["install"]?.first()!!
+    assertThat(executed).contains("-g")
+  }
+
+  @Test
+  fun `installApk constructs correct command without grant permissions`() {
+    val helper = createHelper(deviceApiLevel = 23)
+    mockCommand("install", exitCode = 0)
+
+    val options = AdbApkInstaller.InstallOptions(grantPermissions = false)
+    helper.installApk(apk1, options)
+
+    val executed = executedCommands["install"]?.first()!!
+    assertThat(executed).doesNotContain("-g")
+  }
+
+  @Test
   fun `installApk with full compilation triggers compile command`() {
     val helper = createHelper(deviceApiLevel = 30)
     mockCommand("install", exitCode = 0)
@@ -209,6 +233,22 @@ class AdbApkInstallerTest {
     val helper = createHelper(deviceApiLevel = 28)
     val exception = assertFailsWith<IllegalStateException> { helper.installSplitApk(emptyList(), AdbApkInstaller.InstallOptions()) }
     assertThat(exception).hasMessageThat().isEqualTo("No APKs provided for installation.")
+  }
+
+  @Test
+  fun `uninstallApk success with complex badging output`() {
+    val helper = createHelper(deviceApiLevel = 30)
+    mockCommand(
+      "aapt2 dump badging",
+      0,
+      "package: name='com.example.app' versionCode='123' versionName='1.2.3' compileSdkVersion='34' compileSdkVersionCodename='14'",
+    )
+    mockCommand("uninstall", exitCode = 0)
+
+    helper.uninstallApk(apk1)
+
+    val executedUninstall = executedCommands["uninstall"]?.first()!!
+    assertThat(executedUninstall).contains("uninstall com.example.app")
   }
 
   @Test
@@ -308,13 +348,20 @@ class AdbApkInstallerTest {
 
   @Test
   fun `postTestCleanup runs clear debug app`() {
-    val helper = createHelper(deviceApiLevel = 30)
+    val helper = createHelper(deviceApiLevel = 35)
     mockCommand("am clear-debug-app", exitCode = 0)
 
     helper.postTestCleanup()
 
     val executed = executedCommands["am clear-debug-app"]?.first()!!
     assertThat(executed).contains("am clear-debug-app")
+  }
+
+  @Test
+  fun `postTestCleanup api 34 does nothing`() {
+    val helper = createHelper(deviceApiLevel = 34)
+    helper.postTestCleanup()
+    assertThat(executedCommands).isEmpty()
   }
 
   @Test

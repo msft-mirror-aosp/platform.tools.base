@@ -394,7 +394,6 @@ class PublishingSpecs {
       variantSpec(ComponentTypeImpl.TEST_APK)
       variantSpec(ComponentTypeImpl.ANDROID_TEST)
       variantSpec(ComponentTypeImpl.UNIT_TEST)
-      variantSpec(ComponentTypeImpl.PRIVACY_SANDBOX_SDK)
       lock()
     }
 

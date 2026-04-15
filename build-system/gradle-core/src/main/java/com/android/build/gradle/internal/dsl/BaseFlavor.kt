@@ -45,7 +45,6 @@ import java.io.File
 import org.gradle.api.Action
 import org.gradle.api.provider.Provider
 import org.gradle.declarative.dsl.model.annotations.Adding
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /** Base DSL object used to configure product flavors. */
 abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
@@ -85,7 +84,6 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
 
   private val minSdkDelegate = MinSdkDelegate(getMinSdk = { _minSdk }, setMinSdk = { _minSdk = it }, dslServices = dslServices)
 
-  @get:Restricted
   override var minSdk: Int?
     get() = minSdkDelegate.minSdk
     set(value) {
@@ -277,7 +275,7 @@ abstract class BaseFlavor(name: String, private val dslServices: DslServices) :
     testInstrumentationRunnerArguments[key] = value
   }
 
-  @get:Restricted abstract override var testInstrumentationRunner: String?
+  abstract override var testInstrumentationRunner: String?
 
   /**
    * Adds custom arguments to the test instrumentation runner, e.g:

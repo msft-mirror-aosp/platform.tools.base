@@ -68,41 +68,6 @@ class TestSuiteDeviceTest {
       }
   }
 
-  class MyTestEngine : HierarchicalTestEngine<MyTestEngineContext>() {
-    override fun getId(): String = "MyTestEngine"
-
-    override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor =
-      MyTestEngineDescriptor(uniqueId).apply { addChild(MyTestDescriptor(uniqueId, "myTestCase")) }
-
-    override fun createExecutionContext(request: ExecutionRequest) = MyTestEngineContext()
-  }
-
-  class MyTestEngineDescriptor(uniqueId: UniqueId) : EngineDescriptor(uniqueId, "MyTestEngine")
-
-  class MyTestEngineContext : EngineExecutionContext
-
-  class MyTestDescriptor(parentId: UniqueId, testName: String) :
-    AbstractTestDescriptor(parentId.append("my-test-segment", testName), testName), Node<MyTestEngineContext> {
-    override fun getType() = TestDescriptor.Type.TEST
-
-    override fun execute(context: MyTestEngineContext, dynamicTestExecutor: Node.DynamicTestExecutor): MyTestEngineContext {
-      val client = TestSuiteExecutionClient.default()
-      val serialIds = client.getInputParameter(TestEngineInputProperty.SERIAL_IDS).split(',').sorted()
-      println("Serial IDs = ${serialIds.joinToString(",")}")
-
-      val inputProperties = Properties().also { it.load(FileReader(System.getenv("com.android.junit.engine.input.parameters"))) }
-      val adbPath = inputProperties.getProperty("com.android.agp.test.ADB_EXECUTABLE")
-
-      val process = ProcessBuilder(adbPath, "devices").start()
-      process.waitFor(1, TimeUnit.MINUTES)
-      val stdout = process.inputStream.bufferedReader().use { it.readText() }
-      assertThat(stdout).contains("emulator-5554")
-      assertThat(stdout).contains("emulator-5556")
-
-      return context
-    }
-  }
-
   @get:Rule
   val rule =
     GradleRule.configure()
@@ -121,6 +86,7 @@ class TestSuiteDeviceTest {
       .from {
         gradleProperties { add(BooleanOption.TEST_SUITE_SUPPORT, true) }
         androidApplication {
+          files { add("src/myTestSuite/testcase1.txt", "some content") }
           android {
             testOptions.suites.create("myTestSuite", AgpTestSuite::class.java) {
               it.useJunitEngine.apply {
@@ -171,5 +137,40 @@ class TestSuiteDeviceTest {
       .withEnvironmentVariables(mapOf("ANDROID_SERIAL" to "emulator-5554"))
       .run(":app:testMyTestSuiteT1DebugTestSuite")
       .assertOutputContains("Serial IDs = emulator-5554")
+  }
+}
+
+class MyTestEngine : HierarchicalTestEngine<MyTestEngineContext>() {
+  override fun getId(): String = "MyTestEngine"
+
+  override fun discover(discoveryRequest: EngineDiscoveryRequest, uniqueId: UniqueId): TestDescriptor =
+    MyTestEngineDescriptor(uniqueId).apply { addChild(MyTestDescriptor(uniqueId, "myTestCase")) }
+
+  override fun createExecutionContext(request: ExecutionRequest) = MyTestEngineContext()
+}
+
+class MyTestEngineDescriptor(uniqueId: UniqueId) : EngineDescriptor(uniqueId, "MyTestEngine")
+
+class MyTestEngineContext : EngineExecutionContext
+
+class MyTestDescriptor(parentId: UniqueId, testName: String) :
+  AbstractTestDescriptor(parentId.append("my-test-segment", testName), testName), Node<MyTestEngineContext> {
+  override fun getType() = TestDescriptor.Type.TEST
+
+  override fun execute(context: MyTestEngineContext, dynamicTestExecutor: Node.DynamicTestExecutor): MyTestEngineContext {
+    val client = TestSuiteExecutionClient.default()
+    val serialIds = client.getInputParameter(TestEngineInputProperty.SERIAL_IDS).split(',').sorted()
+    println("Serial IDs = ${serialIds.joinToString(",")}")
+
+    val inputProperties = Properties().also { it.load(FileReader(System.getenv("com.android.junit.engine.input.parameters"))) }
+    val adbPath = inputProperties.getProperty("com.android.agp.test.ADB_EXECUTABLE")
+
+    val process = ProcessBuilder(adbPath, "devices").start()
+    process.waitFor(1, TimeUnit.MINUTES)
+    val stdout = process.inputStream.bufferedReader().use { it.readText() }
+    assertThat(stdout).contains("emulator-5554")
+    assertThat(stdout).contains("emulator-5556")
+
+    return context
   }
 }

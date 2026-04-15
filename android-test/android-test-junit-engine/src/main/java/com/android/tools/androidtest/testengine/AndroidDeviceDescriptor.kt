@@ -73,6 +73,62 @@ class AndroidDeviceDescriptor(
 
     val reporter = baseResultsDir?.let { SimpleXmlResultReporter(it, deviceId) }
     val logcatCollector = deviceResultsDir?.let { LogcatCollector(it, config.adb.absolutePath) }
+    logger.info(
+      "Configuring AndroidAdditionalTestOutputCollector: hostDir=${config.additionalTestOutputDirOnHost}, deviceDir=${config.additionalTestOutputDirOnDevice}, testedApplicationId=${config.testedApplicationId}, useTestStorage=${config.useTestStorageService}"
+    )
+    val additionalTestOutputCollector =
+      AndroidAdditionalTestOutputCollector(
+        adbController = AdbController(config.adb),
+        deviceSerial = deviceSerial,
+        additionalOutputDirectoryOnHost = config.additionalTestOutputDirOnHost?.let { File(it, deviceId) },
+        additionalOutputDirectoryOnDevice = config.additionalTestOutputDirOnDevice,
+        instrumentationTargetPackageId = config.instrumentationTargetPackageId,
+        testedApplicationId = config.testedApplicationId,
+        testPackageId = config.testPackageId,
+        useTestStorageService = config.useTestStorageService,
+        runAsPackageName = config.instrumentationTargetPackageId,
+      )
+
+    val isOrchestratorEnabled = config.executionMode == "ANDROID_TEST_ORCHESTRATOR"
+
+    val effectiveCoverageFileOnDevice =
+      config.coverageFileOnDevice.takeIf { !it.isNullOrBlank() }
+        ?: if (config.isTestCoverageEnabled) {
+          if (config.useTestStorageService) {
+            if (isOrchestratorEnabled) "coverage_data/" else "coverage.ec"
+          } else {
+            if (isOrchestratorEnabled) {
+              "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
+            } else {
+              "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
+            }
+          }
+        } else {
+          null
+        }
+
+    val effectiveCoverageDirOnDevice =
+      config.coverageDirOnDevice.takeIf { !it.isNullOrBlank() }
+        ?: if (config.isTestCoverageEnabled && isOrchestratorEnabled) {
+          if (config.useTestStorageService) {
+            "coverage_data/"
+          } else {
+            "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
+          }
+        } else {
+          null
+        }
+
+    val coverageCollector =
+      AndroidTestCoverageCollector(
+        adbController = AdbController(config.adb),
+        deviceSerial = deviceSerial,
+        coverageDirOnHost = config.coverageDirOnHost,
+        coverageFileOnDevice = effectiveCoverageFileOnDevice,
+        coverageDirOnDevice = effectiveCoverageDirOnDevice,
+        useTestStorageService = config.useTestStorageService,
+        additionalTestOutputCollector = additionalTestOutputCollector,
+      )
 
     val deviceInfoFile =
       deviceResultsDir?.let { dir ->
@@ -87,14 +143,26 @@ class AndroidDeviceDescriptor(
         }
       }
 
-    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile)
+    val listener = Listener(context, reporter, logcatCollector, deviceInfoFile, additionalTestOutputCollector)
+
+    val instrumentationArgs = config.instrumentationArgs.toMutableMap()
+    if (config.isTestCoverageEnabled) {
+      instrumentationArgs["coverage"] = "true"
+      if (isOrchestratorEnabled) {
+        instrumentationArgs["coverageFilePath"] = effectiveCoverageFileOnDevice!!
+      } else {
+        instrumentationArgs["coverageFile"] = effectiveCoverageFileOnDevice!!
+      }
+    }
 
     val instrumentationRunner =
       AmInstrumentationRunner(
         config.adb,
         deviceSerial,
         config.instrumentationRunnerClass,
-        config.instrumentationTargetPackageId,
+        config.testPackageId,
+        config.executionMode,
+        instrumentationArgs,
         setOf(listener),
       )
 
@@ -102,11 +170,20 @@ class AndroidDeviceDescriptor(
       AndroidTestRunner(
         adbApkInstaller,
         instrumentationRunner,
+        config.instrumentationTargetPackageId,
         config.getTestedApks(deviceSerial),
         config.getTestApks(deviceSerial),
         config.apkInstallOptions,
         config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
+        onBeforeInstrumentation = {
+          additionalTestOutputCollector.prepare()
+          coverageCollector.prepare()
+        },
+        onTestFinished = {
+          additionalTestOutputCollector.collect()
+          coverageCollector.collect()
+        },
       )
 
     // We run the instrumentation runner in a separate thread so that it can discover and send
@@ -158,6 +235,7 @@ class AndroidDeviceDescriptor(
     private val reporter: SimpleXmlResultReporter?,
     private val logcatCollector: LogcatCollector?,
     private val deviceInfoFile: File?,
+    private val additionalTestOutputCollector: AndroidAdditionalTestOutputCollector?,
   ) : AmInstrumentationListener {
 
     private val testDescriptors = ConcurrentHashMap<TestIdentifier, AndroidDynamicTestDescriptor>()
@@ -207,6 +285,8 @@ class AndroidDeviceDescriptor(
         reporter?.testFailed(ddmlibTestId, testResult.stackTrace ?: "")
       }
       reporter?.testEnded(ddmlibTestId, emptyMap())
+
+      additionalTestOutputCollector?.addBenchmarkOutput(testResult)
 
       val testDescriptor = testDescriptors[testIdentifier]
       if (testDescriptor != null) {

@@ -2965,4 +2965,215 @@ src/Autocomplete.java:34: Error: Must be one or more of: Hint.NONE, Hint.GENERAT
       .run()
       .expectClean()
   }
+
+  fun testDuplicatedCompanionConstants() {
+    // Kotlin constants can get compiled down to two fields at the JVM level, and both can be
+    // referenced. See TypedefDetector.asSeqWithDuplicatedConstants.
+    lint()
+      .files(
+        compiled(
+          "libs/constants.jar",
+          kotlin(
+              """
+              package com.example.app
+
+              class Constants
+
+              interface Animals {
+                companion object {
+                  const val CAT = 1
+                  const val DOG = 2
+                }
+              }
+
+              annotation class Vegetables {
+                companion object {
+                  const val CARROT = 1
+                  const val CUCUMBER = 2
+                }
+              }
+              """
+            )
+            .indented(),
+          0x3c92b6a6,
+          """
+          META-INF/main.kotlin_module:
+          H4sIAAAAAAAA/2NgYGBmYGBggmIwUGLQYgAA0sbvCRgAAAA=
+          """,
+          """
+          com/example/app/Animals＄Companion.class:
+          H4sIAAAAAAAA/4VRy27TQBQ9M04cx3VbNy0kLc/SAG0XOK3YUSGCeShSSKU2
+          ikBZTRIL3NjjKONUXWbVD+EPKhaVQEJRlnwU4o6BCiEhLPs+ztx75t7jb98/
+          fwXwGLsMm/0k9oIzEY+iwBOjkVeXYSwiVfWTeCRkmMgCGIN7Ik6FFwn53jvs
+          nQT9tACDwTwIZZg+ZTC2dzoO8jBt5FBgyKUfQsWw1fwv+xMG66AfZTw2uG62
+          q9VG67hdb/kvHSzCLhK8RHf49TYDaxg0Ok1kvDh8rUPOsNIcJilReG+CVAxE
+          KoiUx6f6FNQxpOws1FmNosEeQ3s2Ldm8wm3uzqY2twwKLHs2tebnRmU23ec1
+          9rxo8flHM2dx1zhacnMbvJZ/Oz9vE8apkiDzL0hz7zN9Y/kfWxdwh6F4tTqD
+          4ydSpUKm6tEwZVj8nXZENAlIRT8ZkFtuhjJoTeJeMG6LXkRIqZn0RdQR41Dn
+          v0CnIWUw9iOhVEDa28fJZNwPXoX6bP1oItMwDjqhCqm4LmWSipRmUNgjdXOk
+          jeFWtNgUrcPFCq2xpdVFifLVP/I1+rj+1YRUCfG0xOTzu5ewLrKS+2TNDDTx
+          gKzzswDFjN7CwlVzmar1s/AF/N0lnE9YvsgAAw/J2lTGcRebNMN2Rn0PO+Sf
+          EX6NCK93YTSwlr1lVBp62AY2cKMLpnATt7ooKNgKtxXyCqaCm8WrPwDuADfM
+          AgMAAA==
+          """,
+          """
+          com/example/app/Animals.class:
+          H4sIAAAAAAAA/4VSTW/TQBB9Y5c4MQmklNKY8tHSAOWCS8WJIqTIfMhSSSVa
+          5dLTJlmqTdbrKLuJesxfAm4cUCRu/CjE2OJLQhWW5Zk38+btvJW/ff/8BcBT
+          7BI2BnkWy3ORTbSMxWQSd4zKhLYBiNAcibmItTBn8VF/JAcugE+oPh9oZZR7
+          QfB3H/UI2xdotJM8mwijchMgIITtdto9Pul0k1eEncP/Dh3UUUNYQxWXCbXf
+          5ToaRdXDlUIln57FI+n6U6GMjYUxuROOWTbu5q470/qAt0w6JwRKfTbNrvyX
+          R2+K1COsHo5zx2bit9KJoXCC2V42L7rgiTGjc1WgPc6GT9jqchGGXssLvSZn
+          y0X1fWu52PL2vT16Rt7XRcUviPuE6CJ/fAJL1xNe0Qnj7OOxI2y+mxmnMpma
+          ubKqr2XnjxFC4xe5J/RMElaSfMihnhojp4kW1kpmhcf5bDqQr5XmXvRTsPeP
+          XIUXxApb8hEVN8nL3GNU4djkGGEV1zjfKS4Ia4yv/4XXOaviUsluc2WNY/EE
+          H1H/hKsfSuDjPn/DkurxEREelMPbeFj+dYQbLLFxCj/Fevm2EKWsdTPFJm6d
+          gixu4w73Le5abFk0fgActsCssgIAAA==
+          """,
+          """
+          com/example/app/Constants.class:
+          H4sIAAAAAAAA/3VQS0tCQRg9M1evdrvlo5f2WLSrFl2VoEURlBAIVlDhxtWo
+          Q43eO1ecUVz6W/oHrYIWIS37UdHMTdoFw5nvnPPxvb6+3z8AnGCPoNyNo4BP
+          WTQMecCGw6AeS6WZ1CoDQpDvswkLQiafgrtOn3d1Bg6Bey6k0BcEzsFhy0ca
+          rocUMgQp/SwUwU7z36pnBIXmINahkMEN16zHNDMajSaOGYlaAAEZ2MD0p1Nh
+          o4qJelWC/fnM92iJejQ/n3k0S0vzWY1WyFXm88VNZWnesYk1Ymv4fz2PB9qM
+          Vo97nCDXFJLfjqMOHz2yTmiUYjPusrDFRsLyheg9xONRl18LS8r3Y6lFxFtC
+          CeNeShlrpoUpjyqo2XwxtD2EwZJhQcKB9NEbsq92M5QNuonoYNug/5uAJXiJ
+          v5PgFnbNf2q8ZeP5bTgNrCRvFbkG8ig0UMRaG0RhHRttpBQ8hU2FtIL7A1H9
+          +2/aAQAA
+          """,
+          """
+          com/example/app/Vegetables＄Companion.class:
+          H4sIAAAAAAAA/41RXU8TQRQ9M9uP7dLCUlBK/cCPisCDW4hvEmPZYNKklKSU
+          RtOnaTvBpfvRdLaExz7xQ/wHxAcSTUzTR3+U8c6qxJiYuJmduefMnXPvnPn2
+          /fNXAC+xw1DpR4EjL0Uw8qUjRiOnI89kLHq+VBU3CkYi9KIwC8Zgn4sL4fgi
+          PHOOe+eyH2dhMGT2vdCLXzMYW9udPNLIWEghy5CKP3iKYbPxPwVeMZj7fT+R
+          ssD1eatSqTdP2rWme5hHAVaO6EWq59ZareM2A6sbdAfqy3RP3dOjg8OWxpxh
+          uTGMYpJyjqjMQMSCxHlwoXdBx4aELj2NqhQNdhnas2nR4iVucXs2tbhpUGBa
+          s6k5vzJKs+ker7KDnMnnHzMpk9tGa9FOlXk1/W5+1SaOUyZRmb8orb3HdMXy
+          vw3IYoMhd+sCQ96NQhWLMFYvhjFD4TfsCH8iyVM3GtCy1PBC2ZwEPTluax2G
+          YiPqC78jxp7Gv8h8PQzl2PWFUpJewjqJJuO+fOvpvfXWJIy9QHY85VFyLQyj
+          WMTUg8IuGZ0iewy7pH2naB02lukmT7XBKBJe+QOv0s/1wxNTIcbRLtOa3rmB
+          eZ2kPKM5k5AFbNKc/5mAXCJvYuH28Bpl62/hC/j7G+Q/Yek6IQw8p9miNI5H
+          eEw9bCXST7BN6xvi75Dg3S6MOlaTsYZSXTdbRxn3umAK9/Ggi6yCpfBQIa2Q
+          UbCTeOUHgZbqfBMDAAA=
+          """,
+          """
+          com/example/app/Vegetables.class:
+          H4sIAAAAAAAA/41RXW/SUBh+ThkrVCbMqYMxHXOImx/rXLxyRsOamTQBtnTA
+          za4OcEIK5ZRwDmTeceX/Ue+8MMRLf5TxLeq2RF1s2r7P835/fPv++QuAF9hl
+          WGuHA1uc88EwEDYfDu2m6ArNW4FQJhhDpscn3A647NrHrZ5oaxMxho1LLZcy
+          1Fz7obTLF9BEnCHxqh340tevGWLbO02G4r9rFZ1wMORyHppksIpFt3ZaL9ec
+          I4ZS5X/iDlK4gVQSFpYYkhfqFNKR1kCGYasSjrp2T+jWiPtSXWld2bVQ18ZB
+          cMCw6JQ977jOwNwYbYl2kHAaTqN6eORF3GAoVP46vie0kBGiJPEJD8Yi6v16
+          15Mw8NvvKMD0GrW6W6Vxlyv9UNPi7CrN2OGak9UYTKLaoKb6xM79iO0R6jxn
+          2JxNLcvIGpaRyVuzaeLreyM7mxaMfWOPvWTG4WwaOe4zrF+zSCpC2VMO7UJz
+          qdVuXzPkvTF1ORCunPjKJ7fLCyuGpd/OzZ+zLjhhh0TKlVKMnIArJcjLOg3H
+          o7Z46wdky/1K2PwjXYl6xAK1sIgYctHRCG/TlIskb5HMYQW3Ce9EN8Ad4nev
+          8FVCCZj0MTwmzQrJ6DE/4uYnLH+Ykxie0N8ik0UhaUrxdB78CM9IviGUJVtO
+          YA15rCOOe2eIuVidv/ex4VLZgotNPDgDU9hCkewKDxVKCukfFLwexFYDAAA=
+          """,
+        ),
+        java(
+            """
+            package com.example.app;
+
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+
+            import androidx.annotation.IntDef;
+
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({Animals.CAT, Animals.DOG})
+            public @interface Animal {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.app;
+
+            import java.lang.annotation.Retention;
+            import java.lang.annotation.RetentionPolicy;
+
+            import androidx.annotation.IntDef;
+
+            @Retention(RetentionPolicy.SOURCE)
+            @IntDef({Vegetables.CARROT, Vegetables.CUCUMBER})
+            @interface Vegetable {}
+            """
+          )
+          .indented(),
+        java(
+            """
+            package com.example.app;
+
+            public class HelloJava {
+
+              public void go() {
+                checkAnimal(Animals.CAT);
+                checkAnimal(Animals.DOG);
+                checkAnimal(Animals.Companion.CAT);
+                checkAnimal(Animals.Companion.DOG);
+                checkAnimal(Vegetables.CARROT);
+
+                checkVegetable(Vegetables.CARROT);
+                checkVegetable(Vegetables.CUCUMBER);
+                checkVegetable(Vegetables.Companion.CARROT);
+                checkVegetable(Vegetables.Companion.CUCUMBER);
+                checkVegetable(Animals.CAT);
+              }
+
+              public void checkAnimal(@Animal int animal) {}
+              public void checkVegetable(@Vegetable int vegetable) {}
+            }
+            """
+          )
+          .indented(),
+        kotlin(
+            """
+            package com.example.app
+
+            class HelloKotlin
+
+            fun checkAnimal(@Animal animal: Int) {}
+            fun checkVegetable(@Vegetable vegetable: Int) {}
+
+            fun go() {
+              checkAnimal(Animals.CAT)
+              checkAnimal(Animals.DOG)
+              checkAnimal(Animals.Companion.CAT)
+              checkAnimal(Animals.Companion.DOG)
+              checkAnimal(Vegetables.CARROT)
+
+              checkVegetable(Vegetables.CARROT)
+              checkVegetable(Vegetables.CUCUMBER)
+              checkVegetable(Vegetables.Companion.CARROT)
+              checkVegetable(Vegetables.Companion.CUCUMBER)
+              checkVegetable(Animals.CAT)
+            }
+            """
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/com/example/app/HelloJava.java:10: Error: Must be one of: Animals.CAT, Animals.DOG [WrongConstant]
+            checkAnimal(Vegetables.CARROT);
+                        ~~~~~~~~~~~~~~~~~
+        src/com/example/app/HelloJava.java:16: Error: Must be one of: Vegetables.CARROT, Vegetables.CUCUMBER [WrongConstant]
+            checkVegetable(Animals.CAT);
+                           ~~~~~~~~~~~
+        src/com/example/app/HelloKotlin.kt:13: Error: Must be one of: Animals.CAT, Animals.DOG [WrongConstant]
+          checkAnimal(Vegetables.CARROT)
+                      ~~~~~~~~~~~~~~~~~
+        src/com/example/app/HelloKotlin.kt:19: Error: Must be one of: Vegetables.CARROT, Vegetables.CUCUMBER [WrongConstant]
+          checkVegetable(Animals.CAT)
+                         ~~~~~~~~~~~
+        4 errors
+        """
+      )
+  }
 }

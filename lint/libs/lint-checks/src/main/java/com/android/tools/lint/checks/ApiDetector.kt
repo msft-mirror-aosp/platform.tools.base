@@ -2861,10 +2861,10 @@ class ApiDetector : ResourceXmlDetector(), SourceCodeScanner, ResourceFolderScan
           if (!isInfinity(constant) && expectFull != isFullSdkInt(constant)) {
             val rhs = binary.rightOperand.skipParenthesizedExprDown().sourcePsi?.text ?: ""
             val message =
-              if (expectFull) {
-                "The API level (`$rhs`) appears to be a full SDK int (encoding major and minor versions), so it should be compared with `SDK_INT_FULL`, not `SDK_INT`"
+              if (expectFull) { // We expect full, but it is plain
+                "The API level (`$rhs`) appears to be a plain SDK int, so it should be compared with `$SDK_INT`, not `$SDK_INT_FULL`, or you should switch the API level to a full SDK constant"
               } else {
-                "The API level (`$rhs`) appears to be a plain SDK int, so it should be compared with `SDK_INT`, not `SDK_INT`, or you should switch the API level to a full SDK constant"
+                "The API level (`$rhs`) appears to be a full SDK int (encoding major and minor versions), so it should be compared with `$SDK_INT_FULL`, not `$SDK_INT`"
               }
             val lhs = binary.leftOperand
             val resolved = lhs.tryResolve()

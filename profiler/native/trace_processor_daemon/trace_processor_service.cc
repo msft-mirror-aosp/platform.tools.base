@@ -29,19 +29,13 @@
 #include "perfetto/trace_processor/trace_processor.h"
 #include "process_metadata/process_metadata_request_handler.h"
 #include "scheduling/scheduling_request_handler.h"
-#include "src/profiling/symbolizer/local_symbolizer.h"
-#include "src/profiling/symbolizer/symbolize_database.h"
-#include "src/profiling/symbolizer/symbolizer.h"
+#include "src/trace_processor/util/symbolizer/symbolize_database.h"
 #include "thread_state/thread_state_request_handler.h"
 #include "trace_events/android_frame_events_request_handler.h"
 #include "trace_events/android_frame_timeline_request_handler.h"
 #include "trace_events/trace_events_request_handler.h"
 #include "trace_metadata_request_handler.h"
 
-using ::perfetto::profiling::BinaryFinder;
-using ::perfetto::profiling::LocalBinaryIndexer;
-using ::perfetto::profiling::LocalSymbolizer;
-using ::perfetto::profiling::Symbolizer;
 using ::perfetto::trace_processor::Config;
 using ::perfetto::trace_processor::ReadTrace;
 using ::perfetto::trace_processor::TraceProcessor;
@@ -126,25 +120,42 @@ grpc::Status TraceProcessorServiceImpl::LoadTrace(
     if (!request->symbolized_output_path().empty()) {
       output_file_fd = fopen(request->symbolized_output_path().c_str(), "wb+");
     }
-    std::unique_ptr<BinaryFinder> finder(
-        new LocalBinaryIndexer(symbol_paths, {}));
-    std::unique_ptr<Symbolizer> symbolizer(
-        new LocalSymbolizer(llvm_path_, std::move(finder)));
-    ::perfetto::profiling::SymbolizeDatabase(
-        tp_.get(), symbolizer.get(), [&](const std::string& trace_proto) {
-          std::unique_ptr<uint8_t[]> buf(new uint8_t[trace_proto.size()]);
-          memcpy(buf.get(), trace_proto.data(), trace_proto.size());
-          // Load symbols into symbol database.
-          auto status = tp_->Parse(std::move(buf), trace_proto.size());
-          if (!status.ok()) {
-            std::cout << "Failed to parse symbol line: " << trace_proto
-                      << std::endl;
-            return;
-          }
-          if (output_file_fd != nullptr) {
-            fwrite(trace_proto.data(), 1, trace_proto.size(), output_file_fd);
-          }
-        });
+    ::perfetto::profiling::SymbolizerConfig symbolizer_config;
+    symbolizer_config.index_symbol_paths = symbol_paths;
+
+    auto symbolize_result =
+        ::perfetto::profiling::SymbolizeDatabase(tp_.get(), symbolizer_config);
+
+    if (symbolize_result.error != ::perfetto::profiling::SymbolizerError::kOk) {
+      std::cout << "Symbolization failed: " << symbolize_result.error_details
+                << std::endl;
+    }
+
+    std::string symbolization_summary =
+        ::perfetto::profiling::FormatSymbolizationSummary(symbolize_result,
+                                                          false, false);
+    if (!symbolization_summary.empty()) {
+      std::cout << "Symbolization Summary:\n"
+                << symbolization_summary << std::endl;
+    }
+
+    if (!symbolize_result.symbols.empty()) {
+      std::unique_ptr<uint8_t[]> symbol_buffer(
+          new uint8_t[symbolize_result.symbols.size()]);
+      memcpy(symbol_buffer.get(), symbolize_result.symbols.data(),
+             symbolize_result.symbols.size());
+      // Load symbols into symbol database.
+      auto parse_status =
+          tp_->Parse(std::move(symbol_buffer), symbolize_result.symbols.size());
+      if (!parse_status.ok()) {
+        std::cout << "Failed to parse symbols into trace processor."
+                  << std::endl;
+      }
+      if (output_file_fd != nullptr) {
+        fwrite(symbolize_result.symbols.data(), 1,
+               symbolize_result.symbols.size(), output_file_fd);
+      }
+    }
     if (output_file_fd != nullptr) {
       fclose(output_file_fd);
     }

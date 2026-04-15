@@ -38,11 +38,14 @@ import java.io.File
 class AndroidTestRunner(
   private val adbApkInstaller: AdbApkInstaller,
   private val instrumentationRunner: AmInstrumentationRunner,
+  private val instrumentationTargetPackageId: String,
   private val testedApks: List<File>,
   private val testApks: List<File>,
   private val apkInstallOptions: List<String>,
   private val testUtilApks: List<File>,
   private val uninstallApksAfterTests: Boolean,
+  private val onBeforeInstrumentation: (() -> Unit)? = null,
+  private val onTestFinished: (() -> Unit)? = null,
 ) {
 
   /**
@@ -58,6 +61,8 @@ class AndroidTestRunner(
    */
   fun run() {
     try {
+      adbApkInstaller.preInstallationSetup(instrumentationTargetPackageId)
+
       if (testedApks.size == 1) {
         adbApkInstaller.installApk(testedApks.first(), AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
       } else if (testedApks.size > 1) {
@@ -65,17 +70,20 @@ class AndroidTestRunner(
       }
 
       if (testApks.size == 1) {
-        adbApkInstaller.installApk(testApks.first(), AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+        adbApkInstaller.installApk(testApks.first(), AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions))
       } else if (testApks.size > 1) {
-        adbApkInstaller.installSplitApk(testApks, AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+        adbApkInstaller.installSplitApk(testApks, AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions))
       }
 
       testUtilApks.forEach { apk ->
         adbApkInstaller.installApk(apk, AdbApkInstaller.InstallOptions(grantPermissions = true, forceQueryable = true))
       }
 
+      onBeforeInstrumentation?.invoke()
+
       instrumentationRunner.runAmInstrumentCommand()
     } finally {
+      onTestFinished?.invoke()
       adbApkInstaller.postTestCleanup()
       if (uninstallApksAfterTests) {
         if (testedApks.isNotEmpty()) {

@@ -151,8 +151,6 @@ data class AvdInfo(
         AvdStatus.ERROR_CONFIG -> "Missing config.ini file in $dataFolderPath"
         AvdStatus.ERROR_PROPERTIES -> "Failed to parse properties from $configFile"
         AvdStatus.ERROR_IMAGE_MISSING -> {
-          val tag = if (SystemImageTags.DEFAULT_TAG == this.tag) "" else (this.tag.getDisplay() + " ")
-          this.tag
           val image = properties[ConfigKey.IMAGES_1]
           if (image == null) "System image missing in configuration"
           else {

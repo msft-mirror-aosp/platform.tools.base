@@ -17,6 +17,10 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.api.dsl.ApplicationBuildType
+import com.android.build.api.dsl.BaselineProfile
+import com.android.build.api.dsl.BuildTypeDependenciesExtension
+import com.android.build.api.dsl.DeclarativeApplicationBuildType
+import com.android.build.api.dsl.DeclarativeLibraryBuildType
 import com.android.build.api.dsl.DynamicFeatureBuildType
 import com.android.build.api.dsl.LibraryBuildType
 import com.android.build.api.dsl.Ndk
@@ -42,23 +46,21 @@ import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Property
-import org.gradle.declarative.dsl.model.annotations.Configuring
-import org.gradle.declarative.dsl.model.annotations.ElementFactoryName
-import org.gradle.declarative.dsl.model.annotations.Restricted
 import org.gradle.testing.jacoco.plugins.JacocoPlugin
 
-@ElementFactoryName("buildType")
 abstract class DeclarativeBuildType
 @Inject
 constructor(name: String, private val dslServices: DslServices, componentType: ComponentType, objectFactory: ObjectFactory) :
-  BuildType(name, dslServices, componentType, objectFactory) {
+  BuildType(name, dslServices, componentType, objectFactory), DeclarativeApplicationBuildType, DeclarativeLibraryBuildType {
 
-  val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
+  override val dependencies: BuildTypeDependenciesExtension by lazy { dslServices.newInstance(BuildTypeDependenciesExtension::class.java) }
 
-  @Configuring
   fun dependencies(configure: BuildTypeDependenciesExtension.() -> Unit) {
     configure.invoke(dependencies)
   }
+
+  override val isUseProguard: Boolean?
+    get() = false
 }
 
 /** DSL object to configure build types. */
@@ -83,7 +85,13 @@ constructor(
   @WithLazyInitialization
   fun lazyInit() {
     renderscriptOptimLevel = 3
-    enableUnitTestCoverage = dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
+    enableUnitTestCoverage =
+      try {
+        // this information may not available for declarative definition
+        dslServices.projectInfo.hasPlugin(JacocoPlugin.PLUGIN_EXTENSION_NAME)
+      } catch (_: Exception) {
+        false
+      }
   }
 
   /** Name of this build type. */
@@ -123,6 +131,16 @@ constructor(
   abstract override var renderscriptOptimLevel: Int
 
   abstract override var isProfileable: Boolean
+
+  override val baselineProfile: BaselineProfile = dslServices.newDecoratedInstance(BaselineProfileImpl::class.java, dslServices)
+
+  override fun baselineProfile(action: BaselineProfile.() -> Unit) {
+    action.invoke(baselineProfile)
+  }
+
+  fun baselineProfile(action: Action<BaselineProfile>) {
+    action.execute(baselineProfile)
+  }
 
   @Deprecated("This property is deprecated. Changing its value has no effect (AGP produced artifacts are already aligned).")
   override var isZipAlignEnabled: Boolean
@@ -407,7 +425,7 @@ constructor(
     action.invoke(shaders)
   }
 
-  @get:Restricted override var isMinifyEnabled: Boolean = false
+  override var isMinifyEnabled: Boolean = false
 
   /**
    * Whether shrinking of unused resources is enabled.

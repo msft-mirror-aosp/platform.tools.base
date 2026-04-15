@@ -46,6 +46,7 @@ class NavigationPlaceholderTest {
       .appendToBuild(
         """
         android {
+            enableKotlin = false
             defaultConfig {
                 manifestPlaceholders =
                     [
@@ -91,6 +92,7 @@ class NavigationPlaceholderTest {
       .appendToBuild(
         """
         android {
+            enableKotlin = false
             defaultConfig {
                 manifestPlaceholders =
                     [
@@ -139,7 +141,6 @@ class NavigationPlaceholderTest {
           .dependency(lib, "androidx.navigation:navigation-fragment:2.5.2")
           .build()
       )
-      .disableBuiltInKotlin()
       .create()
 
   private val executor: GradleTaskExecutor

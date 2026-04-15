@@ -65,6 +65,7 @@ fun RecipeExecutor.generateNavigationDrawer(
 
   addAllKotlinDependencies(data)
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
+  addDependency("androidx.activity:activity-ktx:+")
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(data.viewBindingSupport, true)
 

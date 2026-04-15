@@ -19,6 +19,7 @@ local_repository(
     path = "external/skia",
 )
 
+# buildifier: disable=external-path
 local_repository(
     name = "skia_user_config",
     path = "tools/vendor/google/skia/external/skia-user-config",
@@ -26,3 +27,6 @@ local_repository(
 
 # ASwB test deps are in a different directory for ownership.
 include("//tools/adt/idea/aswb/testing/test_deps:test_deps.MODULE.bazel")
+
+# Journeys evals test artifacts
+include("//tools/vendor/google/ml/aiplugin/android/journeys-evals:test_artifacts.MODULE.bazel")

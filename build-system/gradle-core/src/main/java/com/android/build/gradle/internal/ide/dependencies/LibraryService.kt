@@ -288,23 +288,6 @@ class LibraryCacheImpl(private val stringCache: StringCache, private val localJa
           )
         }
 
-        ResolvedArtifact.DependencyType.ANDROID_SANDBOX_SDK -> {
-          val folder = artifact.extractedFolder
-          if (folder != null) {
-            LibraryImpl.createJavaLibrary(
-              stringCache.cacheString(libraryInfo.computeKey()),
-              libraryInfo,
-              folder,
-              additionalArtifacts.sources,
-              additionalArtifacts.javadoc,
-            )
-          } else {
-            // If privacy sandbox isn't enabled treat the library as an empty artifact
-            // (The build will fail with an explanation)
-            LibraryImpl.createNoArtifactFileLibrary(stringCache.cacheString(libraryInfo.computeKey()), libraryInfo)
-          }
-        }
-
         ResolvedArtifact.DependencyType.JAVA -> {
           LibraryImpl.createJavaLibrary(
             stringCache.cacheString(libraryInfo.computeKey()),
@@ -323,28 +306,6 @@ class LibraryCacheImpl(private val stringCache: StringCache, private val localJa
           LibraryImpl.createNoArtifactFileLibrary(stringCache.cacheString(libraryInfo.computeKey()), libraryInfo)
         }
       }
-    } else if (artifact.dependencyType == ResolvedArtifact.DependencyType.ANDROID_SANDBOX_SDK) {
-      // This is a hack to treat internal ASAR dependencies as external as we need to publish
-      // the jar as a dependency that Studio needs to resolve SDK classes
-      val folder = artifact.extractedFolder ?: throw RuntimeException("Null extracted folder for artifact: $artifact")
-      val libraryInfo =
-        LibraryInfoImpl(
-          buildType = null,
-          productFlavors = mapOf(),
-          attributes = mapOf(),
-          capabilities = listOf(),
-          group = stringCache.cacheString(LOCAL_ASAR_GROUPID),
-          name = stringCache.cacheString(folder.absolutePath),
-          version = stringCache.cacheString("unspecified"),
-          isTestFixtures = false,
-        )
-      LibraryImpl.createJavaLibrary(
-        stringCache.cacheString(libraryInfo.computeKey()),
-        libraryInfo,
-        folder,
-        additionalArtifacts.sources,
-        additionalArtifacts.javadoc,
-      )
     } else if (artifact.dependencyType == ResolvedArtifact.DependencyType.NO_ARTIFACT_FILE) {
       // Handle projects that have no artifacts (e.g. java-platform)
       val projectInfo = getProjectInfo(artifact.variant)

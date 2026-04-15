@@ -86,8 +86,4 @@ public class DeviceConfigProviderImpl implements DeviceConfigProvider {
         return deviceConnector.getApiLevel();
     }
 
-    @Override
-    public boolean getSupportsPrivacySandbox() {
-        return deviceConnector.getSupportsPrivacySandbox();
-    }
 }

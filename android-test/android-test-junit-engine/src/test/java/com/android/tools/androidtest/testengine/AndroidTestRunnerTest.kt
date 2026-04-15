@@ -65,6 +65,7 @@ class AndroidTestRunnerTest {
     val installOptions = listOf("-t", "-d")
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = listOf(baseApk),
@@ -93,6 +94,7 @@ class AndroidTestRunnerTest {
     val installOptions = listOf("-t", "-d")
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = listOf(baseApk),
@@ -101,15 +103,16 @@ class AndroidTestRunnerTest {
         testUtilApks = emptyList(),
         uninstallApksAfterTests = true,
       )
-    val expectedInstallOptions = InstallOptions(extraArgs = installOptions)
+    val expectedBaseInstallOptions = InstallOptions(extraArgs = installOptions)
+    val expectedTestInstallOptions = InstallOptions(grantPermissions = true, extraArgs = installOptions)
 
     // When the runner is executed.
     runner.run()
 
     // Then verify the sequence of operations is correct: install, run tests, cleanup, uninstall.
     inOrder(adbApkInstaller, instrumentationRunner) {
-      verify(adbApkInstaller).installApk(baseApk, expectedInstallOptions)
-      verify(adbApkInstaller).installApk(testApk, expectedInstallOptions)
+      verify(adbApkInstaller).installApk(baseApk, expectedBaseInstallOptions)
+      verify(adbApkInstaller).installApk(testApk, expectedTestInstallOptions)
       verify(instrumentationRunner).runAmInstrumentCommand()
       verify(adbApkInstaller).postTestCleanup()
       verify(adbApkInstaller).uninstallApk(baseApk)
@@ -124,6 +127,7 @@ class AndroidTestRunnerTest {
     val installOptions = listOf("-g")
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = testedApks,
@@ -152,6 +156,7 @@ class AndroidTestRunnerTest {
     // Given a runner with a base APK and a utility APK.
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = listOf(baseApk),
@@ -181,6 +186,7 @@ class AndroidTestRunnerTest {
     // Given a runner where uninstallation is explicitly disabled.
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = listOf(baseApk),
@@ -209,6 +215,7 @@ class AndroidTestRunnerTest {
     // Given a runner where the installer will throw an error during installation.
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = listOf(baseApk),
@@ -242,6 +249,7 @@ class AndroidTestRunnerTest {
     // Given a runner with no APKs to install.
     val runner =
       AndroidTestRunner(
+        instrumentationTargetPackageId = "target.pkg",
         adbApkInstaller = adbApkInstaller,
         instrumentationRunner = instrumentationRunner,
         testedApks = emptyList(),

@@ -428,6 +428,8 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release(int,kotlin.jvm.functions.Function1)",
         "public static com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdk.release\$default(com.android.build.api.dsl.CompileSdk,int,kotlin.jvm.functions.Function1,int,java.lang.Object)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.addon(java.lang.String,java.lang.String,int)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.beta(int,kotlin.jvm.functions.Function1)",
+        "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.canary(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.preview(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int,kotlin.jvm.functions.Function1)",

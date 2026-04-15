@@ -254,4 +254,6 @@ object ConfigKey {
   const val ROLL_PERCENTAGES_POSTURE_DEFINITIONS = "hw.sensor.roll_percentages_posture_definitions"
 
   const val LCD_TRANSPARENT = "hw.lcd.transparent"
+
+  const val AI_GLASSES_DISPLAY_MODE = "emulator.dev.xr.glasses_display"
 }

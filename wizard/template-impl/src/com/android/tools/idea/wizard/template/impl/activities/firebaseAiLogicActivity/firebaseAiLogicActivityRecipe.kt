@@ -40,7 +40,7 @@ fun RecipeExecutor.firebaseAiLogicActivityRecipe(moduleData: ModuleTemplateData,
   addDependency(mavenCoordinate = "androidx.activity:activity-compose:+")
 
   // Add Compose dependencies, using the BOM to set versions
-  addComposeDependencies(moduleData)
+  addComposeDependencies(moduleData, composeBomVersion = "2026.02.01")
 
   addDependency(mavenCoordinate = "androidx.compose.material3:material3")
 

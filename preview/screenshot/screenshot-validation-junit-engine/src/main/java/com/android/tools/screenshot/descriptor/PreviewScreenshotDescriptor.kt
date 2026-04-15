@@ -24,6 +24,7 @@ import com.android.tools.screenshot.differ.ImageDiffer
 import com.android.tools.screenshot.differ.ImageUpdater
 import com.android.tools.screenshot.differ.ImageVerifier
 import com.android.tools.screenshot.differ.PixelPerfect
+import com.android.tools.screenshot.differ.VerificationResult
 import java.io.File
 import java.util.Optional
 import org.junit.platform.engine.TestDescriptor
@@ -64,23 +65,28 @@ class PreviewScreenshotDescriptor(
     context: PreviewScreenshotExecutionContext,
     dynamicTestExecutor: Node.DynamicTestExecutor,
   ): PreviewScreenshotExecutionContext {
-    val newImagePath = "${context.previewImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
-    val refImagePath = "${context.referenceImageDir.absolutePath}/${previewScreenshotResult.imagePath}"
-    val diffImagePath = "${context.previewDiffImageOutputDir.absolutePath}/${previewScreenshotResult.imagePath}"
+    val newImageFile = File(context.previewImageOutputDir, previewScreenshotResult.imagePath)
+    val refImageFile = File(context.referenceImageDir, previewScreenshotResult.imagePath)
+    val diffImageFile = File(context.previewDiffImageOutputDir, previewScreenshotResult.imagePath)
 
     previewScreenshotResult.error?.let { System.err.println(it) }
 
     val imageVerifier = ImageVerifier(PixelPerfect(ImageDifferInput.threshold))
-    var verificationResult: com.android.tools.screenshot.differ.VerificationResult? = null
+    var verificationResult: VerificationResult? = null
 
     try {
       if (PreviewScreenshotTestEngineInput.TestOption.recordingModeEnabled) {
-        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImagePath, refImagePath)
+        ImageUpdater(PixelPerfect(ImageDifferInput.threshold)).updateIfDifferent(newImageFile, refImageFile, context.projectRoot)
       } else {
-        verificationResult = imageVerifier.verify(newImagePath, refImagePath, diffImagePath)
+        verificationResult = imageVerifier.verify(newImageFile, refImageFile, diffImageFile, context.projectRoot)
 
         if (verificationResult.diffResult is ImageDiffer.DiffResult.Different) {
-          throw ImageVerifier.ImageComparisonAssertionError(refImagePath, newImagePath, verificationResult.diffPercent, diffImagePath)
+          throw ImageVerifier.ImageComparisonAssertionError(
+            refImageFile.relativeTo(context.projectRoot).path,
+            newImageFile.relativeTo(context.projectRoot).path,
+            verificationResult.diffPercent,
+            diffImageFile.relativeTo(context.projectRoot).path,
+          )
         }
       }
     } finally {
@@ -91,13 +97,22 @@ class PreviewScreenshotDescriptor(
       context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.previewName", previewDisplayName))
       context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.methodName", methodName))
       // Always publish refImagePath, this is required in IDE
-      context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.refImagePath", refImagePath))
+      context.executionListener.reportingEntryPublished(
+        this,
+        ReportEntry.from("PreviewScreenshot.refImagePath", refImageFile.relativeTo(context.projectRoot).path),
+      )
 
-      if (File(newImagePath).exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.newImagePath", newImagePath))
+      if (newImageFile.exists()) {
+        context.executionListener.reportingEntryPublished(
+          this,
+          ReportEntry.from("PreviewScreenshot.newImagePath", newImageFile.relativeTo(context.projectRoot).path),
+        )
       }
-      if (File(diffImagePath).exists()) {
-        context.executionListener.reportingEntryPublished(this, ReportEntry.from("PreviewScreenshot.diffImagePath", diffImagePath))
+      if (diffImageFile.exists()) {
+        context.executionListener.reportingEntryPublished(
+          this,
+          ReportEntry.from("PreviewScreenshot.diffImagePath", diffImageFile.relativeTo(context.projectRoot).path),
+        )
       }
     }
 

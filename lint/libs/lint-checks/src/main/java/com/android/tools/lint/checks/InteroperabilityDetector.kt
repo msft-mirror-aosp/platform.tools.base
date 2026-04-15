@@ -542,7 +542,7 @@ class InteroperabilityDetector : Detector(), SourceCodeScanner {
       ) {
         val name1 = badGetter.name
         if (name1.startsWith("is") && methodName.startsWith("setIs") && name1[2].isUpperCase()) {
-          val newProperty = name1[2].toLowerCase() + name1.substring(3)
+          val newProperty = name1[2].lowercase() + name1.substring(3)
           val message =
             "This method should be called `set${newProperty.usLocaleCapitalize()}` such " +
               "that (along with the `$name1` getter) Kotlin code can access it " +

@@ -95,6 +95,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
 
   var bootMode: BootMode = QuickBoot
 
+  var aiGlassesDisplayMode: AiGlassesDisplayMode = DEFAULT_AI_GLASSES_DISPLAY_MODE
   val userSettings = mutableMapOf<String, String>()
 
   val androidVersion: AndroidVersion?
@@ -122,9 +123,6 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
     properties[ConfigKey.GPU_EMULATION] = "yes"
     properties[ConfigKey.AVD_ID] = avdName
     properties.putAll(bootMode.properties())
-    if (environment != null) {
-      properties[ConfigKey.LCD_TRANSPARENT] = "yes"
-    }
     binding.write(this, properties)
     return properties
   }
@@ -164,6 +162,8 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
   }
 
   companion object {
+    val DEFAULT_AI_GLASSES_DISPLAY_MODE = AiGlassesDisplayMode.MONOCULAR_RIGHT
+
     /**
      * Values that we unconditionally set before setting other properties. They may be overridden by Device-determined properties. If they
      * need to be configurable, they can be converted to fields.
@@ -185,6 +185,7 @@ class AvdBuilder(var metadataIniPath: Path, avdFolder: Path, var device: Device)
         AvdBuilder::enableKeyboard bindToKey HardwareProperties.HW_KEYBOARD,
         AvdBuilder::networkLatency bindToKey ConfigKey.NETWORK_LATENCY,
         AvdBuilder::networkSpeed bindToKey ConfigKey.NETWORK_SPEED,
+        AvdBuilder::aiGlassesDisplayMode bindToKey ConfigKey.AI_GLASSES_DISPLAY_MODE,
       )
 
     /** Creates an AvdBuilder for editing an existing AVD. */

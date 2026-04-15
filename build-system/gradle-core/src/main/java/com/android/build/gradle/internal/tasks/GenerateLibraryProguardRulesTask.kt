@@ -139,7 +139,6 @@ internal fun canResourcesBeProcessedIncrementally(resourceChanges: SerializableC
     FileStatus.NEW -> true
     FileStatus.CHANGED -> !isLayoutFile(resourceChanges.file)
     FileStatus.REMOVED -> !isLayoutFile(resourceChanges.file)
-    else -> false
   }
 
 internal fun runFullTask(params: GenerateLibraryProguardRulesTask.GenerateProguardRulesWorkAction.Params) {

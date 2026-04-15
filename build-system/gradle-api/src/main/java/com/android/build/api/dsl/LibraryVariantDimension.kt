@@ -17,7 +17,6 @@
 package com.android.build.api.dsl
 
 import java.io.File
-import org.gradle.declarative.dsl.model.annotations.Restricted
 
 /**
  * Shared properties between DSL objects that contribute to a library variant.
@@ -30,7 +29,7 @@ interface LibraryVariantDimension : VariantDimension {
    *
    * This can be null if the flag is not set, in which case the default value is used.
    */
-  @get:Restricted var multiDexEnabled: Boolean?
+  var multiDexEnabled: Boolean?
 
   /**
    * ProGuard rule files to be included in the published AAR.

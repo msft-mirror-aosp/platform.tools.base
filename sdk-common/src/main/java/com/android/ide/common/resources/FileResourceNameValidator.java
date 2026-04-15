@@ -27,9 +27,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.SdkUtils;
+
 import java.io.File;
-import java.util.List;
 import java.util.function.IntPredicate;
+
 import javax.lang.model.SourceVersion;
 
 public final class FileResourceNameValidator {
@@ -183,17 +184,18 @@ public final class FileResourceNameValidator {
         }
 
         StringBuilder result = new StringBuilder();
-        int first = fileNameWithoutExtension.codePointAt(0);
-        checkAndAppend(
-                first, result, c -> Character.isJavaIdentifierStart(c) && isValidCharacter(c));
-
+        // First, generate string with all valid characters.
         fileNameWithoutExtension
                 .codePoints()
-                .skip(1)
                 .forEach(
                         c -> {
                             checkAndAppend(c, result, FileResourceNameValidator::isValidCharacter);
                         });
+
+        // If first character is not permissible - insert underscore in front.
+        if (!Character.isJavaIdentifierStart(result.codePointAt(0))) {
+            result.insert(0, '_');
+        }
 
         return result.toString();
     }
@@ -219,16 +221,5 @@ public final class FileResourceNameValidator {
         } else {
             return fileNameWithExt;
         }
-    }
-
-    private static boolean oneOfStartsWithIgnoreCase(List<String> strings, String prefix) {
-        boolean matches = false;
-        for (String allowedString : strings) {
-            if (SdkUtils.startsWithIgnoreCase(allowedString, prefix)) {
-                matches = true;
-                break;
-            }
-        }
-        return matches;
     }
 }

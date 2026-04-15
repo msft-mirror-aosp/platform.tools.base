@@ -187,7 +187,7 @@ maven_library(
     description = "Checks for Android Lint",
     kotlinc_opts = [
         # Needed to use the Kotlin K2 analysis API (b/308454624)
-        "-Xcontext-receivers",
+        "-Xcontext-parameters",
     ],
     lint_baseline = "libs/lint-checks/lint_baseline.xml",
     module_name = "lint-checks",

@@ -144,6 +144,8 @@ public class Main {
 
     private static final String ARG_HTML = "--html";
 
+    private static final String ARG_HTML_V2 = "--html-v2";
+
     @SuppressWarnings("SpellCheckingInspection")
     private static final String ARG_SIMPLE_HTML = "--simplehtml";
 
@@ -936,10 +938,13 @@ public class Main {
                 } else {
                     flags.setOverrideLintConfig(file);
                 }
-            } else if (arg.equals(ARG_HTML) || arg.equals(ARG_SIMPLE_HTML)) {
+            } else if (arg.equals(ARG_HTML) || arg.equals(ARG_SIMPLE_HTML) || arg.equals(ARG_HTML_V2)) {
                 if (index == args.length - 1) {
                     System.err.println("Missing HTML output file name");
                     return ERRNO_INVALID_ARGS;
+                }
+                if (arg.equals(ARG_HTML_V2)) {
+                  flags.setUseHtmlV2(true);
                 }
                 File output = getOutArgumentPath(args[++index]);
                 // Get an absolute path such that we can ask its parent directory for

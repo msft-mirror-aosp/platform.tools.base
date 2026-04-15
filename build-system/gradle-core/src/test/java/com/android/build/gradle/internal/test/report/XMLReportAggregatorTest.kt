@@ -405,4 +405,68 @@ class XMLReportAggregatorTest {
     assertThat(clazz.summary.total).isEqualTo(5)
     assertThat(clazz.testSuiteSummaries.first().summary.total).isEqualTo(5)
   }
+
+  @Test
+  fun testGenerateReport_deterministicSorting() {
+    // Create multiple XML files with names that would be out-of-order if not sorted
+    val xmlB =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="variantB"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "report-B.xml", xmlB)
+
+    val xmlA =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="variantA"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "report-A.xml", xmlA)
+
+    val xmlC =
+      """
+      <?xml version="1.0" encoding="UTF-8"?>
+      <testsuite name="com.example.app.MyTestSuite" tests="1" failures="0" errors="0" skipped="0" time="0.1">
+          <properties>
+              <property name="testedVariantName" value="variantC"/>
+              <property name="modulePath" value=":app"/>
+              <property name="testSuiteName" value="unitTest"/>
+          </properties>
+          <testcase name="testExample" classname="com.example.app.MyClassTest" time="0.1"/>
+      </testsuite>
+      """
+        .trimIndent()
+    createXmlReport(inputDir1, "report-C.xml", xmlC)
+
+    val aggregator = XMLReportAggregator(files = listOf(inputDir1), projectName = "DeterministicProject")
+    val report = aggregator.generateReport()
+
+    // Assert that the parsed variants are sorted alphabetically
+    assertThat(report.variants).containsExactly("variantA", "variantB", "variantC").inOrder()
+
+    val module = report.modules.first()
+    val pkg = module.packages.first()
+    val clazz = pkg.classes.first()
+    val testCase = clazz.testCases.first()
+
+    // Assert that the test cases results map keys are ordered alphabetically ascending
+    val resultKeys = testCase.results.keys.toList()
+    assertThat(resultKeys).containsExactly("variantA", "variantB", "variantC").inOrder()
+  }
 }

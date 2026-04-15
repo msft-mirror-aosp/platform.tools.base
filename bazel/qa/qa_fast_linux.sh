@@ -25,7 +25,6 @@ target_filters=qa_fast,qa_unreliable,-requires_emulator
   --keep_going \
   ${config_options} --config=ants \
   --invocation_id=${invocation_id} \
-  --define=meta_android_build_number=${build_number} \
   --build_tag_filters=${target_filters} \
   --build_metadata=ab_build_id="${build_number}" \
   --build_metadata=ab_target="qa-fast" \
@@ -60,7 +59,6 @@ if [[ -d "${dist_dir}" ]]; then
 #  --test_tag_filters=${target_filters} \
 #  --tool_tag=${script_name} \
 #  --define external_emulator=true \
-#  --define=meta_android_build_number=${build_number} \
 #  -- \
 #  //tools/adt/idea/android-uitests/...
 #

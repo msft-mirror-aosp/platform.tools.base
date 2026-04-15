@@ -48,17 +48,6 @@
     <issue
         id="FileComparisons"
         message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
-        errorLine1="                        !dir.equals(directory);"
-        errorLine2="                         ~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="src/main/java/com/android/builder/merge/MergeOutputWriters.java"
-            line="119"
-            column="26"/>
-    </issue>
-
-    <issue
-        id="FileComparisons"
-        message="Do not compare java.io.File with `equals` or `==`: will not work correctly on case insensitive file systems! See `go/files-howto`."
         errorLine1="                !base.equals(file), &quot;Base must not equal file. Given: %s&quot;, base.getAbsolutePath());"
         errorLine2="                 ~~~~~~~~~~~~~~~~~">
         <location

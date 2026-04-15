@@ -90,7 +90,11 @@ internal data class Env<out FX>(
         is Type.Sym.This -> types[uniqueName]
         else -> null
       }
-    return if (b == null) this else Type.Union(b.add(this))
+    return when {
+      b == null -> this
+      b.size == 1 && b.first().let { it is Type.Application && it.constructor is ClassId.Guarded } -> b.first()
+      else -> Type.Union(b.add(this))
+    }
   }
 
   private fun Type<FX>.bound(): Type<FX> =

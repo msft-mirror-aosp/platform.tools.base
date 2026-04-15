@@ -219,8 +219,12 @@ protected constructor(
      */
     @JvmStatic
     @Throws(IOException::class)
-    fun createHtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags): Reporter {
-      return HtmlReporter(client, output, flags)
+    fun createHtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags): HtmlReporter {
+      return if (flags.isUseHtmlV2) {
+        HtmlReporterV2(client, output, flags)
+      } else {
+        HtmlReporter(client, output, flags)
+      }
     }
 
     /**
@@ -260,7 +264,7 @@ protected constructor(
      */
     @JvmStatic
     @Throws(IOException::class)
-    fun createSarifReporter(client: LintCliClient, output: File): Reporter {
+    fun createSarifReporter(client: LintCliClient, output: File): SarifReporter {
       return SarifReporter(client, output)
     }
 

@@ -55,9 +55,13 @@ class AndroidDynamicTestDescriptor(uniqueId: UniqueId, displayName: String, clas
       AmInstrumentationParser.STATUS_CODE_OK -> {
         // Success
       }
-      AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE,
+      AmInstrumentationParser.STATUS_CODE_ASSUMPTION_FAILURE -> {
+        throw org.opentest4j.TestAbortedException(result.stackTrace ?: "Assumption failed")
+      }
       AmInstrumentationParser.STATUS_CODE_IGNORED -> {
-        // TODO: Mark as skipped/ignored. For now, we just complete successfully.
+        // For dynamic tests that have already "started", we report them as aborted
+        // as there's no standard way to "skip" them after execution has begun in JUnit 5.
+        throw org.opentest4j.TestAbortedException(result.stackTrace ?: "Test ignored")
       }
       else -> {
         throw RuntimeException(result.stackTrace ?: "Test failed with status ${result.status}")

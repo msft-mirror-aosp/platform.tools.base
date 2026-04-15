@@ -16,66 +16,51 @@
 
 package com.android.build.gradle.integration.r8
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.MinimalSubProjectUsingKTS
-import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.builder.BuildFileType.KTS
 import org.junit.Rule
 import org.junit.Test
 
 class DefaultProguardFilesTest {
-
-  private val baseModule =
-    MinimalSubProjectUsingKTS.app("com.example.baseModule")
-      .appendToBuild(
-        """
-                    android {
-                        buildTypes {
-                            getByName("release") {
-                                isMinifyEnabled = true
-                                proguardFiles(
-                                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                                    "proguard-rules.pro"
-                                )
-                            }
-                        }
-                        dynamicFeatures += setOf(":feature")
-                    }
-                    """
-      )
-      .withFile("src/main/res/raw/base_file.txt", "base file")
-
-  private val feature =
-    MinimalSubProjectUsingKTS.dynamicFeature("com.example.feature")
-      .appendToBuild(
-        """
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidApplication(":baseModule") {
         android {
-            buildTypes {
-                getByName("release") {
-                    isMinifyEnabled = false
-                    proguardFiles(
-                        getDefaultProguardFile("proguard-android-optimize.txt"),
-                        "proguard-rules.pro"
-                    )
-                }
+          namespace = "com.example.baseModule"
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = true
+              it.proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             }
+          }
+          dynamicFeatures += setOf(":feature")
         }
-        dependencies {
-            implementation(project(":baseModule"))
+        files { add("src/main/res/raw/base_file.txt", "base file") }
+      }
+      androidFeature {
+        android {
+          namespace = "com.example.feature"
+          buildTypes {
+            named("release") {
+              it.isMinifyEnabled = false
+              it.proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            }
+          }
         }
-        """
-          .trimIndent()
-      )
-      .withFile("src/main/res/raw/main_feature_file.txt", "feature file")
-      .withFile("src/androidTest/res/raw/android_test_feature_file.txt", "hello")
-
-  private val testApp = MultiModuleTestProject.builder().subproject(":baseModule", baseModule).subproject(":feature", feature).build()
-
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
+        dependencies { implementation(project(":baseModule")) }
+        files {
+          add("src/main/res/raw/main_feature_file.txt", "feature file")
+          add("src/androidTest/res/raw/android_test_feature_file.txt", "hello")
+        }
+      }
+      buildFileType = KTS
+    }
 
   /** Regression test for b/295666695. */
   @Test
   fun testDefaultProguardFilesHaveTaskDependencies() {
-    val result = project.executor().expectFailure().run("assembleRelease")
+    val result = rule.build.executor.expectFailure().run("assembleRelease")
 
     // If default Proguard files didn't have task dependencies, the build would fail with an
     // error different from the error below (see b/295666695), so by checking the error below,

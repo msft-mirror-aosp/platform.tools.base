@@ -625,6 +625,7 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
         getTestRunnerFactory().getDeviceSerialValues().addAll(serials);
     }
 
+    @Input
     @Override
     public boolean getIgnoreFailures() {
         return ignoreFailures;
@@ -638,11 +639,6 @@ public abstract class DeviceProviderInstrumentTestTask extends NonIncrementalTas
     @InputFiles
     @PathSensitive(PathSensitivity.RELATIVE)
     public abstract ConfigurableFileCollection getBuddyApks();
-
-    @InputFiles
-    @PathSensitive(PathSensitivity.ABSOLUTE)
-    @Optional
-    public abstract ConfigurableFileCollection getPrivacySandboxSdkApksFiles();
 
     @Nested
     public abstract BuildToolsExecutableInput getBuildTools();

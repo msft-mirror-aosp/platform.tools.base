@@ -1413,23 +1413,6 @@ abstract class SourceProviderInput {
     return this
   }
 
-  internal fun initializeForPrivacySandboxSdk(): SourceProviderInput {
-    this.manifestFilePath.disallowChanges()
-    this.manifestOverlayFilePaths.disallowChanges()
-    this.javaDirectories.disallowChanges()
-    this.resDirectories.disallowChanges()
-    this.assetsDirectories.disallowChanges()
-    this.javaDirectoriesClasspath.disallowChanges()
-    this.resDirectoriesClasspath.disallowChanges()
-    this.assetsDirectoriesClasspath.disallowChanges()
-    this.aarKeepRulesDirectories.disallowChanges()
-    this.debugOnly.setDisallowChanges(false)
-    this.unitTestOnly.setDisallowChanges(false)
-    this.instrumentationTestOnly.setDisallowChanges(false)
-    this.testFixtureOnly.setDisallowChanges(false)
-    return this
-  }
-
   internal fun toLintModels(): List<LintModelSourceProvider> {
     return listOf(
       DefaultLintModelSourceProvider(

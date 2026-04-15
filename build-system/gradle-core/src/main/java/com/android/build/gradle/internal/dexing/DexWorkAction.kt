@@ -185,6 +185,7 @@ private fun getDexArchiveBuilder(dexWorkActionParams: DexWorkActionParams, messa
           coreLibDesugarConfig = dexSpec.dexParams.coreLibDesugarConfig,
           enableApiModeling = dexSpec.dexParams.enableApiModeling,
           messageReceiver = messageReceiver,
+          useNoOpGlobalSyntheticsConsumer = dexSpec.dexParams.useNoOpGlobalSyntheticsConsumer,
         )
       )
   }

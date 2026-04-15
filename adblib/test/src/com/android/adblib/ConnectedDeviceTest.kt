@@ -23,6 +23,13 @@ import com.android.adblib.testingutils.TestingAdbSessionHost
 import com.android.adblib.testingutils.TimeWaitSocketsThrottler
 import com.android.adblib.testingutils.asAdbInputChannel
 import com.android.fakeadbserver.DeviceFileState
+import com.android.fakeadbserver.FakeAdbServer
+import com.android.fakeadbserver.ShellProtocolType
+import com.android.fakeadbserver.services.ActivityManager
+import com.android.fakeadbserver.services.PackageManager
+import com.android.fakeadbserver.services.StatusWriter
+import com.android.fakeadbserver.shellcommandhandlers.ShellConstants
+import com.android.fakeadbserver.shellcommandhandlers.SimpleShellHandler
 import com.android.sdklib.AndroidApiLevel
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -969,6 +976,62 @@ class ConnectedDeviceTest {
   }
 
   @Test
+  fun testActivityManagerWaitsForServiceToBeReady(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+    val deviceState = fakeDevice.toDeviceState()
+    deviceState.serviceManager.removeService(ActivityManager.SERVICE_NAME)
+
+    // Act
+    val asyncCapabilities = async { fakeDevice.activityManager.capabilities() }
+
+    // Assert: Activity manager command does not complete after a short wait, because activity service is not available
+    delay(200)
+    Assert.assertFalse(asyncCapabilities.isCompleted)
+
+    // Act: Add the activity service back
+    deviceState.serviceManager.setService(ActivityManager.SERVICE_NAME, ActivityManager(deviceState))
+    val result = asyncCapabilities.await()
+
+    // Assert: Capabilities returns null for API 30 in FakeAdbServer (default)
+    Assert.assertNull(result)
+  }
+
+  @Test
+  fun testActivityManagerThrowsOnUnexpectedServiceCheckOutput(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+
+    // Register a mock handler that returns unexpected output for "adb shell service check" command
+    fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      object : SimpleShellHandler(ShellProtocolType.SHELL_V2, "service") {
+        override fun execute(
+          fakeAdbServer: FakeAdbServer,
+          statusWriter: StatusWriter,
+          shellCommandOutput: com.android.fakeadbserver.services.ShellCommandOutput,
+          device: com.android.fakeadbserver.DeviceState,
+          shellCommand: String,
+          shellCommandArgs: String?,
+        ) {
+          if (shellCommandArgs == "check ${ActivityManager.SERVICE_NAME}") {
+            statusWriter.writeOk()
+            shellCommandOutput.writeStdout("Fake error\n")
+          }
+        }
+      },
+    )
+
+    // Act
+    exceptionRule.expect(IOException::class.java)
+    exceptionRule.expectMessage("Unexpected output from 'service check activity': Fake error")
+    fakeDevice.activityManager.capabilities()
+
+    // Assert
+    Assert.fail("Should have thrown IOException")
+  }
+
+  @Test
   fun testReverseForward(): Unit = runBlockingWithTimeout {
     // Prepare
     val fakeDevice = addFakeConnectedDevice()
@@ -1380,6 +1443,131 @@ class ConnectedDeviceTest {
 
     // Assert
     job.await()
+  }
+
+  @Test
+  fun testPackageManagerUninstallSuccess(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act: Uninstall existing package (i.e. anything other than ShellConstants.NON_INSTALLED_APP_ID)
+    connectedDevice.packageManager.uninstall("com.app1")
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("uninstall com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerClearSuccess(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act: Clear existing package (i.e. anything other than ShellConstants.NON_INSTALLED_APP_ID)
+    connectedDevice.packageManager.clear("com.app1")
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("clear com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerClearFailure(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.clear(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailureApi28AndAbove(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailure_Api27(): Unit = runBlockingWithTimeout {
+    // Prepare: when uninstalling an unknown package the adb shell returns `0` exit code, and an error in stderr
+    val connectedDevice = addFakeConnectedDevice(sdk = 27)
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage(
+      "Exception occurred while executing:\njava.lang.IllegalArgumentException: Unknown package: ${ShellConstants.NON_INSTALLED_APP_ID}"
+    )
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerUninstallFailure_Api24_andBelow(): Unit = runBlockingWithTimeout {
+    // Prepare: when uninstalling an unknown package the adb shell returns `0` exit code, and an error in stdout
+    val connectedDevice = addFakeConnectedDevice(sdk = 24)
+
+    // Act
+    exceptionRule.expect(AdbPackageManagerException::class.java)
+    exceptionRule.expectMessage("Failure [DELETE_FAILED_INTERNAL_ERROR]")
+    connectedDevice.packageManager.uninstall(ShellConstants.NON_INSTALLED_APP_ID)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testPackageManagerWaitsForServiceToBeReady(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val connectedDevice = addFakeConnectedDevice()
+    val deviceState = connectedDevice.toDeviceState()
+    deviceState.serviceManager.removeService(PackageManager.SERVICE_NAME)
+
+    // Act
+    val asyncUninstall = async { connectedDevice.packageManager.uninstall("com.app1") }
+
+    // Assert: Package manager command does not complete after a short wait, because package service is not available
+    delay(200)
+    Assert.assertFalse(asyncUninstall.isCompleted)
+    Assert.assertTrue(connectedDevice.toDeviceState().pmLogs.isEmpty())
+
+    // Act: Add the package service back
+    deviceState.serviceManager.setService(PackageManager.SERVICE_NAME, PackageManager(deviceState))
+    asyncUninstall.await()
+
+    // Assert
+    val pmLogs = connectedDevice.toDeviceState().pmLogs
+    Assert.assertEquals("uninstall com.app1", pmLogs.last())
+  }
+
+  @Test
+  fun testPackageManagerUninstallThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice()
+    val delay = Duration.ofMillis(200)
+    setHostPropertyValue(fakeDevice.session.host, AdbLibProperties.PM_SERVICE_TIMEOUT, delay)
+    fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+    fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+    // Act
+    exceptionRule.expect(AdbIOTimeoutException::class.java)
+    fakeDevice.packageManager.uninstall("com.app1")
+
+    // Assert
+    Assert.fail("Should not reach")
   }
 
   open class TestSyncProgress : SyncProgress {

@@ -44,7 +44,6 @@ import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.android.utils.ILogger
 import com.google.wireless.android.sdk.stats.DeviceInfo
 import java.nio.file.Path
-import java.time.Duration
 import javax.swing.Icon
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -69,7 +68,6 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.takeWhile
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -90,8 +88,7 @@ internal constructor(
   private val context: LocalEmulatorContext,
   private val scope: CoroutineScope,
   private val adbSession: AdbSession,
-  private val refreshAvds: () -> List<AvdInfo>,
-  rescanPeriod: Duration = Duration.ofSeconds(10),
+  private val avdScanner: AvdScanner,
   pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
   private val handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
 ) : DeviceProvisionerPlugin {
@@ -99,9 +96,8 @@ internal constructor(
   constructor(
     scope: CoroutineScope,
     adbSession: AdbSession,
-    refreshAvds: () -> List<AvdInfo>,
+    avdScanner: AvdScanner,
     deviceIcons: DeviceIcons,
-    rescanPeriod: Duration = Duration.ofSeconds(10),
     pluginExtensions: List<ExtensionProvider<LocalEmulatorProvisionerPlugin, *>> = emptyList(),
     handleExtensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   ) : this(
@@ -113,8 +109,7 @@ internal constructor(
       ),
     scope = scope,
     adbSession = adbSession,
-    refreshAvds = refreshAvds,
-    rescanPeriod = rescanPeriod,
+    avdScanner = avdScanner,
     pluginExtensions = pluginExtensions,
     handleExtensions = handleExtensions,
   )
@@ -135,17 +130,12 @@ internal constructor(
   private val _devices = MutableStateFlow<List<LocalEmulatorDeviceHandle>>(emptyList())
   override val devices: StateFlow<List<DeviceHandle>> = _devices.asStateFlow()
 
-  // TODO: Consider if it would be better to use a filesystem watcher here instead of polling.
-  private val avdScanner = PeriodicAction(scope, rescanPeriod, ::rescanAvds)
-
   private val extensionRegistry = ExtensionRegistry(this, pluginExtensions)
 
   override fun <T : Extension> extension(extensionClass: Class<T>) = extensionRegistry.extension(extensionClass)
 
   init {
-    avdScanner.runNow()
-
-    scope.coroutineContext.job.invokeOnCompletion { avdScanner.cancel() }
+    scope.launch { avdScanner.avdFlow.collect(::updateAvds) }
   }
 
   /**
@@ -153,9 +143,9 @@ internal constructor(
    *
    * Do not call directly; this should only be called by PeriodicAction.
    */
-  private suspend fun rescanAvds() {
+  private suspend fun updateAvds(avdInfos: List<AvdInfo>) {
     try {
-      val avdsOnDisk = refreshAvds().associateBy { it.dataFolderPath }
+      val avdsOnDisk = avdInfos.associateBy { it.dataFolderPath }
       mutex.withLock {
         // Remove any current DeviceHandles that are no longer present on disk, unless they are
         // connected. (If a client holds on to the disconnected device handle, and it gets
@@ -175,7 +165,7 @@ internal constructor(
               deviceHandles[path] =
                 LocalEmulatorDeviceHandle(
                   context = context,
-                  refreshDevices = ::refreshDevices,
+                  avdScanner = avdScanner,
                   scope = scope.createChildScope(isSupervisor = true),
                   extensions = handleExtensions,
                   initialAvdInfo = avdInfo,
@@ -190,7 +180,7 @@ internal constructor(
       if (t is CancellationException) {
         throw t
       }
-      // The PeriodicAction's action must not throw, or it will not get rescheduled.
+      // Collection must not fail, or we will not get any more AVD updates.
       logger.error(t, "Exception scanning AVDs")
     }
   }
@@ -217,9 +207,9 @@ internal constructor(
     var handle = mutex.withLock { deviceHandles[path] }
     if (handle == null) {
       // We didn't read this path from disk yet. Rescan and try again.
-      avdScanner.runNow().join()
-      handle = mutex.withLock { deviceHandles[path] }
+      updateAvds(avdScanner.rescan())
     }
+    handle = mutex.withLock { deviceHandles[path] }
     if (handle == null) {
       // Apparently this emulator is not on disk, or it is not in the directory that we scan for
       // AVDs. (Perhaps GMD or Crow failed to pick it up.)
@@ -239,10 +229,6 @@ internal constructor(
 
     return handle
   }
-
-  fun refreshDevices() {
-    avdScanner.runNow()
-  }
 }
 
 /** The mutable state of a LocalEmulatorDeviceHandle, emitted by the internalStateFlow. */
@@ -259,7 +245,7 @@ private data class InternalState(
  */
 class LocalEmulatorDeviceHandle(
   private val context: LocalEmulatorContext,
-  val refreshDevices: () -> Unit,
+  val avdScanner: AvdScanner,
   override val scope: CoroutineScope,
   extensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   initialAvdInfo: AvdInfo,
@@ -573,9 +559,58 @@ class LocalEmulatorDeviceHandle(
     updatePairedDevice(UserSettingsKey.PAIRED_PHONE_AVD_ID, companion)
   }
 
-  /** Sets the glasses that are paired to this device; if null, clears the paired glasses. */
-  fun updatePairedGlasses(companion: LocalEmulatorDeviceHandle?) {
-    updatePairedDevice(UserSettingsKey.PAIRED_GLASSES_AVD_ID, companion)
+  fun addPairedGlasses(id: DeviceId, mac: String?) {
+    val currentList = getPairedGlassesFromDisk()
+    val existingIndex = currentList.indexOfFirst { it.id == id }
+    val newList =
+      if (existingIndex >= 0) {
+        currentList.toMutableList().apply { this[existingIndex] = PairedGlassesInfo(id, mac) }
+      } else {
+        currentList + PairedGlassesInfo(id, mac)
+      }
+    updatePairedGlassesState(newList)
+  }
+
+  fun removePairedGlasses(id: DeviceId) {
+    val currentList = getPairedGlassesFromDisk()
+    if (currentList.any { it.id == id }) {
+      val newList = currentList.filter { it.id != id }
+      updatePairedGlassesState(newList)
+    }
+  }
+
+  fun clearPairedGlasses() {
+    updatePairedGlassesState(emptyList())
+  }
+
+  private fun getPairedGlassesFromDisk(): List<PairedGlassesInfo> {
+    val avdPath = (state.properties as LocalEmulatorProperties).avdPath
+    val currentSettings = AvdInfo.parseUserSettingsFile(avdPath, logger.asILogger())
+    return PairedGlassesInfo.parseFromSettings(currentSettings)
+  }
+
+  private fun updatePairedGlassesState(newList: List<PairedGlassesInfo>) {
+    val avdPath = (state.properties as LocalEmulatorProperties).avdPath
+    val currentSettings = AvdInfo.parseUserSettingsFile(avdPath, logger.asILogger())
+
+    val map = mutableMapOf<String, String?>(UserSettingsKey.PAIRED_GLASSES_AVD_ID to null)
+
+    // Initialize all existing paired glasses keys to null to clear them from disk
+    currentSettings.keys
+      .filter {
+        it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX) || it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX)
+      }
+      .forEach { map[it] = null }
+
+    // Overwrite with the new list
+    for (i in newList.indices) {
+      val info = newList[i]
+      map["${UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX}${i + 1}"] = info.id.toString()
+      map["${UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX}${i + 1}"] = info.mac
+    }
+
+    AvdBuilder.updateUserSettings(avdPath, map, logger.asILogger())
+    avdScanner.rescanAsync()
   }
 
   private fun updatePairedDevice(key: String, companion: LocalEmulatorDeviceHandle?) {
@@ -584,7 +619,7 @@ class LocalEmulatorDeviceHandle(
       mapOf(key to companion?.id?.toString()),
       logger.asILogger(),
     )
-    refreshDevices()
+    avdScanner.rescanAsync()
   }
 }
 
@@ -611,7 +646,7 @@ data class LocalEmulatorProperties(
   override val isResizable: Boolean?,
   override val wearPairingId: String?,
   override val pairedPhoneId: DeviceId?,
-  override val pairedGlassesId: DeviceId?,
+  override val pairedGlassesInfos: List<PairedGlassesInfo>,
   override val resolution: Resolution?,
   override val density: Int?,
   override val icon: Icon,
@@ -624,13 +659,12 @@ data class LocalEmulatorProperties(
   val avdConfigProperties: ImmutableMap<String, String>,
   val isAiGlassesCompatible: Boolean,
 ) : DeviceProperties {
-
   override fun toBuilder(): Builder = Builder().apply { copyFrom(this@LocalEmulatorProperties) }
 
   override val title = displayName
 
   companion object {
-    inline fun build(avdInfo: AvdInfo, block: Builder.() -> Unit): LocalEmulatorProperties =
+    inline fun build(avdInfo: AvdInfo, block: Builder.() -> Unit = {}): LocalEmulatorProperties =
       Builder()
         .apply {
           setAvdInfo(avdInfo)
@@ -683,7 +717,7 @@ data class LocalEmulatorProperties(
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
       pairedPhoneId = avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
-      pairedGlassesId = avdInfo.userSettings[UserSettingsKey.PAIRED_GLASSES_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedGlassesInfos = PairedGlassesInfo.parseFromSettings(avdInfo.userSettings)
       density = avdInfo.density
       resolution = avdInfo.resolution
       isDebuggable = !avdInfo.hasPlayStore()
@@ -708,6 +742,8 @@ data class LocalEmulatorProperties(
         isDebuggable = isDebuggable,
         isResizable = isResizable,
         wearPairingId = wearPairingId,
+        pairedPhoneId = pairedPhoneId,
+        pairedGlassesInfos = pairedGlassesInfos.toList(),
         resolution = resolution,
         density = density,
         icon = checkNotNull(icon),
@@ -717,8 +753,6 @@ data class LocalEmulatorProperties(
         avdPath = checkNotNull(avdPath),
         displayName = checkNotNull(displayName),
         hasPlayStore = hasPlayStore,
-        pairedPhoneId = pairedPhoneId,
-        pairedGlassesId = pairedGlassesId,
         avdConfigProperties = avdConfigProperties.toImmutableMap(),
         isAiGlassesCompatible = isAiGlassesCompatible,
       )
@@ -842,3 +876,23 @@ fun AdbLogger.asILogger(): ILogger =
       logIf(AdbLogger.Level.VERBOSE) { msgFormat.format(*args) }
     }
   }
+
+data class PairedGlassesInfo(val id: DeviceId, val mac: String?) {
+  companion object {
+    fun parseFromSettings(settings: Map<String, String>): List<PairedGlassesInfo> {
+      val idKeys = settings.keys.filter { it.startsWith(UserSettingsKey.PAIRED_GLASSES_AVD_ID_PREFIX) }
+      val indexedList = mutableListOf<PairedGlassesInfo>()
+
+      for (key in idKeys) {
+        val idStr = settings[key] ?: continue
+        val indexSuffix = key.substringAfterLast('.')
+        val macStr = settings["${UserSettingsKey.PAIRED_GLASSES_AVD_MAC_PREFIX}$indexSuffix"]
+        val id = DeviceId.fromString(idStr)
+        if (id != null) {
+          indexedList.add(PairedGlassesInfo(id, macStr))
+        }
+      }
+      return indexedList.toList()
+    }
+  }
+}

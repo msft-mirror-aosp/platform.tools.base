@@ -71,9 +71,9 @@ class MutationScriptTest(parameterized.TestCase):
         self.assertEqual(result, expected_content)
 
     @parameterized.named_parameters(
-        ('kotlin_return', 'file.kt', 'return 1', 'return if (true) throw RuntimeException(\"Catch me if you can!\") else 1'),
-        ('java_return', 'file.java', 'return ;', 'if (true) { throw new RuntimeException(\"Catch me if you can!\");} return ;'),
-        ('kotlin_val', 'file.kt', 'val x = 1','val __catch_me:Nothing = throw RuntimeException(\"Catch me if you can!\")\nval x = 1')
+        ('kotlin_return', 'file.kt', 'return 1', 'return if (true) { println(\"Executing mutated code...\"); throw RuntimeException(\"Catch me if you can!\") } else 1'),
+        ('java_return', 'file.java', 'return ;', 'if (true) { System.out.println(\"Executing mutated code...\"); throw new RuntimeException(\"Catch me if you can!\");} return ;'),
+        ('kotlin_val', 'file.kt', 'val x = 1','println(\"Executing mutated code...\")\nval __catch_me:Nothing = throw RuntimeException(\"Catch me if you can!\")\nval x = 1')
     )
     def test_mutate_finds_and_generates_correct_mutations(self, filename, content, expected_substring):
         """Tests that mutate finds a single mutation and its content is correct."""

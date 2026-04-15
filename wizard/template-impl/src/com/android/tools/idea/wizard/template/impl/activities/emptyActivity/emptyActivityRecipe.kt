@@ -40,7 +40,7 @@ fun RecipeExecutor.generateEmptyActivity(
 
   addDependency("com.android.support:appcompat-v7:${moduleData.apis.appCompatVersion}.+")
   addMaterial3Dependency()
-  addDependency("androidx.activity:activity:+")
+  addDependency("androidx.activity:activity-ktx:+")
 
   generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false)
 

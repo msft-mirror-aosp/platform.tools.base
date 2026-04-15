@@ -354,6 +354,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   }
 
   private fun AndroidProjectDefinition<out CommonExtension>.enableTestStorageService() {
+    android.defaultConfig.testInstrumentationRunnerArguments["useTestStorageService"] = "true"
     dependencies { add("androidTestUtil", "androidx.test.services:test-services:$ANDROIDX_TEST_VERSION") }
   }
 
@@ -372,9 +373,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverage() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
     rule.build.androidApplication().reconfigure { enableCodeCoverage() }
 
@@ -389,7 +387,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithTestFailures() {
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -445,7 +442,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestrator() {
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure { enableAndroidTestOrchestrator() }
@@ -459,9 +455,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverage() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -494,7 +487,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestFromTestOnlyModule() {
-
     selectModule("test")
 
     executor.run(testTaskName)
@@ -506,9 +498,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithTestStorageService() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -520,6 +509,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import androidx.test.services.storage.TestStorage
           import org.junit.Test
@@ -564,9 +554,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithoutTestStorageService() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -577,6 +564,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import org.junit.Test
           import org.junit.runner.RunWith
@@ -586,13 +574,16 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           class AdditionalTestOutputExampleTest {
               @Test
               fun writeFileWithoutTestStorageService() {
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: started")
                   val dir = File("/sdcard/Android/media/com.example.android.kotlin/additional_test_output").also {
                       it.mkdirs()
                   }
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: dir created: " + dir.absolutePath)
                   File(dir,"myTestFile1").apply {
                       createNewFile()
                       writeText("output message 1")
                   }
+                  Log.i("AdditionalTestOutputExampleTest", "writeFileWithoutTestStorageService: finished")
               }
           }
           """
@@ -609,9 +600,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithBenchmarkFiles() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -624,6 +612,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
           import android.os.Bundle
           import android.os.Environment
+          import android.util.Log
           import androidx.test.platform.app.InstrumentationRegistry
           import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -636,6 +625,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           class AdditionalTestOutputExampleTest {
               @Test
               fun createSampleFileAndReportIt() {
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: started")
                   val instrumentation = InstrumentationRegistry.getInstrumentation()
                   // Tries to report a bundle with additional test output
                   @Suppress("DEPRECATION")
@@ -646,8 +636,12 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                       }
                       ?: throw Exception("Cannot get external storage due to not mounted")
 
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: outputFolder: " + outputFolder.absolutePath)
+
                   val sampleFile = File(outputFolder, "sampleFile_1")
                       .apply { writeText("This is a sample file.") }
+
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: sampleFile created: " + sampleFile.absolutePath)
 
                   // Note that the path used here should be relative to outputFolder, so just the filename.
                   val summary = "[sample file](file://" + sampleFile.name + ")"
@@ -661,6 +655,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                   InstrumentationRegistry
                       .getInstrumentation()
                       .sendStatus(2, bundle)
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: finished")
               }
           }
           """
@@ -685,9 +680,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun additionalTestOutputWithBenchmarkV3Files() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("app")
 
     rule.build.androidApplication().reconfigure {
@@ -700,6 +692,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
 
           import android.os.Bundle
           import android.os.Environment
+          import android.util.Log
           import androidx.test.platform.app.InstrumentationRegistry
           import androidx.test.ext.junit.runners.AndroidJUnit4
 
@@ -712,6 +705,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           class AdditionalTestOutputExampleTest {
               @Test
               fun createSampleFileAndReportIt() {
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: started")
                   val instrumentation = InstrumentationRegistry.getInstrumentation()
                   // Tries to report a bundle with additional test output
                   @Suppress("DEPRECATION")
@@ -722,8 +716,12 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                       }
                       ?: throw Exception("Cannot get external storage due to not mounted")
 
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: outputFolder: " + outputFolder.absolutePath)
+
                   val sampleFile = File(outputFolder, "sampleFile_1")
                       .apply { writeText("This is a sample file.") }
+
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: sampleFile created: " + sampleFile.absolutePath)
 
                   // Note that the path used here should be relative to outputFolder, so just the filename.
                   val summary = "[sample file](file://" + sampleFile.name + ")"
@@ -740,6 +738,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
                   InstrumentationRegistry
                       .getInstrumentation()
                       .sendStatus(2, bundle)
+                  Log.i("AdditionalTestOutputExampleTest", "createSampleFileAndReportIt: finished")
               }
           }
           """
@@ -778,30 +777,24 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
     assertThat(deviceInfo).isNotNull()
     assertThat(deviceInfo?.name).isNotEmpty()
 
-    // TODO(b/476442048): Re-enable this check after TestSuiteTestTask configuration cache issue is resolved.
-    if (!runWithBuiltInPlatform) {
-      // Run the task again after clean. This time the task configuration is
-      // restored from the configuration cache. We expect no crashes.
-      executor.run("clean")
+    // Run the task again after clean. This time the task configuration is
+    // restored from the configuration cache. We expect no crashes.
+    executor.run("clean")
 
-      assertThat(project.resolve(testResultXmlPath)).doesNotExist()
-      assertThat(project.resolve(testReportPath)).doesNotExist()
-      assertThat(project.resolve(testResultPbPath)).doesNotExist()
+    assertThat(project.resolve(testResultXmlPath)).doesNotExist()
+    assertThat(project.resolve(testReportPath)).doesNotExist()
+    assertThat(project.resolve(testResultPbPath)).doesNotExist()
 
-      executor.run(testTaskName)
+    executor.run(testTaskName)
 
-      assertThat(project.resolve(testResultXmlPath)).exists()
-      assertThat(project.resolve(testReportPath)).exists()
-      assertThat(project.resolve(testResultPbPath)).exists()
-    }
+    assertThat(project.resolve(testResultXmlPath)).exists()
+    assertThat(project.resolve(testReportPath)).exists()
+    assertThat(project.resolve(testResultPbPath)).exists()
   }
 
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -816,9 +809,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithLogcatWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -835,9 +825,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure { enableDynamicFeature("feature") }
@@ -850,6 +837,7 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
           """
           package com.example.helloworld
 
+          import android.util.Log
           import androidx.test.ext.junit.runners.AndroidJUnit4
           import androidx.test.services.storage.TestStorage
           import org.junit.Test
@@ -914,9 +902,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure {
@@ -940,9 +925,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   @Test
   @Throws(Exception::class)
   fun androidTestWithCodeCoverageWithDynamicFeature() {
-    // TODO(b/476442048): Implement built-in test platform.
-    Assume.assumeFalse(runWithBuiltInPlatform)
-
     selectModule("feature")
 
     rule.build.androidApplication().reconfigure {
@@ -976,7 +958,6 @@ abstract class UtpTestBase(val runWithBuiltInPlatform: Boolean) {
   /** Regression test for b/466374462. */
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
-
     selectModule("test")
 
     // NoClassDefFoundError typically happen when you return too early from work action

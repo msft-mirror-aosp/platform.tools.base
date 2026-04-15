@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreati
 import com.android.build.gradle.internal.tasks.factory.features.DexingTaskCreationActionImpl
 import com.android.build.gradle.internal.utils.getDesugarLibConfig
 import com.android.build.gradle.internal.utils.setDisallowChanges
+import com.android.build.gradle.internal.utils.useUniversalGlobalSyntheticsDex
 import com.android.build.gradle.options.SyncOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.builder.dexing.ClassFileInputs
@@ -69,6 +70,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
   @get:Optional @get:Input abstract val libConfiguration: Property<String>
 
   @get:Input abstract val enableApiModeling: Property<Boolean>
+  @get:Input abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
 
   private lateinit var errorFormatMode: SyncOptions.ErrorFormatMode
 
@@ -90,6 +92,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
         it.errorFormatMode.set(errorFormatMode)
         it.libConfiguration.set(libConfiguration)
         it.enableApiModeling.set(enableApiModeling)
+        it.useNoOpGlobalSyntheticsConsumer.set(useNoOpGlobalSyntheticsConsumer)
         it.outputGlobalSynthetics.set(outputGlobalSynthetics.dir("${index}_${input.name}"))
       }
     }
@@ -105,6 +108,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
     abstract val errorFormatMode: Property<SyncOptions.ErrorFormatMode>
     abstract val libConfiguration: Property<String>
     abstract val enableApiModeling: Property<Boolean>
+    abstract val useNoOpGlobalSyntheticsConsumer: Property<Boolean>
     abstract val outputGlobalSynthetics: DirectoryProperty
   }
 
@@ -125,6 +129,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
               desugarClasspath = ClassFileProviderFactory(classpath).also { closer.register(it) },
               coreLibDesugarConfig = parameters.libConfiguration.orNull,
               enableApiModeling = parameters.enableApiModeling.get(),
+              useNoOpGlobalSyntheticsConsumer = parameters.useNoOpGlobalSyntheticsConsumer.get(),
               messageReceiver =
                 MessageReceiverImpl(
                   errorFormatMode = parameters.errorFormatMode.get(),
@@ -219,6 +224,7 @@ abstract class DexFileDependenciesTask : NonIncrementalTask() {
         task.bootClasspath.from(creationConfig.global.bootClasspath)
       }
       task.enableApiModeling.set(creationConfig.enableApiModeling)
+      task.useNoOpGlobalSyntheticsConsumer.set(creationConfig.useUniversalGlobalSyntheticsDex)
 
       task.classpath.disallowChanges()
       task.bootClasspath.disallowChanges()

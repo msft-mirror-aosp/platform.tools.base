@@ -58,6 +58,7 @@ fun RecipeExecutor.viewModelActivityRecipe(
 
   addDependency("com.android.support:appcompat-v7:${appCompatVersion}.+")
   addDependency("com.android.support.constraint:constraint-layout:+")
+  addDependency("androidx.activity:activity-ktx:+")
   addLifecycleDependencies(useAndroidX)
   addMaterialDependency(useAndroidX)
   if (generateKotlin && useAndroidX) {

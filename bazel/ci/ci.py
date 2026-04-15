@@ -161,6 +161,8 @@ def main():
       ci.run(flake_reruns.studio_linux_flake_reruns)
     case 'studio-win':
       ci.run(studio_win.studio_win)
+    case 'studio-win-canary':
+      ci.run(studio_win.studio_win_canary)
     case 'studio-win-flake-reruns':
       ci.run(flake_reruns.studio_win_flake_reruns)
     case 'studio-mac':
@@ -171,7 +173,9 @@ def main():
       ci.run(studio_nightly.studio_nightly)
     case 'studio-autobot':
       pass  # No-op. To be filled in later.
-    case 'uitools_evals':
+    case 'studio-evals':
+        ci.run(studio_evals.studio_evals)
+    case 'uitools_evals': # deprecated, to be removed
       ci.run(studio_evals.studio_evals)
     case _:
       raise NotImplementedError(f'target: "{args.target}" does not exist')

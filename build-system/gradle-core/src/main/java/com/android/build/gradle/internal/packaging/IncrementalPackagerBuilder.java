@@ -136,10 +136,6 @@ public class IncrementalPackagerBuilder {
     @NonNull private List<SerializableChange> changedArtProfileMetadata = new ArrayList<>();
     @NonNull private List<SerializableChange> changedVersionControlInfo = new ArrayList<>();
 
-    @NonNull
-    private List<SerializableChange> changedPrivacySandboxRuntimeEnabledSdkTable =
-            new ArrayList<>(1);
-
     /** Creates a new builder. */
     public IncrementalPackagerBuilder(@NonNull BuildType buildType) {
         abiFilters = new HashSet<>();
@@ -505,8 +501,7 @@ public class IncrementalPackagerBuilder {
                     changedAppMetadata,
                     changedArtProfile,
                     changedArtProfileMetadata,
-                    changedVersionControlInfo,
-                    changedPrivacySandboxRuntimeEnabledSdkTable);
+                    changedVersionControlInfo);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

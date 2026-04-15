@@ -91,34 +91,38 @@ class AdbActivityManagerServicesImpl(override val session: AdbSession) : AdbActi
    * ## Note
    *
    * Error reporting from 'am' commands has changed over API levels:
-   * * In API 16-25, `exitcode` is always 0, `stdout` is empty and `stderr` contains `am` usage info (multiple lines) followed by an error
-   *   message line starting with `"Error:"`
    * * In API 26-36+, `exitcode` is set to a non-zero value, `stdout` contains the error message (without the `"Error:"` prefix), and
    *   `stderr` is always empty.
-   * * In addition to that, for API 16-23, `adblib` does not have access to `stderr` as a separate stream since there is no support for
-   *   [com.android.adblib.AdbDeviceServices.shellV2]
+   * * In API 24-25, `exitcode` is always 0, `stdout` is empty and `stderr` contains `am` usage info (multiple lines) followed by an error
+   *   message line starting with `"Error:"`
+   * * In API 16-23, `exitcode` is always 0, `adblib` does not have access to `stderr` as a separate stream since there is no support for
+   *   [com.android.adblib.AdbDeviceServices.shellV2], so the error output goes to `stdout`.
    *
    * In summary:
    * ```
-   * |          | API 16-25                        | API 26-36+    |
-   * |----------|----------------------------------|---------------|
-   * | exitcode | 0                                | non zero      |
-   * | stdout   | <empty>                          | error message |
-   * | stderr   | usage followed by error message  | <empty>       |
-   * |          | with "Error:" prefix             |               |
+   * |          | API 16-23                        | API 24-25                    | API 26-36+    |
+   * |----------|----------------------------------|------------------------------|---------------|
+   * | exitcode | 0                                | 0                            | non zero      |
+   * | stdout   | usage followed by error message  | <empty>                      | error message |
+   * |          | with "Error:" prefix             |                              |               |
+   * | stderr   | <empty>                          | usage followed by error      | <empty>       |
+   * |          |                                  | message with "Error:" prefix |               |
    * ```
    *
-   * Example: When executing an unknown as command such as `am foobar`
+   * Example: When executing an unknown am command such as `am foobar`
    *
    * ```
-   * |          | API 16-25                         | API 26-36+                |
-   * |----------|-----------------------------------|---------------------------|
-   * | exitcode | 0                                 | 255                       |
-   * | stdout   | <empty>                           | "Unknown command: foobar" |
-   * | stderr   | "am usage line 1\n"               | <empty>                   |
-   * |          | "..."                             |                           |
-   * |          | "am usage line <x>\n"             |                           |
-   * |          | "Error: unknown command 'foobar'" |                           |
+   * |          | API 16-23                         | API 24-25                         | API 26-36+                |
+   * |----------|-----------------------------------|-----------------------------------|---------------------------|
+   * | exitcode | 0                                 | 0                                 | 255                       |
+   * | stdout   | "am usage line 1\n"               | <empty>                           | "Unknown command: foobar" |
+   * |          | "..."                             |                                   |                           |
+   * |          | "am usage line <x>\n"             |                                   |                           |
+   * |          | "Error: unknown command 'foobar'" |                                   |                           |
+   * | stderr   | <empty>                           | "am usage line 1\n"               | <empty>                   |
+   * |          |                                   | "..."                             |                           |
+   * |          |                                   | "am usage line <x>\n"             |                           |
+   * |          |                                   | "Error: unknown command 'foobar'" |                           |
    * ```
    */
   private suspend fun checkOutputForError(device: DeviceSelector, amCommand: String, result: ByteArrayShellCollector.CommandResult) {

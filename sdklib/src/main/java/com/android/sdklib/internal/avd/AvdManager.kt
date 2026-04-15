@@ -1448,7 +1448,8 @@ private constructor(
     const val USER_SETTINGS_INI: String = "user-settings.ini" // $NON-NLS-1$
 
     private const val BOOT_PROP = "boot.prop"
-    const val ENVIRONMENT_DIR = "environment"
+    @Deprecated("Environment image files should not be copied to AVD directory.") const val ENVIRONMENT_DIR = "environment"
+    const val ENVIRONMENTS_DIR = "environments"
     const val ENVIRONMENT_INI = "environment.ini"
     const val CONFIG_INI: String = "config.ini"
     private const val HARDWARE_QEMU_INI = "hardware-qemu.ini"
@@ -1567,6 +1568,9 @@ private constructor(
      */
     private fun inhibitCopyOnWrite(avdFolder: Path, log: ILogger) {
       if (SdkConstants.CURRENT_PLATFORM != SdkConstants.PLATFORM_LINUX) {
+        return
+      }
+      if (avdFolder.fileSystem != FileSystems.getDefault()) {
         return
       }
       try {

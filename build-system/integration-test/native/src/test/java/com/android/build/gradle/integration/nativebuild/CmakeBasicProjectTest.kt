@@ -55,6 +55,7 @@ import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.cxx.attribution.decodeBuildTaskAttributions
 import com.android.build.gradle.internal.cxx.configure.CMakeVersion
+import com.android.build.gradle.internal.cxx.configure.decodeFingerPrintFileWritten
 import com.android.build.gradle.internal.cxx.configure.shouldConfigure
 import com.android.build.gradle.internal.cxx.hashing.sha256Of
 import com.android.build.gradle.internal.cxx.io.SynchronizeFile.Outcome.CREATED_HARD_LINK_FROM_SOURCE_TO_DESTINATION
@@ -64,6 +65,7 @@ import com.android.build.gradle.internal.cxx.json.AndroidBuildGradleJsons.getNat
 import com.android.build.gradle.internal.cxx.model.compileCommandsJsonBinFile
 import com.android.build.gradle.internal.cxx.model.cxxBuildHashKeyFile
 import com.android.build.gradle.internal.cxx.model.jsonGenerationLoggingRecordFile
+import com.android.build.gradle.internal.cxx.model.lastConfigureFingerPrintFile
 import com.android.build.gradle.internal.cxx.model.miniConfigFile
 import com.android.build.gradle.internal.cxx.model.ndkMinPlatform
 import com.android.build.gradle.internal.cxx.model.ninjaBuildFile
@@ -1208,6 +1210,32 @@ apply plugin: 'com.android.application'
     executorWithLegacyApi().run("configureNinjaDebug[x86_64]")
     assertThat(project.lastConfigureInvalidationState.shouldConfigure).isTrue()
     assertThat(project.totalProcessExecuted).isEqualTo(1)
+  }
+
+  @Test
+  fun `fingerprint file not updated when up-to-date`() {
+    Assume.assumeTrue(mode == Mode.CMake)
+    enableCxxStructuredLogging(project)
+
+    project.executor().run("configureCMakeDebug[armeabi-v7a]")
+    val abi = project.recoverExistingCxxAbiModels(Abi.ARMEABI_V7A)
+    val fingerprintFile = abi.lastConfigureFingerPrintFile
+    Truth.assertThat(fingerprintFile.isFile).isTrue()
+
+    // Positive assertion: Verify that FingerPrintFileWritten WAS logged in the first run
+    val logsBeforeDelete = project.readStructuredLogs(::decodeFingerPrintFileWritten)
+    Truth.assertThat(logsBeforeDelete).isNotEmpty()
+
+    deleteExistingStructuredLogs(project)
+
+    // Force task execution with --rerun-tasks to ensure ExternalNativeJsonGenerator runs
+    project.executor().withArguments(listOf("--rerun-tasks")).run("configureCMakeDebug[armeabi-v7a]")
+
+    project.assertLastConfigureWasNotRebuild()
+
+    // Verify that FingerPrintFileWritten was NOT logged in the second run
+    val logs = project.readStructuredLogs(::decodeFingerPrintFileWritten)
+    Truth.assertThat(logs).isEmpty()
   }
 
   @Test

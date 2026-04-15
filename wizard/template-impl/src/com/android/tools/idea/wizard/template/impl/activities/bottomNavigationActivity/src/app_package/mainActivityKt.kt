@@ -46,8 +46,11 @@ fun mainActivityKt(
 package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import ${getMaterialComponentName("android.support.design.widget.BottomNavigationView", useAndroidX)}
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -62,7 +65,13 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         ${contentViewBlock}
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Kotlin, isViewBindingSupported, id = "main")}) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
         val navView: BottomNavigationView = ${findViewById(
           language = Language.Kotlin,
           isViewBindingSupported = isViewBindingSupported,

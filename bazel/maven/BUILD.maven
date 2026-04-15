@@ -9367,6 +9367,184 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-analysis-common_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-analysis-common/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-analysis-common",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-analysis-common/10.1.0/lucene-analysis-common-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-analysis-common/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-core_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-core",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/apache/lucene/lucene-core/10.1.0/lucene-core-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-facet_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-facet",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-facet/10.1.0/lucene-facet-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queries_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-queries",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-queries/10.1.0/lucene-queries-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queryparser_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-sandbox_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-queryparser",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+        "org.apache.lucene.lucene-queries",
+        "org.apache.lucene.lucene-sandbox",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-sandbox_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-queryparser/10.1.0/lucene-queryparser-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-sandbox_10.1.0",
+    pom = "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/10.1.0",
+    deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-facet_10.1.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.apache.lucene.lucene-sandbox",
+    classifiers = [],
+    jars = [
+        "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.jar"
+    ],
+    exports = [
+        "org.apache.lucene.lucene-core",
+        "org.apache.lucene.lucene-queries",
+        "org.apache.lucene.lucene-facet",
+    ],
+    original_deps = [
+        "org.apache.lucene.lucene-core_10.1.0",
+        "org.apache.lucene.lucene-queries_10.1.0",
+        "org.apache.lucene.lucene-facet_10.1.0",
+    ],
+    pom = "repository/org/apache/lucene/lucene-sandbox/10.1.0/lucene-sandbox-10.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/10.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-aether-provider_3.3.9",
     pom = "repository/org/apache/maven/maven-aether-provider/3.3.9/maven-aether-provider-3.3.9.pom",
     repo_root_path = "repository",
@@ -11350,6 +11528,29 @@ maven_import(
 )
 
 maven_artifact(
+    name = "org.fusesource.jansi.jansi_2.4.3",
+    pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/2.4.3",
+    parent = "org.fusesource.fusesource-pom_1.12",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "org.fusesource.jansi.jansi",
+    classifiers = [],
+    parent = "org.fusesource.fusesource-pom_1.12",
+    jars = [
+        "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.jar"
+    ],
+    original_deps = [],
+    pom = "repository/org/fusesource/jansi/jansi/2.4.3/jansi-2.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/2.4.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.glassfish.jaxb.codemodel_2.3.2",
     pom = "repository/org/glassfish/jaxb/codemodel/2.3.2/codemodel-2.3.2.pom",
     repo_root_path = "repository",
@@ -11530,10 +11731,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_9.5.0-milestone-5",
-    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.pom",
+    name = "org.gradle.gradle-tooling-api_9.4.1",
+    pom = "repository/org/gradle/gradle-tooling-api/9.4.1/gradle-tooling-api-9.4.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-5",
+    repo_path = "org/gradle/gradle-tooling-api/9.4.1",
     deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
@@ -11544,7 +11745,7 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.jar"
+        "repository/org/gradle/gradle-tooling-api/9.4.1/gradle-tooling-api-9.4.1.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
@@ -11552,12 +11753,9 @@ maven_import(
     original_deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-5/gradle-tooling-api-9.5.0-milestone-5.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/9.4.1/gradle-tooling-api-9.4.1.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-5",
-    deps_with_exclusions = [
-        "org.slf4j.slf4j-api",
-     ],
+    repo_path = "org/gradle/gradle-tooling-api/9.4.1",
     visibility = ["//visibility:public"],
 )
 
@@ -15232,11 +15430,6 @@ maven_import(
     pom = "repository/org/slf4j/slf4j-api/2.0.17/slf4j-api-2.0.17.pom",
     repo_root_path = "repository",
     repo_path = "org/slf4j/slf4j-api/2.0.17",
-    exclusions_for_parents = {
-        "org.gradle.gradle-tooling-api": [
-            "org.slf4j.slf4j-simple",
-        ],
-    },
     visibility = ["//visibility:public"],
 )
 
@@ -71179,6 +71372,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.charleskorn.kaml.kaml-jvm_0.61.0",
+    pom = "repository/com/charleskorn/kaml/kaml-jvm/0.61.0/kaml-jvm-0.61.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/charleskorn/kaml/kaml-jvm/0.61.0",
+    deps = [
+        "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.7.1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
+        "com.squareup.okio.okio-jvm_3.9.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.crashlytics.sdk.android.answers_1.3.13",
     pom = "repository/com/crashlytics/sdk/android/answers/1.3.13/answers-1.3.13.pom",
     repo_root_path = "repository",
@@ -71630,6 +71837,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.github.ajalt.colormath.colormath-jvm_3.5.0",
+    pom = "repository/com/github/ajalt/colormath/colormath-jvm/3.5.0/colormath-jvm-3.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/colormath/colormath-jvm/3.5.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.ajalt.mordant.mordant-jvm_2.7.2",
+    pom = "repository/com/github/ajalt/mordant/mordant-jvm/2.7.2/mordant-jvm-2.7.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/ajalt/mordant/mordant-jvm/2.7.2",
+    deps = [
+        "com.github.ajalt.colormath.colormath-jvm_3.5.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.markdown-jvm_0.7.3",
+        "net.java.dev.jna.jna_5.14.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.github.ben-manes.caffeine.caffeine_3.0.5",
     pom = "repository/com/github/ben-manes/caffeine/caffeine/3.0.5/caffeine-3.0.5.pom",
     repo_root_path = "repository",
@@ -71736,6 +71968,36 @@ maven_artifact(
     pom = "repository/com/github/kevinstern/software-and-algorithms/1.0/software-and-algorithms-1.0.pom",
     repo_root_path = "repository",
     repo_path = "com/github/kevinstern/software-and-algorithms/1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.luben.zstd-jni_1.5.5-10",
+    pom = "repository/com/github/luben/zstd-jni/1.5.5-10/zstd-jni-1.5.5-10.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/luben/zstd-jni/1.5.5-10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.plokhotnyuk.jsoniter-scala.jsoniter-scala-core_2.13_2.13.5",
+    pom = "repository/com/github/plokhotnyuk/jsoniter-scala/jsoniter-scala-core_2.13/2.13.5/jsoniter-scala-core_2.13-2.13.5.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/plokhotnyuk/jsoniter-scala/jsoniter-scala-core_2.13/2.13.5",
+    deps = [
+        "org.scala-lang.scala-library_2.13.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.github.plokhotnyuk.jsoniter-scala.jsoniter-scala-core_2.13_2.13.5.2",
+    pom = "repository/com/github/plokhotnyuk/jsoniter-scala/jsoniter-scala-core_2.13/2.13.5.2/jsoniter-scala-core_2.13-2.13.5.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/github/plokhotnyuk/jsoniter-scala/jsoniter-scala-core_2.13/2.13.5.2",
+    deps = [
+        "org.scala-lang.scala-library_2.13.8",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -71865,10 +72127,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.google.ai.edge.litertlm.litertlm-jvm_0.9.0-alpha05",
-    pom = "repository/com/google/ai/edge/litertlm/litertlm-jvm/0.9.0-alpha05/litertlm-jvm-0.9.0-alpha05.pom",
+    name = "com.google.ai.edge.litertlm.litertlm-jvm_0.10.0",
+    pom = "repository/com/google/ai/edge/litertlm/litertlm-jvm/0.10.0/litertlm-jvm-0.10.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/google/ai/edge/litertlm/litertlm-jvm/0.9.0-alpha05",
+    repo_path = "com/google/ai/edge/litertlm/litertlm-jvm/0.10.0",
     deps = [
         "com.google.code.gson.gson_2.13.2",
         "org.jetbrains.kotlin.kotlin-reflect_2.2.21",
@@ -77818,6 +78080,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.protobuf.protoc_4.33.2",
+    pom = "repository/com/google/protobuf/protoc/4.33.2/protoc-4.33.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/protobuf/protoc/4.33.2",
+    parent = "com.google.google_5",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.test.platform.core-proto_0.0.2-dev",
     pom = "repository/com/google/test/platform/core-proto/0.0.2-dev/core-proto-0.0.2-dev.pom",
     repo_root_path = "repository",
@@ -79289,6 +79560,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "commons-codec.commons-codec_1.16.0",
+    pom = "repository/commons-codec/commons-codec/1.16.0/commons-codec-1.16.0.pom",
+    repo_root_path = "repository",
+    repo_path = "commons-codec/commons-codec/1.16.0",
+    parent = "org.apache.commons.commons-parent_58",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-codec.commons-codec_1.17.0",
     pom = "repository/commons-codec/commons-codec/1.17.0/commons-codec-1.17.0.pom",
     repo_root_path = "repository",
@@ -79333,6 +79613,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "commons-io.commons-io_2.11.0",
+    pom = "repository/commons-io/commons-io/2.11.0/commons-io-2.11.0.pom",
+    repo_root_path = "repository",
+    repo_path = "commons-io/commons-io/2.11.0",
+    parent = "org.apache.commons.commons-parent_52",
+    deps = [
+        "org.junit.junit-bom_5.7.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "commons-io.commons-io_2.12.0",
     pom = "repository/commons-io/commons-io/2.12.0/commons-io-2.12.0.pom",
     repo_root_path = "repository",
@@ -79347,6 +79639,15 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "commons-io/commons-io/2.13.0",
     parent = "org.apache.commons.commons-parent_58",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "commons-io.commons-io_2.15.0",
+    pom = "repository/commons-io/commons-io/2.15.0/commons-io-2.15.0.pom",
+    repo_root_path = "repository",
+    repo_path = "commons-io/commons-io/2.15.0",
+    parent = "org.apache.commons.commons-parent_64",
     visibility = ["//visibility:public"],
 )
 
@@ -79516,6 +79817,110 @@ maven_artifact(
     pom = "repository/io/fabric/sdk/android/fabric/1.3.17/fabric-1.3.17.pom",
     repo_root_path = "repository",
     repo_path = "io/fabric/sdk/android/fabric/1.3.17",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.jniutils.windows-jni-utils_0.3.3",
+    pom = "repository/io/get-coursier/jniutils/windows-jni-utils/0.3.3/windows-jni-utils-0.3.3.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/jniutils/windows-jni-utils/0.3.3",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.coursier-cache_2.13_2.1.8",
+    pom = "repository/io/get-coursier/coursier-cache_2.13/2.1.8/coursier-cache_2.13-2.1.8.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/coursier-cache_2.13/2.1.8",
+    deps = [
+        "io.get-coursier.jniutils.windows-jni-utils_0.3.3",
+        "org.codehaus.plexus.plexus-archiver_4.9.0",
+        "org.codehaus.plexus.plexus-container-default_2.1.1",
+        "org.virtuslab.scala-cli.config_2.13_0.2.1",
+        "io.github.alexarchambault.windows-ansi.windows-ansi_0.0.5",
+        "org.scala-lang.scala-library_2.13.6",
+        "io.get-coursier.coursier-util_2.13_2.1.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.coursier-core_2.13_2.1.8",
+    pom = "repository/io/get-coursier/coursier-core_2.13/2.1.8/coursier-core_2.13-2.1.8.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/coursier-core_2.13/2.1.8",
+    deps = [
+        "io.github.alexarchambault.concurrent-reference-hash-map_1.1.0",
+        "org.scala-lang.modules.scala-xml_2.13_2.2.0",
+        "org.scala-lang.scala-library_2.13.6",
+        "io.get-coursier.coursier-util_2.13_2.1.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.coursier-proxy-setup_2.1.8",
+    pom = "repository/io/get-coursier/coursier-proxy-setup/2.1.8/coursier-proxy-setup-2.1.8.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/coursier-proxy-setup/2.1.8",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.coursier-util_2.13_2.1.8",
+    pom = "repository/io/get-coursier/coursier-util_2.13/2.1.8/coursier-util_2.13-2.1.8.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/coursier-util_2.13/2.1.8",
+    deps = [
+        "org.scala-lang.modules.scala-collection-compat_2.13_2.11.0",
+        "org.scala-lang.scala-library_2.13.6",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.coursier_2.13_2.1.8",
+    pom = "repository/io/get-coursier/coursier_2.13/2.1.8/coursier_2.13-2.1.8.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/coursier_2.13/2.1.8",
+    deps = [
+        "com.github.plokhotnyuk.jsoniter-scala.jsoniter-scala-core_2.13_2.13.5",
+        "org.scala-lang.scala-library_2.13.6",
+        "io.get-coursier.coursier-core_2.13_2.1.8",
+        "io.get-coursier.coursier-cache_2.13_2.1.8",
+        "io.get-coursier.coursier-proxy-setup_2.1.8",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.get-coursier.interface_1.0.19",
+    pom = "repository/io/get-coursier/interface/1.0.19/interface-1.0.19.pom",
+    repo_root_path = "repository",
+    repo_path = "io/get-coursier/interface/1.0.19",
+    deps = [
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.github.alexarchambault.windows-ansi.windows-ansi_0.0.5",
+    pom = "repository/io/github/alexarchambault/windows-ansi/windows-ansi/0.0.5/windows-ansi-0.0.5.pom",
+    repo_root_path = "repository",
+    repo_path = "io/github/alexarchambault/windows-ansi/windows-ansi/0.0.5",
+    deps = [
+        "org.fusesource.jansi.jansi_1.18",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "io.github.alexarchambault.concurrent-reference-hash-map_1.1.0",
+    pom = "repository/io/github/alexarchambault/concurrent-reference-hash-map/1.1.0/concurrent-reference-hash-map-1.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "io/github/alexarchambault/concurrent-reference-hash-map/1.1.0",
     visibility = ["//visibility:public"],
 )
 
@@ -81749,6 +82154,19 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "it.krzeminski.snakeyaml-engine-kmp-jvm_3.0.1",
+    pom = "repository/it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1/snakeyaml-engine-kmp-jvm-3.0.1.pom",
+    repo_root_path = "repository",
+    repo_path = "it/krzeminski/snakeyaml-engine-kmp-jvm/3.0.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "com.squareup.okio.okio-jvm_3.9.0",
+        "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "it.unimi.dsi.fastutil_7.2.0",
     pom = "repository/it/unimi/dsi/fastutil/7.2.0/fastutil-7.2.0.pom",
     repo_root_path = "repository",
@@ -81929,6 +82347,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "net.java.dev.jna.jna_5.14.0",
+    pom = "repository/net/java/dev/jna/jna/5.14.0/jna-5.14.0.pom",
+    repo_root_path = "repository",
+    repo_path = "net/java/dev/jna/jna/5.14.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "net.sf.proguard.proguard-base_5.3.3",
     pom = "repository/net/sf/proguard/proguard-base/5.3.3/proguard-base-5.3.3.pom",
     repo_root_path = "repository",
@@ -81966,6 +82392,17 @@ maven_artifact(
     parent = "net.sf.proguard.proguard-parent_6.0.3",
     deps = [
         "net.sf.proguard.proguard-base_6.0.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "net.thauvin.erik.urlencoder.urlencoder-lib-jvm_1.5.0",
+    pom = "repository/net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0/urlencoder-lib-jvm-1.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "net/thauvin/erik/urlencoder/urlencoder-lib-jvm/1.5.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_1.9.23",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82139,6 +82576,18 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/apache/commons/commons-compress/1.24.0",
     parent = "org.apache.commons.commons-parent_61",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.commons.commons-lang3_3.12.0",
+    pom = "repository/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/commons/commons-lang3/3.12.0",
+    parent = "org.apache.commons.commons-parent_52",
+    deps = [
+        "org.junit.junit-bom_5.7.1",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -82492,12 +82941,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-core_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-core/9.12.0/lucene-core-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-core/9.12.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-facet_10.3.0",
     pom = "repository/org/apache/lucene/lucene-facet/10.3.0/lucene-facet-10.3.0.pom",
     repo_root_path = "repository",
     repo_path = "org/apache/lucene/lucene-facet/10.3.0",
     deps = [
         "org.apache.lucene.lucene-core_10.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-facet_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-facet/9.12.0/lucene-facet-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-facet/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82538,6 +83006,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-queries_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-queries/9.12.0/lucene-queries-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queries/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.lucene.lucene-queryparser_10.3.0",
     pom = "repository/org/apache/lucene/lucene-queryparser/10.3.0/lucene-queryparser-10.3.0.pom",
     repo_root_path = "repository",
@@ -82546,6 +83025,19 @@ maven_artifact(
         "org.apache.lucene.lucene-core_10.3.0",
         "org.apache.lucene.lucene-queries_10.3.0",
         "org.apache.lucene.lucene-sandbox_10.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.lucene.lucene-queryparser_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-queryparser/9.12.0/lucene-queryparser-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-queryparser/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+        "org.apache.lucene.lucene-queries_9.12.0",
+        "org.apache.lucene.lucene-sandbox_9.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82564,6 +83056,128 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.lucene.lucene-sandbox_9.12.0",
+    pom = "repository/org/apache/lucene/lucene-sandbox/9.12.0/lucene-sandbox-9.12.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/lucene/lucene-sandbox/9.12.0",
+    deps = [
+        "org.apache.lucene.lucene-core_9.12.0",
+        "org.apache.lucene.lucene-queries_9.12.0",
+        "org.apache.lucene.lucene-facet_9.12.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-api/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-connector-basic_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-connector-basic/1.9.18/maven-resolver-connector-basic-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-connector-basic/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-util_1.9.18",
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-impl_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-impl/1.9.18/maven-resolver-impl-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-impl/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-named-locks_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-util_1.9.18",
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-named-locks_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-named-locks/1.9.18/maven-resolver-named-locks-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-named-locks/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-spi/1.9.18/maven-resolver-spi-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-spi/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-transport-file_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-transport-file/1.9.18/maven-resolver-transport-file-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-transport-file/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-transport-http_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-transport-http/1.9.18/maven-resolver-transport-http-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-transport-http/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-util_1.9.18",
+        "org.apache.httpcomponents.httpclient_4.5.14",
+        "org.apache.httpcomponents.httpcore_4.4.16",
+        "commons-codec.commons-codec_1.16.0",
+        "org.slf4j.jcl-over-slf4j_1.7.36",
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver-util_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver-util/1.9.18",
+    parent = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    deps = [
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-artifact_3.3.9",
     pom = "repository/org/apache/maven/maven-artifact/3.3.9/maven-artifact-3.3.9.pom",
     repo_root_path = "repository",
@@ -82572,6 +83186,19 @@ maven_artifact(
     deps = [
         "org.codehaus.plexus.plexus-utils_3.0.22",
         "org.apache.commons.commons-lang3_3.4",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven-artifact_3.9.6",
+    pom = "repository/org/apache/maven/maven-artifact/3.9.6/maven-artifact-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-artifact/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
+    deps = [
+        "org.codehaus.plexus.plexus-utils_3.5.1",
+        "org.apache.commons.commons-lang3_3.12.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -82586,6 +83213,15 @@ maven_artifact(
         "org.codehaus.plexus.plexus-utils_3.0.22",
         "org.apache.commons.commons-lang3_3.4",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven-builder-support_3.9.6",
+    pom = "repository/org/apache/maven/maven-builder-support/3.9.6/maven-builder-support-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-builder-support/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
     visibility = ["//visibility:public"],
 )
 
@@ -82609,6 +83245,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.maven.maven-model-builder_3.9.6",
+    pom = "repository/org/apache/maven/maven-model-builder/3.9.6/maven-model-builder-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-model-builder/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
+    deps = [
+        "org.codehaus.plexus.plexus-utils_3.5.1",
+        "org.codehaus.plexus.plexus-interpolation_1.26",
+        "javax.inject.javax.inject_1",
+        "org.apache.maven.maven-model_3.9.6",
+        "org.apache.maven.maven-artifact_3.9.6",
+        "org.apache.maven.maven-builder-support_3.9.6",
+        "org.eclipse.sisu.org.eclipse.sisu.inject_0.9.0.M2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-model_3.3.9",
     pom = "repository/org/apache/maven/maven-model/3.3.9/maven-model-3.3.9.pom",
     repo_root_path = "repository",
@@ -82618,6 +83272,59 @@ maven_artifact(
         "org.codehaus.plexus.plexus-utils_3.0.22",
         "org.apache.commons.commons-lang3_3.4",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven-model_3.9.6",
+    pom = "repository/org/apache/maven/maven-model/3.9.6/maven-model-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-model/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
+    deps = [
+        "org.codehaus.plexus.plexus-utils_3.5.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven-repository-metadata_3.9.6",
+    pom = "repository/org/apache/maven/maven-repository-metadata/3.9.6/maven-repository-metadata-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-repository-metadata/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
+    deps = [
+        "org.codehaus.plexus.plexus-utils_3.5.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven-resolver-provider_3.9.6",
+    pom = "repository/org/apache/maven/maven-resolver-provider/3.9.6/maven-resolver-provider-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-resolver-provider/3.9.6",
+    parent = "org.apache.maven.maven_3.9.6",
+    deps = [
+        "org.apache.maven.maven-model_3.9.6",
+        "org.apache.maven.maven-model-builder_3.9.6",
+        "org.apache.maven.maven-repository-metadata_3.9.6",
+        "org.apache.maven.resolver.maven-resolver-api_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-spi_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-util_1.9.18",
+        "org.apache.maven.resolver.maven-resolver-impl_1.9.18",
+        "org.codehaus.plexus.plexus-utils_3.5.1",
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.apache.xbean.xbean-reflect_3.7",
+    pom = "repository/org/apache/xbean/xbean-reflect/3.7/xbean-reflect-3.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/xbean/xbean-reflect/3.7",
+    parent = "org.apache.xbean.xbean_3.7",
     visibility = ["//visibility:public"],
 )
 
@@ -83626,6 +84333,50 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.codehaus.plexus.plexus-archiver_4.9.0",
+    pom = "repository/org/codehaus/plexus/plexus-archiver/4.9.0/plexus-archiver-4.9.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-archiver/4.9.0",
+    parent = "org.codehaus.plexus.plexus_15",
+    deps = [
+        "javax.inject.javax.inject_1",
+        "org.codehaus.plexus.plexus-utils_4.0.0",
+        "org.codehaus.plexus.plexus-io_3.4.1",
+        "commons-io.commons-io_2.15.0",
+        "org.apache.commons.commons-compress_1.24.0",
+        "org.slf4j.slf4j-api_1.7.36",
+        "org.iq80.snappy.snappy_0.4",
+        "org.tukaani.xz_1.9",
+        "com.github.luben.zstd-jni_1.5.5-10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus-classworlds_2.6.0",
+    pom = "repository/org/codehaus/plexus/plexus-classworlds/2.6.0/plexus-classworlds-2.6.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-classworlds/2.6.0",
+    parent = "org.codehaus.plexus.plexus_5.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus-container-default_2.1.1",
+    pom = "repository/org/codehaus/plexus/plexus-container-default/2.1.1/plexus-container-default-2.1.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-container-default/2.1.1",
+    parent = "org.codehaus.plexus.plexus-containers_2.1.1",
+    deps = [
+        "org.codehaus.plexus.plexus-utils_3.1.1",
+        "org.codehaus.plexus.plexus-classworlds_2.6.0",
+        "org.apache.xbean.xbean-reflect_3.7",
+        "junit.junit_4.13.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.codehaus.plexus.plexus-interpolation_1.21",
     pom = "repository/org/codehaus/plexus/plexus-interpolation/1.21/plexus-interpolation-1.21.pom",
     repo_root_path = "repository",
@@ -83635,11 +84386,52 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.codehaus.plexus.plexus-io_3.4.1",
+    pom = "repository/org/codehaus/plexus/plexus-io/3.4.1/plexus-io-3.4.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-io/3.4.1",
+    parent = "org.codehaus.plexus.plexus_10",
+    deps = [
+        "javax.inject.javax.inject_1",
+        "org.codehaus.plexus.plexus-utils_3.5.0",
+        "commons-io.commons-io_2.11.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.codehaus.plexus.plexus-utils_3.0.22",
     pom = "repository/org/codehaus/plexus/plexus-utils/3.0.22/plexus-utils-3.0.22.pom",
     repo_root_path = "repository",
     repo_path = "org/codehaus/plexus/plexus-utils/3.0.22",
     parent = "org.codehaus.plexus.plexus_3.3.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus-utils_3.1.1",
+    pom = "repository/org/codehaus/plexus/plexus-utils/3.1.1/plexus-utils-3.1.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-utils/3.1.1",
+    parent = "org.codehaus.plexus.plexus_4.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus-utils_3.5.0",
+    pom = "repository/org/codehaus/plexus/plexus-utils/3.5.0/plexus-utils-3.5.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-utils/3.5.0",
+    parent = "org.codehaus.plexus.plexus_10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus-utils_4.0.0",
+    pom = "repository/org/codehaus/plexus/plexus-utils/4.0.0/plexus-utils-4.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-utils/4.0.0",
+    parent = "org.codehaus.plexus.plexus_13",
     visibility = ["//visibility:public"],
 )
 
@@ -83712,6 +84504,24 @@ maven_artifact(
     deps = [
         "org.eclipse.lsp4j.org.eclipse.lsp4j.jsonrpc_0.21.1",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.eclipse.sisu.org.eclipse.sisu.inject_0.9.0.M2",
+    pom = "repository/org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M2/org.eclipse.sisu.inject-0.9.0.M2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/sisu/org.eclipse.sisu.inject/0.9.0.M2",
+    parent = "org.eclipse.sisu.sisu-inject_0.9.0.M2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.fusesource.jansi.jansi_1.18",
+    pom = "repository/org/fusesource/jansi/jansi/1.18/jansi-1.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi/1.18",
+    parent = "org.fusesource.jansi.jansi-project_1.18",
     visibility = ["//visibility:public"],
 )
 
@@ -83822,6 +84632,25 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.gradle.plugin-compatibility.org.gradle.plugin-compatibility.gradle.plugin_1.0.0",
+    pom = "repository/org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.0.0/org.gradle.plugin-compatibility.gradle.plugin-1.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/plugin-compatibility/org.gradle.plugin-compatibility.gradle.plugin/1.0.0",
+    deps = [
+        "org.gradle.plugin.compatibility-plugin_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.gradle.plugin.compatibility-plugin_1.0.0",
+    pom = "repository/org/gradle/plugin/compatibility-plugin/1.0.0/compatibility-plugin-1.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/gradle/plugin/compatibility-plugin/1.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.gradle.toolchains.foojay-resolver-convention.org.gradle.toolchains.foojay-resolver-convention.gradle.plugin_1.0.0",
     pom = "repository/org/gradle/toolchains/foojay-resolver-convention/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin/1.0.0/org.gradle.toolchains.foojay-resolver-convention.gradle.plugin-1.0.0.pom",
     repo_root_path = "repository",
@@ -83901,6 +84730,14 @@ maven_artifact(
     deps = [
         "org.hamcrest.hamcrest-core_2.2",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.iq80.snappy.snappy_0.4",
+    pom = "repository/org/iq80/snappy/snappy/0.4/snappy-0.4.pom",
+    repo_root_path = "repository",
+    repo_path = "org/iq80/snappy/snappy/0.4",
     visibility = ["//visibility:public"],
 )
 
@@ -85709,12 +86546,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.4.0-dev-5614/org.jetbrains.kotlin.android.gradle.plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.android.org.jetbrains.kotlin.android.gradle.plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.4.0-dev-8268/org.jetbrains.kotlin.android.gradle.plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/android/org.jetbrains.kotlin.android.gradle.plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -85874,12 +86711,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.4.0-dev-5614/org.jetbrains.kotlin.jvm.gradle.plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.jvm.org.jetbrains.kotlin.jvm.gradle.plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.4.0-dev-8268/org.jetbrains.kotlin.jvm.gradle.plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/jvm/org.jetbrains.kotlin.jvm.gradle.plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -85951,12 +86788,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.4.0-dev-5614/org.jetbrains.kotlin.kapt.gradle.plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kapt.org.jetbrains.kotlin.kapt.gradle.plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.4.0-dev-8268/org.jetbrains.kotlin.kapt.gradle.plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kapt/org.jetbrains.kotlin.kapt.gradle.plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86072,12 +86909,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.4.0-dev-5614/org.jetbrains.kotlin.plugin.compose.gradle.plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.plugin.compose.org.jetbrains.kotlin.plugin.compose.gradle.plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.4.0-dev-8268/org.jetbrains.kotlin.plugin.compose.gradle.plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/plugin/compose/org.jetbrains.kotlin.plugin.compose.gradle.plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86118,10 +86955,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.abi-tools-api_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.4.0-dev-5614/abi-tools-api-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.abi-tools-api_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/abi-tools-api/2.4.0-dev-8268/abi-tools-api-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/abi-tools-api/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -86166,14 +87003,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.4.0-dev-5614/compose-compiler-gradle-plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.compose-compiler-gradle-plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.4.0-dev-8268/compose-compiler-gradle-plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/compose-compiler-gradle-plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -86223,21 +87060,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.4.0-dev-5614/fus-statistics-gradle-plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.4.0-dev-8268/fus-statistics-gradle-plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/fus-statistics-gradle-plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.jvm-abi-gen_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.3.10/jvm-abi-gen-2.3.10.pom",
+    name = "org.jetbrains.kotlin.jvm-abi-gen_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/jvm-abi-gen/2.3.20/jvm-abi-gen-2.3.20.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.3.10",
+    repo_path = "org/jetbrains/kotlin/jvm-abi-gen/2.3.20",
     visibility = ["//visibility:public"],
 )
 
@@ -87019,12 +87856,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.4.0-dev-5614/kotlin-build-statistics-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-statistics_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-statistics/2.4.0-dev-8268/kotlin-build-statistics-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-statistics/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
         "com.google.code.gson.gson_2.11.0",
     ],
     visibility = ["//visibility:public"],
@@ -87119,10 +87956,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-5614/kotlin-build-tools-api-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-8268/kotlin-build-tools-api-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-api/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -87149,12 +87986,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.4.0-dev-5614/kotlin-build-tools-compat-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-compat_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-compat/2.4.0-dev-8268/kotlin-build-tools-compat-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-compat/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87172,13 +88009,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.0-dev-5614/kotlin-build-tools-cri-impl-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.0-dev-8268/kotlin-build-tools-cri-impl-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-cri-impl/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87261,16 +88098,16 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.0-dev-5614/kotlin-build-tools-impl-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-build-tools-impl_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.0-dev-8268/kotlin-build-tools-impl-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-build-tools-impl/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-build-tools-cri-impl_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -87619,15 +88456,16 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.0-dev-5614/kotlin-compiler-embeddable-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.0-dev-8268/kotlin-compiler-embeddable-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-embeddable/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0-dev-8268",
         "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
-        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.4.0-dev-8268",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -87953,14 +88791,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.0-dev-5614/kotlin-compiler-runner-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler-runner/2.4.0-dev-8268/kotlin-compiler-runner-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler-runner/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-daemon-client_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-daemon-client_2.4.0-dev-8268",
         "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
-        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-compiler-embeddable_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88082,6 +88920,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-compiler_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.20/kotlin-compiler-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-compiler/2.3.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.20",
+        "org.jetbrains.kotlin.kotlin-script-runtime_2.3.20",
+        "org.jetbrains.kotlin.kotlin-reflect_1.6.10",
+        "org.jetbrains.kotlinx.kotlinx-coroutines-core-jvm_1.8.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-compiler_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-compiler/2.3.20-RC/kotlin-compiler-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -88158,12 +89010,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.10/kotlin-compose-compiler-plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-compose-compiler-plugin_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.20/kotlin-compose-compiler-plugin-2.3.20.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-compose-compiler-plugin/2.3.20",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88411,12 +89263,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.4.0-dev-5614/kotlin-daemon-client-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-client_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-client/2.4.0-dev-8268/kotlin-daemon-client-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-client/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.1.21",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -88598,10 +89450,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.0-dev-5614/kotlin-daemon-embeddable-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-daemon-embeddable_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.0-dev-8268/kotlin-daemon-embeddable-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-daemon-embeddable/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -88749,12 +89601,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.4.0-dev-5614/kotlin-gradle-plugin-annotations-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.4.0-dev-8268/kotlin-gradle-plugin-annotations-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-annotations/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89073,16 +89925,16 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.4.0-dev-5614/kotlin-gradle-plugin-api-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.4.0-dev-8268/kotlin-gradle-plugin-api-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-api/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-build-tools-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89265,13 +90117,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.4.0-dev-5614/kotlin-gradle-plugin-idea-proto-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.4.0-dev-8268/kotlin-gradle-plugin-idea-proto-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea-proto/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89474,13 +90326,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.4.0-dev-5614/kotlin-gradle-plugin-idea-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.4.0-dev-8268/kotlin-gradle-plugin-idea-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin-idea/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-annotations_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90260,21 +91112,21 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.4.0-dev-5614/kotlin-gradle-plugin-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugin_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugin/2.4.0-dev-8268/kotlin-gradle-plugin-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugin/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-build-statistics_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.abi-tools-api_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.fus-statistics-gradle-plugin_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugin-idea-proto_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-build-statistics_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.abi-tools-api_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-compiler-runner_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90384,10 +91236,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.4.0-dev-5614/kotlin-gradle-plugins-bom-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.4.0-dev-8268/kotlin-gradle-plugins-bom-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-gradle-plugins-bom/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -90612,12 +91464,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.4.0-dev-5614/kotlin-klib-commonizer-api-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-klib-commonizer-api_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.4.0-dev-8268/kotlin-klib-commonizer-api-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-klib-commonizer-api/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -90953,14 +91805,14 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.4.0-dev-5614/kotlin-native-utils-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-native-utils_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-native-utils/2.4.0-dev-8268/kotlin-native-utils-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-native-utils/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-gradle-plugins-bom_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -91748,6 +92600,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.20/kotlin-script-runtime-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.3.20",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-script-runtime_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.3.20-RC/kotlin-script-runtime-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -91756,10 +92616,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.4.0-dev-5614/kotlin-script-runtime-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-script-runtime_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-script-runtime/2.4.0-dev-8268/kotlin-script-runtime-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-script-runtime/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -92767,10 +93627,18 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.3.10",
-    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.10/kotlin-serialization-compiler-plugin-2.3.10.pom",
+    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin-embeddable_2.1.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin-embeddable/2.1.0/kotlin-serialization-compiler-plugin-embeddable-2.1.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.10",
+    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin-embeddable/2.1.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-serialization-compiler-plugin_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.20/kotlin-serialization-compiler-plugin-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-serialization-compiler-plugin/2.3.20",
     visibility = ["//visibility:public"],
 )
 
@@ -93127,6 +93995,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.0.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.0.0/kotlin-stdlib-common-2.0.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.0.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.0.21",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.0.21/kotlin-stdlib-common-2.0.21.pom",
     repo_root_path = "repository",
@@ -93199,10 +94075,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.4.0-dev-5614/kotlin-stdlib-common-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-common_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-common/2.4.0-dev-8268/kotlin-stdlib-common-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-common/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -93647,6 +94523,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.20/kotlin-stdlib-jdk7-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.3.20-RC/kotlin-stdlib-jdk7-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -93658,12 +94545,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0-dev-5614/kotlin-stdlib-jdk7-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0-dev-8268/kotlin-stdlib-jdk7-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk7/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -94137,6 +95024,18 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.20/kotlin-stdlib-jdk8-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.3.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.3.20-RC/kotlin-stdlib-jdk8-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -94149,13 +95048,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0-dev-5614/kotlin-stdlib-jdk8-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib-jdk8_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0-dev-8268/kotlin-stdlib-jdk8-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib-jdk8/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-stdlib-jdk7_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -94939,6 +95838,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.20/kotlin-stdlib-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.3.20",
+    deps = [
+        "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-stdlib_2.3.20-RC",
     pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.3.20-RC/kotlin-stdlib-2.3.20-RC.pom",
     repo_root_path = "repository",
@@ -94950,12 +95860,26 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.4.0-dev-5614/kotlin-stdlib-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-stdlib_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-stdlib/2.4.0-dev-8268/kotlin-stdlib-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-stdlib/2.4.0-dev-8268",
     deps = [
         "org.jetbrains.annotations_13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-test-junit5_2.1.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test-junit5/2.1.0/kotlin-test-junit5-2.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-test-junit5/2.1.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-test_2.1.0",
+        "org.junit.jupiter.junit-jupiter-api_5.10.1",
+        "org.junit.jupiter.junit-jupiter-engine_5.10.1",
+        "org.junit.platform.junit-platform-launcher_1.10.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -95061,6 +95985,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-test/2.0.21",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-test_2.1.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-test/2.1.0/kotlin-test-2.1.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-test/2.1.0",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.1.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -95256,10 +96191,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.4.0-dev-5614/kotlin-tooling-core-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-tooling-core_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-tooling-core/2.4.0-dev-8268/kotlin-tooling-core-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-tooling-core/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -95490,10 +96425,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.4.0-dev-5614/kotlin-util-io-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-io/2.4.0-dev-8268/kotlin-util-io-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-io/2.4.0-dev-8268",
     visibility = ["//visibility:public"],
 )
 
@@ -95558,13 +96493,13 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.4.0-dev-5614/kotlin-util-klib-metadata-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib-metadata_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib-metadata/2.4.0-dev-8268/kotlin-util-klib-metadata-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib-metadata/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-5614",
-        "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-8268",
+        "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -95814,12 +96749,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-5614",
-    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.4.0-dev-5614/kotlin-util-klib-2.4.0-dev-5614.pom",
+    name = "org.jetbrains.kotlin.kotlin-util-klib_2.4.0-dev-8268",
+    pom = "repository/org/jetbrains/kotlin/kotlin-util-klib/2.4.0-dev-8268/kotlin-util-klib-2.4.0-dev-8268.pom",
     repo_root_path = "repository",
-    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.4.0-dev-5614",
+    repo_path = "org/jetbrains/kotlin/kotlin-util-klib/2.4.0-dev-8268",
     deps = [
-        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-5614",
+        "org.jetbrains.kotlin.kotlin-util-io_2.4.0-dev-8268",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97032,6 +97967,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.7.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.7.1/kotlinx-serialization-bom-1.7.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-bom/1.7.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.8.0",
     pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-bom/1.8.0/kotlinx-serialization-bom-1.8.0.pom",
     repo_root_path = "repository",
@@ -97107,6 +98050,19 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib_1.9.22",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.9.22",
         "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.6.3",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlinx.kotlinx-serialization-core-jvm_1.7.1",
+    pom = "repository/org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.1/kotlinx-serialization-core-jvm-1.7.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlinx/kotlinx-serialization-core-jvm/1.7.1",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib-common_2.0.0",
+        "org.jetbrains.kotlinx.kotlinx-serialization-bom_1.7.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97501,6 +98457,17 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.markdown-jvm_0.7.3",
+    pom = "repository/org/jetbrains/markdown-jvm/0.7.3/markdown-jvm-0.7.3.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/markdown-jvm/0.7.3",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.json.json_20080701",
     pom = "repository/org/json/json/20080701/json-20080701.pom",
     repo_root_path = "repository",
@@ -97550,6 +98517,34 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-api_5.10.0",
+    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.10.0/junit-jupiter-api-5.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-api/5.10.0",
+    deps = [
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-api_5.10.1",
+    pom = "repository/org/junit/jupiter/junit-jupiter-api/5.10.1/junit-jupiter-api-5.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-api/5.10.1",
+    deps = [
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.10.1",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.jupiter.junit-jupiter-api_5.7.0",
     pom = "repository/org/junit/jupiter/junit-jupiter-api/5.7.0/junit-jupiter-api-5.7.0.pom",
     repo_root_path = "repository",
@@ -97563,6 +98558,34 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-engine_5.10.0",
+    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.10.0/junit-jupiter-engine-5.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.10.0",
+    deps = [
+        "org.junit.platform.junit-platform-engine_1.10.0",
+        "org.junit.jupiter.junit-jupiter-api_5.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.jupiter.junit-jupiter-engine_5.10.1",
+    pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.10.1/junit-jupiter-engine-5.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/jupiter/junit-jupiter-engine/5.10.1",
+    deps = [
+        "org.junit.platform.junit-platform-engine_1.10.1",
+        "org.junit.jupiter.junit-jupiter-api_5.10.1",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.jupiter.junit-jupiter-engine_5.7.0",
     pom = "repository/org/junit/jupiter/junit-jupiter-engine/5.7.0/junit-jupiter-engine-5.7.0.pom",
     repo_root_path = "repository",
@@ -97571,6 +98594,30 @@ maven_artifact(
         "org.junit.platform.junit-platform-engine_1.7.0",
         "org.junit.jupiter.junit-jupiter-api_5.7.0",
         "org.junit.junit-bom_5.7.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-commons_1.10.0",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.10.0/junit-platform-commons-1.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-commons/1.10.0",
+    deps = [
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-commons_1.10.1",
+    pom = "repository/org/junit/platform/junit-platform-commons/1.10.1/junit-platform-commons-1.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-commons/1.10.1",
+    deps = [
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97606,6 +98653,47 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.platform.junit-platform-console_1.10.0",
+    pom = "repository/org/junit/platform/junit-platform-console/1.10.0/junit-platform-console-1.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-console/1.10.0",
+    deps = [
+        "org.junit.platform.junit-platform-reporting_1.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-engine_1.10.0",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.10.0/junit-platform-engine-1.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-engine/1.10.0",
+    deps = [
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-engine_1.10.1",
+    pom = "repository/org/junit/platform/junit-platform-engine/1.10.1/junit-platform-engine-1.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-engine/1.10.1",
+    deps = [
+        "org.opentest4j.opentest4j_1.3.0",
+        "org.junit.platform.junit-platform-commons_1.10.1",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.platform.junit-platform-engine_1.7.0",
     pom = "repository/org/junit/platform/junit-platform-engine/1.7.0/junit-platform-engine-1.7.0.pom",
     repo_root_path = "repository",
@@ -97632,6 +98720,32 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.junit.platform.junit-platform-launcher_1.10.0",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.10.0/junit-platform-launcher-1.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.10.0",
+    deps = [
+        "org.junit.platform.junit-platform-engine_1.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-launcher_1.10.1",
+    pom = "repository/org/junit/platform/junit-platform-launcher/1.10.1/junit-platform-launcher-1.10.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-launcher/1.10.1",
+    deps = [
+        "org.junit.platform.junit-platform-engine_1.10.1",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.junit.platform.junit-platform-launcher_1.7.0",
     pom = "repository/org/junit/platform/junit-platform-launcher/1.7.0/junit-platform-launcher-1.7.0.pom",
     repo_root_path = "repository",
@@ -97651,6 +98765,19 @@ maven_artifact(
     deps = [
         "org.junit.platform.junit-platform-engine_1.9.2",
         "org.junit.junit-bom_5.9.2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.platform.junit-platform-reporting_1.10.0",
+    pom = "repository/org/junit/platform/junit-platform-reporting/1.10.0/junit-platform-reporting-1.10.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/platform/junit-platform-reporting/1.10.0",
+    deps = [
+        "org.junit.platform.junit-platform-launcher_1.10.0",
+        "org.apiguardian.apiguardian-api_1.1.2",
+        "org.junit.junit-bom_5.10.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -97700,6 +98827,22 @@ maven_artifact(
     pom = "repository/org/junit/junit-bom/5.7.0/junit-bom-5.7.0.pom",
     repo_root_path = "repository",
     repo_path = "org/junit/junit-bom/5.7.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.7.1",
+    pom = "repository/org/junit/junit-bom/5.7.1/junit-bom-5.7.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.7.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.junit.junit-bom_5.7.2",
+    pom = "repository/org/junit/junit-bom/5.7.2/junit-bom-5.7.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/junit/junit-bom/5.7.2",
     visibility = ["//visibility:public"],
 )
 
@@ -98902,6 +100045,72 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.scala-lang.modules.scala-collection-compat_2.13_2.11.0",
+    pom = "repository/org/scala-lang/modules/scala-collection-compat_2.13/2.11.0/scala-collection-compat_2.13-2.11.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/modules/scala-collection-compat_2.13/2.11.0",
+    deps = [
+        "org.scala-lang.scala-library_2.13.11",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.scala-lang.modules.scala-xml_2.13_2.2.0",
+    pom = "repository/org/scala-lang/modules/scala-xml_2.13/2.2.0/scala-xml_2.13-2.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/modules/scala-xml_2.13/2.2.0",
+    deps = [
+        "org.scala-lang.scala-library_2.13.11",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.scala-lang.scala-library_2.13.10",
+    pom = "repository/org/scala-lang/scala-library/2.13.10/scala-library-2.13.10.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/scala-library/2.13.10",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.scala-lang.scala-library_2.13.11",
+    pom = "repository/org/scala-lang/scala-library/2.13.11/scala-library-2.13.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/scala-library/2.13.11",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.scala-lang.scala-library_2.13.6",
+    pom = "repository/org/scala-lang/scala-library/2.13.6/scala-library-2.13.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/scala-library/2.13.6",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.scala-lang.scala-library_2.13.8",
+    pom = "repository/org/scala-lang/scala-library/2.13.8/scala-library-2.13.8.pom",
+    repo_root_path = "repository",
+    repo_path = "org/scala-lang/scala-library/2.13.8",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.slf4j.jcl-over-slf4j_1.7.36",
+    pom = "repository/org/slf4j/jcl-over-slf4j/1.7.36/jcl-over-slf4j-1.7.36.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/jcl-over-slf4j/1.7.36",
+    parent = "org.slf4j.slf4j-parent_1.7.36",
+    deps = [
+        "org.slf4j.slf4j-api_1.7.36",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-api_1.6.2",
     pom = "repository/org/slf4j/slf4j-api/1.6.2/slf4j-api-1.6.2.pom",
     repo_root_path = "repository",
@@ -98991,6 +100200,14 @@ maven_artifact(
     deps = [
         "org.slf4j.slf4j-api_2.0.9",
     ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.snakeyaml.snakeyaml-engine_2.7",
+    pom = "repository/org/snakeyaml/snakeyaml-engine/2.7/snakeyaml-engine-2.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/snakeyaml/snakeyaml-engine/2.7",
     visibility = ["//visibility:public"],
 )
 
@@ -99099,6 +100316,18 @@ maven_artifact(
     pom = "repository/org/tukaani/xz/1.9/xz-1.9.pom",
     repo_root_path = "repository",
     repo_path = "org/tukaani/xz/1.9",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.virtuslab.scala-cli.config_2.13_0.2.1",
+    pom = "repository/org/virtuslab/scala-cli/config_2.13/0.2.1/config_2.13-0.2.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/virtuslab/scala-cli/config_2.13/0.2.1",
+    deps = [
+        "com.github.plokhotnyuk.jsoniter-scala.jsoniter-scala-core_2.13_2.13.5.2",
+        "org.scala-lang.scala-library_2.13.10",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -101588,6 +102817,30 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.geronimo.genesis.genesis-default-flava_2.0",
+    pom = "repository/org/apache/geronimo/genesis/genesis-default-flava/2.0/genesis-default-flava-2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/geronimo/genesis/genesis-default-flava/2.0",
+    parent = "org.apache.geronimo.genesis.genesis_2.0",
+)
+
+maven_artifact(
+    name = "org.apache.geronimo.genesis.genesis-java5-flava_2.0",
+    pom = "repository/org/apache/geronimo/genesis/genesis-java5-flava/2.0/genesis-java5-flava-2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/geronimo/genesis/genesis-java5-flava/2.0",
+    parent = "org.apache.geronimo.genesis.genesis-default-flava_2.0",
+)
+
+maven_artifact(
+    name = "org.apache.geronimo.genesis.genesis_2.0",
+    pom = "repository/org/apache/geronimo/genesis/genesis/2.0/genesis-2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/geronimo/genesis/genesis/2.0",
+    parent = "org.apache.apache_6",
+)
+
+maven_artifact(
     name = "org.apache.httpcomponents.client5.httpclient5-parent_5.3.1",
     pom = "repository/org/apache/httpcomponents/client5/httpclient5-parent/5.3.1/httpclient5-parent-5.3.1.pom",
     repo_root_path = "repository",
@@ -101834,6 +103087,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.maven.resolver.maven-resolver_1.9.18",
+    pom = "repository/org/apache/maven/resolver/maven-resolver/1.9.18/maven-resolver-1.9.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/resolver/maven-resolver/1.9.18",
+    parent = "org.apache.maven.maven-parent_41",
+)
+
+maven_artifact(
     name = "org.apache.maven.maven-parent_27",
     pom = "repository/org/apache/maven/maven-parent/27/maven-parent-27.pom",
     repo_root_path = "repository",
@@ -101850,6 +103111,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.apache.maven.maven-parent_41",
+    pom = "repository/org/apache/maven/maven-parent/41/maven-parent-41.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven-parent/41",
+    parent = "org.apache.apache_31",
+)
+
+maven_artifact(
     name = "org.apache.maven.maven_3.3.9",
     pom = "repository/org/apache/maven/maven/3.3.9/maven-3.3.9.pom",
     repo_root_path = "repository",
@@ -101863,6 +103132,22 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/apache/maven/maven/3.9.1",
     parent = "org.apache.maven.maven-parent_39",
+)
+
+maven_artifact(
+    name = "org.apache.maven.maven_3.9.6",
+    pom = "repository/org/apache/maven/maven/3.9.6/maven-3.9.6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/maven/maven/3.9.6",
+    parent = "org.apache.maven.maven-parent_41",
+)
+
+maven_artifact(
+    name = "org.apache.xbean.xbean_3.7",
+    pom = "repository/org/apache/xbean/xbean/3.7/xbean-3.7.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/xbean/xbean/3.7",
+    parent = "org.apache.geronimo.genesis.genesis-java5-flava_2.0",
 )
 
 maven_artifact(
@@ -101968,6 +103253,13 @@ maven_artifact(
     pom = "repository/org/apache/apache/4/apache-4.pom",
     repo_root_path = "repository",
     repo_path = "org/apache/apache/4",
+)
+
+maven_artifact(
+    name = "org.apache.apache_6",
+    pom = "repository/org/apache/apache/6/apache-6.pom",
+    repo_root_path = "repository",
+    repo_path = "org/apache/apache/6",
 )
 
 maven_artifact(
@@ -102106,10 +103398,32 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.codehaus.plexus.plexus-containers_2.1.1",
+    pom = "repository/org/codehaus/plexus/plexus-containers/2.1.1/plexus-containers-2.1.1.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus-containers/2.1.1",
+    parent = "org.codehaus.plexus.plexus_6.5",
+)
+
+maven_artifact(
     name = "org.codehaus.plexus.plexus_10",
     pom = "repository/org/codehaus/plexus/plexus/10/plexus-10.pom",
     repo_root_path = "repository",
     repo_path = "org/codehaus/plexus/plexus/10",
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus_13",
+    pom = "repository/org/codehaus/plexus/plexus/13/plexus-13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus/13",
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus_15",
+    pom = "repository/org/codehaus/plexus/plexus/15/plexus-15.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus/15",
 )
 
 maven_artifact(
@@ -102129,10 +103443,25 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.codehaus.plexus.plexus_4.0",
+    pom = "repository/org/codehaus/plexus/plexus/4.0/plexus-4.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus/4.0",
+    parent = "org.sonatype.forge.forge-parent_10",
+)
+
+maven_artifact(
     name = "org.codehaus.plexus.plexus_5.1",
     pom = "repository/org/codehaus/plexus/plexus/5.1/plexus-5.1.pom",
     repo_root_path = "repository",
     repo_path = "org/codehaus/plexus/plexus/5.1",
+)
+
+maven_artifact(
+    name = "org.codehaus.plexus.plexus_6.5",
+    pom = "repository/org/codehaus/plexus/plexus/6.5/plexus-6.5.pom",
+    repo_root_path = "repository",
+    repo_path = "org/codehaus/plexus/plexus/6.5",
 )
 
 maven_artifact(
@@ -102197,6 +103526,28 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "org/eclipse/sisu/sisu-inject/0.3.5",
     parent = "org.sonatype.oss.oss-parent_9",
+)
+
+maven_artifact(
+    name = "org.eclipse.sisu.sisu-inject_0.9.0.M2",
+    pom = "repository/org/eclipse/sisu/sisu-inject/0.9.0.M2/sisu-inject-0.9.0.M2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/eclipse/sisu/sisu-inject/0.9.0.M2",
+)
+
+maven_artifact(
+    name = "org.fusesource.jansi.jansi-project_1.18",
+    pom = "repository/org/fusesource/jansi/jansi-project/1.18/jansi-project-1.18.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/jansi/jansi-project/1.18",
+    parent = "org.fusesource.fusesource-pom_1.11",
+)
+
+maven_artifact(
+    name = "org.fusesource.fusesource-pom_1.11",
+    pom = "repository/org/fusesource/fusesource-pom/1.11/fusesource-pom-1.11.pom",
+    repo_root_path = "repository",
+    repo_path = "org/fusesource/fusesource-pom/1.11",
 )
 
 maven_artifact(

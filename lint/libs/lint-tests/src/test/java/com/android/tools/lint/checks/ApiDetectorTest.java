@@ -10020,13 +10020,13 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         getNewAndroidOsBuildStub())
                 .run()
                 .expect(
-                        "src/test/pkg/test.kt:13: Error: The API level (Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_0) appears to be a plain SDK int, so it should be compared with SDK_INT, not SDK_INT, or you should switch the API level to a full SDK constant [WrongSdkInt]\n"
+                        "src/test/pkg/test.kt:13: Error: The API level (Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_0) appears to be a full SDK int (encoding major and minor versions), so it should be compared with SDK_INT_FULL, not SDK_INT [WrongSdkInt]\n"
                             + "    if (SDK_INT > Build.VERSION_CODES_FULL.VANILLA_ICE_CREAM_0) { // ERROR 1\n"
                             + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                            + "src/test/pkg/test.kt:15: Error: The API level (Build.VERSION_CODES.VANILLA_ICE_CREAM) appears to be a full SDK int (encoding major and minor versions), so it should be compared with SDK_INT_FULL, not SDK_INT [WrongSdkInt]\n"
+                            + "src/test/pkg/test.kt:15: Error: The API level (Build.VERSION_CODES.VANILLA_ICE_CREAM) appears to be a plain SDK int, so it should be compared with SDK_INT, not SDK_INT_FULL, or you should switch the API level to a full SDK constant [WrongSdkInt]\n"
                             + "    if (SDK_INT_FULL > Build.VERSION_CODES.VANILLA_ICE_CREAM) { // ERROR 2\n"
                             + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                            + "2 errors, 0 warnings")
+                            + "2 errors")
                 .expectFixDiffs(
                         "Fix for src/test/pkg/test.kt line 13: Switch to `SDK_INT_FULL`:\n"
                             + "@@ -13 +13\n"

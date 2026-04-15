@@ -59,7 +59,6 @@ class ViaBundleDeviceApkOutput(
             deviceSpec.codeName?.let { spec.codename = it }
             deviceSpec.abis.takeIf { it.isNotEmpty() }?.let { spec.addAllSupportedAbis(it) }
             deviceSpec.screenDensity.takeIf { it > 0 }?.let { spec.screenDensity = it }
-            spec.setSdkRuntime(Devices.SdkRuntime.newBuilder().setSupported(deviceSpec.supportsPrivacySandbox).build())
           }
           .build()
       val apkFiles: MutableList<RegularFile> = Lists.newLinkedList()

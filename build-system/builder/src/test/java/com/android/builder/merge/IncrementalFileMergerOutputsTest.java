@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.tools.build.apkzlib.utils.IOExceptionFunction;
+import com.android.zipflinger.Source;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;

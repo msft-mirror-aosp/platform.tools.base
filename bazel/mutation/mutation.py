@@ -48,6 +48,10 @@ ALLOWED_FILE_FORMAT = (".kt", ".java")
 MUTATION_PROTO_FILE = "tools/base/bazel/mutation/proto/mutation.proto"
 MUTATION_PROTO_MESSAGE = "MutationFileMetadata"
 
+# Mutation Error String constants
+MUTATION_ERROR_MESSAGE = "Catch me if you can!"
+MUTATION_LOG_LINE = "Executing mutated code..."
+
 EXCLUDE_FILTERS = [
     exclude_filter.CommentFilter(),
     exclude_filter.AbstractInterfaceFilter(),
@@ -67,7 +71,7 @@ class MutationRegexMatcher:
         (
             "return_exception",
             re.compile(r"(\s*)return "),
-            lambda m: f"{m.group(1)}return if (true) throw RuntimeException(\"Catch me if you can!\") else ",
+            lambda m: f"{m.group(1)}return if (true) {{ println(\"{MUTATION_LOG_LINE}\"); throw RuntimeException(\"{MUTATION_ERROR_MESSAGE}\") }} else ",
             lambda line: False
         ),
 
@@ -76,7 +80,7 @@ class MutationRegexMatcher:
         (
             "val_exception",
             re.compile(r"^([ \t]*)val "),
-            lambda m: f"{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"Catch me if you can!\")\n{m.group(1)}val ",
+            lambda m: f"{m.group(1)}println(\"{MUTATION_LOG_LINE}\")\n{m.group(1)}val __catch_me:Nothing = throw RuntimeException(\"{MUTATION_ERROR_MESSAGE}\")\n{m.group(1)}val ",
             lambda line: bool(re.search(r'\b(class|fun|override)\b|[,(){}]', line))
         ),
     ]
@@ -85,7 +89,7 @@ class MutationRegexMatcher:
         (
             "return_exception",
             re.compile(r"(\s*)return "),
-            lambda m: f"{m.group(1)}if (true) {{ throw new RuntimeException(\"Catch me if you can!\");}} return ",
+            lambda m: f"{m.group(1)}if (true) {{ System.out.println(\"{MUTATION_LOG_LINE}\"); throw new RuntimeException(\"{MUTATION_ERROR_MESSAGE}\");}} return ",
             lambda line: False
         ),
     ]

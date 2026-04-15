@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
     // Exclude tests that rely on `DeployerRunner`.
     // `DeployerRunner` is incompatible with the version of `ddmlib`
     // used in Android Studio and requires legacy `ddmlib`.
-    AdbInstallerTest.class,
     ApplyChangesTest.class,
     BaselineProfileTest.class,
     DeployStrategyTest.class,

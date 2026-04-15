@@ -74,6 +74,7 @@ class TestSuitesTestReportTest {
               it.targets.create("t2") {}
             }
           }
+          files { add("src/first/test.txt", "dummy content") }
           dependencies { implementation("com.google.truth:truth:0.44") }
         }
       }
@@ -123,6 +124,7 @@ class TestSuitesTestReportTest {
               it.targets.create("t2") {}
             }
           }
+          files { add("src/second/test.txt", "dummy content") }
         }
         androidApplication { dependencies { implementation(project(DEFAULT_LIB_PATH)) } }
       }

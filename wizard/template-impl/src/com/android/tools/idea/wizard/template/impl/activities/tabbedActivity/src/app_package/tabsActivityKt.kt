@@ -44,11 +44,14 @@ fun tabsActivityKt(
   return """package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)}
 import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)}
 import ${getMaterialComponentName("android.support.design.widget.TabLayout", useAndroidX)}
 import ${getMaterialComponentName("android.support.v4.view.ViewPager", useAndroidX)}
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import android.view.Menu
 import android.view.MenuItem
 import ${escapeKotlinIdentifier(packageName)}.ui.main.SectionsPagerAdapter
@@ -62,7 +65,13 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         $contentViewBlock
+        ViewCompat.setOnApplyWindowInsetsListener(${findViewById(Language.Kotlin, isViewBindingSupported, id = "main")}) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
         val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
         val viewPager: ViewPager = ${findViewById(
           Language.Kotlin,

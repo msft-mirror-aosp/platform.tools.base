@@ -16,13 +16,4 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.internal.DependenciesExtension
-
-abstract class ApplicationExtensionWrapper : DeclarativeApplicationExtension {
-  var delegate: ApplicationExtension? = null
-
-  override fun dependenciesDcl(action: DependenciesExtension.() -> Unit) {
-    (delegate as? BaseAppModuleExtensionInternal)?.dependenciesDcl(action)
-  }
-}
+abstract class ApplicationExtensionWrapper : DeclarativeApplicationExtension

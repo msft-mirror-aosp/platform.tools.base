@@ -40,7 +40,7 @@ import com.android.adblib.tools.debugging.profiler
 import com.android.adblib.tools.debugging.properties
 import com.android.adblib.tools.debugging.propertiesFlow
 import com.android.adblib.tools.debugging.proxyStatus
-import com.android.adblib.tools.debugging.sendDdmsExit
+import com.android.adblib.tools.debugging.sendVmExit
 import com.android.adblib.tools.debugging.toByteArray
 import com.android.adblib.tools.debugging.toByteBuffer
 import com.android.adblib.tools.debugging.viewHierarchy
@@ -160,7 +160,6 @@ internal class AdblibClientWrapper(private val trackerHost: ProcessTrackerHost, 
     }
     clientWrapper.clientData.vmIdentifier = newProperties.vmIdentifier.getOrNull()
     clientWrapper.clientData.abi = newProperties.instructionSetDescription.getOrNull()
-    clientWrapper.clientData.jvmFlags = newProperties.jvmFlags.getOrNull()
     clientWrapper.clientData.isNativeDebuggable = newProperties.isNativeDebuggable.getOrDefault(false)
     newProperties.features.alsoIfValue { clientWrapper.addFeatures(it) }
 
@@ -213,8 +212,8 @@ internal class AdblibClientWrapper(private val trackerHost: ProcessTrackerHost, 
   }
 
   override fun kill() {
-    // Sends a DDMS EXIT packet to the VM
-    runBlockingLegacy { jdwpProcess.sendDdmsExit(1) }
+    // Sends a VM_EXIT packet to the VM
+    runBlockingLegacy { jdwpProcess.sendVmExit(1) }
   }
 
   /**
@@ -372,13 +371,6 @@ internal class AdblibClientWrapper(private val trackerHost: ProcessTrackerHost, 
           // only because the ddmlib API requires it.
           data.toByteArray(length)
         }
-
-      // Work with legacy global handler.
-      @Suppress("DEPRECATION") val handler = ClientData.getAllocationTrackingHandler()
-      if (handler != null) {
-        logger.debug { "requestAllocationDetails: Allocation data is ${allocationData.size} bytes" }
-        handler.onSuccess(allocationData, this@AdblibClientWrapper)
-      }
 
       //
       // Set allocation data, call listeners, then clear allocation data

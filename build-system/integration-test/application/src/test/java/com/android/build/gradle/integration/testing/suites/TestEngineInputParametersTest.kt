@@ -80,6 +80,7 @@ class TestEngineInputParametersTest {
               it.targets.create("t1") {}
             }
           }
+          files { add("src/first/test.txt", "dummy content") }
           this.dependencies { implementation("com.google.truth:truth:0.44") }
           pluginCallbacks += TestingInputProperties::class.java
         }

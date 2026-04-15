@@ -40,7 +40,7 @@ class BakingViewModel : ViewModel() {
     _uiState.asStateFlow()
 
   private val generativeModel = Firebase.ai.generativeModel(
-    modelName = "gemini-2.5-flash",
+    modelName = "gemini-flash-latest",
   )
 
   fun sendPrompt(bitmap: Bitmap, prompt: String) {

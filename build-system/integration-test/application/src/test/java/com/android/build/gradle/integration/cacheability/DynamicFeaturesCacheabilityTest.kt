@@ -75,7 +75,10 @@ class DynamicFeaturesCacheabilityTest {
               ":app:javaPreCompileDebug",
               ":app:lintAnalyzeDebug",
               ":app:mergeDebugResources",
-              ":app:mergeDexDebug",
+              ":app:generateDebugGlobalSynthetics",
+              ":app:mergeExtDexDebug",
+              ":app:mergeLibDexDebug",
+              ":app:mergeProjectDexDebug",
               ":app:packageDebugResources",
               ":app:parseDebugLocalResources",
               ":app:processDebugMainManifest",
@@ -94,6 +97,7 @@ class DynamicFeaturesCacheabilityTest {
               ":feature1:generateDebugRFile",
               ":feature1:javaPreCompileDebug",
               ":feature1:lintAnalyzeDebug",
+              ":feature1:generateDebugGlobalSynthetics",
               ":feature1:mergeDebugResources",
               ":feature1:mergeExtDexDebug",
               ":feature1:mergeLibDexDebug",
@@ -117,6 +121,7 @@ class DynamicFeaturesCacheabilityTest {
               ":feature2:generateDebugRFile",
               ":feature2:javaPreCompileDebug",
               ":feature2:lintAnalyzeDebug",
+              ":feature2:generateDebugGlobalSynthetics",
               ":feature2:mergeDebugResources",
               ":feature2:mergeExtDexDebug",
               ":feature2:mergeLibDexDebug",
@@ -257,6 +262,7 @@ class DynamicFeaturesCacheabilityTest {
         project.getSubproject("app").buildFile,
         """
         android {
+            defaultConfig.minSdkVersion = 21
             testOptions { unitTests { includeAndroidResources = true } }
             buildFeatures { resValues = true }
         }
@@ -267,6 +273,7 @@ class DynamicFeaturesCacheabilityTest {
         project.getSubproject("feature1").buildFile,
         """
         android {
+            defaultConfig.minSdkVersion = 21
             buildFeatures { resValues = true }
         }
         """
@@ -276,6 +283,7 @@ class DynamicFeaturesCacheabilityTest {
         project.getSubproject("feature2").buildFile,
         """
         android {
+            defaultConfig.minSdkVersion = 21
             buildFeatures { resValues = true }
         }
         """

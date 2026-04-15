@@ -267,11 +267,63 @@ jboolean JNICALL SendObjectCountNative(JNIEnv* env, jclass j_class,
   return JNI_TRUE;
 }
 
+void JNICALL SendErrorNative(JNIEnv* env, jclass j_class, jint error_code) {
+  if (!Agent::Instance().IsConnectedToDaemon()) {
+    Log::V(Log::Tag::PROFILER, "Agent not connected to daemon.");
+    return;
+  }
+
+  Event event;
+  event.set_pid(getpid());
+  event.set_timestamp(SteadyClock().GetCurrentTime());
+  event.set_kind(Event::LEAKCANARY_DEVICE_ERROR);
+  event.mutable_leakcanary_device_error()->set_error_type(
+      static_cast<profiler::proto::LeakCanaryDeviceError::ErrorType>(
+          error_code));
+
+  SendEventRequest request;
+  *request.mutable_event() = event;
+  Agent::Instance().SubmitAgentTasks(
+      {[request](AgentService::Stub& stub, ClientContext& context) mutable {
+        profiler::proto::EmptyResponse response;
+        grpc::Status status = stub.SendEvent(&context, request, &response);
+
+        if (!status.ok()) {
+          Log::E(Log::Tag::PROFILER,
+                 "Failed to send LeakCanary error event. Error: %s",
+                 status.error_message().c_str());
+        }
+        return status;
+      }});
+}
+
+void RegisterLeakCanaryNatives(JNIEnv* jni_env) {
+  jclass manager_class = jni_env->FindClass(
+      "com/android/tools/profiler/support/profilers/LeakCanaryManager");
+  if (manager_class == nullptr) {
+    Log::V(Log::Tag::PROFILER,
+           "LeakCanaryManager class not found during initialization.");
+    jni_env->ExceptionClear();
+    return;
+  }
+
+  static const JNINativeMethod methods[] = {
+      {"sendObjectCountNative", "(I)Z", (void*)SendObjectCountNative},
+      {"sendErrorNative", "(I)V", (void*)SendErrorNative}};
+
+  jint result = jni_env->RegisterNatives(manager_class, methods, 2);
+  if (result != JNI_OK) {
+    Log::E(Log::Tag::PROFILER, "Failed to register LeakCanary native methods.");
+    jni_env->ExceptionClear();
+  }
+}
+
 void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
                         const AgentConfig& agent_config) {
   Log::V(Log::Tag::PROFILER, "Initializing profiler on agent.");
   JNIEnv* jni_env = GetThreadLocalJNI(vm);
   Agent::Instance().InitializeProfilers();
+  RegisterLeakCanaryNatives(jni_env);
   // MemoryTrackingEnv needs to wait for the MemoryComponent in the agent,
   // which blocks until the Daemon is connected, hence we delay initializing
   // it in the callback below.
@@ -419,6 +471,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
 
   Agent::Instance().RegisterCommandHandler(
       Command::SIGNAL_HEAP_DUMP_COMPLETE, [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling SIGNAL_HEAP_DUMP_COMPLETE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -453,6 +507,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::SET_STUDIO_LEAKCANARY_MODE,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling SET_STUDIO_LEAKCANARY_MODE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -468,16 +524,6 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
           return;
         }
         ScopedLocalRef<jclass> manager_class_ref(jni_env, manager_class);
-
-        static const JNINativeMethod methods[] = {
-            {"sendObjectCountNative", "(I)Z", (void*)SendObjectCountNative}};
-
-        jint result = jni_env->RegisterNatives(manager_class, methods, 1);
-        if (result != JNI_OK) {
-          Log::E(Log::Tag::PROFILER,
-                 "Failed to register LeakCanary native methods.");
-          jni_env->ExceptionClear();
-        }
 
         jmethodID method = jni_env->GetStaticMethodID(
             manager_class, "startListeningForRetainedObjects", "(I)V");
@@ -495,6 +541,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::STOP_LEAKCANARY_OBJECT_COUNT_TRACKING,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling STOP_LEAKCANARY_OBJECT_COUNT_TRACKING command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,
@@ -527,6 +575,8 @@ void InitializeProfiler(JavaVM* vm, jvmtiEnv* jvmti_env,
   Agent::Instance().RegisterCommandHandler(
       Command::FORCE_DUMP_LEAKCANARY_ON_DEVICE,
       [vm](const Command* command) -> void {
+        Log::V(Log::Tag::PROFILER,
+               "Handling FORCE_DUMP_LEAKCANARY_ON_DEVICE command.");
         JNIEnv* jni_env = GetThreadLocalJNI(vm);
         if (jni_env == nullptr) {
           Log::E(Log::Tag::PROFILER,

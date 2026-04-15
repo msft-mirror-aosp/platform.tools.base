@@ -45,6 +45,7 @@ package ${escapeKotlinIdentifier(packageName)}
 
 import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -63,6 +64,7 @@ ${renderIf(isViewBindingSupported) {"""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         $contentViewBlock
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         val mapFragment = supportFragmentManager

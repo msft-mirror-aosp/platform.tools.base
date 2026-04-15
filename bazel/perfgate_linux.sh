@@ -26,6 +26,7 @@ fi
 
 if [[ -n "${BUILD_NUMBER}" ]]; then
   echo "common --credential_helper=*.pkg.dev=%workspace%/build/bazel/tools/ci_credhelper.py" > ci.bazelrc
+  echo "common --credential_helper=*.googleapis.com=%workspace%/build/bazel/tools/ci_credhelper.py" >> ci.bazelrc
 fi
 
 build_tag_filters=-no_linux
@@ -46,7 +47,6 @@ readonly invocation_id="$(uuidgen)"
   --build_metadata=ANDROID_TEST_INVESTIGATE="http://ab/tests/bazel/${invocation_id}" \
   --invocation_id=${invocation_id} \
   --build_tag_filters=${build_tag_filters} \
-  --define=meta_android_build_number=${build_number} \
   --build_event_binary_file="${dist_dir:-/tmp}/bazel-${build_number}.bes" \
   --test_tag_filters=${test_tag_filters} \
   --tool_tag=${script_name} \

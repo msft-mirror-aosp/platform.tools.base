@@ -121,11 +121,13 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
             ),
         SKIPPED to
           setOf(
+            ":app:compileDebugKotlin",
             ":app:mergeDebugNativeDebugMetadata",
             ":app:mergeDebugNativeLibs",
             ":app:processDebugJavaRes",
             ":app:stripDebugDebugSymbols",
             ":lib:compileDebugJavaWithJavac",
+            ":lib:compileDebugKotlin",
             ":lib:mergeDebugNativeLibs",
             ":lib:processDebugJavaRes",
             ":lib:stripDebugDebugSymbols",
@@ -134,11 +136,7 @@ class IncrementalBuildWithOnlyEmptySrcDirsTaskStatesTest {
   }
 
   @get:Rule
-  var project =
-    EmptyActivityProjectBuilder()
-      .addAndroidLibrary(subprojectName = "lib", addImplementationDependencyFromApp = true)
-      .disableBuiltInKotlin()
-      .build()
+  var project = EmptyActivityProjectBuilder().addAndroidLibrary(subprojectName = "lib", addImplementationDependencyFromApp = true).build()
 
   @Before
   fun setUp() {
