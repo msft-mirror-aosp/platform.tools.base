@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.tasks
 
 import com.android.SdkConstants
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
-import com.android.build.gradle.internal.instrumentation.ASM_API_VERSION
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.buildanalyzer.common.TaskCategory
@@ -30,8 +29,6 @@ import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassVisitor
-import org.objectweb.asm.MethodVisitor
 
 /**
  * Task to discover tests in the compiled classes of an instrumentation test variant. It produces a test-list.txt file in the output
@@ -82,45 +79,6 @@ abstract class AndroidTestDiscoveryTask : NewIncrementalTask() {
     reader.accept(visitor, ClassReader.SKIP_CODE or ClassReader.SKIP_DEBUG or ClassReader.SKIP_FRAMES)
     if (visitor.isTestClass) {
       discoveredTests.add(reader.className.replace('/', '.'))
-    }
-  }
-
-  private class TestDiscoveryClassVisitor : ClassVisitor(ASM_API_VERSION) {
-    var isTestClass = false
-      private set
-
-    private var className: String? = null
-
-    override fun visit(version: Int, access: Int, name: String?, signature: String?, superName: String?, interfaces: Array<out String>?) {
-      className = name
-      if (superName == "junit/framework/TestCase" || superName == "android/test/AndroidTestCase") {
-        isTestClass = true
-      }
-      super.visit(version, access, name, signature, superName, interfaces)
-    }
-
-    override fun visitAnnotation(descriptor: String?, visible: Boolean): org.objectweb.asm.AnnotationVisitor? {
-      if (descriptor == "Lorg/junit/runner/RunWith;") {
-        isTestClass = true
-      }
-      return super.visitAnnotation(descriptor, visible)
-    }
-
-    override fun visitMethod(
-      access: Int,
-      name: String?,
-      descriptor: String?,
-      signature: String?,
-      exceptions: Array<out String>?,
-    ): MethodVisitor? {
-      return object : MethodVisitor(ASM_API_VERSION) {
-        override fun visitAnnotation(desc: String?, visible: Boolean): org.objectweb.asm.AnnotationVisitor? {
-          if (desc == "Lorg/junit/Test;") {
-            isTestClass = true
-          }
-          return super.visitAnnotation(desc, visible)
-        }
-      }
     }
   }
 
