@@ -1055,8 +1055,9 @@ _CLASS_JARS = [
     "io.ktor:ktor-client-okhttp-jvm:2.3.2",
     "io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.2",
     "io.ktor:ktor-server-cio-jvm:3.1.3",
-    "io.ktor:ktor-server-sse-jvm:3.3.2",
-    "io.ktor:ktor-server-websockets-jvm:3.3.2",
+    "io.ktor:ktor-server-content-negotiation-jvm:3.3.2",  # MCP SDK
+    "io.ktor:ktor-server-sse-jvm:3.3.2",  # MCP SDK
+    "io.ktor:ktor-server-websockets-jvm:3.3.2",  # MCP SDK
     "io.opentracing:opentracing-impl:0.13.0",
     "it.krzeminski:snakeyaml-engine-kmp-jvm:3.0.1",
     "jakarta.inject:jakarta.inject-api:2.0.1",
@@ -1417,7 +1418,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin.plugin.compose:org.jetbrains.kotlin.plugin.compose.gradle.plugin:pom:2.4.0-dev-8268",
     "org.jetbrains.kotlin.plugin.parcelize:org.jetbrains.kotlin.plugin.parcelize.gradle.plugin:pom:2.3.20-RC",  # Used by com.android.tools.idea.benchmarks.tests.JetNewsBenchmarkTest
     "org.jetbrains.kotlinx:atomicfu:0.21.0",
-    "org.jetbrains.kotlinx:atomicfu:0.29.0",
+    "org.jetbrains.kotlinx:atomicfu:0.29.0",  # MCP SDK
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.1",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.6",
     "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1",
