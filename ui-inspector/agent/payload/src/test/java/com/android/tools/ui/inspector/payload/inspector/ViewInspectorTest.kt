@@ -21,6 +21,11 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorExecutors
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Event
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloCommand
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.TriggerEventCommand
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import org.junit.Test
@@ -61,10 +66,12 @@ class ViewInspectorTest {
         }
       }
 
-    inspector.onReceiveCommand("hello".toByteArray(), callback)
+    val command = Command.newBuilder().setHelloCommand(HelloCommand.getDefaultInstance()).build()
+    inspector.onReceiveCommand(command.toByteArray(), callback)
 
     assertThat(replyData).isNotNull()
-    assertThat(String(replyData!!)).isEqualTo("world")
+    val response = Response.parseFrom(replyData!!)
+    assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.HELLO_RESPONSE)
   }
 
   @Test
@@ -89,10 +96,15 @@ class ViewInspectorTest {
         }
       }
 
-    inspector.onReceiveCommand("unknown".toByteArray(), callback)
-
-    assertThat(replyData).isNotNull()
-    assertThat(String(replyData!!)).isEqualTo("unknown command")
+    val command = Command.getDefaultInstance()
+    var exceptionThrown = false
+    try {
+      inspector.onReceiveCommand(command.toByteArray(), callback)
+    } catch (e: IllegalStateException) {
+      exceptionThrown = true
+      assertThat(e.message).contains("Unknown command")
+    }
+    assertThat(exceptionThrown).isTrue()
   }
 
   @Test
@@ -118,11 +130,16 @@ class ViewInspectorTest {
         }
       }
 
-    inspector.onReceiveCommand("trigger_event".toByteArray(), callback)
+    val command = Command.newBuilder().setTriggerEventCommand(TriggerEventCommand.getDefaultInstance()).build()
+    inspector.onReceiveCommand(command.toByteArray(), callback)
 
     assertThat(replyData).isNotNull()
-    assertThat(String(replyData!!)).isEqualTo("event triggered")
+    val response = Response.parseFrom(replyData!!)
+    assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.TRIGGER_EVENT_RESPONSE)
+
     assertThat(capturedEvent).isNotNull()
-    assertThat(String(capturedEvent!!)).isEqualTo("hello event")
+    val event = Event.parseFrom(capturedEvent!!)
+    assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.HELLO_EVENT)
+    assertThat(event.helloEvent.message).isEqualTo("hello event")
   }
 }

@@ -20,6 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -62,10 +63,12 @@ class DumpUiCommand : Callable<Int> {
         CommandSender("localhost", port.toInt()).use { sender ->
 
           // Send "hello" command to verify communication
-          val response = sender.sendMessage("hello")
+          val command =
+            ViewInspectorProtocol.Command.newBuilder().setHelloCommand(ViewInspectorProtocol.HelloCommand.getDefaultInstance()).build()
+          val response = sender.sendMessage(command)
 
-          System.out.println("Sent: hello")
-          System.out.println("Received: $response")
+          System.out.println("Sent: hello command")
+          System.out.println("Received: ${response.helloResponse}")
         }
       }
       return EXIT_OK
