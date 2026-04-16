@@ -99,39 +99,97 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
     util.runAndroidTestWithNoTestClasses()
   }
 
-  @Test fun androidTestWithCodeCoverage() = util.androidTestWithCodeCoverage()
+  @Test
+  fun androidTestWithCodeCoverage() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithCodeCoverage()
+  }
 
-  @Test fun androidTestWithTestFailures() = util.androidTestWithTestFailures()
+  @Test
+  fun androidTestWithTestFailures() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithTestFailures()
+  }
 
   @Test fun androidTest() = util.androidTest()
 
-  @Test fun androidTestWithOrchestrator() = util.androidTestWithOrchestrator()
-
-  @Test fun androidTestWithOrchestratorAndCodeCoverage() = util.androidTestWithOrchestratorAndCodeCoverage()
-
-  @Test fun connectedAndroidTestWithLogcat() = util.connectedAndroidTestWithLogcat()
-
-  @Test fun connectedAndroidTestFromTestOnlyModule() = util.connectedAndroidTestFromTestOnlyModule()
-
-  @Test fun additionalTestOutputWithTestStorageService() = util.additionalTestOutputWithTestStorageService()
-
-  @Test fun additionalTestOutputWithoutTestStorageService() = util.additionalTestOutputWithoutTestStorageService()
-
-  @Test fun additionalTestOutputWithBenchmarkFiles() = util.additionalTestOutputWithBenchmarkFiles()
-
-  @Test fun additionalTestOutputWithBenchmarkV3Files() = util.additionalTestOutputWithBenchmarkV3Files()
-
-  @Test fun androidTestWithDynamicFeature() = util.androidTestWithDynamicFeature()
-
-  @Test fun androidTestWithOrchestratorWithDynamicFeature() = util.androidTestWithOrchestratorWithDynamicFeature()
-
-  @Test fun connectedAndroidTestWithLogcatWithDynamicFeature() = util.connectedAndroidTestWithLogcatWithDynamicFeature()
+  @Test
+  fun androidTestWithOrchestrator() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithOrchestrator()
+  }
 
   @Test
-  fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() =
-    util.connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature()
+  fun androidTestWithOrchestratorAndCodeCoverage() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithOrchestratorAndCodeCoverage()
+  }
 
-  @Test fun androidTestWithForceCompilation() = util.androidTestWithForceCompilation()
+  @Test
+  fun connectedAndroidTestWithLogcat() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.connectedAndroidTestWithLogcat()
+  }
+
+  @Test
+  fun connectedAndroidTestFromTestOnlyModule() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.connectedAndroidTestFromTestOnlyModule()
+  }
+
+  @Test
+  fun additionalTestOutputWithTestStorageService() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.additionalTestOutputWithTestStorageService()
+  }
+
+  @Test
+  fun additionalTestOutputWithoutTestStorageService() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.additionalTestOutputWithoutTestStorageService()
+  }
+
+  @Test
+  fun additionalTestOutputWithBenchmarkFiles() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.additionalTestOutputWithBenchmarkFiles()
+  }
+
+  @Test
+  fun additionalTestOutputWithBenchmarkV3Files() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.additionalTestOutputWithBenchmarkV3Files()
+  }
+
+  @Test
+  fun androidTestWithDynamicFeature() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithDynamicFeature()
+  }
+
+  @Test
+  fun androidTestWithOrchestratorWithDynamicFeature() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithOrchestratorWithDynamicFeature()
+  }
+
+  @Test
+  fun connectedAndroidTestWithLogcatWithDynamicFeature() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.connectedAndroidTestWithLogcatWithDynamicFeature()
+  }
+
+  @Test
+  fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature()
+  }
+
+  @Test
+  fun androidTestWithForceCompilation() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.androidTestWithForceCompilation()
+  }
 
   @Ignore("b/261739458")
   @Test
@@ -139,5 +197,9 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Ignore("b/261739458") @Test fun androidTestWithCodeCoverageWithDynamicFeature() = util.androidTestWithCodeCoverageWithDynamicFeature()
 
-  @Test fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() = util.connectedAndroidTestDoesNotOutputNoClassDefFoundError()
+  @Test
+  fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
+    assumeFalse(runWithBuiltInPlatform)
+    util.connectedAndroidTestDoesNotOutputNoClassDefFoundError()
+  }
 }

@@ -182,6 +182,7 @@ import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ShaderCompile
 import com.android.build.gradle.tasks.SimplifiedMergedManifestsProducerTask
 import com.android.build.gradle.tasks.TestResultsCollectionTask
+import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.build.gradle.tasks.TransformClassesWithAsmTask
 import com.android.build.gradle.tasks.VerifyLibraryResourcesTask
 import com.android.buildanalyzer.common.TaskCategoryIssue
@@ -1102,18 +1103,33 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
       val managedDeviceTestTask =
         when {
           managedDevice is ManagedVirtualDevice ->
-            taskFactory.register(
-              ManagedDeviceInstrumentationTestTask.CreationAction(
-                creationConfig,
-                managedDevice,
-                testData,
-                deviceResults,
-                deviceReports,
-                deviceAdditionalOutputs,
-                deviceCoverage,
-                testTaskSuffix,
+            if (creationConfig.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+              taskFactory.register(
+                TestSuiteTestTask.ManagedDeviceTestSuiteCreationAction(
+                  creationConfig,
+                  managedDevice,
+                  testData,
+                  deviceResults,
+                  deviceReports,
+                  deviceAdditionalOutputs,
+                  deviceCoverage,
+                  testTaskSuffix,
+                )
               )
-            )
+            } else {
+              taskFactory.register(
+                ManagedDeviceInstrumentationTestTask.CreationAction(
+                  creationConfig,
+                  managedDevice,
+                  testData,
+                  deviceResults,
+                  deviceReports,
+                  deviceAdditionalOutputs,
+                  deviceCoverage,
+                  testTaskSuffix,
+                )
+              )
+            }
           registration != null -> {
             val setupResult: Provider<Directory>? =
               if (registration.hasSetupActions) {
