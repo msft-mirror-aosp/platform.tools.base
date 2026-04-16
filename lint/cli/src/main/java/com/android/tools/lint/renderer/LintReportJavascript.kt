@@ -192,10 +192,14 @@ const LintReportApp = {
             if (isExpanded) {
                 const codeSnippet = issue.sourceContext ? `<pre class="errorlines">${'$'}{issue.sourceContext}</pre>` : (issue.errorLine1 ? `<pre class="errorlines">${'$'}{this.escapeHTML(issue.errorLine1)}\n${'$'}{this.escapeHTML(issue.errorLine2 || '')}</pre>` : '');
                 const autoFixedMsg = issue.wasAutoFixed ? '<div class="mt-4 text-green-600 font-medium">This issue was automatically fixed.</div>' : '';
+                const urlsHtml = (issue.urls && issue.urls.length > 0)
+                    ? `<br><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul>`
+                    : '';
 
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{(parentId)}"><td colspan="6"><div class="explanation-content">
                     <strong>Summary:</strong> ${'$'}{issue.summary}<br><br>
                     <strong>Explanation:</strong><br>${'$'}{issue.explanation.replace(/\n/g, '<br>')}
+                    ${'$'}{urlsHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{codeSnippet}
                 </div></td></tr>`);

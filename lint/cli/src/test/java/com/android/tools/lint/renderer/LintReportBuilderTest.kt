@@ -278,6 +278,32 @@ class LintReportBuilderTest {
     assertEquals("Test message 10", report.issues[9].message)
   }
 
+  @Test
+  fun testIssueUrls() {
+    val client = createMockClient()
+    val rootProjectDir = File("/path/to/project")
+    val builder = LintReportBuilder(client, "Test Report", rootProjectDir, "1.0") { null }
+
+    val issue = mock(Issue::class.java)
+    `when`(issue.id).thenReturn("TestIssue")
+    `when`(issue.category).thenReturn(Category.CORRECTNESS)
+    `when`(issue.moreInfo).thenReturn(listOf("https://example.com/info1", "https://example.com/info2"))
+
+    val incident = mock(Incident::class.java)
+    `when`(incident.issue).thenReturn(issue)
+    `when`(incident.severity).thenReturn(Severity.ERROR)
+
+    val location = mock(Location::class.java)
+    `when`(location.file).thenReturn(File("/path/to/project/file.java"))
+    `when`(incident.location).thenReturn(location)
+    `when`(incident.file).thenReturn(File("/path/to/project/file.java"))
+
+    val report = builder.buildReport(listOf(incident), emptyList(), emptyMap())
+    val lintIssue = report.issues[0]
+
+    assertEquals(listOf("https://example.com/info1", "https://example.com/info2"), lintIssue.urls)
+  }
+
   private fun createMockClient(): LintCliClient {
     val client = mock(LintCliClient::class.java)
     whenever(client.getDisplayPath(any<File>(), anyOrNull<Project>(), any<TextFormat>())).thenAnswer {

@@ -252,6 +252,8 @@ tr:hover { background-color: var(--bg-selected); }
 
 .explanation-row { background-color: var(--bg-subtle); }
 .explanation-content { padding: 1rem 2rem; white-space: normal; color: var(--text-gray-600); }
+.more-info-list { margin-left: 1.5rem; margin-top: 0.25rem; list-style-type: disc; }
+.more-info-list li { margin-bottom: 0.125rem; }
 
 pre.errorlines {
     background-color: var(--bg-codeblock);

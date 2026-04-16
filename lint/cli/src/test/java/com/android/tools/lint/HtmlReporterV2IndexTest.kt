@@ -160,4 +160,38 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("\"id\":\"Issue1\""))
     assertTrue(html.contains("\"id\":\"Issue2\""))
   }
+
+  @Test
+  fun testGetIndexHtmlWithUrls() {
+    val report =
+      LintReport(
+        name = "Report with URLs",
+        timeStamp = "2026-05-20",
+        issues =
+          listOf(
+            LintIssue(
+              id = "UrlIssue",
+              severityDescription = "Error",
+              message = "Message",
+              category = "Correctness",
+              priority = 5,
+              summary = "Summary",
+              explanation = "Explanation",
+              location = LintLocation("File.kt", 1, 1),
+              urls = listOf("https://example.com/1", "https://example.com/2")
+            )
+          ),
+        numberOfIssues = 1,
+      )
+    val json = GsonBuilder().create().toJson(report)
+    val reportData = "const lintReport = $json;"
+    val html = getIndexHtml(reportData)
+
+    assertTrue(html.contains("\"urls\":[\"https://example.com/1\",\"https://example.com/2\"]"))
+    // Also verify that LINTSCRIPT_JS contains the logic to render them
+    assertTrue(LINTSCRIPT_JS.contains("issue.urls"))
+    assertTrue(LINTSCRIPT_JS.contains("more-info-list"))
+    // And STYLE_CSS contains the style
+    assertTrue(STYLE_CSS.contains(".more-info-list"))
+  }
 }
