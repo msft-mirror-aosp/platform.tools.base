@@ -71314,12 +71314,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java-client-okhttp_2.14.0",
-    pom = "repository/com/anthropic/anthropic-java-client-okhttp/2.14.0/anthropic-java-client-okhttp-2.14.0.pom",
+    name = "com.anthropic.anthropic-java-client-okhttp_2.26.0",
+    pom = "repository/com/anthropic/anthropic-java-client-okhttp/2.26.0/anthropic-java-client-okhttp-2.26.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java-client-okhttp/2.14.0",
+    repo_path = "com/anthropic/anthropic-java-client-okhttp/2.26.0",
     deps = [
-        "com.anthropic.anthropic-java-core_2.14.0",
+        "com.anthropic.anthropic-java-core_2.26.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "com.squareup.okhttp3.okhttp_4.12.0",
         "com.squareup.okhttp3.logging-interceptor_4.12.0",
@@ -71328,10 +71328,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java-core_2.14.0",
-    pom = "repository/com/anthropic/anthropic-java-core/2.14.0/anthropic-java-core-2.14.0.pom",
+    name = "com.anthropic.anthropic-java-core_2.26.0",
+    pom = "repository/com/anthropic/anthropic-java-core/2.26.0/anthropic-java-core-2.26.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java-core/2.14.0",
+    repo_path = "com/anthropic/anthropic-java-core/2.26.0",
     deps = [
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
         "com.fasterxml.jackson.core.jackson-databind_2.18.2",
@@ -71352,12 +71352,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.anthropic.anthropic-java_2.14.0",
-    pom = "repository/com/anthropic/anthropic-java/2.14.0/anthropic-java-2.14.0.pom",
+    name = "com.anthropic.anthropic-java_2.26.0",
+    pom = "repository/com/anthropic/anthropic-java/2.26.0/anthropic-java-2.26.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/anthropic/anthropic-java/2.14.0",
+    repo_path = "com/anthropic/anthropic-java/2.26.0",
     deps = [
-        "com.anthropic.anthropic-java-client-okhttp_2.14.0",
+        "com.anthropic.anthropic-java-client-okhttp_2.26.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
     ],
     visibility = ["//visibility:public"],
@@ -78678,12 +78678,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-client-okhttp_4.21.0",
-    pom = "repository/com/openai/openai-java-client-okhttp/4.21.0/openai-java-client-okhttp-4.21.0.pom",
+    name = "com.openai.openai-java-client-okhttp_4.32.0",
+    pom = "repository/com/openai/openai-java-client-okhttp/4.32.0/openai-java-client-okhttp-4.32.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-client-okhttp/4.21.0",
+    repo_path = "com/openai/openai-java-client-okhttp/4.32.0",
     deps = [
-        "com.openai.openai-java-core_4.21.0",
+        "com.openai.openai-java-core_4.32.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
         "com.squareup.okhttp3.okhttp_4.12.0",
         "com.squareup.okhttp3.logging-interceptor_4.12.0",
@@ -78692,10 +78692,10 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java-core_4.21.0",
-    pom = "repository/com/openai/openai-java-core/4.21.0/openai-java-core-4.21.0.pom",
+    name = "com.openai.openai-java-core_4.32.0",
+    pom = "repository/com/openai/openai-java-core/4.32.0/openai-java-core-4.32.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java-core/4.21.0",
+    repo_path = "com/openai/openai-java-core/4.32.0",
     deps = [
         "com.fasterxml.jackson.core.jackson-core_2.18.2",
         "com.fasterxml.jackson.core.jackson-databind_2.18.2",
@@ -78706,8 +78706,6 @@ maven_artifact(
         "com.fasterxml.jackson.datatype.jackson-datatype-jdk8_2.18.2",
         "com.fasterxml.jackson.datatype.jackson-datatype-jsr310_2.18.2",
         "com.fasterxml.jackson.module.jackson-module-kotlin_2.18.2",
-        "org.apache.httpcomponents.core5.httpcore5_5.2.4",
-        "org.apache.httpcomponents.client5.httpclient5_5.3.1",
         "com.github.victools.jsonschema-generator_4.38.0",
         "com.github.victools.jsonschema-module-jackson_4.38.0",
         "com.github.victools.jsonschema-module-swagger-2_4.38.0",
@@ -78716,12 +78714,12 @@ maven_artifact(
 )
 
 maven_artifact(
-    name = "com.openai.openai-java_4.21.0",
-    pom = "repository/com/openai/openai-java/4.21.0/openai-java-4.21.0.pom",
+    name = "com.openai.openai-java_4.32.0",
+    pom = "repository/com/openai/openai-java/4.32.0/openai-java-4.32.0.pom",
     repo_root_path = "repository",
-    repo_path = "com/openai/openai-java/4.21.0",
+    repo_path = "com/openai/openai-java/4.32.0",
     deps = [
-        "com.openai.openai-java-client-okhttp_4.21.0",
+        "com.openai.openai-java-client-okhttp_4.32.0",
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.8.0",
     ],
     visibility = ["//visibility:public"],
