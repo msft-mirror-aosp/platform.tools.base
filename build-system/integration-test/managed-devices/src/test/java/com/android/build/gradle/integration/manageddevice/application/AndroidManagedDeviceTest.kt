@@ -185,11 +185,10 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
     util.androidTestWithForceCompilation()
   }
 
-  @Ignore("b/261739458")
   @Test
   fun androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature() = util.androidTestWithOrchestratorAndCodeCoverageWithDynamicFeature()
 
-  @Ignore("b/261739458") @Test fun androidTestWithCodeCoverageWithDynamicFeature() = util.androidTestWithCodeCoverageWithDynamicFeature()
+  @Test fun androidTestWithCodeCoverageWithDynamicFeature() = util.androidTestWithCodeCoverageWithDynamicFeature()
 
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {

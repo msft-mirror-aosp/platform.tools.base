@@ -601,14 +601,17 @@ class AndroidTestUtil(
       enableCodeCoverage(this)
       enableDynamicFeature(this, "feature")
     }
-    rule.build.androidFeature().reconfigure { enableAndroidTestOrchestrator(this) }
+    rule.build.androidFeature().reconfigure {
+      enableAndroidTestOrchestrator(this)
+      enableCodeCoverage(this)
+    }
 
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
     assertThat(project.resolve(testResultPbPath)).exists()
     assertThat(project.resolve(testCoverageXmlPath))
-      .contains("""<method name="stubfeatureFuncForTestingCodeCoverage" desc="()V" line="9">""")
+      .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
   }
 
@@ -619,12 +622,13 @@ class AndroidTestUtil(
       enableDynamicFeature(this, "feature")
       enableCodeCoverage(this)
     }
+    rule.build.androidFeature().reconfigure { enableCodeCoverage(this) }
 
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
     assertThat(project.resolve(testResultPbPath)).exists()
-    assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
+    assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
   }
 
@@ -880,6 +884,7 @@ fun GradleBuildDefinition.applyAndroidTestConfiguration(runWithBuiltInPlatform: 
         """
         package com.example.android.kotlin.feature
 
+        import com.example.android.kotlin.MainActivity
         import androidx.test.ext.junit.runners.AndroidJUnit4
 
         import org.junit.Test
@@ -894,6 +899,7 @@ fun GradleBuildDefinition.applyAndroidTestConfiguration(runWithBuiltInPlatform: 
             @Test
             fun useAppContext() {
                 logger.info("test logs")
+                MainActivity.stubFuncForTestingCodeCoverage()
                 DynamicFeature1.stubDynamicFeature1FuncForTestingCodeCoverage()
             }
         }
