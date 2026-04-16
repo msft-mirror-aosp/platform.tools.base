@@ -176,6 +176,7 @@ class AndroidDeviceDescriptor(
         config.apkInstallOptions,
         config.getTestUtilApks(deviceSerial),
         config.uninstallApksAfterTests,
+        config.forceAotCompilation,
         onBeforeInstrumentation = {
           additionalTestOutputCollector.prepare()
           coverageCollector.prepare()

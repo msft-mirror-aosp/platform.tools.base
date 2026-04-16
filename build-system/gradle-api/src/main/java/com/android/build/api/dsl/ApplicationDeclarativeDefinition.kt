@@ -19,10 +19,8 @@ package com.android.build.api.dsl
 import com.android.build.api.variant.AndroidApplicationModuleModel
 import org.gradle.api.Incubating
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.internal.plugins.Definition
 import org.gradle.declarative.dsl.model.annotations.HiddenInDefinition
-
-// import org.gradle.features.binding.Definition
+import org.gradle.features.binding.Definition
 
 @Incubating
 /** @suppress */

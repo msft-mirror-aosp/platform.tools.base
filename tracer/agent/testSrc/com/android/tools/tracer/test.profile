@@ -1,4 +1,4 @@
-Output: report.json
+TraceOutputDirectory: .
 Trace-Agent: false
 Annotation: java.lang.Deprecated
 Start: com.android.tools.tracer.MainTest::main

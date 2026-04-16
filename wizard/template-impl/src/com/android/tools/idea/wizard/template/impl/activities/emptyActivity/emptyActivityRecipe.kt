@@ -42,7 +42,15 @@ fun RecipeExecutor.generateEmptyActivity(
   addMaterial3Dependency()
   addDependency("androidx.activity:activity-ktx:+")
 
-  generateManifest(moduleData, activityClass, packageName, isLauncher, false, generateActivityTitle = false)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    false,
+    generateActivityTitle = false,
+    windowSoftInputMode = "adjustResize",
+  )
 
   addAllKotlinDependencies(moduleData)
 

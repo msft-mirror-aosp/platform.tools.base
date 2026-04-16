@@ -13,23 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:JvmName("PerfettoTracer")
+
 package com.android.tools.tracer
 
+import androidx.tracing.AbstractTraceSink
 import androidx.tracing.DelicateTracingApi
-import androidx.tracing.ProcessTrack
 import androidx.tracing.PropagationToken
-import androidx.tracing.ThreadTrack
-import androidx.tracing.TraceSink
 import androidx.tracing.Tracer
 import androidx.tracing.wire.ExperimentalRingBufferApi
 import androidx.tracing.wire.InMemoryRingBufferTraceSink
 import androidx.tracing.wire.TraceDriver
+import androidx.tracing.wire.TraceSink
+import androidx.tracing.wire.perfettoTraceFile
 import com.android.tools.tracer.Tracing.initialize
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.atomic.AtomicReference
 import okio.appendingSink
 import okio.buffer
@@ -39,7 +38,7 @@ import org.jetbrains.annotations.VisibleForTesting
 object Tracing {
   private val state = AtomicReference<TracingState?>(null)
 
-  internal val driver: androidx.tracing.TraceDriver?
+  internal val driver: TraceDriver?
     get() = state.get()?.driver
 
   internal val tracer: Tracer?
@@ -57,8 +56,6 @@ object Tracing {
 
   @VisibleForTesting
   internal fun initialize(config: TracingConfigProvider, fileProvider: (File) -> File) {
-    val traceDirectory = config.getTraceDirectory()
-
     var oldState: TracingState? = null
     val newState: TracingState
 
@@ -68,7 +65,7 @@ object Tracing {
       newState =
         if (current?.canReuse(config) == true) {
           // All that changes about the previous state is the file, so just copy.
-          current.copy(traceFile = fileProvider(traceDirectory))
+          current.copy(traceFile = fileProvider(current.traceDirectory))
         } else {
           oldState = current
           createNewState(config, fileProvider)
@@ -100,10 +97,9 @@ object Tracing {
   @JvmStatic
   fun flush(): String? {
     val currentState = state.get() ?: return null
-    val file = currentState.traceFile
-    currentState.sink.flushTo(file)
+    currentState.flush()
     initialize(currentState.config, currentState.fileProvider)
-    return file.absolutePath
+    return currentState.traceFile.absolutePath
   }
 
   /**
@@ -116,9 +112,8 @@ object Tracing {
   fun close(saveToDisk: Boolean = false) {
     // If we don't have a current state, exit early.
     val currentState = state.getAndSet(null) ?: return
-    val file = currentState.traceFile
     if (saveToDisk) {
-      currentState.sink.flushTo(file)
+      currentState.flush()
     }
     currentState.close()
   }
@@ -129,14 +124,15 @@ object Tracing {
     val ringBufferCapacity: Long,
     val traceDirectory: File,
     val traceFile: File,
-    val driver: androidx.tracing.TraceDriver,
+    val driver: TraceDriver,
     val sink: TracingSink,
     val fileProvider: (File) -> File,
   ) : AutoCloseable by driver {
     fun isEquivalent(newConfig: TracingConfigProvider): Boolean {
-      return isTracingEnabled == newConfig.isTracingEnabled() &&
-        ringBufferCapacity == newConfig.getRingBufferCapacity() &&
-        traceDirectory.absolutePath == newConfig.getTraceDirectory().absolutePath
+      // We intentionally relax the requirements of what is equivalent.
+      // This is to preserve an existing call to initialize that may have been invoked
+      // by the JVM TI Agent.
+      return isTracingEnabled == newConfig.isTracingEnabled()
     }
 
     // If the config is the same, a ring buffer sink can be reused.
@@ -147,7 +143,7 @@ object Tracing {
   }
 
   private sealed interface TracingSink {
-    val sink: TraceSink
+    val sink: AbstractTraceSink
     val canReuse: Boolean
 
     fun flushTo(file: File)
@@ -173,20 +169,19 @@ object Tracing {
   }
 
   private class StandardTracingSink(file: File) : TracingSink {
-    override val sink = androidx.tracing.wire.TraceSink(1, file.appendingSink().buffer())
+    override val sink = TraceSink(1, file.appendingSink().buffer())
     override val canReuse = false
 
     override fun flushTo(file: File) {
       // No explicit flush required as the sink can't be reused and is closed upon flushing.
     }
   }
-}
 
-private fun File.perfettoTraceFile(): File {
-  val formatter = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
-  formatter.timeZone = TimeZone.getTimeZone("UTC")
-  val traceFile = File(this, "perfetto-${formatter.format(Date())}.perfetto")
-  return traceFile
+  private fun TracingState.flush() {
+    // First we flush the driver to ensure process and thread tracks are sent to the sink.
+    driver.flush()
+    sink.flushTo(traceFile)
+  }
 }
 
 fun isTracingEnabled(): Boolean {
@@ -231,6 +226,7 @@ suspend fun <T> traceCoroutine(category: String? = null, name: String? = null, i
  * [name] gives a name to the trace section.
  */
 @OptIn(DelicateTracingApi::class)
+@JvmOverloads
 fun beginSectionWithMetadata(category: String, name: String, token: PropagationToken? = null) {
   val tracer = Tracing.tracer ?: return
   val result = tracer.beginSectionWithMetadata(category, name, token, isRoot = false)
@@ -246,27 +242,4 @@ fun endSection() {
   val driver = Tracing.driver ?: return
   val process = driver.context.process
   process.currentThreadTrack().endSection()
-}
-
-@Volatile private var l1ThreadTrack: ThreadTrack? = null
-
-@Volatile private var l2ThreadTrack: ThreadTrack? = null
-
-// TODO(b/467364934): Remove this once the library supports getting the thread track.
-fun ProcessTrack.currentThreadTrack(): ThreadTrack {
-  val current = Thread.currentThread()
-  val id = current.id.toInt()
-  val l1 = l1ThreadTrack
-  val l2 = l2ThreadTrack
-
-  return when {
-    l1 != null && l1.id == id -> l1
-    l2 != null && l2.id == id -> l2
-    else -> {
-      val track = this.getOrCreateThreadTrack(id = id, name = name)
-      l2ThreadTrack = l1ThreadTrack
-      l1ThreadTrack = track
-      track
-    }
-  }
 }

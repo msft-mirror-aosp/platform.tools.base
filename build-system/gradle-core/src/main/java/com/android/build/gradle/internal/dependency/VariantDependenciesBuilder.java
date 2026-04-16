@@ -273,10 +273,12 @@ public class VariantDependenciesBuilder {
             }
 
             if (testFixturesEnabled) {
-                dependencies.add(compileClasspath.getName(), dependencies.testFixtures(project));
+                dependencies.add(
+                        compileClasspath.getName(),
+                        dependencies.testFixtures(dependencies.project()));
             }
 
-            compileClasspath.getDependencies().add(dependencies.create(project));
+            compileClasspath.getDependencies().add(dependencies.project());
         }
 
         if (componentType.isTestFixturesComponent()) {
@@ -284,13 +286,11 @@ public class VariantDependenciesBuilder {
                 // equivalent to dependencies { testFixturesApi project("$currentProject") }
                 apiClasspaths.forEach(
                         apiConfiguration ->
-                                apiConfiguration
-                                        .getDependencies()
-                                        .add(dependencies.create(project)));
+                                apiConfiguration.getDependencies().add(dependencies.project()));
             } else {
                 // In the case of an app project, testFixtures won't have a runtime dependency on
                 // the main app project.
-                compileClasspath.getDependencies().add(dependencies.create(project));
+                compileClasspath.getDependencies().add(dependencies.project());
             }
         }
         compileClasspath.setCanBeConsumed(false);
@@ -327,10 +327,12 @@ public class VariantDependenciesBuilder {
         runtimeClasspath.setExtendsFrom(runtimeClasspaths);
         if (testedVariant != null) {
             if (testFixturesEnabled) {
-                dependencies.add(runtimeClasspath.getName(), dependencies.testFixtures(project));
+                dependencies.add(
+                        runtimeClasspath.getName(),
+                        dependencies.testFixtures(dependencies.project()));
             }
             if (testedVariant.getComponentType().isAar() || !dslInfo.getComponentType().isApk()) {
-                runtimeClasspath.getDependencies().add(dependencies.create(project));
+                runtimeClasspath.getDependencies().add(dependencies.project());
             }
         }
         runtimeClasspath.setCanBeConsumed(false);
@@ -659,9 +661,8 @@ public class VariantDependenciesBuilder {
                 List<String> notFound = new ArrayList<>();
 
                 for (String feature : featureList) {
-                    Project p = project.findProject(feature);
-                    if (p != null) {
-                        dependencies.add(reverseMetadataValuesName, p);
+                    if (project.findProject(feature) != null) {
+                        dependencies.add(reverseMetadataValuesName, dependencies.project(feature));
                     } else {
                         notFound.add(feature);
                     }

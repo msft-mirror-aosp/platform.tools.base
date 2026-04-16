@@ -26,12 +26,7 @@ class AnalyticsCompositeBuildTest {
 
   @get:Rule
   val project =
-    GradleTestProject.builder()
-      .fromTestProject("multiCompositeBuild")
-      .withDependencyChecker(false)
-      .enableProfileOutput()
-      .disableBuiltInKotlin()
-      .create()
+    GradleTestProject.builder().fromTestProject("multiCompositeBuild").withDependencyChecker(false).enableProfileOutput().create()
 
   // regression test for b/226095015
   @Test

@@ -38,8 +38,6 @@ public class ApiTest {
     @BeforeClass
     public static void setUp() throws IOException, InterruptedException {
         project.executor()
-                .with(BooleanOption.ENABLE_LEGACY_API, true)
-                .with(BooleanOption.USE_NEW_DSL, false)
                 .run("clean", "assembleDebug");
     }
 
@@ -51,8 +49,6 @@ public class ApiTest {
     @Test
     public void lint() throws IOException, InterruptedException {
         project.executor()
-                .with(BooleanOption.ENABLE_LEGACY_API, true)
-                .with(BooleanOption.USE_NEW_DSL, false)
                 .run("lint");
     }
 
@@ -61,8 +57,8 @@ public class ApiTest {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("app/build.gradle")))
-                .isEqualTo("1d5e38a7a3a73ad454a8bcd05a55d5eeaf43cc7b");
+                .isEqualTo("839a483bd0a48dde8f0074035459f570d333dc9c");
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("lib/build.gradle")))
-                .isEqualTo("36c6c27a9ddaa61e8dd0c0aeee0184b047bbab6c");
+                .isEqualTo("751fa5409289c29b30e3733af6de7c94a8c6656b");
     }
 }

@@ -97,6 +97,7 @@
       <module fileurl="file://$PROJECT_DIR$/transport/test-framework/transport-test-framework.iml" filepath="$PROJECT_DIR$/transport/test-framework/transport-test-framework.iml" />
       <module fileurl="file://$PROJECT_DIR$/usb-devices/usb-devices.iml" filepath="$PROJECT_DIR$/usb-devices/usb-devices.iml" />
       <module fileurl="file://$PROJECT_DIR$/../vendor/google/windows-exe-patcher/windows-exe-patcher.iml" filepath="$PROJECT_DIR$/../vendor/google/windows-exe-patcher/windows-exe-patcher.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ui-inspector/android.sdktools.ui-inspector.iml" filepath="$PROJECT_DIR$/ui-inspector/android.sdktools.ui-inspector.iml" />
     </modules>
   </component>
 </project>

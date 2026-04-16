@@ -125,7 +125,7 @@ data class VariantCoverage(val name: String, val instruction: CoverageInfo, val 
  * @property covered The number of covered items.
  * @property total The total number of items.
  */
-data class CoverageInfo(val percent: Int, val covered: Int, val total: Int)
+data class CoverageInfo(val percent: Int?, val covered: Int, val total: Int)
 
 /**
  * Associates a build variant with the absolute path to a specific source file.

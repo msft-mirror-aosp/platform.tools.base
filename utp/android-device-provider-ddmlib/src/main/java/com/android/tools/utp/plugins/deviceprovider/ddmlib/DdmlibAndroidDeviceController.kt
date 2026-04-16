@@ -108,7 +108,7 @@ class DdmlibAndroidDeviceController(
     controlledDevice.installPackage(
       artifact.sourcePath.path,
       /*reinstall=*/ true,
-      *listOfNotNull("-t", "-g".takeIf { controlledDevice.version.apiLevel >= 23 }).toTypedArray(),
+      *listOfNotNull("-t", "-g".takeIf { controlledDevice.version.androidApiLevel.majorVersion >= 23 }).toTypedArray(),
     )
     return CommandResult(0, listOf())
   }

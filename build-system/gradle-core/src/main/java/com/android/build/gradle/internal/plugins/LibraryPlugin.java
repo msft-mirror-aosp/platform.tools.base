@@ -67,14 +67,11 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.component.SoftwareComponentFactory;
 import org.gradle.api.configuration.BuildFeatures;
-import org.gradle.api.internal.plugins.BindsProjectType;
-import org.gradle.api.internal.plugins.ProjectTypeBinding;
-import org.gradle.api.internal.plugins.ProjectTypeBindingBuilder;
 import org.gradle.api.reflect.TypeOf;
 import org.gradle.build.event.BuildEventsListenerRegistry;
-// import org.gradle.features.annotations.BindsProjectType;
-// import org.gradle.features.binding.ProjectTypeBinding;
-// import org.gradle.features.binding.ProjectTypeBindingBuilder;
+import org.gradle.features.annotations.BindsProjectType;
+import org.gradle.features.binding.ProjectTypeBinding;
+import org.gradle.features.binding.ProjectTypeBindingBuilder;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.util.Collection;
@@ -111,8 +108,8 @@ public class LibraryPlugin
 
                                 DslBindingUtils.copyProperties(definition, extension);
                             })
-                    .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class);
-            //                    .withUnsafeApplyAction();
+                    .withUnsafeDefinitionImplementationType(LibraryDeclarativeDefinitionImpl.class)
+                    .withUnsafeApplyAction();
         }
     }
 

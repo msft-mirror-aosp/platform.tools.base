@@ -135,6 +135,7 @@ fun RecipeExecutor.aiStarterRecipe(moduleData: ModuleTemplateData, activityClass
     isLauncher = isLauncher,
     hasNoActionBar = true,
     generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
   )
   mergeXml(
     """

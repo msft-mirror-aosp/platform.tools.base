@@ -16,7 +16,9 @@
 
 package com.android.tools.deployer.tasks;
 
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.common.Canceller;
+import com.android.tools.deployer.common.DeployerException;
+
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;

@@ -43,6 +43,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.rules.TestName
+import org.mockito.Mockito
 
 /** Tests for [Aapt2DaemonImpl], including error conditions */
 class Aapt2DaemonImplTest {
@@ -423,6 +424,19 @@ class Aapt2DaemonImplTest {
     )
     val withCrunchDisabled = Files.readAllBytes(outFile)
     assertThat(withCrunchDisabled).isEqualTo(withCrunchEnabled)
+  }
+
+  @Test
+  fun testAapt2ConfigChangesNoteOutput() {
+    val logger = Mockito.mock(com.android.utils.ILogger::class.java)
+    val waiter = Aapt2DaemonImpl.WaitForTaskCompletion("test", logger)
+    waiter.err("note: Updating value of 'android:configChanges' from allKnown to assetsPaths|colorMode")
+    waiter.err("some warning message")
+    waiter.err("Done")
+
+    Mockito.verify(logger).info("note: Updating value of 'android:configChanges' from allKnown to assetsPaths|colorMode")
+    Mockito.verify(logger, Mockito.never()).info("Done")
+    Mockito.verify(logger).warning("some warning message\n")
   }
 
   @After

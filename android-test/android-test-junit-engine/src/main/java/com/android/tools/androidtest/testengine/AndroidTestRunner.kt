@@ -44,6 +44,7 @@ class AndroidTestRunner(
   private val apkInstallOptions: List<String>,
   private val testUtilApks: List<File>,
   private val uninstallApksAfterTests: Boolean,
+  private val forceAotCompilation: Boolean = false,
   private val onBeforeInstrumentation: (() -> Unit)? = null,
   private val onTestFinished: (() -> Unit)? = null,
 ) {
@@ -63,16 +64,32 @@ class AndroidTestRunner(
     try {
       adbApkInstaller.preInstallationSetup(instrumentationTargetPackageId)
 
+      val forceCompilation =
+        if (forceAotCompilation) AdbApkInstaller.ForceCompilation.FULL_COMPILATION
+        else AdbApkInstaller.ForceCompilation.NO_FORCE_COMPILATION
+
       if (testedApks.size == 1) {
-        adbApkInstaller.installApk(testedApks.first(), AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+        adbApkInstaller.installApk(
+          testedApks.first(),
+          AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions, forceCompilation = forceCompilation),
+        )
       } else if (testedApks.size > 1) {
-        adbApkInstaller.installSplitApk(testedApks, AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions))
+        adbApkInstaller.installSplitApk(
+          testedApks,
+          AdbApkInstaller.InstallOptions(extraArgs = apkInstallOptions, forceCompilation = forceCompilation),
+        )
       }
 
       if (testApks.size == 1) {
-        adbApkInstaller.installApk(testApks.first(), AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions))
+        adbApkInstaller.installApk(
+          testApks.first(),
+          AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions, forceCompilation = forceCompilation),
+        )
       } else if (testApks.size > 1) {
-        adbApkInstaller.installSplitApk(testApks, AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions))
+        adbApkInstaller.installSplitApk(
+          testApks,
+          AdbApkInstaller.InstallOptions(grantPermissions = true, extraArgs = apkInstallOptions, forceCompilation = forceCompilation),
+        )
       }
 
       testUtilApks.forEach { apk ->

@@ -254,12 +254,12 @@ class AndroidTestApkInstallerPlugin(
         } else {
           when (installableApk.installOptions.forceCompilation) {
             ForceCompilation.FULL_COMPILATION -> {
-              logger.info("Running force AOT compilation for $packageName")
+              logger.info("Running force AOT compilation (speed) for $packageName")
               deviceController.execute(listOf("shell", "cmd", "package", "compile", "-m", "speed", "-f", packageName))
             }
 
             ForceCompilation.PROFILE_BASED_COMPILATION -> {
-              logger.info("Running profile based AOT compilation for $packageName")
+              logger.info("Running force AOT compilation (speed-profile) for $packageName")
               deviceController.execute(listOf("shell", "cmd", "package", "compile", "-m", "speed-profile", "-f", packageName))
             }
 

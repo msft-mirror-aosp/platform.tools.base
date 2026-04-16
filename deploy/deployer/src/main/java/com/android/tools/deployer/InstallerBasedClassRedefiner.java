@@ -18,6 +18,9 @@ package com.android.tools.deployer;
 import com.android.tools.deploy.proto.Deploy;
 import com.android.tools.deploy.proto.Deploy.SwapRequest;
 import com.android.tools.deploy.proto.Deploy.SwapResponse;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.Installer;
+
 import java.io.IOException;
 
 public class InstallerBasedClassRedefiner implements ClassRedefiner {

@@ -67,7 +67,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
       build_env.bazel_query(*query).stdout.decode('utf-8').splitlines()
   )
   targets = test_targets + [
-      '//tools/vendor/google/android:android',
+      '//tools/vendor/google/android:legacy-android-cli.zip',
       '//tools/vendor/google/android:android-cli.zip',
       '//tools/vendor/google/skia:skiaparser',
       '//tools/vendor/google/skia:skia_test_support',
@@ -99,7 +99,7 @@ def studio_mac_arm(build_env: bazel.BuildEnv) -> None:
               ),
               ('tools/vendor/google/skia/skiaparser.zip', ''),
               ('tools/vendor/google/skia/skia_test_support.zip', ''),
-              ('tools/vendor/google/android/android', ''),
+              ('tools/vendor/google/android/legacy-android-cli.zip', ''),
               ('tools/vendor/google/android/android-cli.zip', ''),
           ],
       )

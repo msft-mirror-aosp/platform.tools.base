@@ -19,6 +19,8 @@ import com.android.ddmlib.AdbInitOptions;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.IDevice;
 import com.android.testutils.AssumeUtil;
+import com.android.tools.deployer.common.AdbClient;
+import com.android.tools.deployer.common.DeployMetric;
 import com.android.tools.deployer.common.DeployerTestConstants;
 import com.android.tools.deployer.devices.FakeDevice;
 import com.android.tools.deployer.rules.ApiLevel;

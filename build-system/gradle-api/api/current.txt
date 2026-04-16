@@ -606,7 +606,7 @@ package com.android.build.api.dsl {
     property public abstract com.android.build.api.dsl.Optimization optimization;
   }
 
-  @org.gradle.api.Incubating public interface ApplicationDeclarativeDefinition extends com.android.build.api.dsl.CommonDeclarativeDefinition org.gradle.api.internal.plugins.Definition<com.android.build.api.variant.AndroidApplicationModuleModel> com.android.build.api.dsl.TestedDeclarativeDefinition {
+  @org.gradle.api.Incubating public interface ApplicationDeclarativeDefinition extends com.android.build.api.dsl.CommonDeclarativeDefinition org.gradle.features.binding.Definition<com.android.build.api.variant.AndroidApplicationModuleModel> com.android.build.api.dsl.TestedDeclarativeDefinition {
     method @org.gradle.api.Incubating public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.ApplicationAndroidResources getAndroidResources();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Set<java.lang.String> getAssetPacks();
@@ -1320,7 +1320,7 @@ package com.android.build.api.dsl {
     enum_constant @org.gradle.api.Incubating public static final com.android.build.api.dsl.DefaultInputsForAgpTestSuites JOURNEYS_TEST;
   }
 
-  @org.gradle.api.Incubating public interface DependenciesExtension extends org.gradle.api.artifacts.dsl.GradleDependencies {
+  @org.gradle.api.Incubating public interface DependenciesExtension extends org.gradle.api.artifacts.dsl.GradleDependencies org.gradle.api.plugins.jvm.PlatformDependencyModifiers {
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getAndroidTestImplementation();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getApi();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.artifacts.dsl.DependencyCollector getImplementation();
@@ -1770,7 +1770,7 @@ package com.android.build.api.dsl {
     property public abstract boolean isDefault;
   }
 
-  @org.gradle.api.Incubating public interface LibraryDeclarativeDefinition extends com.android.build.api.dsl.CommonDeclarativeDefinition org.gradle.api.internal.plugins.Definition<com.android.build.api.variant.AndroidLibraryModuleModel> com.android.build.api.dsl.TestedDeclarativeDefinition {
+  @org.gradle.api.Incubating public interface LibraryDeclarativeDefinition extends com.android.build.api.dsl.CommonDeclarativeDefinition org.gradle.features.binding.Definition<com.android.build.api.variant.AndroidLibraryModuleModel> com.android.build.api.dsl.TestedDeclarativeDefinition {
     method @org.gradle.api.Incubating public void debug(org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeLibraryBuildType,kotlin.Unit> action);
     method @InaccessibleFromKotlin @org.gradle.api.Incubating @org.gradle.declarative.dsl.model.annotations.HiddenInDefinition public java.util.Collection<java.lang.String>? getAidlPackagedList();
     method @InaccessibleFromKotlin @org.gradle.api.Incubating public com.android.build.api.dsl.LibraryAndroidResources getAndroidResources();
@@ -2833,7 +2833,7 @@ package com.android.build.api.variant {
     property @org.gradle.api.tasks.Input public abstract org.gradle.api.provider.Provider<java.lang.String> version;
   }
 
-  public abstract class AndroidApplicationModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidApplicationModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidApplicationModuleModel();
   }
 
@@ -2858,7 +2858,7 @@ package com.android.build.api.variant {
     method public com.android.build.api.variant.VariantSelector selector();
   }
 
-  public abstract class AndroidLibraryModuleModel implements org.gradle.api.internal.plugins.BuildModel {
+  public abstract class AndroidLibraryModuleModel implements org.gradle.features.binding.BuildModel {
     ctor public AndroidLibraryModuleModel();
   }
 

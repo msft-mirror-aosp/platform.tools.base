@@ -59,7 +59,15 @@ fun RecipeExecutor.bottomNavigationActivityRecipe(
     addDependency("com.android.support:support-vector-drawable:${appCompatVersion}.+")
   }
 
-  generateManifest(moduleData, activityClass, packageName, isLauncher, hasNoActionBar = false, generateActivityTitle = true)
+  generateManifest(
+    moduleData,
+    activityClass,
+    packageName,
+    isLauncher,
+    hasNoActionBar = false,
+    generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
+  )
 
   val language = projectData.language
   val isViewBindingSupported = moduleData.viewBindingSupport.isViewBindingSupported()

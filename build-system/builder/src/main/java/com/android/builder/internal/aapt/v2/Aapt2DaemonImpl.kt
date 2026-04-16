@@ -349,10 +349,14 @@ class Aapt2DaemonImpl(
           }
         }
         else -> {
-          if (errors == null) {
-            errors = StringBuilder()
+          if (line.startsWith("note: ", ignoreCase = true)) {
+            logger.info(line)
+          } else {
+            if (errors == null) {
+              errors = StringBuilder()
+            }
+            errors!!.append(line).append('\n')
           }
-          errors!!.append(line).append('\n')
         }
       }
     }

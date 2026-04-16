@@ -699,7 +699,7 @@ https://issuetracker.google.com/494573625
   * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.VariantDimensionDependenciesExtension.getRuntimeOnly: org.gradle.api.artifacts.dsl.DependencyCollector ()
 https://issuetracker.google.com/497537804
-  * com.android.build.api.dsl.ApplicationDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.api.internal.plugins.Definition
+  * com.android.build.api.dsl.ApplicationDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.features.binding.Definition
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.ApplicationBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeApplicationBuildType, kotlin.Unit>)
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAndroidResources: com.android.build.api.dsl.ApplicationAndroidResources ()
   * com.android.build.api.dsl.ApplicationDeclarativeDefinition.getAssetPacks: java.util.Set<java.lang.String> ()
@@ -750,12 +750,11 @@ https://issuetracker.google.com/497537804
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getBuildTypes: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType> ()
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getDependencies: com.android.build.api.dsl.DependenciesExtension ()
   * com.android.build.api.dsl.DeclarativeLibraryExtension.getProductFlavors: org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryFlavor> ()
-  * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies
   * com.android.build.api.dsl.DependenciesExtension.getAndroidTestImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DependenciesExtension.getApi: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DependenciesExtension.getImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
   * com.android.build.api.dsl.DependenciesExtension.getTestImplementation: org.gradle.api.artifacts.dsl.DependencyCollector ()
-  * com.android.build.api.dsl.LibraryDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.api.internal.plugins.Definition
+  * com.android.build.api.dsl.LibraryDeclarativeDefinition implements com.android.build.api.dsl.CommonDeclarativeDefinition, com.android.build.api.dsl.TestedDeclarativeDefinition, org.gradle.features.binding.Definition
   * com.android.build.api.dsl.LibraryDeclarativeDefinition.debug: void (org.gradle.api.NamedDomainObjectContainer<com.android.build.api.dsl.DeclarativeLibraryBuildType>, kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.DeclarativeLibraryBuildType, kotlin.Unit>)
   * com.android.build.api.dsl.LibraryDeclarativeDefinition.getAidlPackagedList: java.util.Collection<java.lang.String> ()
   * com.android.build.api.dsl.LibraryDeclarativeDefinition.getAndroidResources: com.android.build.api.dsl.LibraryAndroidResources ()
@@ -789,3 +788,5 @@ https://issuetracker.google.com/497537804
 https://issuetracker.google.com/498938267
   * com.android.build.api.dsl.ApplicationBuildType.baselineProfile: void (kotlin.jvm.functions.Function1<? super com.android.build.api.dsl.BaselineProfile, kotlin.Unit>)
   * com.android.build.api.dsl.ApplicationBuildType.getBaselineProfile: com.android.build.api.dsl.BaselineProfile ()
+https://issuetracker.google.com/501095983
+  * com.android.build.api.dsl.DependenciesExtension implements org.gradle.api.artifacts.dsl.GradleDependencies, org.gradle.api.plugins.jvm.PlatformDependencyModifiers

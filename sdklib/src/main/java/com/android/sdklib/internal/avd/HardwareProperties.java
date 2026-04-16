@@ -92,6 +92,12 @@ public class HardwareProperties {
     /** AVD/config.ini key for LCD height. */
     public static final String HW_LCD_HEIGHT = "hw.lcd.height";
 
+    /** AVD/config.ini key for environment width. */
+    public static final String ENVIRONMENT_WIDTH = "environment.width";
+
+    /** AVD/config.ini key for environment height. */
+    public static final String ENVIRONMENT_HEIGHT = "environment.height";
+
     /** AVD/config.ini key for whether touchpad is present. */
     public static final String HW_TOUCHPAD0 = "hw.touchpad0";
 

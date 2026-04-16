@@ -190,6 +190,9 @@ class AndroidTestTaskManager(project: Project, globalConfig: GlobalTaskCreationC
     taskFactory.register(SigningConfigWriterTask.CreationAction(androidTestProperties))
     taskFactory.register(SigningConfigVersionsWriterTask.CreationAction(androidTestProperties))
     taskFactory.register(StripDebugSymbolsTask.CreationAction(androidTestProperties))
+    if (androidTestProperties.services.projectOptions[BooleanOption.ANDROID_BUILTIN_TEST_PLATFORM]) {
+      taskFactory.register(com.android.build.gradle.internal.tasks.AndroidTestDiscoveryTask.CreationAction(androidTestProperties))
+    }
     createPackagingTask(androidTestProperties)
     taskFactory.configure(ASSEMBLE_ANDROID_TEST) { assembleTest: Task ->
       assembleTest.dependsOn(androidTestProperties.taskContainer.assembleTask.name)

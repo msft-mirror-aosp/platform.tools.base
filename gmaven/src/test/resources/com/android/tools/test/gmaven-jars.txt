@@ -230,6 +230,8 @@ com/android/tools/apkdeployer/apkdeployer
   com/android/tools/deploy/proto/
   com/android/tools/deployer/
   com/android/tools/deployer/cli/
+  com/android/tools/deployer/common/
+  com/android/tools/deployer/install/
   com/android/tools/deployer/model/
   com/android/tools/deployer/model/activate/
   com/android/tools/deployer/model/component/
@@ -898,6 +900,7 @@ com/android/tools/dvlib
   com/android/
   com/android/dvlib/
   com/android/dvlib/devices-1.xsd
+  com/android/dvlib/devices-10.xsd
   com/android/dvlib/devices-2.xsd
   com/android/dvlib/devices-3.xsd
   com/android/dvlib/devices-4.xsd

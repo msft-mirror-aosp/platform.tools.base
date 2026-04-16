@@ -450,8 +450,8 @@ internal constructor(
 
       // add dependency on main project
       if (dslInfo.componentType.isTestComponent) {
-        compileClasspath.dependencies.add(project.dependencies.create(project))
-        runtimeClasspath.dependencies.add(project.dependencies.create(project))
+        compileClasspath.dependencies.add(project.dependencies.project())
+        runtimeClasspath.dependencies.add(project.dependencies.project())
       }
 
       val aarLibraryElements = project.objects.named(LibraryElements::class.java, AndroidArtifacts.ArtifactType.AAR.type)

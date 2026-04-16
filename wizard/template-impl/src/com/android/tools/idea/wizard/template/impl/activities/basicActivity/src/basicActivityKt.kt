@@ -17,7 +17,6 @@ package com.android.tools.idea.wizard.template.impl.activities.basicActivity.src
 
 import com.android.tools.idea.wizard.template.Language
 import com.android.tools.idea.wizard.template.escapeKotlinIdentifier
-import com.android.tools.idea.wizard.template.getMaterialComponentName
 import com.android.tools.idea.wizard.template.impl.activities.common.findViewById
 import com.android.tools.idea.wizard.template.impl.activities.common.importViewBindingClass
 import com.android.tools.idea.wizard.template.impl.activities.common.layoutToViewBindingClass
@@ -27,7 +26,6 @@ fun basicActivityKt(
   isNewProject: Boolean,
   applicationPackage: String?,
   packageName: String,
-  useAndroidX: Boolean,
   activityClass: String,
   layoutName: String,
   menuName: String,
@@ -77,10 +75,10 @@ package ${escapeKotlinIdentifier(packageName)}
 
 import android.os.Bundle
 ${renderIf(!isViewBindingSupported) {"""
-import ${getMaterialComponentName("android.support.design.widget.FloatingActionButton", useAndroidX)}
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 """}}
-import ${getMaterialComponentName("android.support.design.widget.Snackbar", useAndroidX)}
-import ${getMaterialComponentName("android.support.v7.app.AppCompatActivity", useAndroidX)}
+import com.google.android.material.snackbar.Snackbar
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat

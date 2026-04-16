@@ -15,8 +15,9 @@
  */
 package com.android.tools.deployer.tasks;
 
-import com.android.tools.deployer.DeployMetric;
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.common.DeployMetric;
+import com.android.tools.deployer.common.DeployerException;
+
 import java.util.List;
 import java.util.stream.Collectors;
 

@@ -2301,6 +2301,10 @@ public class Main {
                     "Create an HTML report instead. If the filename is a "
                             + "directory (or a new filename without an extension), lint will create a "
                             + "separate report for each scanned project.",
+                    ARG_HTML_V2 + " <filename>",
+                    "Create an HTML report using the V2 format. If the filename is a "
+                            + "directory (or a new filename without an extension), lint will create a "
+                            + "separate report for each scanned project.",
                     ARG_URL + " filepath=url",
                     "Add links to HTML report, replacing local "
                             + "path prefixes with url prefix. The mapping can be a comma-separated list of "

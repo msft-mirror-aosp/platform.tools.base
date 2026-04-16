@@ -15,18 +15,21 @@
  */
 package com.android.tools.deployer.tasks;
 
-import com.android.tools.deployer.DeployerException;
-import com.android.tools.deployer.DeploymentCacheDatabase;
-import com.android.tools.deployer.OverlayId;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.DeploymentCacheDatabase;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
+
 import com.google.common.collect.Lists;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 
 /** Unit tests for DeploymentCacheDatabase. */
 public class DeploymentCacheDatabaseTest {

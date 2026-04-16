@@ -65,7 +65,7 @@ public class LeakCanaryManager {
      * Timeout for waiting for the Studio-LeakCanary library to respond to the threshold check
      * broadcast.
      */
-    private static final long LEAKCANARY_CHECK_TIMEOUT_SECONDS = 2;
+    private static final long LEAKCANARY_CHECK_TIMEOUT_SECONDS = 3;
 
     private static final int DEFAULT_RETAINED_VISIBLE_THRESHOLD = 5;
 

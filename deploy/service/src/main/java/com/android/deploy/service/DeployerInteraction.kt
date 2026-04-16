@@ -15,7 +15,7 @@
  */
 package com.android.deploy.service
 
-import com.android.tools.deployer.UIService
+import com.android.tools.deployer.common.UIService
 import java.util.LinkedList
 import java.util.Queue
 

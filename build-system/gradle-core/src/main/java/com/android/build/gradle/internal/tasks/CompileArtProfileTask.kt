@@ -21,7 +21,6 @@ import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.dsl.ApplicationInstallation
 import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
-import com.android.build.gradle.internal.dsl.ModulePropertyKey
 import com.android.build.gradle.internal.profile.ProfileAwareWorkAction
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.tasks.MergeFileTask.Companion.mergeFiles
@@ -237,13 +236,7 @@ abstract class CompileArtProfileTask : NonIncrementalTask() {
 
     @VisibleForTesting
     internal fun configureObfuscationMappingFile(task: CompileArtProfileTask) {
-      if (creationConfig is VariantCreationConfig) {
-        task.useMappingFile.setDisallowChanges(
-          creationConfig.experimentalProperties.map { !ModulePropertyKey.BooleanWithDefault.ART_PROFILE_R8_REWRITING.getValue(it) }
-        )
-      } else {
-        task.useMappingFile.setDisallowChanges(true)
-      }
+      task.useMappingFile.setDisallowChanges(creationConfig !is VariantCreationConfig)
       task.obfuscationMappingFile.setDisallowChanges(creationConfig.artifacts.get(SingleArtifact.OBFUSCATION_MAPPING_FILE))
     }
   }

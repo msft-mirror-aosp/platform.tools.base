@@ -58,6 +58,7 @@ fun RecipeExecutor.composeNavigationUiActivityRecipe(
     isLauncher = isLauncher,
     hasNoActionBar = true,
     generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
   )
   // It doesn't have to create separate themes.xml for light and night because the default
   // status bar color is same between them at this moment

@@ -69,7 +69,15 @@ fun RecipeExecutor.generateNavigationDrawer(
   addMaterialDependency(useAndroidX)
   addViewBindingSupport(data.viewBindingSupport, true)
 
-  generateManifest(data, activityClass, packageName, isLauncher, hasNoActionBar = true, generateActivityTitle = true)
+  generateManifest(
+    data,
+    activityClass,
+    packageName,
+    isLauncher,
+    hasNoActionBar = true,
+    generateActivityTitle = true,
+    windowSoftInputMode = "adjustResize",
+  )
 
   mergeXml(strings(), resOut.resolve("values/strings.xml"))
   mergeXml(dimens(), resOut.resolve("values/dimens.xml"))

@@ -15,7 +15,7 @@
  */
 package com.android.tools.deployer.tasks;
 
-import com.android.tools.deployer.DeployerException;
+import com.android.tools.deployer.common.DeployerException;
 
 public class MockTask {
     private boolean runCalled;

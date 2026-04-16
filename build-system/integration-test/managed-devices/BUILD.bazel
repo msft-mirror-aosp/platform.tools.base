@@ -128,7 +128,7 @@ gradle_connected_test(
 )
 
 gradle_connected_test(
-    name = "UtpManagedDeviceTest",
+    name = "AndroidManagedDeviceTest",
     srcs = "src/test/java/com/android/build/gradle/integration/manageddevice/application/",
     avd = None,
     data = TEST_DATA,

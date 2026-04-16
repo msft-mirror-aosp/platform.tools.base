@@ -75,6 +75,8 @@ public class DeviceParser {
         private final Path mParentFolder;
         private Meta mMeta;
         private Hardware mHardware;
+        private Environment mEnvironment;
+        private boolean mInEnvironment = false;
         private Software mSoftware;
         private State mState;
         private Device.Builder mBuilder;
@@ -100,6 +102,8 @@ public class DeviceParser {
                 mMeta = null;
                 mHardware = null;
                 mSoftware = null;
+                mEnvironment = null;
+                mInEnvironment = false;
                 mState = null;
                 mCamera = null;
 
@@ -140,6 +144,10 @@ public class DeviceParser {
                 mBootProp = new String[2];
             } else if (DeviceSchema.NODE_TOUCHPAD.equals(localName)) {
                 mHardware.setTouchpad(new Touchpad());
+            } else if (DeviceSchema.NODE_ENVIRONMENT.equals(localName)) {
+                mEnvironment = new Environment();
+                mHardware.setEnvironment(mEnvironment);
+                mInEnvironment = true;
             }
             mStringAccumulator.setLength(0);
         }
@@ -243,9 +251,17 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_HINGE_ANGLES_POSTURE_DEFINITIONS.equals(localName)) {
                 mHardware.getHinge().setHingeAnglePostureDefinitions(getString(mStringAccumulator));
             } else if (DeviceSchema.NODE_WIDTH.equals(localName)) {
-                mHardware.getTouchpad().setWidth(getInteger(mStringAccumulator));
+                if (mInEnvironment) {
+                    mEnvironment.setWidth(getInteger(mStringAccumulator));
+                } else {
+                    mHardware.getTouchpad().setWidth(getInteger(mStringAccumulator));
+                }
             } else if (DeviceSchema.NODE_HEIGHT.equals(localName)) {
-                mHardware.getTouchpad().setHeight(getInteger(mStringAccumulator));
+                if (mInEnvironment) {
+                    mEnvironment.setHeight(getInteger(mStringAccumulator));
+                } else {
+                    mHardware.getTouchpad().setHeight(getInteger(mStringAccumulator));
+                }
             } else if (DeviceSchema.NODE_XDPI.equals(localName)) {
                 mHardware.getScreen().setXdpi(getDouble(mStringAccumulator));
             } else if (DeviceSchema.NODE_YDPI.equals(localName)) {
@@ -278,6 +294,8 @@ public class DeviceParser {
             } else if (DeviceSchema.NODE_CAMERA.equals(localName)) {
                 mHardware.addCamera(mCamera);
                 mCamera = null;
+            } else if (DeviceSchema.NODE_ENVIRONMENT.equals(localName)) {
+                mInEnvironment = false;
             } else if (DeviceSchema.NODE_LOCATION.equals(localName)) {
                 CameraLocation location = CameraLocation.getEnum(getString(mStringAccumulator));
                 if (location != null) {

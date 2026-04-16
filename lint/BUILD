@@ -92,6 +92,7 @@ iml_module(
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
         "@intellij//:org.jetbrains.kotlin",
+        "@intellij//:intellij.platform.uast",
         "//tools/base/annotations:studio.android.sdktools.android-annotations",
         "//tools/base/lint:studio.android.sdktools.lint-model",
         "//tools/base/common:studio.android.sdktools.common",
@@ -99,6 +100,7 @@ iml_module(
         "//tools/base/sdk-common:studio.android.sdktools.sdk-common",
         "//tools/base/layoutlib-api:studio.android.sdktools.layoutlib-api",
         "//tools/base/build-system/manifest-merger:studio.android.sdktools.manifest-merger",
+        "@intellij//:intellij.java.uast",
     ],
 )
 
@@ -173,6 +175,8 @@ iml_module(
         "@intellij//:org.jetbrains.kotlin",
         "//tools/base/lint:studio.android.sdktools.lint-api",
         "//tools/base/lint:liblint-checks-proto",
+        "@intellij//:intellij.platform.uast",
+        "@intellij//:intellij.java.uast",
     ],
 )
 
@@ -362,6 +366,7 @@ iml_module(
         "@intellij//:org.jetbrains.kotlin",
         "@intellij//:intellij-sdk",
         "@intellij//:com.intellij.java",
+        "@intellij//:intellij.platform.uast",
     ],
 )
 

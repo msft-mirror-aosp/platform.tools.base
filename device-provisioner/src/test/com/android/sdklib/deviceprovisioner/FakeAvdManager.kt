@@ -144,6 +144,7 @@ fun makeAvdInfo(
   hasPlayStore: Boolean = true,
   avdStatus: AvdInfo.AvdStatus = AvdInfo.AvdStatus.OK,
   tag: IdDisplay = SystemImageTags.DEFAULT_TAG,
+  userSettings: Map<String, String> = emptyMap(),
 ): AvdInfo {
   return AvdInfo(
     iniFile = avdRoot.resolve("fake_avd_${index}.ini"),
@@ -162,6 +163,7 @@ fun makeAvdInfo(
         ConfigKey.TAG_IDS to tag.id,
         ConfigKey.TAG_DISPLAYNAMES to tag.display,
       ),
+    userSettings = userSettings,
     status = avdStatus,
   )
 }

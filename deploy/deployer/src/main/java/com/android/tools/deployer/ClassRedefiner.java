@@ -16,6 +16,7 @@
 package com.android.tools.deployer;
 
 import com.android.tools.deploy.proto.Deploy;
+import com.android.tools.deployer.common.DeployerException;
 
 /** Responsible for invoking the corresponding API to redefine a class in ART. */
 public interface ClassRedefiner {

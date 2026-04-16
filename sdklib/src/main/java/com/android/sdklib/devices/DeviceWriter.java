@@ -218,6 +218,14 @@ public class DeviceWriter {
         addElement(doc, touch, DeviceSchema.NODE_MECHANISM, s.getMechanism().getResourceValue());
         addElement(doc, touch, DeviceSchema.NODE_SCREEN_TYPE, s.getScreenType().toString());
 
+        Environment env = hw.getEnvironment();
+        if (env != null) {
+            Element environment = doc.createElement(PREFIX + DeviceSchema.NODE_ENVIRONMENT);
+            hardware.appendChild(environment);
+            addElement(doc, environment, DeviceSchema.NODE_WIDTH, Integer.toString(env.getWidth()));
+            addElement(doc, environment, DeviceSchema.NODE_HEIGHT, Integer.toString(env.getHeight()));
+        }
+
         addElement(doc, hardware, DeviceSchema.NODE_NETWORKING, hw.getNetworking());
         addElement(doc, hardware, DeviceSchema.NODE_SENSORS, hw.getSensors());
         addElement(doc, hardware, DeviceSchema.NODE_MIC, Boolean.toString(hw.hasMic()));

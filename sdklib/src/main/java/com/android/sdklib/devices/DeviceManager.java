@@ -627,8 +627,13 @@ public class DeviceManager {
         props.put(
                 HardwareProperties.HW_LCD_HEIGHT, Integer.toString(hw.getScreen().getYDimension()));
 
-        Touchpad touchpad = hw.getTouchpad();
+        Environment environment = hw.getEnvironment();
+        if (environment != null) {
+            props.put(HardwareProperties.ENVIRONMENT_HEIGHT, Integer.toString(environment.getHeight()));
+            props.put(HardwareProperties.ENVIRONMENT_WIDTH, Integer.toString(environment.getWidth()));
+        }
 
+        Touchpad touchpad = hw.getTouchpad();
         if (touchpad != null) {
             props.put(HardwareProperties.HW_TOUCHPAD0, getBooleanVal(true));
             props.put(HardwareProperties.HW_TOUCHPAD0_WIDTH, Integer.toString(touchpad.getWidth()));

@@ -49,7 +49,7 @@ class ResourcesOverridingTest {
       .subproject(":app", app)
       .build()
 
-  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).disableBuiltInKotlin().create()
+  @get:Rule val project = GradleTestProject.builder().fromTestApp(testApp).create()
 
   @Before
   fun setUp() {
@@ -123,6 +123,10 @@ class ResourcesOverridingTest {
     TestFileUtils.appendToFile(
       project.getSubproject("app").buildFile,
       """
+      android {
+          // TODO(b/498924383): we shouldn't need this.
+          enableKotlin = false
+      }
       dependencies {
           implementation(project.dependencyFactory.create(null, "publishedLib-release", null, null, "aar"))
           implementation project(':localLib')

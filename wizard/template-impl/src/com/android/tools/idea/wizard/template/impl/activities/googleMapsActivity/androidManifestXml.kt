@@ -55,6 +55,7 @@ fun androidManifestXml(
 
         <activity android:name="${packageName}.${activityClass}"
             android:exported="$launcher"
+            android:windowSoftInputMode="adjustResize"
             android:label="@string/title_${simpleName}">
             $activityBody
         </activity>

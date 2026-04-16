@@ -17,11 +17,17 @@ package com.android.tools.deployer;
 
 import static org.junit.Assert.*;
 
+import com.android.tools.deployer.common.ChangeType;
+import com.android.tools.deployer.common.DeployerException;
+import com.android.tools.deployer.common.OverlayId;
 import com.android.tools.deployer.model.Apk;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import java.util.EnumSet;
+
 import org.junit.Test;
+
+import java.util.EnumSet;
 
 public class OverlayDifferTest {
 
