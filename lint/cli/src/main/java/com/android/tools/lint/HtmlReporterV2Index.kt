@@ -181,9 +181,9 @@ $STYLE_CSS
 
             <p>To suppress a lint warning in a <code class="bg-gray-100 px-1 rounded">build.gradle</code> file, add a section like this:</p>
             <pre class="errorlines">android {
-lintOptions {
-    disable 'TypographyFractions','TypographyQuotes'
-}
+    lintOptions {
+        disable 'TypographyFractions','TypographyQuotes'
+    }
 }</pre>
 
             <p>Here we specify a comma separated list of issue id's after the disable command. You can also use <code class="bg-gray-100 px-1 rounded">warning</code> or <code class="bg-gray-100 px-1 rounded">error</code> instead of <code class="bg-gray-100 px-1 rounded">disable</code> to change the severity of issues.</p>
