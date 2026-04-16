@@ -308,7 +308,6 @@ com.android.build.gradle.integration.dependencies.app.AppWithResolutionStrategyF
 com.android.build.gradle.integration.dependencies.app.AppWithRuntimeDependencyTest
 com.android.build.gradle.integration.dependencies.BrokenTestModuleSyncTest
 com.android.build.gradle.integration.dependencies.CheckJetifierTaskTest
-com.android.build.gradle.integration.dependencies.CompileAndRuntimeClasspathTest
 com.android.build.gradle.integration.dependencies.DependenciesFilePublicOutputTest
 com.android.build.gradle.integration.dependencies.DependencyOrderTest
 com.android.build.gradle.integration.dependencies.DepOnLocalJarThroughAModuleTest

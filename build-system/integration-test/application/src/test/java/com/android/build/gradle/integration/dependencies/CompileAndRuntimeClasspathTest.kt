@@ -16,8 +16,7 @@
 
 package com.android.build.gradle.integration.dependencies
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.options.BooleanOption
 import com.android.builder.model.v2.ide.AndroidGradlePluginProjectFlags.BooleanFlag.ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT
 import com.android.builder.model.v2.ide.SyncIssue
@@ -31,45 +30,43 @@ import org.junit.runners.Parameterized
 class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
 
   companion object {
-
     @Parameterized.Parameters(name = "enableAlignment_{0}") @JvmStatic fun parameters() = listOf(true, false)
   }
 
-  @JvmField
-  @Rule
-  val project: GradleTestProject =
-    GradleTestProject.builder()
-      .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-      .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
-      .create()
+  @get:Rule
+  val rule =
+    GradleRule.configure().from {
+      androidJavaApplication {}
+      gradleProperties { add(BooleanOption.USE_DEPENDENCY_CONSTRAINTS, enableAlignment) }
+    }
 
   @Test
   fun `Higher Compile than Runtime causes failure`() {
-    project.buildFile.appendText(
-      """
-      |android.enableKotlin = false
-      |dependencies {
-      |    compileOnly'com.google.guava:guava:20.0'
-      |    runtimeOnly'com.google.guava:guava:19.0'
-      |}
-      """
-        .trimMargin()
-    )
+    val project =
+      rule.build {
+        androidApplication {
+          android { enableKotlin = false }
+          dependencies {
+            compileOnly("com.google.guava:guava:20.0")
+            runtimeOnly("com.google.guava:guava:19.0")
+          }
+        }
+      }
 
     if (enableAlignment) {
-      val result = project.executor().expectFailure().run("assembleDebug")
+      val result = project.executor.expectFailure().run("assembleDebug")
       result.assertErrorContains(
-        "> Could not resolve all files for configuration ':debugCompileClasspath'.\n" +
+        "> Could not resolve all files for configuration ':app:debugCompileClasspath'.\n" +
           "   > Could not resolve com.google.guava:guava:20.0.\n" +
           "     Required by:\n" +
-          "         root project 'project'\n" +
+          "         project ':app'\n" +
           "      > Cannot find a version of 'com.google.guava:guava' that satisfies the version constraints:\n" +
-          "           Dependency path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
-          "           Constraint path: 'root project :' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
-          " version resolved in configuration ':debugRuntimeClasspath' by consistent resolution\n"
+          "           Dependency path: 'project :app' (debugCompileClasspath) --> 'com.google.guava:guava:20.0'\n" +
+          "           Constraint path: 'project :app' (debugCompileClasspath) --> 'com.google.guava:guava:{strictly 19.0}' because of the following reason:" +
+          " version resolved in configuration ':app:debugRuntimeClasspath' by consistent resolution\n"
       )
     } else {
-      val result = project.executor().run("dependencies")
+      val result = project.executor.run(":app:dependencies")
       result.assertOutputContains(
         """
         debugCompileClasspath - Resolved configuration for compilation for variant: debug
@@ -82,18 +79,18 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
 
   @Test
   fun `Lower Compile than Runtime leads to promoted version`() {
-    project.buildFile.appendText(
-      """
-      |android.enableKotlin = false
-      |dependencies {
-      |    compileOnly'com.google.guava:guava:19.0'
-      |    runtimeOnly'com.google.guava:guava:20.0'
-      |}
-      """
-        .trimMargin()
-    )
+    val project =
+      rule.build {
+        androidApplication {
+          android { enableKotlin = false }
+          dependencies {
+            compileOnly("com.google.guava:guava:19.0")
+            runtimeOnly("com.google.guava:guava:20.0")
+          }
+        }
+      }
 
-    val result = project.executor().run("dependencies")
+    val result = project.executor.run(":app:dependencies")
     if (enableAlignment) {
       result.assertOutputContains(
         """
@@ -117,12 +114,11 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
   @Test
   fun `value is represented in the model`() {
     val models =
-      project
-        .modelV2()
+      rule.build.modelBuilder
         // ignore performance warning
         .ignoreSyncIssues(SyncIssue.SEVERITY_WARNING)
         .fetchModels()
-    val flags = models.container.getProject(":").androidProject!!.flags
+    val flags = models.container.getProject(":app").androidProject!!.flags
     assertThat(ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT.getValue(flags))
       .named("tooling model ENABLE_COMPILE_RUNTIME_CLASSPATH_ALIGNMENT")
       .isEqualTo(enableAlignment)
