@@ -41,13 +41,13 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
     GradleTestProject.builder()
       .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
       .addGradleProperties("${BooleanOption.USE_DEPENDENCY_CONSTRAINTS.propertyName}=$enableAlignment")
-      .disableBuiltInKotlin()
       .create()
 
   @Test
   fun `Higher Compile than Runtime causes failure`() {
     project.buildFile.appendText(
       """
+      |android.enableKotlin = false
       |dependencies {
       |    compileOnly'com.google.guava:guava:20.0'
       |    runtimeOnly'com.google.guava:guava:19.0'
@@ -84,6 +84,7 @@ class CompileAndRuntimeClasspathTest(private val enableAlignment: Boolean) {
   fun `Lower Compile than Runtime leads to promoted version`() {
     project.buildFile.appendText(
       """
+      |android.enableKotlin = false
       |dependencies {
       |    compileOnly'com.google.guava:guava:19.0'
       |    runtimeOnly'com.google.guava:guava:20.0'
