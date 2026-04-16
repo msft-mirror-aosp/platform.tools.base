@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
 import com.android.build.gradle.internal.initialize
+import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalMultipleArtifactType
 import com.android.build.gradle.internal.services.getBuildService
@@ -405,7 +406,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
           )
           creationConfig.sourceContainers.forEach { sourceContainer ->
-            fileCollection.from(sourceContainer.suiteSourceClasspath.runtimeClasspath)
+            fileCollection.from(sourceContainer.suiteSourceClasspath.getRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
             fileCollection.from(
               sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
             )

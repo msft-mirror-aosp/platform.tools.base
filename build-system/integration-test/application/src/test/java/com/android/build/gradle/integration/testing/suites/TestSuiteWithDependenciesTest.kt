@@ -125,6 +125,13 @@ class TestSuiteWithDependenciesTest {
   fun testConfigurationBlockExecutes() {
     rule.build.executor.run("app:testFirstT1DebugTestSuite")
   }
+
+  @Test
+  fun testApplicationWithProjectClassesInRuntimeClasspath() {
+    // This test verifies that we don't have resolution failures due to project classes (directories)
+    // being present in a configuration that previously required CLASSES_JAR (JARs).
+    rule.build.executor.run(":app:testFirstT1DebugTestSuite")
+  }
 }
 
 class ToyJunitEngineForTestingDependencies : TestEngine {
