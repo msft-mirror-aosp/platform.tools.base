@@ -103,7 +103,7 @@ open class AssumptionTableBuilder<FX>(lattice: Lattice<FX>) : Lattice<FX> by lat
   /** Creates a monomorphic signature, [setUp]-ing the type and effect given [domains] */
   fun TypeBounds<Nothing>.given(vararg domains: Type<Nothing>, setUp: ResultTemplateBuilder<FX>.() -> Unit): ResultTemplate<FX> =
     with(ResultTemplateBuilder(this@AssumptionTableBuilder).apply(setUp)) {
-      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint))
+      ResultTemplate(this@given, domains.asList(), range, Effect(concreteEffect, symbolicInvocations, constraint), persistentMapOf())
     }
 
   /** Creates a polymorphic signature, introducing unbounded type parameter */

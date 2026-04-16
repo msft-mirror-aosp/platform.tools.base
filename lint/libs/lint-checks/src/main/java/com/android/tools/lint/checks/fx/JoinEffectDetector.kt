@@ -36,6 +36,7 @@ import com.android.tools.lint.checks.fx.result.Scope
 import com.android.tools.lint.checks.fx.result.Type
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.static
 import com.android.tools.lint.checks.fx.result.Type.MethodRef.Companion.virtual
+import com.android.tools.lint.checks.fx.result.emptySubst
 import com.android.tools.lint.checks.fx.result.get
 import com.android.tools.lint.checks.fx.utils.Encoder
 import com.android.tools.lint.checks.fx.utils.Encoder.Companion.adapt
@@ -340,6 +341,7 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
         recNothingTypeEncoder.zeroOrMore() withDefault listOf(),
         recTypeEncoder withDefault Type.Unit,
         fxEncoder withDefault Effect(effects.bottom, persistentSetOf(), Constraint.MostPermissive),
+        Encoder.map(nameEncoder, typeEncoder) withDefault emptySubst,
       )
     Encoder.map(methodIdEncoder, resultEncoder)
   }
@@ -903,7 +905,8 @@ private fun <FX : Any> resultList(module: Module<FX>, results: Map<Type.MethodRe
               is EffectResult.Inference -> effectResult.result
               is EffectResult.Inapplicable -> return@fold m
             }
-          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect))
+          val subst = methodSummary.effect.subst!!
+          m.put(methodId, ResultTemplate(methodBody.initEnvironment.types, methodBody.domains, methodSummary.value, effect, subst))
         }
       classId to classSummary
     }
