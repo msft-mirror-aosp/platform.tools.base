@@ -101,13 +101,11 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun androidTestWithCodeCoverage() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithCodeCoverage()
   }
 
   @Test
   fun androidTestWithTestFailures() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithTestFailures()
   }
 
@@ -115,13 +113,11 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun androidTestWithOrchestrator() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithOrchestrator()
   }
 
   @Test
   fun androidTestWithOrchestratorAndCodeCoverage() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithOrchestratorAndCodeCoverage()
   }
 
@@ -169,7 +165,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun androidTestWithOrchestratorWithDynamicFeature() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithOrchestratorWithDynamicFeature()
   }
 
@@ -187,7 +182,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun androidTestWithForceCompilation() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithForceCompilation()
   }
 
