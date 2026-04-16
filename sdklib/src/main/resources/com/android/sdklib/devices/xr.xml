@@ -263,6 +263,10 @@
                 <d:prop-name>emulator.dev.xr.disp_modality</d:prop-name>
                 <d:prop-value>ost</d:prop-value>
             </d:boot-prop>
+            <d:boot-prop>
+                <d:prop-name>emulator.dev.xr.dimming_levels</d:prop-name>
+                <d:prop-value>0.0,0.25,0.5,0.75,1.0</d:prop-value>
+            </d:boot-prop>
         </d:boot-props>
     </d:device>
 </d:devices>
