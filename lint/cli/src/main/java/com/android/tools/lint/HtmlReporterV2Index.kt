@@ -19,7 +19,7 @@ package com.android.tools.lint
 import com.android.tools.lint.renderer.LINTSCRIPT_JS
 import com.android.tools.lint.renderer.STYLE_CSS
 
-internal fun getIndexHtml(reportData: String): String =
+internal fun getIndexHtml(reportData: String, title: String): String =
   """
 <!--
  Copyright (C) 2026 The Android Open Source Project
@@ -42,7 +42,7 @@ internal fun getIndexHtml(reportData: String): String =
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lint Report</title>
+<title>$title</title>
 <style>
 $STYLE_CSS
 </style>
@@ -53,7 +53,7 @@ $STYLE_CSS
 <div class="header-top-row">
     <div class="header-left">
         <div class="header-branding">
-            <h1 class="header-title" id="project-name">Lint Report</h1>
+            <h1 class="header-title" id="project-name">$title</h1>
             <p class="header-date" id="report-date"></p>
         </div>
     </div>
