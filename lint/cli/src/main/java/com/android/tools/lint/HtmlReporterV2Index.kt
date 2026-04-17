@@ -123,6 +123,21 @@ $STYLE_CSS
             </div>
         </div>
         <div class="flex-1 flex-end-gap-3">
+            <div class="search-container">
+                <button id="search-reveal-btn" class="icon-btn" data-tooltip="Search Issues">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </button>
+                <div id="search-wrapper" class="search-input-wrapper">
+                    <input type="text" id="search-input" placeholder="Search..." class="search-input">
+                    <button id="search-clear-btn" class="search-clear-btn hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
             <div class="segmented-control" id="density-segments">
                 <button data-value="comfy" class="segment-btn active" data-tooltip="Comfortable Density">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"

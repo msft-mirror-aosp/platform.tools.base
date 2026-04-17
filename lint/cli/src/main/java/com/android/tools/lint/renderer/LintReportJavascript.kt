@@ -26,6 +26,7 @@ const LintReportApp = {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'issues', // 'packages', 'issues'
         density: 'comfy',
+        searchQuery: '',
         expandedIssues: new Set(),
         collapsedNodes: new Set(),
         sort: { by: 'severity', order: 'desc' },
@@ -71,6 +72,10 @@ const LintReportApp = {
 
             viewSegments: document.getElementById('view-segments'),
             densitySegments: document.getElementById('density-segments'),
+            searchRevealBtn: document.getElementById('search-reveal-btn'),
+            searchWrapper: document.getElementById('search-wrapper'),
+            searchInput: document.getElementById('search-input'),
+            searchClearBtn: document.getElementById('search-clear-btn'),
 
             addFilterBtn: document.getElementById('add-filter-btn'),
             addFilterDropdown: document.getElementById('add-filter-dropdown'),
@@ -164,6 +169,42 @@ const LintReportApp = {
             });
         }
 
+        if (this.elements.searchRevealBtn) {
+            this.elements.searchRevealBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.elements.searchRevealBtn.classList.add('hidden');
+                this.elements.searchWrapper.classList.add('expanded');
+                this.elements.searchInput.focus();
+            });
+        }
+
+        if (this.elements.searchInput) {
+            const debouncedRender = this.debounce(() => {
+                this.render();
+            }, 150);
+
+            this.elements.searchInput.addEventListener('input', () => {
+                const term = this.elements.searchInput.value.trim().toLowerCase();
+                this.state.searchQuery = term;
+                if (term.length > 0) {
+                    this.elements.searchClearBtn.classList.remove('hidden');
+                } else {
+                    this.elements.searchClearBtn.classList.add('hidden');
+                }
+                debouncedRender();
+            });
+        }
+
+        if (this.elements.searchClearBtn) {
+            this.elements.searchClearBtn.addEventListener('click', () => {
+                this.elements.searchInput.value = '';
+                this.state.searchQuery = '';
+                this.elements.searchClearBtn.classList.add('hidden');
+                this.render();
+                this.elements.searchInput.focus();
+            });
+        }
+
         if (this.elements.tableHeaders) {
             this.elements.tableHeaders.addEventListener('click', (e) => {
                 const th = e.target.closest('[data-sort]');
@@ -217,7 +258,10 @@ const LintReportApp = {
     },
 
     render() {
-        const issues = this.getFilteredIssues(this.lintReport.issues || []);
+        let issues = this.getFilteredIssues(this.lintReport.issues || []);
+        if (this.state.searchQuery) {
+            issues = issues.filter(i => this.matchesSearch(i, this.state.searchQuery));
+        }
         this.renderStats();
         this.renderContent(issues);
         this.renderAdditionalChecks();
@@ -357,6 +401,30 @@ const LintReportApp = {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    },
+
+    matchesSearch(issue, query) {
+        if (!issue || !query) return false;
+        const searchableFields = ['id', 'category', 'summary', 'explanation', 'message', 'priority', 'severityDescription'];
+        for (const field of searchableFields) {
+            const val = issue[field];
+            if (val != null && val.toString().toLowerCase().includes(query)) {
+                return true;
+            }
+        }
+        if (issue.location && issue.location.file && issue.location.file.toLowerCase().includes(query)) {
+            return true;
+        }
+        return false;
+    },
+
+    debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+            const context = this;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func.apply(context, args), wait);
+        };
     },
 
     setupDensitySegments(elements, state, tableElements = []) {

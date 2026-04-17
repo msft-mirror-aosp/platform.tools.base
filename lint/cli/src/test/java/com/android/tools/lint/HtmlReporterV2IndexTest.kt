@@ -51,9 +51,13 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".pl-level-8"))
     assertTrue(STYLE_CSS.contains(".table-compact"))
     assertTrue(STYLE_CSS.contains(".segmented-control"))
+    assertTrue(STYLE_CSS.contains(".search-container"))
+    assertTrue(STYLE_CSS.contains(".search-input-wrapper"))
+    assertTrue(STYLE_CSS.contains(".search-input"))
 
     // Check for some key JS logic
     assertTrue(LINTSCRIPT_JS.contains("this.lintReport.issues"))
+    assertTrue(LINTSCRIPT_JS.contains("searchQuery: ''"))
     assertTrue(LINTSCRIPT_JS.contains("sort: { by: 'severity', order: 'desc' }"))
     assertTrue(LINTSCRIPT_JS.contains("this.escapeHTML(locationStr)"))
 
@@ -61,6 +65,8 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"project-name\""))
     assertTrue(html.contains("id=\"total-issues\""))
     assertTrue(html.contains("id=\"lint-data\""))
+    assertTrue(html.contains("id=\"search-reveal-btn\""))
+    assertTrue(html.contains("id=\"search-input\""))
     assertTrue(html.contains("id=\"ExtraIssues\""))
     assertTrue(html.contains("id=\"MissingIssues\""))
   }
@@ -83,6 +89,25 @@ class HtmlReporterV2IndexTest {
     // Check that LINTSCRIPT_JS caches and binds events for density segments
     assertTrue(LINTSCRIPT_JS.contains("densitySegments: document.getElementById('density-segments')"))
     assertTrue(LINTSCRIPT_JS.contains("this.setupDensitySegments"))
+  }
+
+  @Test
+  fun testSearchControl() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for search components
+    assertTrue(html.contains("id=\"search-reveal-btn\""))
+    assertTrue(html.contains("id=\"search-input\""))
+    assertTrue(html.contains("id=\"search-clear-btn\""))
+
+    // Check search-related JS
+    assertTrue(LINTSCRIPT_JS.contains("searchQuery: ''"))
+    assertTrue(LINTSCRIPT_JS.contains("searchRevealBtn: document.getElementById('search-reveal-btn')"))
+    assertTrue(LINTSCRIPT_JS.contains("searchWrapper: document.getElementById('search-wrapper')"))
+    assertTrue(LINTSCRIPT_JS.contains("this.matchesSearch(i, this.state.searchQuery)"))
+    assertTrue(LINTSCRIPT_JS.contains("matchesSearch(issue, query)"))
+    assertTrue(LINTSCRIPT_JS.contains("debounce(func, wait)"))
   }
 
   @Test

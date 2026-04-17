@@ -182,6 +182,9 @@ header {
 .header-title { font-size: 1.25rem; font-weight: 700; color: var(--text-darkest); letter-spacing: -0.025em; }
 .header-date { font-size: 0.8125rem; color: var(--text-subtle); margin-top: 0.125rem; }
 
+.icon-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 0.375rem; border: 1px solid transparent; background: transparent; color: var(--text-subtle); transition: all 0.2s; cursor: pointer; }
+.icon-btn:hover, .icon-btn.active { background-color: var(--bg-hover); color: var(--text-main); }
+
 .header-toolbar { padding: 0; background-color: var(--bg-header); }
 .header-toolbar-inner {
     max-width: 1800px;
@@ -399,6 +402,46 @@ tr.issue-row:hover { cursor: pointer; }
 .table-compact th {
   padding: 0.25rem 0.5rem;
 }
+
+/* Search Box (Expandable) */
+.search-container { display: flex; align-items: center; position: relative; }
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0;
+    opacity: 0;
+}
+.search-input-wrapper.expanded { width: 220px; opacity: 1; margin-left: 0.25rem; }
+.search-input {
+    border: 1px solid var(--border-interactive);
+    border-radius: 0.375rem;
+    padding: 0.25rem 0.6rem;
+    padding-right: 2rem;
+    font-size: 0.8125rem;
+    width: 100%;
+    transition: border-color 0.2s;
+    background: var(--bg-card);
+    height: 28px;
+}
+.search-input:focus { border-color: var(--text-blue-600); outline: none; }
+.search-clear-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    color: var(--text-muted);
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100%;
+    transition: color 0.2s;
+}
+.search-clear-btn:hover { color: var(--text-gray-500); }
 
 .caretline { background-color: var(--bg-caret); display: block; width: 100%; border-radius: 2px; }
 .lineno { color: var(--text-lineno); background-color: var(--bg-lineno); padding: 0 8px; margin-right: 8px; border-right: 1px solid var(--border-lineno); user-select: none; }
