@@ -439,7 +439,9 @@ class AndroidAdditionalTestOutputCollector(
   private fun addBenchmarkMessage(benchmarkMessage: String, testResult: TestResult) {
     val hostOutputDir = additionalOutputDirectoryOnHost ?: return
     val testIdentifier = testResult.testIdentifier
-    val fileNameSuffix = "${testIdentifier.testPackage}.${testIdentifier.testClass}.${testIdentifier.testMethod}"
+    val packageName = testIdentifier.testPackage
+    val fullClassName = if (packageName.isNotEmpty()) "$packageName.${testIdentifier.testClass}" else testIdentifier.testClass
+    val fileNameSuffix = "${fullClassName}.${testIdentifier.testMethod}"
     val benchmarkMessageOutputFile = File(hostOutputDir, "additionaltestoutput.benchmark.message_${fileNameSuffix}.txt")
     benchmarkMessageOutputFile.writeText(benchmarkMessage, StandardCharsets.UTF_8)
   }

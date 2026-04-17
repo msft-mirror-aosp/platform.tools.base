@@ -33,6 +33,7 @@ import com.android.build.gradle.internal.component.DeviceTestCreationConfig
 import com.android.build.gradle.internal.component.InstrumentedTestCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.TestSuiteTargetCreationConfig
+import com.android.build.gradle.internal.component.TestVariantCreationConfig
 import com.android.build.gradle.internal.computeAbiFromArchitecture
 import com.android.build.gradle.internal.computeAvdName
 import com.android.build.gradle.internal.dsl.ManagedVirtualDevice
@@ -570,7 +571,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
    * backward compatibility for the default 'connected' check path, without requiring users to explicitly configure the test suite DSL.
    */
   class ConnectedTestSuiteCreationAction(
-    private val creationConfig: DeviceTestCreationConfig,
+    private val creationConfig: InstrumentedTestCreationConfig,
     private val testData: TestData,
     private val connectedCheckSerials: Provider<List<String>>,
   ) : GlobalTaskCreationAction<LegacyReportingTestSuiteTestTask>() {
@@ -584,14 +585,16 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       super.configure(task)
 
       val globalConfig = creationConfig.global
+      val testedConfig = (creationConfig as? DeviceTestCreationConfig)?.mainVariant
+      val variantName = testedConfig?.name ?: creationConfig.name
 
       task.group = JavaBasePlugin.VERIFICATION_GROUP
-      task.description = "Installs and runs the tests for ${creationConfig.mainVariant.name} on connected devices."
+      task.description = "Installs and runs the tests for $variantName on connected devices."
       task.outputs.upToDateWhen { false }
 
       task.testSuiteName.setDisallowChanges("androidTest")
       task.testSuiteTarget.setDisallowChanges("connected")
-      task.testedVariantName.setDisallowChanges(creationConfig.mainVariant.name)
+      task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
 
       task.deviceProviderFactory.timeOutInMs.setDisallowChanges(globalConfig.installationOptions.timeOutInMs)
@@ -636,9 +639,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
 
-      if (creationConfig.mainVariant.artifacts.get(SingleArtifact.APK).isPresent) {
+      val isLibrary = testedConfig?.componentType?.isAar ?: false
+
+      if (testedConfig != null && !isLibrary) {
         task.engineInputParameters.add(
-          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.mainVariant.artifacts.get(SingleArtifact.APK))
+          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
+        )
+      } else if (creationConfig is TestVariantCreationConfig) {
+        task.engineInputParameters.add(
+          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks)
         )
       }
       task.engineInputParameters.add(
@@ -666,7 +675,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       )
       task.engineInputProperties.put("android-test.force-aot-compilation", creationConfig.isForceAotCompilation.toString())
 
-      val variantName = creationConfig.mainVariant.name
       var buildTarget: String
       var flavorFolder = if (creationConfig.componentType.isAar) "" else creationConfig.flavorName ?: ""
       if (flavorFolder.isNotEmpty()) {
@@ -874,9 +882,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
 
       task.useJUnitPlatform { testFramework: JUnitPlatformOptions -> testFramework.includeEngines("android-test-engine") }
 
-      if (testedConfig?.artifacts?.get(SingleArtifact.APK)?.isPresent == true) {
+      val isLibrary = testedConfig?.componentType?.isAar ?: false
+
+      if (testedConfig != null && !isLibrary) {
         task.engineInputParameters.add(
           AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
+        )
+      } else if (creationConfig is TestVariantCreationConfig) {
+        task.engineInputParameters.add(
+          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks)
         )
       }
       task.engineInputParameters.add(
@@ -930,10 +944,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.legacyTestReportingRedirectionEnabled.map { it.toString() },
       )
       task.engineInputProperties.put(
+        "android-test.additional-test-output-dir-on-host",
+        additionalTestOutputDir.absolutePath,
+      )
+      task.engineInputProperties.put(
         "android-test.additional-test-output-dir-on-device",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
       )
-      task.engineInputProperties.put("com.android.junit.engine.results.file", File(testResultOutputDir, "test-result.pb").absolutePath)
 
       task.engineInputProperties.disallowChanges()
 

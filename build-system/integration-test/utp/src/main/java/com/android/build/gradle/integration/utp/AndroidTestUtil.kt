@@ -641,7 +641,8 @@ class AndroidTestUtil(
         .run(testTaskName)
 
     if (runWithBuiltInPlatform) {
-      result.assertTask(":emptyAppProject:connectedDebugAndroidTest").wasSkipped()
+      val skippedTask = result.skippedTasks.find { it.endsWith("AndroidTest") }
+      assertThat(skippedTask).isNotNull()
     } else {
       result.assertOutputContains("No tests found, nothing to do.")
     }

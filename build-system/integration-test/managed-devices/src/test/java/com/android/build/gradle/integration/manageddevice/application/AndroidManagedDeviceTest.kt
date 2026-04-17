@@ -55,17 +55,37 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         }
 
         util.testTaskName = ":${moduleName}:allDevicesCheck"
-        util.testResultXmlPath = "${moduleName}/$TEST_RESULT_XML$moduleName-.xml"
+        val deviceName = if (util.runWithBuiltInPlatform) BUILT_IN_DEVICE_NAME else DSL_DEVICE_NAME
+        val deviceOutputDir = "$TEST_RESULTS/$deviceName"
+
+        util.testResultXmlPath =
+          if (util.runWithBuiltInPlatform) {
+            "${moduleName}/$TEST_RESULTS/TEST-$deviceName.xml"
+          } else {
+            "${moduleName}/$deviceOutputDir/TEST-$DSL_DEVICE_NAME-_$moduleName-.xml"
+          }
+
         if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
-          util.testReportPath = "${moduleName}/$TEST_REPORT_FOR_DYNAMIC_FEATURE"
-          util.testLogcatPath = "${moduleName}/$LOGCAT_FOR_DYNAMIC_FEATURE"
+          util.testReportPath =
+            if (util.runWithBuiltInPlatform) {
+              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/com.example.android.kotlin.feature.html"
+            } else {
+              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin.feature.html"
+            }
+          util.testLogcatPath = "${moduleName}/$deviceOutputDir/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
         } else {
-          util.testReportPath = "${moduleName}/$TEST_REPORT"
-          util.testLogcatPath = "${moduleName}/$LOGCAT"
+          util.testReportPath =
+            if (util.runWithBuiltInPlatform) {
+              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/com.example.android.kotlin.html"
+            } else {
+              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin.html"
+            }
+          util.testLogcatPath = "${moduleName}/$deviceOutputDir/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
         }
-        util.testResultPbPath = "${moduleName}/$TEST_RESULT_PB"
+        util.testResultPbPath = "${moduleName}/$deviceOutputDir/test-result.pb"
         util.testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
-        util.testAdditionalOutputPath = "${moduleName}/${TEST_ADDITIONAL_OUTPUT}"
+        util.testAdditionalOutputPath =
+          "${moduleName}/build/outputs/managed_device_android_test_additional_output/debug/$deviceName"
       },
     )
 
@@ -75,6 +95,7 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
     fun parameters(): Collection<Array<Any>> = listOf(arrayOf(false), arrayOf(true))
 
     private const val DSL_DEVICE_NAME = "device1"
+    private const val BUILT_IN_DEVICE_NAME = "emulator-5554 - 13"
 
     private const val OUTPUTS = "build/outputs"
     private const val TEST_ADDITIONAL_OUTPUT = "$OUTPUTS/managed_device_android_test_additional_output/debug/$DSL_DEVICE_NAME"
@@ -95,7 +116,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
   @Test
   fun runAndroidTestWithNoTestClasses() {
     // TODO(b/476442048): Implement built-in test platform for Managed Device.
-    assumeFalse(runWithBuiltInPlatform)
     util.runAndroidTestWithNoTestClasses()
   }
 
@@ -123,13 +143,11 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun connectedAndroidTestWithLogcat() {
-    assumeFalse(runWithBuiltInPlatform)
     util.connectedAndroidTestWithLogcat()
   }
 
   @Test
   fun connectedAndroidTestFromTestOnlyModule() {
-    assumeFalse(runWithBuiltInPlatform)
     util.connectedAndroidTestFromTestOnlyModule()
   }
 
@@ -159,7 +177,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun androidTestWithDynamicFeature() {
-    assumeFalse(runWithBuiltInPlatform)
     util.androidTestWithDynamicFeature()
   }
 
@@ -170,7 +187,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun connectedAndroidTestWithLogcatWithDynamicFeature() {
-    assumeFalse(runWithBuiltInPlatform)
     util.connectedAndroidTestWithLogcatWithDynamicFeature()
   }
 
@@ -192,7 +208,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun connectedAndroidTestDoesNotOutputNoClassDefFoundError() {
-    assumeFalse(runWithBuiltInPlatform)
     util.connectedAndroidTestDoesNotOutputNoClassDefFoundError()
   }
 }
