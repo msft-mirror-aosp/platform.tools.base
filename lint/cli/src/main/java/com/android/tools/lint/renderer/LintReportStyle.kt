@@ -282,15 +282,15 @@ pre.errorlines {
     box-shadow: var(--shadow-inset);
 }
 
-* --- List Checks Button --- */
+/* --- List Checks Button --- */
 .list-checks-btn {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.25rem 0.75rem;
-    background-color: var(--bg-blue-100) !important;
-    color: var(--text-blue-800) !important;
-    border: 1px solid var(--border-blue-300) !important;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--bg-selected);
+    color: var(--text-blue-800);
+    border: 1px solid var(--bg-blue-100);
     border-radius: 9999px;
     font-size: 0.8125rem;
     font-weight: 500;
@@ -298,7 +298,7 @@ pre.errorlines {
     transition: all 0.2s;
     white-space: nowrap;
 }
-.list-checks-btn:hover { background-color: var(--bg-blue-200) !important; }
+.list-checks-btn:hover { background-color: var(--bg-blue-100); }
 
 tr.issue-row:hover { cursor: pointer; }
 
