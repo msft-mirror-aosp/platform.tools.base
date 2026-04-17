@@ -71,7 +71,11 @@ const SourceViewApp = {
      */
     async loadAndRender(classData, context = {}) {
         // Reset selected variants if we are loading a new class (check name and package)
-        if (!this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name) {
+        // Unless we are restoring state from history.
+        const isNewClass = !this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name;
+        const isPopping = typeof Navigation !== 'undefined' && Navigation.isPopping;
+
+        if (isNewClass && !isPopping) {
             this.state.selectedVariants = [];
         }
 
@@ -144,6 +148,10 @@ const SourceViewApp = {
         this.renderFunctionList();
         this.renderAllVariantViews();
         this.updateVariantButtonText();
+
+        if (typeof Navigation !== 'undefined') {
+            Navigation.replace();
+        }
     },
 
     renderBreadcrumbs() {
@@ -242,21 +250,24 @@ const SourceViewApp = {
                 CoverageReportApp.resetSelection();
                 CoverageReportApp.state.currentView = 'modules';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
             case 'go-to-packages':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = null;
                 CoverageReportApp.state.currentView = 'packages';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
             case 'go-to-classes':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = packageName;
                 CoverageReportApp.state.currentView = 'classes';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
         }
     },
@@ -267,6 +278,8 @@ const SourceViewApp = {
 
     closeDropdownOnClickOutside() {
         document.addEventListener('click', (event) => {
+            if (!document.body.contains(event.target)) return;
+
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
             }
@@ -378,6 +391,9 @@ const SourceViewApp = {
         UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
             this.renderAllVariantViews();
             this.updateVariantButtonText();
+            if (typeof Navigation !== 'undefined') {
+                Navigation.push();
+            }
         }, false);
     },
 

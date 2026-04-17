@@ -47,11 +47,14 @@ const App = {
                         testSuiteName: CoverageReportApp.state.filters.testSuite
                     };
                     this.showSourceView(classObj, context);
+                    Navigation.push();
                 } else {
                     console.error("Class data not found for source view.");
                 }
             }
         });
+
+        Navigation.init();
     },
 
     findClassObject(moduleName, packageName, className) {
@@ -82,6 +85,150 @@ const App = {
         document.getElementById('report-view-controls').classList.remove('hidden');
     }
 }
+
+/**
+ * Navigation handler for history management (Back/Forward buttons).
+ */
+const Navigation = {
+    isPopping: false,
+
+    init() {
+        // Store initial state
+        history.replaceState(this.captureState(), "");
+
+        window.onpopstate = (event) => {
+            if (event.state) {
+                this.isPopping = true;
+                this.applyState(event.state);
+                this.isPopping = false;
+            }
+        };
+    },
+
+    captureState() {
+        const state = {
+            reportState: JSON.parse(JSON.stringify(CoverageReportApp.state)),
+            sourceState: {
+                classData: SourceViewApp.classData ? {
+                    name: SourceViewApp.classData.name,
+                    packageName: SourceViewApp.classData.packageName,
+                    moduleName: SourceViewApp.context.moduleName
+                } : null,
+                context: SourceViewApp.context,
+                selectedVariants: [...SourceViewApp.state.selectedVariants]
+            },
+            currentView: document.getElementById('source-view').classList.contains('hidden-view') ? 'report' : 'source',
+            chipVisibility: {
+                module: !CoverageReportApp.elements.modChipContainer.classList.contains('hidden'),
+                package: !CoverageReportApp.elements.pkgChipContainer.classList.contains('hidden'),
+                class: !CoverageReportApp.elements.clsChipContainer.classList.contains('hidden')
+            }
+        };
+
+        // Always clear search from history state
+        if (state.reportState && state.reportState.filters) {
+            state.reportState.filters.search = '';
+        }
+        // Always remove density from history state to retain user choice across navigation
+        if (state.reportState) {
+            delete state.reportState.density;
+        }
+        return state;
+    },
+
+    push() {
+        if (this.isPopping) return;
+        history.pushState(this.captureState(), "");
+    },
+
+    replace() {
+        if (this.isPopping) return;
+        history.replaceState(this.captureState(), "");
+    },
+
+    applyState(state) {
+        if (!state) return;
+
+        // Restore Report State while preserving array references
+        const currentFilters = CoverageReportApp.state.filters;
+        const newFilters = state.reportState.filters;
+
+        currentFilters.modules.length = 0; currentFilters.modules.push(...newFilters.modules);
+        currentFilters.packages.length = 0; currentFilters.packages.push(...newFilters.packages);
+        currentFilters.classes.length = 0; currentFilters.classes.push(...newFilters.classes);
+        currentFilters.variants.length = 0; currentFilters.variants.push(...newFilters.variants);
+        currentFilters.testSuite = newFilters.testSuite;
+
+        // Always clear search on navigation
+        currentFilters.search = '';
+        if (CoverageReportApp.elements.searchInput) {
+            CoverageReportApp.elements.searchInput.value = '';
+        }
+        if (CoverageReportApp.elements.searchClearBtn) {
+            CoverageReportApp.elements.searchClearBtn.classList.add('hidden');
+        }
+        if (CoverageReportApp.elements.searchWrapper && CoverageReportApp.elements.searchRevealBtn) {
+            CoverageReportApp.elements.searchWrapper.classList.remove('expanded');
+            CoverageReportApp.elements.searchRevealBtn.classList.remove('hidden');
+        }
+
+        // Clear SourceViewApp search as well
+        if (typeof SourceViewApp !== 'undefined' && SourceViewApp.elements) {
+            if (SourceViewApp.elements.functionSearch) {
+                SourceViewApp.elements.functionSearch.value = '';
+            }
+            if (SourceViewApp.elements.functionSearchClearBtn) {
+                SourceViewApp.elements.functionSearchClearBtn.classList.add('hidden');
+            }
+            if (SourceViewApp.elements.srcSearchWrapper && SourceViewApp.elements.srcSearchRevealBtn) {
+                SourceViewApp.elements.srcSearchWrapper.classList.remove('expanded');
+                SourceViewApp.elements.srcSearchRevealBtn.classList.remove('hidden');
+            }
+            // Trigger the search handler to reset the function list display
+            if (typeof SourceViewApp.handleFunctionSearch === 'function') {
+                SourceViewApp.handleFunctionSearch({ target: { value: '' } });
+            }
+        }
+
+        CoverageReportApp.state.viewMode = state.reportState.viewMode;
+        CoverageReportApp.state.currentView = state.reportState.currentView;
+        CoverageReportApp.state.selectedModule = state.reportState.selectedModule;
+        CoverageReportApp.state.selectedPackage = state.reportState.selectedPackage;
+        CoverageReportApp.state.sort = state.reportState.sort;
+
+        // Restore filter chips visibility
+        if (state.chipVisibility) {
+            if (state.chipVisibility.module) CoverageReportApp.elements.modChipContainer.classList.remove('hidden');
+            else CoverageReportApp.elements.modChipContainer.classList.add('hidden');
+
+            if (state.chipVisibility.package) CoverageReportApp.elements.pkgChipContainer.classList.remove('hidden');
+            else CoverageReportApp.elements.pkgChipContainer.classList.add('hidden');
+
+            if (state.chipVisibility.class) CoverageReportApp.elements.clsChipContainer.classList.remove('hidden');
+            else CoverageReportApp.elements.clsChipContainer.classList.add('hidden');
+        }
+
+        // Update shared header UI
+        CoverageReportApp.updateFilterButtons();
+        CoverageReportApp.updateVariantButtonText();
+
+        if (state.currentView === 'report') {
+            App.showReportView();
+            CoverageReportApp.updateVariantDropdown();
+            CoverageReportApp.render(true); // pass true to skip replaceState
+        } else if (state.sourceState.classData) {
+            const classObj = App.findClassObject(
+                state.sourceState.classData.moduleName,
+                state.sourceState.classData.packageName,
+                state.sourceState.classData.name
+            );
+            if (classObj) {
+                SourceViewApp.state.selectedVariants = state.sourceState.selectedVariants;
+                App.showSourceView(classObj, state.sourceState.context);
+            }
+        }
+    }
+};
 
 /**
  * UI Utilities
@@ -369,14 +516,22 @@ const CoverageReportApp = {
             this.state.filters.variants = [...allVariants];
         }
 
+        this.updateVariantDropdown();
+        this.updateDynamicFilters();
+    },
+
+    updateVariantDropdown() {
+        let allVariants = [];
+        if (this.fullReport.variantCoverages && this.fullReport.variantCoverages.length > 0) {
+            allVariants = this.fullReport.variantCoverages.map(v => v.name);
+        }
         const variantOptions = allVariants.map(v => ({name: v, value: v}));
 
         UIUtils.buildActionDropdown(this.elements.variantFilterDropdown, variantOptions, this.state.filters.variants, () => {
             this.updateVariantButtonText();
-            this.render();
+            this.render(true);
+            Navigation.push();
         }, false);
-
-        this.updateDynamicFilters();
     },
 
     getDropdownConfigs() {
@@ -430,7 +585,8 @@ const CoverageReportApp = {
                 this.elements.addFilterDropdown.classList.add('hidden');
                 this.handleHeaderFilterChange(filterType);
                 this.updateFilterButtons();
-                this.render();
+                this.render(true);
+                Navigation.push();
 
                 // Auto-open newly added dropdown
                 setTimeout(() => {
@@ -469,7 +625,8 @@ const CoverageReportApp = {
 
                     this.handleHeaderFilterChange();
                     this.updateFilterButtons();
-                    this.render();
+                    this.render(true);
+                    Navigation.push();
                 }
             });
         });
@@ -490,14 +647,10 @@ const CoverageReportApp = {
                 const btn = e.target.closest('.segment-btn');
                 if (!btn) return;
 
-                // Update UI Active State
-                this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                // Update State and Render
                 this.state.viewMode = btn.dataset.value;
                 this.resetSelection();
-                this.render();
+                this.render(true);
+                Navigation.push();
             });
         }
 
@@ -509,17 +662,20 @@ const CoverageReportApp = {
             } else {
                 this.elements.searchClearBtn.classList.add('hidden');
             }
-            this.render();
+            this.render(true);
+            Navigation.replace();
         });
         this.elements.searchClearBtn.addEventListener('click', () => {
             this.elements.searchInput.value = '';
             this.state.filters.search = '';
             this.elements.searchClearBtn.classList.add('hidden');
-            this.render();
+            this.render(true);
             this.elements.searchWrapper.classList.remove('expanded');
             setTimeout(() => {
                 this.elements.searchRevealBtn.classList.remove('hidden');
             }, 300);
+            Navigation.replace();
+            this.elements.searchInput.focus();
         });
 
         // Density Segments (Comfy/Compact)
@@ -528,15 +684,9 @@ const CoverageReportApp = {
                 const btn = e.target.closest('.segment-btn');
                 if (!btn) return;
 
-                this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
                 this.state.density = btn.dataset.value;
-                if (this.state.density === 'compact') {
-                    this.elements.mainTable.classList.add('table-compact');
-                } else {
-                    this.elements.mainTable.classList.remove('table-compact');
-                }
+                this.render(true);
+                Navigation.replace();
             });
         }
     },
@@ -654,12 +804,14 @@ const CoverageReportApp = {
             case 'go-to-modules':
                 this.state.currentView = 'modules';
                 this.resetSelection();
-                this.render();
+                this.render(true);
+                Navigation.push();
                 break;
             case 'go-to-packages':
                 this.state.currentView = 'packages';
                 this.state.selectedPackage = null;
-                this.render();
+                this.render(true);
+                Navigation.push();
                 break;
         }
     },
@@ -675,7 +827,8 @@ const CoverageReportApp = {
             this.state.sort.by = newSortBy;
             this.state.sort.order = 'asc';
         }
-        this.render();
+        this.render(true);
+        Navigation.push();
     },
 
     handleFilterSelection(filterType, e) {
@@ -756,14 +909,16 @@ const CoverageReportApp = {
             filters.classes = [];
             this.handleHeaderFilterChange('module');
             this.updateFilterButtons();
-            this.render();
+            this.render(true);
+            Navigation.push();
         });
 
         const testSuiteStateWrapper = [filters.testSuite];
         UIUtils.buildActionDropdown(this.elements.testSuiteFilterDropdown, testSuiteOptions, testSuiteStateWrapper, () => {
             filters.testSuite = testSuiteStateWrapper[0] || 'Aggregated';
             this.updateFilterButtons();
-            this.render();
+            this.render(true);
+            Navigation.push();
 
             if (typeof SourceViewApp !== 'undefined' && SourceViewApp.classData) {
                 SourceViewApp.context.testSuiteName = filters.testSuite;
@@ -777,18 +932,23 @@ const CoverageReportApp = {
             filters.classes = [];
             this.handleHeaderFilterChange('package');
             this.updateFilterButtons();
-            this.render();
+            this.render(true);
+            Navigation.push();
         });
 
         UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, () => {
             this.handleHeaderFilterChange('class');
             this.updateFilterButtons();
-            this.render();
+            this.render(true);
+            Navigation.push();
         });
+
     },
 
     closeDropdownOnClickOutside() {
         document.addEventListener('click', (event) => {
+            if (!document.body.contains(event.target)) return;
+
             this.getDropdownConfigs().forEach(({ btn, dropdown }) => {
                 if (btn && dropdown && !btn.contains(event.target) && !dropdown.contains(event.target)) {
                     dropdown.classList.add('hidden');
@@ -817,13 +977,16 @@ const CoverageReportApp = {
         this.state.currentView = target.dataset.value;
         this.elements.groupByDropdown.classList.add('hidden');
         this.resetSelection();
-        this.render();
+        this.render(true);
+        Navigation.push();
     },
 
     handleRowClick(e) {
         if (this.state.viewMode === 'flat') {
             const td = e.target.closest('td[data-name]');
-            if (td) this.handleFlatRowClick(td);
+            if (td) {
+                this.handleFlatRowClick(td);
+            }
         } else {
             this.handleTreeRowClick(e.target);
         }
@@ -839,7 +1002,8 @@ const CoverageReportApp = {
             this.state.selectedPackage = name;
             this.state.currentView = 'classes';
         }
-        this.render();
+        this.render(true);
+        Navigation.push();
     },
 
     handleTreeRowClick(target) {
@@ -904,16 +1068,47 @@ const CoverageReportApp = {
         });
     },
 
-    render() {
+    render(skipReplaceState = false) {
         this.updateDynamicFilters();
         this.updateGroupByText();
         this.renderBreadcrumbs();
+        this.updateSegmentsUI();
         let dataToRender = this.getFilteredData();
         dataToRender = this.getSortedData(dataToRender);
 
         this.renderTable(dataToRender);
 
         this.updateTooltipsForOverflow();
+
+        if (!skipReplaceState) {
+            Navigation.replace();
+        }
+    },
+
+    updateSegmentsUI() {
+        if (this.elements.viewSegments) {
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => {
+                if (b.dataset.value === this.state.viewMode) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+        }
+        if (this.elements.densitySegments) {
+            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+                if (b.dataset.value === this.state.density) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
+            if (this.state.density === 'compact') {
+                this.elements.mainTable.classList.add('table-compact');
+            } else {
+                this.elements.mainTable.classList.remove('table-compact');
+            }
+        }
     },
 
     updateGroupByText() {
