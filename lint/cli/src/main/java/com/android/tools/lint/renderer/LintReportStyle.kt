@@ -182,6 +182,19 @@ header {
 .header-title { font-size: 1.25rem; font-weight: 700; color: var(--text-darkest); letter-spacing: -0.025em; }
 .header-date { font-size: 0.8125rem; color: var(--text-subtle); margin-top: 0.125rem; }
 
+.header-toolbar { padding: 0; background-color: var(--bg-header); }
+.header-toolbar-inner {
+    max-width: 1800px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    height: 46px;
+}
+
 .header-stats {
     display: flex;
     gap: 2rem;
@@ -335,6 +348,57 @@ tr.issue-row:hover { cursor: pointer; }
 .flex-end-gap-3 { display: flex; align-items: center; gap: 0.75rem; justify-content: flex-end; }
 .svg-full-size { width: 100%; height: 100%; }
 .list-decimal { list-style-type: decimal; }
+
+/* Segmented Controls */
+.segmented-control {
+    display: flex;
+    background-color: var(--bg-hover);
+    padding: 2px;
+    border-radius: 0.375rem;
+}
+.segment-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.32rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    color: var(--text-gray-500);
+    transition: all 0.2s ease;
+    background-color: transparent;
+    font-size: 0.8rem;
+    font-weight: 500;
+    height: 28px;
+    width: 28px;
+}
+.segment-btn:hover:not(.active) { color: var(--text-gray-900); }
+.segment-btn.active { background-color: var(--bg-card); color: var(--text-blue-600); box-shadow: var(--shadow-sm); }
+
+/* Tooltip */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--bg-tooltip);
+    color: var(--text-inverse);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: var(--shadow-md);
+}
+
+/* Compact Mode */
+.table-compact td,
+.table-compact th {
+  padding: 0.25rem 0.5rem;
+}
 
 .caretline { background-color: var(--bg-caret); display: block; width: 100%; border-radius: 2px; }
 .lineno { color: var(--text-lineno); background-color: var(--bg-lineno); padding: 0 8px; margin-right: 8px; border-right: 1px solid var(--border-lineno); user-select: none; }

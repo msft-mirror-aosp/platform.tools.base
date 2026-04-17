@@ -81,6 +81,27 @@ $STYLE_CSS
         </div>
     </div>
 </div>
+<div class="header-toolbar">
+    <div class="header-toolbar-inner">
+        <div class="flex-1 flex-start-gap-4"></div>
+        <div class="flex-1 flex-end-gap-3">
+            <div class="segmented-control" id="density-segments">
+                <button data-value="comfy" class="segment-btn active" data-tooltip="Comfortable Density">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <button data-value="compact" class="segment-btn" data-tooltip="Compact Density">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 5h16M4 9.66h16M4 14.33h16M4 19h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 </header>
 
 <div id="report-view" class="container-custom">

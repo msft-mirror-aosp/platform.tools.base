@@ -25,6 +25,7 @@ const LintReportApp = {
     state: {
         viewMode: 'flat', // 'flat' or 'tree'
         currentView: 'issues', // 'packages', 'issues'
+        density: 'comfy',
         expandedIssues: new Set(),
         collapsedNodes: new Set(),
         sort: { by: 'severity', order: 'desc' }
@@ -65,6 +66,7 @@ const LintReportApp = {
             totalHints: document.getElementById('total-hints'),
 
             viewSegments: document.getElementById('view-segments'),
+            densitySegments: document.getElementById('density-segments'),
 
             mainTable: document.getElementById('main-table'),
             tableHeaders: document.getElementById('table-headers'),
@@ -83,6 +85,9 @@ const LintReportApp = {
     },
 
     bindEvents() {
+        this.setupDensitySegments(this.elements, this.state, [
+            this.elements.mainTable
+        ]);
 
         if (this.elements.tableHeaders) {
             this.elements.tableHeaders.addEventListener('click', (e) => {
@@ -252,6 +257,21 @@ const LintReportApp = {
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
     },
+
+    setupDensitySegments(elements, state, tableElements = []) {
+        if (!elements.densitySegments) return;
+        elements.densitySegments.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            state.density = btn.dataset.value;
+            const isCompact = state.density === 'compact';
+            tableElements.forEach(table => {
+                if (table) table.classList.toggle('table-compact', isCompact);
+            });
+        });
+    }
 };
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -49,6 +49,8 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".hover\\:underline:hover"))
     assertTrue(STYLE_CSS.contains(".pl-level-0"))
     assertTrue(STYLE_CSS.contains(".pl-level-8"))
+    assertTrue(STYLE_CSS.contains(".table-compact"))
+    assertTrue(STYLE_CSS.contains(".segmented-control"))
 
     // Check for some key JS logic
     assertTrue(LINTSCRIPT_JS.contains("this.lintReport.issues"))
@@ -61,6 +63,26 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"lint-data\""))
     assertTrue(html.contains("id=\"ExtraIssues\""))
     assertTrue(html.contains("id=\"MissingIssues\""))
+  }
+
+  @Test
+  fun testDensityControls() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for density control buttons
+    assertTrue(html.contains("data-value=\"comfy\""))
+    assertTrue(html.contains("data-value=\"compact\""))
+    assertTrue(html.contains("data-tooltip=\"Comfortable Density\""))
+    assertTrue(html.contains("data-tooltip=\"Compact Density\""))
+
+    // Check default starting state: Comfortable Density is active by default
+    assertTrue(html.contains("<button data-value=\"comfy\" class=\"segment-btn active\""))
+    assertTrue(LINTSCRIPT_JS.contains("density: 'comfy'"))
+
+    // Check that LINTSCRIPT_JS caches and binds events for density segments
+    assertTrue(LINTSCRIPT_JS.contains("densitySegments: document.getElementById('density-segments')"))
+    assertTrue(LINTSCRIPT_JS.contains("this.setupDensitySegments"))
   }
 
   @Test
