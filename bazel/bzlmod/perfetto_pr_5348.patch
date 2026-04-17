@@ -1,0 +1,36 @@
+diff --git a/protos/perfetto/trace/perfetto_trace.proto b/protos/perfetto/trace/perfetto_trace.proto
+index 5076cf7d324..b2ab9e8ceac 100644
+--- a/protos/perfetto/trace/perfetto_trace.proto
++++ b/protos/perfetto/trace/perfetto_trace.proto
+@@ -15666,7 +15666,14 @@ message ChromeWindowHandleEventInfo {
+ // Begin of protos/perfetto/trace/track_event/screenshot.proto
+ 
+ message Screenshot {
++  // The JPEG (Joint Photographic Experts Group) file format.
+   optional bytes jpg_image = 1;
++
++  // The PAM (Portable Arbitrary Map) file format.
++  optional bytes pam_image = 2;
++
++  // The PPM (Portable Pixmap) file format.
++  optional bytes ppm_image = 3;
+ }
+ 
+ // End of protos/perfetto/trace/track_event/screenshot.proto
+diff --git a/protos/perfetto/trace/track_event/screenshot.proto b/protos/perfetto/trace/track_event/screenshot.proto
+index 02e658cd3ea..3aaa33f72a0 100644
+--- a/protos/perfetto/trace/track_event/screenshot.proto
++++ b/protos/perfetto/trace/track_event/screenshot.proto
+@@ -19,5 +19,12 @@ syntax = "proto2";
+ package perfetto.protos;
+ 
+ message Screenshot {
++  // The JPEG (Joint Photographic Experts Group) file format.
+   optional bytes jpg_image = 1;
++
++  // The PAM (Portable Arbitrary Map) file format.
++  optional bytes pam_image = 2;
++
++  // The PPM (Portable Pixmap) file format.
++  optional bytes ppm_image = 3;
+ }
