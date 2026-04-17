@@ -405,9 +405,8 @@ coverage_java_test(
     jvm_flags = [
         "-Dtest.suite.jar=deployer.tests.jar",
         "-Ddashboards.enabled=true",
+        "-javaagent:$(location //tools/base/tracer:trace_agent)=$(location //tools/base/deploy/deployer:src/test/resource/deployer.profile)",
     ],
-    # TODO(b/502267724): Re-enable once the fix in b/496940383 has been released.
-    #"-javaagent:$(location //tools/base/tracer:trace_agent)=$(location //tools/base/deploy/deployer:src/test/resource/deployer.profile)",
     tags = [
         "no_rbe_windows",
         "noci:studio-win",  # b/116693861
@@ -466,9 +465,8 @@ kotlin_test(
     jvm_flags = [
         "-Dtest.suite.jar=deployer.runner.tests.jar",
         "-Ddashboards.enabled=true",
+        "-javaagent:$(location //tools/base/tracer:trace_agent)=$(location //tools/base/deploy/deployer:src/test/resource/deployer.profile)",
     ],
-    # TODO(b/502267724): Re-enable once the fix in b/496940383 has been released.
-    # "-javaagent:$(location //tools/base/tracer:trace_agent)=$(location //tools/base/deploy/deployer:src/test/resource/deployer.profile)",
     tags = [
         "no_rbe_windows",
         "noci:studio-win",

@@ -29,8 +29,7 @@ EXPECTED=$(cat <<- EOF
 EOF
 )
 
-PERFETTO_FILES=$(find . -name "*.perfetto*")
-if [ -n "$PERFETTO_FILES" ]; then
+if [ -f report.json ]; then
   fail "Report should not exist before execution"
 fi
 # Run the file without instrumentation
@@ -40,42 +39,56 @@ if [ "$OUT" != "$EXPECTED" ]; then
   fail "Expected output does not match"
 fi
 
-PERFETTO_FILES=$(find . -name "*.perfetto*")
-if [ -n "$PERFETTO_FILES" ]; then
+if [ -f report.json ]; then
   fail "Report should not exist after running with no agent"
 fi
 
 # Now run with:
 OUT=$(tools/base/tracer/trace_test --jvm_flag=-javaagent:tools/base/tracer/trace_agent.jar=tools/base/tracer/agent/testSrc/com/android/tools/tracer/test.profile)
-
-PERFETTO_FILES=$(find . -name "*.perfetto*")
-if [ -z "$PERFETTO_FILES" ]; then
+if [ ! -f report.json ]; then
   fail "Report with profile should exist"
 fi
 
-PERFETTO_FILE=$(echo "$PERFETTO_FILES" | head -n 1)
-
-EXPECTED_METHODS=(
-  "void MainTest.main(String[])"
-  "void MainTest.simple()"
-  "int MainTest.twoReturns(boolean)"
-  "void MainTest.itCatches()"
-  "void MainTest.isAnnotated()"
-  "void MainTest.nestedCatches()"
-  "void MainTest.itThrows()"
-  "void MainTest.callsAThrow()"
-  "void Other.<init>()"
-  "void PkgClass.<init>()"
-  "manual trace"
-  "custom events"
-  "custom"
+EXPECTED_JSON=$(cat <<EOF
+[
+"void MainTest.main(String[])"},
+"void MainTest.simple()"},
+""},
+"int MainTest.twoReturns(boolean)"},
+""},
+"int MainTest.twoReturns(boolean)"},
+""},
+"void MainTest.itCatches()"},
+""},
+"void MainTest.isAnnotated()"},
+""},
+"void MainTest.nestedCatches()"},
+""},
+"void MainTest.itThrows()"},
+""},
+"void MainTest.callsAThrow()"},
+"void MainTest.itThrows()"},
+""},
+""},
+"void Other.<init>()"},
+""},
+"void PkgClass.<init>()"},
+""},
+"manual trace"},
+""},
+"custom events"},
+"custom"},
+""},
+""},
+""},
+EOF
 )
+JSON=$(cat report.json | sed "s/.*\"name\" : //")
 
-for method in "${EXPECTED_METHODS[@]}"; do
-  if ! grep -a -F "$method" "$PERFETTO_FILE" > /dev/null; then
-    fail "Expected trace method '$method' not found in $PERFETTO_FILE"
-  fi
-done
+if [ "$EXPECTED_JSON" != "$JSON" ]; then
+  echo $JSON
+  fail "Expected report does not match"
+fi
 
 if [ "$OUT" != "$EXPECTED" ]; then
   fail "Expected output with agent does not match"

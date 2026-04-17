@@ -15,40 +15,21 @@
  */
 package com.android.tools.tracer.agent;
 
-import java.io.File;
-import java.io.InputStream;
 import java.lang.instrument.Instrumentation;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 
 public class TraceAgent {
-
-    public static Tracer delegate;
-    private static URLClassLoader cl;
-
     public static void premain(String agentArgs, Instrumentation inst) {
-        try {
-            File tempJar = File.createTempFile("trace_agent_impl", ".jar");
-            tempJar.deleteOnExit();
-            try (InputStream is =
-                    TraceAgent.class.getResourceAsStream("/trace_agent_impl_deploy.jar")) {
-                if (is == null) {
-                    throw new RuntimeException(
-                            "Could not find trace_agent_impl_deploy.jar as a resource.");
-                }
-                Files.copy(is, tempJar.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-
-            cl = new URLClassLoader(new URL[] {tempJar.toURI().toURL()});
-            cl.loadClass("com.android.tools.tracer.agent.TraceAgentImpl")
-                    .getDeclaredMethod("run", String.class, Instrumentation.class)
-                    .invoke(null, agentArgs, inst);
-            Class<?> tracer = cl.loadClass("com.android.tools.tracer.agent.TracerImpl");
-            delegate = (Tracer) tracer.getField("INSTANCE").get(null);
-        } catch (Exception e) {
-            e.printStackTrace();
+        TraceProfile profile = new TraceProfile(agentArgs);
+        inst.addTransformer(new TraceTransformer(profile));
+        Tracer.profile = profile;
+        if (profile.traceAgent()) {
+            traceVMLifetime();
         }
+    }
+
+    private static void traceVMLifetime() {
+        Tracer.begin(Tracer.pid, 0, System.nanoTime(), "TraceAgent");
+        Runtime.getRuntime()
+                .addShutdownHook(new Thread(() -> Tracer.end(Tracer.pid, 0, System.nanoTime())));
     }
 }

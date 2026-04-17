@@ -36,7 +36,7 @@ class TraceProfile {
     private final MethodSet start;
     private final MethodSet trace;
     private final MethodSet flush;
-    private String traceOutputDirectory;
+    private String outputFile;
     private final Set<String> annotations;
     private String jvmArgs;
     private boolean traceAgent;
@@ -50,7 +50,7 @@ class TraceProfile {
         start = new MethodSet();
         trace = new MethodSet();
         flush = new MethodSet();
-        traceOutputDirectory = getDefaultOutputDir();
+        outputFile = getDefaultOutputPath();
         jvmArgs = initJvmArgs(configFile);
         annotations = new HashSet<>();
         annotations.add("Lcom/android/annotations/Trace;");
@@ -78,22 +78,15 @@ class TraceProfile {
                 } else if (key.equals("Start")) {
                     trace.add(value);
                     start.add(value);
-                } else if (key.equals("TraceOutputDirectory")) {
-                    traceOutputDirectory = value;
-                } else if (key.equals("TraceOutputDirectoryEnvVar")) {
+                } else if (key.equals("Output")) {
+                    outputFile = value;
+                } else if (key.equals("OutputEnvVar")) {
                     String outputDir = System.getenv(value);
                     if (outputDir == null || outputDir.isEmpty()) {
                         throw new RuntimeException(
-                                "TraceOutputDirectoryEnvVar specified in trace file, but value not"
-                                        + " set.");
+                                "OutputEnvVar specified in trace file, but value not set.");
                     }
-                    traceOutputDirectory = outputDir;
-                } else if (key.equals("Output") || key.equals("OutputEnvVar")) {
-                    System.err.println(
-                            "Warning: '"
-                                    + key
-                                    + "' is deprecated. Use 'TraceOutputDirectory' and"
-                                    + " 'TraceOutputDirectoryEnvVar' instead. Ignoring.");
+                    outputFile = new File(outputDir, "report.json").getPath();
                 } else if (key.equals("Annotation")) {
                     value = "L" + value.replaceAll("\\.", "/") + ";";
                     annotations.add(value);
@@ -106,13 +99,13 @@ class TraceProfile {
         }
     }
 
-    private String getDefaultOutputDir() {
+    private String getDefaultOutputPath() {
         String os = System.getProperty("os.name").toLowerCase();
         if (os.indexOf("win") >= 0) {
             String tmp = System.getProperty("java.io.tmpdir");
-            return new File(tmp).getAbsolutePath();
+            return new File(tmp, "report.json").getAbsolutePath();
         } else {
-            return "/tmp/";
+            return "/tmp/report.json";
         }
     }
 
@@ -169,8 +162,8 @@ class TraceProfile {
         return start.contains(className, method);
     }
 
-    public String getTraceOutputDirectory() {
-        return traceOutputDirectory;
+    public String getOutputFile() {
+        return outputFile;
     }
 
     public String getJvmArgs() {
@@ -179,10 +172,6 @@ class TraceProfile {
 
     public boolean traceAgent() {
         return traceAgent;
-    }
-
-    public boolean hasStartHooks() {
-        return !start.isEmpty();
     }
 
     /**
@@ -200,10 +189,6 @@ class TraceProfile {
         public MethodSet() {
             packages = new HashMap<>();
             classes = new HashMap<>();
-        }
-
-        public boolean isEmpty() {
-            return packages.isEmpty() && classes.isEmpty();
         }
 
         /**
@@ -253,10 +238,9 @@ class TraceProfile {
                     && (classMethods.contains(methodName) || classMethods.contains("*"))) {
                 return true;
             }
-            String pkg = className;
-            int ix;
-            while ((ix = pkg.lastIndexOf('/')) != -1) {
-                pkg = pkg.substring(0, ix);
+            int ix = className.lastIndexOf('/');
+            if (ix != -1) {
+                String pkg = className.substring(0, ix);
                 Set<String> packageMethods = packages.get(pkg);
                 if (packageMethods != null
                         && (packageMethods.contains(methodName) || packageMethods.contains("*"))) {
@@ -270,13 +254,10 @@ class TraceProfile {
             if (classes.get(className) != null) {
                 return true;
             }
-            String pkg = className;
-            int ix;
-            while ((ix = pkg.lastIndexOf('/')) != -1) {
-                pkg = pkg.substring(0, ix);
-                if (packages.get(pkg) != null) {
-                    return true;
-                }
+            int ix = className.lastIndexOf('/');
+            if (ix != -1) {
+                String pkg = className.substring(0, ix);
+                return packages.get(pkg) != null;
             }
             return false;
         }

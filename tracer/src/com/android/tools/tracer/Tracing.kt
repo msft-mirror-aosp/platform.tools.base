@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:JvmName("PerfettoTracer")
-
 package com.android.tools.tracer
 
 import androidx.tracing.AbstractTraceSink
@@ -56,6 +53,8 @@ object Tracing {
 
   @VisibleForTesting
   internal fun initialize(config: TracingConfigProvider, fileProvider: (File) -> File) {
+    val traceDirectory = config.getTraceDirectory()
+
     var oldState: TracingState? = null
     val newState: TracingState
 
@@ -65,7 +64,7 @@ object Tracing {
       newState =
         if (current?.canReuse(config) == true) {
           // All that changes about the previous state is the file, so just copy.
-          current.copy(traceFile = fileProvider(current.traceDirectory))
+          current.copy(traceFile = fileProvider(traceDirectory))
         } else {
           oldState = current
           createNewState(config, fileProvider)
@@ -129,10 +128,9 @@ object Tracing {
     val fileProvider: (File) -> File,
   ) : AutoCloseable by driver {
     fun isEquivalent(newConfig: TracingConfigProvider): Boolean {
-      // We intentionally relax the requirements of what is equivalent.
-      // This is to preserve an existing call to initialize that may have been invoked
-      // by the JVM TI Agent.
-      return isTracingEnabled == newConfig.isTracingEnabled()
+      return isTracingEnabled == newConfig.isTracingEnabled() &&
+        ringBufferCapacity == newConfig.getRingBufferCapacity() &&
+        traceDirectory.absolutePath == newConfig.getTraceDirectory().absolutePath
     }
 
     // If the config is the same, a ring buffer sink can be reused.
@@ -226,7 +224,6 @@ suspend fun <T> traceCoroutine(category: String? = null, name: String? = null, i
  * [name] gives a name to the trace section.
  */
 @OptIn(DelicateTracingApi::class)
-@JvmOverloads
 fun beginSectionWithMetadata(category: String, name: String, token: PropagationToken? = null) {
   val tracer = Tracing.tracer ?: return
   val result = tracer.beginSectionWithMetadata(category, name, token, isRoot = false)

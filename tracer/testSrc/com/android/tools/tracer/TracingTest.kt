@@ -188,9 +188,6 @@ class TracingTest {
         override fun isTracingEnabled() = true
 
         override fun getTraceDirectory() = tempDir
-
-        // A change to the capacity has no impact, we'll keep the old config.
-        override fun getRingBufferCapacity(): Long = 50_000_000
       }
     Tracing.initialize(config2)
 

@@ -137,15 +137,9 @@ class TraceMethodVisitor extends AdviceAdapter {
     }
 
     private void invoke(String method, String desc, String... args) {
-        visitFieldInsn(
-                GETSTATIC,
-                "com/android/tools/tracer/agent/TraceAgent",
-                "delegate",
-                "Lcom/android/tools/tracer/agent/Tracer;");
         for (String arg : args) {
             visitLdcInsn(arg);
         }
-        visitMethodInsn(
-                INVOKEINTERFACE, "com/android/tools/tracer/agent/Tracer", method, desc, true);
+        visitMethodInsn(INVOKESTATIC, "com/android/tools/tracer/agent/Tracer", method, desc, false);
     }
 }
