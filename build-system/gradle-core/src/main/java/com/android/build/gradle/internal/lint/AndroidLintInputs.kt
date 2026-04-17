@@ -60,7 +60,6 @@ import com.android.build.gradle.internal.utils.getDesugaredMethods
 import com.android.build.gradle.internal.utils.isKotlinPluginAppliedInTheSameClassloader
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.ProjectOptions
 import com.android.build.gradle.options.StringOption
 import com.android.builder.core.ComponentType
@@ -2195,14 +2194,6 @@ abstract class ArtifactInput {
 abstract class UastInputs {
 
   /**
-   * Whether to use K2 UAST when running the corresponding task. This provider will be set iff the corresponding
-   * [OptionalBooleanOption.LINT_USE_K2_UAST] or [OptionalBoolean.LINT_USE_K2_UAST] are set.
-   *
-   * If unset, K2 UAST will be used iff the corresponding kotlin language version is at least 2.0 (see [UsesUast.useK2Uast])
-   */
-  @get:Input @get:Optional abstract val useK2UastManualSetting: Property<Boolean>
-
-  /**
    * The kotlin language version used by the corresponding [KotlinCompile] task. This property is set via [KotlinCompile.compilerOptions].
    */
   @get:Input @get:Optional abstract val compilerOptionsKotlinLanguageVersion: Property<String>
@@ -2217,7 +2208,7 @@ abstract class UastInputs {
   val useK2Uast: Boolean
     @Suppress("UnstableApiUsage")
     get() {
-      return useK2UastManualSetting.orNull ?: kotlinLanguageVersion?.let { Version.parse(it) >= Version.prefixInfimum("2") } ?: true
+      return kotlinLanguageVersion?.let { Version.parse(it) >= Version.prefixInfimum("2") } ?: true
     }
 
   @get:Internal
@@ -2225,7 +2216,6 @@ abstract class UastInputs {
     get() = compilerOptionsKotlinLanguageVersion.orNull ?: defaultKotlinLanguageVersion.orNull
 
   fun initialize(project: Project, variant: VariantCreationConfig) {
-    this.useK2UastManualSetting.setDisallowChanges(variant.lintUseK2UastManualSetting)
     val kotlinCompileTaskName =
       if (variant.componentType == ComponentTypeImpl.KMP_ANDROID) {
         "compileAndroidMain"
@@ -2236,7 +2226,6 @@ abstract class UastInputs {
   }
 
   fun initializeForStandalone(project: Project, taskCreationServices: TaskCreationServices, kotlinCompileTaskName: String) {
-    this.useK2UastManualSetting.setDisallowChanges(taskCreationServices.projectOptions.getProvider(OptionalBooleanOption.LINT_USE_K2_UAST))
     initializeFromKotlinCompileTask(kotlinCompileTaskName, project)
   }
 

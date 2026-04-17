@@ -60,7 +60,6 @@ class AndroidLintAnalysisTaskTest {
     task.lintTool.lintCacheDirectory.set(temporaryFolder.newFolder())
     task.lintTool.versionKey.set(Version.ANDROID_TOOLS_BASE_VERSION + "_foo")
     task.offline.set(true)
-    task.uastInputs.useK2UastManualSetting.set(true)
     val commandLineArguments = task.generateCommandLineArguments().joinToString(" ")
     assertThat(commandLineArguments).contains("--client-id gradle")
     assertThat(commandLineArguments).contains("--client-name AGP")

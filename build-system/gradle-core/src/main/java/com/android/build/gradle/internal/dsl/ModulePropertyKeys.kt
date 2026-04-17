@@ -17,16 +17,12 @@
 package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.options.BooleanOption
-import com.android.build.gradle.options.OptionalBooleanOption
 import com.android.build.gradle.options.parseBoolean
 
 sealed interface ModulePropertyKey<OutputT> {
 
   enum class OptionalBoolean(override val key: String) : ModulePropertyKey<Boolean?> {
-    VERIFY_AAR_CLASSES(BooleanOption.VERIFY_AAR_CLASSES.propertyName),
-
-    /** Whether to use K2 UAST when running lint. The corresponding global property is [OptionalBooleanOption.LINT_USE_K2_UAST]. */
-    LINT_USE_K2_UAST(OptionalBooleanOption.LINT_USE_K2_UAST.propertyName);
+    VERIFY_AAR_CLASSES(BooleanOption.VERIFY_AAR_CLASSES.propertyName);
 
     override fun getValue(properties: Map<String, Any>): Boolean? {
       return properties[key]?.let { parseBoolean(key, it) }
