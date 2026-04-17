@@ -82,17 +82,6 @@ public class AndroidDebugBridgeChangeEvents {
         }
     }
 
-    public void notifyBridgeInitializationError(@NonNull Exception e) {
-        for (AndroidDebugBridge.IDebugBridgeChangeListener listener : bridgeListeners) {
-            // we attempt to catch any exception so that a bad listener doesn't kill our thread
-            try {
-                listener.initializationError(e);
-            } catch (Throwable t) {
-                Log.e(ADB, t);
-            }
-        }
-    }
-
     public void addDeviceChangeListener(
             @NonNull AndroidDebugBridge.IDeviceChangeListener listener) {
         deviceListeners.add(listener);
