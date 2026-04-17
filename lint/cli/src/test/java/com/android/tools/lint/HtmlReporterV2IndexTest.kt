@@ -200,7 +200,7 @@ class HtmlReporterV2IndexTest {
               summary = "Summary",
               explanation = "Explanation",
               location = LintLocation("File.kt", 1, 1),
-              urls = listOf("https://example.com/1", "https://example.com/2")
+              urls = listOf("https://example.com/1", "https://example.com/2"),
             )
           ),
         numberOfIssues = 1,
@@ -215,5 +215,44 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("more-info-list"))
     // And STYLE_CSS contains the style
     assertTrue(STYLE_CSS.contains(".more-info-list"))
+  }
+
+  @Test
+  fun testSeverityFilter() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for the "Add Filter" button and its container
+    assertTrue(html.contains("class=\"relative\" id=\"add-filter-container\""))
+    assertTrue(html.contains("id=\"add-filter-btn\""))
+    assertTrue(html.contains("Add Filter"))
+
+    // Check for the "Add Filter" dropdown
+    assertTrue(html.contains("id=\"add-filter-dropdown\" class=\"dropdown-menu hidden\""))
+    assertTrue(html.contains("data-filter-type=\"severity\""))
+    assertTrue(html.contains("Severity</div>"))
+
+    // Check for the severity filter chip (hidden by default)
+    assertTrue(html.contains("id=\"sev-chip-container\" class=\"hidden\""))
+    assertTrue(html.contains("id=\"sev-filter-btn\" class=\"flex items-center cursor-pointer\""))
+    assertTrue(html.contains("id=\"sev-filter-text\""))
+    assertTrue(html.contains("Severity: All"))
+
+    // Check for the severity dropdown list container
+    assertTrue(html.contains("id=\"sev-filter-list\""))
+
+    // Check for the remove filter button
+    assertTrue(html.contains("id=\"remove-severity-filter\""))
+
+    // Verify LINTSCRIPT_JS contains filter state and logic
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("isSeverityAdded: false"))
+    assertTrue(LINTSCRIPT_JS.contains("getFilteredIssues(issues)"))
+
+    // Verify STYLE_CSS contains filter styles
+    assertTrue(STYLE_CSS.contains(".add-filter-btn"))
+    assertTrue(STYLE_CSS.contains(".filter-chip"))
+    assertTrue(STYLE_CSS.contains(".dropdown-menu"))
+    assertTrue(STYLE_CSS.contains(".popover-item"))
   }
 }

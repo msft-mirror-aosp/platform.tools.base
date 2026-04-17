@@ -83,7 +83,45 @@ $STYLE_CSS
 </div>
 <div class="header-toolbar">
     <div class="header-toolbar-inner">
-        <div class="flex-1 flex-start-gap-4"></div>
+        <div class="flex-1 flex-start-gap-4">
+            <div class="filter-icon" title="Filter Options">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M7 12h10M10 18h4" />
+                </svg>
+            </div>
+
+            <div id="filter-chips-container" class="filter-chips-wrapper">
+                <div id="sev-chip-container" class="hidden" style="position: relative;">
+                    <div class="filter-chip">
+                        <span id="sev-filter-btn" class="flex items-center cursor-pointer">
+                            <span id="sev-filter-text">Severity: All</span>
+                        </span>
+                        <span class="chip-close" id="remove-severity-filter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div id="sev-dropdown" class="dropdown-menu hidden">
+                        <div id="sev-filter-list" class="p-1 space-y-1"></div>
+                    </div>
+                </div>
+
+                <div class="relative" id="add-filter-container">
+                    <button id="add-filter-btn" class="add-filter-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Filter
+                    </button>
+                    <div id="add-filter-dropdown" class="dropdown-menu hidden" style="min-width: 10rem">
+                        <div id="add-filter-list">
+                            <div class="dropdown-item" data-filter-type="severity">Severity</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="flex-1 flex-end-gap-3">
             <div class="segmented-control" id="density-segments">
                 <button data-value="comfy" class="segment-btn active" data-tooltip="Comfortable Density">

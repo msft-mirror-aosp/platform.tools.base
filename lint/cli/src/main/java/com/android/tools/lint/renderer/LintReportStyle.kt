@@ -415,4 +415,194 @@ tr.issue-row:hover { cursor: pointer; }
 .pl-level-6 { padding-left: 7rem; }
 .pl-level-7 { padding-left: 8rem; }
 .pl-level-8 { padding-left: 9rem; }
-"""
+
+.icon-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 0.375rem; border: 1px solid transparent; background: transparent; color: var(--text-subtle); transition: all 0.2s; cursor: pointer; }
+.icon-btn:hover, .icon-btn.active { background-color: var(--bg-hover); color: var(--text-main); }
+
+.filter-icon {
+    display: flex;
+    align-items: center;
+    color: var(--text-gray-400);
+    margin-right: 0.5rem;
+}
+
+/* Filter Chips */
+.filter-chips-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-chips-wrapper > div {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--bg-selected);
+    color: var(--text-blue-800);
+    border: 1px solid var(--bg-blue-100);
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.filter-chip:hover { background-color: var(--bg-blue-100); }
+.filter-chip.active { box-shadow: 0 0 0 2px var(--text-blue-600); }
+
+.chip-close {
+    display: inline-flex;
+    margin-right: -0.25rem;
+    margin-left: 0.25rem;
+    padding: 0.125rem;
+    border-radius: 9999px;
+    color: var(--text-blue-600);
+    transition: background-color 0.2s, color 0.2s;
+}
+.chip-close:hover { background-color: var(--bg-blue-200); color: var(--text-blue-800); }
+
+/* Add Filter Button */
+.add-filter-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-gray-500);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px dashed var(--border-interactive);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.add-filter-btn:hover { background-color: var(--bg-hover); color: var(--text-gray-900); border-color: var(--text-gray-500); }
+
+/* --- Dropdowns --- */
+.relative { position: relative; }
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-md);
+    z-index: 99;
+    min-width: 12rem;
+    display: none;
+    max-height: 40vh;
+    overflow-y: auto;
+}
+.dropdown-menu:not(.hidden) { display: block; }
+
+.dropdown-search-zone {
+    height: 48px;
+    box-sizing: border-box;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-card);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+}
+
+.popover-search {
+    width: 100%;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border-interactive);
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    background: var(--bg-card);
+}
+.popover-search:focus { border-color: var(--text-blue-600); outline: none; }
+
+.dropdown-action-zone {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dropdown-action-btn {
+    font-size: 0.8125rem;
+    color: var(--text-blue-600);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+}
+.dropdown-action-btn:hover { text-decoration: underline; color: var(--text-blue-700); }
+
+.dropdown-scroll-zone {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 0.25rem 0;
+}
+
+.popover-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.875rem;
+    color: var(--text-gray-900);
+}
+.popover-item:hover { background-color: var(--bg-hover); }
+
+.active-popover-item {
+    background-color: var(--bg-hover);
+    font-weight: 600;
+    color: var(--text-blue-600);
+}
+
+.popover-checkbox {
+    accent-color: var(--text-blue-600);
+    width: 1rem;
+    height: 1rem;
+    margin-top: 1px;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: var(--text-dark);
+    cursor: pointer;
+}
+.dropdown-item:hover { background: var(--bg-hover); }
+
+.chip-select {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    font-weight: inherit;
+    padding: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.chip-select:focus { outline: none; }
+""""""
