@@ -1115,10 +1115,10 @@ abstract class TaskManager(@JvmField protected val project: Project, @JvmField p
                   creationConfig,
                   managedDevice,
                   testData,
-                  resultsDir,
-                  reportDir,
-                  additionalTestOutputDir,
-                  coverageOutputDir,
+                  deviceResults,
+                  deviceReports,
+                  deviceAdditionalOutputs,
+                  deviceCoverage,
                   testTaskSuffix,
                 )
               )
