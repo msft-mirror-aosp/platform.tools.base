@@ -32,6 +32,13 @@ single_version_override(
     patch_strip = 1,
 )
 
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    edition = "2024",
+    rustfmt_version = "1.91.1",
+    versions = ["1.91.1"],
+)
+
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.spec(
     features = [
@@ -39,36 +46,35 @@ crate.spec(
         "backtrace",
     ],
     package = "anyhow",
-    version = "1.0.98",
+    version = "=1.0.102",
 )
 crate.spec(
     package = "jni",
-    version = "0.21.1",
+    version = "=0.21.1",
 )
 crate.spec(
     default_features = False,
     features = ["deflate"],
     package = "zip",
-    version = "2.4.2",
+    version = "=2.4.2",
 )
 crate.spec(
     package = "libloading",
-    version = "0.8.6",
+    version = "=0.8.9",
 )
 crate.spec(
     package = "log",
-    version = "0.4.26",
+    version = "=0.4.29",
 )
 crate.spec(
     package = "env_logger",
-    version = "0.11.6",
+    version = "=0.11.10",
 )
 crate.spec(
     package = "sha1",
-    version = "0.10.6",
+    version = "=0.10.6",
 )
 crate.spec(
-    package = "windows",
     features = [
         "Win32_Foundation",
         "Win32_Globalization",
@@ -77,6 +83,7 @@ crate.spec(
         "Win32_System_LibraryLoader",
         "Win32_System_Threading",
     ],
+    package = "windows",
     version = "0.61.1",
 )
 crate.spec(
@@ -86,9 +93,14 @@ crate.spec(
         "rustls",
     ],
     package = "reqwest",
-    version = "0.13.2",
+    version = "=0.13.2",
 )
 crate.from_specs(
+    # Cargo upgrades crate versions during dependency resolution by default, which is
+    # not what we want. We cache the dependency resolution step with toplevel.MODULE.bazel.lock,
+    # but we additionally need a Cargo.lockfile to avoid spurious crate upgrades when we rerun
+    # dependency resolution locally (e.g. when adding a new crate).
+    cargo_lockfile = "//tools/base/bazel:Cargo.lockfile",
     # We specify our supported platform explicitly, overriding the default list at
     # https://github.com/bazelbuild/rules_rust/blob/ae1be23677/crate_universe/private/crates_repository.bzl#L29
     supported_platform_triples = [
