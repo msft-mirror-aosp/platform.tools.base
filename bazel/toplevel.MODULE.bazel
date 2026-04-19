@@ -20,7 +20,17 @@ single_version_override(
 )
 
 bazel_dep(name = "rules_proto", version = "7.1.0")
-bazel_dep(name = "rules_rust", version = "0.68.1")
+
+# For rules_rust we pick up commit https://github.com/bazelbuild/rules_rust/commit/0a4285119b
+# which fixes local builds on gWindows (for crates that utilize the C++ toolchain).
+# We should eventually switch to version 0.70.0+ once it is available.
+bazel_dep(name = "rules_rust")
+single_version_override(
+    module_name = "rules_rust",
+    version = "0.68.1",
+    patches = ["//tools/base/bazel/bzlmod:rules_rust_0a4285119b.patch"],
+    patch_strip = 1,
+)
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.spec(
