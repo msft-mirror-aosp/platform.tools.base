@@ -30,7 +30,6 @@ import static java.io.File.pathSeparatorChar;
 import com.android.annotations.NonNull;
 import com.android.testutils.TestUtils;
 import com.android.tools.lint.UastEnvironment;
-import com.android.tools.lint.UastEnvironmentKt;
 import com.android.tools.lint.checks.infrastructure.KotlinClasspathKt;
 import com.android.tools.lint.checks.infrastructure.TestFile;
 import com.android.tools.lint.checks.infrastructure.TestFiles;
@@ -43,7 +42,6 @@ import com.google.common.io.Files;
 
 import kotlin.text.Charsets;
 
-import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -56,7 +54,6 @@ import java.io.PrintStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
 // TODO: Test functions not in classes
@@ -364,18 +361,7 @@ public class ExtractAnnotationsDriverTest {
     }
 
     @Test
-    public void testKotlinK1() throws Exception {
-        Assume.assumeFalse(UastEnvironmentKt.useFirUast());
-        checkKotlin(false);
-    }
-
-    @Test
-    public void testKotlinK2() throws Exception {
-        Assume.assumeTrue(UastEnvironmentKt.useFirUast());
-        checkKotlin(true);
-    }
-
-    private void checkKotlin(boolean useK2Uast) throws Exception {
+    public void checkKotlin() throws Exception {
         assumeNotWindows();
         File androidJar = TestUtils.resolvePlatformPath("android.jar").toFile();
 
@@ -407,10 +393,6 @@ public class ExtractAnnotationsDriverTest {
                         output.getPath(),
                         "--proguard",
                         proguard.getPath());
-        if (!useK2Uast) {
-            list = new ArrayList<>(list);
-            list.add("--XuseK1Uast");
-        }
         String[] args = list.toArray(new String[0]);
         assertNotNull(args);
 
