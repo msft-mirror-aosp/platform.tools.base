@@ -758,11 +758,21 @@ single_gradle_integration_test_per_source(
     deps = TEST_DEPS,
 )
 
+kotlin_library(
+    name = "screenshot_fixture",
+    srcs = ["src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTestFixture.kt"],
+    deps = TEST_DEPS,
+)
+
 single_gradle_integration_test_per_source(
     name = "screenshot-tests",
     package_name = "tools/base/build-system/integration-test/application",
     timeout = "long",
     srcs = [
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotEdgeCaseTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotFeaturesTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotMultiModuleTest.kt",
+        "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotPerformanceTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/ScreenshotTest.kt",
         "src/test/java/com/android/build/gradle/integration/testing/screenshot/WearTileScreenshotTest.kt",
     ],
@@ -782,7 +792,7 @@ single_gradle_integration_test_per_source(
     tags = [
         "noci:studio-win",  # b/374358308
     ],
-    deps = TEST_DEPS,
+    deps = TEST_DEPS + [":screenshot_fixture"],
 )
 
 SUITES_FIXTURE = [
