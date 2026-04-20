@@ -30,8 +30,9 @@ const LintReportApp = {
         expandedIssues: new Set(),
         collapsedNodes: new Set(),
         sort: { by: 'severity', order: 'desc' },
-        filters: { severities: [] },
-        isSeverityAdded: false
+        filters: { severities: [], categories: [] },
+        isSeverityAdded: false,
+        isCategoryAdded: false
     },
     elements: {},
     lintReport: null,
@@ -87,6 +88,13 @@ const LintReportApp = {
             severityFilterList: document.getElementById('sev-filter-list'),
             removeSeverityFilter: document.getElementById('remove-severity-filter'),
 
+            catChipContainer: document.getElementById('cat-chip-container'),
+            categoryFilterBtn: document.getElementById('cat-filter-btn'),
+            categoryFilterText: document.getElementById('cat-filter-text'),
+            categoryFilterDropdown: document.getElementById('cat-dropdown'),
+            categoryFilterList: document.getElementById('cat-filter-list'),
+            removeCategoryFilter: document.getElementById('remove-category-filter'),
+
             mainTable: document.getElementById('main-table'),
             tableHeaders: document.getElementById('table-headers'),
             lintData: document.getElementById('lint-data'),
@@ -110,6 +118,12 @@ const LintReportApp = {
             this.updateFilterButtons();
             this.render();
         });
+
+        const allCategories = [...new Set(issues.map(i => i.category))].sort();
+        this.buildActionDropdown(this.elements.categoryFilterList, allCategories.map(c => ({name: c, value: c})), this.state.filters.categories, () => {
+            this.updateFilterButtons();
+            this.render();
+        });
     },
 
     bindEvents() {
@@ -119,7 +133,8 @@ const LintReportApp = {
 
         const dropdownConfigs = [
             { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
-            { btn: this.elements.severityFilterBtn, dropdown: this.elements.severityFilterDropdown }
+            { btn: this.elements.severityFilterBtn, dropdown: this.elements.severityFilterDropdown },
+            { btn: this.elements.categoryFilterBtn, dropdown: this.elements.categoryFilterDropdown }
         ];
 
         dropdownConfigs.forEach(({ btn, dropdown }) => {
@@ -151,6 +166,8 @@ const LintReportApp = {
                 const type = target.dataset.filterType;
                 if (type === 'severity') {
                     this.state.isSeverityAdded = true;
+                } else if (type === 'category') {
+                    this.state.isCategoryAdded = true;
                 }
                 this.elements.addFilterDropdown.classList.add('hidden');
                 this.updateFilterButtons();
@@ -163,6 +180,17 @@ const LintReportApp = {
                 e.stopPropagation();
                 this.state.isSeverityAdded = false;
                 this.state.filters.severities = [];
+                this.populateFilters();
+                this.updateFilterButtons();
+                this.render();
+            });
+        }
+
+        if (this.elements.removeCategoryFilter) {
+            this.elements.removeCategoryFilter.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.state.isCategoryAdded = false;
+                this.state.filters.categories = [];
                 this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
@@ -271,17 +299,35 @@ const LintReportApp = {
     updateFilterButtons() {
         const issues = this.lintReport.issues || [];
         const allSeverities = [...new Set(issues.map(i => i.severityDescription))];
+        const allCategories = [...new Set(issues.map(i => i.category))];
 
         if (this.elements.sevChipContainer) {
             this.elements.sevChipContainer.classList.toggle('hidden', !this.state.isSeverityAdded);
+        }
+
+        if (this.elements.catChipContainer) {
+            this.elements.catChipContainer.classList.toggle('hidden', !this.state.isCategoryAdded);
         }
 
         if (this.elements.severityFilterText) {
             this.elements.severityFilterText.textContent = this.getFilterLabel('severity', this.state.filters.severities, allSeverities.length);
         }
 
+        if (this.elements.categoryFilterText) {
+            this.elements.categoryFilterText.textContent = this.getFilterLabel('category', this.state.filters.categories, allCategories.length);
+        }
+
+        if (this.elements.addFilterList) {
+            const items = this.elements.addFilterList.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                const type = item.dataset.filterType;
+                if (type === 'severity') item.classList.toggle('hidden', this.state.isSeverityAdded);
+                if (type === 'category') item.classList.toggle('hidden', this.state.isCategoryAdded);
+            });
+        }
+
         if (this.elements.addFilterBtn && this.elements.addFilterBtn.parentElement) {
-            this.elements.addFilterBtn.parentElement.classList.toggle('hidden', this.state.isSeverityAdded);
+            this.elements.addFilterBtn.parentElement.classList.toggle('hidden', this.state.isSeverityAdded && this.state.isCategoryAdded);
         }
     },
 
@@ -289,6 +335,9 @@ const LintReportApp = {
         return issues.filter(issue => {
             if (this.state.filters.severities.length > 0) {
                 if (!this.state.filters.severities.includes(issue.severityDescription)) return false;
+            }
+            if (this.state.filters.categories.length > 0) {
+                if (!this.state.filters.categories.includes(issue.category)) return false;
             }
             return true;
         });

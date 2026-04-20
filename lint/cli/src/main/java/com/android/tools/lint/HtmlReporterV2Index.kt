@@ -107,6 +107,22 @@ $STYLE_CSS
                     </div>
                 </div>
 
+                <div id="cat-chip-container" class="hidden" style="position: relative;">
+                    <div class="filter-chip">
+                        <span id="cat-filter-btn" class="flex items-center cursor-pointer">
+                            <span id="cat-filter-text">Category: All</span>
+                        </span>
+                        <span class="chip-close" id="remove-category-filter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div id="cat-dropdown" class="dropdown-menu hidden">
+                        <div id="cat-filter-list" class="p-1 space-y-1"></div>
+                    </div>
+                </div>
+
                 <div class="relative" id="add-filter-container">
                     <button id="add-filter-btn" class="add-filter-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -117,6 +133,7 @@ $STYLE_CSS
                     <div id="add-filter-dropdown" class="dropdown-menu hidden" style="min-width: 10rem">
                         <div id="add-filter-list">
                             <div class="dropdown-item" data-filter-type="severity">Severity</div>
+                            <div class="dropdown-item" data-filter-type="category">Category</div>
                         </div>
                     </div>
                 </div>

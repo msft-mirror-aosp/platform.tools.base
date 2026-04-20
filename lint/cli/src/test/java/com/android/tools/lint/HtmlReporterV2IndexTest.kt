@@ -270,7 +270,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-severity-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isSeverityAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("getFilteredIssues(issues)"))
 
@@ -279,5 +279,32 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".filter-chip"))
     assertTrue(STYLE_CSS.contains(".dropdown-menu"))
     assertTrue(STYLE_CSS.contains(".popover-item"))
+  }
+
+  @Test
+  fun testCategoryFilter() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for the category filter option in the "Add Filter" dropdown
+    assertTrue(html.contains("data-filter-type=\"category\""))
+    assertTrue(html.contains("Category</div>"))
+
+    // Check for the category filter chip (hidden by default)
+    assertTrue(html.contains("id=\"cat-chip-container\" class=\"hidden\""))
+    assertTrue(html.contains("id=\"cat-filter-btn\" class=\"flex items-center cursor-pointer\""))
+    assertTrue(html.contains("id=\"cat-filter-text\""))
+    assertTrue(html.contains("Category: All"))
+
+    // Check for the category dropdown list container
+    assertTrue(html.contains("id=\"cat-filter-list\""))
+
+    // Check for the remove filter button
+    assertTrue(html.contains("id=\"remove-category-filter\""))
+
+    // Verify LINTSCRIPT_JS contains filter state and logic for categories
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("isCategoryAdded: false"))
+    assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.categories.length > 0)"))
   }
 }
