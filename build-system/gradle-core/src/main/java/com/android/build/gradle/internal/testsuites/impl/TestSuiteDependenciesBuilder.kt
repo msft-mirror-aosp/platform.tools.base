@@ -17,16 +17,13 @@
 package com.android.build.gradle.internal.testsuites.impl
 
 import com.android.Version
-import com.android.build.api.artifact.ScopedArtifact
 import com.android.build.api.attributes.AgpVersionAttr
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.api.attributes.ProductFlavorAttr
 import com.android.build.api.dsl.AgpTestSuiteDependencies
-import com.android.build.api.variant.ScopedArtifacts
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.core.dsl.MultiVariantComponentDslInfo
 import com.android.build.gradle.internal.dependency.TestSuiteSourceClasspath
-import com.android.build.gradle.internal.publishing.AndroidArtifacts
 import com.android.build.gradle.options.ProjectOptions
 import com.android.builder.errors.IssueReporter
 import com.google.common.collect.Maps
@@ -34,7 +31,6 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ResolutionStrategy
 import org.gradle.api.artifacts.dsl.DependencyCollector
-import org.gradle.api.artifacts.type.ArtifactTypeDefinition
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.attributes.Usage
@@ -66,9 +62,9 @@ internal constructor(
    * [AgpTestSuiteDependencies]. That's the [dslDeclaredDependencies] that are declared in the DSL and the [variantSpecificDependencies]
    * that are potentially added through the Variant API.
    */
-  private fun gatherCollectors(action: (AgpTestSuiteDependencies) -> Collection<DependencyCollector>) =
-    dslDeclaredDependencies?.let { action(it) }
-      ?: listOf<DependencyCollector>().plus(variantSpecificDependencies?.let { action(it) } ?: listOf())
+  private fun gatherCollectors(action: (AgpTestSuiteDependencies) -> Collection<DependencyCollector>): Collection<DependencyCollector> {
+    return listOfNotNull(dslDeclaredDependencies, variantSpecificDependencies).flatMap(action)
+  }
 
   fun build(): TestSuiteSourceClasspath {
     val factory = project.objects

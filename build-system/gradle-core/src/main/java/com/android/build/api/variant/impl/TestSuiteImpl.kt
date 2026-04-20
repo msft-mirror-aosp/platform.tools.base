@@ -98,6 +98,8 @@ internal constructor(
 
   override val codeCoverage: Property<Boolean> = variantServices.propertyOf(Boolean::class.java, testSuiteBuilder.codeCoverage)
 
+  override val androidResourcesIncluded: Boolean = testSuiteBuilder.testSuite.androidResourcesIncluded
+
   override fun instrumentationRunner(source: TestSuiteSourceSet.TestApk): Provider<String> {
     val dslInfo = testedVariantComponent.variantDslInfo
     val variant = testedVariantComponent.variant

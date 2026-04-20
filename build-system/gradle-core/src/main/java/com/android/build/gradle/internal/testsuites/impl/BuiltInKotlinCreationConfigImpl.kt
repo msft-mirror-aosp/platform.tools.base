@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.component.ComponentBasedBuiltInKotlinCr
 import com.android.build.gradle.internal.component.TestSuiteCreationConfig
 import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.publishing.AndroidArtifacts
+import com.android.build.gradle.internal.publishing.AndroidArtifacts.ConsumedConfigType
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.MutableTaskContainer
 import com.android.build.gradle.internal.services.BuiltInKaptSupportMode
@@ -86,6 +87,7 @@ internal class BuiltInKotlinCreationConfigImpl(
       .from(
         sourceContainer.suiteSourceClasspath.compileClasspath.asFileTree,
         testedVariant.artifacts.forScope(Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES),
+        testedVariant.androidResourcesCreationConfig?.getCompiledRClasses(ConsumedConfigType.COMPILE_CLASSPATH),
       )
 
   override val builtInKotlinSupportMode: BuiltInKotlinSupportMode

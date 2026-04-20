@@ -20,6 +20,8 @@ import com.android.build.api.variant.FilterConfiguration
 import com.android.build.api.variant.impl.BuiltArtifactsLoaderImpl
 import com.android.build.gradle.internal.caching.DisabledCachingReason.SIMPLE_MERGING_TASK
 import com.android.build.gradle.internal.component.HostTestCreationConfig
+import com.android.build.gradle.internal.component.TestSuiteCreationConfig
+import com.android.build.gradle.internal.component.VariantCreationConfig
 import com.android.build.gradle.internal.scope.InternalArtifactType
 import com.android.build.gradle.internal.scope.InternalArtifactType.LINKED_RESOURCES_BINARY_FORMAT
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
@@ -146,6 +148,29 @@ abstract class PackageForHostTest : NonIncrementalTask() {
       artifacts.setTaskInputToFinalProduct(LINKED_RESOURCES_BINARY_FORMAT, task.resApk)
       task.mergedAssetsDirectory.setDisallowChanges(artifacts.get(SingleArtifact.ASSETS))
       creationConfig.androidResources?.let { task.noCompress.setDisallowChanges(it.noCompress) }
+    }
+  }
+
+  class TestSuiteCreationAction(val testSuite: TestSuiteCreationConfig) :
+    VariantTaskCreationAction<PackageForHostTest, VariantCreationConfig>(testSuite.testedVariant) {
+
+    override val name =
+      testSuite.testedVariant.computeTaskNameInternal("package", "For${testSuite.name.replaceFirstChar { it.uppercase() }}")
+    override val type = PackageForHostTest::class.java
+
+    override fun handleProvider(taskProvider: TaskProvider<PackageForHostTest>) {
+      super.handleProvider(taskProvider)
+      testSuite.artifacts
+        .setInitialProvider(taskProvider, PackageForHostTest::apkForHostTest)
+        .withName("apk-for-local-test.ap_")
+        .on(InternalArtifactType.APK_FOR_LOCAL_TEST)
+    }
+
+    override fun configure(task: PackageForHostTest) {
+      super.configure(task)
+      val artifacts = testSuite.artifacts
+      artifacts.setTaskInputToFinalProduct(LINKED_RESOURCES_BINARY_FORMAT, task.resApk)
+      task.mergedAssetsDirectory.setDisallowChanges(artifacts.get(SingleArtifact.ASSETS))
     }
   }
 }

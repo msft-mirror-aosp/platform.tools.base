@@ -488,6 +488,15 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedVariant.artifacts.get(SingleArtifact.APK))
             )
           }
+
+          AgpTestSuiteInputParameters.LOCAL_TESTED_APKS -> {
+            task.engineInputParameters.add(
+              AgpTestSuiteInputParameter(
+                AgpTestSuiteInputParameters.LOCAL_TESTED_APKS,
+                creationConfig.artifacts.get(InternalArtifactType.APK_FOR_LOCAL_TEST),
+              )
+            )
+          }
           AgpTestSuiteInputParameters.ADB_EXECUTABLE -> {
             // do nothing so far, we always do it but it might change in the near future.
           }
