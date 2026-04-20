@@ -30,9 +30,10 @@ const LintReportApp = {
         expandedIssues: new Set(),
         collapsedNodes: new Set(),
         sort: { by: 'severity', order: 'desc' },
-        filters: { severities: [], categories: [] },
+        filters: { severities: [], categories: [], modules: [] },
         isSeverityAdded: false,
-        isCategoryAdded: false
+        isCategoryAdded: false,
+        isModuleAdded: false
     },
     elements: {},
     lintReport: null,
@@ -95,6 +96,13 @@ const LintReportApp = {
             categoryFilterList: document.getElementById('cat-filter-list'),
             removeCategoryFilter: document.getElementById('remove-category-filter'),
 
+            modChipContainer: document.getElementById('mod-chip-container'),
+            moduleFilterBtn: document.getElementById('mod-filter-btn'),
+            moduleFilterText: document.getElementById('mod-filter-text'),
+            moduleFilterDropdown: document.getElementById('mod-dropdown'),
+            moduleFilterList: document.getElementById('mod-filter-list'),
+            removeModuleFilter: document.getElementById('remove-module-filter'),
+
             mainTable: document.getElementById('main-table'),
             tableHeaders: document.getElementById('table-headers'),
             lintData: document.getElementById('lint-data'),
@@ -124,6 +132,12 @@ const LintReportApp = {
             this.updateFilterButtons();
             this.render();
         });
+
+        const allModules = [...new Set(issues.map(i => i.module))].sort();
+        this.buildActionDropdown(this.elements.moduleFilterList, allModules.map(m => ({name: m || 'Unknown', value: m})), this.state.filters.modules, () => {
+            this.updateFilterButtons();
+            this.render();
+        });
     },
 
     bindEvents() {
@@ -134,7 +148,8 @@ const LintReportApp = {
         const dropdownConfigs = [
             { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
             { btn: this.elements.severityFilterBtn, dropdown: this.elements.severityFilterDropdown },
-            { btn: this.elements.categoryFilterBtn, dropdown: this.elements.categoryFilterDropdown }
+            { btn: this.elements.categoryFilterBtn, dropdown: this.elements.categoryFilterDropdown },
+            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown }
         ];
 
         dropdownConfigs.forEach(({ btn, dropdown }) => {
@@ -168,6 +183,8 @@ const LintReportApp = {
                     this.state.isSeverityAdded = true;
                 } else if (type === 'category') {
                     this.state.isCategoryAdded = true;
+                } else if (type === 'module') {
+                    this.state.isModuleAdded = true;
                 }
                 this.elements.addFilterDropdown.classList.add('hidden');
                 this.updateFilterButtons();
@@ -191,6 +208,17 @@ const LintReportApp = {
                 e.stopPropagation();
                 this.state.isCategoryAdded = false;
                 this.state.filters.categories = [];
+                this.populateFilters();
+                this.updateFilterButtons();
+                this.render();
+            });
+        }
+
+        if (this.elements.removeModuleFilter) {
+            this.elements.removeModuleFilter.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.state.isModuleAdded = false;
+                this.state.filters.modules = [];
                 this.populateFilters();
                 this.updateFilterButtons();
                 this.render();
@@ -300,6 +328,7 @@ const LintReportApp = {
         const issues = this.lintReport.issues || [];
         const allSeverities = [...new Set(issues.map(i => i.severityDescription))];
         const allCategories = [...new Set(issues.map(i => i.category))];
+        const allModules = [...new Set(issues.map(i => i.module))];
 
         if (this.elements.sevChipContainer) {
             this.elements.sevChipContainer.classList.toggle('hidden', !this.state.isSeverityAdded);
@@ -307,6 +336,10 @@ const LintReportApp = {
 
         if (this.elements.catChipContainer) {
             this.elements.catChipContainer.classList.toggle('hidden', !this.state.isCategoryAdded);
+        }
+
+        if (this.elements.modChipContainer) {
+            this.elements.modChipContainer.classList.toggle('hidden', !this.state.isModuleAdded);
         }
 
         if (this.elements.severityFilterText) {
@@ -317,17 +350,22 @@ const LintReportApp = {
             this.elements.categoryFilterText.textContent = this.getFilterLabel('category', this.state.filters.categories, allCategories.length);
         }
 
+        if (this.elements.moduleFilterText) {
+            this.elements.moduleFilterText.textContent = this.getFilterLabel('module', this.state.filters.modules, allModules.length);
+        }
+
         if (this.elements.addFilterList) {
             const items = this.elements.addFilterList.querySelectorAll('.dropdown-item');
             items.forEach(item => {
                 const type = item.dataset.filterType;
                 if (type === 'severity') item.classList.toggle('hidden', this.state.isSeverityAdded);
                 if (type === 'category') item.classList.toggle('hidden', this.state.isCategoryAdded);
+                if (type === 'module') item.classList.toggle('hidden', this.state.isModuleAdded);
             });
         }
 
         if (this.elements.addFilterBtn && this.elements.addFilterBtn.parentElement) {
-            this.elements.addFilterBtn.parentElement.classList.toggle('hidden', this.state.isSeverityAdded && this.state.isCategoryAdded);
+            this.elements.addFilterBtn.parentElement.classList.toggle('hidden', this.state.isSeverityAdded && this.state.isCategoryAdded && this.state.isModuleAdded);
         }
     },
 
@@ -338,6 +376,9 @@ const LintReportApp = {
             }
             if (this.state.filters.categories.length > 0) {
                 if (!this.state.filters.categories.includes(issue.category)) return false;
+            }
+            if (this.state.filters.modules.length > 0) {
+                if (!this.state.filters.modules.includes(issue.module)) return false;
             }
             return true;
         });
@@ -361,6 +402,7 @@ const LintReportApp = {
             <th class="cursor-pointer sticky-name" data-sort="id">ID</th>
             <th class="cursor-pointer" data-sort="severity">Severity</th>
             <th class="cursor-pointer" data-sort="category">Category</th>
+            <th class="cursor-pointer" data-sort="module">Module</th>
             <th class="cursor-pointer" data-sort="priority">Priority</th>
             <th>Message</th>
             <th>Location</th>
@@ -384,6 +426,7 @@ const LintReportApp = {
                 <td class="sticky-name ${'$'}{plClass}">${'$'}{this.escapeHTML(issue.id)}</td>
                 <td class="${'$'}{severityClass}">${'$'}{this.escapeHTML(issue.severityDescription)}</td>
                 <td>${'$'}{this.escapeHTML(issue.category)}</td>
+                <td>${'$'}{this.escapeHTML(issue.module)}</td>
                 <td>${'$'}{issue.priority}</td>
                 <td>${'$'}{this.escapeHTML(issue.message)}</td>
                 <td title="${'$'}{issue.location ? issue.location.file : ''}">${'$'}{locationHtml}</td>
@@ -395,7 +438,7 @@ const LintReportApp = {
                     ? `<br><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul>`
                     : '';
 
-                rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="6"><div class="explanation-content">
+                rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
                     <strong>Summary:</strong> ${'$'}{issue.summary}<br><br>
                     <strong>Explanation:</strong><br>${'$'}{issue.explanation.replace(/\n/g, '<br>')}
                     ${'$'}{urlsHtml}
@@ -454,7 +497,7 @@ const LintReportApp = {
 
     matchesSearch(issue, query) {
         if (!issue || !query) return false;
-        const searchableFields = ['id', 'category', 'summary', 'explanation', 'message', 'priority', 'severityDescription'];
+        const searchableFields = ['id', 'category', 'module', 'summary', 'explanation', 'message', 'priority', 'severityDescription'];
         for (const field of searchableFields) {
             const val = issue[field];
             if (val != null && val.toString().toLowerCase().includes(query)) {

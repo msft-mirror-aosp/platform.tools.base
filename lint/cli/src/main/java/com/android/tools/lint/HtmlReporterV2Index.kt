@@ -123,6 +123,22 @@ $STYLE_CSS
                     </div>
                 </div>
 
+                <div id="mod-chip-container" class="hidden" style="position: relative;">
+                    <div class="filter-chip">
+                        <span id="mod-filter-btn" class="flex items-center cursor-pointer">
+                            <span id="mod-filter-text">Module: All</span>
+                        </span>
+                        <span class="chip-close" id="remove-module-filter">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </span>
+                    </div>
+                    <div id="mod-dropdown" class="dropdown-menu hidden">
+                        <div id="mod-filter-list" class="p-1 space-y-1"></div>
+                    </div>
+                </div>
+
                 <div class="relative" id="add-filter-container">
                     <button id="add-filter-btn" class="add-filter-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -134,6 +150,7 @@ $STYLE_CSS
                         <div id="add-filter-list">
                             <div class="dropdown-item" data-filter-type="severity">Severity</div>
                             <div class="dropdown-item" data-filter-type="category">Category</div>
+                            <div class="dropdown-item" data-filter-type="module">Module</div>
                         </div>
                     </div>
                 </div>
@@ -184,6 +201,7 @@ $STYLE_CSS
                         <th class="cursor-pointer sticky-name" data-sort="id">ID</th>
                         <th class="cursor-pointer" data-sort="severity">Severity</th>
                         <th class="cursor-pointer" data-sort="category">Category</th>
+                        <th class="cursor-pointer" data-sort="module">Module</th>
                         <th class="cursor-pointer" data-sort="priority">Priority</th>
                         <th>Message</th>
                         <th>Location</th>

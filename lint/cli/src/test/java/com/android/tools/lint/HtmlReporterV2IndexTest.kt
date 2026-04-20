@@ -270,7 +270,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-severity-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isSeverityAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("getFilteredIssues(issues)"))
 
@@ -303,8 +303,35 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-category-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic for categories
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isCategoryAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.categories.length > 0)"))
+  }
+
+  @Test
+  fun testModuleFilter() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for the module filter option in the "Add Filter" dropdown
+    assertTrue(html.contains("data-filter-type=\"module\""))
+    assertTrue(html.contains("Module</div>"))
+
+    // Check for the module filter chip (hidden by default)
+    assertTrue(html.contains("id=\"mod-chip-container\" class=\"hidden\""))
+    assertTrue(html.contains("id=\"mod-filter-btn\" class=\"flex items-center cursor-pointer\""))
+    assertTrue(html.contains("id=\"mod-filter-text\""))
+    assertTrue(html.contains("Module: All"))
+
+    // Check for the module dropdown list container
+    assertTrue(html.contains("id=\"mod-filter-list\""))
+
+    // Check for the remove filter button
+    assertTrue(html.contains("id=\"remove-module-filter\""))
+
+    // Verify LINTSCRIPT_JS contains filter state and logic for modules
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("isModuleAdded: false"))
+    assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.modules.length > 0)"))
   }
 }
