@@ -91,15 +91,15 @@ public class XmlPrettyPrinter {
      *
      * @param prefs the preferences to format with
      * @param style the style to format with
-     * @param lineSeparator the line separator to use, such as "\n" (can be null, in which
-     *            case the system default is looked up via the line.separator property)
+     * @param lineSeparator the line separator to use, such as '\n' (can be null, in which case '\n'
+     *     is used to avoid OS file system differences e.g. for remote caching.)
      */
-    public XmlPrettyPrinter(XmlFormatPreferences prefs, XmlFormatStyle style,
-            String lineSeparator) {
+    public XmlPrettyPrinter(
+            XmlFormatPreferences prefs, XmlFormatStyle style, String lineSeparator) {
         mPrefs = prefs;
         mStyle = style;
         if (lineSeparator == null) {
-            lineSeparator = System.lineSeparator();
+            lineSeparator = "\n";
         }
         mLineSeparator = lineSeparator;
     }
@@ -239,7 +239,7 @@ public class XmlPrettyPrinter {
                 node,
                 XmlFormatPreferences.defaults(),
                 XmlFormatStyle.get(node),
-                System.lineSeparator(),
+                null,
                 endWithNewline);
     }
 

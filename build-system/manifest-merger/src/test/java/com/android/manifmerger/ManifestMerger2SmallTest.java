@@ -4155,6 +4155,29 @@ public class ManifestMerger2SmallTest {
         }
     }
 
+    /* Regression test for b/496807451 */
+    @Test
+    public void testMergedManifestLineEndings() throws Exception {
+        String main =
+                "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\""
+                        + " package=\"com.example.app\">\r\n"
+                        + "    <application/>\r\n"
+                        + "</manifest>";
+        File mainFile = temporaryFolder.newFile("AndroidManifest.xml");
+        Files.write(mainFile.toPath(), main.getBytes(StandardCharsets.UTF_8));
+
+        ManifestMerger2.Invoker invoker =
+                ManifestMerger2.newMerger(
+                        mainFile, new MockLog(), ManifestMerger2.MergeType.APPLICATION);
+        MergingReport report = invoker.merge();
+        assertEquals(MergingReport.Result.SUCCESS, report.getResult());
+
+        String mergedManifest = report.getMergedDocument(MergingReport.MergedManifestKind.MERGED);
+        assertThat(mergedManifest).contains("\n");
+        // Ensures OS specific new line separator is not used.
+        assertThat(mergedManifest).doesNotContain("\r\n");
+    }
+
     public static void validateFeatureName(
             ManifestMerger2.Invoker invoker, String featureName, boolean isValid) throws Exception {
         invoker.setFeatureName(featureName);

@@ -17,6 +17,7 @@
 package com.android.ide.common.xml;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
@@ -1416,6 +1417,20 @@ public class XmlPrettyPrinterTest {
                 Files.toString(temp, StandardCharsets.UTF_8));
         //noinspection ResultOfMethodCallIgnored
         temp.delete();
+    }
+
+    @Test
+    public void testLineSeparatorDefault() {
+        XmlFormatPreferences prefs = XmlFormatPreferences.defaults();
+        XmlFormatStyle style = XmlFormatStyle.RESOURCE;
+        XmlPrettyPrinter printer = new XmlPrettyPrinter(prefs, style, null);
+
+        Document doc = XmlUtils.parseDocumentSilently("<root><child/></root>", true);
+        StringBuilder sb = new StringBuilder();
+        printer.prettyPrint(-1, doc, null, null, sb, false);
+        String formatted = sb.toString();
+        assertEquals("<root>\n\n    <child />\n\n</root>", formatted);
+        assertFalse(formatted.contains("\r"));
     }
 
     @Nullable

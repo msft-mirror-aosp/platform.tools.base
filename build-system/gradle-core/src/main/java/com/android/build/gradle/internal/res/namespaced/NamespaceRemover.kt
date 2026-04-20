@@ -75,7 +75,7 @@ object NamespaceRemover : ResourceCompilationService {
    */
   @VisibleForTesting
   @Throws(ParserConfigurationException::class, SAXException::class, IOException::class)
-  fun rewrite(input: InputStream, lineSeparator: String = System.lineSeparator()): String {
+  fun rewrite(input: InputStream, lineSeparator: String = "\n"): String {
     val doc = PositionXmlParser.parse(input)
 
     removeNamespaces(doc)
