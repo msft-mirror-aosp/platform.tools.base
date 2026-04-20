@@ -516,7 +516,10 @@ const CoverageReportApp = {
             this.state.filters.search = '';
             this.elements.searchClearBtn.classList.add('hidden');
             this.render();
-            this.elements.searchInput.focus();
+            this.elements.searchWrapper.classList.remove('expanded');
+            setTimeout(() => {
+                this.elements.searchRevealBtn.classList.remove('hidden');
+            }, 300);
         });
 
         // Density Segments (Comfy/Compact)

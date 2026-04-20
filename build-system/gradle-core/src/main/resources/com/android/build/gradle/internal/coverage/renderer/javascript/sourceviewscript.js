@@ -316,7 +316,10 @@ const SourceViewApp = {
     handleFunctionSearchClear() {
         this.elements.functionSearch.value = '';
         this.handleFunctionSearch({ target: this.elements.functionSearch });
-        this.elements.functionSearch.focus();
+        this.elements.srcSearchWrapper.classList.remove('expanded');
+        setTimeout(() => {
+            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+        }, 300);
     },
 
     handleMethodClick(e) {
