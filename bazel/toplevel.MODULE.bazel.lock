@@ -6322,7 +6322,7 @@
     "@@rules_rust+//crate_universe:extensions.bzl%crate": {
       "general": {
         "bzlTransitiveDigest": "WJ6Y6XzNtjZgZmulxy1tgSSu5SVM0b9e78wjt6q1Cdo=",
-        "usagesDigest": "yliYFFGNwnf3ZCqKCVCJxm91Y9xvFjW4d/o/839ebYY=",
+        "usagesDigest": "SaCv7+yw6CXBYH1/DT1dwdWceyrNGhxS/i0zWYzInZk=",
         "recordedFileInputs": {
           "@@//tools/base/bazel/Cargo.lockfile": "3d8a7551616255a20590003809bdafdfe367f9d169c0439ed0b36e19aaf0dd5c"
         },
