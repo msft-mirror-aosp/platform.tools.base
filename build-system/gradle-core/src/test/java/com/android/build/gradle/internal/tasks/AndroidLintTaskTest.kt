@@ -78,7 +78,6 @@ class AndroidLintTaskTest {
     assertThat(commandLineArguments).contains("--offline")
     assertThat(commandLineArguments).contains("--stacktrace")
     assertThat(commandLineArguments).contains("--baseline-omit-line-numbers")
-    assertThat(commandLineArguments).contains("--XuseK2Uast")
     assertThat(commandLineArguments).doesNotContain("--html-v2")
   }
 

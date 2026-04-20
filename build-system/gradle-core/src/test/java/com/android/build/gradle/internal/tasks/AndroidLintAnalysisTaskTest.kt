@@ -66,6 +66,5 @@ class AndroidLintAnalysisTaskTest {
     assertThat(commandLineArguments).contains("--client-version ${Version.ANDROID_GRADLE_PLUGIN_VERSION}")
     assertThat(commandLineArguments).contains("--offline")
     assertThat(commandLineArguments).contains("--stacktrace")
-    assertThat(commandLineArguments).contains("--XuseK2Uast")
   }
 }
