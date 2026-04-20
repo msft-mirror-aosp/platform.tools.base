@@ -1434,25 +1434,46 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
-    pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.pom",
+    name = "com.ethlo.time.itu_1.10.2",
+    pom = "repository/com/ethlo/time/itu/1.10.2/itu-1.10.2.pom",
     repo_root_path = "repository",
-    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.11.1",
-    parent = "com.fasterxml.jackson.jackson-parent_2.11",
+    repo_path = "com/ethlo/time/itu/1.10.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.ethlo.time.itu",
+    classifiers = [],
+    jars = [
+        "repository/com/ethlo/time/itu/1.10.2/itu-1.10.2.jar"
+    ],
+    original_deps = [],
+    pom = "repository/com/ethlo/time/itu/1.10.2/itu-1.10.2.pom",
+    repo_root_path = "repository",
+    repo_path = "com/ethlo/time/itu/1.10.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-annotations_2.17.1",
+    pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-parent_2.17",
     visibility = ["//visibility:public"],
 )
 
 maven_import(
     name = "com.fasterxml.jackson.core.jackson-annotations",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-parent_2.11",
+    parent = "com.fasterxml.jackson.jackson-parent_2.17",
     jars = [
-        "repository/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.jar"
+        "repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar"
     ],
     original_deps = [],
-    pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.pom",
+    pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.11.1",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.17.1",
     visibility = ["//visibility:public"],
 )
 
@@ -1480,14 +1501,14 @@ maven_import(
 )
 
 maven_artifact(
-    name = "com.fasterxml.jackson.core.jackson-databind_2.11.1",
-    pom = "repository/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.pom",
+    name = "com.fasterxml.jackson.core.jackson-databind_2.17.1",
+    pom = "repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.11.1",
-    parent = "com.fasterxml.jackson.jackson-base_2.11.1",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-base_2.17.1",
     deps = [
-        "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
-        "com.fasterxml.jackson.core.jackson-core_2.11.1",
+        "com.fasterxml.jackson.core.jackson-annotations_2.17.1",
+        "com.fasterxml.jackson.core.jackson-core_2.17.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -1495,21 +1516,21 @@ maven_artifact(
 maven_import(
     name = "com.fasterxml.jackson.core.jackson-databind",
     classifiers = [],
-    parent = "com.fasterxml.jackson.jackson-base_2.11.1",
+    parent = "com.fasterxml.jackson.jackson-base_2.17.1",
     jars = [
-        "repository/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.jar"
+        "repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar"
     ],
     exports = [
         "com.fasterxml.jackson.core.jackson-annotations",
         "com.fasterxml.jackson.core.jackson-core",
     ],
     original_deps = [
-        "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
-        "com.fasterxml.jackson.core.jackson-core_2.11.1",
+        "com.fasterxml.jackson.core.jackson-annotations_2.17.1",
+        "com.fasterxml.jackson.core.jackson-core_2.17.1",
     ],
-    pom = "repository/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.pom",
+    pom = "repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.pom",
     repo_root_path = "repository",
-    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.11.1",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.17.1",
     visibility = ["//visibility:public"],
 )
 
@@ -1562,6 +1583,43 @@ maven_import(
         "com.fasterxml.woodstox.woodstox-core",
         "org.codehaus.woodstox.stax2-api",
      ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.dataformat.jackson-dataformat-yaml_2.17.1",
+    pom = "repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1",
+    parent = "com.fasterxml.jackson.dataformat.jackson-dataformats-text_2.17.1",
+    deps = [
+        "com.fasterxml.jackson.core.jackson-databind_2.17.1",
+        "org.yaml.snakeyaml_2.2",
+        "com.fasterxml.jackson.core.jackson-core_2.17.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.fasterxml.jackson.dataformat.jackson-dataformat-yaml",
+    classifiers = [],
+    parent = "com.fasterxml.jackson.dataformat.jackson-dataformats-text_2.17.1",
+    jars = [
+        "repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.jar"
+    ],
+    exports = [
+        "com.fasterxml.jackson.core.jackson-databind",
+        "org.yaml.snakeyaml",
+        "com.fasterxml.jackson.core.jackson-core",
+    ],
+    original_deps = [
+        "com.fasterxml.jackson.core.jackson-databind_2.17.1",
+        "org.yaml.snakeyaml_2.2",
+        "com.fasterxml.jackson.core.jackson-core_2.17.1",
+    ],
+    pom = "repository/com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1/jackson-dataformat-yaml-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformat-yaml/2.17.1",
     visibility = ["//visibility:public"],
 )
 
@@ -4021,6 +4079,44 @@ maven_import(
     pom = "repository/com/ibm/icu/icu4j/75.1/icu4j-75.1.pom",
     repo_root_path = "repository",
     repo_path = "com/ibm/icu/icu4j/75.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.networknt.json-schema-validator_1.4.3",
+    pom = "repository/com/networknt/json-schema-validator/1.4.3/json-schema-validator-1.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/networknt/json-schema-validator/1.4.3",
+    deps = [
+        "com.ethlo.time.itu_1.10.2",
+        "com.fasterxml.jackson.core.jackson-databind_2.17.1",
+        "com.fasterxml.jackson.dataformat.jackson-dataformat-yaml_2.17.1",
+        "org.slf4j.slf4j-api_2.0.13",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "com.networknt.json-schema-validator",
+    classifiers = [],
+    jars = [
+        "repository/com/networknt/json-schema-validator/1.4.3/json-schema-validator-1.4.3.jar"
+    ],
+    exports = [
+        "com.ethlo.time.itu",
+        "com.fasterxml.jackson.core.jackson-databind",
+        "com.fasterxml.jackson.dataformat.jackson-dataformat-yaml",
+        "org.slf4j.slf4j-api",
+    ],
+    original_deps = [
+        "com.ethlo.time.itu_1.10.2",
+        "com.fasterxml.jackson.core.jackson-databind_2.17.1",
+        "com.fasterxml.jackson.dataformat.jackson-dataformat-yaml_2.17.1",
+        "org.slf4j.slf4j-api_2.0.13",
+    ],
+    pom = "repository/com/networknt/json-schema-validator/1.4.3/json-schema-validator-1.4.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/networknt/json-schema-validator/1.4.3",
     visibility = ["//visibility:public"],
 )
 
@@ -15421,10 +15517,10 @@ maven_import(
         "org.robolectric.shadows-framework",
         "org.bouncycastle.bcprov-jdk18on",
         "androidx.test.monitor",
+        "org.yaml.snakeyaml",
     ],
     deps = [
         "org.conscrypt.conscrypt-openjdk-uber",
-        "org.yaml.snakeyaml",
         "androidx.test.espresso.espresso-idling-resource",
         "com.google.testparameterinjector.test-parameter-injector",
     ],
@@ -71749,6 +71845,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
+    pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.11.1/jackson-annotations-2.11.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/core/jackson-annotations/2.11.1",
+    parent = "com.fasterxml.jackson.jackson-parent_2.11",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-annotations_2.13.5",
     pom = "repository/com/fasterxml/jackson/core/jackson-annotations/2.13.5/jackson-annotations-2.13.5.pom",
     repo_root_path = "repository",
@@ -71872,6 +71977,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-core_2.17.1",
+    pom = "repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/core/jackson-core/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-base_2.17.1",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.fasterxml.jackson.core.jackson-core_2.17.2",
     pom = "repository/com/fasterxml/jackson/core/jackson-core/2.17.2/jackson-core-2.17.2.pom",
     repo_root_path = "repository",
@@ -71907,6 +72021,19 @@ maven_artifact(
     deps = [
         "com.fasterxml.jackson.core.jackson-annotations_2.10.1",
         "com.fasterxml.jackson.core.jackson-core_2.10.1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.core.jackson-databind_2.11.1",
+    pom = "repository/com/fasterxml/jackson/core/jackson-databind/2.11.1/jackson-databind-2.11.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/core/jackson-databind/2.11.1",
+    parent = "com.fasterxml.jackson.jackson-base_2.11.1",
+    deps = [
+        "com.fasterxml.jackson.core.jackson-annotations_2.11.1",
+        "com.fasterxml.jackson.core.jackson-core_2.11.1",
     ],
     visibility = ["//visibility:public"],
 )
@@ -100649,6 +100776,15 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.slf4j.slf4j-api_2.0.13",
+    pom = "repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-api/2.0.13",
+    parent = "org.slf4j.slf4j-parent_2.0.13",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-api_2.0.16",
     pom = "repository/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.pom",
     repo_root_path = "repository",
@@ -100854,6 +100990,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.yaml.snakeyaml_2.2",
+    pom = "repository/org/yaml/snakeyaml/2.2/snakeyaml-2.2.pom",
+    repo_root_path = "repository",
+    repo_path = "org/yaml/snakeyaml/2.2",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "software.amazon.awssdk.bom_2.11.9",
     pom = "repository/software/amazon/awssdk/bom/2.11.9/bom-2.11.9.pom",
     repo_root_path = "repository",
@@ -100912,6 +101056,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "xpp3/xpp3/1.1.4c",
     visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.dataformat.jackson-dataformats-text_2.17.1",
+    pom = "repository/com/fasterxml/jackson/dataformat/jackson-dataformats-text/2.17.1/jackson-dataformats-text-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/dataformat/jackson-dataformats-text/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-base_2.17.1",
 )
 
 maven_artifact(
@@ -100976,6 +101128,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/fasterxml/jackson/jackson-base/2.15.2",
     parent = "com.fasterxml.jackson.jackson-bom_2.15.2",
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.jackson-base_2.17.1",
+    pom = "repository/com/fasterxml/jackson/jackson-base/2.17.1/jackson-base-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/jackson-base/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-bom_2.17.1",
 )
 
 maven_artifact(
@@ -101056,6 +101216,14 @@ maven_artifact(
     repo_root_path = "repository",
     repo_path = "com/fasterxml/jackson/jackson-bom/2.15.2",
     parent = "com.fasterxml.jackson.jackson-parent_2.15",
+)
+
+maven_artifact(
+    name = "com.fasterxml.jackson.jackson-bom_2.17.1",
+    pom = "repository/com/fasterxml/jackson/jackson-bom/2.17.1/jackson-bom-2.17.1.pom",
+    repo_root_path = "repository",
+    repo_path = "com/fasterxml/jackson/jackson-bom/2.17.1",
+    parent = "com.fasterxml.jackson.jackson-parent_2.17",
 )
 
 maven_artifact(
@@ -104236,6 +104404,13 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.slf4j.slf4j-bom_2.0.13",
+    pom = "repository/org/slf4j/slf4j-bom/2.0.13/slf4j-bom-2.0.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-bom/2.0.13",
+)
+
+maven_artifact(
     name = "org.slf4j.slf4j-bom_2.0.16",
     pom = "repository/org/slf4j/slf4j-bom/2.0.16/slf4j-bom-2.0.16.pom",
     repo_root_path = "repository",
@@ -104296,6 +104471,14 @@ maven_artifact(
     pom = "repository/org/slf4j/slf4j-parent/1.7.36/slf4j-parent-1.7.36.pom",
     repo_root_path = "repository",
     repo_path = "org/slf4j/slf4j-parent/1.7.36",
+)
+
+maven_artifact(
+    name = "org.slf4j.slf4j-parent_2.0.13",
+    pom = "repository/org/slf4j/slf4j-parent/2.0.13/slf4j-parent-2.0.13.pom",
+    repo_root_path = "repository",
+    repo_path = "org/slf4j/slf4j-parent/2.0.13",
+    parent = "org.slf4j.slf4j-bom_2.0.13",
 )
 
 maven_artifact(

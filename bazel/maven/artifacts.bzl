@@ -99,6 +99,7 @@ ARTIFACTS = [
     "com.google.truth:truth:0.42",
     "com.googlecode.jarjar:jarjar:1.3",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
+    "com.networknt:json-schema-validator:1.4.3",
     "com.nothome:javaxdelta:2.0.1",
     "com.squareup:javapoet:1.10.0",
     "com.squareup:javawriter:2.5.0",
