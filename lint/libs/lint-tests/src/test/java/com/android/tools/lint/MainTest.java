@@ -101,8 +101,7 @@ public class MainTest extends AbstractCheckTest {
                 args,
                 cleanup,
                 listener,
-                null,
-                true);
+                null);
     }
 
     public static void checkDriver(
@@ -112,8 +111,7 @@ public class MainTest extends AbstractCheckTest {
             @NonNull String[] args,
             @Nullable Cleanup cleanup,
             @Nullable LintListener listener,
-            @Nullable Check check,
-            boolean expectedExactMatch) {
+            @Nullable Check check) {
 
         PrintStream previousOut = System.out;
         PrintStream previousErr = System.err;
@@ -164,15 +162,9 @@ public class MainTest extends AbstractCheckTest {
                 }
             }
             if (expectedError != null && !expectedError.trim().equals(stderr.trim())) {
-                if (expectedExactMatch
-                        && Arrays.stream(args).anyMatch((arg) -> arg == "--XuseK1Uast")) {
-                    // instead of fail: get difference in output
-                    assertEquals(expectedError, stderr);
-                } else {
-                    // TODO: https://youtrack.jetbrains.com/issue/KT-57715
-                    //  Until then, we can't assert explicit "equals" yet.
-                    assertThat(stderr).contains(expectedError);
-                }
+                // TODO: https://youtrack.jetbrains.com/issue/KT-57715
+                //  Until then, we can't assert explicit "equals" yet.
+                assertThat(stderr).contains(expectedError);
             }
             assertEquals("Unexpected exit code", expectedExitCode, exitCode);
         } finally {

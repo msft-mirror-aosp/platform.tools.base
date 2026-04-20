@@ -2240,7 +2240,6 @@ class LintBaselineTest {
           assertThat(it.contains("package.xml")).isTrue()
           assertThat(it.contains("1 error, 2 warnings (and 1 warning filtered by baseline baseline.xml)")).isTrue()
         },
-        true,
       )
 
       @Language("XML")
