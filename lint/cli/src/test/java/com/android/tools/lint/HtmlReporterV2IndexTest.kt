@@ -334,4 +334,35 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("isModuleAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.modules.length > 0)"))
   }
+
+  @Test
+  fun testGroupByDropdown() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData)
+
+    // Check for the "Group By" row
+    assertTrue(html.contains("class=\"breadcrumb-row-style\""))
+
+    // Check for the "Group By" button and label
+    assertTrue(html.contains("id=\"group-by-btn\" class=\"group-by-btn-style\""))
+    assertTrue(html.contains("<span class=\"group-by-label\">Group By:</span>"))
+    assertTrue(html.contains("id=\"group-by-text\" class=\"group-by-value\">Issues</span>"))
+
+    // Check for the "Group By" dropdown
+    assertTrue(html.contains("id=\"group-by-dropdown\" class=\"dropdown-menu right-0 hidden group-by-dropdown-style\""))
+    assertTrue(html.contains("<div class=\"dropdown-item\" data-value=\"issues\">Issues</div>"))
+
+    // Verify LINTSCRIPT_JS contains group-by caching and logic
+    assertTrue(LINTSCRIPT_JS.contains("groupByBtn: document.getElementById('group-by-btn')"))
+    assertTrue(LINTSCRIPT_JS.contains("groupByText: document.getElementById('group-by-text')"))
+    assertTrue(LINTSCRIPT_JS.contains("groupByDropdown: document.getElementById('group-by-dropdown')"))
+    assertTrue(LINTSCRIPT_JS.contains("this.state.currentView = target.dataset.value"))
+
+    // Verify STYLE_CSS contains group-by styles
+    assertTrue(STYLE_CSS.contains(".group-by-btn-style"))
+    assertTrue(STYLE_CSS.contains(".group-by-label"))
+    assertTrue(STYLE_CSS.contains(".group-by-value"))
+    assertTrue(STYLE_CSS.contains(".group-by-icon"))
+    assertTrue(STYLE_CSS.contains(".breadcrumb-row-style"))
+  }
 }

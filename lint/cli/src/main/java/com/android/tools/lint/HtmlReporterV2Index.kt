@@ -193,6 +193,22 @@ $STYLE_CSS
 
 <div id="report-view" class="container-custom">
 <main>
+    <div class="breadcrumb-row-style">
+        <div id="breadcrumbs" class="flex items-center gap-2 text-sm text-gray-500 breadcrumbs-container"></div>
+        <div class="relative" id="group-by-container">
+            <button id="group-by-btn" class="group-by-btn-style">
+                <span class="group-by-label">Group By:</span>
+                <span id="group-by-text" class="group-by-value">Issues</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="group-by-icon">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+            <div id="group-by-dropdown" class="dropdown-menu right-0 hidden group-by-dropdown-style">
+                <div class="dropdown-item" data-value="issues">Issues</div>
+            </div>
+        </div>
+    </div>
+
     <section id="issues-section">
         <div class="table-container">
             <table id="main-table">

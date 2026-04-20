@@ -303,6 +303,34 @@ pre.errorlines {
 }
 .list-checks-btn:hover { background-color: var(--bg-blue-100); }
 
+/* --- Group By --- */
+.group-by-btn-style {
+    border: none;
+    background: transparent;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.group-by-btn-style:hover { background: var(--bg-hover); }
+.group-by-dropdown-style { min-width: 150px; }
+.group-by-label { font-weight: 500; color: var(--text-gray-500); }
+.group-by-value { font-weight: 600; color: var(--text-gray-600); margin-left: 0.25rem; }
+.group-by-icon { margin-left: 0.25rem; color: var(--text-gray-500); }
+
+.breadcrumb-row-style {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.breadcrumbs-container {
+    min-height: 28px;
+}
+
 tr.issue-row:hover { cursor: pointer; }
 
 * --- Utilities --- */

@@ -107,6 +107,9 @@ const LintReportApp = {
             tableHeaders: document.getElementById('table-headers'),
             lintData: document.getElementById('lint-data'),
             issuesSection: document.getElementById('issues-section'),
+            groupByBtn: document.getElementById('group-by-btn'),
+            groupByText: document.getElementById('group-by-text'),
+            groupByDropdown: document.getElementById('group-by-dropdown'),
         };
     },
 
@@ -149,7 +152,8 @@ const LintReportApp = {
             { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
             { btn: this.elements.severityFilterBtn, dropdown: this.elements.severityFilterDropdown },
             { btn: this.elements.categoryFilterBtn, dropdown: this.elements.categoryFilterDropdown },
-            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown }
+            { btn: this.elements.moduleFilterBtn, dropdown: this.elements.moduleFilterDropdown },
+            { btn: this.elements.groupByBtn, dropdown: this.elements.groupByDropdown }
         ];
 
         dropdownConfigs.forEach(({ btn, dropdown }) => {
@@ -258,6 +262,16 @@ const LintReportApp = {
                 this.elements.searchClearBtn.classList.add('hidden');
                 this.render();
                 this.elements.searchInput.focus();
+            });
+        }
+
+        if (this.elements.groupByDropdown) {
+            this.elements.groupByDropdown.addEventListener('click', (e) => {
+                const target = e.target.closest('.dropdown-item');
+                if (!target) return;
+                this.state.currentView = target.dataset.value;
+                this.elements.groupByDropdown.classList.add('hidden');
+                this.render();
             });
         }
 
@@ -394,6 +408,10 @@ const LintReportApp = {
 
     renderContent(issues) {
         this.renderFlatIssues(issues);
+        if (this.elements.groupByText) {
+            const text = this.state.currentView;
+            this.elements.groupByText.textContent = text.charAt(0).toUpperCase() + text.slice(1);
+        }
     },
 
     renderFlatIssues(issues) {
