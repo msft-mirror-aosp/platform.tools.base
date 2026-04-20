@@ -122,6 +122,7 @@ _ARTIFACTS = [
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
     ('tools/vendor/google/android/legacy-android-cli.zip', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/lume/dist/lume-distribution.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]
