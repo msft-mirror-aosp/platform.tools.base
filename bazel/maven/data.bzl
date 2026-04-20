@@ -1053,6 +1053,7 @@ _CLASS_JARS = [
     "io.ktor:ktor-client-content-negotiation-jvm:2.3.2",
     "io.ktor:ktor-client-core-jvm:2.3.2",
     "io.ktor:ktor-client-logging-jvm:2.3.2",
+    "io.ktor:ktor-client-mock-jvm:3.3.2",
     "io.ktor:ktor-client-okhttp-jvm:2.3.2",
     "io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.2",
     "io.ktor:ktor-server-cio-jvm:3.1.3",
