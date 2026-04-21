@@ -189,34 +189,36 @@ public class DeviceWriter {
     private static Element generateHardwareNode(Hardware hw, Document doc) {
         Screen s = hw.getScreen();
         Element hardware = doc.createElement(PREFIX + DeviceSchema.NODE_HARDWARE);
-        Element screen = doc.createElement(PREFIX + DeviceSchema.NODE_SCREEN);
-        hardware.appendChild(screen);
+        if (s != null) {
+            Element screen = doc.createElement(PREFIX + DeviceSchema.NODE_SCREEN);
+            hardware.appendChild(screen);
 
-        addElement(doc, screen, DeviceSchema.NODE_SCREEN_SIZE, s.getSize().getResourceValue());
-        addElement(doc, screen, DeviceSchema.NODE_DIAGONAL_LENGTH,
-                String.format(Locale.US, "%.2f",s.getDiagonalLength()));
-        addElement(doc, screen, DeviceSchema.NODE_PIXEL_DENSITY,
-                s.getPixelDensity().getResourceValue());
-        addElement(doc, screen, DeviceSchema.NODE_SCREEN_RATIO, s.getRatio().getResourceValue());
+            addElement(doc, screen, DeviceSchema.NODE_SCREEN_SIZE, s.getSize().getResourceValue());
+            addElement(doc, screen, DeviceSchema.NODE_DIAGONAL_LENGTH,
+                    String.format(Locale.US, "%.2f",s.getDiagonalLength()));
+            addElement(doc, screen, DeviceSchema.NODE_PIXEL_DENSITY,
+                    s.getPixelDensity().getResourceValue());
+            addElement(doc, screen, DeviceSchema.NODE_SCREEN_RATIO, s.getRatio().getResourceValue());
 
-        Element dimensions = doc.createElement(PREFIX + DeviceSchema.NODE_DIMENSIONS);
-        screen.appendChild(dimensions);
+            Element dimensions = doc.createElement(PREFIX + DeviceSchema.NODE_DIMENSIONS);
+            screen.appendChild(dimensions);
 
-        addElement(doc, dimensions, DeviceSchema.NODE_X_DIMENSION,
-                Integer.toString(s.getXDimension()));
-        addElement(doc, dimensions, DeviceSchema.NODE_Y_DIMENSION,
-                Integer.toString(s.getYDimension()));
-        addElement(doc, screen, DeviceSchema.NODE_XDPI, String.format(Locale.US,
-                "%.2f", s.getXdpi()));
-        addElement(doc, screen, DeviceSchema.NODE_YDPI, String.format(Locale.US,
-                "%.2f", s.getYdpi()));
+            addElement(doc, dimensions, DeviceSchema.NODE_X_DIMENSION,
+                    Integer.toString(s.getXDimension()));
+            addElement(doc, dimensions, DeviceSchema.NODE_Y_DIMENSION,
+                    Integer.toString(s.getYDimension()));
+            addElement(doc, screen, DeviceSchema.NODE_XDPI, String.format(Locale.US,
+                    "%.2f", s.getXdpi()));
+            addElement(doc, screen, DeviceSchema.NODE_YDPI, String.format(Locale.US,
+                    "%.2f", s.getYdpi()));
 
-        Element touch = doc.createElement(PREFIX + DeviceSchema.NODE_TOUCH);
-        screen.appendChild(touch);
+            Element touch = doc.createElement(PREFIX + DeviceSchema.NODE_TOUCH);
+            screen.appendChild(touch);
 
-        addElement(doc, touch, DeviceSchema.NODE_MULTITOUCH, s.getMultitouch().toString());
-        addElement(doc, touch, DeviceSchema.NODE_MECHANISM, s.getMechanism().getResourceValue());
-        addElement(doc, touch, DeviceSchema.NODE_SCREEN_TYPE, s.getScreenType().toString());
+            addElement(doc, touch, DeviceSchema.NODE_MULTITOUCH, s.getMultitouch().toString());
+            addElement(doc, touch, DeviceSchema.NODE_MECHANISM, s.getMechanism().getResourceValue());
+            addElement(doc, touch, DeviceSchema.NODE_SCREEN_TYPE, s.getScreenType().toString());
+        }
 
         Environment env = hw.getEnvironment();
         if (env != null) {

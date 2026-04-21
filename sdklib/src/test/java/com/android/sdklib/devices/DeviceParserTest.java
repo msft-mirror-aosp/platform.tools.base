@@ -45,6 +45,7 @@ import java.awt.Dimension;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -449,8 +450,7 @@ public class DeviceParserTest extends TestCase {
                 "    </d:state>\n" +
                 "  </d:device>\n" +
                 "</d:devices>";
-        InputStream stream = new ByteArrayInputStream(xml.getBytes("UTF-8"));
-        try {
+        try (InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
             Table<String, String, Device> devices = DeviceParser.parse(stream);
             assertEquals(1, devices.size());
             Device device = devices.get("Glasses Device", "Generic");
@@ -462,8 +462,63 @@ public class DeviceParserTest extends TestCase {
             assertNotNull(env);
             assertEquals(800, env.getWidth());
             assertEquals(1200, env.getHeight());
-        } finally {
-            stream.close();
+        }
+    }
+
+    public void testDevices_v10_no_screen() throws Exception {
+        String xml =
+                "<?xml version=\"1.0\"?>\n"
+                        + "<d:devices\n"
+                        + "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n"
+                        + "    xmlns:d=\"http://schemas.android.com/sdk/devices/10\">\n"
+                        + "  <d:device>\n"
+                        + "    <d:name>Screenless Device</d:name>\n"
+                        + "    <d:manufacturer>Generic</d:manufacturer>\n"
+                        + "    <d:hardware>\n"
+                        + "      <d:environment>\n"
+                        + "        <d:width>100</d:width>\n"
+                        + "        <d:height>200</d:height>\n"
+                        + "      </d:environment>\n"
+                        + "      <d:networking>Bluetooth</d:networking>\n"
+                        + "      <d:sensors>Accelerometer</d:sensors>\n"
+                        + "      <d:mic>true</d:mic>\n"
+                        + "      <d:keyboard>nokeys</d:keyboard>\n"
+                        + "      <d:nav>nonav</d:nav>\n"
+                        + "      <d:ram unit=\"GiB\">1</d:ram>\n"
+                        + "      <d:buttons>soft</d:buttons>\n"
+                        + "      <d:internal-storage unit=\"GiB\">16</d:internal-storage>\n"
+                        + "      <d:cpu>Generic CPU</d:cpu>\n"
+                        + "      <d:gpu>Generic GPU</d:gpu>\n"
+                        + "      <d:dock></d:dock>\n"
+                        + "      <d:power-type>battery</d:power-type>\n"
+                        + "    </d:hardware>\n"
+                        + "    <d:software>\n"
+                        + "      <d:api-level>34</d:api-level>\n"
+                        + "      <d:live-wallpaper-support>true</d:live-wallpaper-support>\n"
+                        + "      <d:bluetooth-profiles>A2DP</d:bluetooth-profiles>\n"
+                        + "      <d:gl-version>2.0</d:gl-version>\n"
+                        + "      <d:gl-extensions></d:gl-extensions>\n"
+                        + "      <d:status-bar>true</d:status-bar>\n"
+                        + "    </d:software>\n"
+                        + "    <d:state name=\"Portrait\" default=\"true\">\n"
+                        + "      <d:description>Portrait view</d:description>\n"
+                        + "      <d:screen-orientation>port</d:screen-orientation>\n"
+                        + "      <d:keyboard-state>keyssoft</d:keyboard-state>\n"
+                        + "      <d:nav-state>nonav</d:nav-state>\n"
+                        + "    </d:state>\n"
+                        + "  </d:device>\n"
+                        + "</d:devices>";
+        try (InputStream stream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+            Table<String, String, Device> devices = DeviceParser.parse(stream);
+            assertEquals(1, devices.size());
+            Device device = devices.get("Screenless Device", "Generic");
+            assertNotNull(device);
+            Hardware hw = device.getDefaultHardware();
+            assertNull(hw.getScreen());
+            Environment env = hw.getEnvironment();
+            assertNotNull(env);
+            assertEquals(100, env.getWidth());
+            assertEquals(200, env.getHeight());
         }
     }
 
