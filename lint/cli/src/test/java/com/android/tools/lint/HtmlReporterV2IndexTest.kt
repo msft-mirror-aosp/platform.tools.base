@@ -32,12 +32,12 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testGetIndexHtml() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Local Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check basic structure
     assertTrue(html.contains("<!DOCTYPE html>"))
     assertTrue(html.contains("<html lang=\"en\">"))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
+    assertTrue(html.contains("<title>Lint Report</title>"))
 
     // Check inclusion of CSS and JS
     assertTrue(html.contains(STYLE_CSS))
@@ -74,7 +74,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testDensityControls() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Aggregate Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for density control buttons
     assertTrue(html.contains("data-value=\"comfy\""))
@@ -94,7 +94,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testSearchControl() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for search components
     assertTrue(html.contains("id=\"search-reveal-btn\""))
@@ -114,7 +114,7 @@ class HtmlReporterV2IndexTest {
   fun testGetIndexHtmlWithFullReport() {
     val report =
       LintReport(
-        name = "Local Lint Report",
+        name = "Comprehensive Report",
         timeStamp = "2026-05-20 12:00:00",
         issues =
           listOf(
@@ -142,11 +142,9 @@ class HtmlReporterV2IndexTest {
       )
     val json = GsonBuilder().create().toJson(report)
     val reportData = "const lintReport = $json;"
-    val html = getIndexHtml(reportData, report.name)
+    val html = getIndexHtml(reportData)
 
     assertTrue(html.contains(reportData))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Lint Report</h1>"))
     assertTrue(html.contains("\"id\":\"TestIssue\""))
     assertTrue(html.contains("\"severityDescription\":\"Error\""))
     assertTrue(html.contains("\"message\":\"This is a test message with \\\"quotes\\\"\""))
@@ -162,14 +160,12 @@ class HtmlReporterV2IndexTest {
 
   @Test
   fun testGetIndexHtmlNoIssues() {
-    val report = LintReport(name = "Local Lint Report", timeStamp = "2026-05-20", issues = emptyList(), numberOfIssues = 0)
+    val report = LintReport(name = "Lint Report", timeStamp = "2026-05-20", issues = emptyList(), numberOfIssues = 0)
     val json = GsonBuilder().create().toJson(report)
     val reportData = "const lintReport = $json;"
-    val html = getIndexHtml(reportData, report.name)
+    val html = getIndexHtml(reportData)
 
     assertTrue(html.contains(reportData))
-    assertTrue(html.contains("<title>Local Lint Report</title>"))
-    assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Lint Report</h1>"))
     assertTrue(html.contains("\"issues\":[]"))
   }
 
@@ -206,7 +202,7 @@ class HtmlReporterV2IndexTest {
       )
     val json = GsonBuilder().create().toJson(report)
     val reportData = "const lintReport = $json;"
-    val html = getIndexHtml(reportData, report.name)
+    val html = getIndexHtml(reportData)
 
     assertTrue(html.contains("\"id\":\"Issue1\""))
     assertTrue(html.contains("\"id\":\"Issue2\""))
@@ -236,7 +232,7 @@ class HtmlReporterV2IndexTest {
       )
     val json = GsonBuilder().create().toJson(report)
     val reportData = "const lintReport = $json;"
-    val html = getIndexHtml(reportData, report.name)
+    val html = getIndexHtml(reportData)
 
     assertTrue(html.contains("\"urls\":[\"https://example.com/1\",\"https://example.com/2\"]"))
     // Also verify that LINTSCRIPT_JS contains the logic to render them
@@ -249,7 +245,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testSeverityFilter() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for the "Add Filter" button and its container
     assertTrue(html.contains("class=\"relative\" id=\"add-filter-container\""))
@@ -288,7 +284,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testCategoryFilter() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for the category filter option in the "Add Filter" dropdown
     assertTrue(html.contains("data-filter-type=\"category\""))
@@ -315,7 +311,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testModuleFilter() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for the module filter option in the "Add Filter" dropdown
     assertTrue(html.contains("data-filter-type=\"module\""))
@@ -342,7 +338,7 @@ class HtmlReporterV2IndexTest {
   @Test
   fun testGroupByDropdown() {
     val reportData = "const lintReport = { 'issues': [] };"
-    val html = getIndexHtml(reportData, "Lint Report")
+    val html = getIndexHtml(reportData)
 
     // Check for the "Group By" row
     assertTrue(html.contains("class=\"breadcrumb-row-style\""))

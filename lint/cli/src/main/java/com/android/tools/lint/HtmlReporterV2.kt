@@ -31,10 +31,7 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
   override fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry) {
     val output = this.output ?: return
     val rootProjectDir = client.getRootDir() ?: output.parentFile ?: File(".")
-    val titlePrefix = if (flags.isCheckDependencies) "Aggregate" else "Local"
-    val reportTitle = "$titlePrefix $title"
-
-    val builder = LintReportBuilder(client, reportTitle, rootProjectDir, client.getClientDisplayRevision()) { getUrl(it) }
+    val builder = LintReportBuilder(client, title, rootProjectDir, client.getClientDisplayRevision()) { getUrl(it) }
     val lintReport = builder.buildReport(incidents, computeExtraIssues(registry), computeMissingIssues(registry, incidents))
 
     render(lintReport, output)
@@ -47,7 +44,7 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
 
   private fun render(lintReport: LintReport, outputHtml: File) {
     val json = GsonBuilder().create().toJson(lintReport)
-    val finalHtml = getIndexHtml("const lintReport = $json;", lintReport.name)
+    val finalHtml = getIndexHtml("const lintReport = $json;")
     outputHtml.writeText(finalHtml)
   }
 }
