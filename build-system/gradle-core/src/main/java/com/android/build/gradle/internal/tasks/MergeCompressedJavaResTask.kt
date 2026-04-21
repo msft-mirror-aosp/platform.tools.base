@@ -32,18 +32,16 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.immutableListBuilder
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.buildanalyzer.common.TaskCategory
-import com.android.builder.merge.DelegateIncrementalFileMergerOutput
-import com.android.builder.merge.FilterIncrementalFileMergerInput
-import com.android.builder.merge.IncrementalFileMerger
-import com.android.builder.merge.IncrementalFileMergerInput
-import com.android.builder.merge.IncrementalFileMergerOutputs
-import com.android.builder.merge.IncrementalFileMergerState
-import com.android.builder.merge.LazyIncrementalFileMergerInputs
+import com.android.builder.merge.DelegateFileMergerOutput
+import com.android.builder.merge.FileMerger
+import com.android.builder.merge.FileMergerInput
+import com.android.builder.merge.FileMergerOutputs
+import com.android.builder.merge.FilterFileMergerInput
+import com.android.builder.merge.LazyFileMergerInput
 import com.android.builder.merge.MergeOutputWriters
 import com.android.builder.merge.StreamMergeAlgorithms
 import com.android.builder.packaging.PackagingUtils
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import kotlin.sequences.map
 import kotlin.sequences.sortedBy
 import org.gradle.api.file.ConfigurableFileCollection
@@ -195,26 +193,26 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
 
     val sources = immutableListBuilder {
       if (parameters.projectJavaResJar.isPresent) {
-        add(listOf(parameters.projectJavaResJar.get().asFile) to JavaResMergingPriority.HIGH)
+        add(CompressedJavaResJar(parameters.projectJavaResJar.get().asFile, JavaResMergingPriority.HIGH))
       }
-      parameters.mergedDependenciesJavaRes.forEach { add(listOf(it) to JavaResMergingPriority.LOW) }
+      parameters.mergedDependenciesJavaRes.forEach { add(CompressedJavaResJar(it, JavaResMergingPriority.LOW)) }
     }
 
     val packagingOptions = ParsedPackagingOptions(parameters.excludes.get(), parameters.pickFirsts.get(), parameters.merges.get())
     val inputFilter = MergeJavaResourceTask.predicate.and { path -> packagingOptions.getAction(path) != PackagingFileAction.EXCLUDE }
 
-    val highPriorityInputs = mutableListOf<FilterIncrementalFileMergerInput>()
+    val highPriorityInputs = mutableListOf<FileMergerInput>()
 
     // create final input list, sorted and filtered.
     val finalInputList =
       sources
         .asSequence()
-        .sortedBy { it.second }
-        .map { (files, priority) ->
-          val input = LazyIncrementalFileMergerInputs.fromNew(files.first().name, ImmutableSet.copyOf(files))
-          val filteredInput = FilterIncrementalFileMergerInput(input, inputFilter)
+        .sortedBy(CompressedJavaResJar::priority)
+        .map { jar ->
+          val input = LazyFileMergerInput(jar.file.name, jar.file)
+          val filteredInput = FilterFileMergerInput(input, inputFilter)
 
-          if (priority != JavaResMergingPriority.LOW) {
+          if (jar.priority != JavaResMergingPriority.LOW) {
             highPriorityInputs.add(filteredInput)
           }
 
@@ -235,20 +233,15 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         }
       }
 
-    val baseOutput =
-      IncrementalFileMergerOutputs.fromAlgorithmAndWriter(mergeTransformAlgorithm, MergeOutputWriters.toZipWithZipFlinger(outputFile))
+    val baseOutput = FileMergerOutputs.fromAlgorithmAndWriter(mergeTransformAlgorithm, MergeOutputWriters.toZipWithZipFlinger(outputFile))
 
     val output =
-      object : DelegateIncrementalFileMergerOutput(baseOutput) {
-        override fun create(path: String, inputs: List<IncrementalFileMergerInput>, compress: Boolean) {
+      object : DelegateFileMergerOutput(baseOutput) {
+        override fun <T : FileMergerInput> create(path: String, inputs: List<T>, compress: Boolean) {
           super.create(path, filter(path, inputs), compress)
         }
 
-        override fun update(path: String, prevInputNames: List<String>, inputs: List<IncrementalFileMergerInput>, compress: Boolean) {
-          super.update(path, prevInputNames, filter(path, inputs), compress)
-        }
-
-        private fun filter(path: String, inputs: List<IncrementalFileMergerInput>): ImmutableList<IncrementalFileMergerInput> {
+        private fun filter(path: String, inputs: List<FileMergerInput>): ImmutableList<FileMergerInput> {
           val packagingAction = packagingOptions.getAction(path)
           val shouldFilterInputs = packagingAction == PackagingFileAction.NONE && inputs.any { highPriorityInputs.contains(it) }
           return if (shouldFilterInputs) {
@@ -271,12 +264,7 @@ abstract class MergeJavaResOptimizedWorkAction : ProfileAwareWorkAction<MergeJav
         }
       }
 
-    IncrementalFileMerger.merge(
-      finalInputList,
-      output,
-      IncrementalFileMergerState(),
-      PackagingUtils.getNoCompressPredicateForJavaRes(parameters.noCompress.get()),
-    )
+    FileMerger.merge(finalInputList, output, PackagingUtils.getNoCompressPredicateForJavaRes(parameters.noCompress.get()))
   }
 
   abstract class Params : Parameters() {
