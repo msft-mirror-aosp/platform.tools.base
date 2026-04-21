@@ -372,6 +372,7 @@ com.android.tools.analytics-library:publisher
     com.android.tools:common (runtime)
     com.google.guava:guava (runtime)
     com.google.protobuf:protobuf-java (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
 com.android.tools.analytics-library:shared
   pomName=Android Tools Analytics Shared Library
