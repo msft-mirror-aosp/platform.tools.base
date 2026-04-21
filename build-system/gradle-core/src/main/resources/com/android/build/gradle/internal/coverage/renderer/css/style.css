@@ -330,13 +330,23 @@ header {
 .segment-btn:hover:not(.active) { color: var(--text-gray-900); }
 .segment-btn.active { background-color: #ffffff; color: var(--text-blue-600); box-shadow: var(--shadow-sm); }
 
-/* Search Box (Expandable) */
+.search-reveal-btn {
+    transition: opacity 0.3s ease;
+    opacity: 1;
+}
+.search-reveal-btn.hidden {
+    display: none !important;
+}
+.search-reveal-btn.transparent {
+    opacity: 0;
+    pointer-events: none;
+}
 .search-container { display: flex; align-items: center; position: relative; }
 .search-input-wrapper {
     display: flex;
     align-items: center;
     overflow: hidden;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 0;
     opacity: 0;
 }

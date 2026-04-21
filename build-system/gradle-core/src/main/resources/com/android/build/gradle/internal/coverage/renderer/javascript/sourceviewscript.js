@@ -23,7 +23,6 @@ const SourceViewApp = {
         isLoading: false,
         scrollLock: false
     },
-    isSyncing: false,
 
     init() {
         this.cacheElements();
@@ -64,6 +63,35 @@ const SourceViewApp = {
         `;
         document.body.appendChild(div);
         return div;
+    },
+
+    resetSearchUI() {
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.value = '';
+        }
+        if (this.elements.functionSearchClearBtn) {
+            this.elements.functionSearchClearBtn.classList.add('hidden');
+        }
+        this.handleFunctionSearch({ target: { value: '' } });
+    },
+
+    revealSearchUI() {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+        this.elements.srcSearchRevealBtn.classList.add('transparent');
+        this.elements.srcSearchWrapper.classList.add('expanded');
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.focus();
+        }
+    },
+
+    collapseSearchUI(animated = true) {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+
+        this.elements.srcSearchWrapper.classList.remove('expanded');
+        this.elements.srcSearchRevealBtn.classList.remove('transparent');
+        if (!animated) {
+            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+        }
     },
 
     /**
@@ -191,9 +219,7 @@ const SourceViewApp = {
         if (this.elements.srcSearchRevealBtn) {
             this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.elements.srcSearchRevealBtn.classList.add('hidden');
-                this.elements.srcSearchWrapper.classList.add('expanded');
-                this.elements.functionSearch.focus();
+                this.revealSearchUI();
             });
         }
 
@@ -288,10 +314,7 @@ const SourceViewApp = {
             if (this.elements.srcSearchWrapper && this.elements.srcSearchRevealBtn) {
                 if (!this.elements.srcSearchWrapper.contains(event.target) && !this.elements.srcSearchRevealBtn.contains(event.target)) {
                     if (this.elements.functionSearch && this.elements.functionSearch.value === '') {
-                        this.elements.srcSearchWrapper.classList.remove('expanded');
-                        setTimeout(() => {
-                            this.elements.srcSearchRevealBtn.classList.remove('hidden');
-                        }, 300);
+                        this.collapseSearchUI(true);
                     }
                 }
             }
@@ -327,12 +350,8 @@ const SourceViewApp = {
     },
 
     handleFunctionSearchClear() {
-        this.elements.functionSearch.value = '';
-        this.handleFunctionSearch({ target: this.elements.functionSearch });
-        this.elements.srcSearchWrapper.classList.remove('expanded');
-        setTimeout(() => {
-            this.elements.srcSearchRevealBtn.classList.remove('hidden');
-        }, 300);
+        this.resetSearchUI();
+        this.collapseSearchUI(true);
     },
 
     handleMethodClick(e) {
