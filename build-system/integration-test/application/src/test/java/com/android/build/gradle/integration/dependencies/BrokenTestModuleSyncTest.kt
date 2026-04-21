@@ -21,11 +21,18 @@ import com.android.build.gradle.integration.common.fixture.app.MinimalSubProject
 import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
-class BrokenTestModuleSyncTest {
+@RunWith(Parameterized::class)
+class BrokenTestModuleSyncTest(private val useNewDsl: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "useNewDsl_{0}") @JvmStatic fun params() = listOf(true, false)
+  }
 
   val app =
     MinimalSubProject.app("com.example.app")
@@ -51,9 +58,10 @@ class BrokenTestModuleSyncTest {
         "android {\n" +
           "    compileSdkVersion ${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}\n" +
           "    // target the app \n" +
-          "    targetProjectPath ':app'\n" +
-          "    // use the old mechanism to target a flavor which isn't supported anymore \n" +
-          "    targetVariant 'flavor1Debug'\n" +
+          "    targetProjectPath = ':app'\n" +
+          (if (!useNewDsl)
+            "    // use the old mechanism to target a flavor which isn't supported anymore \n" + "    targetVariant 'flavor1Debug'\n"
+          else "") +
           "}\n"
       )
 
@@ -64,7 +72,7 @@ class BrokenTestModuleSyncTest {
   @Test
   fun checkSync() {
     val modelInfo =
-      project.modelV2().with(BooleanOption.USE_NEW_DSL, false).ignoreSyncIssues().fetchModels("debug").container.getProject(":test")
+      project.modelV2().with(BooleanOption.USE_NEW_DSL, useNewDsl).ignoreSyncIssues().fetchModels("debug").container.getProject(":test")
     val syncIssues = modelInfo.issues!!.syncIssues.toList()
     val unresolvedDeps = modelInfo.variantDependencies?.mainArtifact?.unresolvedDependencies
     TruthHelper.assertThat(syncIssues).hasSize(1)
