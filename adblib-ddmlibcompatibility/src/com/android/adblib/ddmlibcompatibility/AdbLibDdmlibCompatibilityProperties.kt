@@ -37,5 +37,5 @@ object AdbLibDdmlibCompatibilityProperties {
    * Maximum amount of time a thread should be blocked when calling a method of the [Client] interface implemented by [AdblibClientWrapper].
    */
   val RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT =
-    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.run.blocking.legacy.default.timeout", defaultValue = Duration.ofSeconds(5))
+    AdbSessionHost.DurationProperty(name = "$NAME_PREFIX.run.blocking.legacy.default.timeout", defaultValue = DEFAULT_DDMLIB_TIMEOUT)
 }

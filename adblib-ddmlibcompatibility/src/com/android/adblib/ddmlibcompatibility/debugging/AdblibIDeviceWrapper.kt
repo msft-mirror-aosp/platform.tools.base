@@ -25,7 +25,10 @@ import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
 import com.android.adblib.adbLogger
 import com.android.adblib.availableFeatures
+import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
 import com.android.adblib.ddmlibcompatibility.AdbLibIDeviceManager
+import com.android.adblib.ddmlibcompatibility.DEFAULT_DDMLIB_TIMEOUT
+import com.android.adblib.property
 import com.android.adblib.rootAndWait
 import com.android.adblib.scope
 import com.android.adblib.serialNumber
@@ -44,7 +47,6 @@ import com.android.ddmlib.AndroidDebugBridge
 import com.android.ddmlib.AvdData
 import com.android.ddmlib.Client
 import com.android.ddmlib.CollectingOutputReceiver
-import com.android.ddmlib.DdmPreferences
 import com.android.ddmlib.FileListingService
 import com.android.ddmlib.IDevice
 import com.android.ddmlib.IDevice.DeviceState
@@ -152,7 +154,8 @@ internal class AdblibIDeviceWrapper(
   override fun executeShellCommand(command: String, receiver: IShellOutputReceiver) {
     logUsage(IDeviceUsageTracker.Method.EXECUTE_SHELL_COMMAND_1) {
       // This matches the behavior of `DeviceImpl`
-      executeRemoteCommand(command, receiver, DdmPreferences.getTimeOut().toLong(), TimeUnit.MILLISECONDS)
+
+      executeRemoteCommand(command, receiver, maxTimeToOutputResponse = DEFAULT_DDMLIB_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
     }
   }
 
@@ -480,7 +483,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun pushFile(local: String, remote: String) {
     logUsage(IDeviceUsageTracker.Method.PUSH_FILE) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
 
         val localFile = File(local).toPath()
@@ -502,7 +505,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun pullFile(remote: String, local: String) {
     logUsage(IDeviceUsageTracker.Method.PULL_FILE) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
 
         val localFile = File(local).toPath()
@@ -633,7 +636,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun root(): Boolean =
     logUsage(IDeviceUsageTracker.Method.ROOT) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         val deviceSelector = DeviceSelector.fromSerialNumber(connectedDevice.serialNumber)
         connectedDevice.session.deviceServices.rootAndWait(deviceSelector)
         isRoot()
@@ -801,7 +804,7 @@ internal class AdblibIDeviceWrapper(
 
   override fun rawExec2(executable: String, parameters: Array<out String>): SimpleConnectedSocket =
     logUsage(IDeviceUsageTracker.Method.RAW_EXEC2) {
-      runBlockingLegacy {
+      runBlockingLegacy(timeout = INFINITE_DURATION) {
         mapToDdmlibException {
           val command = StringBuilder(executable)
           for (parameter in parameters) {
@@ -849,7 +852,7 @@ internal class AdblibIDeviceWrapper(
    * @throws IOException that wraps `InterruptedException`, if encountered
    */
   private fun <R> runBlockingLegacy(
-    timeout: Duration = Duration.ofMillis(DdmPreferences.getTimeOut().toLong()),
+    timeout: Duration = connectedDevice.session.property(RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT),
     block: suspend CoroutineScope.() -> R,
   ): R {
     try {
