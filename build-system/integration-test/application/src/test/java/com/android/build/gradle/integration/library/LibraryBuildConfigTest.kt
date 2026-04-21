@@ -16,10 +16,13 @@
 
 package com.android.build.gradle.integration.library
 
+import com.android.build.api.variant.BuildConfigField
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.integration.common.fixture.project.GradleBuild
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyLibraryCallback
+import com.android.build.gradle.integration.common.fixture.project.plugins.LibraryComponentCallback
 import com.android.build.gradle.integration.common.utils.getBuildType
 import com.android.build.gradle.integration.common.utils.getProductFlavor
 import com.android.build.gradle.options.BooleanOption
@@ -33,17 +36,25 @@ import org.gradle.api.Project
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.Parameterized
 
 /**
  * Test for BuildConfig field declared in build type, flavors, and variant and how they override each other.
  *
  * Forked from [com.android.build.gradle.integration.application.BuildConfigTest].
  */
-class LibraryBuildConfigTest {
+@RunWith(Parameterized::class)
+class LibraryBuildConfigTest(private val useNewDsl: Boolean) {
+
+  companion object {
+    @Parameterized.Parameters(name = "useNewDsl={0}") @JvmStatic fun parameters() = listOf(true, false)
+  }
 
   @get:Rule
   val project =
-    GradleRule.configure().disableBrokenNewDslOptOutChecks().from {
+    GradleRule.configure().from {
+      gradleProperties { add(BooleanOption.USE_NEW_DSL, useNewDsl) }
       androidLibrary {
         android {
           defaultConfig {
@@ -73,12 +84,23 @@ class LibraryBuildConfigTest {
           }
           buildFeatures { buildConfig = true }
         }
-        pluginCallbacks += Callback::class.java
+        if (useNewDsl) {
+          pluginCallbacks += Callback::class.java
+        } else {
+          pluginCallbacks += LegacyCallback::class.java
+        }
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
 
-  class Callback : LegacyLibraryCallback {
+  class Callback : LibraryComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: LibraryAndroidComponentsExtension) {
+      androidComponents.onVariants(androidComponents.selector().withBuildType("debug")) { variant ->
+        variant.buildConfigFields?.put("VALUE_VARIANT", BuildConfigField("int", "1000", "Field from the variant API"))
+      }
+    }
+  }
+
+  class LegacyCallback : LegacyLibraryCallback {
     override fun handleExtension(project: Project, extension: LibraryExtension) {
       extension.libraryVariants.all { variant ->
         if (variant.buildType.name == "debug") {
@@ -107,7 +129,11 @@ class LibraryBuildConfigTest {
           "generateFlavor2DebugBuildConfig",
           "generateFlavor2ReleaseBuildConfig",
         )
-        _dslModel = it.modelBuilder.allowOptionWarning(BooleanOption.USE_NEW_DSL).fetchModels().container.getProject().androidDsl
+        val modelBuilder = it.modelBuilder
+        if (!useNewDsl) {
+          modelBuilder.allowOptionWarning(BooleanOption.USE_NEW_DSL)
+        }
+        _dslModel = modelBuilder.fetchModels().container.getProject().androidDsl
       }
   }
 
