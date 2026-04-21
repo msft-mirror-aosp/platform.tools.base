@@ -2,7 +2,6 @@ load("@rules_java//java:defs.bzl", "java_binary")
 load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:coverage.bzl", "coverage_java_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
-load("//tools/base/bazel:utils.bzl", "java_jarjar")
 
 coverage_java_library(
     name = "tools.tracer",
@@ -12,25 +11,40 @@ coverage_java_library(
 
 java_binary(
     name = "agent_binary",
-    srcs = glob(["agent/src/**/*.java"]),
+    srcs = [
+        "agent/src/com/android/tools/tracer/agent/TraceAgent.java",
+        "agent/src/com/android/tools/tracer/agent/Tracer.java",
+    ],
+    deploy_env = [":trace_agent_impl"],
     deploy_manifest_lines = [
         "Premain-Class: com.android.tools.tracer.agent.TraceAgent",
         "Boot-Class-Path: trace_agent.jar",
     ],
     main_class = "com.android.tools.tracer.agent.TraceAgent",
+    resource_strip_prefix = "tools/base/tracer",
+    resources = [":trace_agent_impl_deploy.jar"],
+)
+
+java_binary(
+    name = "trace_agent_impl",
+    srcs = glob(
+        ["agent/src/**/*.java"],
+        exclude = ["agent/src/com/android/tools/tracer/agent/TraceAgent.java"],
+    ),
+    main_class = "com.android.tools.tracer.agent.TraceAgentImpl",
     deps = [
+        ":tools.tracing",
         "@maven//:org.ow2.asm.asm",
         "@maven//:org.ow2.asm.asm-commons",
     ],
 )
 
 # Note that the code depends at runtime on the name "trace_agent.jar"
-java_jarjar(
+genrule(
     name = "trace_agent",
-    srcs = [
-        ":agent_binary_deploy.jar",
-    ],
-    rules = "jarjar_rules.txt",
+    srcs = [":agent_binary_deploy.jar"],
+    outs = ["trace_agent.jar"],
+    cmd = "cp $< $@",
     visibility = ["//visibility:public"],
 )
 
@@ -60,7 +74,6 @@ sh_test(
     ],
 )
 
-# NOTE: this is important to preserve even in the absence of any consumers to ensure incorrect dependencies aren't added.
 kotlin_library(
     name = "tools.tracing",
     srcs = glob(["src/**/*"]),

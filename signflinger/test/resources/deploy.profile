@@ -3,7 +3,7 @@
 
 # Main configuration step
 Trace: org.gradle.configuration.DefaultBuildConfigurer::configure
-Output: profile.json
+TraceOutputDirectory: .
 # Main execution step
 Trace: org.gradle.execution.DefaultBuildExecuter::execute
 Trace: org.gradle.execution.DefaultBuildConfigurationActionExecuter::configure
