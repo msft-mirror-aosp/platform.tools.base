@@ -365,4 +365,39 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".group-by-icon"))
     assertTrue(STYLE_CSS.contains(".breadcrumb-row-style"))
   }
+
+  @Test
+  fun testImages() {
+    val report =
+      LintReport(
+        name = "Report with Images",
+        timeStamp = "2026-05-20",
+        issues =
+          listOf(
+            LintIssue(
+              id = "ImageIssue",
+              severityDescription = "Error",
+              message = "Message",
+              category = "Correctness",
+              priority = 5,
+              summary = "Summary",
+              explanation = "Explanation",
+              location = LintLocation("File.kt", 1, 1),
+              images = listOf("http://example.com/icon1.png", "http://example.com/icon2.jpg"),
+            )
+          ),
+        numberOfIssues = 1,
+      )
+    val json = GsonBuilder().create().toJson(report)
+    val reportData = "const lintReport = $json;"
+    val html = getIndexHtml(reportData)
+
+    assertTrue(html.contains("\"images\":[\"http://example.com/icon1.png\",\"http://example.com/icon2.jpg\"]"))
+    // Also verify that LINTSCRIPT_JS contains the logic to render them
+    assertTrue(LINTSCRIPT_JS.contains("issue.images"))
+    assertTrue(LINTSCRIPT_JS.contains("<img src=\"\${this.escapeHTML(url)}\""))
+    // And STYLE_CSS contains the style
+    assertTrue(STYLE_CSS.contains(".h-32"))
+    assertTrue(STYLE_CSS.contains(".object-contain"))
+  }
 }

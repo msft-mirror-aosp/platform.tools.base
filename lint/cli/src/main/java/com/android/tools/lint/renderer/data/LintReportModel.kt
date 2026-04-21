@@ -94,6 +94,8 @@ data class LintIssue(
   val className: String? = null,
   /** Whether the issue was automatically fixed. */
   val wasAutoFixed: Boolean = false,
+  /** List of images related to this issue. */
+  val images: List<String> = emptyList(),
 )
 
 /** Represents a lint check. */

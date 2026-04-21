@@ -20,6 +20,7 @@ import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.getErrorLines
 import com.android.tools.lint.getPath
@@ -27,6 +28,7 @@ import com.android.tools.lint.renderer.data.LintCheck
 import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
 import com.android.tools.lint.renderer.data.LintReport
+import com.android.utils.SdkUtils
 import java.io.File
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -115,6 +117,16 @@ class LintReportBuilder(
 
     val applicableVariants = incident.applicableVariants
 
+    val images = mutableListOf<String>()
+    var curr: Location? = incident.location
+    while (curr != null) {
+      val imageFile = curr.file
+      if (SdkUtils.isBitmapFile(imageFile)) {
+        urlProvider(imageFile)?.let { images.add(it) }
+      }
+      curr = curr.secondary
+    }
+
     return LintIssue(
       id = issue.id,
       severityDescription = incident.severity?.description ?: "Unknown",
@@ -136,6 +148,7 @@ class LintReportBuilder(
       className = file.nameWithoutExtension,
       vendor = getVendorName(issue),
       wasAutoFixed = incident.wasAutoFixed,
+      images = images,
     )
   }
 

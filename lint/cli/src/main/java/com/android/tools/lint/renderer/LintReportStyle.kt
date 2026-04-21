@@ -333,16 +333,21 @@ pre.errorlines {
 
 tr.issue-row:hover { cursor: pointer; }
 
-* --- Utilities --- */
+/* --- Utilities --- */
 .flex { display: flex; }
 .flex-1 { flex: 1 1 0%; }
+.flex-shrink-0 { flex-shrink: 0; }
 .items-center { align-items: center; }
 .gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+.overflow-x-auto { overflow-x: auto; }
 
 .p-1 { padding: 0.25rem; }
 .p-4 { padding: 1rem; }
 .p-6 { padding: 1.5rem; }
+.pb-2 { padding-bottom: 0.5rem; }
 
+.mt-4 { margin-top: 1rem; }
 .mt-8 { margin-top: 2rem; }
 .mt-12 { margin-top: 3rem; }
 .mb-4 { margin-bottom: 1rem; }
@@ -354,6 +359,15 @@ tr.issue-row:hover { cursor: pointer; }
 .space-y-4 > * + * { margin-top: 1rem; }
 
 .hidden { display: none !important; }
+
+.h-32 { height: 8rem; }
+.object-contain { object-fit: contain; }
+.bg-gray-50 { background-color: #f9fafb; }
+.border-gray-300 { border-color: #d1d5db; }
+.rounded-md { border-radius: 0.375rem; }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.transition-all { transition-property: all; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+.hover\:border-blue-500:hover { border-color: #3b82f6; }
 
 .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
 .text-sm { font-size: 0.875rem; }

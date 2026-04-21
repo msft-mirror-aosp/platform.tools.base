@@ -304,6 +304,39 @@ class LintReportBuilderTest {
     assertEquals(listOf("https://example.com/info1", "https://example.com/info2"), lintIssue.urls)
   }
 
+  @Test
+  fun testImages() {
+    val client = createMockClient()
+    val rootProjectDir = File("/path/to/project")
+    val builder = LintReportBuilder(client, "Test Report", rootProjectDir, "1.0") { file -> "http://example.com/${file.name}" }
+
+    val issue = mock(Issue::class.java)
+    `when`(issue.id).thenReturn("TestIssue")
+    `when`(issue.category).thenReturn(Category.CORRECTNESS)
+
+    val incident = mock(Incident::class.java)
+    `when`(incident.issue).thenReturn(issue)
+    `when`(incident.severity).thenReturn(Severity.ERROR)
+
+    val location1 = mock(Location::class.java)
+    val location2 = mock(Location::class.java)
+    val location3 = mock(Location::class.java)
+    `when`(location1.secondary).thenReturn(location2)
+    `when`(location2.secondary).thenReturn(location3)
+
+    `when`(location1.file).thenReturn(File("/path/to/project/icon1.png"))
+    `when`(location2.file).thenReturn(File("/path/to/project/icon2.jpg"))
+    `when`(location3.file).thenReturn(File("/path/to/project/not-an-image.txt"))
+
+    `when`(incident.location).thenReturn(location1)
+    `when`(incident.file).thenReturn(File("/path/to/project/icon1.png"))
+
+    val report = builder.buildReport(listOf(incident), emptyList(), emptyMap())
+    val lintIssue = report.issues[0]
+
+    assertEquals(listOf("http://example.com/icon1.png", "http://example.com/icon2.jpg"), lintIssue.images)
+  }
+
   private fun createMockClient(): LintCliClient {
     val client = mock(LintCliClient::class.java)
     whenever(client.getDisplayPath(any<File>(), anyOrNull<Project>(), any<TextFormat>())).thenAnswer {

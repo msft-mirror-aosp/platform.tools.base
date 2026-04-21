@@ -455,12 +455,16 @@ const LintReportApp = {
                 const urlsHtml = (issue.urls && issue.urls.length > 0)
                     ? `<br><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul>`
                     : '';
+                const imagesHtml = (issue.images && issue.images.length > 0)
+                    ? `<div class="mt-4 flex gap-4 overflow-x-auto pb-2">${'$'}{issue.images.map(url => `<div class="flex-shrink-0"><a href="${'$'}{this.escapeHTML(url)}" target="_blank"><img src="${'$'}{this.escapeHTML(url)}" class="h-32 object-contain border border-gray-300 rounded-md p-1 bg-gray-50 hover:border-blue-500 transition-all shadow-sm"></a></div>`).join('')}</div>`
+                    : '';
 
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
                     <strong>Summary:</strong> ${'$'}{issue.summary}<br><br>
                     <strong>Explanation:</strong><br>${'$'}{issue.explanation.replace(/\n/g, '<br>')}
                     ${'$'}{urlsHtml}
                     ${'$'}{autoFixedMsg}
+                    ${'$'}{imagesHtml}
                     ${'$'}{codeSnippet}
                 </div></td></tr>`);
             }
