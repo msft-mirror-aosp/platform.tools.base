@@ -112,7 +112,7 @@ class AllDslMethodsTest(
     GradleTestProject.builder()
       .fromTestApp(MultiModuleTestProject.builder().build())
       .withKotlinGradlePlugin(true)
-      .disableBuiltInKotlin()
+      .withComposeCompilerGradlePlugin(true)
       .create()
 
   @Before
@@ -133,6 +133,7 @@ class AllDslMethodsTest(
                     plugins {
                         id("$pluginId")
                         ${"kotlin(\"multiplatform\")".takeIf { extensionClass == KotlinMultiplatformAndroidLibraryExtension::class.java } ?: ""}
+                        ${"id(\"org.jetbrains.kotlin.plugin.compose\")".takeIf { extensionClass != KotlinMultiplatformAndroidLibraryExtension::class.java } ?: ""}
                     }
                 """
           .trimIndent() + generator.getScript(index - 1),
