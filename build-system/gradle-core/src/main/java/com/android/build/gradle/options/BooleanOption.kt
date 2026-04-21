@@ -210,6 +210,9 @@ enum class BooleanOption(
    */
   UNINSTALL_INCOMPATIBLE_APKS("android.experimental.testOptions.uninstallIncompatibleApks", false, FeatureStage.Experimental),
 
+  /** When enabled, on-the-fly code coverage will be used for Android tests instead of offline instrumentation. */
+  ENABLE_ON_THE_FLY_CODE_COVERAGE("android.experimental.testOptions.coverage.onTheFly", false, FeatureStage.Experimental),
+
   /** When enabled, "-show-kernel" and "-verbose" flags are used when running an Android emulator for Gradle Managed devices. */
   GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING(
     "android.experimental.testOptions.managedDevices.emulator.showKernelLogging",
