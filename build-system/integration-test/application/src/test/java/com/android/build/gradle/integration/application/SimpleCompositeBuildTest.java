@@ -33,7 +33,6 @@ public class SimpleCompositeBuildTest {
             GradleTestProject.builder()
                     .fromTestProject("simpleCompositeBuild")
                     .withDependencyChecker(false)
-                    .disableBuiltInKotlin()
                     .create();
 
     @Test
@@ -48,10 +47,18 @@ public class SimpleCompositeBuildTest {
                 dependencies
                 = modelInfo.getVariantDependencies().getMainArtifact().getCompileDependencies();
 
-        Truth.assertThat(dependencies).hasSize(1);
+        com.android.builder.model.v2.ide.GraphItem stringUtils =
+                dependencies.stream()
+                        .filter(it -> it.getKey().contains("org.sample:string-utils:1.0"))
+                        .findFirst()
+                        .orElseThrow(
+                                () ->
+                                        new AssertionError(
+                                                "Could not find string-utils dependency in "
+                                                        + dependencies));
+
         Truth.assertThat(
-                        dependencies
-                                .get(0)
+                        stringUtils
                                 .getKey()
                                 .replace(
                                         "org.gradle.jvm.version>" + Runtime.version().feature(),

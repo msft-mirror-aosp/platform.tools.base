@@ -51,7 +51,6 @@ public class SwitchMultidexTest {
     public GradleTestProject project =
             GradleTestProject.builder()
                     .fromTestApp(HelloWorldApp.forPlugin("com.android.application"))
-                    .disableBuiltInKotlin()
                     .create();
 
     @Before
@@ -117,7 +116,9 @@ public class SwitchMultidexTest {
                                                 && !c.startsWith("Lkotlin/")
                                                 && !c.startsWith("Landroid/")
                                                 && !c.startsWith("Ljava/")
-                                                && !c.startsWith("Ldalvik/"))
+                                                && !c.startsWith("Ldalvik/")
+                                                && !c.startsWith("Lorg/jetbrains/")
+                                                && !c.startsWith("Lorg/intellij/"))
                         .collect(java.util.stream.Collectors.toList());
         assertThat(mainDexClasses)
                 .containsExactly(
@@ -149,7 +150,9 @@ public class SwitchMultidexTest {
                                                 && !c.startsWith("Lkotlin/")
                                                 && !c.startsWith("Landroid/")
                                                 && !c.startsWith("Ljava/")
-                                                && !c.startsWith("Ldalvik/"))
+                                                && !c.startsWith("Ldalvik/")
+                                                && !c.startsWith("Lorg/jetbrains/")
+                                                && !c.startsWith("Lorg/intellij/"))
                         .collect(java.util.stream.Collectors.toSet());
 
         if (project.getIntermediateFile(
@@ -215,7 +218,9 @@ public class SwitchMultidexTest {
                                                 && !c.startsWith("Lkotlin/")
                                                 && !c.startsWith("Landroid/")
                                                 && !c.startsWith("Ljava/")
-                                                && !c.startsWith("Ldalvik/"))
+                                                && !c.startsWith("Ldalvik/")
+                                                && !c.startsWith("Lorg/jetbrains/")
+                                                && !c.startsWith("Lorg/intellij/"))
                         .collect(java.util.stream.Collectors.toSet());
 
         if (project.getIntermediateFile(

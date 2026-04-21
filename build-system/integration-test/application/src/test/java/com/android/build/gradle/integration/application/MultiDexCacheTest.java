@@ -36,7 +36,6 @@ public class MultiDexCacheTest {
     public GradleTestProject mProject =
             GradleTestProject.builder()
                     .fromTestProject("flavored")
-                    .addGradleProperty(BooleanOption.USE_NEW_DSL, false)
                     .create();
 
     @Test
