@@ -556,7 +556,7 @@ class LocalEmulatorDeviceHandle(
 
   /** Sets the phone that is paired to this device; if null, clears the paired phone. */
   fun updatePairedPhone(companion: LocalEmulatorDeviceHandle?) {
-    updatePairedDevice(UserSettingsKey.PAIRED_PHONE_AVD_ID, companion)
+    updatePairedDevice("${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1", companion)
   }
 
   fun addPairedGlasses(id: DeviceId, mac: String?) {
@@ -716,7 +716,7 @@ data class LocalEmulatorProperties(
       deviceType = avdInfo.toDeviceType()
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
-      pairedPhoneId = avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedPhoneId = avdInfo.userSettings["${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1"]?.let { DeviceId.fromString(it) }
       pairedGlassesInfos = PairedGlassesInfo.parseFromSettings(avdInfo.userSettings)
       density = avdInfo.density
       resolution = avdInfo.resolution

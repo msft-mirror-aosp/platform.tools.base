@@ -32,6 +32,7 @@ import com.android.sdklib.internal.avd.BootSnapshot
 import com.android.sdklib.internal.avd.ColdBoot
 import com.android.sdklib.internal.avd.ConfigKey
 import com.android.sdklib.internal.avd.QuickBoot
+import com.android.sdklib.internal.avd.UserSettingsKey
 import com.android.sdklib.internal.avd.UserSettingsKey.PREFERRED_ABI
 import com.google.common.truth.Truth.assertThat
 import com.google.wireless.android.sdk.stats.DeviceInfo
@@ -291,6 +292,20 @@ class LocalEmulatorProvisionerPluginTest {
     val noPlay = avdManager.makeAvdInfo(2, AndroidVersion(29), hasPlayStore = false)
     assertThat(buildProperties(withPlay).isDebuggable).isFalse()
     assertThat(buildProperties(noPlay).isDebuggable).isTrue()
+  }
+
+  @Test
+  fun pairedPhoneId() {
+    val avdWithNewKey =
+      makeAvdInfo(
+        avdManager.avdRoot,
+        1,
+        userSettings = mapOf("${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1" to "LocalEmulator::path=/path/to/phone.avd"),
+      )
+    val avdWithNoKey = makeAvdInfo(avdManager.avdRoot, 2)
+
+    assertThat(buildProperties(avdWithNewKey).pairedPhoneId).isEqualTo(DeviceId("LocalEmulator", false, "path=/path/to/phone.avd"))
+    assertThat(buildProperties(avdWithNoKey).pairedPhoneId).isNull()
   }
 
   @Test
