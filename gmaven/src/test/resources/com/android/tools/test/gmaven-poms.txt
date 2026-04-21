@@ -412,6 +412,7 @@ com.android.tools.analytics-library:tracker
     com.google.guava:guava (runtime)
     com.google.protobuf:protobuf-java (runtime)
     org.jetbrains.kotlin:kotlin-stdlib-jdk8 (runtime)
+    org.jetbrains.kotlinx:kotlinx-coroutines-core (runtime)
 
 com.android.tools.apkdeployer:apkdeployer
   pomName=com.android.tools.apkdeployer.apkdeployer
