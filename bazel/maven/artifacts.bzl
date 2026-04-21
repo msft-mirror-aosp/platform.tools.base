@@ -13,17 +13,18 @@ of a `(maven|kotlin|java)_library` rule, otherwise use DATA.
 ARTIFACTS = [
     "androidx.annotation:annotation:1.1.0",
     "androidx.annotation:annotation-jvm:1.7.1",
-    "androidx.compose.animation:animation-core-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.animation:animation-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.foundation:foundation-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.material:material-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.material3:material3-lint:1.4.0-alpha04",  # Compose Desktop Lint checks
-    "androidx.compose.runtime:runtime-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.runtime:runtime-saveable-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-graphics-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-test-manifest-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-text-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
+    "androidx.compose.animation:animation-core-lint:1.11.0-rc01",
+    "androidx.compose.animation:animation-lint:1.11.0-rc01",
+    "androidx.compose.foundation:foundation-lint:1.11.0-rc01",
+    "androidx.compose.material:material-lint:1.11.0-rc01",
+    "androidx.compose.material3:material3-lint:1.5.0-alpha17",
+    "androidx.compose.runtime:runtime-lint:1.11.0-rc01",
+    "androidx.compose.runtime:runtime-retain-lint:1.11.0-rc01",
+    "androidx.compose.runtime:runtime-saveable-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-graphics-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-test-manifest-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-text-lint:1.11.0-rc01",
     "androidx.core:core:1.1.0",
     "androidx.lint:lint-gradle:1.0.0-alpha01",
     "androidx.multidex:multidex:2.0.1",

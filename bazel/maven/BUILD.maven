@@ -144,10 +144,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "androidx.compose.animation.animation-core-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/animation/animation-core-lint/1.8.0-alpha06/animation-core-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.animation.animation-core-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/animation/animation-core-lint/1.11.0-rc01/animation-core-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/animation/animation-core-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/animation/animation-core-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -155,20 +155,20 @@ maven_import(
     name = "androidx.compose.animation.animation-core-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/animation/animation-core-lint/1.8.0-alpha06/animation-core-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/animation/animation-core-lint/1.11.0-rc01/animation-core-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/animation/animation-core-lint/1.8.0-alpha06/animation-core-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/animation/animation-core-lint/1.11.0-rc01/animation-core-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/animation/animation-core-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/animation/animation-core-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.animation.animation-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/animation/animation-lint/1.8.0-alpha06/animation-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.animation.animation-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/animation/animation-lint/1.11.0-rc01/animation-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/animation/animation-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/animation/animation-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -176,20 +176,20 @@ maven_import(
     name = "androidx.compose.animation.animation-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/animation/animation-lint/1.8.0-alpha06/animation-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/animation/animation-lint/1.11.0-rc01/animation-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/animation/animation-lint/1.8.0-alpha06/animation-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/animation/animation-lint/1.11.0-rc01/animation-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/animation/animation-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/animation/animation-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.foundation.foundation-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/foundation/foundation-lint/1.8.0-alpha06/foundation-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.foundation.foundation-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/foundation/foundation-lint/1.11.0-rc01/foundation-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/foundation/foundation-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/foundation/foundation-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -197,20 +197,20 @@ maven_import(
     name = "androidx.compose.foundation.foundation-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/foundation/foundation-lint/1.8.0-alpha06/foundation-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/foundation/foundation-lint/1.11.0-rc01/foundation-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/foundation/foundation-lint/1.8.0-alpha06/foundation-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/foundation/foundation-lint/1.11.0-rc01/foundation-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/foundation/foundation-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/foundation/foundation-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.material3.material3-lint_1.4.0-alpha04",
-    pom = "repository/androidx/compose/material3/material3-lint/1.4.0-alpha04/material3-lint-1.4.0-alpha04.pom",
+    name = "androidx.compose.material3.material3-lint_1.5.0-alpha17",
+    pom = "repository/androidx/compose/material3/material3-lint/1.5.0-alpha17/material3-lint-1.5.0-alpha17.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/material3/material3-lint/1.4.0-alpha04",
+    repo_path = "androidx/compose/material3/material3-lint/1.5.0-alpha17",
     visibility = ["//visibility:public"],
 )
 
@@ -218,20 +218,20 @@ maven_import(
     name = "androidx.compose.material3.material3-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/material3/material3-lint/1.4.0-alpha04/material3-lint-1.4.0-alpha04.jar"
+        "repository/androidx/compose/material3/material3-lint/1.5.0-alpha17/material3-lint-1.5.0-alpha17.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/material3/material3-lint/1.4.0-alpha04/material3-lint-1.4.0-alpha04.pom",
+    pom = "repository/androidx/compose/material3/material3-lint/1.5.0-alpha17/material3-lint-1.5.0-alpha17.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/material3/material3-lint/1.4.0-alpha04",
+    repo_path = "androidx/compose/material3/material3-lint/1.5.0-alpha17",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.material.material-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/material/material-lint/1.8.0-alpha06/material-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.material.material-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/material/material-lint/1.11.0-rc01/material-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/material/material-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/material/material-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -239,20 +239,20 @@ maven_import(
     name = "androidx.compose.material.material-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/material/material-lint/1.8.0-alpha06/material-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/material/material-lint/1.11.0-rc01/material-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/material/material-lint/1.8.0-alpha06/material-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/material/material-lint/1.11.0-rc01/material-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/material/material-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/material/material-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.runtime.runtime-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/runtime/runtime-lint/1.8.0-alpha06/runtime-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.runtime.runtime-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/runtime/runtime-lint/1.11.0-rc01/runtime-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/runtime/runtime-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/runtime/runtime-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -260,20 +260,41 @@ maven_import(
     name = "androidx.compose.runtime.runtime-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/runtime/runtime-lint/1.8.0-alpha06/runtime-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/runtime/runtime-lint/1.11.0-rc01/runtime-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/runtime/runtime-lint/1.8.0-alpha06/runtime-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/runtime/runtime-lint/1.11.0-rc01/runtime-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/runtime/runtime-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/runtime/runtime-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.runtime.runtime-saveable-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/runtime/runtime-saveable-lint/1.8.0-alpha06/runtime-saveable-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.runtime.runtime-retain-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/runtime/runtime-retain-lint/1.11.0-rc01/runtime-retain-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/runtime/runtime-saveable-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/runtime/runtime-retain-lint/1.11.0-rc01",
+    visibility = ["//visibility:public"],
+)
+
+maven_import(
+    name = "androidx.compose.runtime.runtime-retain-lint",
+    classifiers = [],
+    jars = [
+        "repository/androidx/compose/runtime/runtime-retain-lint/1.11.0-rc01/runtime-retain-lint-1.11.0-rc01.jar"
+    ],
+    original_deps = [],
+    pom = "repository/androidx/compose/runtime/runtime-retain-lint/1.11.0-rc01/runtime-retain-lint-1.11.0-rc01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-retain-lint/1.11.0-rc01",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.runtime.runtime-saveable-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/runtime/runtime-saveable-lint/1.11.0-rc01/runtime-saveable-lint-1.11.0-rc01.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/runtime/runtime-saveable-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -281,20 +302,20 @@ maven_import(
     name = "androidx.compose.runtime.runtime-saveable-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/runtime/runtime-saveable-lint/1.8.0-alpha06/runtime-saveable-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/runtime/runtime-saveable-lint/1.11.0-rc01/runtime-saveable-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/runtime/runtime-saveable-lint/1.8.0-alpha06/runtime-saveable-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/runtime/runtime-saveable-lint/1.11.0-rc01/runtime-saveable-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/runtime/runtime-saveable-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/runtime/runtime-saveable-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.ui.ui-graphics-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/ui/ui-graphics-lint/1.8.0-alpha06/ui-graphics-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.ui.ui-graphics-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/ui/ui-graphics-lint/1.11.0-rc01/ui-graphics-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-graphics-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-graphics-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -302,20 +323,20 @@ maven_import(
     name = "androidx.compose.ui.ui-graphics-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/ui/ui-graphics-lint/1.8.0-alpha06/ui-graphics-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/ui/ui-graphics-lint/1.11.0-rc01/ui-graphics-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/ui/ui-graphics-lint/1.8.0-alpha06/ui-graphics-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/ui/ui-graphics-lint/1.11.0-rc01/ui-graphics-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-graphics-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-graphics-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.ui.ui-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/ui/ui-lint/1.8.0-alpha06/ui-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.ui.ui-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/ui/ui-lint/1.11.0-rc01/ui-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -323,20 +344,20 @@ maven_import(
     name = "androidx.compose.ui.ui-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/ui/ui-lint/1.8.0-alpha06/ui-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/ui/ui-lint/1.11.0-rc01/ui-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/ui/ui-lint/1.8.0-alpha06/ui-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/ui/ui-lint/1.11.0-rc01/ui-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.ui.ui-test-manifest-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/ui/ui-test-manifest-lint/1.8.0-alpha06/ui-test-manifest-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.ui.ui-test-manifest-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/ui/ui-test-manifest-lint/1.11.0-rc01/ui-test-manifest-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-test-manifest-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-test-manifest-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -344,20 +365,20 @@ maven_import(
     name = "androidx.compose.ui.ui-test-manifest-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/ui/ui-test-manifest-lint/1.8.0-alpha06/ui-test-manifest-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/ui/ui-test-manifest-lint/1.11.0-rc01/ui-test-manifest-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/ui/ui-test-manifest-lint/1.8.0-alpha06/ui-test-manifest-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/ui/ui-test-manifest-lint/1.11.0-rc01/ui-test-manifest-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-test-manifest-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-test-manifest-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
 maven_artifact(
-    name = "androidx.compose.ui.ui-text-lint_1.8.0-alpha06",
-    pom = "repository/androidx/compose/ui/ui-text-lint/1.8.0-alpha06/ui-text-lint-1.8.0-alpha06.pom",
+    name = "androidx.compose.ui.ui-text-lint_1.11.0-rc01",
+    pom = "repository/androidx/compose/ui/ui-text-lint/1.11.0-rc01/ui-text-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-text-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-text-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 
@@ -365,12 +386,12 @@ maven_import(
     name = "androidx.compose.ui.ui-text-lint",
     classifiers = [],
     jars = [
-        "repository/androidx/compose/ui/ui-text-lint/1.8.0-alpha06/ui-text-lint-1.8.0-alpha06.jar"
+        "repository/androidx/compose/ui/ui-text-lint/1.11.0-rc01/ui-text-lint-1.11.0-rc01.jar"
     ],
     original_deps = [],
-    pom = "repository/androidx/compose/ui/ui-text-lint/1.8.0-alpha06/ui-text-lint-1.8.0-alpha06.pom",
+    pom = "repository/androidx/compose/ui/ui-text-lint/1.11.0-rc01/ui-text-lint-1.11.0-rc01.pom",
     repo_root_path = "repository",
-    repo_path = "androidx/compose/ui/ui-text-lint/1.8.0-alpha06",
+    repo_path = "androidx/compose/ui/ui-text-lint/1.11.0-rc01",
     visibility = ["//visibility:public"],
 )
 

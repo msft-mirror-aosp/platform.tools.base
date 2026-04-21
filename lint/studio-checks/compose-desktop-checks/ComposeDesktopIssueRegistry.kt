@@ -39,6 +39,7 @@ class ComposeDesktopIssueRegistry : IssueRegistry() {
         addAll(androidx.compose.material.lint.MaterialIssueRegistry().issues)
         addAll(androidx.compose.material3.lint.Material3IssueRegistry().issues)
         addAll(androidx.compose.runtime.lint.RuntimeIssueRegistry().issues)
+        addAll(androidx.compose.runtime.retain.lint.RetainIssueRegistry().issues)
         addAll(androidx.compose.runtime.saveable.lint.RuntimeSaveableIssueRegistry().issues)
         addAll(androidx.compose.ui.graphics.lint.UiGraphicsIssueRegistry().issues)
         addAll(androidx.compose.ui.lint.UiIssueRegistry().issues)
