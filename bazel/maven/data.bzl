@@ -443,7 +443,7 @@ _CLASS_JARS = [
     "androidx.test:runner:1.4.0-alpha06",
     "androidx.test:runner:1.5.2",
     "androidx.test.services:test-services:1.5.0-alpha02",
-    "androidx.tracing:tracing-desktop:2.0.0-alpha05",
+    "androidx.tracing:tracing-desktop:2.0.0-alpha06",
     "androidx.tracing:tracing-perfetto-handshake:1.0.0-beta02",
     "androidx.tv:tv-foundation:1.0.0-alpha07",
     "androidx.tv:tv-material:1.0.0-alpha07",
