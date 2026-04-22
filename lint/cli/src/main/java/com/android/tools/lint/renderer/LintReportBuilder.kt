@@ -157,6 +157,7 @@ class LintReportBuilder(
     return LintCheck(
       id = issue.id,
       summary = issue.getBriefDescription(TextFormat.HTML) ?: "",
+      explanation = issue.getExplanation(TextFormat.HTML) ?: "",
       category = issue.category.fullName,
       vendor = createLintVendor(issue),
       reason = reason,

@@ -70,6 +70,8 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"search-input\""))
     assertTrue(html.contains("id=\"ExtraIssues\""))
     assertTrue(html.contains("id=\"MissingIssues\""))
+    assertTrue(html.contains("id=\"additional-checks-data\""))
+    assertTrue(html.contains("id=\"disabled-checks-data\""))
   }
 
   @Test
@@ -407,5 +409,43 @@ class HtmlReporterV2IndexTest {
     // And STYLE_CSS contains the style
     assertTrue(STYLE_CSS.contains(".h-32"))
     assertTrue(STYLE_CSS.contains(".object-contain"))
+  }
+
+  @Test
+  fun testRenderCheckRows() {
+    // Verify LINTSCRIPT_JS contains the logic for rendering additional and disabled checks
+    assertTrue(LINTSCRIPT_JS.contains("renderCheckRows(checks, container) {"))
+    assertTrue(LINTSCRIPT_JS.contains("const isExpanded = this.state.expandedChecks.has(c.id);"))
+    assertTrue(LINTSCRIPT_JS.contains("data-check-id=\"\${this.escapeHTML(c.id)}\""))
+
+    // Verify explanation rendering
+    assertTrue(LINTSCRIPT_JS.contains("if (c.explanation) {"))
+    assertTrue(LINTSCRIPT_JS.contains("c.explanation.replace(/\\n/g, '<br>')"))
+
+    // Verify vendor rendering logic
+    assertTrue(LINTSCRIPT_JS.contains("if (c.vendor) {"))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>Vendor:</strong> \${this.escapeHTML(c.vendor.name)}"))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>Identifier:</strong> \${this.escapeHTML(c.vendor.identifier)}"))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>Contact:</strong> <a href=\"\${this.escapeHTML(contact)}\""))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>Feedback:</strong> <a href=\"\${this.escapeHTML(c.vendor.feedbackUrl)}\""))
+
+    // Verify reason rendering (for disabled checks)
+    assertTrue(LINTSCRIPT_JS.contains("if (c.reason) detailsHtml += `<strong>Reason:</strong> \${this.escapeHTML(c.reason)}<br>`;"))
+
+    // Verify calls to renderCheckRows
+    assertTrue(LINTSCRIPT_JS.contains("this.renderCheckRows(checks, this.elements.additionalChecksData);"))
+    assertTrue(LINTSCRIPT_JS.contains("this.renderCheckRows(checks, this.elements.disabledChecksData);"))
+
+    // Verify elements are cached
+    assertTrue(LINTSCRIPT_JS.contains("additionalChecksData: document.getElementById('additional-checks-data')"))
+    assertTrue(LINTSCRIPT_JS.contains("disabledChecksData: document.getElementById('disabled-checks-data')"))
+
+    // Verify event listeners for expanding check rows
+    assertTrue(LINTSCRIPT_JS.contains("this.attachCheckRowToggleListener(this.elements.additionalChecksData);"))
+    assertTrue(LINTSCRIPT_JS.contains("this.attachCheckRowToggleListener(this.elements.disabledChecksData);"))
+    assertTrue(LINTSCRIPT_JS.contains("attachCheckRowToggleListener(element) {"))
+    assertTrue(LINTSCRIPT_JS.contains("element.addEventListener('click'"))
+    assertTrue(LINTSCRIPT_JS.contains("const id = row.dataset.checkId;"))
+    assertTrue(LINTSCRIPT_JS.contains("this.state.expandedChecks.has(id)"))
   }
 }

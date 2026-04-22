@@ -104,6 +104,8 @@ data class LintCheck(
   val id: String,
   /** A summary of the check. */
   val summary: String,
+  /** A detailed explanation of the check. */
+  val explanation: String? = null,
   /** The category of the check. */
   val category: String? = null,
   /** The vendor who provided the check. */
