@@ -151,6 +151,58 @@ filegroup(
 )
 
 filegroup(
+    name = "x86_64-android-32-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-32-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
     name = "x86_64-android-33-images",
     srcs = [
         "VerifiedBootParams.textproto",
@@ -282,6 +334,64 @@ filegroup(
 
 filegroup(
     name = "arm64-android-34AospAtd-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "data/misc/pixel_fold/devicestate/device_state_configuration.xml",
+        "data/misc/pixel_fold/display_settings.xml",
+        "data/misc/pixel_fold/displayconfig/display_layout_configuration.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "x86_64-android-34-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "data/misc/pixel_fold/devicestate/device_state_configuration.xml",
+        "data/misc/pixel_fold/display_settings.xml",
+        "data/misc/pixel_fold/displayconfig/display_layout_configuration.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-34-images",
     srcs = [
         "NOTICE.txt",
         "VerifiedBootParams.textproto",

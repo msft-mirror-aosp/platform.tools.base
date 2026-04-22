@@ -30,3 +30,6 @@ include("//tools/adt/idea/aswb/testing/test_deps:test_deps.MODULE.bazel")
 
 # Journeys evals test artifacts
 include("//tools/vendor/google/ml/aiplugin/android/journeys-evals:test_artifacts.MODULE.bazel")
+
+# Android Bench test artifacts
+include("//tools/vendor/google/ml/aiplugin/android/eval:bench_repos.MODULE.bazel")

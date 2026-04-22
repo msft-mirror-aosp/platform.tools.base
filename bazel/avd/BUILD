@@ -42,14 +42,21 @@ avd(
 
 avd(
     name = "avd_34",
-    image = "//prebuilts/studio/sdk:system_image_android-34_aosp_atd",
+    image = "//prebuilts/studio/sdk:system_image_android-34_default",
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+avd(
+    name = "avd_33",
+    image = "//prebuilts/studio/sdk:system_image_android-33_default",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )
 
 avd(
     name = "avd_32",
-    image = "//prebuilts/studio/sdk:system_image_android-32_aosp_atd",
+    image = "//prebuilts/studio/sdk:system_image_android-32_default",
     target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//visibility:public"],
 )

@@ -27,9 +27,9 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "rules_rust")
 single_version_override(
     module_name = "rules_rust",
-    version = "0.68.1",
-    patches = ["//tools/base/bazel/bzlmod:rules_rust_0a4285119b.patch"],
     patch_strip = 1,
+    patches = ["//tools/base/bazel/bzlmod:rules_rust_0a4285119b.patch"],
+    version = "0.68.1",
 )
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
@@ -38,6 +38,8 @@ rust.toolchain(
     rustfmt_version = "1.91.1",
     versions = ["1.91.1"],
 )
+
+bazel_dep(name = "rules_gcs", version = "1.0.1")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
 crate.spec(
