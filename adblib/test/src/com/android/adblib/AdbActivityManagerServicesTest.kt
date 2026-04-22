@@ -84,6 +84,40 @@ class AdbActivityManagerServicesTest {
   }
 
   @Test
+  fun testGc(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb, sdk = 36)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+    val pid = 101
+    device.startClient(pid, 1000, "package1", false)
+    yieldUntil { device.getClient(pid) != null }
+
+    // Act
+    activityManagerServices.gc(deviceSelector, pid)
+
+    // Assert
+    Assert.assertEquals(listOf(pid), device.gcPids)
+  }
+
+  @Test
+  fun testGcThrows_whenGcIsNotSupported(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb, sdk = 30)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+    // Act
+    val result = runCatching { activityManagerServices.gc(deviceSelector, 101) }
+
+    // Assert
+    result
+      .onFailure { throwable ->
+        Assert.assertTrue(throwable is AdbActivityManagerException)
+        Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
+      }
+      .onSuccess { Assert.fail("Command should have failed") }
+  }
+
+  @Test
   fun testCrashThrows_whenPackageContainsInvalidCharacters(): Unit = runBlockingWithTimeout {
     // Prepare
     val device = addFakeDevice(fakeAdb)
@@ -136,7 +170,7 @@ class AdbActivityManagerServicesTest {
 
     // Assert
     Assert.assertNotNull(result)
-    Assert.assertEquals(listOf("start.suspend"), result.capabilities)
+    Assert.assertEquals(listOf("start.suspend", "gc"), result.capabilities)
     Assert.assertEquals(
       listOf(
         "method-trace-profiling",

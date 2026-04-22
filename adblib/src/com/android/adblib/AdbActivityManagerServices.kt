@@ -33,6 +33,14 @@ interface AdbActivityManagerServices {
   suspend fun crash(device: DeviceSelector, packageName: String)
 
   /**
+   * Uses `adb shell am gc` to trigger garbage collection on a process.
+   *
+   * Note: You can use the [capabilities] method to check if the `gc` command is supported by the `am` implementation on the device. This
+   * method will throw an [AdbActivityManagerException] if the `gc` command is not supported.
+   */
+  suspend fun gc(device: DeviceSelector, pid: Int)
+
+  /**
    * Uses `adb shell am capabilities` to return various device/run-time capabilities
    *
    * Note that `am capabilities` command is available on API level >= 34.

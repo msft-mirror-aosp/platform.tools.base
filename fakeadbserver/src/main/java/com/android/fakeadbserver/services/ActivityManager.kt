@@ -52,6 +52,21 @@ class ActivityManager(private val deviceState: DeviceState) : Service {
         shellCommandOutput.writeExitCode(0)
       }
 
+      "gc" -> {
+        if (args.size <= 1) {
+          return errorReporting.reportMissingArgument(shellCommandOutput = shellCommandOutput, message = "Argument expected after \"gc\"\n")
+        }
+        val pid = args[1].toIntOrNull() ?: throw IllegalArgumentException("gc command for \"processName\" is not implemented by fakeAdb")
+
+        val hasGcCapability = deviceState.deviceCapabilities?.capabilities?.contains("gc") ?: false
+        if (!hasGcCapability) {
+          return errorReporting.reportUnknownCommand(shellCommandOutput, cmd)
+        }
+
+        deviceState.addGcPid(pid)
+        shellCommandOutput.writeExitCode(0)
+      }
+
       "capabilities" -> {
         // See Android platform implementation here:
         // https://cs.android.com/android/platform/superproject/main/+/1b409eb6cacc9508e6f415353ddcacdcb6bdaf26:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShellCommand.java;l=480

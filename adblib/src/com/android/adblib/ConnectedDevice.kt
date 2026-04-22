@@ -354,6 +354,26 @@ class ActivityManager(val device: ConnectedDevice) {
   }
 
   /**
+   * Uses `adb shell am gc` to trigger garbage collection on a process.
+   *
+   * Note: You can use the [capabilities] method to check if the `gc` command is supported by the `am` implementation on the device. This
+   * method will throw an [AdbActivityManagerException] if the `gc` command is not supported.
+   *
+   * @see AdbActivityManagerServices.gc
+   */
+  suspend fun gc(pid: Int) {
+    mapTimeoutToAdbException("gc $pid") {
+      runAmCommandWhenServiceIsReady(
+        amCommandName = "gc",
+        timeout = device.session.property(AM_SERVICE_TIMEOUT),
+        retryDelay = device.session.property(AM_SERVICE_RETRY_DELAY),
+      ) {
+        device.session.activityManagerServices.gc(device.selector, pid)
+      }
+    }
+  }
+
+  /**
    * Uses `adb shell am force-stop` to terminate an app.
    *
    * @see AdbActivityManagerServices.forceStop
@@ -424,6 +444,19 @@ class ActivityManager(val device: ConnectedDevice) {
   companion object {
     private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
   }
+}
+
+/**
+ * Returns `true` if the device supports the `am gc` command.
+ *
+ * @see AdbActivityManagerServices.gc
+ */
+suspend fun ActivityManager.isGcSupported(): Boolean {
+  // TODO: Introduce and rely on isCapabilitiesSupported
+  if (device.deviceProperties().api() < 34) {
+    return false
+  }
+  return capabilities()?.capabilities?.contains("gc") ?: false
 }
 
 /**

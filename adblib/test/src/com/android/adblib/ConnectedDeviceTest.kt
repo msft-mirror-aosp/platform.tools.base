@@ -331,7 +331,7 @@ class ConnectedDeviceTest {
   fun testShellCommandAllowsCrLfOnOldDevices(): Unit = runBlockingWithTimeout {
     // Prepare
     // Below API 21, only "shell" is supported
-    val fakeDevice = addFakeConnectedDevice(19)
+    val fakeDevice = addFakeConnectedDevice(sdk = 19)
 
     // Act
     val output = fakeDevice.shell.command("getprop").withTextCollector().allowStripCrLfForLegacyShell(false).execute().first().stdout
@@ -904,7 +904,7 @@ class ConnectedDeviceTest {
 
     // Assert
     Assert.assertNotNull(result)
-    Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+    Assert.assertEquals(listOf("start.suspend", "gc"), result?.capabilities)
     Assert.assertEquals(
       listOf(
         "method-trace-profiling",
@@ -958,7 +958,7 @@ class ConnectedDeviceTest {
     Assert.assertTrue(job.isCompleted)
     Assert.assertNotNull(result)
     Assert.assertNotNull(result)
-    Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+    Assert.assertEquals(listOf("start.suspend", "gc"), result?.capabilities)
     Assert.assertEquals(
       listOf(
         "method-trace-profiling",
@@ -1415,6 +1415,49 @@ class ConnectedDeviceTest {
   }
 
   @Test
+  fun testActivityManagerGcWorks(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice(sdk = 36)
+    val pid = 101
+
+    // Act
+    fakeDevice.activityManager.gc(pid)
+
+    // Assert
+    Assert.assertEquals(listOf(pid), fakeDevice.toDeviceState().gcPids)
+  }
+
+  @Test
+  fun testActivityManagerGcThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice(sdk = 36)
+    val delay = Duration.ofMillis(500)
+    setHostPropertyValue(fakeDevice.session.host, AdbLibProperties.AM_SERVICE_TIMEOUT, delay)
+    fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+    fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+    // Act
+    exceptionRule.expect(AdbIOTimeoutException::class.java)
+    fakeDevice.activityManager.gc(101)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testActivityManagerIsCapabilitiesSupported(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device30 = addFakeConnectedDevice("device30", sdk = 30)
+    val device34 = addFakeConnectedDevice("device34", sdk = 34)
+    val device36 = addFakeConnectedDevice("device36", sdk = 36)
+
+    // Act/Assert
+    Assert.assertFalse(device30.activityManager.isGcSupported())
+    Assert.assertFalse(device34.activityManager.isGcSupported())
+    Assert.assertTrue(device36.activityManager.isGcSupported())
+  }
+
+  @Test
   fun testWaitUntilStateThrowsIOExceptionWhenDeviceDisconnects(): Unit = runBlockingWithTimeout {
     // Prepare
     val connectedDevice = addFakeConnectedDevice()
@@ -1599,10 +1642,10 @@ class ConnectedDeviceTest {
 
   class MyTestException(message: String) : IOException(message)
 
-  private suspend fun addFakeConnectedDevice(sdk: Int = 30): ConnectedDevice {
+  private suspend fun addFakeConnectedDevice(serialNumber: String = "1234", sdk: Int = 30): ConnectedDevice {
     val deviceState =
       fakeAdbRule.fakeAdb.connectDevice(
-        "1234",
+        serialNumber,
         "test1",
         "test2",
         "model",
