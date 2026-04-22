@@ -223,6 +223,7 @@ ARTIFACTS = [
     "org.jspecify:jspecify:0.2.0",
     "org.junit.jupiter:junit-jupiter-api:5.12.0",
     "org.junit.jupiter:junit-jupiter-engine:5.12.0",
+    "org.junit.platform:junit-platform-console:1.12.0",
     "org.junit.platform:junit-platform-engine:1.12.0",
     "org.junit.platform:junit-platform-launcher:1.12.0",
     "org.junit.platform:junit-platform-reporting:1.12.0",
