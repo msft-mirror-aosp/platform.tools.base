@@ -161,6 +161,7 @@ def kotlin_test(
         name = name,
         tests = [name + ".test"],
         visibility = visibility,
+        tags = kwargs.get("tags"),
     )
 
 # Creates actions to generate the sources jar
