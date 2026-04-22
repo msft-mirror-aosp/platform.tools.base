@@ -33,6 +33,7 @@ import com.android.tools.r8.ArchiveProtoAndroidResourceConsumer
 import com.android.tools.r8.ArchiveProtoAndroidResourceProvider
 import com.android.tools.r8.AssertionsConfiguration
 import com.android.tools.r8.BaseCompilerCommand
+import com.android.tools.r8.ByteArrayConsumer
 import com.android.tools.r8.ClassFileConsumer
 import com.android.tools.r8.CompilationMode
 import com.android.tools.r8.DataDirectoryResource
@@ -259,6 +260,8 @@ fun runR8(
   }
 
   val proguardOutputFiles = proguardConfig.proguardOutputFiles
+  proguardOutputFiles.keepRadiusDataOutput?.let { Files.deleteIfExists(it) }
+  proguardOutputFiles.keepRadiusReportOutput?.let { Files.deleteIfExists(it) }
   Files.deleteIfExists(proguardOutputFiles.proguardMapOutput)
   Files.deleteIfExists(proguardOutputFiles.proguardPartitionMapOutput)
   Files.deleteIfExists(proguardOutputFiles.proguardSeedsOutput)
@@ -267,6 +270,12 @@ fun runR8(
   Files.deleteIfExists(proguardOutputFiles.missingKeepRules)
 
   Files.createDirectories(proguardOutputFiles.proguardMapOutput.parent)
+  proguardOutputFiles.keepRadiusDataOutput?.let {
+    r8CommandBuilder.setConfigurationAnalysisDataConsumer(ByteArrayConsumer.FileConsumer(it))
+  }
+  proguardOutputFiles.keepRadiusReportOutput?.let {
+    r8CommandBuilder.setConfigurationAnalysisHtmlReportConsumer(StringConsumer.FileConsumer(it))
+  }
   r8CommandBuilder.setProguardMapOutputPath(proguardOutputFiles.proguardMapOutput)
   r8CommandBuilder.setPartitionMapOutputPath(proguardOutputFiles.proguardPartitionMapOutput)
   r8CommandBuilder.setProguardSeedsConsumer(StringConsumer.FileConsumer(proguardOutputFiles.proguardSeedsOutput))
@@ -642,6 +651,8 @@ data class ProguardConfig(
 )
 
 data class ProguardOutputFiles(
+  val keepRadiusDataOutput: Path?,
+  val keepRadiusReportOutput: Path?,
   val proguardMapOutput: Path,
   val proguardPartitionMapOutput: Path,
   val proguardSeedsOutput: Path,

@@ -601,6 +601,8 @@ class R8Test(private val r8OutputType: R8OutputType) {
       referencedInputs = referencedInputs,
       classes = classes,
       resourcesJar = resourcesJar.toFile(),
+      keepRadiusDataOutput = tmp.root.resolve("keepradius.pb"),
+      keepRadiusReportOutput = tmp.root.resolve("keepradiusreport.html"),
       mappingFile = outputProguardMapping,
       mappingPartitionFile = outputPartitionMapping,
       proguardSeedsOutput = tmp.root.resolve("seeds.txt"),
