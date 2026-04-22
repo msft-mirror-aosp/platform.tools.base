@@ -19,7 +19,6 @@ import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.requiresExtensionStub
-import com.android.tools.lint.useFirUast
 
 class AnnotationDetectorTest : AbstractCheckTest() {
   fun testBasic() {
@@ -1220,10 +1219,6 @@ class AnnotationDetectorTest : AbstractCheckTest() {
   }
 
   fun testValidateRequiresExtensions() {
-    // TODO(b/331978236): Java UAST drops Kotlin annotations on methods
-    if (!useFirUast()) {
-      return
-    }
     lint()
       .files(
         manifest().minSdk(15),
@@ -1779,10 +1774,6 @@ class AnnotationDetectorTest : AbstractCheckTest() {
   }
 
   fun testDelegates() {
-    // TODO(b/439078858): handle annotation on delegated property
-    if (!useFirUast()) {
-      return
-    }
     // Regression test for 132782238
     lint()
       .files(
@@ -1907,9 +1898,7 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .apply {
         // TODO(b/369688640): FIR no longer allows type replacement in the middle.
         //  That test mode needs to provide the rewritten annotation jar upfront.
-        if (useFirUast()) {
-          skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
-        }
+        skipTestModes(PLATFORM_ANNOTATIONS_TEST_MODE)
       }
       .run()
       .expect(

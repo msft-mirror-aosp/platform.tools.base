@@ -94,7 +94,6 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assume.assumeTrue
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -253,9 +252,8 @@ class ProjectInitializerTest {
     val appProjectPath = appProjectDir.path
 
     // TO avoid already existing temp folders
-    val suffix = if (useFirUast()) "-k2" else "-k1"
-    val sdk = temp.newFolder("fake-sdk$suffix")
-    val cacheDir = temp.newFolder("cache$suffix")
+    val sdk = temp.newFolder("fake-sdk")
+    val cacheDir = temp.newFolder("cache")
     @Language("XML")
     val mergedManifestXml =
       """
@@ -285,7 +283,7 @@ class ProjectInitializerTest {
       """
         .trimIndent()
 
-    val mergedManifest = temp.newFile("merged-manifest$suffix")
+    val mergedManifest = temp.newFile("merged-manifest")
     Files.asCharSink(mergedManifest, Charsets.UTF_8).write(mergedManifestXml)
 
     @Language("XML")
@@ -380,9 +378,7 @@ class ProjectInitializerTest {
     val canonicalRoot = root.canonicalPath
 
     // TODO: https://youtrack.jetbrains.com/issue/KT-57715
-    val expectedError =
-      if (useFirUast()) "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
-      else "w: Classpath entry points to a non-existent location: ROOT/test.jar"
+    val expectedError = "WARN: ROOT/test.jar: ROOT/test.jar\n" + "java.nio.file.NoSuchFileException: ROOT/test.jar"
 
     MainTest.checkDriver(
       """
@@ -2436,7 +2432,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testAnalysisAPIServices() {
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2508,7 +2503,6 @@ class ProjectInitializerTest {
   @OptIn(KaExperimentalApi::class)
   @Test
   fun testExpectActualWithJustJvm() {
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -2663,7 +2657,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testKmpNativeUastPsi() {
-    assumeTrue(useFirUast())
     // Tests the new KlibLightElementProvider.
     // kotlinSourceFile references various symbols from klibSourceFile. We consider different
     // scenarios for where the code in klibSourceFile ends up:
@@ -3835,9 +3828,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
@@ -3953,10 +3943,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile2() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
-
     // Similar to testGeneratedAndTestFile (above), except we are not checking generated files.
     // In particular, file C (both test and gen) should not be visited.
     val root = temp.newFolder().canonicalFile.absoluteFile
@@ -4068,10 +4054,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testGeneratedAndTestFile3() {
-    // Test/generated sources cannot be in the same root as non-test/non-generated sources with
-    // Lint's K1 project structure, so we can only test on K2.
-    assumeTrue(useFirUast())
-
     // Similar to testGeneratedAndTestFile2 (above), except we are not checking test files.
     // So we only visit normal and generated files (not test files, and not gen+test).
     val root = temp.newFolder().canonicalFile.absoluteFile
@@ -4324,7 +4306,6 @@ class ProjectInitializerTest {
 
   @Test
   fun testKMPProjectK2() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -4736,7 +4717,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_explicitPlatform() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           kt(
@@ -5148,7 +5128,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
 
   @Test
   fun testKMPProjectK2_common_klib() {
-    assumeTrue(useFirUast())
     val shared =
       project(
           // TODO
@@ -5564,8 +5543,6 @@ src/main/AndroidManifest.xml:7: Warning: You must set android:targetSdkVersion t
   /** Copied from [testKMPProjectK2], with klib removed and `iosApp/Hello.kt` added */
   @Test
   fun testLightClassSupportForNonJvm() {
-    assumeTrue(useFirUast())
-
     val shared =
       project(
           kt(

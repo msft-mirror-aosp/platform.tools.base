@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.impl.ZipHandler
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
 import kotlin.concurrent.withLock
-import org.jetbrains.annotations.ApiStatus
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.addJavaSourceRoots
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
@@ -49,11 +48,6 @@ import org.jetbrains.kotlin.platform.konan.NativePlatforms
 import org.jetbrains.kotlin.platform.wasm.WasmPlatforms
 import org.jetbrains.kotlin.util.Logger
 import org.jetbrains.uast.UastFacade
-
-/** JVM system property to enable FIR UAST or K2 UAST, as per the new compiler name */
-const val FIR_UAST_KEY = "lint.use.fir.uast"
-
-@ApiStatus.Internal fun useFirUast(): Boolean = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
 
 /**
  * This interface provides the setup and configuration needed to use VFS/PSI/UAST on the command line.
@@ -92,7 +86,7 @@ interface UastEnvironment {
       /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
       @Deprecated("No longer support K1 UAST", replaceWith = ReplaceWith("create()"))
       @JvmStatic
-      fun create(enableKotlinScripting: Boolean = true, useFirUast: Boolean = useFirUast()): Configuration {
+      fun create(enableKotlinScripting: Boolean = true, useFirUast: Boolean = true): Configuration {
         return if (useFirUast) FirUastEnvironment.Configuration.create(enableKotlinScripting)
         else Fe10UastEnvironment.Configuration.create(enableKotlinScripting)
       }
