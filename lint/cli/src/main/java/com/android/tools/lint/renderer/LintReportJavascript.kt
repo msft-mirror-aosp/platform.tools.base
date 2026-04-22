@@ -493,7 +493,7 @@ const LintReportApp = {
         if (container) {
             container.classList.toggle('hidden', checks.length === 0);
             const data = document.getElementById('additional-checks-data');
-            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.vendor ? ` (${'$'}{this.escapeHTML(c.vendor)})` : ''}</td></tr>`).join('');
+            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.vendor && c.vendor.name ? ` (${'$'}{this.escapeHTML(c.vendor.name)})` : ''}</td></tr>`).join('');
         }
     },
 
@@ -503,7 +503,7 @@ const LintReportApp = {
         if (container) {
             container.classList.toggle('hidden', checks.length === 0);
             const data = document.getElementById('disabled-checks-data');
-            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.reason ? ` (${'$'}{this.escapeHTML(c.reason)})` : ''}</td></tr>`).join('');
+            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.vendor && c.vendor.name ? ` (${'$'}{this.escapeHTML(c.vendor.name)})` : ''}${'$'}{c.reason ? ` (${'$'}{this.escapeHTML(c.reason)})` : ''}</td></tr>`).join('');
         }
     },
 

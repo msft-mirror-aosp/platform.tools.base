@@ -23,6 +23,7 @@ import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
 import com.android.tools.lint.renderer.data.LintProject
 import com.android.tools.lint.renderer.data.LintReport
+import com.android.tools.lint.renderer.data.LintVendor
 import com.google.gson.GsonBuilder
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -131,12 +132,15 @@ class HtmlReporterV2IndexTest {
               wasAutoFixed = true,
               includedVariants = listOf("debug"),
               excludedVariants = listOf("release"),
-              vendor = "Android Open Source Project",
+              vendor = LintVendor(name = "Android Open Source Project"),
             )
           ),
         numberOfIssues = 1,
         lintVersion = "8.6.0",
-        additionalChecks = listOf(LintCheck(id = "AdditionalId", summary = "Additional summary", category = "Security", vendor = "Google")),
+        additionalChecks =
+          listOf(
+            LintCheck(id = "AdditionalId", summary = "Additional summary", category = "Security", vendor = LintVendor(name = "Google"))
+          ),
         disabledChecks = listOf(LintCheck(id = "DisabledId", summary = "Disabled summary", reason = "Explicitly disabled")),
         projects = listOf(LintProject(name = "app", relativePath = "app/", errorCount = 0, warningCount = 1)),
       )
@@ -151,7 +155,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("\"severityDescription\":\"Error\""))
     assertTrue(html.contains("\"message\":\"This is a test message with \\\"quotes\\\"\""))
     assertTrue(html.contains("\"wasAutoFixed\":true"))
-    assertTrue(html.contains("\"vendor\":\"Android Open Source Project\""))
+    assertTrue(html.contains("\"vendor\":{\"name\":\"Android Open Source Project\"}"))
     assertTrue(html.contains("src/Test.kt"))
     assertTrue(html.contains("src/Other.kt"))
     assertTrue(html.contains("\"id\":\"AdditionalId\""))

@@ -87,7 +87,7 @@ data class LintIssue(
   /** Additional source context for the issue. */
   val sourceContext: String? = null,
   /** Vendor who provided the check. */
-  val vendor: String? = null,
+  val vendor: LintVendor? = null,
   /** Package name where the issue occurred. */
   val packageName: String? = null,
   /** Class name where the issue occurred. */
@@ -107,7 +107,7 @@ data class LintCheck(
   /** The category of the check. */
   val category: String? = null,
   /** The vendor who provided the check. */
-  val vendor: String? = null,
+  val vendor: LintVendor? = null,
   /** The reason for the check status (e.g., why it's disabled). */
   val reason: String? = null,
 )
@@ -122,4 +122,16 @@ data class LintLocation(
   val column: Int?,
   /** An optional URL for the file or location. */
   val url: String? = null,
+)
+
+/** Information about the vendor of a lint check. */
+data class LintVendor(
+  /** The name of the vendor. */
+  val name: String? = null,
+  /** An identifier for the check provider (e.g., maven coordinates). */
+  val identifier: String? = null,
+  /** A URL for reporting feedback or bugs. */
+  val feedbackUrl: String? = null,
+  /** Contact information for the vendor. */
+  val contact: String? = null,
 )

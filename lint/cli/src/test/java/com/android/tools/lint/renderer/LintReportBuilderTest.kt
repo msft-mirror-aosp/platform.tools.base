@@ -237,7 +237,7 @@ class LintReportBuilderTest {
     val report = builder.buildReport(listOf(incident), emptyList(), emptyMap())
     val lintIssue = report.issues[0]
 
-    assertEquals("Custom Vendor", lintIssue.vendor)
+    assertEquals("Custom Vendor", lintIssue.vendor?.name)
 
     // Test AOSP Vendor is ignored/set to null
     `when`(issue.vendor).thenReturn(AOSP_VENDOR)
