@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.plugins
 
 import com.android.build.api.dsl.ApplicationExtension
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
 import com.android.build.gradle.internal.fixture.TestConstants
 import com.android.build.gradle.internal.fixture.TestProjects
 import com.android.build.gradle.internal.packaging.defaultExcludes
@@ -26,11 +25,9 @@ import com.android.build.gradle.internal.utils.importOfflineMavenRepo
 import com.android.build.gradle.options.BooleanOption
 import com.google.common.collect.ImmutableList
 import com.google.common.truth.Truth.assertThat
-import java.io.File
 import kotlin.test.assertFailsWith
 import org.gradle.api.Project
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -115,33 +112,6 @@ class KotlinDslCompatibilityTest {
       resConfigs(listOf("four"))
       assertThat(resourceConfigurations).containsExactly("one", "two", "three", "four")
       assertFailsWith<Exception> { resConfigs("") }
-    }
-  }
-
-  @Ignore("Disabled because it fails with ClassCastException in unit test setup. It was previously skipped due to assume() on USE_NEW_DSL.")
-  @Test
-  fun `mergedFlavor source compatibility`() {
-    val applicationVariants = (android as BaseAppModuleExtension).applicationVariants
-    val fileF = File("f")
-    val fileG = File("g")
-    val fileH = File("h")
-    applicationVariants.all { variant ->
-      variant.mergedFlavor.manifestPlaceholders += mapOf("a" to "b")
-      variant.mergedFlavor.testInstrumentationRunnerArguments += mapOf("c" to "d")
-      variant.mergedFlavor.resourceConfigurations += "e"
-      variant.mergedFlavor.proguardFiles += fileF
-      variant.mergedFlavor.consumerProguardFiles += fileG
-      variant.mergedFlavor.testProguardFiles += fileH
-    }
-    plugin.createAndroidTasks(project)
-    assertThat(applicationVariants).hasSize(2)
-    applicationVariants.first().also { variant ->
-      assertThat(variant.mergedFlavor.manifestPlaceholders).containsExactly("a", "b")
-      assertThat(variant.mergedFlavor.testInstrumentationRunnerArguments).containsExactly("c", "d")
-      assertThat(variant.mergedFlavor.resourceConfigurations).containsExactly("e")
-      assertThat(variant.mergedFlavor.proguardFiles).containsExactly(fileF)
-      assertThat(variant.mergedFlavor.consumerProguardFiles).containsExactly(fileG)
-      assertThat(variant.mergedFlavor.testProguardFiles).containsExactly(fileH)
     }
   }
 
