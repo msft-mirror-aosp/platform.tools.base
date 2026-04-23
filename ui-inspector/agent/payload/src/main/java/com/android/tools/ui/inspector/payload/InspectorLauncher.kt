@@ -56,7 +56,7 @@ object InspectorLauncher {
 
         while (isActive) {
           val socket = serverSocket.accept()
-          ClientHandler(socket).handle()
+          SessionHandler(socket).handle()
         }
       }
     } catch (e: IOException) {

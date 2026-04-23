@@ -27,9 +27,9 @@ import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvir
 import java.io.EOFException
 
 /** Handles a single connection from the host to a UI Inspector agent. */
-class ClientHandler(private val socket: LocalSocket) {
+class SessionHandler(private val socket: LocalSocket) {
   companion object {
-    private const val TAG = "studio.ClientHandler"
+    private const val TAG = "studio.SessionHandler"
     private const val THREAD_NAME = "ui_inspector_thread"
   }
 
