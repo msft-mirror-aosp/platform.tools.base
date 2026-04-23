@@ -75,6 +75,7 @@ kotlin_library(
         "src/main/java/com/android/tools/deployer/model/*.kt",
         "src/main/java/com/android/tools/deployer/model/activate/*.kt",
         "src/main/java/com/android/tools/deployer/model/component/*.java",
+        "src/main/java/com/android/tools/deployer/model/component/*.kt",
     ]),
     visibility = ["//visibility:public"],
     deps = [
@@ -497,6 +498,7 @@ kotlin_test(
     srcs = [
         "src/test/java/com/android/tools/deployer/DeployStrategyReaderTest.kt",
         "src/test/java/com/android/tools/deployer/TestLogger.java",
+        "src/test/java/com/android/tools/deployer/model/component/DeclarativeWatchFaceTest.kt",
     ],
     data = glob(["src/test/resource/**"]),
     jvm_flags = ["-Dtest.suite.jar=deployer.kotlin_tests.jar"],

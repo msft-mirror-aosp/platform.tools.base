@@ -19,7 +19,6 @@ import com.android.tools.lint.checks.InferredThreadDetector.Thread
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 import com.android.tools.lint.checks.infrastructure.TestLintTask
 import com.android.tools.lint.checks.infrastructure.TestMode
-import com.android.tools.lint.useFirUast
 import com.google.common.truth.Truth
 
 @Suppress("LintDocExample")
@@ -1851,7 +1850,6 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
   }
 
   fun `test kotlin properties`() {
-    if (useFirUast()) return // TODO(b/406309278)
     lint()
       .files(
         kotlin(

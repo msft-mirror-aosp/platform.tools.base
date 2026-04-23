@@ -210,6 +210,9 @@ enum class BooleanOption(
    */
   UNINSTALL_INCOMPATIBLE_APKS("android.experimental.testOptions.uninstallIncompatibleApks", false, FeatureStage.Experimental),
 
+  /** When enabled, on-the-fly code coverage will be used for Android tests instead of offline instrumentation. */
+  ENABLE_ON_THE_FLY_CODE_COVERAGE("android.experimental.testOptions.coverage.onTheFly", false, FeatureStage.Experimental),
+
   /** When enabled, "-show-kernel" and "-verbose" flags are used when running an Android emulator for Gradle Managed devices. */
   GRADLE_MANAGED_DEVICE_EMULATOR_SHOW_KERNEL_LOGGING(
     "android.experimental.testOptions.managedDevices.emulator.showKernelLogging",
@@ -338,7 +341,7 @@ enum class BooleanOption(
   ),
 
   /** When enabled, registers code coverage and test results aggregation tasks. */
-  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", true, FeatureStage.Experimental),
+  REPORT_AGGREGATION_SUPPORT("android.experimental.reportAggregationSupport", false, FeatureStage.Experimental),
 
   /** Temporary workaround to continue using R8 param of --main-dex-list */
   R8_MAIN_DEX_LIST_DISALLOWED(

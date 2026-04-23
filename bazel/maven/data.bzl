@@ -807,7 +807,7 @@ _CLASS_JARS = [
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:30.2.0",
     "com.android.tools.utp:android-test-plugin-result-listener-gradle:jar:31.1.0",
     "com.android:zipflinger:8.7.0",
-    "com.anthropic:anthropic-java:2.14.0",
+    "com.anthropic:anthropic-java:2.26.0",
     "com.beust:jcommander:1.82",
     "com.charleskorn.kaml:kaml-jvm:0.61.0",
     "com.crashlytics.sdk.android:crashlytics:2.6.8",
@@ -1014,7 +1014,7 @@ _CLASS_JARS = [
     "com.jakewharton.timber:timber:5.0.1",  # Dependency of architecture-samples
     "com.jetbrains.intellij.java:java-compiler-ant-tasks:243.22562.145",
     "com.linkedin.testbutler:test-butler-app:1.3.1",
-    "com.openai:openai-java:4.21.0",
+    "com.openai:openai-java:4.32.0",
     "com.squareup.dagger:dagger-compiler:1.2.2",
     "com.squareup:kotlinpoet:1.12.0",
     "com.squareup:kotlinpoet:2.1.0",
@@ -1454,6 +1454,7 @@ _CLASS_JARS = [
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
     "org.jetbrains.skiko:skiko-js-wasm-runtime:0.9.37.4",
+    "org.jspecify:jspecify:0.2.0",
     "org.junit:junit-bom:pom:5.10.0",
     "org.junit:junit-bom:pom:5.10.1",
     "org.junit:junit-bom:pom:5.10.2",
@@ -1516,8 +1517,8 @@ _SOURCE_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel-desktop:jar:sources:2.8.5",
     "androidx.sqlite:sqlite-bundled-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
     "androidx.sqlite:sqlite-jvm:jar:sources:2.5.0-beta01",  # Database Inspector
-    "com.anthropic:anthropic-java-core:jar:sources:2.14.0",
-    "com.openai:openai-java-core:jar:sources:4.21.0",
+    "com.anthropic:anthropic-java-core:jar:sources:2.26.0",
+    "com.openai:openai-java-core:jar:sources:4.32.0",
     "com.squareup.okhttp3:okhttp:jar:sources:4.12.0",
     "com.squareup.okio:okio-jvm:jar:sources:3.6.0",
     "io.grpc:grpc-all:jar:sources:1.69.1",

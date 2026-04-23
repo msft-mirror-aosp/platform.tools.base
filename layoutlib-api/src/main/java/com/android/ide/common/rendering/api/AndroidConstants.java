@@ -23,6 +23,8 @@ public class AndroidConstants {
 
     public static final String ANDROID_URI = "http://schemas.android.com/apk/res/android";
 
+    public static final String ANDROID_PRV_URI = "http://schemas.android.com/apk/prv/res/android";
+
     public static final String TOOLS_NS_NAME = "tools";
 
     public static final String TOOLS_URI = "http://schemas.android.com/tools";

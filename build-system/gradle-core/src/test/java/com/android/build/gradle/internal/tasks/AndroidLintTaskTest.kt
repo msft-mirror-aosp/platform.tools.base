@@ -69,7 +69,6 @@ class AndroidLintTaskTest {
     task.lintMode.set(LintMode.REPORTING)
     task.missingBaselineIsEmptyBaseline.set(true)
     task.baselineOmitLineNumbers.set(true)
-    task.uastInputs.useK2UastManualSetting.set(true)
     task.offline.set(true)
     val commandLineArguments = task.generateCommandLineArguments().joinToString(" ")
     assertThat(commandLineArguments).contains("--client-id gradle")
@@ -79,7 +78,6 @@ class AndroidLintTaskTest {
     assertThat(commandLineArguments).contains("--offline")
     assertThat(commandLineArguments).contains("--stacktrace")
     assertThat(commandLineArguments).contains("--baseline-omit-line-numbers")
-    assertThat(commandLineArguments).contains("--XuseK2Uast")
     assertThat(commandLineArguments).doesNotContain("--html-v2")
   }
 
@@ -102,38 +100,11 @@ class AndroidLintTaskTest {
     task.lintMode.set(LintMode.REPORTING)
     task.missingBaselineIsEmptyBaseline.set(true)
     task.baselineOmitLineNumbers.set(true)
-    task.uastInputs.useK2UastManualSetting.set(true)
     task.offline.set(true)
     task.useHtmlV2.set(true)
 
     val commandLineArguments = task.generateCommandLineArguments()
     assertThat(commandLineArguments).contains("--html-v2")
     assertThat(commandLineArguments).doesNotContain("--html")
-  }
-
-  @Test
-  fun generateCommandLineArgumentsWithK2UastDisabled() {
-    task.autoFix.set(false)
-    task.fatalOnly.set(false)
-    task.systemPropertyInputs.javaHome.set("javaHome")
-    task.androidSdkHome.set("androidSdkHome")
-    task.intermediateTextReport.set(temporaryFolder.newFile())
-    task.textReportEnabled.set(false)
-    task.htmlReportEnabled.set(false)
-    task.xmlReportEnabled.set(false)
-    task.sarifReportEnabled.set(false)
-    task.textReportToStdOut.set(false)
-    task.printStackTrace.set(true)
-    task.lintTool.lintCacheDirectory.set(temporaryFolder.newFolder())
-    task.lintTool.versionKey.set(Version.ANDROID_TOOLS_BASE_VERSION + "_foo")
-    task.lintMode.set(LintMode.REPORTING)
-    task.missingBaselineIsEmptyBaseline.set(true)
-    task.baselineOmitLineNumbers.set(true)
-    task.uastInputs.useK2UastManualSetting.set(false)
-    task.offline.set(true)
-
-    val commandLineArguments = task.generateCommandLineArguments().joinToString(" ")
-    assertThat(commandLineArguments).contains("--XuseK1Uast")
-    assertThat(commandLineArguments).doesNotContain("--XuseK2Uast")
   }
 }

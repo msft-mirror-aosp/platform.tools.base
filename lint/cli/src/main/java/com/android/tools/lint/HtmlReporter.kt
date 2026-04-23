@@ -42,19 +42,14 @@ import kotlin.math.max
 import kotlin.math.min
 
 /** A reporter which emits lint results into an HTML report. */
-open class HtmlReporter(client: LintCliClient, output: File, flags: LintCliFlags) : Reporter(client, output) {
+open class HtmlReporter(client: LintCliClient, output: File, protected val flags: LintCliFlags) : Reporter(client, output) {
 
-  private val writer: Writer
-  private val flags: LintCliFlags
+  protected open val writer: Writer by lazy { output.bufferedWriter() }
+
   private var builder: HtmlBuilder? = null
   private var sb: StringBuilder? = null
   private var highlightedFile: String? = null
   private var highlighter: LintSyntaxHighlighter? = null
-
-  init {
-    writer = output.bufferedWriter()
-    this.flags = flags
-  }
 
   override fun write(stats: LintStats, incidents: List<Incident>, registry: IssueRegistry) {
     val missing = computeMissingIssues(registry, incidents)
@@ -532,7 +527,7 @@ document.getElementById(id).style.display = 'none';
   }
 
   /** Returns the list of extra issues that were included in analysis (those that are not built in). */
-  private fun computeExtraIssues(registry: IssueRegistry): List<Issue> {
+  protected fun computeExtraIssues(registry: IssueRegistry): List<Issue> {
     val issues = registry.issues
     return issues.filter { issue ->
       val vendor = issue.vendor ?: issue.registry?.vendor
@@ -540,7 +535,7 @@ document.getElementById(id).style.display = 'none';
     }
   }
 
-  private fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
+  protected fun computeMissingIssues(registry: IssueRegistry, incidents: List<Incident>): Map<Issue, String> {
     val projects: MutableSet<Project> = HashSet()
     val seen: MutableSet<Issue> = HashSet()
     for (incident in incidents) {

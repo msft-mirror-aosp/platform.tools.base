@@ -39,8 +39,6 @@ import org.gradle.api.tasks.PathSensitivity
 @BuildAnalyzer(primaryTaskCategory = TaskCategory.TEST)
 abstract class TestReportTask : NonIncrementalGlobalTask() {
 
-  @get:Input abstract val reportAggregationEnabled: Property<Boolean>
-
   @get:Input abstract val rootProjectName: Property<String>
 
   @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) abstract val testResults: ListProperty<Directory>
@@ -48,18 +46,13 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
   @get:OutputDirectory abstract val testReport: DirectoryProperty
 
   override fun doTaskAction() {
-    if (!reportAggregationEnabled.get()) {
-      logger.warn("Aggregated Test reporting feature is disabled, TestReportTask's execution is skipped.")
-      return
-    }
     val inputDirectories: List<File> = testResults.get().map { it.asFile }
     val testReport = testReport.get().asFile
 
     XMLReportAggregator(inputDirectories, rootProjectName.get()).writeReport(testReport)
   }
 
-  class AggregatedTestReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
-    BaseCreationAction(creationConfig, isReportAggregationEnabled) {
+  class AggregatedTestReportCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseCreationAction(creationConfig) {
     override val name = "createAggregatedTestReport"
     override val artifactType = InternalMultipleArtifactType.ALL_PROJECT_TEST_RESULTS
 
@@ -71,8 +64,7 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     }
   }
 
-  class TestReportCreationAction(creationConfig: GlobalTaskCreationConfig, isReportAggregationEnabled: Boolean) :
-    BaseCreationAction(creationConfig, isReportAggregationEnabled) {
+  class TestReportCreationAction(creationConfig: GlobalTaskCreationConfig) : BaseCreationAction(creationConfig) {
     override val name = "createTestReport"
     override val artifactType = InternalMultipleArtifactType.PROJECT_LEVEL_TEST_RESULTS
 
@@ -83,21 +75,15 @@ abstract class TestReportTask : NonIncrementalGlobalTask() {
     }
   }
 
-  abstract class BaseCreationAction(val creationConfig: GlobalTaskCreationConfig, val isReportAggregationEnabled: Boolean) :
-    GlobalTaskCreationAction<TestReportTask>() {
+  abstract class BaseCreationAction(val creationConfig: GlobalTaskCreationConfig) : GlobalTaskCreationAction<TestReportTask>() {
 
     abstract val artifactType: InternalMultipleArtifactType<Directory>
     override val type = TestReportTask::class.java
 
     override fun configure(task: TestReportTask) {
       super.configure(task)
-      task.reportAggregationEnabled.set(isReportAggregationEnabled)
-      if (isReportAggregationEnabled) {
-        task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
-        task.testResults.disallowChanges()
-      } else {
-        task.testResults.empty().disallowChanges()
-      }
+      task.testResults.set(creationConfig.globalArtifacts.getAll(artifactType))
+      task.testResults.disallowChanges()
       task.rootProjectName.set(creationConfig.services.projectInfo.rootProjectName)
     }
   }

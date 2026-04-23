@@ -135,9 +135,9 @@
             </d:camera>
             <d:keyboard>nokeys</d:keyboard>
             <d:nav>nonav</d:nav>
-            <d:ram unit="GiB">4</d:ram>
+            <d:ram unit="GiB">2</d:ram>
             <d:buttons>soft</d:buttons>
-            <d:internal-storage unit="GiB">10</d:internal-storage>
+            <d:internal-storage unit="GiB">6</d:internal-storage>
             <d:removable-storage unit="MiB">0</d:removable-storage>
             <d:cpu>Generic CPU</d:cpu>
             <d:gpu>Generic GPU</d:gpu>
@@ -262,6 +262,10 @@
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.disp_modality</d:prop-name>
                 <d:prop-value>ost</d:prop-value>
+            </d:boot-prop>
+            <d:boot-prop>
+                <d:prop-name>emulator.dev.xr.dimming_levels</d:prop-name>
+                <d:prop-value>0.0,0.25,0.5,0.75,1.0</d:prop-value>
             </d:boot-prop>
         </d:boot-props>
     </d:device>

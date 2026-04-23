@@ -1194,8 +1194,8 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
     val jdwpSession = openSharedJdwpSession(session, fakeDevice.deviceId, 10)
     jdwpSession.sendVmExit(1)
 
-    // Assert: Wait until client process is gone
-    yieldUntil { fakeDevice.getClient(10) == null }
+    // Assert
+    assertNull(fakeDevice.getClient(10))
   }
 
   @Test
@@ -1206,8 +1206,8 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
     // Act
     openSharedJdwpSession(session, fakeDevice.deviceId, 10).use { jdwpSession -> jdwpSession.sendDdmsExit(1) }
 
-    // Assert: Wait until client process is gone
-    yieldUntil { fakeDevice.getClient(10) == null }
+    // Assert
+    assertNull(fakeDevice.getClient(10))
   }
 
   @Test
@@ -1264,7 +1264,7 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
   }
 
   @Test
-  fun sharedJdwpSessionMonitorAreInvokedIfRegistered(): Unit = runBlockingWithTimeout {
+  fun sharedJdwpSessionMonitorIsInvokedIfRegistered(): Unit = runBlockingWithTimeout {
     // Prepare
     val fakeDevice = addFakeDevice(fakeAdb, 30)
     fakeDevice.startClient(10, 0, "a.b.c", false)
@@ -1282,7 +1282,7 @@ class SharedJdwpSessionTest : AdbLibToolsTestBase() {
       }
       .receive {
         // We got our reply packet, terminate the process so this collector terminates.
-        jdwpSession.sendVmExit(5)
+        fakeDevice.stopClient(10)
       }
 
     // Assert

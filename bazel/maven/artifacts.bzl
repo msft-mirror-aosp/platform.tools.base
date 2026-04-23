@@ -13,17 +13,18 @@ of a `(maven|kotlin|java)_library` rule, otherwise use DATA.
 ARTIFACTS = [
     "androidx.annotation:annotation:1.1.0",
     "androidx.annotation:annotation-jvm:1.7.1",
-    "androidx.compose.animation:animation-core-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.animation:animation-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.foundation:foundation-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.material:material-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.material3:material3-lint:1.4.0-alpha04",  # Compose Desktop Lint checks
-    "androidx.compose.runtime:runtime-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.runtime:runtime-saveable-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-graphics-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-test-manifest-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
-    "androidx.compose.ui:ui-text-lint:1.8.0-alpha06",  # Compose Desktop Lint checks
+    "androidx.compose.animation:animation-core-lint:1.11.0-rc01",
+    "androidx.compose.animation:animation-lint:1.11.0-rc01",
+    "androidx.compose.foundation:foundation-lint:1.11.0-rc01",
+    "androidx.compose.material:material-lint:1.11.0-rc01",
+    "androidx.compose.material3:material3-lint:1.5.0-alpha17",
+    "androidx.compose.runtime:runtime-lint:1.11.0-rc01",
+    "androidx.compose.runtime:runtime-retain-lint:1.11.0-rc01",
+    "androidx.compose.runtime:runtime-saveable-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-graphics-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-test-manifest-lint:1.11.0-rc01",
+    "androidx.compose.ui:ui-text-lint:1.11.0-rc01",
     "androidx.core:core:1.1.0",
     "androidx.lint:lint-gradle:1.0.0-alpha01",
     "androidx.multidex:multidex:2.0.1",
@@ -43,10 +44,12 @@ ARTIFACTS = [
     "com.android.tools:r8:8.13.19",
     "com.android.tools.smali:smali-baksmali:3.0.9",
     "com.android.tools.smali:smali-dexlib2:3.0.9",
+    "com.charleskorn.kaml:kaml-jvm:0.61.0",
     "com.fasterxml:aalto-xml:1.3.0",
     "com.fasterxml.jackson.core:jackson-annotations:2.11.1",
     "com.fasterxml.jackson.core:jackson-core:2.11.1",
     "com.fasterxml.jackson.core:jackson-databind:2.11.1",
+    "com.github.ajalt.mordant:mordant-jvm:2.7.2",
     "com.github.javaparser:javaparser-core:3.23.0",
     "com.github.rholder:guava-retrying:2.0.0",
     "com.github.rising3:semver:0.3.1",
@@ -96,6 +99,7 @@ ARTIFACTS = [
     "com.google.truth:truth:0.42",
     "com.googlecode.jarjar:jarjar:1.3",
     "com.googlecode.juniversalchardet:juniversalchardet:1.0.3",
+    "com.networknt:json-schema-validator:1.4.3",
     "com.nothome:javaxdelta:2.0.1",
     "com.squareup:javapoet:1.10.0",
     "com.squareup:javawriter:2.5.0",
@@ -213,11 +217,16 @@ ARTIFACTS = [
     "org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.6.4",
     "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.6.0",
     "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.6.0",
+    "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
+    "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
     "org.jetbrains:markdown:pom:0.2.1",
     "org.jspecify:jspecify:0.2.0",
+    "org.junit.jupiter:junit-jupiter-api:5.12.0",
+    "org.junit.jupiter:junit-jupiter-engine:5.12.0",
     "org.junit.platform:junit-platform-engine:1.12.0",
     "org.junit.platform:junit-platform-launcher:1.12.0",
     "org.junit.platform:junit-platform-reporting:1.12.0",
+    "org.junit.platform:junit-platform-runner:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
     "org.mockito:mockito-core:5.12.0",
     "org.mortbay.jetty:jetty:6.1.26",

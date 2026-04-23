@@ -15,6 +15,7 @@
  */
 package com.android.tools.lint.checks
 
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.GradleContext
@@ -51,6 +52,11 @@ class ProguardAndroidTxtDetector : Detector(), GradleScanner {
             "Avoid `getDefaultProguardFile('proguard-android.txt')`",
             fix().replace().pattern("proguard-android.txt").with("proguard-android-optimize.txt").build(),
           )
+        if ((context.project.gradleModelVersion?.major ?: 9) < 9 && !LintClient.isStudio) {
+          // Downgrade to warning if not in Studio, since this is very bad for perf, but app will still run
+          // Note this is only prior to AGP 9, at which point the value isn't supported.
+          incident.overrideSeverity(Severity.WARNING)
+        }
         context.client.report(context, incident)
       }
     }

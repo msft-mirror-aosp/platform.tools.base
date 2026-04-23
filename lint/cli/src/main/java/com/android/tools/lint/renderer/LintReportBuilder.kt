@@ -20,6 +20,7 @@ import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
+import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.TextFormat
 import com.android.tools.lint.getErrorLines
 import com.android.tools.lint.getPath
@@ -27,6 +28,7 @@ import com.android.tools.lint.renderer.data.LintCheck
 import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
 import com.android.tools.lint.renderer.data.LintReport
+import com.android.utils.SdkUtils
 import java.io.File
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -50,8 +52,25 @@ class LintReportBuilder(
   private val urlProvider: (File) -> String?,
 ) {
 
-  fun buildReport(incidents: List<Incident>, extraIssues: List<Issue>, missingIssues: Map<Issue, String>): LintReport {
-    val lintIssues = incidents.map(::createLintIssue)
+  fun buildReport(
+    incidents: List<Incident>,
+    extraIssues: List<Issue>,
+    missingIssues: Map<Issue, String>,
+    maxCount: Int = MAX_COUNT,
+  ): LintReport {
+    val counts = mutableMapOf<Issue, Int>()
+    val lintIssues =
+      incidents
+        .filter { incident ->
+          val count = counts.getOrDefault(incident.issue, 0)
+          if (count < maxCount) {
+            counts[incident.issue] = count + 1
+            true
+          } else {
+            false
+          }
+        }
+        .map(::createLintIssue)
     val additionalChecks = extraIssues.map(::createLintCheck)
     val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }
 
@@ -98,6 +117,16 @@ class LintReportBuilder(
 
     val applicableVariants = incident.applicableVariants
 
+    val images = mutableListOf<String>()
+    var curr: Location? = incident.location
+    while (curr != null) {
+      val imageFile = curr.file
+      if (SdkUtils.isBitmapFile(imageFile)) {
+        urlProvider(imageFile)?.let { images.add(it) }
+      }
+      curr = curr.secondary
+    }
+
     return LintIssue(
       id = issue.id,
       severityDescription = incident.severity?.description ?: "Unknown",
@@ -119,6 +148,7 @@ class LintReportBuilder(
       className = file.nameWithoutExtension,
       vendor = getVendorName(issue),
       wasAutoFixed = incident.wasAutoFixed,
+      images = images,
     )
   }
 
@@ -146,5 +176,10 @@ class LintReportBuilder(
     val formatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
     val zonedDateTime = ZonedDateTime.now(ZoneId.systemDefault())
     return zonedDateTime.format(formatter)
+  }
+
+  companion object {
+    /** Maximum number of incidents shown per issue type */
+    const val MAX_COUNT = 50
   }
 }

@@ -58,7 +58,8 @@ enum class Language(val string: String, val extension: String) {
 
 enum class DslLanguage(val extension: String) {
   KTS("gradle.kts"),
-  GROOVY("gradle");
+  GROOVY("gradle"),
+  DCL("gradle.dcl");
 
   val buildFileName: String
     get() = "build.$extension"
@@ -71,6 +72,9 @@ enum class DslLanguage(val extension: String) {
 
   val isGroovy: Boolean
     get() = this == GROOVY
+
+  val isDcl: Boolean
+    get() = this == DCL
 }
 
 // We define a new enum here instead of reusing existing ones because it should be available
@@ -90,14 +94,16 @@ const val KOTLIN_DSL_LINK = "https://d.android.com/build/migrate-to-kotlin-dsl"
 
 enum class BuildConfigurationLanguageForNewProject(val description: String, val useKts: Boolean) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]", true),
-  Groovy("Groovy DSL (build.gradle)", false);
+  Groovy("Groovy DSL (build.gradle)", false),
+  DCL("Declarative DSL (build.gradle.dcl)", false);
 
   override fun toString() = description
 }
 
 enum class BuildConfigurationLanguageForNewModule(val description: String) {
   KTS("Kotlin DSL (build.gradle.kts) [Recommended]"),
-  Groovy("Groovy DSL (build.gradle)");
+  Groovy("Groovy DSL (build.gradle)"),
+  DCL("Declarative DSL (build.gradle.dcl)");
 
   override fun toString() = description
 }

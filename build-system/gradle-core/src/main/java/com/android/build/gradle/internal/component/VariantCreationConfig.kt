@@ -17,13 +17,8 @@
 package com.android.build.gradle.internal.component
 
 import com.android.build.api.variant.Component
-import com.android.build.gradle.internal.dsl.ModulePropertyKey.OptionalBoolean
-import com.android.build.gradle.internal.services.TaskCreationServices
-import com.android.build.gradle.options.OptionalBooleanOption
-import com.android.build.gradle.options.parseBoolean
 import com.google.wireless.android.sdk.stats.GradleBuildVariant
 import org.gradle.api.provider.MapProperty
-import org.gradle.api.provider.Provider
 
 interface VariantCreationConfig : ConsumableCreationConfig {
   val maxSdk: Int?
@@ -35,27 +30,4 @@ interface VariantCreationConfig : ConsumableCreationConfig {
   val testSuites: List<TestSuiteCreationConfig>
 
   fun <T : Component> createUserVisibleVariantObject(stats: GradleBuildVariant.Builder?): T
-
-  /**
-   * Whether to use K2 UAST when running lint for this component or its nested components. This provider will only be set if
-   * [OptionalBooleanOption.LINT_USE_K2_UAST] or [OptionalBoolean.LINT_USE_K2_UAST] is set.
-   *
-   * If unset, K2 UAST will be used when running lint iff the corresponding kotlin language version is at least 2.0.
-   */
-  val lintUseK2UastManualSetting: Provider<Boolean>
-    get() {
-      return getLintUseK2UastManualSetting(experimentalProperties, services)
-    }
-
-  companion object {
-    fun getLintUseK2UastManualSetting(experimentalProperties: MapProperty<String, Any>, services: TaskCreationServices): Provider<Boolean> {
-      val ret: Provider<Boolean> =
-        experimentalProperties.getting(OptionalBoolean.LINT_USE_K2_UAST.key).map { parseBoolean(OptionalBoolean.LINT_USE_K2_UAST.key, it) }
-
-      services.projectOptions.get(OptionalBooleanOption.LINT_USE_K2_UAST)?.let {
-        return ret.orElse(it)
-      }
-      return ret
-    }
-  }
 }

@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.testing.unit
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.options.BooleanOption
 import com.google.common.truth.Truth.assertThat
 import org.junit.Rule
 import org.junit.Test
@@ -45,6 +46,7 @@ class UnitTestCachingTest {
             .trimIndent(),
         )
       }
+      gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
     }
 
   @Test

@@ -77,6 +77,7 @@ class TestSuitesTestReportTest {
           files { add("src/first/test.txt", "dummy content") }
           dependencies { implementation("com.google.truth:truth:0.44") }
         }
+        gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, true) }
       }
 
   @Test
@@ -98,9 +99,8 @@ class TestSuitesTestReportTest {
   @Test
   fun testReportingDisabled() {
     val build = rule.build { gradleProperties { add(BooleanOption.REPORT_AGGREGATION_SUPPORT, false) } }
-    val result = build.executor.run(":app:createTestReport")
-    assertThat(result.didWorkTasks).doesNotContain(":app:testResultsCollectionDebug")
-    result.assertOutputContains("Aggregated Test reporting feature is disabled, TestReportTask's execution is skipped.")
+    val result = build.executor.expectFailure().run(":app:createTestReport")
+    result.assertFailureMessage().contains("task 'createTestReport' not found in project ':app'")
   }
 
   @Test

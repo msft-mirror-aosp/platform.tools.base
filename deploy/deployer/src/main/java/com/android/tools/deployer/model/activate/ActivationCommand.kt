@@ -15,6 +15,8 @@
  */
 package com.android.tools.deployer.model.activate
 
+import kotlin.jvm.JvmOverloads
+
 /**
  * An abstraction of what a single command needed to activate a component after deployment.
  *
@@ -25,7 +27,35 @@ package com.android.tools.deployer.model.activate
  * @param checker: This consumer like listener will be sent lines of the commandline's output to determine the success status of the
  *   command. It allows for custom callbacks to be registered if the caller wants to handle errors / warning in any way they want.
  */
-data class ActivationCommand(val command: String, val status: String? = null, val checker: ActivationCommandResultChecker) {}
+class ActivationContext {
+  private val values = mutableMapOf<String, String>()
+
+  fun put(key: String, value: String) {
+    values[key] = value
+  }
+
+  fun get(key: String): String? = values[key]
+}
+
+data class ActivationCommand
+@JvmOverloads
+constructor(
+  val commandTemplate: String,
+  val status: String? = null,
+  val checker: ActivationCommandResultChecker,
+  val context: ActivationContext = ActivationContext(),
+) {
+  val command: String
+    get() = getResolvedCommand(context)
+
+  fun getResolvedCommand(context: ActivationContext): String {
+    val pattern = "\\\$\\{([a-zA-Z0-9_]+)\\}".toRegex()
+    return pattern.replace(commandTemplate) { matchResult ->
+      val key = matchResult.groupValues[1]
+      context.get(key) ?: matchResult.value
+    }
+  }
+}
 
 class ActivationCommands(val commands: List<ActivationCommand>) : List<ActivationCommand> by commands {
   constructor(vararg commands: ActivationCommand) : this(commands.toList())

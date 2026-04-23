@@ -45,8 +45,9 @@ test  --jvmopt='-XX:CompileCommand=exclude,org.jetbrains.kotlin.serialization.de
 
 # JetBrainsRuntime version to bundle into Android Studio
 # and java runtime for running tests
-build --//prebuilts/studio/jdk:jdk_bundle_version=next
-test --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr-next'
+build:jbr25 --//prebuilts/studio/jdk:jdk_bundle_version=25
+build:jbr25 --java_runtime_version=jbr25
+test:jbr25 --jvmopt='-Dembedded.jdk.path=prebuilts/studio/jdk/jbr25'
 
 # Enable Kotlin K2 mode (b/373746515).
 test --jvmopt='-Didea.kotlin.plugin.use.k1=false'
@@ -90,7 +91,7 @@ build --define=grpc_no_ares=true
 # finds make in the ndk-build script (see b/72179674).
 build --test_env=SHELL
 
-# Bazel will find the matching java toolchain registered in WORKSPACE.
+# Bazel will find the matching java toolchain registered in bzlmod/toolchains.MODULE.bazel
 build --java_language_version=21
 build --java_runtime_version=jbr-next
 build --tool_java_language_version=21

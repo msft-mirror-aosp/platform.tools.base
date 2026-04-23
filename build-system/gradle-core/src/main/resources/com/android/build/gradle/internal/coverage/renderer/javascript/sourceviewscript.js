@@ -23,7 +23,6 @@ const SourceViewApp = {
         isLoading: false,
         scrollLock: false
     },
-    isSyncing: false,
 
     init() {
         this.cacheElements();
@@ -66,12 +65,45 @@ const SourceViewApp = {
         return div;
     },
 
+    resetSearchUI() {
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.value = '';
+        }
+        if (this.elements.functionSearchClearBtn) {
+            this.elements.functionSearchClearBtn.classList.add('hidden');
+        }
+        this.handleFunctionSearch({ target: { value: '' } });
+    },
+
+    revealSearchUI() {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+        this.elements.srcSearchRevealBtn.classList.add('transparent');
+        this.elements.srcSearchWrapper.classList.add('expanded');
+        if (this.elements.functionSearch) {
+            this.elements.functionSearch.focus();
+        }
+    },
+
+    collapseSearchUI(animated = true) {
+        if (!this.elements.srcSearchWrapper || !this.elements.srcSearchRevealBtn) return;
+
+        this.elements.srcSearchWrapper.classList.remove('expanded');
+        this.elements.srcSearchRevealBtn.classList.remove('transparent');
+        if (!animated) {
+            this.elements.srcSearchRevealBtn.classList.remove('hidden');
+        }
+    },
+
     /**
      * Entry point to load specific source files for a class and then render.
      */
     async loadAndRender(classData, context = {}) {
         // Reset selected variants if we are loading a new class (check name and package)
-        if (!this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name) {
+        // Unless we are restoring state from history.
+        const isNewClass = !this.classData || this.classData.packageName !== classData.packageName || this.classData.name !== classData.name;
+        const isPopping = typeof Navigation !== 'undefined' && Navigation.isPopping;
+
+        if (isNewClass && !isPopping) {
             this.state.selectedVariants = [];
         }
 
@@ -144,6 +176,10 @@ const SourceViewApp = {
         this.renderFunctionList();
         this.renderAllVariantViews();
         this.updateVariantButtonText();
+
+        if (typeof Navigation !== 'undefined') {
+            Navigation.replace();
+        }
     },
 
     renderBreadcrumbs() {
@@ -183,9 +219,7 @@ const SourceViewApp = {
         if (this.elements.srcSearchRevealBtn) {
             this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                this.elements.srcSearchRevealBtn.classList.add('hidden');
-                this.elements.srcSearchWrapper.classList.add('expanded');
-                this.elements.functionSearch.focus();
+                this.revealSearchUI();
             });
         }
 
@@ -242,21 +276,24 @@ const SourceViewApp = {
                 CoverageReportApp.resetSelection();
                 CoverageReportApp.state.currentView = 'modules';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
             case 'go-to-packages':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = null;
                 CoverageReportApp.state.currentView = 'packages';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
             case 'go-to-classes':
                 CoverageReportApp.state.selectedModule = moduleName;
                 CoverageReportApp.state.selectedPackage = packageName;
                 CoverageReportApp.state.currentView = 'classes';
                 App.showReportView();
-                CoverageReportApp.render();
+                CoverageReportApp.render(true);
+                Navigation.push();
                 break;
         }
     },
@@ -267,6 +304,8 @@ const SourceViewApp = {
 
     closeDropdownOnClickOutside() {
         document.addEventListener('click', (event) => {
+            if (!document.body.contains(event.target)) return;
+
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
             }
@@ -275,10 +314,7 @@ const SourceViewApp = {
             if (this.elements.srcSearchWrapper && this.elements.srcSearchRevealBtn) {
                 if (!this.elements.srcSearchWrapper.contains(event.target) && !this.elements.srcSearchRevealBtn.contains(event.target)) {
                     if (this.elements.functionSearch && this.elements.functionSearch.value === '') {
-                        this.elements.srcSearchWrapper.classList.remove('expanded');
-                        setTimeout(() => {
-                            this.elements.srcSearchRevealBtn.classList.remove('hidden');
-                        }, 300);
+                        this.collapseSearchUI(true);
                     }
                 }
             }
@@ -314,9 +350,8 @@ const SourceViewApp = {
     },
 
     handleFunctionSearchClear() {
-        this.elements.functionSearch.value = '';
-        this.handleFunctionSearch({ target: this.elements.functionSearch });
-        this.elements.functionSearch.focus();
+        this.resetSearchUI();
+        this.collapseSearchUI(true);
     },
 
     handleMethodClick(e) {
@@ -375,6 +410,9 @@ const SourceViewApp = {
         UIUtils.buildActionDropdown(this.elements.variantFiltersDropdown, variantOptions, this.state.selectedVariants, () => {
             this.renderAllVariantViews();
             this.updateVariantButtonText();
+            if (typeof Navigation !== 'undefined') {
+                Navigation.push();
+            }
         }, false);
     },
 

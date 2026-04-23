@@ -24,15 +24,17 @@ import kotlin.math.min
 open class ClassInstance(id: Long, stack: StackTrace?, private val valuesOffset: Long) : Instance(id, stack) {
   open val values: List<FieldValue>
     get() =
-      mutableListOf<FieldValue>().also { result ->
-        buffer.setPosition(valuesOffset)
-        tailrec fun collect(cl: ClassObj?) {
-          if (cl != null) {
-            result.addAll(cl.fields.map { FieldValue(it, readValue(it.type)) })
-            collect(cl.superClassObj)
+      synchronized(buffer) {
+        mutableListOf<FieldValue>().also { result ->
+          buffer.setPosition(valuesOffset)
+          tailrec fun collect(cl: ClassObj?) {
+            if (cl != null) {
+              result.addAll(cl.fields.map { FieldValue(it, readValue(it.type)) })
+              collect(cl.superClassObj)
+            }
           }
+          collect(classObj)
         }
-        collect(classObj)
       }
 
   override val isSoftReference: Boolean

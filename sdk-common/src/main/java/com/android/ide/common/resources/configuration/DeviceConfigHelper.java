@@ -45,6 +45,9 @@ public class DeviceConfigHelper {
 
         FolderConfiguration config = FolderConfiguration.createDefault();
         Screen screen = hw.getScreen();
+        if (screen == null) {
+            return config;
+        }
         config.setDensityQualifier(new DensityQualifier(screen.getPixelDensity()));
         config.setNavigationMethodQualifier(new NavigationMethodQualifier(hw.getNav()));
         ScreenDimensionQualifier sdq;

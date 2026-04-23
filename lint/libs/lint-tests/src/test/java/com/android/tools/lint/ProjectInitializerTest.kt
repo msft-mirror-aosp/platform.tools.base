@@ -410,7 +410,6 @@ class ProjectInitializerTest {
 
       // Args
       arrayOf(
-        if (useFirUast()) "" else "--XuseK1Uast",
         "--check",
         "UniquePermission,DuplicateDefinition,SdCardPath",
         "--config",
@@ -423,7 +422,6 @@ class ProjectInitializerTest {
       { it.replace(canonicalRoot, "ROOT").replace(root.path, "ROOT").replace(baseline.parentFile.path, "TESTROOT").dos2unix() },
       listener,
       null,
-      false,
     )
 
     // Make sure we hit all our checks with the listener

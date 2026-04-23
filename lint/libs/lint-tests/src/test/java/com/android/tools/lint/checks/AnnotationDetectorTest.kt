@@ -1156,22 +1156,22 @@ class AnnotationDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        src/test/pkg/WrongUsagesJava.java:5: Warning: Use @RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of @TargetApi` to propagate the requirement to users of WrongUsagesJava [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:5: Warning: Use @RequiresApi(Build.VERSION_CODES.HONEYCOMB) instead of @TargetApi to propagate the requirement to users of WrongUsagesJava [UseRequiresApi]
         @TargetApi(Build.VERSION_CODES.HONEYCOMB) // ERROR 1
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesJava.java:7: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:7: Warning: Use @RequiresApi(31) instead of @TargetApi to propagate the requirement to callers of testApi [UseRequiresApi]
             @TargetApi(31) // ERROR 2
             ~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesJava.java:10: Warning: Use @RequiresApi(value = 32) instead of @TargetApi` to propagate the requirement to accessors of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesJava.java:10: Warning: Use @RequiresApi(value = 32) instead of @TargetApi to propagate the requirement to accessors of testApi [UseRequiresApi]
             @TargetApi(value = 32) // ERROR 3
             ~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:7: Warning: Use @RequiresApi(value = 31) instead of @TargetApi` to propagate the requirement to accessors of member [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:7: Warning: Use @RequiresApi(value = 31) instead of @TargetApi to propagate the requirement to accessors of member [UseRequiresApi]
             @field:TargetApi(value = 31) // ERROR 4
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:8: Warning: Use @RequiresApi(Build.VERSION_CODES.TIRAMISU) instead of @TargetApi` to propagate the requirement to callers of getMember [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:8: Warning: Use @RequiresApi(Build.VERSION_CODES.TIRAMISU) instead of @TargetApi to propagate the requirement to callers of getMember [UseRequiresApi]
             @get:TargetApi(Build.VERSION_CODES.TIRAMISU) // ERROR 5
             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        src/test/pkg/WrongUsagesKotlin.kt:11: Warning: Use @RequiresApi(31) instead of @TargetApi` to propagate the requirement to callers of testApi [UseRequiresApi]
+        src/test/pkg/WrongUsagesKotlin.kt:11: Warning: Use @RequiresApi(31) instead of @TargetApi to propagate the requirement to callers of testApi [UseRequiresApi]
             @TargetApi(31) // ERROR 6
             ~~~~~~~~~~~~~~
         0 errors, 6 warnings

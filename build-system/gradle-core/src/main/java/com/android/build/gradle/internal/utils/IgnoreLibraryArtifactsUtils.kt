@@ -23,6 +23,7 @@ import java.io.File
 import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.artifacts.component.ComponentIdentifier
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.file.FileCollection
 
 enum class LibraryArtifactType {
@@ -89,6 +90,8 @@ fun getFilteredFiles(
             version = origin.version,
             filePath = it.path,
           )
+        is ProjectComponentIdentifier ->
+          KeepRuleFile.LocalProjectOrigin(buildId = origin.build.buildPath, projectPath = origin.projectPath, filePath = it.path)
         else -> KeepRuleFile.WithoutOrigin(it.toPath())
       }
     }

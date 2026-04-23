@@ -56,6 +56,7 @@ androidLibrary {
     }
 
     dependencies {
+        implementation("androidx.compose.runtime:runtime:1.6.0")
         implementation("org.apache.commons:commons-lang3:3.13.0")
         implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.24")
         implementation("com.google.guava:guava:33.3.1-jre")

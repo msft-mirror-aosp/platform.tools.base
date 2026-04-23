@@ -434,6 +434,8 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
 
   object MANIFEST_MERGE_BLAME_FILE : InternalArtifactType<RegularFile>(FILE), Replaceable
 
+  object MERGED_NATIVE_LIBS_BLAME : InternalArtifactType<RegularFile>(FILE), Replaceable
+
   // List of annotation processors for metrics.
   object ANNOTATION_PROCESSOR_LIST : InternalArtifactType<RegularFile>(FILE), Replaceable
 

@@ -29,6 +29,7 @@ import com.android.annotations.NonNull;
 import com.android.resources.Density;
 import com.android.resources.ScreenSize;
 import com.android.sdklib.devices.Device;
+import com.android.sdklib.devices.Screen;
 import com.android.sdklib.devices.Storage;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
@@ -108,11 +109,10 @@ public class EmulatedProperties {
         if (Device.isXr(device)) {
             return new Storage(512, Storage.Unit.MiB);
         }
-        return minimumVmHeapSize(
-                ScreenSize.getScreenSize(
-                        device.getDefaultHardware().getScreen().getDiagonalLength()),
-                device.getDefaultHardware().getScreen().getPixelDensity(),
-                Device.isWear(device));
+        Screen screen = device.getDefaultHardware().getScreen();
+        ScreenSize screenSize = screen == null ? ScreenSize.NORMAL : ScreenSize.getScreenSize(screen.getDiagonalLength());
+        Density screenDensity = screen == null ? Density.MEDIUM : screen.getPixelDensity();
+        return minimumVmHeapSize(screenSize, screenDensity, Device.isWear(device));
     }
 
     /**

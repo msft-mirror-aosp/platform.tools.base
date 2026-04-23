@@ -190,7 +190,7 @@ class XMLReportAggregatorTest {
 
     val dataJsContent = File(outputDir, "data.js").readText()
     assertThat(dataJsContent).contains("const TEST_DATA_SOURCE = {")
-    assertThat(dataJsContent).contains("\"projectName\": \"MyProject\"")
+    assertThat(dataJsContent).contains("\"projectName\":\"MyProject\"")
     assertThat(dataJsContent).contains("\"timestamp\"")
     assertThat(dataJsContent).contains("debug")
     assertThat(dataJsContent).contains("testExample")

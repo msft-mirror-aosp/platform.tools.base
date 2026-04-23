@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl
 
+import java.lang.reflect.InvocationTargetException
 import org.gradle.api.Named
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.artifacts.dsl.DependencyCollector
@@ -51,14 +52,41 @@ object DslBindingUtils {
           }
         if (baseName.isEmpty()) continue
 
-        val value = method.invoke(source)
+        val value =
+          try {
+            method.invoke(source)
+          } catch (e: InvocationTargetException) {
+            if (e.cause is IllegalStateException) {
+              // Some properties might not be ready to be read yet (e.g. not finalized).
+              continue
+            }
+            throw e
+          } catch (_: IllegalStateException) {
+            // Some properties might not be ready to be read yet (e.g. not finalized).
+            continue
+          }
         val targetGetter = target.javaClass.methods.find { it.name == name && it.parameterCount == 0 }
-        val targetValue = targetGetter?.invoke(target)
+        val targetValue =
+          try {
+            targetGetter?.invoke(target)
+          } catch (e: InvocationTargetException) {
+            if (e.cause is IllegalStateException) {
+              // Some properties might not be ready to be read yet (e.g. not finalized).
+              null
+            } else {
+              throw e
+            }
+          } catch (_: IllegalStateException) {
+            // Some properties might not be ready to be read yet (e.g. not finalized).
+            null
+          }
         val setterName = "set$baseName"
         val setter = target.javaClass.methods.find { it.name == setterName && it.parameterCount == 1 }
         if (setter != null) {
           if (targetGetter == null || value != targetValue) {
-            setter.invoke(target, value)
+            if (value == null || setter.parameterTypes[0].isAssignableFrom(value.javaClass)) {
+              setter.invoke(target, value)
+            }
           }
         } else {
           if (value != null && targetValue != null) {
@@ -77,13 +105,17 @@ object DslBindingUtils {
                 value.dependencyConstraints.get().forEach { targetValue.addConstraint(it) }
               }
               (value is List<*> || value is Set<*>) && targetValue is MutableCollection<*> -> {
-                @Suppress("UNCHECKED_CAST") (targetValue as MutableCollection<Any>).addAll(value as Collection<Any>)
+                try {
+                  @Suppress("UNCHECKED_CAST") (targetValue as MutableCollection<Any>).addAll(value as Collection<Any>)
+                } catch (_: UnsupportedOperationException) {
+                  // If the target collection is immutable, we can't add to it.
+                  // This can happen for some DSL objects.
+                }
               }
-              value.javaClass.name.startsWith("com.android.build.api.dsl.") ||
-                value.javaClass.interfaces.any { it.name.startsWith("com.android.build.api.dsl.") } -> {
+              isDslObject(value.javaClass) -> {
                 copyProperties(value, targetValue)
               }
-              value.javaClass.name == "org.gradle.api.NamedDomainObjectContainer" -> {
+              isNamedDomainObjectContainer(value.javaClass) -> {
                 copyProperties(value, targetValue)
               }
               else -> {
@@ -100,6 +132,20 @@ object DslBindingUtils {
         }
       }
     }
+  }
+
+  private fun isDslObject(clazz: Class<*>): Boolean =
+    walkHierarchy(clazz) {
+      it.name.startsWith("com.android.build.api.dsl.") || it.name.startsWith("com.android.build.gradle.internal.dsl.")
+    }
+
+  private fun isNamedDomainObjectContainer(clazz: Class<*>): Boolean =
+    NamedDomainObjectContainer::class.java.isAssignableFrom(clazz) ||
+      walkHierarchy(clazz) { it.name == "org.gradle.api.NamedDomainObjectContainer" }
+
+  private fun walkHierarchy(clazz: Class<*>, predicate: (Class<*>) -> Boolean): Boolean {
+    if (predicate(clazz)) return true
+    return clazz.interfaces.any { walkHierarchy(it, predicate) } || clazz.superclass?.let { walkHierarchy(it, predicate) } == true
   }
 
   private fun setField(target: Any, baseName: String, value: Any?) {

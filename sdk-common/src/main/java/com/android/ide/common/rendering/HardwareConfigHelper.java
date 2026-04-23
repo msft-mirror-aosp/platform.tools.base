@@ -115,6 +115,19 @@ public class HardwareConfigHelper {
     public HardwareConfig getConfig() {
         Screen screen = mDevice.getDefaultHardware().getScreen();
 
+        if (screen == null) {
+            return new HardwareConfig(
+                    0,
+                    0,
+                    null,
+                    0,
+                    0,
+                    null,
+                    mScreenOrientation,
+                    null,
+                    mDevice.getDefaultHardware().getButtonType() == ButtonType.SOFT);
+        }
+
         // compute width and height to take orientation into account.
         int x = screen.getXDimension();
         int y = screen.getYDimension();
@@ -162,7 +175,7 @@ public class HardwareConfigHelper {
                 (float) screen.getYdpi(),
                 screen.getSize(),
                 mScreenOrientation,
-                mDevice.getDefaultHardware().getScreen().getScreenRound(),
+                screen.getScreenRound(),
                 mDevice.getDefaultHardware().getButtonType() == ButtonType.SOFT);
     }
 
@@ -193,10 +206,10 @@ public class HardwareConfigHelper {
         Collections.sort(list, (device1, device2) -> {
 
             Screen screen1 = device1.getDefaultHardware().getScreen();
-            float length1 = (float) screen1.getDiagonalLength();
+            float length1 = screen1 == null ? 0 : (float) screen1.getDiagonalLength();
 
             Screen screen2 = device2.getDefaultHardware().getScreen();
-            float length2 = (float) screen2.getDiagonalLength();
+            float length2 = screen2 == null ? 0 : (float) screen2.getDiagonalLength();
 
             return (int) Math.signum(length1 - length2);
         });

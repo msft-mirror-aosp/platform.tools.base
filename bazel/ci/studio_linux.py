@@ -53,7 +53,6 @@ _EXTRA_TARGETS = [
     '//tools/vendor/google/asfp/studio:asfp_build_manifest.textproto',
     '//tools/vendor/google/asfp/studio:asfp.deb',
     '//tools/vendor/google/ml:aiplugin',
-    '//tools/vendor/google/ml:studiobot-dogfood-plugin',
 # TODO: b/497702794 - old custom packaging deleted.
 #    '//tools/adt/idea/aswb/aswb:aswb_bazel_zip',
     '//tools/base/bazel:owners.zip',
@@ -95,7 +94,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/skia/skiaparser.zip', 'artifacts'),
     ('tools/vendor/google/skia/skia_test_support.zip', 'artifacts'),
     ('tools/vendor/google/ml/aiplugin*.zip', 'artifacts'),
-    ('tools/vendor/google/ml/studiobot-dogfood-plugin*.zip', 'artifacts'),
 
     ('tools/base/sdklib/commandlinetools_*.zip', 'artifacts'),
     ('tools/base/ddmlib/tools.ddmlib.jar', 'artifacts/ddmlib.jar'),
@@ -124,6 +122,7 @@ _ARTIFACTS = [
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
     ('tools/vendor/google/android/legacy-android-cli.zip', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/lume/dist/lume-distribution.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),
 ]

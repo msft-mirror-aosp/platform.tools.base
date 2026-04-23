@@ -61,11 +61,9 @@ class XMLReportAggregator(private val files: List<File>, projectName: String) {
     val finalReport = generateReport()
     val gson =
       GsonBuilder()
-        .setPrettyPrinting()
         .registerTypeAdapter(TestCase::class.java, TestCaseAdapter())
         .registerTypeAdapter(TestSummary::class.java, TestSummaryAdapter())
         .create()
-
     if (!outputDir.exists()) {
       outputDir.mkdirs()
     }

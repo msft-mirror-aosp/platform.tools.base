@@ -26,7 +26,6 @@ import com.android.sdklib.internal.avd.ConfigKey.TAG_IDS
 import com.android.sdklib.repository.IdDisplay
 import com.android.utils.ILogger
 import com.android.utils.asSeparatedListContains
-import com.android.utils.mapValuesNotNull
 import java.nio.file.Path
 
 /**
@@ -38,7 +37,6 @@ import java.nio.file.Path
  * @property systemImage The system image. Can be null if the system image is not found.
  * @property properties The configuration properties (from config.ini). Keys are defined in [ConfigKey].
  * @property userSettings The user settings from user-settings.ini. Keys are defined in [UserSettingsKey].
- * @property environment The environment from environment.ini. Keys are defined in [EnvironmentKey].
  * @property status The error condition of the AVD, or AvdStatus.OK.
  */
 data class AvdInfo(
@@ -47,27 +45,8 @@ data class AvdInfo(
   val systemImage: ISystemImage?,
   val properties: Map<String, String> = emptyMap(),
   val userSettings: Map<String, String> = emptyMap(),
-  val environment: Map<String, String> = emptyMap(),
   val status: AvdStatus = AvdStatus.OK,
 ) {
-  @JvmOverloads
-  constructor(
-    iniFile: Path,
-    dataFolderPath: Path,
-    systemImage: ISystemImage?,
-    properties: Map<String, String>?,
-    userSettings: Map<String, String?>?,
-    status: AvdStatus = AvdStatus.OK,
-  ) : this(
-    iniFile = iniFile,
-    dataFolderPath = dataFolderPath,
-    systemImage = systemImage,
-    properties = properties ?: emptyMap(),
-    userSettings = userSettings?.mapValuesNotNull { (k, v) -> v } ?: emptyMap(),
-    environment = emptyMap(),
-    status = status,
-  )
-
   /** Status for an [AvdInfo]. Indicates whether or not this AVD is valid. */
   enum class AvdStatus {
     /** No error */

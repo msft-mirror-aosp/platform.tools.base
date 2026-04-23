@@ -583,9 +583,62 @@ public class DeviceManager {
     public static Map<String, String> getHardwareProperties(@NonNull State s) {
         Hardware hw = s.getHardware();
         Map<String, String> props = new HashMap<>();
-        if (hw.getScreen().getScreenType().equals(ScreenType.NOTOUCH)) {
-            props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+        Screen screen = hw.getScreen();
+        if (screen != null) {
+            if (screen.getScreenType().equals(ScreenType.NOTOUCH)) {
+                props.put(HardwareProperties.HW_SCREEN, HardwareProperties.HW_SCREEN_NOTOUCH);
+            }
+            props.put(
+                    HardwareProperties.HW_LCD_DENSITY,
+                    Integer.toString(screen.getPixelDensity().getDpiValue()));
+            props.put(HardwareProperties.HW_LCD_WIDTH, Integer.toString(screen.getXDimension()));
+            props.put(HardwareProperties.HW_LCD_HEIGHT, Integer.toString(screen.getYDimension()));
+
+            if (screen.isFoldable()) {
+                props.put(HardwareProperties.HW_KEYBOARD_LID, getBooleanVal(true));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
+                        Integer.toString(screen.getFoldedXOffset()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
+                        Integer.toString(screen.getFoldedYOffset()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_HEIGHT,
+                        Integer.toString(screen.getFoldedHeight()));
+                props.put(
+                        HardwareProperties.HW_LCD_FOLDED_WIDTH,
+                        Integer.toString(screen.getFoldedWidth()));
+                if (screen.getFoldedWidth2() != 0 && screen.getFoldedHeight2() != 0) {
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_X_OFFSET_2,
+                            Integer.toString(screen.getFoldedXOffset2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_2,
+                            Integer.toString(screen.getFoldedYOffset2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_WIDTH_2,
+                            Integer.toString(screen.getFoldedWidth2()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_HEIGHT_2,
+                            Integer.toString(screen.getFoldedHeight2()));
+                }
+                if (screen.getFoldedWidth3() != 0 && screen.getFoldedHeight3() != 0) {
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_X_OFFSET_3,
+                            Integer.toString(screen.getFoldedXOffset3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_3,
+                            Integer.toString(screen.getFoldedYOffset3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_WIDTH_3,
+                            Integer.toString(screen.getFoldedWidth3()));
+                    props.put(
+                            HardwareProperties.HW_LCD_FOLDED_HEIGHT_3,
+                            Integer.toString(screen.getFoldedHeight3()));
+                }
+            }
         }
+
         props.put(
                 HardwareProperties.HW_MAINKEYS,
                 getBooleanVal(hw.getButtonType().equals(ButtonType.HARD)));
@@ -619,13 +672,6 @@ public class DeviceManager {
 
         props.put(HardwareProperties.HW_AUDIO_INPUT, getBooleanVal(hw.hasMic()));
         props.put(HardwareProperties.HW_SDCARD, getBooleanVal(hw.hasSdCard()));
-        props.put(
-                HardwareProperties.HW_LCD_DENSITY,
-                Integer.toString(hw.getScreen().getPixelDensity().getDpiValue()));
-        props.put(
-                HardwareProperties.HW_LCD_WIDTH, Integer.toString(hw.getScreen().getXDimension()));
-        props.put(
-                HardwareProperties.HW_LCD_HEIGHT, Integer.toString(hw.getScreen().getYDimension()));
 
         Environment environment = hw.getEnvironment();
         if (environment != null) {
@@ -644,49 +690,6 @@ public class DeviceManager {
         props.put(
                 HardwareProperties.HW_PROXIMITY_SENSOR,
                 getBooleanVal(sensors.contains(Sensor.PROXIMITY_SENSOR)));
-        if (hw.getScreen().isFoldable()) {
-            props.put(HardwareProperties.HW_KEYBOARD_LID, getBooleanVal(true));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_X_OFFSET,
-                    Integer.toString(hw.getScreen().getFoldedXOffset()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_Y_OFFSET,
-                    Integer.toString(hw.getScreen().getFoldedYOffset()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_HEIGHT,
-                    Integer.toString(hw.getScreen().getFoldedHeight()));
-            props.put(
-                    HardwareProperties.HW_LCD_FOLDED_WIDTH,
-                    Integer.toString(hw.getScreen().getFoldedWidth()));
-            if (hw.getScreen().getFoldedWidth2() != 0 && hw.getScreen().getFoldedHeight2() != 0) {
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET_2,
-                        Integer.toString(hw.getScreen().getFoldedXOffset2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_2,
-                        Integer.toString(hw.getScreen().getFoldedYOffset2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_WIDTH_2,
-                        Integer.toString(hw.getScreen().getFoldedWidth2()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_HEIGHT_2,
-                        Integer.toString(hw.getScreen().getFoldedHeight2()));
-            }
-            if (hw.getScreen().getFoldedWidth3() != 0 && hw.getScreen().getFoldedHeight3() != 0) {
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_X_OFFSET_3,
-                        Integer.toString(hw.getScreen().getFoldedXOffset3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_Y_OFFSET_3,
-                        Integer.toString(hw.getScreen().getFoldedYOffset3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_WIDTH_3,
-                        Integer.toString(hw.getScreen().getFoldedWidth3()));
-                props.put(
-                        HardwareProperties.HW_LCD_FOLDED_HEIGHT_3,
-                        Integer.toString(hw.getScreen().getFoldedHeight3()));
-            }
-        }
 
         Hinge hinge = hw.getHinge();
 

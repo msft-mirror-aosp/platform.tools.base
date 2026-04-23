@@ -17,7 +17,11 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.ProguardFiles
+import com.android.build.gradle.internal.fixtures.FakeArtifactCollection
+import com.android.build.gradle.internal.fixtures.FakeBuildIdentifier
 import com.android.build.gradle.internal.fixtures.FakeGradleProvider
+import com.android.build.gradle.internal.fixtures.FakeProjectComponentIdentifier
+import com.android.build.gradle.internal.fixtures.FakeResolvedArtifactResult
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.dexing.KeepRuleFile
 import com.android.testutils.truth.PathSubject.assertThat
@@ -28,12 +32,15 @@ import kotlin.io.path.name
 import kotlin.io.path.writeText
 import kotlin.test.assertFailsWith
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ArtifactCollection
 import org.gradle.api.file.ProjectLayout
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 
 internal class ProguardConfigurableTaskTest {
 
@@ -192,5 +199,107 @@ internal class ProguardConfigurableTaskTest {
         true,
       )
     }
+  }
+
+  @Test
+  fun `test keep rule origins`() {
+    Truth.assertThat(task).isNotNull()
+
+    val (aaptFile, featureFile, generatedFile, projectFile) =
+      listOf("AAPT", "feature", "generated", "project").map { temporaryFolder.newFile("${it}_rules.pro") }
+
+    task.aaptProguardFiles.from(aaptFile)
+    task.featureProguardFiles.from(featureFile)
+    task.generatedProguardFile.from(generatedFile)
+    task.keepRulesFiles.from(projectFile)
+
+    task.buildId.set("myBuildId")
+    task.localProjectPath.set(":myProject")
+    task.ignoreFromInKeepRules.set(emptySet())
+    task.ignoreFromAllExternalDependenciesInKeepRules.set(false)
+
+    val mockLibraryKeepRules = mock<ArtifactCollection>()
+    whenever(mockLibraryKeepRules.artifacts).thenReturn(emptySet())
+
+    val keepRules = task.obtainKeepRules(mockLibraryKeepRules)
+
+    Truth.assertThat(keepRules).hasSize(4)
+
+    val aaptRule = keepRules.find { it.file == aaptFile.toPath() }
+    Truth.assertThat(aaptRule).isInstanceOf(KeepRuleFile.GeneratedOrigin::class.java)
+    Truth.assertThat((aaptRule as KeepRuleFile.GeneratedOrigin).origin).isEqualTo(ProguardConfigurableTask.AAPT2_RULES_ORIGIN)
+
+    val featureRule = keepRules.find { it.file == featureFile.toPath() }
+    Truth.assertThat(featureRule).isInstanceOf(KeepRuleFile.GeneratedOrigin::class.java)
+    Truth.assertThat((featureRule as KeepRuleFile.GeneratedOrigin).origin).isEqualTo(ProguardConfigurableTask.FEATURE_RULES_ORIGIN)
+
+    val generatedRule = keepRules.find { it.file == generatedFile.toPath() }
+    Truth.assertThat(generatedRule).isInstanceOf(KeepRuleFile.GeneratedOrigin::class.java)
+    Truth.assertThat((generatedRule as KeepRuleFile.GeneratedOrigin).origin).isEqualTo(ProguardConfigurableTask.GENERATED_RULES_ORIGIN)
+
+    val projectRule = keepRules.find { it.file == projectFile.toPath() }
+    Truth.assertThat(projectRule).isInstanceOf(KeepRuleFile.LocalProjectOrigin::class.java)
+    val projectOrigin = projectRule as KeepRuleFile.LocalProjectOrigin
+    Truth.assertThat(projectOrigin.buildId).isEqualTo("myBuildId")
+    Truth.assertThat(projectOrigin.projectPath).isEqualTo(":myProject")
+  }
+
+  @Test
+  fun `test keep rule origin from project dependency`() {
+    Truth.assertThat(task).isNotNull()
+
+    val projectRuleFile = temporaryFolder.newFile("lib_rules.pro")
+    val buildId = "otherBuild"
+    val projectPath = ":lib"
+
+    val artifactCollection =
+      FakeArtifactCollection(
+        mutableSetOf(
+          FakeResolvedArtifactResult(
+            file = projectRuleFile,
+            identifier = FakeProjectComponentIdentifier(projectPath = projectPath, buildIdentifier = FakeBuildIdentifier(buildId)),
+          )
+        )
+      )
+
+    task.configurationFiles.from(projectRuleFile)
+    task.buildId.set("mainBuild")
+    task.localProjectPath.set(":app")
+    task.ignoreFromInKeepRules.set(emptySet())
+    task.ignoreFromAllExternalDependenciesInKeepRules.set(false)
+
+    val keepRules = task.obtainKeepRules(artifactCollection)
+
+    Truth.assertThat(keepRules).hasSize(1)
+    val projectRule = keepRules.single()
+    Truth.assertThat(projectRule).isInstanceOf(KeepRuleFile.LocalProjectOrigin::class.java)
+    val origin = projectRule as KeepRuleFile.LocalProjectOrigin
+    Truth.assertThat(origin.buildId).isEqualTo(buildId)
+    Truth.assertThat(origin.projectPath).isEqualTo(projectPath)
+    Truth.assertThat(origin.file.toFile()).isEqualTo(projectRuleFile)
+  }
+
+  @Test
+  fun `test obtainKeepRules filters out non-existent files`() {
+    Truth.assertThat(task).isNotNull()
+
+    val nonExistentFile = project.layout.projectDirectory.file("non-existent.pro").asFile
+
+    task.aaptProguardFiles.from(nonExistentFile)
+    task.featureProguardFiles.from(nonExistentFile)
+    task.generatedProguardFile.from(nonExistentFile)
+    task.keepRulesFiles.from(nonExistentFile)
+
+    task.buildId.set("myBuildId")
+    task.localProjectPath.set(":myProject")
+    task.ignoreFromInKeepRules.set(emptySet())
+    task.ignoreFromAllExternalDependenciesInKeepRules.set(false)
+
+    val mockLibraryKeepRules = mock<ArtifactCollection>()
+    whenever(mockLibraryKeepRules.artifacts).thenReturn(emptySet())
+
+    val keepRules = task.obtainKeepRules(mockLibraryKeepRules)
+
+    Truth.assertThat(keepRules).isEmpty()
   }
 }

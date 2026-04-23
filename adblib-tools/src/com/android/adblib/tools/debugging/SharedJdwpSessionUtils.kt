@@ -195,7 +195,9 @@ suspend fun SharedJdwpSession.sendVmExit(status: Int) {
 
   val packet =
     MutableJdwpPacket.createCommandPacket(nextPacketId(), JdwpCommands.CmdSet.SET_VM.value, JdwpCommands.VmCmd.CMD_VM_EXIT.value, buffer)
-  sendPacket(packet)
+
+  // Send packet and wait for EOF (i.e. wait for JDWP session to end when process terminates)
+  newPacketReceiver().withName("sendVmExit").withActivation { sendPacket(packet) }.receive {}
 }
 
 suspend fun <R> SharedJdwpSession.handleDdmsListViewRoots(replyHandler: suspend (DdmsChunkView) -> R): R {

@@ -839,7 +839,7 @@ coverage_report(
     tests = [
         "//tools/adt/idea/utp:utp_tests",
         "//tools/base/build-system/gradle-core:tests.test",
-        "//tools/base/build-system/integration-test/connected:UtpConnectedTest",
+        "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
         "//tools/base/utp/android-device-provider-ddmlib:tests.test",
         "//tools/base/utp/android-test-plugin-host-additional-test-output:tests.test",
         "//tools/base/utp/android-test-plugin-host-apk-installer:tests.test",
@@ -1118,7 +1118,7 @@ coverage_report(
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/gradlecompat:GradleVersionCheckTest",
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/sdk:sdk_tests",
         "//tools/base/build-system/integration-test/application/src/test/java/com/android/build/gradle/integration/testing/unit:tests",
-        "//tools/base/build-system/integration-test/connected:UtpConnectedTest",
+        "//tools/base/build-system/integration-test/connected:AndroidConnectedTest",
         "//tools/base/build-system/integration-test/databinding:tests",
         "//tools/base/build-system/integration-test/framework:framework_tests.test",
         "//tools/base/build-system/integration-test/lint:tests",

@@ -690,16 +690,16 @@ internal open class Analysis<FX : Any>(
                 is UMultiResolvable -> {
                   val operand = e.operand
                   val fx =
-                    e.multiResolve().fold(bottom) { acc, res ->
-                      val method = res.element as? PsiMethod ?: return@fold acc
-                      val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return default()
+                    e.multiResolve().joinedOver { res ->
+                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
+                      val (receiver, indices) = operand.lhsReceiverAndIndices() ?: return@joinedOver bottom
                       when {
                         // TODO
                         method.name.startsWith("get") -> callMethod(receiver, method, indices).effect
                         // TODO
                         method.name.startsWith("set") -> callMethod(receiver, method, indices + operand).effect
                         // TODO assuming inc/dec operator
-                        method.parameterList.parametersCount == 1 -> callMethod(operand, method, listOf()).effect
+                        method.parameterList.parametersCount == 0 -> callMethod(operand, method, listOf()).effect
                         else -> throw IllegalStateException("Got method `${method.name}` during ${e.renderAbbrev()}")
                       }
                     }
@@ -741,8 +741,8 @@ internal open class Analysis<FX : Any>(
                 is UMultiResolvable -> {
                   val (receiver, indices) = lhs.lhsReceiverAndIndices() ?: return defaultUnit()
                   val fx =
-                    e.multiResolve().fold(bottom) { acc, res ->
-                      val method = res.element as? PsiMethod ?: return@fold acc
+                    e.multiResolve().joinedOver { res ->
+                      val method = res.element as? PsiMethod ?: return@joinedOver bottom
                       when {
                         // TODO
                         method.name.startsWith("get") -> callMethod(receiver, method, indices).effect

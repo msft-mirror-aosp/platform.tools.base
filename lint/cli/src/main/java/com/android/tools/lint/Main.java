@@ -1516,8 +1516,6 @@ public class Main {
                 } else {
                     return ERRNO_ERRORS;
                 }
-            } else if (arg.equals("--XuseK1Uast")) {
-                System.out.printf("%s is no longer in effect, and will be an error in the next release.\n", arg);
             } else if (arg.equals("--XuseK2Uast")) {
                 // no-op, but no warning either until AGP usages are removed.
             } else if (arg.equals("--XuseKlibLightElementProvider")) {
