@@ -83,14 +83,6 @@ interface UastEnvironment {
         return FirUastEnvironment.Configuration.create(enableKotlinScripting)
       }
 
-      /** Creates a new [Configuration] that specifies project structure, classpath, compiler flags, etc. */
-      @Deprecated("No longer support K1 UAST", replaceWith = ReplaceWith("create()"))
-      @JvmStatic
-      fun create(enableKotlinScripting: Boolean = true, useFirUast: Boolean = true): Configuration {
-        return if (useFirUast) FirUastEnvironment.Configuration.create(enableKotlinScripting)
-        else Fe10UastEnvironment.Configuration.create(enableKotlinScripting)
-      }
-
       fun mergeRoots(modules: List<Module>, bootClassPaths: Iterable<File>?): Pair<Set<File>, Set<File>> {
         fun mergedFiles(prop: (Module) -> Collection<File>): MutableSet<File> = modules.flatMapTo(mutableSetOf(), prop)
         val sourceRoots = mergedFiles(Module::sourceRoots)
@@ -161,7 +153,6 @@ interface UastEnvironment {
     fun create(config: Configuration): UastEnvironment {
       return when (config) {
         is FirUastEnvironment.Configuration -> FirUastEnvironment.create(config)
-        is Fe10UastEnvironment.Configuration -> Fe10UastEnvironment.create(config)
         else -> throw UnsupportedOperationException()
       }
     }
