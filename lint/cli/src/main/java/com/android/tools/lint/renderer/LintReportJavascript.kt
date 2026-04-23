@@ -471,6 +471,7 @@ const LintReportApp = {
             if (isExpanded) {
                 const codeSnippet = issue.sourceContext ? `<pre class="errorlines">${'$'}{issue.sourceContext}</pre>` : (issue.errorLine1 ? `<pre class="errorlines">${'$'}{this.escapeHTML(issue.errorLine1)}\n${'$'}{this.escapeHTML(issue.errorLine2 || '')}</pre>` : '');
                 const autoFixedMsg = issue.wasAutoFixed ? '<div class="mt-4 text-green-600 font-medium">This issue was automatically fixed.</div>' : '';
+                const quickfixMsg = (!issue.vendor && issue.hasAutoFix) ? '<div class="mt-4 text-gray-500 text-sm">Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.</div>' : '';
                 const urlsHtml = (issue.urls && issue.urls.length > 0)
                     ? `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`
                     : '';
@@ -486,6 +487,7 @@ const LintReportApp = {
                     </div>
                     ${'$'}{urlsHtml}
                     ${'$'}{autoFixedMsg}
+                    ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
                     ${'$'}{codeSnippet}
                 </div></td></tr>`);
@@ -557,6 +559,8 @@ const LintReportApp = {
                         }
                     }
                     if (c.vendor.feedbackUrl) detailsHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}</a><br>`;
+                } else if (c.hasAutoFix) {
+                    detailsHtml += `<div class="mt-4 text-gray-500 text-sm">Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.</div>`;
                 }
                 if (c.reason) detailsHtml += `<strong>Reason:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
                 detailsHtml += '</div>';

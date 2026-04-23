@@ -94,6 +94,8 @@ data class LintIssue(
   val className: String? = null,
   /** Whether the issue was automatically fixed. */
   val wasAutoFixed: Boolean = false,
+  /** Whether the issue has an associated quickfix. */
+  val hasAutoFix: Boolean = false,
   /** List of images related to this issue. */
   val images: List<String> = emptyList(),
 )
@@ -110,6 +112,8 @@ data class LintCheck(
   val category: String? = null,
   /** The vendor who provided the check. */
   val vendor: LintVendor? = null,
+  /** Whether the check has an associated quickfix. */
+  val hasAutoFix: Boolean = false,
   /** The reason for the check status (e.g., why it's disabled). */
   val reason: String? = null,
 )

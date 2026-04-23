@@ -451,4 +451,11 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("const id = row.dataset.checkId;"))
     assertTrue(LINTSCRIPT_JS.contains("this.state.expandedChecks.has(id)"))
   }
+
+  @Test
+  fun testQuickfixNotes() {
+    assertTrue(LINTSCRIPT_JS.contains("Note: This issue has an associated quickfix operation"))
+    assertTrue(LINTSCRIPT_JS.contains("!issue.vendor && issue.hasAutoFix"))
+    assertTrue(LINTSCRIPT_JS.contains("} else if (c.hasAutoFix) {"))
+  }
 }

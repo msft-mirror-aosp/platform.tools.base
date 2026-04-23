@@ -17,6 +17,7 @@ package com.android.tools.lint.renderer
 
 import com.android.tools.lint.HtmlReporter
 import com.android.tools.lint.LintCliClient
+import com.android.tools.lint.Reporter
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -149,6 +150,7 @@ class LintReportBuilder(
       className = file.nameWithoutExtension,
       vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,
+      hasAutoFix = Reporter.hasAutoFix(issue),
       images = images,
     )
   }
@@ -160,6 +162,7 @@ class LintReportBuilder(
       explanation = issue.getExplanation(TextFormat.HTML) ?: "",
       category = issue.category.fullName,
       vendor = createLintVendor(issue),
+      hasAutoFix = Reporter.hasAutoFix(issue),
       reason = reason,
     )
   }
