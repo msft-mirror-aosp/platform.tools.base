@@ -101,14 +101,15 @@ void printStackTrace(JNIEnv* jni) {
 bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   const std::string debug_probes_impl_class_name =
       "kotlinx/coroutines/debug/internal/DebugProbesImpl";
-  jclass klass = jni->FindClass(debug_probes_impl_class_name.c_str());
-  if (klass == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass(
+      jni, jni->FindClass(debug_probes_impl_class_name.c_str()));
+  if (klass.get() == nullptr) {
     *error_msg = "Class " + debug_probes_impl_class_name + " not found";
     return false;
   }
 
   // get DebugProbesImpl constructor
-  jmethodID constructor = jni->GetMethodID(klass, "<init>", "()V");
+  jmethodID constructor = jni->GetMethodID(klass.get(), "<init>", "()V");
   if (constructor == nullptr) {
     *error_msg =
         "Constructor of " + debug_probes_impl_class_name + " not found";
@@ -116,7 +117,8 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   }
 
   // create DebugProbesImpl by calling constructor
-  jobject debug_probes_impl_obj = jni->NewObject(klass, constructor);
+  jniutils::ScopedLocalRef<jobject> debug_probes_impl_obj(
+      jni, jni->NewObject(klass.get(), constructor));
   if (jni->ExceptionOccurred()) {
     *error_msg = "Constructor of " + debug_probes_impl_class_name +
                  " threw an exception";
@@ -124,7 +126,7 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   }
 
   // get install method id
-  jmethodID install = jni->GetMethodID(klass, "install", "()V");
+  jmethodID install = jni->GetMethodID(klass.get(), "install", "()V");
   if (install == nullptr) {
     *error_msg =
         "Method " + debug_probes_impl_class_name + "#install()V not found";
@@ -132,7 +134,7 @@ bool installDebugProbes(JNIEnv* jni, std::string* error_msg) {
   }
 
   // invoke install method
-  jni->CallVoidMethod(debug_probes_impl_obj, install);
+  jni->CallVoidMethod(debug_probes_impl_obj.get(), install);
 
   if (jni->ExceptionOccurred()) {
     *error_msg = "Method " + debug_probes_impl_class_name +
@@ -238,37 +240,39 @@ bool setAgentInstallationType(JNIEnv* jni, std::string* error_msg) {
   const std::string method_name =
       "setInstalledStatically$kotlinx_coroutines_core";
 
-  jclass klass_agentInstallationType = jni->FindClass(class_full_name.c_str());
-  if (klass_agentInstallationType == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass_agentInstallationType(
+      jni, jni->FindClass(class_full_name.c_str()));
+  if (klass_agentInstallationType.get() == nullptr) {
     *error_msg = "Class " + class_full_name + " not found";
     return false;
   }
 
   const std::string sig = "L" + class_full_name + ";";
-  jfieldID instance_filedId = jni->GetStaticFieldID(klass_agentInstallationType,
-                                                    "INSTANCE", sig.c_str());
+  jfieldID instance_filedId = jni->GetStaticFieldID(
+      klass_agentInstallationType.get(), "INSTANCE", sig.c_str());
 
   if (instance_filedId == nullptr) {
     *error_msg = class_full_name + "#INSTANCE not found";
     return false;
   }
 
-  jobject obj_agentInstallationType =
-      jni->GetStaticObjectField(klass_agentInstallationType, instance_filedId);
-  if (obj_agentInstallationType == nullptr) {
+  jniutils::ScopedLocalRef<jobject> obj_agentInstallationType(
+      jni, jni->GetStaticObjectField(klass_agentInstallationType.get(),
+                                     instance_filedId));
+  if (obj_agentInstallationType.get() == nullptr) {
     *error_msg = "Failed to retrieve " + class_full_name + "#INSTANCE";
     return false;
   }
 
   jmethodID mid_setIsInstalledStatically = jni->GetMethodID(
-      klass_agentInstallationType, method_name.c_str(), "(Z)V");
+      klass_agentInstallationType.get(), method_name.c_str(), "(Z)V");
   if (mid_setIsInstalledStatically == nullptr) {
     *error_msg = class_full_name + "#" + method_name + "(Z)V not found";
     return false;
   }
 
-  jni->CallVoidMethod(obj_agentInstallationType, mid_setIsInstalledStatically,
-                      true);
+  jni->CallVoidMethod(obj_agentInstallationType.get(),
+                      mid_setIsInstalledStatically, true);
 
   if (jni->ExceptionOccurred()) {
     *error_msg =
@@ -283,13 +287,15 @@ bool setAgentInstallationType(JNIEnv* jni, std::string* error_msg) {
 // Callers of this function are responsible for handling exceptions.
 jobject classloader_get_resource(JNIEnv* jni, jobject class_loader_object,
                                  jstring resource_path) {
-  jclass klass_class_loader = jni->FindClass("java/lang/ClassLoader");
-  if (klass_class_loader == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass_class_loader(
+      jni, jni->FindClass("java/lang/ClassLoader"));
+  if (klass_class_loader.get() == nullptr) {
     return nullptr;
   }
 
-  jmethodID class_loader_getResource = jni->GetMethodID(
-      klass_class_loader, "getResource", "(Ljava/lang/String;)Ljava/net/URL;");
+  jmethodID class_loader_getResource =
+      jni->GetMethodID(klass_class_loader.get(), "getResource",
+                       "(Ljava/lang/String;)Ljava/net/URL;");
   if (class_loader_getResource == nullptr) {
     return nullptr;
   }
@@ -308,72 +314,52 @@ jobject classloader_get_resource(JNIEnv* jni, jobject class_loader_object,
 bool extractTokensFromSemanticVersion(const std::string& semantic_version,
                                       SemanticVersion* lib_semantic_version,
                                       std::string* error_msg) {
-  int separator_size = 3;
-  int versionSeparatorIndices[separator_size];
-  int index = 0;
-  for (int i = 0; i < semantic_version.size() && index < separator_size; i++) {
+  // Safely parse the version string without risking out-of-bounds array reads.
+  // This approach is more robust against malformed version strings and ensures
+  // memory safety by using std::vector for indices and bounds-checked strtol
+  // parsing.
+  std::vector<int> separator_indices;
+  for (int i = 0; i < semantic_version.size(); i++) {
     char c = semantic_version[i];
     if (c == '.' || c == '-' || c == '+') {
-      versionSeparatorIndices[index] = i;
-      index++;
+      separator_indices.push_back(i);
     }
   }
 
   // semantic version string not well formed
-  // if string is well formed index should be 2 or 3.
-  // eg "1.2.3" -> 2 "1.2.3-beta" -> 3
-  if (index < 2) {
+  // if string is well formed we should have at least 2 separators for
+  // major.minor.patch However, "1.2.3" might only have 2 separators (the dots).
+  if (separator_indices.size() < 2) {
     *error_msg = "Version of kotlinx-coroutines '" + semantic_version +
                  "' not well formed according to semantic versioning.";
     return false;
-  }
-
-  // there was no "pre-release" or "build" component in the semantic version
-  // so match last index to end of string
-  if (index == 2) {
-    versionSeparatorIndices[2] = semantic_version.size();
   }
 
   int major_start = 0;
-  int minor_start = versionSeparatorIndices[0] + 1;
-  int patch_start = versionSeparatorIndices[1] + 1;
+  int major_end = separator_indices[0];
+  int minor_start = separator_indices[0] + 1;
+  int minor_end = separator_indices[1];
+  int patch_start = separator_indices[1] + 1;
+  int patch_end = (separator_indices.size() > 2) ? separator_indices[2]
+                                                 : semantic_version.size();
 
-  int major_len = versionSeparatorIndices[0];
-  int minor_len = versionSeparatorIndices[1] - (minor_start);
-  int patch_len = versionSeparatorIndices[2] - (patch_start);
+  auto parse_part = [&](int start, int end, uint32_t* value) {
+    if (start >= end) return false;
+    std::string s = semantic_version.substr(start, end - start);
+    char* endptr;
+    long val = strtol(s.c_str(), &endptr, 10);
+    if (endptr == s.c_str() || val < 0) return false;
+    *value = static_cast<uint32_t>(val);
+    return true;
+  };
 
-  std::string string_major = semantic_version.substr(major_start, major_len);
-  std::string string_minor = semantic_version.substr(minor_start, minor_len);
-  std::string string_patch = semantic_version.substr(patch_start, patch_len);
-
-  char* end;
-  const char* c_major = string_major.c_str();
-  int major = strtol(c_major, &end, 10);
-  if (end == c_major) {
+  if (!parse_part(major_start, major_end, &lib_semantic_version->major) ||
+      !parse_part(minor_start, minor_end, &lib_semantic_version->minor) ||
+      !parse_part(patch_start, patch_end, &lib_semantic_version->patch)) {
     *error_msg = "Version of kotlinx-coroutines '" + semantic_version +
                  "' not well formed according to semantic versioning.";
     return false;
   }
-
-  const char* c_minor = string_minor.c_str();
-  int minor = strtol(c_minor, &end, 10);
-  if (end == c_minor) {
-    *error_msg = "Version of kotlinx-coroutines '" + semantic_version +
-                 "' not well formed according to semantic versioning.";
-    return false;
-  }
-
-  const char* c_patch = string_patch.c_str();
-  int patch = strtol(c_patch, &end, 10);
-  if (end == c_patch) {
-    *error_msg = "Version of kotlinx-coroutines '" + semantic_version +
-                 "' not well formed according to semantic versioning.";
-    return false;
-  }
-
-  lib_semantic_version->major = major;
-  lib_semantic_version->minor = minor;
-  lib_semantic_version->patch = patch;
 
   return true;
 }
@@ -428,16 +414,17 @@ bool close_input_stream(JNIEnv* jni, jobject input_stream_obj,
 bool isUsingSupportedCoroutinesVersion(JNIEnv* jni, jobject class_loader_object,
                                        std::string* error_msg) {
   // create jstring containing META-INF/*.version path
-  jstring meta_inf_version_path_jstring =
-      jni->NewStringUTF(kMeta_inf_version_path.c_str());
-  if (meta_inf_version_path_jstring == nullptr) {
+  jniutils::ScopedLocalRef<jstring> meta_inf_version_path_jstring(
+      jni, jni->NewStringUTF(kMeta_inf_version_path.c_str()));
+  if (meta_inf_version_path_jstring.get() == nullptr) {
     return false;
   }
 
   // get java.net.URL for version file resource.
-  jobject version_file_url = classloader_get_resource(
-      jni, class_loader_object, meta_inf_version_path_jstring);
-  if (version_file_url == nullptr) {
+  jniutils::ScopedLocalRef<jobject> version_file_url(
+      jni, classloader_get_resource(jni, class_loader_object,
+                                    meta_inf_version_path_jstring));
+  if (version_file_url.get() == nullptr) {
     // META-INF/*.version file not found, app is using kotlinx-coroutines older
     // than 1.6.0
     *error_msg =
@@ -447,18 +434,21 @@ bool isUsingSupportedCoroutinesVersion(JNIEnv* jni, jobject class_loader_object,
   }
 
   // get required java classes and methods
-  jclass klass_url = jni->FindClass("java/net/URL");
-  if (klass_url == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass_url(jni,
+                                             jni->FindClass("java/net/URL"));
+  if (klass_url.get() == nullptr) {
     return false;
   }
 
-  jclass klass_input_stream = jni->FindClass("java/io/InputStream");
-  if (klass_input_stream == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass_input_stream(
+      jni, jni->FindClass("java/io/InputStream"));
+  if (klass_input_stream.get() == nullptr) {
     return false;
   }
 
-  jclass klass_scanner = jni->FindClass("java/util/Scanner");
-  if (klass_scanner == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass_scanner(
+      jni, jni->FindClass("java/util/Scanner"));
+  if (klass_scanner.get() == nullptr) {
     return false;
   }
 
@@ -487,24 +477,25 @@ bool isUsingSupportedCoroutinesVersion(JNIEnv* jni, jobject class_loader_object,
   }
 
   // open the input stream for version_file_url
-  jobject input_stream_obj =
-      jni->CallObjectMethod(version_file_url, url_openStream);
-  if (input_stream_obj == nullptr) {
+  jniutils::ScopedLocalRef<jobject> input_stream_obj(
+      jni, jni->CallObjectMethod(version_file_url, url_openStream));
+  if (input_stream_obj.get() == nullptr) {
     return false;
   }
 
   // create the java.util.Scanner passing the input stream to the constructor
-  jobject scanner_obj =
-      jni->NewObject(klass_scanner, scanner_constructor, input_stream_obj);
-  if (scanner_obj == nullptr) {
+  jniutils::ScopedLocalRef<jobject> scanner_obj(
+      jni, jni->NewObject(klass_scanner, scanner_constructor,
+                          input_stream_obj.get()));
+  if (scanner_obj.get() == nullptr) {
     close_input_stream(jni, input_stream_obj, input_stream_close);
     return false;
   }
 
   // read next line from the scanner
-  jstring lib_version_jstring =
-      (jstring)jni->CallObjectMethod(scanner_obj, scanner_nextLine);
-  if (lib_version_jstring == nullptr) {
+  jniutils::ScopedLocalRef<jstring> lib_version_jstring(
+      jni, (jstring)jni->CallObjectMethod(scanner_obj, scanner_nextLine));
+  if (lib_version_jstring.get() == nullptr) {
     close_input_stream(jni, input_stream_obj, input_stream_close);
     return false;
   }
@@ -514,14 +505,13 @@ bool isUsingSupportedCoroutinesVersion(JNIEnv* jni, jobject class_loader_object,
   }
 
   // convert jstring to char*
-  const char* version_str =
-      jni->GetStringUTFChars(lib_version_jstring, JNI_FALSE);
-  if (jni->ExceptionCheck()) {
+  jniutils::ScopedUtfChars version_str(jni, lib_version_jstring);
+  if (jni->ExceptionCheck() || version_str.c_str() == nullptr) {
     return false;
   }
 
   // check that the version is higher or equal to 1.6.0
-  return is_supported(version_str, error_msg);
+  return is_supported(version_str.c_str(), error_msg);
 }
 
 // clears exceptions and disables ClassFileLoadHook
@@ -574,9 +564,9 @@ ClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
   }
 
   // check if kotlinx/coroutines/debug/internal/DebugProbesKt is loadable
-  jclass klass =
-      jni->FindClass("kotlinx/coroutines/debug/internal/DebugProbesKt");
-  if (klass == nullptr) {
+  jniutils::ScopedLocalRef<jclass> klass(
+      jni, jni->FindClass("kotlinx/coroutines/debug/internal/DebugProbesKt"));
+  if (klass.get() == nullptr) {
     error_msg =
         "Couldn't find class kotlinx/coroutines/debug/internal/DebugProbesKt";
     // clear exception thrown by failed FindClass
