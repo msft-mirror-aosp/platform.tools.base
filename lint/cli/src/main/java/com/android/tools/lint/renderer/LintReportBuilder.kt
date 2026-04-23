@@ -73,8 +73,8 @@ class LintReportBuilder(
           }
         }
         .map(::createLintIssue)
-    val additionalChecks = extraIssues.map(::createLintCheck)
-    val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }
+    val additionalChecks = extraIssues.map(::createLintCheck).sortedBy { it.id }
+    val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }.sortedBy { it.id }
 
     return LintReport(
       name = title,

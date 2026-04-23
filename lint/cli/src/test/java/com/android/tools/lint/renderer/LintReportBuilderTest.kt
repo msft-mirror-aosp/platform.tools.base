@@ -18,6 +18,7 @@ package com.android.tools.lint.renderer
 
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Incident
@@ -31,6 +32,7 @@ import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -39,6 +41,11 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 
 class LintReportBuilderTest {
+  @Before
+  fun setUp() {
+    LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
+  }
+
   @Test
   fun testBuildReport() {
     val client = createMockClient()
@@ -209,6 +216,34 @@ class LintReportBuilderTest {
       assertEquals("MissingIssue", this[0].id)
       assertEquals("Disabled for reason", this[0].reason)
     }
+  }
+
+  @Test
+  fun testAdditionalAndDisabledChecksSorting() {
+    val client = createMockClient()
+    val rootProjectDir = File("/path/to/project")
+    val builder = LintReportBuilder(client, "Test Report", rootProjectDir, "1.0") { null }
+
+    val issueZ = mock(Issue::class.java)
+    `when`(issueZ.id).thenReturn("Z-Issue")
+    `when`(issueZ.category).thenReturn(Category.CORRECTNESS)
+
+    val issueA = mock(Issue::class.java)
+    `when`(issueA.id).thenReturn("A-Issue")
+    `when`(issueA.category).thenReturn(Category.CORRECTNESS)
+
+    val issueM = mock(Issue::class.java)
+    `when`(issueM.id).thenReturn("M-Issue")
+    `when`(issueM.category).thenReturn(Category.CORRECTNESS)
+
+    val issueB = mock(Issue::class.java)
+    `when`(issueB.id).thenReturn("B-Issue")
+    `when`(issueB.category).thenReturn(Category.CORRECTNESS)
+
+    val report = builder.buildReport(emptyList(), listOf(issueZ, issueA), mapOf(issueM to "Reason M", issueB to "Reason B"))
+
+    assertEquals(listOf("A-Issue", "Z-Issue"), report.additionalChecks.map { it.id })
+    assertEquals(listOf("B-Issue", "M-Issue"), report.disabledChecks.map { it.id })
   }
 
   @Test
