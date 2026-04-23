@@ -39,7 +39,7 @@ dex_library(
 
 robolectric_test(
     name = "payload_robolectric_tests",
-    srcs = glob(["src/test/java/**/appinspection/*.kt"]),
+    srcs = glob(["src/test/java/**/*.kt"]),
     friends = [":ui_inspector_payload_src"],
     deps = [
         ":ui_inspector_payload_src",
@@ -50,6 +50,7 @@ robolectric_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.robolectric.robolectric",
     ],

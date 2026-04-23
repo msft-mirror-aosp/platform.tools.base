@@ -16,55 +16,37 @@
 
 package com.android.tools.ui.inspector.payload
 
-import android.net.LocalServerSocket
 import android.util.Log
-import com.android.tools.ui.inspector.common.ProtocolConstants
-import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /** Entry point for the UI Inspector payload. Starts a Unix domain socket server to listen for commands from the host. */
 object InspectorLauncher {
-  private const val TAG = "studio.InspectorLauncher"
+  private const val TAG = "studio.Inspector"
+  private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+  private var job: Job? = null
 
-  /**
-   * Starts the inspector server. The server accepts multiple sequential connections, allowing the host to reconnect to the running agent if
-   * needed.
-   */
   @JvmStatic
-  fun start(pid: String) {
-    CoroutineScope(Dispatchers.IO).launch {
-      try {
-        runServer(pid)
-      } catch (t: Throwable) {
-        // Catching Throwable prevents any unhandled exception or error in the agent
-        // from bringing down the entire application process.
-        Log.e(TAG, "Uncaught exception in inspector", t)
+  @JvmOverloads
+  fun start(pid: String, startServer: suspend (String) -> Unit = ::startServer) {
+    synchronized(this) {
+      if (job?.isActive == true) {
+        Log.i(TAG, "Inspector server is already running.")
+        return
       }
-    }
-  }
-
-  private suspend fun runServer(pid: String) = coroutineScope {
-    val socketName = ProtocolConstants.getSocketName(pid)
-
-    try {
-      LocalServerSocket(socketName).use { serverSocket ->
-        Log.i(TAG, "Server listening on $socketName")
-
-        while (isActive) {
-          val socket = serverSocket.accept()
-          SessionHandler(socket).handle()
+      job =
+        scope.launch {
+          try {
+            startServer(pid)
+          } catch (t: Throwable) {
+            // Catching Throwable prevents any unhandled exception or error in the agent
+            // from bringing down the entire application process.
+            Log.e(TAG, "Uncaught exception in inspector", t)
+          }
         }
-      }
-    } catch (e: IOException) {
-      if (e.message?.contains("Address already in use") == true) {
-        Log.i(TAG, "Server is already running on $socketName")
-      } else {
-        Log.e(TAG, "Error in server loop", e)
-      }
     }
   }
 }
