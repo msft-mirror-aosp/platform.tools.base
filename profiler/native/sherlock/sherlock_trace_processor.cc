@@ -30,6 +30,8 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <random>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -45,12 +47,20 @@
 ABSL_FLAG(int32_t, timeout, 0, "Timeout in seconds");
 ABSL_FLAG(int32_t, parent_pid, 0, "Pid of the parent process to monitor");
 ABSL_FLAG(bool, use_ipv6, false, "Use IPv6 for the gRPC server");
+ABSL_FLAG(bool, use_token, false, "Require clients to use auth token");
 
-using grpc::ServerBuilder;
+#define GRPC_RETURN_IF_ERROR(expr)   \
+  do {                               \
+    ::grpc::Status _status = (expr); \
+    if (!_status.ok()) {             \
+      return _status;                \
+    }                                \
+  } while (0)
 
 namespace {
 
 using grpc::Server;
+using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
@@ -117,6 +127,26 @@ bool IsProcessAlive(int32_t pid) {
 #endif
 }
 
+// Generates a random 128-bit hex string
+std::string GenerateToken() {
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_int_distribution<uint64_t> dis;
+  std::stringstream ss;
+  ss << std::hex << dis(gen) << dis(gen);
+  return ss.str();
+}
+
+// Prevents timing attacks when checking the token
+bool ConstantTimeCompare(const std::string& a, const std::string& b) {
+  if (a.length() != b.length()) return false;
+  int result = 0;
+  for (size_t i = 0; i < a.length(); ++i) {
+    result |= a[i] ^ b[i];
+  }
+  return result == 0;
+}
+
 class GapidServiceImpl final : public Gapid::Service {
  public:
   // Serializes all queries to perfetto Trace Processor. AGI does the same!
@@ -127,11 +157,13 @@ class GapidServiceImpl final : public Gapid::Service {
   // trace file loaded.
   std::unique_ptr<perfetto::trace_processor::TraceProcessor> tp;
 
-  GapidServiceImpl(int timeout_seconds, int32_t parent_pid)
+  GapidServiceImpl(int timeout_seconds, int32_t parent_pid,
+                   const std::string& token)
       : last_ping_time_(std::chrono::steady_clock::now()),
         running_(true),
         timeout_seconds_(timeout_seconds),
-        parent_pid_(parent_pid) {
+        parent_pid_(parent_pid),
+        token_(token) {
     // Start a thread to monitor the ping timeout.
     if (timeout_seconds_ != 0) {
       ping_monitor_thread_ = std::thread([this]() { MonitorPingTimeout(); });
@@ -159,6 +191,7 @@ class GapidServiceImpl final : public Gapid::Service {
    */
   Status Ping(ServerContext* context, const PingRequest* request,
               PingResponse* response) override {
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     // Update the last ping time whenever ping is received,
     last_ping_time_ = std::chrono::steady_clock::now();
     return Status::OK;
@@ -167,7 +200,9 @@ class GapidServiceImpl final : public Gapid::Service {
   Status GetServerInfo(ServerContext* context,
                        const GetServerInfoRequest* request,
                        GetServerInfoResponse* response) override {
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: GetServerInfo";
+
     auto* server_info = response->mutable_info();
     server_info->set_name("server_name");
     server_info->set_version_major(1);
@@ -181,7 +216,9 @@ class GapidServiceImpl final : public Gapid::Service {
   Status GetAvailableStringTables(
       ServerContext* context, const GetAvailableStringTablesRequest* request,
       GetAvailableStringTablesResponse* response) override {
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: GetAvailableStringTables";
+
     // This is for internationalization. We don't support this yet.
     // So we return zero tables.
     response->mutable_tables();  // initialize as empty. (is this needed?)
@@ -190,8 +227,8 @@ class GapidServiceImpl final : public Gapid::Service {
 
   Status LoadCapture(ServerContext* context, const LoadCaptureRequest* request,
                      LoadCaptureResponse* response) override {
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: LoadCapture";
-
     // This should be a check into the database. I.e., if the trace already
     // exists in the database, then we should return an error.
     if (tp != nullptr) {
@@ -272,6 +309,7 @@ class GapidServiceImpl final : public Gapid::Service {
 
   Status Get(ServerContext* context, const GetRequest* request,
              GetResponse* response) override {
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: Get";
     auto* capture = response->mutable_value()->mutable_capture();
     capture->set_type(service::Perfetto);
@@ -282,9 +320,9 @@ class GapidServiceImpl final : public Gapid::Service {
   Status PerfettoQuery(ServerContext* context,
                        const PerfettoQueryRequest* request,
                        PerfettoQueryResponse* response) override {
-    std::lock_guard<std::mutex> guard(mu_);
-
+    GRPC_RETURN_IF_ERROR(ValidateToken(context));
     LOG(INFO) << "RPC: PerfettoQuery: " << request->query().data();
+    std::lock_guard<std::mutex> guard(mu_);
     execute_query(tp.get(), request->query().data(),
                   response->mutable_result());
 
@@ -325,6 +363,30 @@ class GapidServiceImpl final : public Gapid::Service {
     }
   }
 
+  /**
+   * Verifies that the incoming request satisfies the required token.
+   * Returns Status::OK if the request should be passed through.
+   */
+  grpc::Status ValidateToken(grpc::ServerContext* context) {
+    // Insecure connection, possibly for testing.
+    if (!absl::GetFlag(FLAGS_use_token)) return grpc::Status::OK;
+
+    auto auth_metadata =
+        context->client_metadata().equal_range("authorization");
+    if (auth_metadata.first != auth_metadata.second) {
+      // Extract the value
+      std::string value(auth_metadata.first->second.data(),
+                        auth_metadata.first->second.length());
+      std::string expected = "Bearer " + token_;
+
+      if (ConstantTimeCompare(value, expected)) {
+        return grpc::Status::OK;
+      }
+    }
+    return grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                        "Invalid or missing token");
+  }
+
  private:
   std::chrono::time_point<std::chrono::steady_clock> last_ping_time_;
   std::atomic<bool> running_;
@@ -332,9 +394,11 @@ class GapidServiceImpl final : public Gapid::Service {
   std::thread parent_monitor_thread_;
   const int timeout_seconds_;
   const int32_t parent_pid_;
+  std::string token_;
 };
 
 void RunServer(int timeout_seconds, int32_t parent_pid, bool use_ipv6) {
+  std::string token = absl::GetFlag(FLAGS_use_token) ? GenerateToken() : "";
   ServerBuilder builder;
 
   // Requirements:
@@ -364,14 +428,19 @@ void RunServer(int timeout_seconds, int32_t parent_pid, bool use_ipv6) {
                              &selected_port);
   }
 
-  GapidServiceImpl gapid_service(timeout_seconds, parent_pid);
+  GapidServiceImpl gapid_service(timeout_seconds, parent_pid, token);
   builder.RegisterService(&gapid_service);
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
 
   // The frontend needs to parse this, so we don't use LOG to avoid any
   // prefixes.
-  std::cout << "Bound on port '" << selected_port << "'" << std::endl;
+  if (absl::GetFlag(FLAGS_use_token)) {
+    std::cout << "Bound on port '" << selected_port << "', using token '"
+              << token << "'" << std::endl;
+  } else {
+    std::cout << "Bound on port '" << selected_port << "'" << std::endl;
+  }
   server->Wait();
 }
 
