@@ -20,7 +20,7 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking

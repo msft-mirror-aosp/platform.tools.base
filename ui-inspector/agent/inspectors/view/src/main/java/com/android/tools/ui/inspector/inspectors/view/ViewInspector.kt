@@ -20,12 +20,12 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorFactory
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Event
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloEvent
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloResponse
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloEvent
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloResponse
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
 
 const val INSPECTOR_ID = "ui.inspector.payload.view.inspector"
 

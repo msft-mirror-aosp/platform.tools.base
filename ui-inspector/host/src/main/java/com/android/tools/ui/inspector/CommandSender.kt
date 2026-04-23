@@ -17,8 +17,8 @@
 package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.common.FramingProtocol
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import java.net.Socket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

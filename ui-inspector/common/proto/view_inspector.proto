@@ -15,8 +15,8 @@
  */
 
 syntax = "proto3";
-package ui.inspector.protocol;
-option java_package = "com.android.tools.ui.inspector.protocol";
+package ui.inspector.view.inspector.protocol;
+option java_package = "com.android.tools.ui.inspector.view.inspector.protocol";
 option java_outer_classname = "ViewInspectorProtocol";
 
 message HelloCommand {}

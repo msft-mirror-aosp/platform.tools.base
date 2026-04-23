@@ -21,11 +21,11 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorExecutors
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Event
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloCommand
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.TriggerEventCommand
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloCommand
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventCommand
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
 import org.junit.Test
