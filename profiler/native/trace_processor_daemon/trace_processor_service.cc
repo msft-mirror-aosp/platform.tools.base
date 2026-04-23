@@ -70,6 +70,16 @@ grpc::Status TraceProcessorServiceImpl::LoadTrace(
     return grpc::Status::OK;
   }
 
+  // Security Fix: Prevent arbitrary file disclosure.
+  // The gRPC service accepts trace_path from the client and reads it.
+  // Disallowing ".." mitigates directory traversal attacks where an attacker
+  // might try to read sensitive files outside intended directories.
+  if (trace_path.find("..") != std::string::npos) {
+    response->set_ok(false);
+    response->set_error("Invalid Trace Path: directory traversal not allowed.");
+    return grpc::Status::OK;
+  }
+
   // If we're attempting to load the same trace again, just return.
   if (trace_id == loaded_trace_id) {
     response->set_ok(true);
