@@ -223,6 +223,9 @@ class LintReportBuilderTest {
 
     val vendor = mock(Vendor::class.java)
     `when`(vendor.vendorName).thenReturn("Custom Vendor")
+    `when`(vendor.identifier).thenReturn("com.example:lint")
+    `when`(vendor.feedbackUrl).thenReturn("http://example.com/feedback")
+    `when`(vendor.contact).thenReturn("http://example.com/contact")
     `when`(issue.vendor).thenReturn(vendor)
 
     val incident = mock(Incident::class.java)
@@ -238,6 +241,9 @@ class LintReportBuilderTest {
     val lintIssue = report.issues[0]
 
     assertEquals("Custom Vendor", lintIssue.vendor?.name)
+    assertEquals("com.example:lint", lintIssue.vendor?.identifier)
+    assertEquals("http://example.com/feedback", lintIssue.vendor?.feedbackUrl)
+    assertEquals("http://example.com/contact", lintIssue.vendor?.contact)
 
     // Test AOSP Vendor is ignored/set to null
     `when`(issue.vendor).thenReturn(AOSP_VENDOR)

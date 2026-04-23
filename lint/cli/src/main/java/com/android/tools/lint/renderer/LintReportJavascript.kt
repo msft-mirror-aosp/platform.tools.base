@@ -478,7 +478,22 @@ const LintReportApp = {
                 const imagesHtml = (issue.images && issue.images.length > 0)
                     ? `<div class="mt-4 flex gap-4 overflow-x-auto pb-2">${'$'}{issue.images.map(url => `<div class="flex-shrink-0"><a href="${'$'}{this.escapeHTML(url)}" target="_blank"><img src="${'$'}{this.escapeHTML(url)}" class="h-32 object-contain border border-gray-300 rounded-md p-1 bg-gray-50 hover:border-blue-500 transition-all shadow-sm"></a></div>`).join('')}</div>`
                     : '';
-
+                let vendorHtml = '';
+                if (issue.vendor) {
+                    vendorHtml = `<div class="vendor mt-4 text-sm text-gray-500">`;
+                    if (issue.vendor.name) vendorHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(issue.vendor.name)}<br>`;
+                    if (issue.vendor.identifier) vendorHtml += `<strong>Identifier:</strong> ${'$'}{this.escapeHTML(issue.vendor.identifier)}<br>`;
+                    if (issue.vendor.contact) {
+                        const contact = issue.vendor.contact;
+                        if (contact.startsWith('http://') || contact.startsWith('https://')) {
+                             vendorHtml += `<strong>Contact:</strong> <a href="${'$'}{this.escapeHTML(contact)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(contact)}</a><br>`;
+                        } else {
+                             vendorHtml += `<strong>Contact:</strong> ${'$'}{this.escapeHTML(contact)}<br>`;
+                        }
+                    }
+                    if (issue.vendor.feedbackUrl) vendorHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}</a><br>`;
+                    vendorHtml += `</div>`;
+                }
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
                     <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
                     <div class="mb-4">
@@ -490,6 +505,7 @@ const LintReportApp = {
                     ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
                     ${'$'}{codeSnippet}
+                    ${'$'}{vendorHtml}
                 </div></td></tr>`);
             }
         });
@@ -552,7 +568,7 @@ const LintReportApp = {
                     if (c.vendor.identifier) detailsHtml += `<strong>Identifier:</strong> ${'$'}{this.escapeHTML(c.vendor.identifier)}<br>`;
                     if (c.vendor.contact) {
                         const contact = c.vendor.contact;
-                        if (contact.startsWith('http')) {
+                        if (contact.startsWith('http://') || contact.startsWith('https://')) {
                             detailsHtml += `<strong>Contact:</strong> <a href="${'$'}{this.escapeHTML(contact)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(contact)}</a><br>`;
                         } else {
                             detailsHtml += `<strong>Contact:</strong> ${'$'}{this.escapeHTML(contact)}<br>`;
