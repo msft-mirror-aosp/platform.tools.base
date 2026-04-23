@@ -16,6 +16,7 @@
 
 package com.android.builder.dexing;
 
+import com.android.tools.r8.CompilationMode;
 import com.android.tools.r8.D8;
 import com.android.tools.r8.D8Command;
 import com.android.tools.r8.Diagnostic;
@@ -78,11 +79,12 @@ public class GlobalSyntheticsGeneratorTool {
                             .build();
 
             GlobalSyntheticsGenerator.run(genCommand);
-
             D8Command d8Command =
                     D8Command.builder(silentWarningHandler)
                             .addLibraryFiles(bootClasspath)
                             .setMinApiLevel(minSdk)
+                            .setMode(CompilationMode.DEBUG)
+                            .setDisableDesugaring(true)
                             .addGlobalSyntheticsFiles(intermediateGlobals)
                             .setOutput(outputDir, OutputMode.DexIndexed)
                             .build();
