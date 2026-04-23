@@ -127,6 +127,7 @@ build:nice --jobs=HOST_CPUS*.5
 # to see flags added in opt mode.
 build:release -c opt
 build:release --strip=always
+build:release --@rules_rust//rust/settings:lto=fat
 build:release --//tools/base/bazel:studio-release
 # Disable Clang diagnostics for release builds, to reduce the amount of noise
 # # in the output in continuous builds and --config=remote runs.
