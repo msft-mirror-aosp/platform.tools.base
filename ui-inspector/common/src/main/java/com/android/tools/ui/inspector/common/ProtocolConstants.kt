@@ -19,6 +19,7 @@ package com.android.tools.ui.inspector.common
 /** Shared constants and identifiers for the UI Inspector communication protocol. */
 object ProtocolConstants {
   const val SOCKET_NAME_PREFIX = "ui_inspector_"
+  const val VIEW_INSPECTOR_ID = "ui.inspector.inspectors.view.inspector"
 
   /* Returns the unique socket name for a given process ID. */
   fun getSocketName(pid: String): String = "$SOCKET_NAME_PREFIX$pid"

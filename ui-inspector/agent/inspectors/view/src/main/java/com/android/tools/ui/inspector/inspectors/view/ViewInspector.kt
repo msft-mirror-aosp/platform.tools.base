@@ -20,6 +20,7 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorFactory
+import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloEvent
@@ -27,9 +28,7 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
 
-const val INSPECTOR_ID = "ui.inspector.payload.view.inspector"
-
-class ViewInspectorFactory : InspectorFactory<ViewInspector>(INSPECTOR_ID) {
+class ViewInspectorFactory : InspectorFactory<ViewInspector>(ProtocolConstants.VIEW_INSPECTOR_ID) {
   override fun createInspector(connection: Connection, environment: InspectorEnvironment) = ViewInspector(connection, environment)
 }
 
