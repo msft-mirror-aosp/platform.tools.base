@@ -19,11 +19,11 @@ package com.android.tools.ui.inspector.payload
 import android.net.LocalSocket
 import android.util.Log
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.inspectors.view.ViewInspector
 import com.android.tools.ui.inspector.payload.appinspection.HandlerThreadExecutor
 import com.android.tools.ui.inspector.payload.appinspection.InspectorMessenger
 import com.android.tools.ui.inspector.payload.appinspection.createAppInspectionConnection
 import com.android.tools.ui.inspector.payload.appinspection.createInspectorEnvironment
-import com.android.tools.ui.inspector.payload.inspector.ViewInspector
 import java.io.EOFException
 
 /** Handles a single connection from the host to a UI Inspector agent. */

@@ -120,7 +120,7 @@ which:
 * Finds `InspectorLauncher` in the new class loader, and invokes its
   entry point.
 
-#### InspectorLauncher (agent/inspector)
+#### InspectorLauncher (agent/payload)
 
 This class is the entry point of the payload. Loading this class and its
 dependencies via a separate `DexClassLoader` is necessary to avoid
@@ -140,7 +140,7 @@ It is responsible for:
 * Instantiating View and Compose inspectors (reused from Layout
   Inspector).
 
-#### ViewInspector (agent/inspector)
+#### ViewInspector (agent/inspectors/view)
 
 This is the actual view inspector. It’s part of the dex that was loaded
 by `InspectorService`.

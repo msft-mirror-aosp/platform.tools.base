@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.ui.inspector.payload.inspector
+package com.android.tools.ui.inspector.inspectors.view
 
 import androidx.inspection.Connection
 import androidx.inspection.Inspector
