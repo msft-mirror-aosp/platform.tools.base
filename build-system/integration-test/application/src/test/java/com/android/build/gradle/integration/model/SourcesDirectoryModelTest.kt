@@ -39,7 +39,7 @@ class SourcesDirectoryModelTest : ModelComparator() {
     GradleRule.from {
       androidApplication {
         android {
-          enableKotlin = false
+          enableKotlin = true
           defaultConfig.minSdk = 14
         }
       }
@@ -88,7 +88,10 @@ class SourcesDirectoryModelTest : ModelComparator() {
   fun `test adding generated source directory to IDE model with registerJavaGeneratingTask old API`() {
     val build =
       rule.build {
-        androidApplication { pluginCallbacks += LegacyAppCallback::class.java }
+        androidApplication {
+          android { enableKotlin = false }
+          pluginCallbacks += LegacyAppCallback::class.java
+        }
         gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
       }
 
