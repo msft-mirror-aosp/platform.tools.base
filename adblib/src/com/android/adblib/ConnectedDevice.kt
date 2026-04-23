@@ -337,9 +337,12 @@ class ActivityManager(val device: ConnectedDevice) {
   /**
    * Uses `adb shell am crash` to crash an app.
    *
-   * Note that `am crash` command is available on API level > 26.
+   * Note that `am crash` command is available on API level >= 26.
    *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
    * @see AdbActivityManagerServices.crash
+   * @see isCrashSupported
    */
   suspend fun crash(packageName: String) {
     mapTimeoutToAdbException("crash $packageName") {
@@ -359,6 +362,8 @@ class ActivityManager(val device: ConnectedDevice) {
    * Note: You can use the [capabilities] method to check if the `gc` command is supported by the `am` implementation on the device. This
    * method will throw an [AdbActivityManagerException] if the `gc` command is not supported.
    *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
    * @see AdbActivityManagerServices.gc
    */
   suspend fun gc(pid: Int) {
@@ -376,6 +381,8 @@ class ActivityManager(val device: ConnectedDevice) {
   /**
    * Uses `adb shell am force-stop` to terminate an app.
    *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
    * @see AdbActivityManagerServices.forceStop
    */
   suspend fun forceStop(packageName: String) {
@@ -391,15 +398,19 @@ class ActivityManager(val device: ConnectedDevice) {
   }
 
   /**
-   * Returns various device/run-time capabilities in [AmCapabilitiesResult] using the `adb shell am capabilities` command, or `null` if the
-   * device does not support `am capabilities`
+   * Returns various device/run-time capabilities in [AmCapabilitiesResult] using the `adb shell am capabilities` command.
    *
    * Note: This method retries the command if the device is not ready, see [AdbActivityManagerServices.capabilities] for a detailed
    * description of error conditions.
    *
    * Note: The [AmCapabilitiesResult] is stored in the [ConnectedDevice.cache] if successfully retrieved.
+   *
+   * @throws AdbActivityManagerException if the `am` command failed or is not supported
+   * @throws IOException if there was an issue communicating with the device
+   * @see AdbActivityManagerServices.capabilities
+   * @see isCapabilitiesSupported
    */
-  suspend fun capabilities(): AmCapabilitiesResult? {
+  suspend fun capabilities(): AmCapabilitiesResult {
     return device.cache.getOrPutSuspending(capabilitiesKey) {
       mapTimeoutToAdbException("capabilities") {
         runAmCommandWhenServiceIsReady(
@@ -414,16 +425,13 @@ class ActivityManager(val device: ConnectedDevice) {
     }
   }
 
-  /**
-   * Returns the result of the [amCommand]. If necessary, waits for device to come online or for the activity service to start running.
-   * Returns `null` if the [amCommand] is not supported by the device.
-   */
+  /** Returns the result of the [amCommand]. If necessary, waits for device to come online or for the activity service to start running. */
   private suspend fun <R> runAmCommandWhenServiceIsReady(
     amCommandName: String,
     timeout: Duration,
     retryDelay: Duration,
     amCommand: suspend () -> R,
-  ): R? {
+  ): R {
     return session.withErrorTimeout(timeout) {
       device.waitUntilOnline()
       device.waitUntilServiceIsReady("activity", retryDelay)
@@ -432,18 +440,34 @@ class ActivityManager(val device: ConnectedDevice) {
         amCommand()
       } catch (cause: AdbActivityManagerException) {
         if (cause.isCommandNotSupported) {
-          logger.debug { "`am $amCommandName' is not supported, returning `null`" }
-          null
-        } else {
-          throw cause
+          logger.debug { "`am $amCommandName' is not supported" }
         }
+        throw cause
       }
     }
   }
 
   companion object {
-    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult?>("capabilitiesKey")
+    private val capabilitiesKey = CoroutineScopeCache.Key<AmCapabilitiesResult>("capabilitiesKey")
   }
+}
+
+/**
+ * Returns `true` if the device supports the `am capabilities` command.
+ *
+ * @see AdbActivityManagerServices.capabilities
+ */
+suspend fun ActivityManager.isCapabilitiesSupported(): Boolean {
+  return device.deviceProperties().api() >= 34
+}
+
+/**
+ * Returns `true` if the device supports the `am crash` command.
+ *
+ * @see AdbActivityManagerServices.crash
+ */
+suspend fun ActivityManager.isCrashSupported(): Boolean {
+  return device.deviceProperties().api() >= 26
 }
 
 /**
@@ -452,11 +476,7 @@ class ActivityManager(val device: ConnectedDevice) {
  * @see AdbActivityManagerServices.gc
  */
 suspend fun ActivityManager.isGcSupported(): Boolean {
-  // TODO: Introduce and rely on isCapabilitiesSupported
-  if (device.deviceProperties().api() < 34) {
-    return false
-  }
-  return capabilities()?.capabilities?.contains("gc") ?: false
+  return isCapabilitiesSupported() && capabilities().capabilities.contains("gc")
 }
 
 /**

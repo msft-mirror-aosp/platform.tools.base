@@ -22,13 +22,20 @@ interface AdbActivityManagerServices {
   /** The session this [AdbActivityManagerServices] instance belongs to. */
   val session: AdbSession
 
-  /** Uses `adb shell am force-stop` to terminate an app. */
+  /**
+   * Uses `adb shell am force-stop` to terminate an app.
+   *
+   * @throws [AdbActivityManagerException] if the `am` command failed
+   */
   suspend fun forceStop(device: DeviceSelector, packageName: String)
 
   /**
    * Uses `adb shell am crash` to crash an app.
    *
    * Note that `am crash` command is available on API level > 26.
+   *
+   * @throws [AdbActivityManagerException] if the `am` command failed
+   * @see [AdbActivityManagerException.isCommandNotSupported]
    */
   suspend fun crash(device: DeviceSelector, packageName: String)
 
@@ -47,9 +54,7 @@ interface AdbActivityManagerServices {
    *
    * Note: See [ActivityManager.capabilities] for a higher level version of this method that supports retrying if the device is not ready.
    *
-   * @throws [AdbFailResponseException] if the device is not [DeviceState.ONLINE]
    * @throws [AdbActivityManagerException] if the `am` command failed
-   * @throws [IOException] if there was an issue communicating with the device
    * @see [AdbActivityManagerException.isCommandNotSupported]
    */
   suspend fun capabilities(device: DeviceSelector): AmCapabilitiesResult

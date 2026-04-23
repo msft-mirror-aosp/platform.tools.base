@@ -68,6 +68,21 @@ class AdbActivityManagerServicesTest {
   }
 
   @Test
+  fun testForceStopThrows_whenDeviceIsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+    device.deviceStatus = DeviceState.DeviceStatus.OFFLINE
+
+    // Act
+    exceptionRule.expect(AdbActivityManagerException::class.java)
+    activityManagerServices.forceStop(deviceSelector, "package1")
+
+    // Assert
+    Assert.fail("Test should have thrown an exception")
+  }
+
+  @Test
   fun testCrash(): Unit = runBlockingWithTimeout {
     // Prepare
     val device = addFakeDevice(fakeAdb)
@@ -132,6 +147,39 @@ class AdbActivityManagerServicesTest {
   }
 
   @Test
+  fun testCrashThrows_whenDeviceIsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+    device.deviceStatus = DeviceState.DeviceStatus.OFFLINE
+
+    // Act
+    exceptionRule.expect(AdbActivityManagerException::class.java)
+    activityManagerServices.crash(deviceSelector, "package1")
+
+    // Assert
+    Assert.fail("Test should have thrown an exception")
+  }
+
+  @Test
+  fun testCrashThrows_whenCrashIsNotSupported(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb, sdk = 25)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+
+    // Act
+    val result = runCatching { activityManagerServices.crash(deviceSelector, "package1") }
+
+    // Assert
+    result
+      .onFailure { throwable ->
+        Assert.assertTrue(throwable is AdbActivityManagerException)
+        Assert.assertTrue((throwable as AdbActivityManagerException).isCommandNotSupported)
+      }
+      .onSuccess { Assert.fail("Command should have failed") }
+  }
+
+  @Test
   fun testCapabilitiesApi35(): Unit = runBlockingWithTimeout {
     // Prepare
     val device = addFakeDevice(fakeAdb, sdk = 35)
@@ -188,6 +236,21 @@ class AdbActivityManagerServicesTest {
   }
 
   @Test
+  fun testCapabilitiesThrows_whenDeviceIsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device = addFakeDevice(fakeAdb, sdk = 36)
+    val deviceSelector = DeviceSelector.fromSerialNumber(device.deviceId)
+    device.deviceStatus = DeviceState.DeviceStatus.OFFLINE
+
+    // Act
+    exceptionRule.expect(AdbActivityManagerException::class.java)
+    activityManagerServices.capabilities(deviceSelector)
+
+    // Assert
+    Assert.fail("Test should have thrown an exception")
+  }
+
+  @Test
   fun testCapabilitiesThrows_whenCapabilitiesIsNotSupported(): Unit = runBlockingWithTimeout {
     // Prepare
     val device = addFakeDevice(fakeAdb, sdk = 30)
@@ -225,7 +288,7 @@ class AdbActivityManagerServicesTest {
   }
 
   @Test
-  fun testCapabilitiesThrows__whenCapabilitiesIsNotSupportedOnDeviceWithOlderAmImplementationWithoutShellV2Support(): Unit =
+  fun testCapabilitiesThrows_whenCapabilitiesIsNotSupportedOnDeviceWithOlderAmImplementationWithoutShellV2Support(): Unit =
     runBlockingWithTimeout {
       // Prepare
       val device = addFakeDevice(fakeAdb, sdk = 22)

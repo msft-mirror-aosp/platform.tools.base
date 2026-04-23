@@ -41,6 +41,9 @@ class ActivityManager(private val deviceState: DeviceState) : Service {
       }
 
       "crash" -> {
+        if (deviceState.apiLevel < 26) {
+          return errorReporting.reportUnknownCommand(shellCommandOutput, cmd)
+        }
         if (args.size <= 1) {
           return errorReporting.reportMissingArgument(
             shellCommandOutput = shellCommandOutput,
