@@ -472,15 +472,18 @@ const LintReportApp = {
                 const codeSnippet = issue.sourceContext ? `<pre class="errorlines">${'$'}{issue.sourceContext}</pre>` : (issue.errorLine1 ? `<pre class="errorlines">${'$'}{this.escapeHTML(issue.errorLine1)}\n${'$'}{this.escapeHTML(issue.errorLine2 || '')}</pre>` : '');
                 const autoFixedMsg = issue.wasAutoFixed ? '<div class="mt-4 text-green-600 font-medium">This issue was automatically fixed.</div>' : '';
                 const urlsHtml = (issue.urls && issue.urls.length > 0)
-                    ? `<br><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul>`
+                    ? `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
                     ? `<div class="mt-4 flex gap-4 overflow-x-auto pb-2">${'$'}{issue.images.map(url => `<div class="flex-shrink-0"><a href="${'$'}{this.escapeHTML(url)}" target="_blank"><img src="${'$'}{this.escapeHTML(url)}" class="h-32 object-contain border border-gray-300 rounded-md p-1 bg-gray-50 hover:border-blue-500 transition-all shadow-sm"></a></div>`).join('')}</div>`
                     : '';
 
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
-                    <strong>Summary:</strong> ${'$'}{issue.summary}<br><br>
-                    <strong>Explanation:</strong><br>${'$'}{issue.explanation.replace(/\n/g, '<br>')}
+                    <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
+                    <div class="mb-4">
+                        <strong>Explanation:</strong>
+                        <div class="mt-1">${'$'}{this.renderExplanation(issue.explanation)}</div>
+                    </div>
                     ${'$'}{urlsHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{imagesHtml}
@@ -537,7 +540,10 @@ const LintReportApp = {
             if (isExpanded) {
                 let detailsHtml = '<div class="explanation-content text-sm">';
                 if (c.explanation) {
-                    detailsHtml += `<strong>Explanation:</strong><br>${'$'}{c.explanation.replace(/\n/g, '<br>')}<br><br>`;
+                    detailsHtml += `<div class="mb-4">
+                        <strong>Explanation:</strong>
+                        <div class="mt-1">${'$'}{this.renderExplanation(c.explanation)}</div>
+                    </div>`;
                 }
                 if (c.vendor) {
                     if (c.vendor.name) detailsHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(c.vendor.name)}<br>`;
@@ -569,6 +575,14 @@ const LintReportApp = {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    },
+
+    renderExplanation(text) {
+        if (!text) return '';
+        return text.trim()
+            .split(/(?:\s*<br\s*\/?>\s*){2,}|\n\n+/)
+            .map(p => `<div>${'$'}{p.trim().replace(/\n/g, '<br>')}</div>`)
+            .join('<div class="mt-2"></div>');
     },
 
     matchesSearch(issue, query) {

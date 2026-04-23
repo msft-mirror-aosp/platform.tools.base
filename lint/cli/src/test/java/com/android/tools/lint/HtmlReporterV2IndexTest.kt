@@ -419,8 +419,11 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("data-check-id=\"\${this.escapeHTML(c.id)}\""))
 
     // Verify explanation rendering
-    assertTrue(LINTSCRIPT_JS.contains("if (c.explanation) {"))
-    assertTrue(LINTSCRIPT_JS.contains("c.explanation.replace(/\\n/g, '<br>')"))
+    assertTrue(LINTSCRIPT_JS.contains("renderExplanation(text) {"))
+    assertTrue(LINTSCRIPT_JS.contains("text.trim()"))
+    assertTrue(LINTSCRIPT_JS.contains(".split(/(?:\\s*<br\\s*\\/?>\\s*){2,}|\\n\\n+/)"))
+    assertTrue(LINTSCRIPT_JS.contains(".map(p => `<div>\${p.trim().replace(/\\n/g, '<br>')}</div>`)"))
+    assertTrue(LINTSCRIPT_JS.contains(".join('<div class=\"mt-2\"></div>')"))
 
     // Verify vendor rendering logic
     assertTrue(LINTSCRIPT_JS.contains("if (c.vendor) {"))
