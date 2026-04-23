@@ -1469,7 +1469,7 @@ _CLASS_JARS = [
     "org.junit.platform:junit-platform-launcher:1.10.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
     "org.mockito:mockito-core:4.3.1",
-    "org.mockito:mockito-core:5.4.0",
+    "org.mockito:mockito-core:5.20.0",
     "org.ow2.asm:asm:9.6",
     "org.ow2.asm:asm:9.8",
     "org.ow2.asm:asm:9.9",

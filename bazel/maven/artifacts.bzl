@@ -229,7 +229,7 @@ ARTIFACTS = [
     "org.junit.platform:junit-platform-reporting:1.12.0",
     "org.junit.platform:junit-platform-runner:1.12.0",
     "org.mockito.kotlin:mockito-kotlin:5.4.0",
-    "org.mockito:mockito-core:5.12.0",
+    "org.mockito:mockito-core:5.20.0",
     "org.mortbay.jetty:jetty:6.1.26",
     "org.ow2.asm:asm:9.9",
     "org.ow2.asm:asm-analysis:9.9",
