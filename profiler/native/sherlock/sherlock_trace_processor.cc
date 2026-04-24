@@ -19,6 +19,8 @@
 #define NOMINMAX
 #include <windows.h>
 #else
+#include <errno.h>
+#include <signal.h>
 #include <sys/mman.h>
 #endif
 
@@ -40,7 +42,8 @@
 #include "processor.h"
 #include "proto/service.grpc.pb.h"
 
-ABSL_FLAG(int32_t, timeout, 10, "Timeout in seconds");
+ABSL_FLAG(int32_t, timeout, 0, "Timeout in seconds");
+ABSL_FLAG(int32_t, parent_pid, 0, "Pid of the parent process to monitor");
 
 using grpc::ServerBuilder;
 
@@ -66,6 +69,53 @@ using service::PerfettoQueryResponse;
 using service::PingRequest;
 using service::PingResponse;
 
+/**
+ * Checks if a process with the given PID is currently running.
+ *
+ * @param pid The Process ID to check.
+ * @return true if the process is alive, false otherwise.
+ */
+bool IsProcessAlive(int32_t pid) {
+#if defined(_WIN32)
+  // Windows Implementation
+  HANDLE process = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+
+  if (process == NULL) {
+    // If OpenProcess fails because of permissions, the process exists but is
+    // protected.
+    if (GetLastError() == ERROR_ACCESS_DENIED) {
+      return true;
+    }
+    return false;
+  }
+
+  bool is_active = WaitForSingleObject(process, 0) == WAIT_TIMEOUT;
+  CloseHandle(process);
+  return is_active;
+#elif defined(__APPLE__) || defined(__linux__)
+  // POSIX Implementation (macOS & Linux)
+
+  // Sending signal '0' doesn't actually send a signal, but it
+  // performs the same error checking as a real signal.
+  if (kill(pid, 0) == 0) {
+    // Process exists and we have permission to signal it
+    return true;
+  }
+
+  // If kill failed, check the error code
+  if (errno == EPERM) {
+    // Process exists, but we are not allowed to send signals to it
+    // (e.g., it belongs to root or another user).
+    return true;
+  }
+
+  // Process does not exist (ESRCH) or other error
+  return false;
+#else
+#error Host platform is not supported
+#endif
+}
+
 class GapidServiceImpl final : public Gapid::Service {
  public:
   // Serializes all queries to perfetto Trace Processor. AGI does the same!
@@ -76,21 +126,32 @@ class GapidServiceImpl final : public Gapid::Service {
   // trace file loaded.
   std::unique_ptr<perfetto::trace_processor::TraceProcessor> tp;
 
-  GapidServiceImpl(int timeout_seconds)
+  GapidServiceImpl(int timeout_seconds, int32_t parent_pid)
       : last_ping_time_(std::chrono::steady_clock::now()),
         running_(true),
-        timeout_seconds_(timeout_seconds) {
+        timeout_seconds_(timeout_seconds),
+        parent_pid_(parent_pid) {
     // Start a thread to monitor the ping timeout.
-    monitor_thread_ = std::thread([this]() { MonitorPingTimeout(); });
+    if (timeout_seconds_ != 0) {
+      ping_monitor_thread_ = std::thread([this]() { MonitorPingTimeout(); });
+    }
+
+    // Start a thread to monitor the parent process.
+    if (parent_pid_ != 0) {
+      parent_monitor_thread_ =
+          std::thread([this]() { MonitorParentProcess(); });
+    }
   }
 
   ~GapidServiceImpl() {
     running_ = false;
-    if (monitor_thread_.joinable()) {
-      monitor_thread_.join();
+    if (ping_monitor_thread_.joinable()) {
+      ping_monitor_thread_.join();
+    }
+    if (parent_monitor_thread_.joinable()) {
+      parent_monitor_thread_.join();
     }
   }
-
   /**
    * This is a keep-alive call. If there are no pings received for N seconds,
    * it means the frontend is dead/exited, so we should exit this process.
@@ -230,11 +291,6 @@ class GapidServiceImpl final : public Gapid::Service {
   }
 
  private:
-  std::chrono::time_point<std::chrono::steady_clock> last_ping_time_;
-  std::atomic<bool> running_;
-  std::thread monitor_thread_;
-  int timeout_seconds_;
-
   /**
    * Monitors the incoming ping requests from the client letting this process
    * know the frontend is still alive. If the duration from the last ping is
@@ -253,11 +309,33 @@ class GapidServiceImpl final : public Gapid::Service {
       }
     }
   }
+
+  /**
+   * Monitors the parent process. If the parent process is no longer alive,
+   * then the current process is terminated.
+   */
+  void MonitorParentProcess() {
+    while (running_) {
+      if (!IsProcessAlive(parent_pid_)) {
+        LOG(ERROR) << "Parent process is not alive. Exiting...";
+        raise(SIGTERM);  // Send termination signal
+      }
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+  }
+
+ private:
+  std::chrono::time_point<std::chrono::steady_clock> last_ping_time_;
+  std::atomic<bool> running_;
+  std::thread ping_monitor_thread_;
+  std::thread parent_monitor_thread_;
+  const int timeout_seconds_;
+  const int32_t parent_pid_;
 };
 
 }  // end namespace
 
-void RunServer(int timeout_seconds) {
+void RunServer(int timeout_seconds, int32_t parent_pid) {
   ServerBuilder builder;
 
   // Let gRPC dynamically pick an available port.
@@ -265,7 +343,7 @@ void RunServer(int timeout_seconds) {
   builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
                            &selected_port);
 
-  GapidServiceImpl gapid_service(timeout_seconds);
+  GapidServiceImpl gapid_service(timeout_seconds, parent_pid);
   builder.RegisterService(&gapid_service);
 
   std::unique_ptr<Server> server(builder.BuildAndStart());
@@ -282,9 +360,10 @@ int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
 
   int timeout = absl::GetFlag(FLAGS_timeout);
+  int32_t parent_pid = absl::GetFlag(FLAGS_parent_pid);
 
   LOG(INFO) << "Starting server with server timeout value of " << timeout
-            << " seconds";
-  RunServer(timeout);
+            << " seconds and parent_pid " << parent_pid;
+  RunServer(timeout, parent_pid);
   return 0;
 }
