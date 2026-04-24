@@ -19,7 +19,7 @@ package com.android.build.gradle.internal.fixtures
 import com.android.build.gradle.internal.errors.SyncIssueReporter
 import com.android.build.gradle.internal.ide.SyncIssueImpl
 import com.android.builder.errors.EvalIssueException
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.collect.ImmutableList
 
 /**

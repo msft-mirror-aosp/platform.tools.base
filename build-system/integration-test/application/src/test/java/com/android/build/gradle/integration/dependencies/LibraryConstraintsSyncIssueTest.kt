@@ -20,7 +20,7 @@ import com.android.build.gradle.integration.common.fixture.ModelContainerV2
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.internal.ide.v2.SyncIssueImpl
 import com.android.build.gradle.options.BooleanOption
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth
 import org.junit.Rule
 import org.junit.Test
