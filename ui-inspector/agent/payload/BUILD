@@ -13,7 +13,9 @@ kotlin_library(
     deps = [
         "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/ui-inspector/common",
+        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
 )
@@ -26,6 +28,8 @@ dex_library(
     jars = [
         ":ui_inspector_payload_src",
         "//tools/base/ui-inspector/common",
+        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
+        "//tools/base/bazel:studio-proto",
         "@maven//:org.jetbrains.kotlin.kotlin-stdlib",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
     ],
@@ -45,7 +49,9 @@ kotlin_test(
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/testutils:tools.testutils",
+        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
     ],
 )
 
@@ -58,8 +64,10 @@ robolectric_test(
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
+        "//tools/base/bazel:studio-proto",
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
+        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.robolectric.robolectric",
     ],

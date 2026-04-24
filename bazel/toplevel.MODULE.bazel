@@ -89,11 +89,22 @@ crate.spec(
 crate.spec(
     default_features = False,
     features = [
-        "blocking",
-        "rustls",
+        # The gzip dependency is small and it allows for compressed HTTP streams.
+        "gzip",
+        # We ship client software, so it is better to respect OS-level certs over baked-in certs.
+        # For details see https://crates.io/crates/rustls-platform-verifier.
+        "platform-verifier",
+        # By default, ureq uses ring as its crypto provider, but ring is not well maintained.
+        # Thus we use rustls-no-provider here and add the aws-lc-rs crypto provider later.
+        # The aws-lc-rs backend is the same one used by Android platform.
+        "rustls-no-provider",
     ],
-    package = "reqwest",
-    version = "=0.13.2",
+    package = "ureq",
+    version = "=3.3.0",
+)
+crate.spec(
+    package = "rustls",
+    version = "=0.23.38",
 )
 crate.from_specs(
     # Cargo upgrades crate versions during dependency resolution by default, which is

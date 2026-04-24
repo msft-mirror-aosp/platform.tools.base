@@ -28,6 +28,7 @@ const LintReportApp = {
         density: 'comfy',
         searchQuery: '',
         expandedIssues: new Set(),
+        expandedChecks: new Set(),
         collapsedNodes: new Set(),
         sort: { by: 'severity', order: 'desc' },
         filters: { severities: [], categories: [], modules: [] },
@@ -106,6 +107,8 @@ const LintReportApp = {
             mainTable: document.getElementById('main-table'),
             tableHeaders: document.getElementById('table-headers'),
             lintData: document.getElementById('lint-data'),
+            additionalChecksData: document.getElementById('additional-checks-data'),
+            disabledChecksData: document.getElementById('disabled-checks-data'),
             issuesSection: document.getElementById('issues-section'),
             groupByBtn: document.getElementById('group-by-btn'),
             groupByText: document.getElementById('group-by-text'),
@@ -143,10 +146,26 @@ const LintReportApp = {
         });
     },
 
+    attachCheckRowToggleListener(element) {
+        if (!element) return;
+        element.addEventListener('click', (e) => {
+            const row = e.target.closest('.issue-row');
+            if (row) {
+                const id = row.dataset.checkId;
+                if (this.state.expandedChecks.has(id)) this.state.expandedChecks.delete(id);
+                else this.state.expandedChecks.add(id);
+                this.render();
+            }
+        });
+    },
+
     bindEvents() {
         this.setupDensitySegments(this.elements, this.state, [
             this.elements.mainTable
         ]);
+
+        this.attachCheckRowToggleListener(this.elements.additionalChecksData);
+        this.attachCheckRowToggleListener(this.elements.disabledChecksData);
 
         const dropdownConfigs = [
             { btn: this.elements.addFilterBtn, dropdown: this.elements.addFilterDropdown },
@@ -492,8 +511,7 @@ const LintReportApp = {
         const container = document.getElementById('ExtraIssues');
         if (container) {
             container.classList.toggle('hidden', checks.length === 0);
-            const data = document.getElementById('additional-checks-data');
-            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.vendor ? ` (${'$'}{this.escapeHTML(c.vendor)})` : ''}</td></tr>`).join('');
+            this.renderCheckRows(checks, this.elements.additionalChecksData);
         }
     },
 
@@ -502,9 +520,45 @@ const LintReportApp = {
         const container = document.getElementById('MissingIssues');
         if (container) {
             container.classList.toggle('hidden', checks.length === 0);
-            const data = document.getElementById('disabled-checks-data');
-            if (data) data.innerHTML = checks.map(c => `<tr><td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td><td>${'$'}{c.summary}${'$'}{c.reason ? ` (${'$'}{this.escapeHTML(c.reason)})` : ''}</td></tr>`).join('');
+            this.renderCheckRows(checks, this.elements.disabledChecksData);
         }
+    },
+
+    renderCheckRows(checks, container) {
+        if (!container) return;
+        let rowsHtml = [];
+        checks.forEach(c => {
+            const isExpanded = this.state.expandedChecks.has(c.id);
+            rowsHtml.push(`<tr class="issue-row" data-check-id="${'$'}{this.escapeHTML(c.id)}">
+                <td class="font-mono text-xs">${'$'}{this.escapeHTML(c.id)}</td>
+                <td>${'$'}{this.escapeHTML(c.summary)}</td>
+            </tr>`);
+
+            if (isExpanded) {
+                let detailsHtml = '<div class="explanation-content text-sm">';
+                if (c.explanation) {
+                    detailsHtml += `<strong>Explanation:</strong><br>${'$'}{c.explanation.replace(/\n/g, '<br>')}<br><br>`;
+                }
+                if (c.vendor) {
+                    if (c.vendor.name) detailsHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(c.vendor.name)}<br>`;
+                    if (c.vendor.identifier) detailsHtml += `<strong>Identifier:</strong> ${'$'}{this.escapeHTML(c.vendor.identifier)}<br>`;
+                    if (c.vendor.contact) {
+                        const contact = c.vendor.contact;
+                        if (contact.startsWith('http')) {
+                            detailsHtml += `<strong>Contact:</strong> <a href="${'$'}{this.escapeHTML(contact)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(contact)}</a><br>`;
+                        } else {
+                            detailsHtml += `<strong>Contact:</strong> ${'$'}{this.escapeHTML(contact)}<br>`;
+                        }
+                    }
+                    if (c.vendor.feedbackUrl) detailsHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}</a><br>`;
+                }
+                if (c.reason) detailsHtml += `<strong>Reason:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
+                detailsHtml += '</div>';
+
+                rowsHtml.push(`<tr class="explanation-row"><td colspan="2">${'$'}{detailsHtml}</td></tr>`);
+            }
+        });
+        container.innerHTML = rowsHtml.join('');
     },
 
     escapeHTML(str) {

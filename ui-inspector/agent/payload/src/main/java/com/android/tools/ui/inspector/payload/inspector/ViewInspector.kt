@@ -20,6 +20,12 @@ import androidx.inspection.Connection
 import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorFactory
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Event
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloEvent
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.HelloResponse
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
 
 const val INSPECTOR_ID = "ui.inspector.payload.view.inspector"
 
@@ -29,16 +35,32 @@ class ViewInspectorFactory : InspectorFactory<ViewInspector>(INSPECTOR_ID) {
 
 class ViewInspector(connection: Connection, private val environment: InspectorEnvironment) : Inspector(connection) {
   override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
-    val message = String(data)
-    when (message) {
-      "hello" -> callback.reply("world".toByteArray())
-      "trigger_event" -> {
-        connection.sendEvent("hello event".toByteArray())
-        callback.reply("event triggered".toByteArray())
-      }
-      else -> callback.reply("unknown command".toByteArray())
+    val command = Command.parseFrom(data)
+    when (command.specializedCase) {
+      Command.SpecializedCase.HELLO_COMMAND -> handleHelloCommand(callback)
+      Command.SpecializedCase.TRIGGER_EVENT_COMMAND -> handleTriggerEventCommand(callback)
+      else -> error("Unknown command: ${command.specializedCase}")
     }
   }
 
+  private fun handleHelloCommand(callback: CommandCallback) {
+    callback.reply { helloResponse = HelloResponse.getDefaultInstance() }
+  }
+
+  private fun handleTriggerEventCommand(callback: CommandCallback) {
+    connection.sendEvent { helloEvent = HelloEvent.newBuilder().setMessage("hello event").build() }
+    callback.reply { triggerEventResponse = TriggerEventResponse.getDefaultInstance() }
+  }
+
   override fun onDispose() {}
+}
+
+private fun Inspector.CommandCallback.reply(initResponse: Response.Builder.() -> Unit) {
+  val response = Response.newBuilder()
+  response.initResponse()
+  reply(response.build().toByteArray())
+}
+
+private fun Connection.sendEvent(init: Event.Builder.() -> Unit) {
+  sendEvent(Event.newBuilder().apply { init() }.build().toByteArray())
 }

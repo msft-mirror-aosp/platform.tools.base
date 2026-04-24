@@ -17,10 +17,9 @@ package com.android.tools.lint.checks
 
 import com.android.tools.lint.checks.infrastructure.TestFiles.getLintClassPath
 import com.android.tools.lint.detector.api.Detector
-import com.android.tools.lint.useFirUast
 
 class UElementAsPsiDetectorTest : AbstractCheckTest() {
-  override fun getDetector(): Detector? {
+  override fun getDetector(): Detector {
     return UElementAsPsiDetector()
   }
 
@@ -660,10 +659,6 @@ src/pkg/k/test.kt:10: Warning: Do not use UElement as PsiElement [UElementAsPsi]
 
   fun testContractLambda() {
     // b/463436546
-    // TODO: after https://youtrack.jetbrains.com/issue/KT-82846
-    if (useFirUast()) {
-      return
-    }
     lint()
       .files(
         kotlin(

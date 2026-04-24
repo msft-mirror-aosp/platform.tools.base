@@ -28,6 +28,7 @@ import com.android.tools.lint.renderer.data.LintCheck
 import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
 import com.android.tools.lint.renderer.data.LintReport
+import com.android.tools.lint.renderer.data.LintVendor
 import com.android.utils.SdkUtils
 import java.io.File
 import java.time.ZoneId
@@ -146,7 +147,7 @@ class LintReportBuilder(
       module = incident.project?.let { project -> project.buildModule?.modulePath ?: project.name }?.removePrefix(":") ?: "",
       packageName = pkgName,
       className = file.nameWithoutExtension,
-      vendor = getVendorName(issue),
+      vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,
       images = images,
     )
@@ -156,8 +157,9 @@ class LintReportBuilder(
     return LintCheck(
       id = issue.id,
       summary = issue.getBriefDescription(TextFormat.HTML) ?: "",
+      explanation = issue.getExplanation(TextFormat.HTML) ?: "",
       category = issue.category.fullName,
-      vendor = getVendorName(issue),
+      vendor = createLintVendor(issue),
       reason = reason,
     )
   }
@@ -167,9 +169,11 @@ class LintReportBuilder(
     return lines.getOrNull(0) to lines.getOrNull(1)
   }
 
-  private fun getVendorName(issue: Issue): String? {
+  private fun createLintVendor(issue: Issue): LintVendor? {
     val vendor = issue.vendor ?: issue.registry?.vendor
-    return vendor?.takeIf { it != AOSP_VENDOR }?.vendorName
+    return vendor
+      ?.takeIf { it != AOSP_VENDOR }
+      ?.let { LintVendor(name = it.vendorName, identifier = it.identifier, feedbackUrl = it.feedbackUrl, contact = it.contact) }
   }
 
   private fun getReportTimestamp(): String {

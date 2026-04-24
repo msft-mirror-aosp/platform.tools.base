@@ -18,7 +18,6 @@ package com.android.tools.lint.checks
 import com.android.tools.lint.checks.infrastructure.TestMode
 import com.android.tools.lint.detector.api.Detector
 import com.android.tools.lint.detector.api.TextFormat
-import com.android.tools.lint.useFirUast
 
 class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
   override fun getDetector(): Detector {
@@ -26,10 +25,6 @@ class MemberExtensionConflictDetectorTest : AbstractCheckTest() {
   }
 
   fun testDocumentationExample() {
-    // Collecting multiple applicable candidates only work for K2 AA
-    if (!useFirUast()) {
-      return
-    }
     lint()
       .files(
         kotlin(
@@ -91,10 +86,6 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
   }
 
   fun testConflictsFromBinary() {
-    // Collecting multiple applicable candidates only work for K2 AA
-    if (!useFirUast()) {
-      return
-    }
     lint()
       .files(
         bytecode(
@@ -251,10 +242,6 @@ src/ListWrapper.kt:11: Warning: `removeMiddle` is defined both as a member in cl
   }
 
   fun testNullableExtensionReceiver() {
-    // Collecting multiple applicable candidates only work for K2 AA
-    if (!useFirUast()) {
-      return
-    }
     // b/406935594
     lint()
       .files(
@@ -348,10 +335,6 @@ src/test/pkg/Foo.kt:13: Warning: `bar` is defined both as a member in class `tes
   }
 
   fun testUserLib_implicitImport() {
-    // Collecting multiple applicable candidates only work for K2 AA
-    if (!useFirUast()) {
-      return
-    }
     // b/427761232
     lint()
       .files(
@@ -451,10 +434,6 @@ src/my/cool/lib/test.kt:5: Warning: removeMiddle is defined both as a member in 
   }
 
   fun testKotlinCollection_explicitImport() {
-    // Collecting multiple applicable candidates only work for K2 AA
-    if (!useFirUast()) {
-      return
-    }
     // b/427761232
     lint()
       .files(

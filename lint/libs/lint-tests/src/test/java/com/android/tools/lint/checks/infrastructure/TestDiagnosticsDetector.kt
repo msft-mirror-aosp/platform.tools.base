@@ -15,7 +15,6 @@
  */
 package com.android.tools.lint.checks.infrastructure
 
-import com.android.tools.lint.FIR_UAST_KEY
 import com.android.tools.lint.client.api.UElementHandler
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
@@ -57,10 +56,6 @@ internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
       }
 
       override fun visitCallExpression(node: UCallExpression) {
-        if (!useK2Uast) {
-          // In AA FE1.0, diagnostics on dot-qualified expression are bound to _dot_ leaf node. :o
-          return
-        }
         if (node.methodName != "compareTo") return
 
         val ktSource = node.sourcePsi as? KtElement ?: return
@@ -90,7 +85,5 @@ internal class TestDiagnosticsDetector : Detector(), SourceCodeScanner {
       )
 
     const val NULLNESS_MESSAGE = "Only safe (?.) or non-null asserted (!!.) calls are allowed on a nullable receiver of type"
-
-    private val useK2Uast = System.getProperty(FIR_UAST_KEY, "true").toBoolean()
   }
 }

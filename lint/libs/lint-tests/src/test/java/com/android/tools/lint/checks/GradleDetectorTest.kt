@@ -70,7 +70,6 @@ import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VE
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_TARGET_SDK_VERSION_YEAR
 import com.android.tools.lint.checks.TargetSdkRequirements.MINIMUM_WEAR_TARGET_SDK_VERSION
 import com.android.tools.lint.checks.TargetSdkRequirements.PREVIOUS_MINIMUM_TARGET_SDK_VERSION
-import com.android.tools.lint.checks.infrastructure.LintDetectorTest.kts
 import com.android.tools.lint.checks.infrastructure.TestFiles.gradleToml
 import com.android.tools.lint.checks.infrastructure.TestIssueRegistry
 import com.android.tools.lint.checks.infrastructure.TestLintTask
@@ -84,7 +83,6 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.model.DefaultLintModelLintOptions
 import com.android.tools.lint.model.LintModelLintOptions
 import com.android.tools.lint.model.LintModelModule
-import com.android.tools.lint.useFirUast
 import com.android.utils.FileUtils
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -9740,11 +9738,8 @@ class GradleDetectorTest : AbstractCheckTest() {
     )
   }
 
-  fun testIncludedFiles_outsideApp() {
-    // TODO(b/463283604): remove the bail-out below.
-    if (useFirUast()) {
-      return
-    }
+  // TODO(b/463283604)
+  fun disabled_testIncludedFiles_outsideApp() {
     // Make sure we handle including files -- from kts to groovy and back.
     lint()
       .files(

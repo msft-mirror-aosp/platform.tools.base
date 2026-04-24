@@ -17,6 +17,8 @@
 package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
 import java.net.Socket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -31,16 +33,16 @@ class CommandSender(host: String, port: Int) : AutoCloseable {
   private val outputStream = socket.getOutputStream()
   private val inputStream = socket.getInputStream()
 
-  /** Sends a string message and waits for a string response, both framed. */
-  suspend fun sendMessage(message: String): String =
+  /** Sends a command and waits for a response. */
+  suspend fun sendMessage(command: Command): Response =
     withContext(Dispatchers.IO) {
       // Send framed message
-      val payload = message.toByteArray(Charsets.UTF_8)
+      val payload = command.toByteArray()
       FramingProtocol.writeMessage(outputStream, payload)
 
       // Read framed response
       val responseBytes = FramingProtocol.readMessage(inputStream)
-      String(responseBytes, Charsets.UTF_8)
+      Response.parseFrom(responseBytes)
     }
 
   override fun close() {

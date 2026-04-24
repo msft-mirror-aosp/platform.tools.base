@@ -27,7 +27,6 @@ import com.google.common.io.Files
 import java.io.File
 import org.intellij.lang.annotations.Language
 import org.junit.After
-import org.junit.Assume
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -212,7 +211,6 @@ class UastEnvironmentSourceSetTest {
 
   @Test
   fun testSelectiveInput_overlapped() {
-    Assume.assumeTrue(useFirUast())
     // Regression test for b/347624107
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
@@ -367,7 +365,6 @@ class UastEnvironmentSourceSetTest {
   fun testPackageInfo_explicitArg() {
     // Regression test for b/406902458
     // Mimic ApiDetectorTest#testPackageInfoMinSdk
-    Assume.assumeTrue(useFirUast())
     val root = temp.newFolder().canonicalFile.absoluteFile
     val projects =
       lint()
