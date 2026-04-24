@@ -56,6 +56,11 @@ void EnqueueTransportEvent(
 
 jlong EnqueueAppInspectionPayloadChunks(JNIEnv *env, jbyteArray data,
                                         int32_t length, int32_t chunk_size) {
+  // SECURITY: Prevent division by zero crash if a malicious or malformed
+  // command specifies a chunk size of 0.
+  if (chunk_size <= 0) {
+    chunk_size = 1024 * 1024;  // Default to 1MB
+  }
   profiler::JByteArrayWrapper chunk_data(env, data, length);
 
   int32_t chunk_index = 0;

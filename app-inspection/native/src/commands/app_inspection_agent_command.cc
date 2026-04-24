@@ -158,21 +158,61 @@ jobject createLibraryCompatibility(JNIEnv* jni_env,
   jstring group_id = jni_env->NewStringUTF(coordinate.group_id().c_str());
   jstring artifact_id = jni_env->NewStringUTF(coordinate.artifact_id().c_str());
   jstring version = jni_env->NewStringUTF(coordinate.version().c_str());
+
+  // SECURITY: Check for pending JNI exceptions (e.g. OOM) before proceeding.
+  if (jni_env->ExceptionCheck()) {
+    if (group_id) jni_env->DeleteLocalRef(group_id);
+    if (artifact_id) jni_env->DeleteLocalRef(artifact_id);
+    if (version) jni_env->DeleteLocalRef(version);
+    return nullptr;
+  }
+
   jobject target = app_inspection::CreateArtifactCoordinate(
       jni_env, group_id, artifact_id, version);
+
+  // SECURITY: Free local references to avoid JNI table overflow.
+  jni_env->DeleteLocalRef(group_id);
+  jni_env->DeleteLocalRef(artifact_id);
+  jni_env->DeleteLocalRef(version);
+
+  if (jni_env->ExceptionCheck() || target == nullptr) return nullptr;
 
   jobjectArray class_names = nullptr;
   int class_count = compatibility.expected_library_class_names_size();
   if (class_count > 0) {
-    class_names = jni_env->NewObjectArray(
-        class_count, jni_env->FindClass("java/lang/String"), NULL);
+    jclass string_class = jni_env->FindClass("java/lang/String");
+    if (jni_env->ExceptionCheck() || string_class == nullptr) {
+      jni_env->DeleteLocalRef(target);
+      return nullptr;
+    }
+    class_names = jni_env->NewObjectArray(class_count, string_class, NULL);
+    jni_env->DeleteLocalRef(string_class);
+    if (jni_env->ExceptionCheck() || class_names == nullptr) {
+      jni_env->DeleteLocalRef(target);
+      return nullptr;
+    }
     for (int i = 0; i < class_count; i++) {
-      jni_env->SetObjectArrayElement(
-          class_names, i,
-          jni_env->NewStringUTF(
-              compatibility.expected_library_class_names(i).c_str()));
+      jstring class_name = jni_env->NewStringUTF(
+          compatibility.expected_library_class_names(i).c_str());
+      if (jni_env->ExceptionCheck() || class_name == nullptr) break;
+      jni_env->SetObjectArrayElement(class_names, i, class_name);
+      // SECURITY: Free local references to avoid JNI table overflow.
+      jni_env->DeleteLocalRef(class_name);
+      if (jni_env->ExceptionCheck()) break;
     }
   }
-  return app_inspection::CreateLibraryCompatibility(jni_env, target,
-                                                    class_names);
+
+  if (jni_env->ExceptionCheck()) {
+    jni_env->DeleteLocalRef(target);
+    if (class_names) jni_env->DeleteLocalRef(class_names);
+    return nullptr;
+  }
+
+  jobject result =
+      app_inspection::CreateLibraryCompatibility(jni_env, target, class_names);
+  jni_env->DeleteLocalRef(target);
+  if (class_names != nullptr) {
+    jni_env->DeleteLocalRef(class_names);
+  }
+  return result;
 }
