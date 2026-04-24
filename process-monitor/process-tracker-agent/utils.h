@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -25,12 +26,20 @@ namespace processtracker {
 
 using namespace std;
 
-/** Reads the contents of a file into a string  */
-string readFile(const string& path) {
+/**
+ * Reads the contents of a file into a string with a maximum length.
+ * SECURITY: Limiting the read size prevents resource exhaustion (DoS) if
+ * a file is unexpectedly large or a malicious symlink points to a giant file.
+ */
+string readFile(const string& path, size_t maxLen = 4096) {
   ifstream stream(path);
-  stringstream buffer;
-  buffer << stream.rdbuf();
-  return buffer.str();
+  if (!stream) return "";
+
+  string result;
+  result.resize(maxLen);
+  stream.read(&result[0], maxLen);
+  result.resize(stream.gcount());
+  return result;
 }
 
 /**
@@ -44,13 +53,14 @@ bool startsWith(const string& str, const string& prefix) {
 
 /**
  * Parses a string into an integer.
- *
- * If the string doesn't represent a valid integer, returns a default value.
+ * SECURITY: Check for both upper and lower bounds to prevent integer
+ * overflow/underflow vulnerabilities.
  */
 int parseInt(const char* str, int defaultValue) {
+  if (str == nullptr || *str == '\0') return defaultValue;
   char* ptr;
   long l = strtol(str, &ptr, 10);
-  if (*ptr != '\0' || l > INT32_MAX) {
+  if (*ptr != '\0' || l > INT32_MAX || l < INT32_MIN) {
     return defaultValue;
   }
   return static_cast<int>(l);

@@ -17,6 +17,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <algorithm>
+#include <cstdint>
 #include <set>
 #include <string>
 
@@ -40,6 +41,12 @@ class Scanner {
     set<int> markedForRemoval(processes);
 
     DIR* pDir = opendir("/proc");
+    // SECURITY: Always check if opendir succeeded to prevent dereferencing
+    // nullptr.
+    if (pDir == nullptr) {
+      perror("Failed to open /proc");
+      return;
+    }
     while (true) {
       dirent* pDirent = readdir(pDir);
       if (pDirent == nullptr) {
@@ -57,6 +64,9 @@ class Scanner {
       }
 
       // New process found
+      // SECURITY: A process could terminate between readdir and readFile
+      // (TOCTOU). readCommand handles empty results gracefully if the file is
+      // gone.
       string path = string("/proc/") + pDirent->d_name;
       const string& name = readCommand(path);
       if (name.empty() || startsWith(name, "zygote") ||
@@ -65,6 +75,7 @@ class Scanner {
         continue;
       }
       processes.insert(pid);
+      // SECURITY: Using %s with name.c_str() is safe here.
       printf("+ %d %s\n", pid, name.c_str());
     }
     closedir(pDir);
@@ -91,10 +102,14 @@ class Scanner {
    * else.
    */
   static string readCommand(const string& path) {
-    const string& cmdline = readFile(path + "/cmdline");
+    // SECURITY: Use limited read to prevent resource exhaustion from giant
+    // files. We use 4096 bytes (standard PAGE_SIZE) because it is safely large
+    // enough for process names/args while strictly bounding memory allocation
+    // per process.
+    const string& cmdline = readFile(path + "/cmdline", 4096);
     int start = 0;
-    uint len = cmdline.length();
-    uint end = len;
+    int len = (int)cmdline.length();
+    int end = len;
     for (int i = 0; i < len; i++) {
       const char& c = cmdline[i];
       if (c == '/') {
@@ -106,11 +121,19 @@ class Scanner {
         break;
       }
     }
-    if (start - end > 0) {
+    // SECURITY: Fixed logic error (end > start) to avoid std::out_of_range
+    // exceptions and correctly extract the process basename.
+    if (end > start) {
       return cmdline.substr(start, end - start);
     }
-    const string& comm = readFile(path + "/comm");
-    return comm.substr(0, comm.find('\n'));
+
+    // Fallback if cmdline parsing didn't yield a name or file was
+    // empty/missing. The kernel limits process names in 'comm' to 15 chars
+    // (TASK_COMM_LEN - 1), making 256 bytes more than generous while still
+    // keeping memory bounded.
+    const string& comm = readFile(path + "/comm", 256);
+    size_t newline = comm.find('\n');
+    return (newline == string::npos) ? comm : comm.substr(0, newline);
   }
 };
 
@@ -134,10 +157,13 @@ static void parseCommandLine(int argc, char** argv) {
       if (i >= argc) {
         printUsageAndExit("Missing argument for '" + arg + "'");
       }
-      intervalMicros = parseInt(argv[i], -1) * 1000;
-      if (intervalMicros <= 0) {
-        printUsageAndExit(string("Invalid interval: ") + argv[i]);
+      int intervalMillis = parseInt(argv[i], -1);
+      // SECURITY: Check for potential overflow before multiplying.
+      if (intervalMillis <= 0 || intervalMillis > (INT32_MAX / 1000)) {
+        printUsageAndExit(string("Invalid or out-of-range interval: ") +
+                          argv[i]);
       }
+      intervalMicros = intervalMillis * 1000;
       continue;
     } else {
       printUsageAndExit("Invalid arg: " + arg);
