@@ -60,9 +60,9 @@ class InjectionManagerIntegrationTest {
     assertThat(packageName).isNotNull()
 
     val injectionManager =
-      InjectionManager(adbSession = adbSession, serviceJarPath = Paths.get(SERVICE_JAR_PATH), payloadJarPath = Paths.get(PAYLOAD_JAR_PATH))
+      InjectionManager(adbSession = adbSession, serial = serial, packageName = packageName!!, serviceJarPath = Paths.get(SERVICE_JAR_PATH))
 
-    val port = injectionManager.injectAndAttach(serial, packageName!!)
+    val port = injectionManager.injectAndAttach()
     assertThat(port).isNotEmpty()
 
     val socket = Socket("localhost", port.toInt())
