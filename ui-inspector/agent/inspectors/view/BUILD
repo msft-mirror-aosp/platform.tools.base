@@ -1,4 +1,7 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools/base/bazel:android.bzl", "dex_library")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
 
@@ -8,6 +11,8 @@ kotlin_library(
         "src/main/java/**/*.kt",
         "src/main/java/**/*.java",
     ]),
+    resource_strip_prefix = "tools/base/ui-inspector/agent/inspectors/view/src/main/resources",
+    resources = glob(["src/main/resources/**/*"]),
     deps = [
         "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
@@ -32,5 +37,26 @@ kotlin_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
+    ],
+)
+
+java_library(
+    name = "view_inspector_resources",
+    resource_strip_prefix = "tools/base/ui-inspector/agent/inspectors/view/src/main/resources",
+    resources = glob(["src/main/resources/**/*"]),
+    visibility = ["//tools/base/ui-inspector:__subpackages__"],
+)
+
+dex_library(
+    name = "view_inspector_dexed",
+    jars = [":view_inspector"],
+)
+
+merge_jars(
+    name = "view_inspector_jar",
+    out = "view-inspector.jar",
+    jars = [
+        ":view_inspector_dexed",
+        ":view_inspector_resources",
     ],
 )
