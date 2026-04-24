@@ -14,7 +14,6 @@ kotlin_library(
         "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/base/bazel:studio-proto",
-        "//tools/base/ui-inspector/agent/inspectors/view:view_inspector",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
@@ -28,7 +27,6 @@ dex_library(
     ],
     jars = [
         ":ui_inspector_payload_src",
-        "//tools/base/ui-inspector/agent/inspectors/view:view_inspector",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
         "//tools/base/bazel:studio-proto",
