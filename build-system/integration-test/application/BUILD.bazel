@@ -1203,7 +1203,7 @@ maven_repository(
         "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.6.3",
         "@maven//:org.jetbrains.kotlinx.kotlinx-serialization-core_1.7.3",
-        "@maven//:org.mockito.mockito-core_5.12.0",
+        "@maven//:org.mockito.mockito-core_5.20.0",
         "@maven//:org.ow2.asm.asm-bom_9.7",
         "@maven//:org.robolectric.android-all-instrumented_9-robolectric-4913185-2-i4",
         "@maven//:org.robolectric.robolectric_4.8.2",

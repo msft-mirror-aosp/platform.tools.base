@@ -54,7 +54,7 @@ class TestReportAggregationTest {
           implementation(project(":lib"))
 
           testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
+          testImplementation("org.mockito:mockito-core:5.20.0")
           testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
           testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -87,7 +87,7 @@ class TestReportAggregationTest {
             implementation(project(":lib2"))
 
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -108,7 +108,7 @@ class TestReportAggregationTest {
           publishing { singleVariant("debug") }
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
