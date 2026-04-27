@@ -25,7 +25,10 @@ import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/** Tests to validate the different filtering mechanisms */
+/**
+ * Tests to validate the different filtering mechanisms. [BooleanOption.USE_NEW_DSL] = `true` tests in [AndroidComponentsFilteringTest];
+ * this test can be deleted when [BooleanOption.USE_NEW_DSL] is no longer an option.
+ */
 class VariantFilteringTest {
 
   @get:Rule
