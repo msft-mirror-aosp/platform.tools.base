@@ -98,6 +98,9 @@ public class HardwareProperties {
     /** AVD/config.ini key for environment height. */
     public static final String ENVIRONMENT_HEIGHT = "environment.height";
 
+    /** AVD/config.ini key for dimming levels. */
+    public static final String HW_DIMMING_LEVELS = "hw.dimmingLevels";
+
     /** AVD/config.ini key for whether touchpad is present. */
     public static final String HW_TOUCHPAD0 = "hw.touchpad0";
 

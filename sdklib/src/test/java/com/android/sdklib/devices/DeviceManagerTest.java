@@ -829,6 +829,18 @@ public class DeviceManagerTest {
     }
 
     @Test
+    public final void testGetXrGlassesHardwareProperties() {
+        final Device glassesDevice = dm.getDevice("xr_glasses_device", "Google");
+
+        Map<String, String> properties = DeviceManager.getHardwareProperties(glassesDevice);
+        assertThat(properties.get("environment.width")).isNull();
+        assertThat(properties.get("environment.height")).isNull();
+        assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
+        assertThat(properties.get("hw.lcd.transparent")).isNull();
+        assertThat(properties.get("hw.dimmingLevels")).isNotEmpty();
+    }
+
+    @Test
     public void testGetFreeformHardwareProperties() {
         Device device = dm.getDevice("13.5in Freeform", "Generic");
         String settingsFile =
