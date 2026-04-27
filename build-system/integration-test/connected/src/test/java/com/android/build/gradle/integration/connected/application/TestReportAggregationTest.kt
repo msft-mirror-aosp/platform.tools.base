@@ -31,8 +31,8 @@ import org.junit.Test
 import org.junit.rules.ExternalResource
 
 /**
- * Integration test for [com.android.build.gradle.tasks.TestReportTask] and [com.android.build.gradle.tasks.TestResultsCollectionTask]
- * evaluating cross-module unit test reporting.
+ * Integration test for [com.android.build.gradle.internal.test.tasks.TestReportTask] and
+ * [com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask] evaluating cross-module unit test reporting.
  */
 class TestReportAggregationTest {
 

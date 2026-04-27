@@ -146,6 +146,7 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.tasks.mlkit.GenerateMlModelClass
 import com.android.build.gradle.internal.tasks.runResourceShrinking
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.internal.transforms.ShrinkAppBundleResourcesTask
 import com.android.build.gradle.internal.transforms.ShrinkResourcesNewShrinkerTask
 import com.android.build.gradle.internal.utils.COMPOSE_COMPILER_PLUGIN_ID
@@ -183,7 +184,6 @@ import com.android.build.gradle.tasks.ProcessTestManifestPackaging
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.ShaderCompile
 import com.android.build.gradle.tasks.SimplifiedMergedManifestsProducerTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.build.gradle.tasks.TransformClassesWithAsmTask
 import com.android.build.gradle.tasks.VerifyLibraryResourcesTask

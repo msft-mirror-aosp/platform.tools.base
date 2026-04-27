@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 @file:JvmName("TestReportAggregationUtils")
 
-package com.android.build.gradle.internal.testing
+package com.android.build.gradle.internal.test.report
 
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
@@ -25,6 +25,7 @@ import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_MET
 import com.android.utils.FileUtils
 import java.io.File
 import java.io.IOException
+import java.io.UncheckedIOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import org.gradle.api.file.DirectoryProperty
@@ -55,7 +56,7 @@ fun processTestReportAggregation(
               FileUtils.copyFile(source.toFile(), destination.toFile())
             }
           } catch (e: IOException) {
-            throw java.io.UncheckedIOException(e)
+            throw UncheckedIOException(e)
           }
         }
       } catch (e: IOException) {

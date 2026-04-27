@@ -38,7 +38,7 @@ import com.android.build.gradle.internal.tasks.BuildAnalyzer;
 import com.android.build.gradle.internal.tasks.UsesAnalytics;
 import com.android.build.gradle.internal.tasks.VariantTask;
 import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction;
-import com.android.build.gradle.internal.testing.TestReportAggregationUtils;
+import com.android.build.gradle.internal.test.report.TestReportAggregationUtils;
 import com.android.build.gradle.internal.utils.HasConfigurableValuesKt;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;

@@ -51,10 +51,10 @@ import com.android.build.gradle.internal.tasks.featuresplit.getFeatureName
 import com.android.build.gradle.internal.test.AbstractTestDataImpl
 import com.android.build.gradle.internal.test.BundleTestDataImpl
 import com.android.build.gradle.internal.test.TestDataImpl
+import com.android.build.gradle.internal.test.tasks.TestResultsCollectionTask
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
 import com.android.build.gradle.tasks.CompileNavigationXmlTask
-import com.android.build.gradle.tasks.TestResultsCollectionTask
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.builder.core.BuilderConstants.FD_MANAGED_DEVICE_SETUP_RESULTS
 import com.android.builder.core.ComponentType
