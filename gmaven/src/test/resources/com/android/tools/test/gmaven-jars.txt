@@ -2137,10 +2137,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/analysis-internal-utils.kotlin_module
   META-INF/arguments.common.kotlin_module
   META-INF/backend.common.jvm.kotlin_module
-  META-INF/backend.jvm.codegen.kotlin_module
-  META-INF/backend.jvm.entrypoint.kotlin_module
-  META-INF/backend.jvm.kotlin_module
-  META-INF/backend.jvm.lower.kotlin_module
   META-INF/backend.kotlin_module
   META-INF/base.kotlin_module
   META-INF/binary-options.kotlin_module
@@ -2194,7 +2190,6 @@ com/android/tools/external/com-intellij/kotlin-compiler
   META-INF/frontend.kotlin_module
   META-INF/frontend.native.kotlin_module
   META-INF/ir.actualization.kotlin_module
-  META-INF/ir.backend.native.kotlin_module
   META-INF/ir.inline.kotlin_module
   META-INF/ir.objcinterop.kotlin_module
   META-INF/ir.psi2ir.kotlin_module
@@ -2620,21 +2615,8 @@ com/android/tools/external/com-intellij/kotlin-compiler
   org/jetbrains/kotlin/backend/common/serialization/metadata/
   org/jetbrains/kotlin/backend/common/serialization/proto/
   org/jetbrains/kotlin/backend/common/serialization/signature/
-  org/jetbrains/kotlin/backend/jvm/
-  org/jetbrains/kotlin/backend/jvm/caches/
-  org/jetbrains/kotlin/backend/jvm/codegen/
-  org/jetbrains/kotlin/backend/jvm/extensions/
-  org/jetbrains/kotlin/backend/jvm/intrinsics/
-  org/jetbrains/kotlin/backend/jvm/ir/
-  org/jetbrains/kotlin/backend/jvm/lower/
-  org/jetbrains/kotlin/backend/jvm/lower/indy/
-  org/jetbrains/kotlin/backend/jvm/mapping/
-  org/jetbrains/kotlin/backend/jvm/metadata/
-  org/jetbrains/kotlin/backend/jvm/overrides/
   org/jetbrains/kotlin/backend/konan/
   org/jetbrains/kotlin/backend/konan/descriptors/
-  org/jetbrains/kotlin/backend/konan/ir/
-  org/jetbrains/kotlin/backend/konan/lower/
   org/jetbrains/kotlin/build/
   org/jetbrains/kotlin/build/report/
   org/jetbrains/kotlin/build/report/metrics/
