@@ -147,6 +147,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -243,6 +244,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -391,6 +393,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -485,6 +488,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -628,6 +632,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Small Round",
                         "Wear OS Rectangular",
                         "Wear OS Square",
@@ -722,6 +727,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -1210,6 +1216,7 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_small\n"
                             + "Warning: Unsupported device desktop_medium\n"
                             + "Warning: Unsupported device desktop_large\n"
+                            + "Warning: Unsupported device desktop_api37\n"
                             + "Warning: Unsupported device xr_headset_device\n"
                             + "Warning: Unsupported device ai_glasses_device\n"
                             + "Warning: Unsupported device ai_glasses_displayless\n"
