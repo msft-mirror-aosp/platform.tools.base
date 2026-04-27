@@ -44,6 +44,7 @@
 
 ABSL_FLAG(int32_t, timeout, 0, "Timeout in seconds");
 ABSL_FLAG(int32_t, parent_pid, 0, "Pid of the parent process to monitor");
+ABSL_FLAG(bool, use_ipv6, false, "Use IPv6 for the gRPC server");
 
 using grpc::ServerBuilder;
 
@@ -333,15 +334,35 @@ class GapidServiceImpl final : public Gapid::Service {
   const int32_t parent_pid_;
 };
 
-}  // end namespace
-
-void RunServer(int timeout_seconds, int32_t parent_pid) {
+void RunServer(int timeout_seconds, int32_t parent_pid, bool use_ipv6) {
   ServerBuilder builder;
 
-  // Let gRPC dynamically pick an available port.
+  // Requirements:
+  //  1. Let gRPC dynamically pick an available port.
+  //  2. Use loopback instead of any (0.0.0.0) so that the port is open to
+  //     only the local machine's private internal network.
+  //  3. Support both IPv4 and IPv6. Some of our target machines will be
+  //  IPv6-only.
+  //  4. Use the same port for IPv4 and IPv6.
+  //
+  // Note that if we use "localhost:0" as the listening address, it serves 1-3
+  // above, but it cannot guarantee the same port being used on both IPv4 and
+  // IPv6.
+  //
+  // For now, we are selecting either IPv4 or IPv6, bot never both.
+  //
+  // TODO: Support serving on the same port of both IPv4/IPv6 stacks
+  // simultaneously.
   int selected_port = 0;
-  builder.AddListeningPort("0.0.0.0:0", grpc::InsecureServerCredentials(),
-                           &selected_port);
+  if (use_ipv6) {
+    LOG(INFO) << "Using IPv6";
+    builder.AddListeningPort("[::1]:0", grpc::InsecureServerCredentials(),
+                             &selected_port);
+  } else {
+    LOG(INFO) << "Using IPv4";
+    builder.AddListeningPort("127.0.0.1:0", grpc::InsecureServerCredentials(),
+                             &selected_port);
+  }
 
   GapidServiceImpl gapid_service(timeout_seconds, parent_pid);
   builder.RegisterService(&gapid_service);
@@ -354,6 +375,8 @@ void RunServer(int timeout_seconds, int32_t parent_pid) {
   server->Wait();
 }
 
+}  // end namespace
+
 int main(int argc, char** argv) {
   absl::InitializeLog();
 
@@ -361,9 +384,10 @@ int main(int argc, char** argv) {
 
   int timeout = absl::GetFlag(FLAGS_timeout);
   int32_t parent_pid = absl::GetFlag(FLAGS_parent_pid);
+  bool use_ipv6 = absl::GetFlag(FLAGS_use_ipv6);
 
   LOG(INFO) << "Starting server with server timeout value of " << timeout
             << " seconds and parent_pid " << parent_pid;
-  RunServer(timeout, parent_pid);
+  RunServer(timeout, parent_pid, use_ipv6);
   return 0;
 }
