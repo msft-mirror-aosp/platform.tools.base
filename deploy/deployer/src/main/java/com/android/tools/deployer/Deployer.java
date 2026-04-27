@@ -35,6 +35,7 @@ import com.android.tools.deployer.install.InstallMode;
 import com.android.tools.deployer.model.Apk;
 import com.android.tools.deployer.model.ApkEntry;
 import com.android.tools.deployer.model.App;
+import com.android.tools.deployer.model.AppState;
 import com.android.tools.deployer.model.DeploymentPlan;
 import com.android.tools.deployer.model.FileDiff;
 import com.android.tools.deployer.tasks.Task;
@@ -186,25 +187,28 @@ public class Deployer {
             String sessionUID = UUID.randomUUID().toString();
 
             InstallInfo info;
+
+            // The first ABI is always the most preferable on the device.
+            AppState appState = new AppState(adb.getDevice().getAbis().get(0));
             if (deployOptions.useRootPushInstall) {
                 info =
                         rootPushInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             } else if (supportsNewPipeline()) {
                 info =
                         optimisticInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             } else {
                 info =
                         packageManagerInstall(
                                 sessionUID,
-                                new DeploymentPlan(adb.getDevice(), app),
+                                new DeploymentPlan(app, appState),
                                 installOptions,
                                 installMode);
             }
