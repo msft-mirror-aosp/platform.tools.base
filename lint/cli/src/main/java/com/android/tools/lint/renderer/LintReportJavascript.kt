@@ -475,6 +475,12 @@ const LintReportApp = {
                 const urlsHtml = (issue.urls && issue.urls.length > 0)
                     ? `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`
                     : '';
+                const secondaryHtml = (issue.secondaryLocations && issue.secondaryLocations.length > 0)
+                    ? `<div class="mt-4"><strong>Additional locations:</strong><ul class="more-info-list">${'$'}{issue.secondaryLocations.map(loc => {
+                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}${'$'}{loc.message ? ': ' + loc.message : ''}`;
+                        return `<li>${'$'}{loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr)}</li>`;
+                    }).join('')}</ul></div>`
+                    : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
                     ? `<div class="mt-4 flex gap-4 overflow-x-auto pb-2">${'$'}{issue.images.map(url => `<div class="flex-shrink-0"><a href="${'$'}{this.escapeHTML(url)}" target="_blank"><img src="${'$'}{this.escapeHTML(url)}" class="h-32 object-contain border border-gray-300 rounded-md p-1 bg-gray-50 hover:border-blue-500 transition-all shadow-sm"></a></div>`).join('')}</div>`
                     : '';
@@ -494,17 +500,32 @@ const LintReportApp = {
                     if (issue.vendor.feedbackUrl) vendorHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}</a><br>`;
                     vendorHtml += `</div>`;
                 }
+                const suppressHtml = issue.suppressMessage ? `<div class="mt-4 text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : '';
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
                     <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
                     <div class="mb-4">
                         <strong>Explanation:</strong>
                         <div class="mt-1">${'$'}{this.renderExplanation(issue.explanation)}</div>
                     </div>
+                    ${'$'}{issue.options && issue.options.length > 0 ? `
+                        <div class="mt-4">This check can be configured via the following options:</div>
+                        <div class="options mt-2 ml-4">
+                            ${'$'}{issue.options.map(opt => `
+                                <div class="mb-2">${'$'}{opt.description}</div>
+                                ${'$'}{opt.explanation ? `
+                                    <div class="mb-2">To configure this option, use a <code>lint.xml</code> file in the project or source folder using an <code>&lt;option&gt;</code> block like the following:</div>
+                                    <pre class="errorlines mb-4">${'$'}{opt.explanation}</pre>
+                                ` : ''}
+                            `).join('')}
+                        </div>
+                    ` : ''}
                     ${'$'}{urlsHtml}
+                    ${'$'}{secondaryHtml}
                     ${'$'}{autoFixedMsg}
                     ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
                     ${'$'}{codeSnippet}
+                    ${'$'}{suppressHtml}
                     ${'$'}{vendorHtml}
                 </div></td></tr>`);
             }
@@ -557,11 +578,23 @@ const LintReportApp = {
 
             if (isExpanded) {
                 let detailsHtml = '<div class="explanation-content text-sm">';
+                if (c.reason) detailsHtml += `<strong>Disabled by:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
                 if (c.explanation) {
-                    detailsHtml += `<div class="mb-4">
-                        <strong>Explanation:</strong>
-                        <div class="mt-1">${'$'}{this.renderExplanation(c.explanation)}</div>
-                    </div>`;
+                    detailsHtml += `<div class="mb-4">${'$'}{this.renderExplanation(c.explanation)}</div>`;
+                }
+                if (c.options && c.options.length > 0) {
+                    detailsHtml += `<div class="mt-4">This check can be configured via the following options:</div><div class="options mt-2 ml-4">`;
+                    c.options.forEach(opt => {
+                        detailsHtml += `<div class="mb-2">${'$'}{opt.description}</div>`;
+                        if (opt.explanation) {
+                            detailsHtml += `<div class="mb-2">To configure this option, use a <code>lint.xml</code> file in the project or source folder using an <code>&lt;option&gt;</code> block like the following:</div>`;
+                            detailsHtml += `<pre class="errorlines mb-4">${'$'}{opt.explanation}</pre>`;
+                        }
+                    });
+                    detailsHtml += `</div>`;
+                }
+                if (c.urls && c.urls.length > 0) {
+                    detailsHtml += `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{c.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`;
                 }
                 if (c.vendor) {
                     if (c.vendor.name) detailsHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(c.vendor.name)}<br>`;
@@ -578,7 +611,6 @@ const LintReportApp = {
                 } else if (c.hasAutoFix) {
                     detailsHtml += `<div class="mt-4 text-gray-500 text-sm">Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.</div>`;
                 }
-                if (c.reason) detailsHtml += `<strong>Reason:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
                 detailsHtml += '</div>';
 
                 rowsHtml.push(`<tr class="explanation-row"><td colspan="2">${'$'}{detailsHtml}</td></tr>`);

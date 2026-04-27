@@ -359,6 +359,7 @@ tr.issue-row:hover { cursor: pointer; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-8 { margin-bottom: 2rem; }
 .mb-12 { margin-bottom: 3rem; }
+.ml-4 { margin-left: 1rem; }
 .ml-6 { margin-left: 1.5rem; }
 
 .space-y-1 > * + * { margin-top: 0.25rem; }
