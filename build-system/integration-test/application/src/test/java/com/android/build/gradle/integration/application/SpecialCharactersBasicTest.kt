@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.prebuilts.BasicSpec
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.AssumeUtil
 import com.google.common.truth.Truth.assertThat
 import java.util.regex.Pattern

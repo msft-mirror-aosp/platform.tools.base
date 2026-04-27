@@ -26,7 +26,7 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject
 import com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import com.android.build.gradle.integration.common.utils.TestFileUtils
 import com.android.builder.errors.IssueReporter
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.testutils.AssumeUtil
 import com.android.testutils.TestInputsGenerator
 import com.android.testutils.apk.Aab
