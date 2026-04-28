@@ -215,18 +215,22 @@ open class LintCliClient : LintClient {
     }
 
   @OptIn(KaNonPublicApi::class)
-  override fun <T> runReadAction(computable: Computable<T>): T =
-    when (uastEnvironment?.isKMP) {
-      true -> withMultiplatformLightClassSupport { super.runReadAction(computable) }
+  override fun <T> runReadAction(computable: Computable<T>): T {
+    val uastEnv = uastEnvironment
+    return when (uastEnv?.isKMP) {
+      true -> withMultiplatformLightClassSupport(uastEnv.ideaProject) { super.runReadAction(computable) }
       else -> super.runReadAction(computable)
     }
+  }
 
   @OptIn(KaNonPublicApi::class)
-  override fun runReadAction(runnable: Runnable) =
-    when (uastEnvironment?.isKMP) {
-      true -> withMultiplatformLightClassSupport { super.runReadAction(runnable) }
+  override fun runReadAction(runnable: Runnable) {
+    val uastEnv = uastEnvironment
+    when (uastEnv?.isKMP) {
+      true -> withMultiplatformLightClassSupport(uastEnv.ideaProject) { super.runReadAction(runnable) }
       else -> super.runReadAction(runnable)
     }
+  }
 
   /** Runs the static analysis command line driver. You need to add at least one error reporter to the command line flags. */
   @Throws(IOException::class)
