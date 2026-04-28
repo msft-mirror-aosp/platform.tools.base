@@ -825,6 +825,7 @@ public class DeviceManagerTest {
         assertThat(properties.get("environment.height")).isEqualTo("900");
         assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
         assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
+        assertThat(properties.get("hw.lcd.density")).isEqualTo("320");
     }
 
     @Test
