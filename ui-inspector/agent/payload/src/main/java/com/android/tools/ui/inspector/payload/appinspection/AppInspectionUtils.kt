@@ -142,7 +142,8 @@ internal suspend fun Inspector.handleCommandSuspend(command: ByteArray): ByteArr
  * 1. It does not cache the [DexClassLoader]. App Inspection caches them to avoid native library loading conflicts (b/187342510) if the same
  *    jar is loaded multiple times. We rely on persisting [InspectorBridge]s instead.
  * 2. It uses `SessionHandler::class.java.classLoader` as the parent class loader, whereas App Inspection uses the application's class
- *    loader.
+ *    loader. Since the session handler's loader is already a child of the application's class loader, app classes remain visible through
+ *    delegation.
  * 3. It does not support native pointers in [InspectorEnvironment].
  */
 internal fun loadInspectorDynamically(

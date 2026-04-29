@@ -22,6 +22,7 @@ import com.android.tools.ui.inspector.common.ProtocolConstants
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,7 +37,7 @@ import kotlinx.coroutines.withContext
 internal typealias InspectorId = String
 
 private const val TAG = "studio.Server"
-private const val INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000L // 5 minutes
+private val INACTIVITY_TIMEOUT = 5.minutes
 
 /** Handles the server socket listener and connection lifecycle for the UI Inspector. */
 internal suspend fun startServer(pid: String) = supervisorScope {
@@ -62,7 +63,7 @@ internal suspend fun startServer(pid: String) = supervisorScope {
   suspend fun <T> withInactivityTimeout(block: suspend () -> T): T {
     timeoutJob?.cancel()
     timeoutJob = launch {
-      delay(INACTIVITY_TIMEOUT_MS)
+      delay(INACTIVITY_TIMEOUT)
       Log.i(TAG, "Inactivity timeout reached, stopping server")
       timedOut.set(true)
       cancel()
