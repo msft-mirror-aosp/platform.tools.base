@@ -196,7 +196,7 @@ class XMLTransformerTest {
     """
         <report name="My Project">
             <properties>
-                <property name="moduleName" value="$module"/>
+                <property name="modulePath" value="$module"/>
                 <property name="testedVariantName" value="$variant"/>
                 <property name="testSuiteName" value="$testSuite"/>
             </properties>
@@ -234,7 +234,7 @@ class XMLTransformerTest {
     """
         <report name="My Project Aggregated">
             <properties>
-                <property name="moduleName" value="$module"/>
+                <property name="modulePath" value="$module"/>
                 <property name="testedVariantName" value="$variant"/>
                 <property name="testSuiteName" value="Aggregated"/>
             </properties>
@@ -249,7 +249,7 @@ class XMLTransformerTest {
     """
         <report name="Default Pkg Project">
             <properties>
-                <property name="moduleName" value="$module"/>
+                <property name="modulePath" value="$module"/>
                 <property name="testedVariantName" value="$variant"/>
                 <property name="testSuiteName" value="$testSuite"/>
             </properties>
@@ -273,7 +273,7 @@ class XMLTransformerTest {
     """
         <report name="Aggregated with Pkgs">
             <properties>
-                <property name="moduleName" value="$module"/>
+                <property name="modulePath" value="$module"/>
                 <property name="testedVariantName" value="$variant"/>
                 <property name="testSuiteName" value="Aggregated"/>
             </properties>

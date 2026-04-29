@@ -68,7 +68,8 @@ abstract class TestResultsCollectionTask : NonIncrementalTask() {
         val metadataFiles = directory.listFiles { file -> file.name == TEST_SUITE_METADATA_FILE }
         if (metadataFiles != null) {
           check(metadataFiles.isNotEmpty()) { "No metadata.txt found in ${directory.path} for test results XML processing" }
-          val metadata = TestSuiteTestTask.parseMetadata(metadataFiles[0])
+          val metadata = TestSuiteTestTask.parseMetadata(metadataFiles[0]).toMutableMap()
+          metadata[TestSuiteTestTask.TEST_SUITE_METADATA_MODULE_KEY] = projectPath.get()
 
           val metadataBytes = metadataFiles[0].readBytes()
           val digest = MessageDigest.getInstance("MD5").digest(metadataBytes)

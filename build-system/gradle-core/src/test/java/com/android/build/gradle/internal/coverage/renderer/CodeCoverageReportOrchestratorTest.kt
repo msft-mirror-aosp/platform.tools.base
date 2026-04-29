@@ -67,7 +67,7 @@ class CodeCoverageReportOrchestratorTest {
             <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
             <report name="TestRootProject">
                 <properties>
-                    <property name="moduleName" value="app"/>
+                    <property name="modulePath" value="app"/>
                     <property name="testedVariantName" value="debug"/>
                     <property name="testSuiteName" value="UnitTest"/>
                 </properties>

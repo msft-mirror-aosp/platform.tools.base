@@ -597,7 +597,7 @@ class CodeCoverageCollectionTest {
 
     val expectedProperties =
       "<properties>" +
-        "<property name=\"moduleName\" value=\"${moduleName}\"/>" +
+        "<property name=\"modulePath\" value=\"${moduleName}\"/>" +
         "<property name=\"testSuiteName\" value=\"${testSuiteName}\"/>" +
         "<property name=\"testedVariantName\" value=\"${testedVariantName}\"/>" +
         "</properties>"

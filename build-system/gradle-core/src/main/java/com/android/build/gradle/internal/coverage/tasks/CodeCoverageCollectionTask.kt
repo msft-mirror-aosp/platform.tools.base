@@ -32,7 +32,9 @@ import com.android.build.gradle.internal.tasks.factory.VariantTaskCreationAction
 import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.tasks.TestSuiteTestTask
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_FILE
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_MODULE_KEY
 import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_SUITE_KEY
+import com.android.build.gradle.tasks.TestSuiteTestTask.Companion.TEST_SUITE_METADATA_VARIANT_KEY
 import com.android.buildanalyzer.common.TaskCategory
 import java.io.File
 import java.io.IOException
@@ -97,8 +99,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
 
   @get:Classpath @get:Optional abstract val jacocoClasspath: ConfigurableFileCollection
 
-  @get:Internal abstract val projectName: Property<String>
-
   @get:Internal abstract val projectRoot: DirectoryProperty
 
   override fun doTaskAction() {
@@ -123,7 +123,7 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         it.sourceFolders.setFrom(sourceFolders)
         it.dependentModuleCoverageData.setFrom(dependentModuleCoverageData)
         it.variantName.set(variantName)
-        it.projectName.set(projectName)
+        it.projectName.set(projectPath.get())
         it.projectRoot.set(projectRoot)
       }
   }
@@ -139,7 +139,6 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
     override fun configure(task: CodeCoverageCollectionTask) {
       super.configure(task)
 
-      task.projectName.set(creationConfig.services.projectInfo.path)
       task.projectRoot.set(task.project.rootDir)
       jacocoAntConfiguration?.let { task.jacocoClasspath.setFrom(it) }
 
@@ -255,9 +254,9 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
             injectMetadataInXmlReport(
               xmlFile,
               mapOf(
-                "moduleName" to parameters.projectName.get(),
-                "testSuiteName" to testSuiteName,
-                "testedVariantName" to parameters.variantName.get(),
+                TEST_SUITE_METADATA_MODULE_KEY to parameters.projectName.get(),
+                TEST_SUITE_METADATA_SUITE_KEY to testSuiteName,
+                TEST_SUITE_METADATA_VARIANT_KEY to parameters.variantName.get(),
               ),
               sourceFolders = parameters.sourceFolders.files.map { it.relativeTo(rootDir).path },
             )
