@@ -132,7 +132,7 @@
           },
           {
             "flag": "BUILT_IN_KOTLIN_DEFAULT_ENABLED",
-            "value": false
+            "value": true
           }
         ]
       },

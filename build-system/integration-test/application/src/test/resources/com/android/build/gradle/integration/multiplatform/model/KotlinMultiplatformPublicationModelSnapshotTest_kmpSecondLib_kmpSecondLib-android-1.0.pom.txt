@@ -19,7 +19,7 @@
     </dependency>
     <dependency>
       <groupId>com.example</groupId>
-      <artifactId>kmpLibraryPlugin-android-debug</artifactId>
+      <artifactId>kmpLibraryPlugin-android</artifactId>
       <version>1.0</version>
       <scope>runtime</scope>
     </dependency>
