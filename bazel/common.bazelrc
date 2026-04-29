@@ -269,3 +269,8 @@ build:dynamic --noexperimental_worker_multiplex
 
 common:without_vendor --repo_env=SETUP_VENDOR=0
 build:without_vendor --//tools/base/bazel:without-vendor
+
+# Build arguments for platform targets
+build --@tools_idea_rules_jvm//:default-javac-opts=@tools_idea//:default-javac-opts
+build --@tools_idea_rules_jvm//:default-kotlinc-opts=@tools_idea//:k21
+build --@tools_idea_rules_jvm//:koltin_inc_threshold=0 --@tools_idea_rules_jvm//:java_inc_threshold=0

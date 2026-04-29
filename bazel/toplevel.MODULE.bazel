@@ -229,6 +229,7 @@ use_repo(android_sdk_repository_extension, "androidsdk")
 register_toolchains("@androidsdk//:sdk-toolchain", "@androidsdk//:all")
 
 include("//tools/base/bazel/bzlmod:external.MODULE.bazel")
+include("//tools/base/bazel/bzlmod:idea.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:toolchains.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:prebuilts.MODULE.bazel")
 include("//tools/base/bazel/bzlmod:coverage.MODULE.bazel")
