@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The Android Open Source Project
+ * Copyright (C) 2026 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,92 +13,84 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.Companion.builder
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.truth.TruthHelper
-import com.android.build.gradle.integration.common.utils.TestFileUtils
-import com.android.build.gradle.options.BooleanOption
-import java.io.IOException
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.gradle.integration.common.fixture.project.GradleRule
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
+import com.google.common.truth.Truth.assertThat
+import org.gradle.api.Project
 import org.junit.Rule
 import org.junit.Test
 
-/** Test property values in Variant API. */
 class VariantApiPropertiesTest {
   @get:Rule
-  val project =
-    builder().fromTestApp(HelloWorldApp.forPlugin("com.android.application")).addGradleProperty(BooleanOption.USE_NEW_DSL, false).create()
+  val rule =
+    GradleRule.from {
+      rootProject { buildscript { classpath("com.google.truth:truth:0.44") } }
+      androidApplication {
+        android {
+          defaultConfig { versionName = "1.2.3-alpha04" }
+          buildTypes {
+            named("debug") {
+              it.javaCompileOptions.annotationProcessorOptions {
+                className("Foo")
+                argument("value", "debugArg")
+              }
+              it.versionNameSuffix = "-xD"
+            }
+          }
+          flavorDimensions += "dimension"
+          productFlavors {
+            create("flavor1") {
+              it.javaCompileOptions.annotationProcessorOptions {
+                className("Bar")
+                argument("value", "flavor1Arg")
+              }
+            }
+          }
+        }
+      }
+    }
 
   @Test
-  @Throws(IOException::class, InterruptedException::class)
-  fun checkMergedJavaCompileOptions() {
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-      android {
-          buildTypes {
-              debug {
-                  javaCompileOptions.annotationProcessorOptions {
-                      className 'Foo'
-                      argument 'value', 'debugArg'
-                  }
-              }
-          }
-          flavorDimensions 'dimension'
-          productFlavors {
-              flavor1 {
-                  javaCompileOptions.annotationProcessorOptions {
-                      className 'Bar'
-                      argument 'value', 'flavor1Arg'
-                  }
-              }
-          }
-          applicationVariants.all { variant ->
-              def options = variant.javaCompileOptions.annotationProcessorOptions
-              if (variant.name == 'flavor1Debug') {
-                  assert options.classNames == ['Bar', 'Foo']
-                  assert options.arguments.get('value') == 'debugArg'
-              }
-          }
-      }
-      """
-        .trimIndent(),
-    )
-    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("help")
+  fun testMergedJavaCompileOptions() {
+    val project = rule.build { androidApplication { pluginCallbacks += MergedJavaCompileOptionsChecker::class.java } }
+    project.executor.run("help")
   }
 
   @Test
-  @Throws(IOException::class, InterruptedException::class)
-  fun checkOutputFileName() {
-    TestFileUtils.appendToFile(
-      project.buildFile,
-      """
-      android {
-          flavorDimensions 'dimension'
-          productFlavors {
-              flavor1 {
-              }
-          }
-          applicationVariants.all { variant ->
-              if (variant.name == 'flavor1Debug') {
-                  assert variant.outputs.first().outputFileName == 'project-flavor1-debug.apk'
-                  def outputFileName = variant.outputs.first().outputFileName
-                  def variantOutput = variant.outputs.first()
-                  variantOutput.outputFileName = outputFileName.replace('flavor1', "flavor1-${"$"}{variant.versionName}")
-                  assert variantOutput.outputFile == project.file("build/outputs/apk/flavor1/debug/${"$"}{variantOutput.outputFileName}")
-              }
-              if (variant.name == 'flavor1Release') {
-                  assert variant.outputs.first().outputFileName == 'project-flavor1-release-unsigned.apk'
-              }
-          }
+  fun testOutputFileName() {
+    val project = rule.build { androidApplication { pluginCallbacks += OutputFileNameChecker::class.java } }
+    project.executor.run("help")
+  }
+}
+
+class MergedJavaCompileOptionsChecker : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType("debug").withFlavor("dimension" to "flavor1")) {
+      val options = it.javaCompilation?.annotationProcessor
+      assertThat(options?.classNames?.get()).isEqualTo(listOf("Bar", "Foo"))
+      assertThat(options?.arguments?.getting("value")?.get()).isEqualTo("debugArg")
+    }
+  }
+}
+
+class OutputFileNameChecker : ApplicationComponentCallback {
+  override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
+    androidComponents.onVariants(androidComponents.selector().withFlavor("dimension" to "flavor1")) {
+      val firstOutput = it.outputs.firstOrNull()
+      val firstOutputName = firstOutput?.outputFileName
+      when (it.buildType) {
+        "debug" -> assertThat(firstOutputName?.get()).isEqualTo("app-flavor1-debug.apk")
+        "release" -> assertThat(firstOutputName?.get()).isEqualTo("app-flavor1-release-unsigned.apk")
+        else -> throw IllegalStateException("Unexpected buildType ${it.buildType} (first output name: $firstOutputName)")
       }
-      """
-        .trimIndent(),
-    )
-    project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("assembleFlavor1Debug")
-    TruthHelper.assertThat(project.getApk(GradleTestProject.ApkType.DEBUG, "flavor1")).doesNotExist()
-    TruthHelper.assertThat(project.getApk("1.0", GradleTestProject.ApkType.DEBUG, GradleTestProject.ApkLocation.Output, "flavor1")).exists()
+      if (it.buildType == "debug") {
+        firstOutputName?.set(firstOutputName.get().replace("flavor1", "flavor1-${firstOutput.versionName.get()}"))
+        assertThat(firstOutputName?.get()).isEqualTo("app-flavor1-1.2.3-alpha04-xD-debug.apk")
+      }
+    }
   }
 }
