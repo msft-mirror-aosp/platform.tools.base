@@ -19,7 +19,7 @@ maven_library(
 )
 
 # The Gradle APIs to build against and run against.
-GRADLE_VERSION = "9.5.0-milestone-7"
+GRADLE_VERSION = "9.5.0"
 
 GRADLE_BASE_VERSION = "9.5.0"
 

@@ -1330,6 +1330,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlin:kotlin-reflect:2.2.21",
     "org.jetbrains.kotlin:kotlin-reflect:2.3.0",
     "org.jetbrains.kotlin:kotlin-reflect:2.3.10",
+    "org.jetbrains.kotlin:kotlin-reflect:2.3.20",  # Studio build
     "org.jetbrains.kotlin:kotlin-reflect:2.4.0-Beta2",  # Used by AGP tests
     "org.jetbrains.kotlin:kotlin-script-runtime:1.5.21",
     "org.jetbrains.kotlin:kotlin-script-runtime:1.6.10",

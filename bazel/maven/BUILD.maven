@@ -12019,10 +12019,10 @@ maven_import(
 )
 
 maven_artifact(
-    name = "org.gradle.gradle-tooling-api_9.5.0-milestone-7",
-    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-7/gradle-tooling-api-9.5.0-milestone-7.pom",
+    name = "org.gradle.gradle-tooling-api_9.5.0",
+    pom = "repository/org/gradle/gradle-tooling-api/9.5.0/gradle-tooling-api-9.5.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-7",
+    repo_path = "org/gradle/gradle-tooling-api/9.5.0",
     deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
@@ -12033,7 +12033,7 @@ maven_import(
     name = "org.gradle.gradle-tooling-api",
     classifiers = [],
     jars = [
-        "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-7/gradle-tooling-api-9.5.0-milestone-7.jar"
+        "repository/org/gradle/gradle-tooling-api/9.5.0/gradle-tooling-api-9.5.0.jar"
     ],
     exports = [
         "org.slf4j.slf4j-api",
@@ -12041,9 +12041,9 @@ maven_import(
     original_deps = [
         "org.slf4j.slf4j-api_2.0.17",
     ],
-    pom = "repository/org/gradle/gradle-tooling-api/9.5.0-milestone-7/gradle-tooling-api-9.5.0-milestone-7.pom",
+    pom = "repository/org/gradle/gradle-tooling-api/9.5.0/gradle-tooling-api-9.5.0.pom",
     repo_root_path = "repository",
-    repo_path = "org/gradle/gradle-tooling-api/9.5.0-milestone-7",
+    repo_path = "org/gradle/gradle-tooling-api/9.5.0",
     deps_with_exclusions = [
         "org.slf4j.slf4j-api",
      ],
@@ -93056,6 +93056,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.10",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.3.10",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-reflect_2.3.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-reflect/2.3.20/kotlin-reflect-2.3.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-reflect/2.3.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.3.20",
     ],
     visibility = ["//visibility:public"],
 )

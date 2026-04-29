@@ -95,13 +95,17 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
 
     executor().run(":kmpFirstLib:createAndroidHostTestCoverageReport")
 
+    val testReportFiles =
+      FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "tests", "testAndroidHostTest")
+        .walkTopDown()
+        .filter { it.extension == "html" }
+        .toList()
     assertWithMessage("Running kmp unit tests should run common tests as well")
-      .that(
-        FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "tests", "testAndroidHostTest").listFiles()!!.map {
-          it.name
-        }
-      )
-      .containsAtLeast("com.example.kmpfirstlib.KmpAndroidFirstLibClassTest", "com.example.kmpfirstlib.KmpCommonFirstLibClassTest")
+      .that(testReportFiles.any { it.readText().contains("com.example.kmpfirstlib.KmpAndroidFirstLibClassTest") })
+      .isTrue()
+    assertWithMessage("Running kmp unit tests should run common tests as well")
+      .that(testReportFiles.any { it.readText().contains("com.example.kmpfirstlib.KmpCommonFirstLibClassTest") })
+      .isTrue()
 
     val coveragePackageFolder =
       FileUtils.join(project.getSubproject("kmpFirstLib").buildDir, "reports", "coverage", "test", "com.example.kmpfirstlib")
