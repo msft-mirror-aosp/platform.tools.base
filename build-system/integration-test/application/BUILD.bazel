@@ -103,6 +103,8 @@ TEST_DATA = [
     "//tools/base/build-system/integration-test:test-projects/flavors",
     "//tools/base/build-system/integration-test:test-projects/genFolderApi",
     "//tools/base/build-system/integration-test:test-projects/genFolderApi2",
+    "//tools/base/build-system/integration-test:test-projects/genFolderApi2Old",
+    "//tools/base/build-system/integration-test:test-projects/genFolderApiOld",
     "//tools/base/build-system/integration-test:test-projects/gradleDeclarative",
     "//tools/base/build-system/integration-test:test-projects/jacocoOnlySubprojectBuildScriptDependency",
     "//tools/base/build-system/integration-test:test-projects/jacocoWithButterKnife",

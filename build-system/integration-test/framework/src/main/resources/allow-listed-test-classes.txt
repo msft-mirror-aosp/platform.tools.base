@@ -86,6 +86,8 @@ com.android.build.gradle.integration.application.GenerateManifestJarTaskTest
 com.android.build.gradle.integration.application.GenerateResValuesIntegrationTest
 com.android.build.gradle.integration.application.GenFolderApi2Test
 com.android.build.gradle.integration.application.GenFolderApiTest
+com.android.build.gradle.integration.application.GenFolderApi2OldTest
+com.android.build.gradle.integration.application.GenFolderApiOldTest
 com.android.build.gradle.integration.application.GenFolderKotlinOnlyApiTest
 com.android.build.gradle.integration.application.InitWithThisTest
 com.android.build.gradle.integration.application.InjectedAbiSplitTest

@@ -176,8 +176,7 @@ public class CheckAll {
                     "api",
                     "artifactApi",
                     "bytecodeGenerationHooksOld",
-                    "genFolderApi2",
-                    "noPreDex",
+                    "genFolderApi2Old",
                     "renamedApk",
                     "splitAwareSeparateTestModule"
             );

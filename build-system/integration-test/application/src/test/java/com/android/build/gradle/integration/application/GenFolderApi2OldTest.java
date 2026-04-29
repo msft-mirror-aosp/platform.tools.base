@@ -16,17 +16,13 @@
 
 package com.android.build.gradle.integration.application;
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
-
-import static org.junit.Assert.assertNotNull;
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject;
 import com.android.build.gradle.integration.common.utils.TestFileUtils;
+import com.android.build.gradle.options.BooleanOption;
 import com.android.builder.model.v2.ide.AndroidArtifact;
 import com.android.builder.model.v2.ide.JavaArtifact;
 import com.android.builder.model.v2.ide.Variant;
 import com.android.builder.model.v2.models.AndroidProject;
-
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -35,16 +31,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/** Tests for addJavaSourceFoldersToModel Variant API. */
-public class GenFolderApi2Test {
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+import static org.junit.Assert.assertNotNull;
+
+/** Old Variant API" (or "pre-10.0 Variant API */
+public class GenFolderApi2OldTest {
     @Rule
     public GradleTestProject project =
-            GradleTestProject.builder().fromTestProject("genFolderApi2").create();
+            GradleTestProject.builder().fromTestProject("genFolderApi2Old").create();
 
     @Test
     public void checkJavaFolderInModel() {
         AndroidProject androidProject =
                 project.modelV2()
+                        .with(BooleanOption.USE_NEW_DSL, false)
                         .fetchModels().getContainer().getProject().getAndroidProject();
 
         File projectDir = project.getProjectDir();
@@ -92,6 +92,6 @@ public class GenFolderApi2Test {
         // ATTENTION Author and Reviewers - please make sure required changes to the build file
         // are backwards compatible before updating this test.
         assertThat(TestFileUtils.sha1NormalizedLineEndings(project.file("build.gradle")))
-                .isEqualTo("ca20c61876ea920925144051ec3cf9b7eed30d83");
+                .isEqualTo("fd908858c2e56649a8556edb58ef6322ba5b36b8");
     }
 }
