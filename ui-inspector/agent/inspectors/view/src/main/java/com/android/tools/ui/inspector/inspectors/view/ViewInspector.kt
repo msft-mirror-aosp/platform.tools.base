@@ -22,22 +22,32 @@ import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorFactory
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsResponse
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloEvent
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloResponse
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class ViewInspectorFactory : InspectorFactory<ViewInspector>(ProtocolConstants.VIEW_INSPECTOR_ID) {
   override fun createInspector(connection: Connection, environment: InspectorEnvironment) = ViewInspector(connection, environment)
 }
 
 class ViewInspector(connection: Connection, private val environment: InspectorEnvironment) : Inspector(connection) {
+  private val scope = CoroutineScope(SupervisorJob() + environment.executors().primary().asCoroutineDispatcher())
+  private val mainDispatcher = MainThreadExecutor().asCoroutineDispatcher()
+
   override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
     val command = Command.parseFrom(data)
     when (command.specializedCase) {
       Command.SpecializedCase.HELLO_COMMAND -> handleHelloCommand(callback)
       Command.SpecializedCase.TRIGGER_EVENT_COMMAND -> handleTriggerEventCommand(callback)
+      Command.SpecializedCase.DUMP_VIEWS_COMMAND -> handleDumpViewsCommand(callback)
       else -> error("Unknown command: ${command.specializedCase}")
     }
   }
@@ -49,6 +59,16 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
   private fun handleTriggerEventCommand(callback: CommandCallback) {
     connection.sendEvent { helloEvent = HelloEvent.newBuilder().setMessage("hello event").build() }
     callback.reply { triggerEventResponse = TriggerEventResponse.getDefaultInstance() }
+  }
+
+  private fun handleDumpViewsCommand(callback: CommandCallback) {
+    scope.launch {
+      val stringTable = StringTable()
+      val nodes = withContext(mainDispatcher) { RootsDetector.getRootViews().map { it.toViewNode(stringTable) } }
+      callback.reply {
+        dumpViewsResponse = DumpViewsResponse.newBuilder().addAllNodes(nodes).addAllStrings(stringTable.toStringEntries()).build()
+      }
+    }
   }
 
   override fun onDispose() {}

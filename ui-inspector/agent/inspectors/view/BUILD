@@ -1,7 +1,8 @@
 load("@rules_java//java:defs.bzl", "java_library")
 load("//tools/base/bazel:android.bzl", "dex_library")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:merge_archives.bzl", "merge_jars")
+load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
 
@@ -23,13 +24,13 @@ kotlin_library(
     ],
 )
 
-kotlin_test(
+robolectric_test(
     name = "view_inspector_tests",
     srcs = glob(["src/test/java/**/*.kt"]),
-    jvm_flags = ["-Dtest.suite.jar=view_inspector_tests.jar"],
-    test_class = "com.android.testutils.JarTestSuite",
+    friends = [":view_inspector"],
     deps = [
         ":view_inspector",
+        "//prebuilts/studio/sdk:platforms/latest_jar",
         "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
         "//tools/adt/idea/.idea/libraries:junit4",
         "//tools/adt/idea/.idea/libraries:truth",
@@ -37,6 +38,9 @@ kotlin_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-test-jvm",
+        "@maven//:org.robolectric.robolectric",
     ],
 )
 

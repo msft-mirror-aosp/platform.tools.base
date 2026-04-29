@@ -64,7 +64,7 @@ class DumpUiCommand : Callable<Int> {
 
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
           createViewInspector(commandSender, injectionManager)
-          viewInspectorHelloWorld(commandSender)
+          viewInspectorDump(commandSender)
         }
       }
       return EXIT_OK
@@ -94,16 +94,38 @@ private suspend fun createViewInspector(commandSender: CommandSender, injectionM
   }
 }
 
-/** Sends a hello command to the view inspector and prints the response. */
-private suspend fun viewInspectorHelloWorld(commandSender: CommandSender) {
+/** Sends a dump command to the view inspector and prints the view hierarchy. */
+private suspend fun viewInspectorDump(commandSender: CommandSender) {
   val viewInspectorCommand =
-    ViewInspectorProtocol.Command.newBuilder().setHelloCommand(ViewInspectorProtocol.HelloCommand.getDefaultInstance()).build()
+    ViewInspectorProtocol.Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.getDefaultInstance()).build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
   val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
 
-  System.out.println("Sent: hello command")
-  System.out.println("Received: ${viewInspectorResponse.helloResponse}")
+  if (viewInspectorResponse.specializedCase != ViewInspectorProtocol.Response.SpecializedCase.DUMP_VIEWS_RESPONSE) {
+    throw IllegalStateException("Unexpected response: ${viewInspectorResponse.specializedCase}")
+  }
+
+  val dumpResponse = viewInspectorResponse.dumpViewsResponse
+  val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+  System.out.println("View Hierarchy:")
+  for (node in dumpResponse.nodesList) {
+    printNode(node, stringTable, 0)
+  }
+}
+
+private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int, String>, indent: Int) {
+  val prefix = "  ".repeat(indent)
+  val className = stringTable[node.className] ?: "Unknown"
+  val bounds = node.bounds
+  System.out.println(
+    "${prefix}[$className] (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
+  )
+
+  for (child in node.childrenList) {
+    printNode(child, stringTable, indent + 1)
+  }
 }
 
 fun main(args: Array<String>) {

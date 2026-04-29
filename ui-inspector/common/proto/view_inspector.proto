@@ -29,10 +29,59 @@ message HelloEvent {
     string message = 1;
 }
 
+message Rect {
+    int32 x = 1;
+    int32 y = 2;
+    int32 width = 3;
+    int32 height = 4;
+}
+
+message ViewNode {
+    // uniqueDrawingId of this view
+    int64 id = 1;
+
+    repeated ViewNode children = 2;
+
+    // String table index for class name
+    int32 class_name = 3;
+
+    // String table index for package name
+    int32 package_name = 4;
+
+    // The absolute bounds of the view in screen coordinates.
+    Rect bounds = 5;
+
+    enum Visibility {
+        VISIBLE = 0;
+        INVISIBLE = 1;
+        GONE = 2;
+    }
+    // TODO: Reconsider if visibility belongs here or with general attributes.
+    Visibility visibility = 6;
+}
+
+// Maps a string to a unique ID to optimize payload size.
+message StringEntry {
+    int32 id = 1;
+    string value = 2;
+}
+
+// Command to dump the view hierarchy of all root views.
+message DumpViewsCommand {}
+
+message DumpViewsResponse {
+    // The flattened list of root views.
+    repeated ViewNode nodes = 1;
+
+    // Deduplicated strings referenced by indices in ViewNode.
+    repeated StringEntry strings = 2;
+}
+
 message Command {
     oneof specialized {
         HelloCommand hello_command = 1;
         TriggerEventCommand trigger_event_command = 2;
+        DumpViewsCommand dump_views_command = 3;
     }
 }
 
@@ -40,6 +89,7 @@ message Response {
     oneof specialized {
         HelloResponse hello_response = 1;
         TriggerEventResponse trigger_event_response = 2;
+        DumpViewsResponse dump_views_response = 3;
     }
 }
 
