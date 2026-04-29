@@ -255,15 +255,6 @@ td {
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
 }
-th:last-child, td:last-child { border-right: none; }
-
-.sticky-name {
-    position: sticky; left: 0; z-index: 5;
-    background-color: inherit;
-    border-right: 1px solid var(--border-color);
-}
-thead th.sticky-name { z-index: 20; background: var(--bg-subtle); }
-
 tr:hover { background-color: var(--bg-selected); }
 
 .explanation-row { background-color: var(--bg-subtle); }

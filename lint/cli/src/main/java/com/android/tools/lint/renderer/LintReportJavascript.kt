@@ -436,7 +436,7 @@ const LintReportApp = {
     renderFlatIssues(issues) {
         if (!this.elements.tableHeaders) return;
         this.elements.tableHeaders.innerHTML = `<tr>
-            <th class="cursor-pointer sticky-name" data-sort="id">ID</th>
+            <th class="cursor-pointer" data-sort="id">ID</th>
             <th class="cursor-pointer" data-sort="severity">Severity</th>
             <th class="cursor-pointer" data-sort="category">Category</th>
             <th class="cursor-pointer" data-sort="module">Module</th>
@@ -460,7 +460,7 @@ const LintReportApp = {
                 : (this.escapeHTML(locationStr));
             const plClass = `pl-level-${'$'}{Math.min(level, 8)}`;
             rowsHtml.push(`<tr class="issue-row" data-issue-id="${'$'}{this.escapeHTML(issue.id)}" data-index="${'$'}{index}" data-parent-id="${'$'}{parentId}">
-                <td class="sticky-name ${'$'}{plClass}">${'$'}{this.escapeHTML(issue.id)}</td>
+                <td class="${'$'}{plClass}">${'$'}{this.escapeHTML(issue.id)}</td>
                 <td class="${'$'}{severityClass}">${'$'}{this.escapeHTML(issue.severityDescription)}</td>
                 <td>${'$'}{this.escapeHTML(issue.category)}</td>
                 <td>${'$'}{this.escapeHTML(issue.module)}</td>
