@@ -747,7 +747,45 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
           }
       }
 
-      // Common scoping functions
+      // Result
+      run {
+        static(kotlin.Result<*>::getOrElse) assumedAs
+          forAll { R ->
+            forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+              given(kotlin.Result::class(Type.WildCard), onFailure) {
+                range = R
+                symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+              }
+            }
+          }
+        static<_, (Any) -> Any>(kotlin.Result<Any>::map) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { transform ->
+                given(kotlin.Result::class(T), transform) {
+                  range = kotlin.Result::class(R)
+                  symbolicInvocations += transform[MethodId.Invoke[1], T]
+                }
+              }
+            }
+          }
+        static<kotlin.Result<Any>, (Any) -> Any, (Throwable) -> Any>(kotlin.Result<Any>::fold) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { onSuccess ->
+                forAll(Function1::class(Throwable::class(), R)) { onFailure ->
+                  given(kotlin.Result::class(T), onSuccess, onFailure) {
+                    range = R
+                    symbolicInvocations += onSuccess[MethodId.Invoke[1], T]
+                    symbolicInvocations += onFailure[MethodId.Invoke[1], Throwable::class()]
+                  }
+                }
+              }
+            }
+          }
+      }
+
+      // Common Kotlin combinators
       run {
         (static(Any::apply) + static(Any::also)) assumedAs
           forAll { self ->
@@ -765,6 +803,63 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
                 given(receiver, block) {
                   range = result
                   symbolicInvocations += block[MethodId.Invoke[1], receiver]
+                }
+              }
+            }
+          }
+
+        static<() -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(initializer) {
+                range = Lazy::class(T)
+                symbolicInvocations += initializer[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<LazyThreadSafetyMode, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(LazyThreadSafetyMode::class(), initializer) {
+                range = Lazy::class(T)
+                symbolicInvocations += initializer[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<Any?, () -> Any>(::lazy) assumedAs
+          forAll { T ->
+            forAll(Function0::class(T)) { initializer ->
+              given(java.lang.Object::class(), initializer) {
+                range = Lazy::class(T)
+                symbolicInvocations += initializer[MethodId.Invoke[0]]
+              }
+            }
+          }
+
+        static(::repeat) assumedAs
+          forAll(Function1::class(Type.Int, Type.Int)) { action ->
+            given(Type.Int, action) {
+              range = Type.Unit
+              symbolicInvocations += action[MethodId.Invoke[1], Type.Int]
+            }
+          }
+
+        static<() -> Any>(::run) assumedAs
+          forAll { R ->
+            forAll(Function0::class(R)) { block ->
+              given(block) {
+                range = R
+                symbolicInvocations += block[MethodId.Invoke[0]]
+              }
+            }
+          }
+        static<Any, Any.() -> Any>(Any::run) assumedAs
+          forAll { T ->
+            forAll { R ->
+              forAll(Function1::class(T, R)) { block ->
+                given(T, block) {
+                  range = R
+                  symbolicInvocations += block[MethodId.Invoke[1], T]
                 }
               }
             }

@@ -91,6 +91,7 @@ import org.jetbrains.kotlin.psi.KtCallExpression
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtObjectDeclaration
 import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.KtProperty
 import org.jetbrains.kotlin.psi.psiUtil.isExtensionDeclaration
 import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UArrayAccessExpression
@@ -656,6 +657,7 @@ internal open class Analysis<FX : Any>(
                 is ULocalVariable -> {
                   val decPsi = dec.javaPsi as PsiLocalVariable
                   val rhs = dec.uastInitializer?.let(::loop)
+                  val delegateFx = ((dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression)?.let(::loop)?.effect
                   val rhsType =
                     // For immutable local bindings, we bypass even the user-declared type to
                     // use
@@ -668,7 +670,12 @@ internal open class Analysis<FX : Any>(
                   // functionally, because later declarations need to see updates by earlier
                   // declarations.
                   env = env.withVar(decPsi.name, rhsType)
-                  rhs ?: emptyResult
+                  when {
+                    rhs != null && delegateFx != null -> rhs.copy(effect = joinOf(rhs.effect, delegateFx))
+                    rhs != null -> rhs
+                    delegateFx != null -> Result(Type.Unit, delegateFx)
+                    else -> emptyResult
+                  }
                 }
                 is UVariable -> unitResult // already added to environment during indexing
                 else -> {

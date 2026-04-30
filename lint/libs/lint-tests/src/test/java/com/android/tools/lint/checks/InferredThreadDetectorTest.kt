@@ -155,6 +155,65 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testBaseAssumption_moreCommonKotlinFunctions() {
+    lint()
+      .files(
+        kotlin(
+            """
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            @WorkerThread fun work() { }
+            @UiThread fun updateUi() { }
+
+            class Container @UiThread constructor() {
+                val field: String by lazy { work(); "foo" } // error TODO(b/508005741)
+            }
+
+            @UiThread fun main() {
+                val m: Int by lazy { work(); 42 } // error
+                val n: Int by lazy { updateUi(); 42 } // ok
+                val p = lazy { work(); 42 } // error
+                val q = lazy { updateUi(); 42 } // ok
+
+                repeat(10, ::work) // error
+                repeat(10, ::updateUi) // ok
+
+                run { work() } // error
+                0.run { work() } // error
+                run { updateUi() } // ok
+                0.run { updateUi() } // ok
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Container.kt:12: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            val m: Int by lazy { work(); 42 } // error
+                          ~~~~~~~~~~~~~~~~~~~
+        src/Container.kt:14: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            val p = lazy { work(); 42 } // error
+                    ~~~~~~~~~~~~~~~~~~~
+        src/Container.kt:17: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            repeat(10, ::work) // error
+            ~~~~~~~~~~~~~~~~~~
+        src/Container.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            run { work() } // error
+            ~~~~~~~~~~~~~~
+        src/Container.kt:21: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            0.run { work() } // error
+              ~~~~~~~~~~~~~~
+        5 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testInferredAny_376518592() {
     lint()
       .files(
