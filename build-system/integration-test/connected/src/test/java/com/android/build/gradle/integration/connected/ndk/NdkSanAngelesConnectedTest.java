@@ -22,6 +22,7 @@ import com.android.build.gradle.options.BooleanOption;
 
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExternalResource;
@@ -44,6 +45,7 @@ public class NdkSanAngelesConnectedTest {
         project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("uninstallAll");
     }
 
+    @Ignore("b/507490878")
     @Test
     public void connectedCheck() throws Exception {
         project.executor().with(BooleanOption.ENABLE_LEGACY_API, true).run("connectedAndroidTest");
