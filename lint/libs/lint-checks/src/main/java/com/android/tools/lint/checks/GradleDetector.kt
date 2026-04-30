@@ -769,10 +769,10 @@ open class GradleDetector : Detector(), GradleScanner, TomlScanner, XmlScanner {
     } else if (parent == "toolchain" && property == "languageVersion") {
       mDeclaredSourceCompatibility = true
       mDeclaredTargetCompatibility = true
-    } else if (parent == "optimization" && property == "enable" && value == "true") {
+    } else if (parent == "optimization" && property == "packageScope") {
       val flag = context.project.getBuildModule()?.highlightGradualR8Api
       if (flag == true) {
-        val message = "Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag."
+        val message = "Cannot use optimization.packageScope without setting android.r8.gradual.support=true flag."
         val fix = createR8FlagFix(context.project)
         report(context, propertyCookie, R8_GRADUAL_API, message, fix)
       }
