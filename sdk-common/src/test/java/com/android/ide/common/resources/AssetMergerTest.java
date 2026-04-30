@@ -458,6 +458,31 @@ public class AssetMergerTest extends BaseTestCase {
         assertEquals(FileValidity.FileStatus.IGNORED_FILE, fileValidity.status);
     }
 
+    @Test
+    public void testMergerFlowWithUnknownChangedFile() throws Exception {
+        AssetSet assetSet = new AssetSet("foo", null);
+        File sourceFolder = mTemporaryFolder.newFolder("src");
+        assetSet.addSource(sourceFolder);
+
+        AssetMerger merger = new AssetMerger();
+        merger.addDataSet(assetSet);
+
+        File unknownFile = new File(sourceFolder, "unknown.txt");
+
+        FileValidity<AssetSet> validity = merger.findDataSetContaining(unknownFile);
+        assertEquals(FileValidity.FileStatus.VALID_FILE, validity.status);
+        assertEquals(assetSet, validity.dataSet);
+
+        boolean result =
+                validity.dataSet.updateWith(
+                        validity.sourceFile,
+                        unknownFile,
+                        FileStatus.CHANGED,
+                        new NoErrorsOrWarningsLogger());
+
+        assertFalse(result);
+    }
+
     /**
      * Creates a fake merge with given sets.
      *
