@@ -100,7 +100,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runAndroidTestWithNoTestClasses() {
-    // TODO(b/476442048): Implement built-in test platform for Managed Device.
     util.runAndroidTestWithNoTestClasses()
   }
 
