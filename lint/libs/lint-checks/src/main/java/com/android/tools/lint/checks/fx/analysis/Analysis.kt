@@ -26,6 +26,7 @@ import com.android.tools.lint.checks.fx.result.Effect
 import com.android.tools.lint.checks.fx.result.EffectAnnotation
 import com.android.tools.lint.checks.fx.result.Env
 import com.android.tools.lint.checks.fx.result.Env.Companion.withVar
+import com.android.tools.lint.checks.fx.result.Env.Companion.withVarDelegate
 import com.android.tools.lint.checks.fx.result.Env.Companion.withVars
 import com.android.tools.lint.checks.fx.result.Error
 import com.android.tools.lint.checks.fx.result.ErrorSite
@@ -339,7 +340,12 @@ internal open class Analysis<FX : Any>(
     fun <E : UExpression> E.asName(name: (E) -> String): Result<Type<FX>, R> {
       val x = name(this)
       val t = env.varAt(x)
-      if (t != null) return pure(t)
+      val fx =
+        when (val delegate = env.varDelegateAt(x)) {
+          null -> fxInstantiationLattice.bottom
+          else -> invokeWildGuess(rec, delegate, "getValue", listOf(Type.Any, Type.KPropertySome)) { instantiationLattice.bottom }.effect
+        }
+      if (t != null) return Result(t, onInvocationEffect(this, fx))
       return giveUp(this, "Don't know what `$x` means in `${target.target.renderAbbrev()}`")
     }
 
@@ -535,6 +541,12 @@ internal open class Analysis<FX : Any>(
             target is PsiField -> Result(module[target] ?: translate(target.type), loop(e.receiver).effect)
             target is KtLightMethod && target.isAccessor(getter = true) -> callMethod(e.receiver, target, listOf())
             e.selector is UCallExpression -> loop(e.selector)
+            // HACK `getValue` of `Lazy`
+            target is PsiMethod && target.name == "getValue" && e.receiver is USimpleNameReferenceExpression ->
+              when (val t = env.varAt((e.receiver as USimpleNameReferenceExpression).identifier)) {
+                is Type.Lambda -> Result(getType(e.receiver), onInvocationEffect(e, Instantiation(t.body.effect)))
+                else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
+              }
             else -> giveUp(e, "Handle ${e.renderAbbrev()} of `${e::class.java.simpleName}`")
           }
         }
@@ -657,7 +669,8 @@ internal open class Analysis<FX : Any>(
                 is ULocalVariable -> {
                   val decPsi = dec.javaPsi as PsiLocalVariable
                   val rhs = dec.uastInitializer?.let(::loop)
-                  val delegateFx = ((dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression)?.let(::loop)?.effect
+                  val delegeteExpr = (dec.sourcePsi as? KtProperty)?.delegateExpression?.toUElement() as? UExpression
+                  val delegate = if (delegeteExpr != null) loop(delegeteExpr) else null
                   val rhsType =
                     // For immutable local bindings, we bypass even the user-declared type to
                     // use
@@ -670,10 +683,11 @@ internal open class Analysis<FX : Any>(
                   // functionally, because later declarations need to see updates by earlier
                   // declarations.
                   env = env.withVar(decPsi.name, rhsType)
+                  if (delegate != null) env = env.withVarDelegate(decPsi.name, delegate.value)
                   when {
-                    rhs != null && delegateFx != null -> rhs.copy(effect = joinOf(rhs.effect, delegateFx))
+                    rhs != null && delegate != null -> rhs.copy(effect = joinOf(rhs.effect, delegate.effect))
                     rhs != null -> rhs
-                    delegateFx != null -> Result(Type.Unit, delegateFx)
+                    delegate != null -> Result(Type.Unit, delegate.effect)
                     else -> emptyResult
                   }
                 }

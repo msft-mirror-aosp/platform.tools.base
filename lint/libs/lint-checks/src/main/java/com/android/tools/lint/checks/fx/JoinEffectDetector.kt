@@ -808,31 +808,25 @@ abstract class JoinEffectDetector<FX : Any>(private val effects: Lattice<FX>, in
             }
           }
 
+        fun lazyRange(range: Type<FX>, initializer: Type.Sym<FX>): Type<FX> =
+          // The delegate implementation returned by `lazy`
+          Type.Lambda(
+            params = listOf(Type.Any, Type.KPropertySome),
+            body = Result(range, Effect(bottom, persistentSetOf(initializer[MethodId.Invoke[0]]))),
+            intf = ClassId.of<Lazy<*>>(),
+          )
         static<() -> Any>(::lazy) assumedAs
-          forAll { T ->
-            forAll(Function0::class(T)) { initializer ->
-              given(initializer) {
-                range = Lazy::class(T)
-                symbolicInvocations += initializer[MethodId.Invoke[0]]
-              }
-            }
-          }
+          forAll { T -> forAll(Function0::class(T)) { initializer -> given(initializer) { range = lazyRange(T, initializer) } } }
         static<LazyThreadSafetyMode, () -> Any>(::lazy) assumedAs
           forAll { T ->
             forAll(Function0::class(T)) { initializer ->
-              given(LazyThreadSafetyMode::class(), initializer) {
-                range = Lazy::class(T)
-                symbolicInvocations += initializer[MethodId.Invoke[0]]
-              }
+              given(LazyThreadSafetyMode::class(), initializer) { range = lazyRange(T, initializer) }
             }
           }
         static<Any?, () -> Any>(::lazy) assumedAs
           forAll { T ->
             forAll(Function0::class(T)) { initializer ->
-              given(java.lang.Object::class(), initializer) {
-                range = Lazy::class(T)
-                symbolicInvocations += initializer[MethodId.Invoke[0]]
-              }
+              given(java.lang.Object::class(), initializer) { range = lazyRange(T, initializer) }
             }
           }
 
