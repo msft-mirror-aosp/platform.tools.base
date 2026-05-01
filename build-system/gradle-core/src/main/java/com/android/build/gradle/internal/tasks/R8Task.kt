@@ -174,9 +174,7 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:Nested abstract val resourceShrinkingParams: R8ResourceShrinkingParameters
 
-  @get:Input @get:Optional abstract val partialShrinkingEnabled: Property<Boolean>
-
-  @get:Input @get:Optional abstract val applicationOptimizationEnabled: Property<Boolean>
+  @get:Input @get:Optional abstract val gradualShrinkingEnabled: Property<Boolean>
 
   @get:Input @get:Optional abstract val gradualShrinkingPackages: SetProperty<String>
 
@@ -400,11 +398,11 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       }
 
       // for validation purposes
-      task.applicationOptimizationEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
+      task.gradualShrinkingEnabled.setDisallowChanges(
+        creationConfig.optimizationCreationConfig.minifiedEnabled && creationConfig.optimizationCreationConfig.packageScopeEnabled
+      )
 
-      task.partialShrinkingEnabled.setDisallowChanges(creationConfig.optimizationCreationConfig.applicationOptimizationEnabled)
-
-      if (creationConfig.optimizationCreationConfig.applicationOptimizationEnabled) {
+      if (creationConfig.optimizationCreationConfig.packageScopeEnabled) {
         task.gradualShrinkingPackages.set(creationConfig.optimizationCreationConfig.includePackages)
       }
     }
@@ -436,10 +434,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   override fun doTaskAction() {
     // verify r8 gradual settings
-    if (applicationOptimizationEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
-      throw RuntimeException(
-        "Wrong configuration. Gradual R8 is ON with optimization.enable = true " + "but packageScope has no include rules."
-      )
+    if (gradualShrinkingEnabled.orNull == true && gradualShrinkingPackages.get().isEmpty()) {
+      throw RuntimeException("Wrong configuration. optimization.packageScope is an empty set, at least one package must be specified.")
     }
 
     val output: Property<out FileSystemLocation> =
@@ -584,11 +580,12 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   // Merge creation config included/excluded patterns with package.txt with merged R8 packages
   private fun aggregatePartialShrinkingConfig(): PartialShrinking? {
-    if (partialShrinkingEnabled.orNull != true) return null
+    if (gradualShrinkingEnabled.orNull != true) return null
 
     // load from files and from new gradual r8 dsl
     val packages = (gradualShrinkingPackages.orNull ?: listOf()).toList()
     if (packages.contains("**")) return PartialShrinkingIncludeAll
+
     return PartialShrinkingConfig(packages)
   }
 

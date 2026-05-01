@@ -434,8 +434,7 @@ private class DslScriptGenerator(private val buildTypeType: Class<*>? = null, pr
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.preview(java.lang.String)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int)",
         "public abstract com.android.build.api.dsl.CompileSdkVersion com.android.build.api.dsl.CompileSdkSpec.release(int,kotlin.jvm.functions.Function1)",
-        "public abstract void com.android.build.api.dsl.Optimization.setEnable(boolean)",
-        "public abstract org.gradle.api.provider.SetProperty<java.lang.String> com.android.build.api.dsl.Optimization.getPackageScope()",
+        "public abstract org.gradle.api.provider.SetProperty com.android.build.api.dsl.Optimization.getPackageScope()",
       )
 
     private val nullableGetters =

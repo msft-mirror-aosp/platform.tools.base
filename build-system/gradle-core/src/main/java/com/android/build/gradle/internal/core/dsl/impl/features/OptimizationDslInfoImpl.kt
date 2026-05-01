@@ -85,7 +85,7 @@ class OptimizationDslInfoImpl(
     get() = mergedOptimization.enable && componentType == BASE_APK
 
   override val includePackages: Set<String>
-    get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf()
+    get() = if (componentType == BASE_APK) mergedOptimization.packageScope else setOf("**")
 
   override val optimizationEnabled: Boolean
     get() = mergedOptimization.enable

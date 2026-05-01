@@ -164,5 +164,8 @@ class OptimizationCreationConfigImpl(
   override val applicationOptimizationEnabled: Boolean
     get() = dslInfo.applicationOptimizationEnabled
 
+  override val packageScopeEnabled: Boolean
+    get() = dslInfo.includePackages != setOf("**")
+
   override val includePackages: Provider<Set<String>> = internalServices.setPropertyOf(String::class.java, dslInfo.includePackages)
 }
