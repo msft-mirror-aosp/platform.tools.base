@@ -2655,7 +2655,7 @@ class ProjectInitializerTest {
     )
   }
 
-  // TODO(b/481384774): re-enable this @Test
+  @Test
   fun testKmpNativeUastPsi() {
     // Tests the new KlibLightElementProvider.
     // kotlinSourceFile references various symbols from klibSourceFile. We consider different

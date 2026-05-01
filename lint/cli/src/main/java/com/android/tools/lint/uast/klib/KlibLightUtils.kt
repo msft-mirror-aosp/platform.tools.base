@@ -17,7 +17,10 @@
 
 package com.android.tools.lint.uast.klib
 
+import com.intellij.openapi.vfs.VfsUtilCore.iterateChildrenRecursively
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.openapi.vfs.isFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
@@ -39,6 +42,8 @@ import org.jetbrains.kotlin.analysis.api.symbols.markers.KaAnnotatedSymbol
 import org.jetbrains.kotlin.analysis.api.symbols.pointers.KaSymbolPointer
 import org.jetbrains.kotlin.fir.declarations.utils.sourceElement
 import org.jetbrains.kotlin.fir.symbols.SymbolInternals
+import org.jetbrains.kotlin.library.components.KlibMetadataConstants.KLIB_METADATA_FILE_EXTENSION
+import org.jetbrains.kotlin.library.components.KlibMetadataConstants.KLIB_METADATA_FOLDER_NAME
 import org.jetbrains.kotlin.library.metadata.KlibDeserializedContainerSource
 import org.jetbrains.kotlin.light.classes.symbol.annotations.hasInlineOnlyAnnotation
 import org.jetbrains.kotlin.light.classes.symbol.classes.SymbolLightClassBase
@@ -134,6 +139,28 @@ internal val SymbolLightField.extractSymbolPointer: KaSymbolPointer<KaDeclaratio
       else -> null
     }
 
+internal fun VirtualFile.findFirst(maxDepth: Int = 2, condition: (VirtualFile) -> Boolean): VirtualFile? {
+  val root = this
+  var firstFile: VirtualFile? = null
+
+  iterateChildrenRecursively(
+    root,
+    null,
+    {
+      when {
+        condition(it) -> {
+          firstFile = it
+          false // to stop
+        }
+        else -> true // to continue
+      }
+    },
+    VirtualFileVisitor.limit(maxDepth),
+  )
+
+  return firstFile
+}
+
 @Suppress("UnstableApiUsage")
 @OptIn(SymbolInternals::class, KaPlatformInterface::class)
 internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): PsiFile? {
@@ -153,10 +180,14 @@ internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): Psi
           }
         }
     }
-    throw IllegalStateException("Could not get container source from $this")
+    KlibLightElementProvider.log { "ERROR: Could not get container source from symbol" }
+    return null
   }
 
-  containerSource as KlibDeserializedContainerSource
+  if (containerSource !is KlibDeserializedContainerSource) {
+    KlibLightElementProvider.log { "ERROR: Could not get KlibDeserializedContainerSource from symbol" }
+    return null
+  }
 
   val klibFile = containerSource.klib.libraryFile
 
@@ -164,15 +195,28 @@ internal fun KaSession.getPsiFile(symbol: KaSymbol, psiManager: PsiManager): Psi
     when {
       klibFile.isDirectory -> VirtualFileManager.getInstance().findFileByNioPath(Paths.get(klibFile.toString()))
       else -> VirtualFileManager.getInstance().getFileSystem("jar").findFileByPath("$klibFile!/")
-    } ?: throw IllegalStateException("Could not get virtual file for klib: $klibFile")
+    }
+
+  if (virtualFile == null) {
+    KlibLightElementProvider.log { "ERROR: Could not get virtual file for klib: $klibFile" }
+    return null
+  }
 
   // TODO: We may have to do better than this by returning a PsiJavaFile/PsiClassOwner that
   //  implements getPackageName (as this appears to have a few uses).
 
-  // We are just picking some file within the klib so that the file is deemed as "in scope" for
-  // analysis. The klib root is not sufficient, so we use the default manifest file, for now.
-  // TODO: We can avoid hardcoding this.
-  return psiManager.findFile(virtualFile.findChild("default")!!.findChild("manifest")!!)
+  // We need to pick some .knm file within the klib so that the file is deemed as "in scope" for analysis.
+  // E.g. default/linkdata/package_com.myorg.myapp/0_klib.knm
+  virtualFile
+    .findFirst { it.name == KLIB_METADATA_FOLDER_NAME && it.isDirectory }
+    ?.findFirst { it.extension == KLIB_METADATA_FILE_EXTENSION && it.isFile }
+    ?.let { psiManager.findFile(it) }
+    ?.let {
+      return it
+    }
+
+  KlibLightElementProvider.log { "ERROR: Could not get a .knm file to use as the containing file" }
+  return null
 }
 
 internal fun KaSession.updateContainingFile(cls: SymbolLightClassBase, file: PsiFile) {

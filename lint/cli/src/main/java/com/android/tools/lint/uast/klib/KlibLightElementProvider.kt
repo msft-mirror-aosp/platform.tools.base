@@ -71,12 +71,12 @@ internal object KlibLightElementProvider : FirKotlinUastLibraryPsiProviderServic
     return lineNumber
   }
 
-  private inline fun log(message: () -> String) {
-    // System.err.println("SlcDeclarationProvider: ${message()}")
+  internal inline fun log(message: () -> String) {
+    // System.err.println("KlibLightElementProvider: ${message()}")
   }
 
-  private inline fun logHeader(message: () -> String) {
-    // System.err.println("\n\nSlcDeclarationProvider: ${message()}")
+  internal inline fun logHeader(message: () -> String) {
+    // System.err.println("\n\nKlibLightElementProvider: ${message()}")
   }
 
   @OptIn(SymbolInternals::class)
