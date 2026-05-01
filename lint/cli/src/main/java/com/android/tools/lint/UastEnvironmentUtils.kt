@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.Project
 import com.intellij.codeInsight.CustomExceptionHandler
 import com.intellij.codeInsight.ExternalAnnotationsManager
 import com.intellij.codeInsight.InferredAnnotationsManager
+import com.intellij.codeInsight.JavaExpressionTypeNullabilityPatcher
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.diagnostic.LoadingState
 import com.intellij.lang.LanguageASTFactory
@@ -80,17 +81,17 @@ import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtLibraryMod
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtScriptModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSdkModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
-import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.CompilerSystemProperties
 import org.jetbrains.kotlin.cli.common.messages.GradleStyleMessageRenderer
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.create
 import org.jetbrains.kotlin.config.CommonConfigurationKeys
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageFeature
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.LanguageVersionSettingsImpl
-import org.jetbrains.kotlin.library.KLIB_METADATA_FILE_EXTENSION
+import org.jetbrains.kotlin.library.components.KlibMetadataConstants.KLIB_METADATA_FILE_EXTENSION
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.has
 import org.jetbrains.kotlin.platform.jvm.JvmPlatform
@@ -104,7 +105,7 @@ import org.jetbrains.uast.java.JavaUastLanguagePlugin
 import org.jetbrains.uast.kotlin.evaluation.KotlinEvaluatorExtension
 
 internal fun createCommonKotlinCompilerConfig(): CompilerConfiguration {
-  val config = CompilerConfiguration()
+  val config = CompilerConfiguration.create()
 
   config.put(CommonConfigurationKeys.MODULE_NAME, "lint-module")
 
@@ -116,7 +117,7 @@ internal fun createCommonKotlinCompilerConfig(): CompilerConfiguration {
   // We're not running compiler checks, but we still want to register a logger
   // in order to see warnings related to misconfiguration.
   val logger = PrintingMessageCollector(System.err, GradleStyleMessageRenderer(), false)
-  config.put(CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY, logger)
+  config.put(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY, logger)
 
   // The Kotlin compiler uses a fast, ASM-based class file reader.
   // However, Lint still relies on representing class files with PSI.
@@ -166,8 +167,8 @@ internal fun configureProjectEnvironment(project: MockProject, config: UastEnvir
   //  even including lint checks shipped in a binary form?!
   @Suppress("DEPRECATION") project.registerService(UastContext::class.java, UastContext(project))
 
-  // KotlinResolutionScopeEnlarger
-  PluginStructureProvider.registerProjectExtensionPoints(project, "/META-INF/analysis-api/analysis-api-platform-interface.xml")
+  // Registers extension point `KotlinContentScopeRefiner`.
+  PluginStructureProvider.registerProjectServices(project, "/META-INF/analysis-api/analysis-api-platform-interface.xml")
 }
 
 @OptIn(KaImplementationDetail::class, KaExperimentalApi::class)
@@ -386,9 +387,25 @@ internal fun configureApplicationEnvironment(appEnv: CoreApplicationEnvironment,
   CoreApplicationEnvironment.registerApplicationExtensionPoint(UEvaluatorExtension.EXTENSION_POINT_NAME, UEvaluatorExtension::class.java)
   CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(PsiAugmentProvider.EP_NAME.toString(), PsiAugmentProvider::class.java)
 
+  // Defined in: intellij/java/java-psi-impl/resources/intellij.java.psi.impl.xml
+  // Used by: intellij/java/java-psi-impl/src/com/intellij/psi/impl/source/tree/java/PsiMethodCallExpressionImpl.java
+  CoreApplicationEnvironment.registerApplicationDynamicExtensionPoint(
+    JavaExpressionTypeNullabilityPatcher.EP_NAME.toString(),
+    JavaExpressionTypeNullabilityPatcher::class.java,
+  )
+
+  // Note: we do not provide/register extension: StreamNullabilityPatcher (implements JavaExpressionTypeNullabilityPatcher).
+  // Unsure if this matters. We don't even include this module (java-analysis-impl).
+  // Location: intellij/java/java-analysis-impl/src/com/intellij/psi/impl/StreamNullabilityPatcher.java
+
   // https://youtrack.jetbrains.com/issue/IJPL-175398
   // JavaIndexingPlugin.xml (formerly JavaPsiPlugin.xml)
   System.setProperty("javac.fresh.variables.for.captured.wildcards.only", "true")
+
+  // Defined in: intellij/java/java-psi-impl/resources/intellij.java.psi.impl.xml
+  // Used by:
+  // intellij/java/java-psi-impl/src/com/intellij/psi/impl/source/resolve/graphInference/constraints/PsiMethodReferenceCompatibilityConstraint.java
+  System.setProperty("unsound.capture.conversion.java.spec.change", "false")
 
   appEnv.addExtension(UastLanguagePlugin.EP, JavaUastLanguagePlugin())
   appEnv.addExtension(UEvaluatorExtension.EXTENSION_POINT_NAME, KotlinEvaluatorExtension())

@@ -28,6 +28,7 @@ import com.intellij.openapi.vfs.impl.ZipHandler
 import com.intellij.pom.java.LanguageLevel
 import java.io.File
 import kotlin.concurrent.withLock
+import org.jetbrains.kotlin.K1Deprecation
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.cli.jvm.config.addJavaSourceRoots
 import org.jetbrains.kotlin.cli.jvm.config.addJvmClasspathRoots
@@ -36,9 +37,6 @@ import org.jetbrains.kotlin.config.JVMConfigurationKeys
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.config.deserializeTargetPlatformByComponentPlatforms
 import org.jetbrains.kotlin.config.languageVersionSettings
-import org.jetbrains.kotlin.konan.library.KLIB_INTEROP_IR_PROVIDER_IDENTIFIER
-import org.jetbrains.kotlin.library.CompilerSingleFileKlibResolveAllowingIrProvidersStrategy
-import org.jetbrains.kotlin.library.KotlinLibrary
 import org.jetbrains.kotlin.platform.CommonPlatforms
 import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.js.JsPlatforms
@@ -161,6 +159,7 @@ interface UastEnvironment {
      * Disposes the global application environment, which is created implicitly by the first [UastEnvironment]. Only call this once *all*
      * [UastEnvironment]s have been disposed.
      */
+    @OptIn(K1Deprecation::class)
     @JvmStatic
     fun disposeApplicationEnvironment() {
       // Note: if we later decide to keep the app env alive forever in the Gradle daemon, we
@@ -182,15 +181,11 @@ interface UastEnvironment {
       }
     }
 
+    @OptIn(K1Deprecation::class)
     @JvmStatic
     fun checkApplicationEnvironmentDisposed() {
       check(KotlinCoreEnvironment.applicationEnvironment == null)
     }
-
-    @JvmStatic
-    fun kotlinLibrary(path: String): KotlinLibrary =
-      CompilerSingleFileKlibResolveAllowingIrProvidersStrategy(listOf(KLIB_INTEROP_IR_PROVIDER_IDENTIFIER))
-        .resolve(org.jetbrains.kotlin.konan.file.File(path), logger)
 
     @JvmStatic fun CompilerConfiguration.getKlibPaths(): List<String> = get(JVMConfigurationKeys.KLIB_PATHS) ?: listOf()
 
