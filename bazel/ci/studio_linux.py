@@ -123,7 +123,6 @@ _ARTIFACTS = [
     ('tools/base/apkparser/tools.binary-resources.jar', 'artifacts'),
     ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
-    ('tools/vendor/google/android/legacy-android-cli.zip', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
     ('tools/vendor/google/lume/dist/lume-distribution.zip', 'artifacts'),
 
