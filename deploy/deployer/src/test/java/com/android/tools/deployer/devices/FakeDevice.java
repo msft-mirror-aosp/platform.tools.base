@@ -182,6 +182,8 @@ public class FakeDevice {
                                 model,
                                 version,
                                 new AndroidApiLevel(api),
+                                "x86_64",
+                                props,
                                 DeviceState.HostConnectionType.USB)
                         .get();
         deviceState.setDeviceStatus(DeviceState.DeviceStatus.ONLINE);
