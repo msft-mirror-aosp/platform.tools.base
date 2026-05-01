@@ -102,6 +102,7 @@ _CLASS_JARS = [
     "androidx.compose.material:material:1.3.0",  # Needed by //tools/base/build-system/integration-test/...
     "androidx.compose.material:material:1.4.3",  # Necessary for Compose for TV.
     "androidx.compose.material:material:1.5.0-alpha04",
+    "androidx.compose.material:material:1.6.0",
     "androidx.compose.material:material:1.7.0",
     "androidx.compose.material:material:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material:1.7.8",  # Compose BOM 2024.09.00

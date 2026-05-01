@@ -22767,6 +22767,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.compose.material.material-android_1.6.0",
+    pom = "repository/androidx/compose/material/material-android/1.6.0/material-android-1.6.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material-android/1.6.0",
+    deps = [
+        "androidx.annotation.annotation_1.1.0",
+        "androidx.compose.animation.animation-android_1.6.0",
+        "androidx.compose.animation.animation-core-android_1.6.0",
+        "androidx.compose.foundation.foundation-android_1.6.0",
+        "androidx.compose.foundation.foundation-layout-android_1.6.0",
+        "androidx.compose.material.material-icons-core_1.6.0",
+        "androidx.compose.material.material-ripple_1.6.0",
+        "androidx.compose.runtime.runtime-android_1.6.0",
+        "androidx.compose.ui.ui-android_1.6.0",
+        "androidx.compose.ui.ui-text-android_1.6.0",
+        "androidx.compose.ui.ui-util-android_1.6.0",
+        "androidx.lifecycle.lifecycle-runtime_2.6.1",
+        "androidx.lifecycle.lifecycle-viewmodel_2.6.1",
+        "androidx.savedstate.savedstate_1.2.1",
+        "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.22",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.compose.material.material-android_1.7.0",
     pom = "repository/androidx/compose/material/material-android/1.7.0/material-android-1.7.0.pom",
     repo_root_path = "repository",
@@ -23913,6 +23938,24 @@ maven_artifact(
         "androidx.lifecycle.lifecycle-viewmodel_2.6.1",
         "androidx.savedstate.savedstate_1.2.1",
         "org.jetbrains.kotlin.kotlin-stdlib-common_1.8.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "androidx.compose.material.material_1.6.0",
+    pom = "repository/androidx/compose/material/material/1.6.0/material-1.6.0.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/compose/material/material/1.6.0",
+    deps = [
+        "androidx.compose.animation.animation-core_1.6.0",
+        "androidx.compose.foundation.foundation_1.6.0",
+        "androidx.compose.material.material-android_1.6.0",
+        "androidx.compose.material.material-icons-core_1.6.0",
+        "androidx.compose.material.material-ripple_1.6.0",
+        "androidx.compose.runtime.runtime_1.6.0",
+        "androidx.compose.ui.ui_1.6.0",
+        "androidx.compose.ui.ui-text_1.6.0",
     ],
     visibility = ["//visibility:public"],
 )
