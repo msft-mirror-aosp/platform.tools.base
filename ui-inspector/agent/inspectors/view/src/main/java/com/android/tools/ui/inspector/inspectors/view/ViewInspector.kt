@@ -23,11 +23,7 @@ import androidx.inspection.InspectorFactory
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsResponse
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloEvent
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloResponse
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -45,20 +41,9 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
   override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
     val command = Command.parseFrom(data)
     when (command.specializedCase) {
-      Command.SpecializedCase.HELLO_COMMAND -> handleHelloCommand(callback)
-      Command.SpecializedCase.TRIGGER_EVENT_COMMAND -> handleTriggerEventCommand(callback)
       Command.SpecializedCase.DUMP_VIEWS_COMMAND -> handleDumpViewsCommand(callback)
       else -> error("Unknown command: ${command.specializedCase}")
     }
-  }
-
-  private fun handleHelloCommand(callback: CommandCallback) {
-    callback.reply { helloResponse = HelloResponse.getDefaultInstance() }
-  }
-
-  private fun handleTriggerEventCommand(callback: CommandCallback) {
-    connection.sendEvent { helloEvent = HelloEvent.newBuilder().setMessage("hello event").build() }
-    callback.reply { triggerEventResponse = TriggerEventResponse.getDefaultInstance() }
   }
 
   private fun handleDumpViewsCommand(callback: CommandCallback) {
@@ -78,8 +63,4 @@ private fun Inspector.CommandCallback.reply(initResponse: Response.Builder.() ->
   val response = Response.newBuilder()
   response.initResponse()
   reply(response.build().toByteArray())
-}
-
-private fun Connection.sendEvent(init: Event.Builder.() -> Unit) {
-  sendEvent(Event.newBuilder().apply { init() }.build().toByteArray())
 }

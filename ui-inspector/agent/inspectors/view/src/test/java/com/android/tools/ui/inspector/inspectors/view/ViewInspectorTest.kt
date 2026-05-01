@@ -30,10 +30,7 @@ import androidx.inspection.InspectorExecutors
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsCommand
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Event
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.HelloCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
-import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.TriggerEventCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.google.common.truth.Truth.assertThat
 import java.util.concurrent.Executor
@@ -79,37 +76,6 @@ class ViewInspectorTest {
     }
 
   @Test
-  fun testOnReceiveCommand_hello() {
-    val mockConnection =
-      object : Connection() {
-        override fun sendEvent(data: ByteArray) {
-          // Not used in this test
-        }
-      }
-
-    val inspector = ViewInspector(mockConnection, mockEnvironment)
-
-    var replyData: ByteArray? = null
-    val callback =
-      object : Inspector.CommandCallback {
-        override fun reply(response: ByteArray) {
-          replyData = response
-        }
-
-        override fun addCancellationListener(executor: Executor, runnable: Runnable) {
-          // Not used
-        }
-      }
-
-    val command = Command.newBuilder().setHelloCommand(HelloCommand.getDefaultInstance()).build()
-    inspector.onReceiveCommand(command.toByteArray(), callback)
-
-    assertThat(replyData).isNotNull()
-    val response = Response.parseFrom(replyData!!)
-    assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.HELLO_RESPONSE)
-  }
-
-  @Test
   fun testOnReceiveCommand_unknown() {
     val mockConnection =
       object : Connection() {
@@ -140,42 +106,6 @@ class ViewInspectorTest {
       assertThat(e.message).contains("Unknown command")
     }
     assertThat(exceptionThrown).isTrue()
-  }
-
-  @Test
-  fun testOnReceiveCommand_triggerEvent() {
-    var capturedEvent: ByteArray? = null
-    val mockConnection =
-      object : Connection() {
-        override fun sendEvent(data: ByteArray) {
-          capturedEvent = data
-        }
-      }
-    val inspector = ViewInspector(mockConnection, mockEnvironment)
-
-    var replyData: ByteArray? = null
-    val callback =
-      object : Inspector.CommandCallback {
-        override fun reply(response: ByteArray) {
-          replyData = response
-        }
-
-        override fun addCancellationListener(executor: java.util.concurrent.Executor, runnable: Runnable) {
-          // Not used
-        }
-      }
-
-    val command = Command.newBuilder().setTriggerEventCommand(TriggerEventCommand.getDefaultInstance()).build()
-    inspector.onReceiveCommand(command.toByteArray(), callback)
-
-    assertThat(replyData).isNotNull()
-    val response = Response.parseFrom(replyData!!)
-    assertThat(response.specializedCase).isEqualTo(Response.SpecializedCase.TRIGGER_EVENT_RESPONSE)
-
-    assertThat(capturedEvent).isNotNull()
-    val event = Event.parseFrom(capturedEvent!!)
-    assertThat(event.specializedCase).isEqualTo(Event.SpecializedCase.HELLO_EVENT)
-    assertThat(event.helloEvent.message).isEqualTo("hello event")
   }
 
   @Test

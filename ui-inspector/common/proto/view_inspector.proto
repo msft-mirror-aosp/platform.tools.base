@@ -19,16 +19,6 @@ package ui.inspector.view.inspector.protocol;
 option java_package = "com.android.tools.ui.inspector.view.inspector.protocol";
 option java_outer_classname = "ViewInspectorProtocol";
 
-message HelloCommand {}
-message HelloResponse {}
-
-message TriggerEventCommand {}
-message TriggerEventResponse {}
-
-message HelloEvent {
-    string message = 1;
-}
-
 message Rect {
     int32 x = 1;
     int32 y = 2;
@@ -79,22 +69,14 @@ message DumpViewsResponse {
 
 message Command {
     oneof specialized {
-        HelloCommand hello_command = 1;
-        TriggerEventCommand trigger_event_command = 2;
-        DumpViewsCommand dump_views_command = 3;
+        DumpViewsCommand dump_views_command = 1;
     }
 }
 
 message Response {
     oneof specialized {
-        HelloResponse hello_response = 1;
-        TriggerEventResponse trigger_event_response = 2;
-        DumpViewsResponse dump_views_response = 3;
+        DumpViewsResponse dump_views_response = 1;
     }
 }
 
-message Event {
-    oneof specialized {
-        HelloEvent hello_event = 1;
-    }
-}
+
