@@ -93,14 +93,14 @@
             <d:screen>
                 <d:screen-size>normal</d:screen-size>
                 <d:diagonal-length>1.0</d:diagonal-length>
-                <d:pixel-density>xhdpi</d:pixel-density>
+                <d:pixel-density>mdpi</d:pixel-density>
                 <d:screen-ratio>notlong</d:screen-ratio>
                 <d:dimensions>
                     <d:x-dimension>450</d:x-dimension>
                     <d:y-dimension>450</d:y-dimension>
                 </d:dimensions>
-                <d:xdpi>320</d:xdpi>
-                <d:ydpi>320</d:ydpi>
+                <d:xdpi>160</d:xdpi>
+                <d:ydpi>160</d:ydpi>
                 <d:touch>
                     <d:multitouch>jazz-hands</d:multitouch>
                     <d:mechanism>finger</d:mechanism>
