@@ -17,6 +17,15 @@ package com.android.build.gradle.internal.test.report;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Closeables;
+
+import kotlin.text.StringsKt;
+
+import org.gradle.api.GradleException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,15 +35,10 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.List;
+
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
-import kotlin.text.StringsKt;
-import org.gradle.api.GradleException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 
 /**
  * Custom test reporter based on Gradle's DefaultTestReport
@@ -100,9 +104,9 @@ public class TestReport {
                 inputStream.close();
             }
 
-            String deviceName = null;
-            String projectName = null;
-            String flavorName = null;
+            String deviceName = "";
+            String projectName = "";
+            String flavorName = "";
             NodeList propertiesList = document.getElementsByTagName("properties");
             for (int i = 0; i < propertiesList.getLength(); i++) {
                 Element properties = (Element) propertiesList.item(i);
@@ -201,7 +205,8 @@ public class TestReport {
                 }
             }
         } catch (Exception e) {
-            throw new GradleException(String.format("Could not load test results from '%s'.", file), e);
+            throw new GradleException(
+                    String.format("Could not load test results from '%s'.", file), e);
         } finally {
             try {
                 Closeables.close(inputStream, true /* swallowIOException */);
@@ -213,7 +218,8 @@ public class TestReport {
 
     private void generateFiles(AllTestResults model) {
         try {
-            generatePage(model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
+            generatePage(
+                    model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
             for (PackageTestResults packageResults : model.getPackages()) {
                 generatePage(packageResults, new PackagePageRenderer(reportType),
                         new File(reportDir, packageResults.getFilename(reportType) + ".html"));
@@ -230,7 +236,8 @@ public class TestReport {
 
     private void generateFilesForScreenshotTest(AllTestResults model, boolean isRecordGolden) {
         try {
-            generatePage(model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
+            generatePage(
+                    model, new OverviewPageRenderer(reportType), new File(reportDir, "index.html"));
             for (PackageTestResults packageResults : model.getPackages()) {
                 generatePage(packageResults, new PackagePageRenderer(reportType),
                         new File(reportDir, packageResults.getFilename(reportType) + ".html"));
