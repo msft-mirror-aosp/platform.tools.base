@@ -89,6 +89,10 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
 
   @get:OutputFile @get:Optional abstract val outputMappingFile: RegularFileProperty
 
+  @get:InputFile @get:PathSensitive(PathSensitivity.NAME_ONLY) @get:Optional abstract val inputPartitionMappingFile: RegularFileProperty
+
+  @get:OutputFile @get:Optional abstract val outputPartitionMappingFile: RegularFileProperty
+
   override fun doTaskAction() {
     workerExecutor.noIsolation().submit(L8DexWorkAction::class.java) {
       it.initializeFromBaseTask(this)
@@ -106,6 +110,9 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
       it.outputArtProfile.set(outputArtProfile)
       it.inputMappingFile.set(inputMappingFile)
       it.outputMappingFile.set(outputMappingFile)
+      it.inputPartitionMappingFile.set(inputPartitionMappingFile)
+      it.outputPartitionMappingFile.set(outputPartitionMappingFile)
+      it.tempDir.set(temporaryDir)
     }
   }
 
@@ -123,6 +130,10 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
           .use(taskProvider)
           .wiredWithFiles(L8DexDesugarLibTask::inputMappingFile, L8DexDesugarLibTask::outputMappingFile)
           .toTransform(SingleArtifact.OBFUSCATION_MAPPING_FILE)
+
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, L8DexDesugarLibTask::outputPartitionMappingFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
       }
       creationConfig.artifacts
         .use(taskProvider)
@@ -143,6 +154,10 @@ abstract class L8DexDesugarLibTask : NonIncrementalTask() {
       task.minSdkVersion.set(dexingCreationConfig.minSdkVersionForDexing)
       task.debuggable.set(creationConfig.debuggable)
       task.fullBootClasspath.from(creationConfig.global.fullBootClasspath)
+
+      if (dexingCreationConfig.needsShrinkDesugarLibrary && creationConfig.optimizationCreationConfig.minifiedEnabled) {
+        creationConfig.artifacts.setTaskInputToFinalProduct(InternalArtifactType.R8_PARTITIONED_MAPPING, task.inputPartitionMappingFile)
+      }
 
       if (dexingCreationConfig.needsShrinkDesugarLibrary) {
         task.desugaredDesugarLibJar.from(getDesugaredDesugarLib(creationConfig))
@@ -188,6 +203,9 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
     abstract val outputArtProfile: RegularFileProperty
     abstract val inputMappingFile: RegularFileProperty
     abstract val outputMappingFile: RegularFileProperty
+    abstract val inputPartitionMappingFile: RegularFileProperty
+    abstract val outputPartitionMappingFile: RegularFileProperty
+    abstract val tempDir: DirectoryProperty
   }
 
   override fun run() {
@@ -217,6 +235,9 @@ abstract class L8DexWorkAction : ProfileAwareWorkAction<L8DexWorkAction.Params>(
       parameters.outputArtProfile.orNull?.asFile?.toPath(),
       parameters.inputMappingFile.orNull?.asFile?.toPath(),
       parameters.outputMappingFile.orNull?.asFile?.toPath(),
+      parameters.inputPartitionMappingFile.orNull?.asFile?.toPath(),
+      parameters.outputPartitionMappingFile.orNull?.asFile?.toPath(),
+      parameters.tempDir.orNull?.asFile?.toPath(),
     )
   }
 }

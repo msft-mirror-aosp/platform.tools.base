@@ -23,6 +23,7 @@ import com.android.build.api.artifact.impl.InternalScopedArtifacts
 import com.android.build.api.variant.InternalLibrarySources
 import com.android.build.api.variant.ScopedArtifacts.Scope
 import com.android.build.gradle.ProguardFiles
+import com.android.build.gradle.internal.component.ApkCreationConfig
 import com.android.build.gradle.internal.component.ApplicationCreationConfig
 import com.android.build.gradle.internal.component.ConsumableCreationConfig
 import com.android.build.gradle.internal.component.TestComponentCreationConfig
@@ -362,9 +363,19 @@ abstract class ProguardConfigurableTask(@get:Internal val projectLayout: Project
         .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingFile)
         .on(SingleArtifact.OBFUSCATION_MAPPING_FILE)
 
-      creationConfig.artifacts
-        .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
-        .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
+      // If L8 desugaring is enabled, route R8's partitioned mapping output to an internal artifact.
+      // L8DexDesugarLibTask will consume this, merge its own mappings, and output the final public artifact.
+      val isL8Enabled = (creationConfig as? ApkCreationConfig)?.dexing?.needsShrinkDesugarLibrary == true
+
+      if (isL8Enabled) {
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
+          .on(InternalArtifactType.R8_PARTITIONED_MAPPING)
+      } else {
+        creationConfig.artifacts
+          .setInitialProvider(taskProvider, ProguardConfigurableTask::mappingPartitionFile)
+          .on(SingleArtifact.OBFUSCATION_MAPPING_PARTITION_FILE)
+      }
     }
 
     override fun configure(task: TaskT) {

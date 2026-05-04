@@ -743,6 +743,9 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   /** Metadata file included in the app bundle as output from R8 */
   object R8_METADATA : InternalArtifactType<RegularFile>(FILE)
 
+  /** Partitioned mapping file directly from R8 before any L8 desugared mapping is merged. */
+  object R8_PARTITIONED_MAPPING : InternalArtifactType<RegularFile>(FILE)
+
   object R8_MAPPING_KEEP_RADIUS_DATA : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradius.pb")
 
   object R8_MAPPING_KEEP_RADIUS_REPORT : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradiusreport.html")
