@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package profiler.proto;
+option java_package = "com.android.tools.profiler.proto";
+option java_outer_classname = "ProfilerTaskMetadataProto";
+
+import "common.proto";
+
+/**
+ * Carrier for Task metadata used to reconstruct offline telemetry tracking accurately.
+ */
+message ProfilerTaskMetadata {
+  enum TaskDataOrigin {
+    ORIGIN_UNSPECIFIED = 0;
+    NEW = 1;
+    PAST_RECORDING = 2;
+    IMPORTED = 3;
+  }
+
+  enum TaskAttachmentPoint {
+    ATTACHMENT_UNSPECIFIED = 0;
+    NEW_PROCESS = 1;
+    EXISTING_PROCESS = 2;
+  }
+
+  SessionMetaData session_metadata = 1;
+  TaskDataOrigin task_data_origin = 2;
+  TaskAttachmentPoint task_attachment_point = 3;
+}
