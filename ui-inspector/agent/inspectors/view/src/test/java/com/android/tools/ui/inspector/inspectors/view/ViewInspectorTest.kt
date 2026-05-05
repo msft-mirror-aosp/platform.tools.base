@@ -17,6 +17,7 @@
 package com.android.tools.ui.inspector.inspectors.view
 
 import android.app.Activity
+import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -211,6 +212,63 @@ class ViewInspectorTest {
     }
 
   @Test
+  fun testDumpViews_resources() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val root = LinearLayout(activity).apply { id = android.R.id.content }
+      activity.setContentView(root)
+
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          mockEnvironment,
+        )
+      val response = runDumpCommand(inspector)
+
+      val dumpResponse = response.dumpViewsResponse
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+      val testRoot = findNodeByClassName(dumpResponse.getNodes(0), "LinearLayout", stringTable)
+      assertThat(testRoot).isNotNull()
+
+      val resource = testRoot!!.idResource
+      assertThat(resource).isNotNull()
+      assertThat(stringTable[resource.name]).isEqualTo("content")
+      assertThat(stringTable[resource.type]).isEqualTo("id")
+    }
+
+  @Test
+  fun testDumpViews_layoutResource() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val root = TestView(activity)
+      activity.setContentView(root)
+
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          mockEnvironment,
+        )
+      val response = runDumpCommand(inspector)
+
+      val dumpResponse = response.dumpViewsResponse
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+      val testViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TestView", stringTable)
+      assertThat(testViewNode).isNotNull()
+
+      val layoutResource = testViewNode!!.layoutResource
+      assertThat(layoutResource).isNotNull()
+      assertThat(stringTable[layoutResource.name]).isEqualTo("simple_list_item_1")
+      assertThat(stringTable[layoutResource.type]).isEqualTo("layout")
+      assertThat(stringTable[layoutResource.namespace]).isEqualTo("android")
+    }
+
+  @Test
   fun testDumpViews_nestedHierarchy() =
     runTest(testDispatcher) {
       val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
@@ -327,5 +385,9 @@ class ViewInspectorTest {
       if (found != null) return found
     }
     return null
+  }
+
+  private class TestView(context: Context) : View(context) {
+    override fun getSourceLayoutResId(): Int = android.R.layout.simple_list_item_1
   }
 }

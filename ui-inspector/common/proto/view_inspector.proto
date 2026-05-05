@@ -26,6 +26,16 @@ message Rect {
     int32 height = 4;
 }
 
+// Represents an Android resource.
+message Resource {
+    // Index in string table
+    int32 namespace = 1;
+    // Index in string table
+    int32 type = 2;
+    // Index in string table
+    int32 name = 3;
+}
+
 message ViewNode {
     // uniqueDrawingId of this view
     int64 id = 1;
@@ -48,6 +58,12 @@ message ViewNode {
     }
     // TODO: Reconsider if visibility belongs here or with general attributes.
     Visibility visibility = 6;
+
+    // The resource ID of the view (e.g., @id/my_view)
+    Resource id_resource = 7;
+
+    // The layout resource that inflated this view (e.g., @layout/activity_main)
+    Resource layout_resource = 8;
 }
 
 // Maps a string to a unique ID to optimize payload size.
