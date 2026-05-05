@@ -443,6 +443,10 @@ void Daemon::RunAgentStatusThread() {
       for (auto map : heartbeat_timestamp_map_) {
         // If we have a heartbeat then we attached the agent once as such we
         // update the status.
+        // Call the callback if our heartbeat timeouts.
+        // TODO(b/509805270): Revisit the logic of
+        // agent_status_changed_callbacks_. Currently, the callback isn't
+        // triggered by agent status change.
         if (kHeartbeatThresholdNs > (current_time - map.second)) {
           for (auto callback : agent_status_changed_callbacks_) {
             callback(map.first);
