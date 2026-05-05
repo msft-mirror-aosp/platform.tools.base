@@ -192,17 +192,17 @@ const SourceViewApp = {
 
         if (moduleName) {
             html += `
-                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-separator" aria-hidden="true">/</span>
                 <a href="#" class="breadcrumb-link" data-action="go-to-packages" data-module-name="${moduleName}">${moduleName}</a>`;
         }
         if (packageName) {
              html += `
-                <span class="breadcrumb-separator">/</span>
+                <span class="breadcrumb-separator" aria-hidden="true">/</span>
                 <a href="#" class="breadcrumb-link" data-action="go-to-classes" data-module-name="${moduleName}" data-package-name="${packageName}">${packageName}</a>`;
         }
 
         html += `
-            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-separator" aria-hidden="true">/</span>
             <span class="font-semibold text-gray-800">${sourceFileName}</span>
         </div>`;
 
@@ -211,10 +211,61 @@ const SourceViewApp = {
 
     bindEvents() {
         this.elements.variantFilterBtn.addEventListener('click', this.toggleVariantDropdown.bind(this));
+        this.elements.variantFilterBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleVariantDropdown();
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (this.elements.variantFiltersDropdown.classList.contains('hidden')) {
+                    this.toggleVariantDropdown();
+                } else {
+                    const firstItem = this.elements.variantFiltersDropdown.querySelector('button, [tabindex="0"], input');
+                    if (firstItem) firstItem.focus();
+                }
+            }
+        });
+        
+        this.elements.variantFiltersDropdown.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const items = Array.from(this.elements.variantFiltersDropdown.querySelectorAll('input:not([disabled]), button:not([disabled]), [role="option"]'))
+                    .filter(el => el.style.display !== 'none' && el.offsetWidth > 0 && el.offsetHeight > 0);
+                if (items.length === 0) return;
+                const currentIndex = items.indexOf(document.activeElement);
+                let nextIndex = 0;
+                if (e.key === 'ArrowDown') {
+                    nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+                } else {
+                    nextIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+                }
+                items[nextIndex].focus();
+            }
+        });
+
         this.elements.functionSearch.addEventListener('input', this.handleFunctionSearch.bind(this));
         this.elements.functionSearchClearBtn.addEventListener('click', this.handleFunctionSearchClear.bind(this));
         this.elements.functionList.addEventListener('click', this.handleMethodClick.bind(this));
+        this.elements.functionList.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const methodLink = e.target.closest('.method-link');
+                if (methodLink) {
+                    e.preventDefault();
+                    methodLink.click();
+                }
+            }
+        });
         this.elements.sourceBreadcrumbs.addEventListener('click', this.handleBreadcrumbClick.bind(this));
+        this.elements.sourceBreadcrumbs.addEventListener('keydown', (e) => {
+            if (e.key === ' ') {
+                const link = e.target.closest('.breadcrumb-link');
+                if (link) {
+                    e.preventDefault();
+                    link.click();
+                }
+            }
+        });
 
         if (this.elements.srcSearchRevealBtn) {
             this.elements.srcSearchRevealBtn.addEventListener('click', (e) => {
@@ -228,12 +279,20 @@ const SourceViewApp = {
                 const btn = e.target.closest('.segment-btn');
                 if (!btn) return;
 
-                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+                this.elements.scrollLockSegments.querySelectorAll('.segment-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-pressed', 'false');
+                    b.removeAttribute('tabindex');
+                });
                 btn.classList.add('active');
+                btn.setAttribute('aria-pressed', 'true');
+                btn.removeAttribute('tabindex');
 
                 this.state.scrollLock = (btn.dataset.value === 'on');
             });
         }
+
+
 
         this.elements.sourceViewContainer.addEventListener('scroll', (e) => {
             if (!this.state.scrollLock) return;
@@ -278,6 +337,12 @@ const SourceViewApp = {
                 App.showReportView();
                 CoverageReportApp.render(true);
                 Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
             case 'go-to-packages':
                 CoverageReportApp.state.selectedModule = moduleName;
@@ -286,6 +351,12 @@ const SourceViewApp = {
                 App.showReportView();
                 CoverageReportApp.render(true);
                 Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
             case 'go-to-classes':
                 CoverageReportApp.state.selectedModule = moduleName;
@@ -294,20 +365,58 @@ const SourceViewApp = {
                 App.showReportView();
                 CoverageReportApp.render(true);
                 Navigation.push();
+                setTimeout(() => {
+                    if (CoverageReportApp.elements.tableHeaders) {
+                        const firstHeader = CoverageReportApp.elements.tableHeaders.querySelector('[tabindex="0"]');
+                        if (firstHeader) firstHeader.focus();
+                    }
+                }, 0);
                 break;
         }
     },
 
     toggleVariantDropdown() {
-        this.elements.variantFiltersDropdown.classList.toggle('hidden');
+        const isHidden = this.elements.variantFiltersDropdown.classList.contains('hidden');
+        if (isHidden) {
+            this.elements.variantFiltersDropdown.classList.remove('hidden');
+            this.elements.variantFilterBtn.setAttribute('aria-expanded', 'true');
+            
+            // Focus management
+            setTimeout(() => {
+                const searchInput = this.elements.variantFiltersDropdown.querySelector('input');
+                if (searchInput) {
+                    searchInput.focus();
+                } else {
+                    const firstItem = this.elements.variantFiltersDropdown.querySelector('button, [tabindex="0"], input');
+                    if (firstItem) firstItem.focus();
+                }
+            }, 0);
+        } else {
+            this.elements.variantFiltersDropdown.classList.add('hidden');
+            this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+        }
     },
 
     closeDropdownOnClickOutside() {
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                if (!this.elements.variantFiltersDropdown.classList.contains('hidden')) {
+                    this.elements.variantFiltersDropdown.classList.add('hidden');
+                    this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
+                    this.elements.variantFilterBtn.focus();
+                } else if (this.elements.srcSearchWrapper && this.elements.srcSearchWrapper.classList.contains('expanded')) {
+                    this.collapseSearchUI(true);
+                    this.elements.srcSearchRevealBtn.focus();
+                }
+            }
+        });
+
         document.addEventListener('click', (event) => {
             if (!document.body.contains(event.target)) return;
 
             if (!this.elements.variantFilterBtn.contains(event.target) && !this.elements.variantFiltersDropdown.contains(event.target)) {
                 this.elements.variantFiltersDropdown.classList.add('hidden');
+                this.elements.variantFilterBtn.setAttribute('aria-expanded', 'false');
             }
 
             // Search Input Collapse
@@ -352,6 +461,9 @@ const SourceViewApp = {
     handleFunctionSearchClear() {
         this.resetSearchUI();
         this.collapseSearchUI(true);
+        if (this.elements.srcSearchRevealBtn) {
+            this.elements.srcSearchRevealBtn.focus();
+        }
     },
 
     handleMethodClick(e) {
@@ -426,7 +538,7 @@ const SourceViewApp = {
         }
 
         this.elements.functionList.innerHTML = this.classData.methods.map(method => `
-            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" data-method-name="${method.name}">
+            <div class="method-link w-full text-left px-3 py-2 rounded-lg transition-colors hover:bg-gray-100 text-gray-700 block cursor-pointer" tabindex="0" role="button" data-method-name="${method.name}">
                 <div class="text-sm font-mono truncate">${method.name}</div>
             </div>`
         ).join('');
