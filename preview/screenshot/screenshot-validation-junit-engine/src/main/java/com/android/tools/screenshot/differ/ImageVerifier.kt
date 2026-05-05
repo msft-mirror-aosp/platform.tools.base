@@ -18,6 +18,7 @@ package com.android.tools.screenshot.differ
 
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.IOException
 import javax.imageio.ImageIO
 
 data class VerificationResult(val diffResult: ImageDiffer.DiffResult, val diffPercent: Double?)
@@ -38,8 +39,12 @@ class ImageVerifier(private val imageDiffer: ImageDiffer) {
       throw ScreenshotImageNotFoundException("Reference image file does not exist (${referenceImageFile.relativeTo(projectRoot).path}).")
     }
 
-    val actual = ImageIO.read(newImageFile)
-    val reference = ImageIO.read(referenceImageFile)
+    val actual =
+      ImageIO.read(newImageFile)
+        ?: throw ScreenshotImageInvalidException("Cannot read preview image file (${newImageFile.relativeTo(projectRoot).path}).")
+    val reference =
+      ImageIO.read(referenceImageFile)
+        ?: throw ScreenshotImageInvalidException("Cannot read reference image file (${referenceImageFile.relativeTo(projectRoot).path}).")
 
     if (actual.width != reference.width || actual.height != reference.height) {
       throw ImageComparisonAssertionError(
@@ -83,5 +88,9 @@ class ImageComparisonAssertionError(
 }
 
 class ScreenshotImageNotFoundException(message: String) : FileNotFoundException(message) {
+  override fun fillInStackTrace(): Throwable = this
+}
+
+class ScreenshotImageInvalidException(message: String) : IOException(message) {
   override fun fillInStackTrace(): Throwable = this
 }
