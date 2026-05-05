@@ -908,27 +908,4 @@ public class XmlDocument {
         }
         return nodeRenamed;
     }
-
-    private static class KeyAndReason {
-
-        private final String mKey;
-        private final String mReason;
-
-        private KeyAndReason(String key, String reason) {
-            this.mKey = key;
-            this.mReason = reason;
-        }
-
-        public static KeyAndReason of(String key, String reason) {
-            return new KeyAndReason(key, reason);
-        }
-
-        public String getKey() {
-            return mKey;
-        }
-
-        public String getReason() {
-            return mReason;
-        }
-    }
 }
