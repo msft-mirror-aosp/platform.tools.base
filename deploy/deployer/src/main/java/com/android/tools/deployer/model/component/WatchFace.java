@@ -16,8 +16,6 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationCommands;
@@ -46,28 +44,7 @@ public class WatchFace extends WearComponent {
         super(appId, info, logger);
     }
 
-    @Override
-    public void activate(
-            @NonNull String extraFlags,
-            @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver receiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        validate(extraFlags);
-        logger.info(
-                "Activating WatchFace '%s' %s",
-                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
-
-        if (activationMode.equals(Mode.DEBUG)) {
-            setUpAmDebugApp(device);
-            // Watch faces are independent of SysUI and WCS implementations so setting the debug app
-            // in the Debug Surface as in case of the other surfaces is redundant.
-        }
-        String command = getStartWatchFaceCommand();
-        runStartCommand(command, receiver, logger, device);
-    }
-
-    private void validate(String extraFlags) throws ModelException {
+    protected void validate(String extraFlags) throws ModelException {
         if (!extraFlags.isEmpty()) {
             throw new ModelException(
                     String.format(
@@ -77,7 +54,7 @@ public class WatchFace extends WearComponent {
     }
 
     @NonNull
-    private String getStartWatchFaceCommand() {
+    protected String getStartWatchFaceCommand() {
         return ShellCommand.SET_WATCH_FACE + getFQEscapedName();
     }
 

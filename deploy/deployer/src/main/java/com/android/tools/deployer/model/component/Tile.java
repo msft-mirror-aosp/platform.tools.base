@@ -16,8 +16,6 @@
 package com.android.tools.deployer.model.component;
 
 import com.android.annotations.NonNull;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tools.deployer.model.ModelException;
 import com.android.tools.deployer.model.activate.ActivationCommand;
 import com.android.tools.deployer.model.activate.ActivationCommandResultChecker;
@@ -50,27 +48,7 @@ public class Tile extends WearComponent {
         super(appId, info, logger);
     }
 
-    @Override
-    public void activate(
-            @NonNull String extraFlags,
-            @NonNull Mode activationMode,
-            @NonNull IShellOutputReceiver addTileReceiver,
-            @NonNull IDevice device)
-            throws ModelException {
-        validate(extraFlags);
-        logger.info(
-                "Activating Tile '%s' %s",
-                info.getQualifiedName(), activationMode.equals(Mode.DEBUG) ? "for debug" : "");
-
-        if (activationMode.equals(Mode.DEBUG)) {
-            setUpAmDebugApp(device);
-            setUpDebugSurfaceDebugApp(device);
-        }
-        String command = getStartTileCommand();
-        runStartCommand(command, addTileReceiver, logger, device);
-    }
-
-    private void validate(String extraFlags) throws ModelException {
+    protected void validate(String extraFlags) throws ModelException {
         if (!extraFlags.isEmpty()) {
             throw new ModelException(
                     String.format(
@@ -79,14 +57,10 @@ public class Tile extends WearComponent {
         }
     }
 
-    private int parseIndex(String extraFlags) throws ModelException {
-        try {
-            return Integer.parseInt(extraFlags.trim());
-        } catch (NumberFormatException e) {
-            throw new ModelException("Invalid tile index in extra flags: " + extraFlags);
-        }
+    @NonNull
+    protected String getStartTileCommand() {
+        return ShellCommand.SET_TILE + getFQEscapedName();
     }
-
     @Override
     public ActivationCommands getActivationCommands(
             @NonNull String extraFlags, @NonNull Mode activationMode) throws ModelException {
@@ -163,10 +137,6 @@ public class Tile extends WearComponent {
                 context);
     }
 
-    @NonNull
-    private String getStartTileCommand() {
-        return ShellCommand.SET_TILE + getFQEscapedName();
-    }
 
     private ActivationCommand getSetWatchTileActivationCommand(ActivationContext context) {
         return new ActivationCommand(

@@ -235,6 +235,8 @@ com/android/tools/apkdeployer/apkdeployer
   com/android/tools/deployer/model/
   com/android/tools/deployer/model/activate/
   com/android/tools/deployer/model/component/
+  com/android/tools/deployer/modelv1/
+  com/android/tools/deployer/modelv1/component/
   com/android/tools/deployer/tasks/
   com/android/tools/idea/
   com/android/tools/idea/protobuf/

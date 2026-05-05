@@ -81,7 +81,6 @@ kotlin_library(
     deps = [
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
-        "//tools/base/ddmlib:tools.ddmlib",
         "//tools/base/deploy/proto:deploy_java_proto",
         "//tools/base/manifest-parser:tools.manifest-parser",
         "//tools/base/tracer:tools.tracer",
@@ -151,6 +150,22 @@ kotlin_library(
 )
 
 kotlin_library(
+    name = "tools.deployer.modelv1",
+    srcs = glob([
+        "src/main/java/com/android/tools/deployer/modelv1/component/*.java",
+    ]),
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tools.deployer.model",
+        "//tools/base/annotations",
+        "//tools/base/common:tools.common",
+        "//tools/base/ddmlib:tools.ddmlib",
+        "//tools/base/manifest-parser:tools.manifest-parser",
+        "@maven//:org.jetbrains.annotations",
+    ],
+)
+
+kotlin_library(
     name = "tools.deployer",
     srcs = glob(
         [
@@ -162,12 +177,16 @@ kotlin_library(
     # Embed android installer in the jar (x86, x86_64, arm7, arm64)
     resources = ["//tools/base/deploy/installer:android-installer"],
     visibility = ["//visibility:public"],
-    exports = [":tools.deployer.model"],
+    exports = [
+        ":tools.deployer.model",
+        ":tools.deployer.modelv1",
+    ],
     deps = [
         ":java_version",
         ":tools.deployer.common",
         ":tools.deployer.install",
         ":tools.deployer.model",
+        ":tools.deployer.modelv1",
         "//prebuilts/r8",
         "//tools/base/adblib",
         "//tools/base/adblib-tools:adblib.tools",
@@ -366,6 +385,7 @@ coverage_java_test(
     test_class = "com.android.testutils.JarTestSuite",
     deps = [
         ":tools.deployer.model",
+        ":tools.deployer.modelv1",
         "//tools/base/annotations",
         "//tools/base/common:tools.common",
         "//tools/base/ddmlib:tools.ddmlib",
