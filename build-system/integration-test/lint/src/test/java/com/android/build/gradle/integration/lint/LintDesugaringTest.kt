@@ -16,10 +16,8 @@
 package com.android.build.gradle.integration.lint
 
 import com.android.build.gradle.integration.common.fixture.DESUGAR_DEPENDENCY_VERSION
-import com.android.build.gradle.integration.common.fixture.SUPPORT_LIB_VERSION
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
 import com.android.build.gradle.integration.common.fixture.project.builder.GradleBuildDefinition
-import com.android.build.gradle.options.BooleanOption
 import com.android.testutils.truth.PathSubject
 import java.io.File
 import org.gradle.api.JavaVersion
@@ -86,14 +84,9 @@ class LintDesugaringTest {
         }
 
         dependencies {
-          api("com.android.support:appcompat-v7:$SUPPORT_LIB_VERSION")
+          api("androidx.appcompat:appcompat:1.6.1")
           coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:$DESUGAR_DEPENDENCY_VERSION")
         }
-      }
-
-      gradleProperties {
-        // Disabled due to a dependency on com.android.support:animated-vector-drawable:28.0.0
-        add(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
       }
     }
 

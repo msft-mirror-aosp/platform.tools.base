@@ -10,8 +10,8 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    targetProjectPath ':app'
-    targetVariant 'debug'
+    targetProjectPath = ':app'
+    targetVariant = 'debug'
 }
 
 dependencies {

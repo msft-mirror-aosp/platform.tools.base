@@ -53,9 +53,6 @@ public class RenderscriptNdkTest {
             throws IOException, InterruptedException {
 
         project.executor()
-                // Test project depends on vector drawable libraries that violate unique
-                // namespacing.
-                .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                 .run("clean", "assembleDebug");
 
         if (checkDotSo) {
@@ -197,9 +194,6 @@ public class RenderscriptNdkTest {
 
         GradleBuildResult result =
                 project.executor()
-                        // Test project depends on vector drawable libraries that violate unique
-                        // namespacing.
-                        .with(BooleanOption.ENFORCE_UNIQUE_PACKAGE_NAMES, false)
                         .expectFailure()
                         .run("clean", "assembleDebug");
         assertNotNull(result.getException());
