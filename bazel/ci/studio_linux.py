@@ -111,6 +111,8 @@ _ARTIFACTS = [
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
     ('tools/base/deploy/service/deploy.service_deploy.jar', 'artifacts'),
+    ('tools/vendor/google/aswb/aswb_bazel.stable.zip', 'artifacts'),
+    ('tools/vendor/google/aswb/aswb_bazel.canary.zip', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.jar', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.src.jar', 'artifacts'),
     ('tools/base/ninepatch/tools.ninepatch.jar', 'artifacts'),
