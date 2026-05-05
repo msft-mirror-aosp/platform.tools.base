@@ -90,13 +90,9 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.onFailure
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -126,9 +122,8 @@ internal class AdblibIDeviceWrapper(
   @Volatile private var mAvdPath: String? = null
 
   /**
-   * We use a [SettableFuture] because we want to return the same future every time [getAvdData] is called. We also want to avoid returning
-   * a failed future if the device disconnects or if there is an error. In this case we just don't set the future value, so it never
-   * completes.
+   * We use a [SettableFuture] because we want to return the same future every time [getAvdData] is called. If the fetch attempt fails, the
+   * future is set to `null` to avoid hanging.
    */
   private val mAvdDataFuture = SettableFuture.create<AvdData?>()
 
@@ -139,19 +134,8 @@ internal class AdblibIDeviceWrapper(
 
   private val pendingPropertyFutures = ConcurrentHashMap<String, MutableList<SettableFuture<String?>>>()
 
-  internal enum class AvdFetchStatus {
-    INITIAL,
-    IN_PROGRESS,
-    FAILED,
-    SUCCEEDED,
-  }
-
-  private val mAvdFetchStatusStateFlow = MutableStateFlow(AvdFetchStatus.INITIAL)
-
-  internal val avdFetchStatusFlow: StateFlow<AvdFetchStatus> = mAvdFetchStatusStateFlow.asStateFlow()
-
   init {
-    ensureAvdDataIsBeingFetched()
+    connectedDevice.scope.launch { fetchAvdData() }
     prefetchProperties()
   }
 
@@ -235,26 +219,7 @@ internal class AdblibIDeviceWrapper(
   @Deprecated("Prefer using getAvdData()")
   override fun getAvdPath(): String? = logUsage(IDeviceUsageTracker.Method.GET_AVD_PATH) { mAvdPath }
 
-  override fun getAvdData(): ListenableFuture<AvdData?> =
-    logUsage(IDeviceUsageTracker.Method.GET_AVD_DATA) {
-      ensureAvdDataIsBeingFetched()
-      mAvdDataFuture
-    }
-
-  private fun ensureAvdDataIsBeingFetched() {
-    if (
-      mAvdFetchStatusStateFlow.compareAndSet(AvdFetchStatus.INITIAL, AvdFetchStatus.IN_PROGRESS) ||
-        mAvdFetchStatusStateFlow.compareAndSet(AvdFetchStatus.FAILED, AvdFetchStatus.IN_PROGRESS)
-    ) {
-      connectedDevice.scope.launch {
-        runCatching { fetchAvdData() }.onFailure { throwable -> logger.logIOCompletionErrors(throwable, "Failed to retrieve AVD data") }
-
-        // If the future is not done, it means the fetch attempt failed or was interrupted.
-        // We set the status to FAILED to allow for subsequent retry attempts.
-        mAvdFetchStatusStateFlow.value = if (mAvdDataFuture.isDone) AvdFetchStatus.SUCCEEDED else AvdFetchStatus.FAILED
-      }
-    }
-  }
+  override fun getAvdData(): ListenableFuture<AvdData?> = logUsage(IDeviceUsageTracker.Method.GET_AVD_DATA) { mAvdDataFuture }
 
   private suspend fun fetchAvdData() {
     if (!isEmulator) {
@@ -262,29 +227,40 @@ internal class AdblibIDeviceWrapper(
       return
     }
 
-    // Wait until the device goes online before creating avd data.
-    // Note that extra care should be taken when relying on `connectedDevice` state
-    // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
-    // the former as all we care about is populating avd data as soon as possible.
-    connectedDevice.waitUntilOnline()
-
-    val emulatorMatchResult = RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: error("Invalid emulator serial pattern: $serialNumber")
-    val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: error("Invalid emulator port: $serialNumber")
-
     try {
-      connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use {
-        val avdName = kotlin.runCatching { it.avdName() }.getOrNull()
-        val path = kotlin.runCatching { it.avdPath() }.getOrNull()
+      // Wait until the device goes online before creating avd data.
+      // Note that extra care should be taken when relying on `connectedDevice` state
+      // instead of `AdblibIDeviceWrapper.deviceStateProvider`. In this case it's ok to use
+      // the former as all we care about is populating avd data as soon as possible.
+      connectedDevice.waitUntilOnline()
+
+      val emulatorMatchResult =
+        RE_EMULATOR_SN.toRegex().matchEntire(serialNumber) ?: error("Invalid emulator serial pattern: $serialNumber")
+      val port = emulatorMatchResult.groupValues[1].toIntOrNull() ?: error("Invalid emulator port: $serialNumber")
+
+      connectedDevice.session.openEmulatorConsole(localConsoleAddress(port)).use { console ->
+        val avdName = kotlin.runCatching { console.avdName() }.getOrNull()
+        val path = kotlin.runCatching { console.avdPath() }.getOrNull()
         val avdData = AvdData(avdName, path)
 
-        mAvdDataFuture.set(avdData)
         mAvdName = avdData.name
         mAvdPath = avdData.path
+        mAvdDataFuture.set(avdData)
       }
-    } catch (e: EmulatorCommandException) {
-      logger.warn(e, "Couldn't open emulator console")
-    } catch (e: IOException) {
-      logger.warn(e, "Couldn't open emulator console")
+    } catch (t: Throwable) {
+      if (t is CancellationException) {
+        throw t
+      }
+      if (t is EmulatorCommandException) {
+        logger.warn(t, "Couldn't open emulator console")
+      } else {
+        logger.logIOCompletionErrors(t, "Failed to retrieve AVD data")
+      }
+    } finally {
+      // Ensure the future is ALWAYS completed
+      if (!mAvdDataFuture.isDone) {
+        mAvdDataFuture.set(null)
+      }
     }
   }
 
