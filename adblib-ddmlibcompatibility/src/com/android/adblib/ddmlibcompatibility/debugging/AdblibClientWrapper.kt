@@ -16,9 +16,11 @@
 package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbSession
+import com.android.adblib.activityManager
 import com.android.adblib.adbLogger
 import com.android.adblib.ddmlibcompatibility.AdbLibDdmlibCompatibilityProperties.RUN_BLOCKING_LEGACY_DEFAULT_TIMEOUT
 import com.android.adblib.deviceProperties
+import com.android.adblib.isGcSupported
 import com.android.adblib.property
 import com.android.adblib.tools.debugging.DdmsCommandException
 import com.android.adblib.tools.debugging.JdwpCommandProgress
@@ -242,10 +244,23 @@ internal class AdblibClientWrapper(private val trackerHost: ProcessTrackerHost, 
   }
 
   override fun executeGarbageCollector() {
+    // 1. Try using the Activity Manager 'gc' command first (supported on newer devices)
+    val executedUsingActivityManager = runBlockingLegacy { executeGarbageCollectorUsingActivityManager() }
+    if (executedUsingActivityManager) return
+
+    // 2. Fallback to the legacy DDMS 'HGPC' command for older devices.
     // Note: To maintain strict ddmlib behavior, we block this method until the
     // DDMS command is sent to the AndroidVM, but we don't wait for the reply.
     runHalfBlockingLegacy("executeGarbageCollector") { progress -> jdwpProcess.executeGarbageCollector(progress) }
   }
+
+  private suspend fun executeGarbageCollectorUsingActivityManager(): Boolean =
+    if (jdwpProcess.device.activityManager.isGcSupported()) {
+      jdwpProcess.device.activityManager.gc(jdwpProcess.pid)
+      true
+    } else {
+      false
+    }
 
   override fun startMethodTracer() {
     val canStream: Boolean = clientData.hasFeature(ClientData.FEATURE_PROFILING_STREAMING)

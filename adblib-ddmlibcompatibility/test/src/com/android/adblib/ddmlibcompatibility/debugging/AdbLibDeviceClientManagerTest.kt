@@ -639,6 +639,38 @@ class AdbLibDeviceClientManagerTest {
   }
 
   @Test
+  fun testExecuteGarbageCollectorViaActivityManagerWorks() = runBlockingWithTimeout {
+    // Prepare
+    val clientManager = AdbLibClientManager(fakeAdb.adbSession)
+    val listener = TestDeviceClientManagerListener()
+    val deviceSerial = "1234"
+    val deviceState = connectTestDevice(deviceSerial, sdk = AndroidApiLevel(36))
+    val fakeIDevice = FakeIDevice(deviceSerial)
+    val deviceClientManager = clientManager.createDeviceClientManager(bridge, fakeIDevice, listener)
+
+    // Act
+    val pid = 10
+    val clientState = deviceState.startClient(pid, 0, "foo.bar", false)
+
+    yieldUntil {
+      // Wait for both processes to show up and for both the JDWP proxy
+      // and process properties to be initialized.
+      deviceClientManager.clients.size == 1 &&
+        deviceClientManager.clients.all { it.debuggerListenPort > 0 && it.clientData.vmIdentifier != null }
+    }
+    val client = deviceClientManager.getClientWrapper(pid)
+
+    client.executeGarbageCollector()
+    client.awaitLegacyOperations()
+
+    // Assert
+    // When using activity manager, HGPC requests are NOT sent
+    Assert.assertEquals(0, clientState.getHgpcRequestsCount())
+    // Instead, the activity manager 'gc' command is called
+    Assert.assertEquals(listOf(pid), deviceState.gcPids)
+  }
+
+  @Test
   fun testEnableAllocationTrackerWorks() = runBlockingWithTimeout {
     // Prepare
     val clientManager = AdbLibClientManager(fakeAdb.adbSession)
