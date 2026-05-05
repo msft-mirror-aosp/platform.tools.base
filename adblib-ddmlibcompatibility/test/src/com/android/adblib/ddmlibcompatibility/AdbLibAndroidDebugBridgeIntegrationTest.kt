@@ -51,9 +51,7 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
 
   @Test
   fun createBridge() = runBlocking {
-    // Act: create bridge
-    val bridgeInstance = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Bridge was null")
-
+    // Prepare: connect device before creating the bridge so that the initial device list is not empty
     val fakeDevice =
       fakeAdbRule.fakeAdb.fakeAdbServer
         .connectDevice(
@@ -69,10 +67,12 @@ class AdbLibAndroidDebugBridgeIntegrationTest {
         .get()
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
 
-    yieldUntil { bridgeInstance.hasInitialDeviceList() }
+    // Act: create bridge
+    val bridgeInstance = AndroidDebugBridge.createBridge(10, TimeUnit.SECONDS) ?: error("Bridge was null")
 
     // Assert
     assertEquals(bridgeInstance, AndroidDebugBridge.getBridge())
+    yieldUntil { bridgeInstance.hasInitialDeviceList() }
     assertTrue(bridgeInstance.devices.isNotEmpty())
     assertEquals("device1", bridgeInstance.devices[0].serialNumber)
 
