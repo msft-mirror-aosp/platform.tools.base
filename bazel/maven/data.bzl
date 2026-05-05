@@ -1155,8 +1155,11 @@ _CLASS_JARS = [
     "org.jetbrains.compose.ui:ui-desktop:1.10.1",
     "org.jetbrains.compose.ui:ui-tooling:1.10.1",
     "org.jetbrains.compose.ui:ui-tooling-preview:1.10.1",
+    "org.jetbrains.dokka:analysis-kotlin-descriptors:2.2.0",
     "org.jetbrains.dokka:dokka-base:1.4.32",
+    "org.jetbrains.dokka:dokka-base:2.2.0",
     "org.jetbrains.dokka:javadoc-plugin:1.4.32",
+    "org.jetbrains.dokka:javadoc-plugin:2.2.0",
     "org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:pom:1.16.0",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.6.21",
     "org.jetbrains.kotlin.android:org.jetbrains.kotlin.android.gradle.plugin:pom:1.7.10",
@@ -1453,6 +1456,7 @@ _CLASS_JARS = [
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0",
     "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1",  # MCP kotlin-sdk
     "org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.7.3",
+    "org.jetbrains:markdown:0.7.3",
     "org.jetbrains:markdown-jvm:0.7.3",
     "org.jetbrains.skiko:skiko:0.7.7",  # used by //tools/base/build-system/integration-test/lint and ASwB query sync
     "org.jetbrains.skiko:skiko-awt:0.7.7",
