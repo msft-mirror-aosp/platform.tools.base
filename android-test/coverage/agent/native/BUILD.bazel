@@ -3,7 +3,11 @@ load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "and
 
 cc_binary(
     name = "coverage_agent.so",
-    srcs = ["coverage_agent.cc"],
+    srcs = [
+        "coverage_agent.cc",
+        "instrumenter.cc",
+        "instrumenter.h",
+    ],
     copts = ANDROID_COPTS,
     linkopts = ANDROID_LINKOPTS,
     linkshared = 1,
