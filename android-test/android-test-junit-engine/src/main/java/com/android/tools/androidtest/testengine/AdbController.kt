@@ -32,6 +32,8 @@ class AdbController(private val adb: File, private val processBuilder: (command:
   /** Executes an external command and captures its output. */
   fun runCommand(command: List<String>, timeout: Duration? = null): CommandResult {
     val process = processBuilder(command).start()
+    // Close stdin immediately to prevent child processes from hanging on stdin reads.
+    process.outputStream.close()
 
     var stdout = ""
     var stderr = ""
@@ -83,6 +85,8 @@ class AdbController(private val adb: File, private val processBuilder: (command:
   ): Int {
     val command = listOf(adb.absolutePath, "-s", deviceSerial, "shell") + args
     val process = processBuilder(command).start()
+    // Close stdin immediately to prevent child processes from hanging on stdin reads.
+    process.outputStream.close()
 
     val errorLines = java.util.Collections.synchronizedList(mutableListOf<String>())
     val stderrThread =

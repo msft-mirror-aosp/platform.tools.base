@@ -101,6 +101,7 @@ class AdbApkInstallerTest {
         on { it.exitValue() } doReturn exitCode
         on { it.inputStream } doReturn output.byteInputStream()
         on { it.errorStream } doReturn error.byteInputStream()
+        on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
         on { it.waitFor(any(), any()) } doReturn true
       }
     mockProcessMap.getOrPut(commandKey) { ArrayDeque() }.add(process)
@@ -320,6 +321,7 @@ class AdbApkInstallerTest {
             on { it.exitValue() } doReturn 1
             on { it.inputStream } doReturn "".byteInputStream()
             on { it.errorStream } doReturn "error".byteInputStream()
+            on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
           }
         mock { on { start() } doReturn process }
       }
@@ -338,6 +340,7 @@ class AdbApkInstallerTest {
             on { it.exitValue() } doReturn 0
             on { it.inputStream } doReturn "invalid".byteInputStream()
             on { it.errorStream } doReturn "".byteInputStream()
+            on { it.outputStream } doReturn java.io.ByteArrayOutputStream()
           }
         mock { on { start() } doReturn process }
       }
