@@ -107,6 +107,7 @@ _CLASS_JARS = [
     "androidx.compose.material:material:1.7.7",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material:1.7.8",  # Compose BOM 2024.09.00
     "androidx.compose.material:material:1.8.0-alpha06",
+    "androidx.compose.material:material-desktop:1.6.0",
     "androidx.compose.material:material-desktop:1.7.0",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.compose.material:material-icons-core:1.7.0",  # Compose BOM 2024.09.00
     "androidx.compose.material:material-icons-core:1.7.8",  # Needed for TemplateDiffTest#testNewComposeWearActivityWithTileAndComplication
@@ -314,6 +315,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-runtime-compose:2.8.7",
     "androidx.lifecycle:lifecycle-runtime-compose:2.9.2",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-runtime-compose:2.9.4",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
+    "androidx.lifecycle:lifecycle-runtime-compose-desktop:2.8.3",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-compose-jvmstubs:2.8.7",  # Needed for ComposeRenderTest
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.0-alpha02",  # Needed for kmp consumption test
     "androidx.lifecycle:lifecycle-runtime-desktop:2.8.7",  # Needed for Privacy Sandbox connected test
@@ -334,6 +336,7 @@ _CLASS_JARS = [
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1",
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.3",  # Needed for TemplateTest#testNewComposeWearActivityWithTileAndComplication
     "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7",  # XR template
+    "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.3",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-desktop:2.8.7",  # Needed for Privacy Sandbox connected tests
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1",  # Needed for AndroidTestRunConfigurationTest#testCanRunLibTestsInDebugBuildWithNoAndroidManifest
     "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.0",  # Needed for tools/data-binding:runtimeLibrariesAndroidX
@@ -498,6 +501,7 @@ _CLASS_JARS = [
     "com.android.application:com.android.application.gradle.plugin:pom:8.8.0",
     "com.android.application:com.android.application.gradle.plugin:pom:8.9.0",
     "com.android.application:com.android.application.gradle.plugin:pom:9.0.0",
+    "com.android.application:com.android.application.gradle.plugin:pom:9.2.0",
     "com.android.databinding:adapters:4.0.0",
     "com.android.databinding:adapters:4.1.0",
     "com.android.databinding:adapters:4.2.0",
@@ -575,6 +579,7 @@ _CLASS_JARS = [
     "com.android.library:com.android.library.gradle.plugin:pom:8.8.0",
     "com.android.library:com.android.library.gradle.plugin:pom:8.9.0",
     "com.android.library:com.android.library.gradle.plugin:pom:9.0.0",
+    "com.android.library:com.android.library.gradle.plugin:pom:9.2.0",
     "com.android:signflinger:8.7.0",
     "com.android.support:animated-vector-drawable:26.1.0",
     "com.android.support:appcompat-v7:25.4.0",
@@ -633,6 +638,7 @@ _CLASS_JARS = [
     "com.android.tools.build:aapt2:jar:linux:8.8.0-12006047",
     "com.android.tools.build:aapt2:jar:linux:8.9.0-12782657",
     "com.android.tools.build:aapt2:jar:linux:9.0.0-14304508",
+    "com.android.tools.build:aapt2:jar:linux:9.2.0-15009934",
     "com.android.tools.build:aapt2:jar:osx:3.3.2-5309881",
     "com.android.tools.build:aapt2:jar:osx:3.5.0-5435860",
     "com.android.tools.build:aapt2:jar:osx:4.0.0-6051327",
@@ -659,6 +665,7 @@ _CLASS_JARS = [
     "com.android.tools.build:aapt2:jar:osx:8.8.0-12006047",
     "com.android.tools.build:aapt2:jar:osx:8.9.0-12782657",
     "com.android.tools.build:aapt2:jar:osx:9.0.0-14304508",
+    "com.android.tools.build:aapt2:jar:osx:9.2.0-15009934",
     "com.android.tools.build:aapt2:jar:windows:3.3.2-5309881",
     "com.android.tools.build:aapt2:jar:windows:3.5.0-5435860",
     "com.android.tools.build:aapt2:jar:windows:4.0.0-6051327",
@@ -685,6 +692,7 @@ _CLASS_JARS = [
     "com.android.tools.build:aapt2:jar:windows:8.8.0-12006047",
     "com.android.tools.build:aapt2:jar:windows:8.9.0-12782657",
     "com.android.tools.build:aapt2:jar:windows:9.0.0-14304508",
+    "com.android.tools.build:aapt2:jar:windows:9.2.0-15009934",
     "com.android.tools.build:aapt2-proto:8.6.1-11315950",
     "com.android.tools.build:apksig:8.7.0",
     "com.android.tools.build:apkzlib:8.7.0",
@@ -765,6 +773,7 @@ _CLASS_JARS = [
     "com.android.tools.lint:lint-gradle:31.8.0",
     "com.android.tools.lint:lint-gradle:31.9.0",
     "com.android.tools.lint:lint-gradle:32.0.0",
+    "com.android.tools.lint:lint-gradle:32.2.0",
     "com.android.tools.metalava:metalava:1.0.0-alpha14",
     "com.android.tools:r8:8.5.35",
     "com.android.tools.utp:android-device-provider-ddmlib:30.2.0",
