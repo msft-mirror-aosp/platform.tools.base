@@ -19,18 +19,38 @@
 
 #include <jni.h>
 #include <jvmti.h>
+#include <string>
 
 namespace coverage {
 
 class Instrumenter {
  public:
-  explicit Instrumenter(jvmtiEnv* jvmti) : jvmti_(jvmti) {}
+  Instrumenter(jvmtiEnv* jvmti, const std::string& inclusion_prefix)
+      : jvmti_(jvmti), inclusion_prefix_(inclusion_prefix) {}
+
+  ~Instrumenter();
 
   // Registers the ClassFileLoadHook and enables the notification.
   bool RegisterHooks();
 
  private:
+  // JVMTI callback for the ClassFileLoadHook event.
+  static void JNICALL OnClassFileLoadHook(
+      jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined,
+      jobject loader, const char* name, jobject protection_domain,
+      jint class_data_len, const unsigned char* class_data,
+      jint* new_class_data_len, unsigned char** new_class_data);
+
+  // Helper to determine if a class should be instrumented.
+  bool ShouldInstrument(jobject loader, const char* name, jclass klass) const;
+
   jvmtiEnv* jvmti_;
+  std::string inclusion_prefix_;
+
+  // Tag value used to mark classes as already instrumented.
+  static constexpr jlong kInstrumentedTag = 0xCAFE1234;
+
+  static Instrumenter* instance_;
 };
 
 }  // namespace coverage

@@ -16,26 +16,97 @@
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
+#include <string_view>
+
 #include "tools/base/android-test/coverage/common/log.h"
 
 namespace coverage {
 
-namespace {
+Instrumenter* Instrumenter::instance_ = nullptr;
+
+Instrumenter::~Instrumenter() {
+  if (instance_ == this) {
+    instance_ = nullptr;
+  }
+}
 
 /**
  * JVMTI callback for the ClassFileLoadHook event.
  */
-void JNICALL OnClassFileLoadHook(jvmtiEnv* jvmti, JNIEnv* jni,
-                                 jclass class_being_redefined, jobject loader,
-                                 const char* name, jobject protection_domain,
-                                 jint class_data_len,
-                                 const unsigned char* class_data,
-                                 jint* new_class_data_len,
-                                 unsigned char** new_class_data) {
-  // TODO: Instrumentation logic to be added here.
+void JNICALL Instrumenter::OnClassFileLoadHook(
+    jvmtiEnv* jvmti, JNIEnv* jni, jclass class_being_redefined, jobject loader,
+    const char* name, jobject protection_domain, jint class_data_len,
+    const unsigned char* class_data, jint* new_class_data_len,
+    unsigned char** new_class_data) {
+  if (instance_ == nullptr ||
+      !instance_->ShouldInstrument(loader, name, class_being_redefined)) {
+    return;
+  }
+
+  // TODO: Instrumentation logic (Slicer IR parsing) to be added here.
+  // After successful instrumentation, tag the class (if it exists)
+  // to avoid future re-instrumentation.
+  // TODO: Handle tagging for classes instrumented during their initial load
+  // to avoid redundant instrumentation during future re-transformations.
+  if (class_being_redefined != nullptr) {
+    jvmti->SetTag(class_being_redefined, kInstrumentedTag);
+  }
 }
 
-}  // namespace
+bool Instrumenter::ShouldInstrument(jobject loader, const char* name,
+                                    jclass klass) const {
+  if (name == nullptr) {
+    return false;
+  }
+
+  // Check if the class is already instrumented.
+  if (klass != nullptr) {
+    jlong tag = 0;
+    jvmti_->GetTag(klass, &tag);
+    if (tag == kInstrumentedTag) {
+      return false;
+    }
+  }
+
+  // Don't instrument classes loaded by the bootstrap class loader (eg. OS
+  // classes).
+  if (loader == nullptr) {
+    return false;
+  }
+
+  std::string_view class_name(name);
+
+  // Only instrument the classes which belong to the package names provided
+  // by the build system.
+  // TODO: Update this logic to support a delimited list of multiple packages.
+  if (inclusion_prefix_.empty()) {
+    return false;
+  }
+
+  std::string_view inc_prefix(inclusion_prefix_);
+  // The build system for this project is constrained to the C++17 standard.
+  // Since std::string_view::starts_with() was only introduced in C++20, we
+  // use rfind(prefix, 0) as a functionally equivalent and efficient way to
+  // verify that the class name begins with our inclusion prefix without
+  // incurring the overhead of string copies.
+  if (class_name.size() < inc_prefix.size() ||
+      class_name.rfind(inc_prefix, 0) != 0) {
+    return false;
+  }
+
+  // If the class name is longer than the prefix, the character immediately
+  // following the prefix match must be a separator ('/' or '$') unless
+  // the prefix itself already ended with a separator.
+  if (class_name.size() > inc_prefix.size() && inc_prefix.back() != '/' &&
+      inc_prefix.back() != '$') {
+    char next_char = class_name[inc_prefix.size()];
+    if (next_char != '/' && next_char != '$') {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 bool Instrumenter::RegisterHooks() {
   jvmtiEventCallbacks callbacks = {};
@@ -46,6 +117,10 @@ bool Instrumenter::RegisterHooks() {
     Log::E("Error: Unable to set JVMTI callbacks. Error code: %d", error);
     return false;
   }
+
+  // Set the global instance pointer before enabling notifications to ensure
+  // that no classes loaded during the registration process are missed.
+  instance_ = this;
 
   error = jvmti_->SetEventNotificationMode(
       JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);

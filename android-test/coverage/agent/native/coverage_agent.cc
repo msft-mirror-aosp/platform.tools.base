@@ -23,6 +23,10 @@
 // Global JVMTI environment handle
 jvmtiEnv* jvmti_env = nullptr;
 
+// Global handle to the instrumenter to manage its lifecycle and avoid
+// use-after-free or redundant allocations.
+static coverage::Instrumenter* g_instrumenter = nullptr;
+
 extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
                                                  void* reserved) {
   coverage::Log::I("Coverage Agent attached with options: %s",
@@ -41,6 +45,7 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   jvmtiCapabilities caps = {};
   caps.can_retransform_classes = 1;
   caps.can_retransform_any_class = 1;
+  caps.can_tag_objects = 1;
 
   jvmtiError error = jvmti_env->AddCapabilities(&caps);
   if (error != JVMTI_ERROR_NONE) {
@@ -50,9 +55,20 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM* vm, char* options,
   }
 
   // 3. Initialize instrumenter and register hooks
-  coverage::Instrumenter instrumenter(jvmti_env);
-  if (!instrumenter.RegisterHooks()) {
-    return JNI_OK;
+  // If we haven't already created an instrumenter (e.g. on a previous attach),
+  // create one now on the heap. It will live for the duration of the process.
+  if (g_instrumenter == nullptr) {
+    // options will contain a delimited list of all package
+    // prefixes that should be instrumented (e.g., "com/app:com/library").
+    // AGP will be later updated to pass the correct project packages.
+    // TODO: Handle the delimited list of package names
+    g_instrumenter =
+        new coverage::Instrumenter(jvmti_env, options ? options : "");
+    if (!g_instrumenter->RegisterHooks()) {
+      delete g_instrumenter;
+      g_instrumenter = nullptr;
+      return JNI_OK;
+    }
   }
 
   coverage::Log::I(
