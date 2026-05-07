@@ -285,6 +285,39 @@ public class ToolsInstructionsCleanerTest extends TestCase {
         assertTrue(Strings.isNullOrEmpty(activity.get().getAttribute("tools:selector")));
     }
 
+    public void testRemoveAllWithSelectorRemoval()
+            throws ParserConfigurationException, SAXException, IOException {
+        MockLog mockLog = new MockLog();
+        String main =
+                ""
+                        + "<manifest\n"
+                        + "    xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                        + "    xmlns:tools=\"http://schemas.android.com/tools\"\n"
+                        + "    package=\"com.example.lib3\">\n"
+                        + "\n"
+                        + "    <application android:label=\"@string/lib_name\">\n"
+                        + "        <activity android:name=\"activityOne\" "
+                        + "             tools:node=\"removeAll\" tools:selector=\"foo\"/>\n"
+                        + "    </application>\n"
+                        + "\n"
+                        + "</manifest>";
+
+        XmlDocument mainDocument =
+                loadXmlDoc(
+                        TestUtils.sourceFile(getClass(), "testRemoveAllWithSelectorRemoval"), main);
+
+        Element rootElement = mainDocument.getRootNode().getXml();
+        ToolsInstructionsCleaner.cleanToolsReferences(
+                ManifestMerger2.MergeType.APPLICATION, mainDocument, mockLog);
+
+        Optional<Element> application = getChildElementByName(rootElement, "application");
+        assertTrue(application.isPresent());
+
+        Optional<Element> activity = getChildElementByName(application.get(), "activity");
+        // ensure the activity DID get deleted even since it has a selector because it's removeAll
+        assertFalse(activity.isPresent());
+    }
+
     public void testOtherToolInstructionRemoval()
             throws ParserConfigurationException, SAXException, IOException {
         MockLog mockLog = new MockLog();

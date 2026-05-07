@@ -94,6 +94,40 @@ public class ToolsInstructionsCleaner {
             parent.removeChild(element);
             return new Pair<>(MergingReport.Result.SUCCESS, false);
         }
+
+        NamedNodeMap namedNodeMap = element.getXml().getAttributes();
+        if (namedNodeMap != null) {
+            Node nodeOperation =
+                    namedNodeMap.getNamedItemNS(
+                            SdkConstants.TOOLS_URI, NodeOperationType.NODE_LOCAL_NAME);
+            if (nodeOperation != null) {
+                String operationValue = nodeOperation.getNodeValue();
+                boolean hasSelector =
+                        namedNodeMap.getNamedItemNS(SdkConstants.TOOLS_URI, "selector") != null;
+                if (operationValue.equals(REMOVE_ALL_OPERATION_XML_MAME)
+                        || (operationValue.equals(REMOVE_OPERATION_XML_MAME) && !hasSelector)) {
+
+                    if (parent == null) {
+                        logger.error(
+                                null /* Throwable */,
+                                String.format(
+                                        "tools:node=\"%1$s\" not allowed on top level %2$s"
+                                                + " element",
+                                        operationValue, element.getName().getLocalName()));
+                        return new Pair<>(ERROR, false);
+                    } else {
+                        // Remove leading comments
+                        for (Node comment : XmlElement.getLeadingComments(element.getXml())) {
+                            parent.removeChild(comment);
+                        }
+
+                        parent.removeChild(element);
+                        return new Pair<>(MergingReport.Result.SUCCESS, false);
+                    }
+                }
+            }
+        }
+
         boolean needsToolsNamespace = false;
         // make a copy of the element children since we will be removing some during
         // this process, we don't want side effects.
@@ -107,7 +141,7 @@ public class ToolsInstructionsCleaner {
                 return new Pair<>(ERROR, needsToolsNamespace);
             }
         }
-        NamedNodeMap namedNodeMap = element.getXml().getAttributes();
+
         if (namedNodeMap != null) {
             // make a copy of the original list of attributes as we will remove some during this
             // process.
@@ -117,51 +151,21 @@ public class ToolsInstructionsCleaner {
             }
             for (Node attribute : attributes) {
                 if (SdkConstants.TOOLS_URI.equals(attribute.getNamespaceURI())) {
-                    // we need to special case when the element contained tools:node="remove"
-                    // since it also needs to be deleted unless it had a selector.
-                    // if this is tools:node="removeAll", we always delete the element whether or
-                    // not there is a tools:selector.
-                    boolean hasSelector = namedNodeMap.getNamedItemNS(
-                            SdkConstants.TOOLS_URI, "selector") != null;
-                    if (attribute.getLocalName().equals(NodeOperationType.NODE_LOCAL_NAME)
-                            && (attribute.getNodeValue().equals(REMOVE_ALL_OPERATION_XML_MAME)
-                                || (attribute.getNodeValue().equals(REMOVE_OPERATION_XML_MAME))
-                                    && !hasSelector)) {
-
-                        if (parent == null) {
-                            logger.error(
-                                    null /* Throwable */,
-                                    String.format(
-                                            "tools:node=\"%1$s\" not allowed on top level %2$s"
-                                                    + " element",
-                                            attribute.getNodeValue(),
-                                            element.getName().getLocalName()));
-                            return new Pair<>(ERROR, needsToolsNamespace);
-                        } else {
-                            // Remove leading comments
-                            for (Node comment : XmlElement.getLeadingComments(element.getXml())) {
-                                parent.removeChild(comment);
-                            }
-
-                            parent.removeChild(element);
-                        }
+                    // anything else, we just clean the attribute unless we are merging for
+                    // libraries.
+                    if (mergeType.isKeepToolsAttributeRequired(
+                            attribute.getLocalName(), attribute.getNodeValue())) {
+                        namedNodeMap.removeNamedItemNS(
+                                attribute.getNamespaceURI(), attribute.getLocalName());
                     } else {
-                        // anything else, we just clean the attribute unless we are merging for
-                        // libraries.
-                        if (mergeType.isKeepToolsAttributeRequired(
-                                attribute.getLocalName(), attribute.getNodeValue())) {
-                            element.removeAttributeNS(
-                                    attribute.getNamespaceURI(), attribute.getLocalName());
-                        } else {
-                            needsToolsNamespace = true;
-                        }
+                        needsToolsNamespace = true;
                     }
                 }
                 // this could also be the xmlns:tools declaration.
                 if (attribute.getNodeName().startsWith(SdkConstants.XMLNS_PREFIX)
                         && SdkConstants.TOOLS_URI.equals(attribute.getNodeValue())
                         && !needsToolsNamespace) {
-                    element.removeAttribute(attribute.getNodeName());
+                    namedNodeMap.removeNamedItem(attribute.getNodeName());
                 }
             }
         }
