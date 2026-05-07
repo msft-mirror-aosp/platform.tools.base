@@ -81,7 +81,7 @@ interface BuildFeatures : ExtensionAware {
   /**
    * Flag to enable Shader compilation.
    *
-   * Setting the value to `null` resets to the default value. Default value is `true`.
+   * Setting the value to `null` resets to the default value. Default value is `false`.
    *
    * You can override the default for this for all projects in your build by adding the line `android.defaults.buildfeatures.shaders=true`
    * in the gradle.properties file at the root project of your build.
