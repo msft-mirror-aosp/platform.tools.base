@@ -787,7 +787,7 @@ public class DeviceManager {
         if (isAiGlasses(d)) {
             props.put(ConfigKey.LCD_TRANSPARENT, "yes");
         } else if (isXrGlasses(d)) {
-            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.0,0.25,0.5,0.75,1.0");
+            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.00390625,0.25,0.5,0.75,0.99609375");
         }
 
         HashFunction md5 = Hashing.md5();
