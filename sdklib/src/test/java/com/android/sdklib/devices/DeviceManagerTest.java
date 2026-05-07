@@ -959,6 +959,21 @@ public class DeviceManagerTest {
     }
 
     @Test
+    public final void testHardwarePropHashChanged_glasses() {
+        Device d = dm.getDevice("xr_glasses_device", "Google");
+        String initialHash = DeviceManager.hasHardwarePropHashChanged(d, "invalid");
+
+        Device d2 = new Device.Builder(d).build();
+        assertThat(DeviceManager.hasHardwarePropHashChanged(d2, initialHash)).isNull();
+
+        Builder d3Builder = new Builder(d);
+        d3Builder.setId("new_xr_glasses");
+        Device d3 = d3Builder.build();
+
+        assertThat(DeviceManager.hasHardwarePropHashChanged(d3, initialHash)).isNotNull();
+    }
+
+    @Test
     public final void testDeviceOverrides() throws Exception {
         AndroidSdkHandler handler = sdkManager.getSdkHandler();
         Path sdkPath = handler.getLocation();
