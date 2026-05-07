@@ -111,58 +111,40 @@ class AndroidAdditionalTestOutputCollector(
       return
     }
 
-    val tmpDir = "/data/local/tmp/collector-${java.util.UUID.randomUUID()}"
-    adbController.runAdbShellCommand(deviceSerial, listOf("mkdir", "-p", tmpDir))
-    adbController.runAdbShellCommand(deviceSerial, listOf("chmod", "777", tmpDir))
-    try {
-      val fileName = File(deviceFilePath).name
-      val tmpFilePath = "$tmpDir/$fileName"
-      // Use cat with run-as to copy the file to a location accessible by adb pull.
-      // We only need run-as for files in /data/
-      val result =
+    hostFilePath.parentFile?.mkdirs()
+    hostFilePath.outputStream().use { outputStream ->
+      val exitCode =
         if (!runAsPackageName.isNullOrBlank() && deviceFilePath.startsWith("/data/")) {
-          adbController.runAdbShellCommand(
+          adbController.runAdbExecOutCommandToOutputStream(
             deviceSerial,
-            listOf("run-as", runAsPackageName, "sh", "-c", "cat \"$deviceFilePath\" > \"$tmpFilePath\""),
+            listOf("run-as", runAsPackageName, "cat", deviceFilePath),
+            outputStream,
           )
         } else {
-          adbController.runAdbShellCommand(deviceSerial, listOf("sh", "-c", "cat \"$deviceFilePath\" > \"$tmpFilePath\""))
+          adbController.runAdbExecOutCommandToOutputStream(deviceSerial, listOf("cat", deviceFilePath), outputStream)
         }
-      if (result.exitCode != 0) {
-        logger.warning("Failed to copy file to tmp on device: $deviceFilePath. exitCode=${result.exitCode}, error=${result.errorOutput}")
-        return
+      if (exitCode != 0) {
+        logger.warning("Failed to pull file from device via cat: $deviceFilePath. exitCode=$exitCode")
+        // Clean up the potentially incomplete file on host.
+        hostFilePath.delete()
       }
-      adbController.runAdbShellCommand(deviceSerial, listOf("chmod", "777", tmpFilePath))
-      val pullResult = adbController.pull(deviceSerial, tmpFilePath, hostFilePath.absolutePath)
-      if (pullResult.exitCode != 0) {
-        logger.warning(
-          "Failed to pull file from device: $tmpFilePath to $hostFilePath. exitCode=${pullResult.exitCode}, error=${pullResult.errorOutput}"
-        )
-      }
-    } finally {
-      adbController.runAdbShellCommand(deviceSerial, listOf("rm", "-rf", tmpDir))
     }
   }
 
   /** Pulls all files in a directory from the device to the host. */
   fun pullDirectory(deviceDirPath: String, hostDirPath: File, extension: String? = null) {
-    val result = runShellCommandWithRunAs(listOf("sh", "-c", "ls \"$deviceDirPath\" | cat"))
+    val result =
+      if (!runAsPackageName.isNullOrBlank() && deviceDirPath.startsWith("/data/")) {
+        adbController.runAdbShellCommand(deviceSerial, listOf("run-as", runAsPackageName, "ls", deviceDirPath))
+      } else {
+        adbController.runAdbShellCommand(deviceSerial, listOf("ls", deviceDirPath))
+      }
     if (result.exitCode != 0) {
       logger.warning("Failed to list directory on device: $deviceDirPath. exitCode=${result.exitCode}, error=${result.errorOutput}")
       return
     }
     val fileNames = result.output.lines().filter { it.isNotBlank() && (extension == null || it.endsWith(extension)) }
     fileNames.forEach { fileName -> pullFile("$deviceDirPath/$fileName", File(hostDirPath, fileName)) }
-  }
-
-  private fun runShellCommandWithRunAs(commands: List<String>): AdbController.CommandResult {
-    return if (!runAsPackageName.isNullOrBlank()) {
-      // We wrap the command in double quotes to handle spaces and redirection correctly.
-      val wrappedCommand = commands.joinToString(" ") { if (it == ">" || it == "|" || it == ">>") it else "\"$it\"" }
-      adbController.runAdbShellCommand(deviceSerial, listOf("run-as", runAsPackageName, "sh", "-c", wrappedCommand))
-    } else {
-      adbController.runAdbShellCommand(deviceSerial, commands)
-    }
   }
 
   private fun getApiLevel(): Int {

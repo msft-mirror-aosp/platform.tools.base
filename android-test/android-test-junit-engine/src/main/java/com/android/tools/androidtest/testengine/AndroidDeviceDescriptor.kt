@@ -118,19 +118,15 @@ class AndroidDeviceDescriptor(
         runAsPackageName = config.instrumentationTargetPackageId,
       )
 
-    val isOrchestratorEnabled = config.executionMode == "ANDROID_TEST_ORCHESTRATOR"
+    val isOrchestratorEnabled = config.executionMode?.uppercase() in listOf("ANDROIDX_TEST_ORCHESTRATOR", "ANDROID_TEST_ORCHESTRATOR")
 
     val effectiveCoverageFileOnDevice =
       config.coverageFileOnDevice.takeIf { !it.isNullOrBlank() }
-        ?: if (config.isTestCoverageEnabled) {
+        ?: if (config.isTestCoverageEnabled && !isOrchestratorEnabled) {
           if (config.useTestStorageService) {
-            if (isOrchestratorEnabled) "coverage_data/" else "coverage.ec"
+            "coverage.ec"
           } else {
-            if (isOrchestratorEnabled) {
-              "/data/data/${config.instrumentationTargetPackageId}/coverage_data/"
-            } else {
-              "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
-            }
+            "/data/data/${config.instrumentationTargetPackageId}/coverage.ec"
           }
         } else {
           null
@@ -161,6 +157,7 @@ class AndroidDeviceDescriptor(
         coverageDirOnDevice = effectiveCoverageDirOnDevice,
         useTestStorageService = config.useTestStorageService,
         additionalTestOutputCollector = additionalTestOutputCollector,
+        runAsPackageName = config.instrumentationTargetPackageId,
       )
 
     val deviceInfoFile =
@@ -182,7 +179,7 @@ class AndroidDeviceDescriptor(
     if (config.isTestCoverageEnabled) {
       instrumentationArgs["coverage"] = "true"
       if (isOrchestratorEnabled) {
-        instrumentationArgs["coverageFilePath"] = effectiveCoverageFileOnDevice!!
+        instrumentationArgs["coverageFilePath"] = effectiveCoverageDirOnDevice!!
       } else {
         instrumentationArgs["coverageFile"] = effectiveCoverageFileOnDevice!!
       }

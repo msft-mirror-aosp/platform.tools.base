@@ -267,7 +267,10 @@ abstract class CodeCoverageCollectionTask : NonIncrementalTask() {
         val unitTestCoverageFile = parameters.unitTestCoverageFile.files.filter { it.exists() }
         generateXmlReport(unitTestCoverageFile, "UnitTest")
 
-        val connectedTestCoverageFile = parameters.connectedTestCoverageDirectory.asFileTree.files.filter(File::isFile)
+        val connectedTestCoverageFile =
+          parameters.connectedTestCoverageDirectory.asFileTree.files.filter { file ->
+            file.isFile && (file.extension == "ec" || file.extension == "exec")
+          }
         generateXmlReport(connectedTestCoverageFile, "AndroidTest")
 
         val testSuiteCoverageFiles = mutableListOf<File>()
