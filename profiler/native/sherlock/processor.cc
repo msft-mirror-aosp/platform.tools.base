@@ -15,6 +15,7 @@
  */
 
 #include "processor.h"
+#include "utf8_utils.h"
 
 // Makes it shorter to refer to the perfetto.pb.h contents.
 namespace p = perfetto;
@@ -93,7 +94,7 @@ void execute_query(ptp::TraceProcessor* tp, const char* query,
           column->clear_double_values();
           // fall-through.
         case p::QueryResult::ColumnDesc::STRING << 8 | ptp::SqlValue::kString:
-          column->add_string_values(value.string_value);
+          column->add_string_values(sherlock::SanitizeUtf8(value.string_value));
           column->add_is_nulls(false);
           break;
         case p::QueryResult::ColumnDesc::UNKNOWN << 8 | ptp::SqlValue::kLong:
