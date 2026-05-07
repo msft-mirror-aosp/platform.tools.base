@@ -33,6 +33,7 @@ import com.android.tools.idea.wizard.template.TextFieldWidget
 import com.android.tools.idea.wizard.template.WizardUiContext
 import com.android.tools.idea.wizard.template.activityToLayout
 import com.android.tools.idea.wizard.template.booleanParameter
+import com.android.tools.idea.wizard.template.impl.activities.common.MIN_API
 import com.android.tools.idea.wizard.template.impl.defaultPackageNameParameter
 import com.android.tools.idea.wizard.template.layoutToActivity
 import com.android.tools.idea.wizard.template.stringParameter
@@ -42,7 +43,7 @@ import java.io.File
 val androidTVActivityTemplate
   get() = template {
     name = "Android TV Blank Views Activity"
-    minApi = 21
+    minApi = MIN_API
     description = "Creates a new Android TV activity using Leanback Support library"
     constraints = listOf(TemplateConstraint.AndroidX)
 
