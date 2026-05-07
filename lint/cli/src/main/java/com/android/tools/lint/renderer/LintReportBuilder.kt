@@ -116,9 +116,31 @@ class LintReportBuilder(
       }
 
     val file = incident.file
-    val relPath = file.relativeToOrNull(rootProjectDir)?.path ?: file.name
-    val dir = relPath.substringBeforeLast(File.separator, "")
-    val pkgName = if (dir.isNotEmpty()) dir.replace(File.separator, ".") else "default"
+    val project = incident.project
+    val pkgName =
+      if (project != null) {
+        val sourceFolders =
+          project.javaSourceFolders +
+            project.unitTestSourceFolders +
+            project.instrumentationTestSourceFolders +
+            project.testFixturesSourceFolders +
+            project.generatedSourceFolders
+        val root = sourceFolders.find { file.startsWith(it) }
+        if (root != null) {
+          file.parentFile?.relativeToOrNull(root)?.path?.replace(File.separatorChar, '.') ?: ""
+        } else {
+          val resFolders = project.resourceFolders + project.generatedResourceFolders + project.assetFolders
+          val resRoot = resFolders.find { file.startsWith(it) }
+          if (resRoot != null) {
+            file.parentFile?.relativeToOrNull(resRoot)?.path?.replace(File.separatorChar, '.') ?: "res"
+          } else {
+            file.parentFile?.relativeToOrNull(project.dir)?.path?.replace(File.separatorChar, '.') ?: ""
+          }
+        }
+      } else {
+        file.parentFile?.relativeToOrNull(rootProjectDir)?.path?.replace(File.separatorChar, '.') ?: ""
+      }
+    val finalPkgName = if (pkgName.isEmpty()) "default" else pkgName
 
     val applicableVariants = incident.applicableVariants
 
@@ -149,7 +171,7 @@ class LintReportBuilder(
       excludedVariants = applicableVariants?.excludedVariantNames ?: emptyList(),
       sourceContext = sourceContext,
       module = incident.project?.let { project -> project.buildModule?.modulePath ?: project.name }?.removePrefix(":") ?: "",
-      packageName = pkgName,
+      packageName = finalPkgName,
       className = file.nameWithoutExtension,
       vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,

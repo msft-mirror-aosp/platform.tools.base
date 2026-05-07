@@ -198,12 +198,15 @@ $STYLE_CSS
         <div class="relative" id="group-by-container">
             <button id="group-by-btn" class="group-by-btn-style">
                 <span class="group-by-label">Group By:</span>
-                <span id="group-by-text" class="group-by-value">Issues</span>
+                <span id="group-by-text" class="group-by-value">Modules</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="group-by-icon">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
             </button>
             <div id="group-by-dropdown" class="dropdown-menu right-0 hidden group-by-dropdown-style">
+                <div class="dropdown-item" data-value="modules">Modules</div>
+                <div class="dropdown-item" data-value="packages">Packages</div>
+                <div class="dropdown-item" data-value="classes">Classes</div>
                 <div class="dropdown-item" data-value="issues">Issues</div>
             </div>
         </div>

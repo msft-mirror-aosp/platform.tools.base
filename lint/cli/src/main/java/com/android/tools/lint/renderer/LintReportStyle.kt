@@ -381,6 +381,7 @@ tr.issue-row:hover { cursor: pointer; }
 .text-gray-600 { color: var(--text-gray-600); }
 .text-gray-900 { color: var(--text-gray-900); }
 .text-blue-600 { color: var(--text-blue-600); }
+.hover\:text-blue-600:hover { color: var(--text-blue-600); }
 .text-red-600 { color: var(--text-red-600); }
 .text-yellow-600 { color: var(--text-yellow-600); }
 .text-green-600 { color: var(--text-green-600); }

@@ -60,7 +60,7 @@ class HtmlReporterV2IndexTest {
     // Check for some key JS logic
     assertTrue(LINTSCRIPT_JS.contains("this.lintReport.issues"))
     assertTrue(LINTSCRIPT_JS.contains("searchQuery: ''"))
-    assertTrue(LINTSCRIPT_JS.contains("sort: { by: 'severity', order: 'desc' }"))
+    assertTrue(LINTSCRIPT_JS.contains("sort: { by: 'name', order: 'asc' }"))
     assertTrue(LINTSCRIPT_JS.contains("this.escapeHTML(locationStr)"))
 
     // Check HTML structure matches what JS expects
@@ -302,7 +302,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-severity-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [], packages: [], classes: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isSeverityAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("getFilteredIssues(issues)"))
 
@@ -335,7 +335,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-category-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic for categories
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [], packages: [], classes: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isCategoryAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.categories.length > 0)"))
   }
@@ -362,7 +362,7 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("id=\"remove-module-filter\""))
 
     // Verify LINTSCRIPT_JS contains filter state and logic for modules
-    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [] }"))
+    assertTrue(LINTSCRIPT_JS.contains("filters: { severities: [], categories: [], modules: [], packages: [], classes: [] }"))
     assertTrue(LINTSCRIPT_JS.contains("isModuleAdded: false"))
     assertTrue(LINTSCRIPT_JS.contains("if (this.state.filters.modules.length > 0)"))
   }
@@ -378,11 +378,23 @@ class HtmlReporterV2IndexTest {
     // Check for the "Group By" button and label
     assertTrue(html.contains("id=\"group-by-btn\" class=\"group-by-btn-style\""))
     assertTrue(html.contains("<span class=\"group-by-label\">Group By:</span>"))
-    assertTrue(html.contains("id=\"group-by-text\" class=\"group-by-value\">Issues</span>"))
+    assertTrue(html.contains("id=\"group-by-text\" class=\"group-by-value\">Modules</span>"))
 
     // Check for the "Group By" dropdown
     assertTrue(html.contains("id=\"group-by-dropdown\" class=\"dropdown-menu right-0 hidden group-by-dropdown-style\""))
+    assertTrue(html.contains("<div class=\"dropdown-item\" data-value=\"modules\">Modules</div>"))
+    assertTrue(html.contains("<div class=\"dropdown-item\" data-value=\"packages\">Packages</div>"))
+    assertTrue(html.contains("<div class=\"dropdown-item\" data-value=\"classes\">Classes</div>"))
     assertTrue(html.contains("<div class=\"dropdown-item\" data-value=\"issues\">Issues</div>"))
+
+    // Verify the specific order in the HTML string
+    val modulesIdx = html.indexOf("data-value=\"modules\"")
+    val packagesIdx = html.indexOf("data-value=\"packages\"")
+    val classesIdx = html.indexOf("data-value=\"classes\"")
+    val issuesIdx = html.indexOf("data-value=\"issues\"")
+    assertTrue(modulesIdx < packagesIdx)
+    assertTrue(packagesIdx < classesIdx)
+    assertTrue(classesIdx < issuesIdx)
 
     // Verify LINTSCRIPT_JS contains group-by caching and logic
     assertTrue(LINTSCRIPT_JS.contains("groupByBtn: document.getElementById('group-by-btn')"))
@@ -396,6 +408,19 @@ class HtmlReporterV2IndexTest {
     assertTrue(STYLE_CSS.contains(".group-by-value"))
     assertTrue(STYLE_CSS.contains(".group-by-icon"))
     assertTrue(STYLE_CSS.contains(".breadcrumb-row-style"))
+  }
+
+  @Test
+  fun testGroupByOptions() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData, "Lint Report")
+
+    assertTrue(LINTSCRIPT_JS.contains("getGroupedData(issues, groupByKey)"))
+    assertTrue(LINTSCRIPT_JS.contains("renderGroupedView(issues, groupByKey)"))
+    assertTrue(LINTSCRIPT_JS.contains("getSortedGroupedData(groups)"))
+    assertTrue(LINTSCRIPT_JS.contains("renderBreadcrumbs()"))
+    assertTrue(LINTSCRIPT_JS.contains("Element"))
+    assertTrue(LINTSCRIPT_JS.contains("levels.push({ name: modName"))
   }
 
   @Test
