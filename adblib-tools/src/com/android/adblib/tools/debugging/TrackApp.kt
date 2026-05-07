@@ -25,6 +25,7 @@ import com.android.adblib.StateFlowStatus
 import com.android.adblib.activityManager
 import com.android.adblib.getOrPutSynchronized
 import com.android.adblib.hasAvailableFeature
+import com.android.adblib.isCapabilitiesSupported
 import com.android.adblib.tools.debugging.impl.TrackAppImpl
 import kotlinx.coroutines.flow.StateFlow
 
@@ -88,7 +89,10 @@ suspend fun ConnectedDevice.isAppInfoSupported(): Boolean {
   else if (!hasAvailableFeature(AdbFeatures.APP_INFO)) {
     false
   } else {
-    val capabilitiesResult = activityManager.capabilities() ?: return false
+    if (!activityManager.isCapabilitiesSupported()) {
+      return false
+    }
+    val capabilitiesResult = activityManager.capabilities()
 
     // ...as well as the Android VM...
     // ...and the Android Framework

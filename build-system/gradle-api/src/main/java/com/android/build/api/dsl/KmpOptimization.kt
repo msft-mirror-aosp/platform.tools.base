@@ -56,10 +56,10 @@ interface LibraryKeepRules : ConfigurableFiles {
 @Incubating
 interface ConsumerKeepRules : ConfigurableFiles {
   /**
-   * Publishing consumer proguard rules as part of a kmp library is an opt-in feature. By default, consumer proguard rules will not be
-   * published.
+   * Publishing consumer proguard rules as part of a kmp library is an opt-in feature. By default, consumer proguard rules are published if
+   * specified as file parameters, or if present in the source set.
    *
-   * To enable it, set this property to `true`
+   * To disable it, set this property to `false`
    */
   @get:Incubating @set:Incubating var publish: Boolean
 

@@ -3807,7 +3807,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithFalseFlag() {
+  fun testR8PackageScopeWithFalseFlag() {
     lint()
       .files(
         propertyFile(
@@ -3826,6 +3826,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }
@@ -3838,15 +3839,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
-                        enable = true
-                        ~~~~~~
+        build.gradle:6: Warning: Cannot use optimization.packageScope without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        packageScope = setOf("androidx.**")
+                        ~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-          Autofix for build.gradle line 5: Replace flag value with true:
+          Autofix for build.gradle line 6: Replace flag value with true:
           gradle.properties:
           @@ -2 +2 @@
           -android.r8.gradual.support=false
@@ -3854,7 +3855,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithNoFlag() {
+  fun testR8PackageScopeWithNoFlag() {
     lint()
       .files(
         propertyFile(
@@ -3871,6 +3872,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }
@@ -3883,15 +3885,15 @@ class GradleDetectorTest : AbstractCheckTest() {
       .run()
       .expect(
         """
-        build.gradle:5: Warning: Cannot use optimization.enable=true without setting android.r8.gradual.support=true flag. [R8GradualApi]
-                        enable = true
-                        ~~~~~~
+        build.gradle:6: Warning: Cannot use optimization.packageScope without setting android.r8.gradual.support=true flag. [R8GradualApi]
+                        packageScope = setOf("androidx.**")
+                        ~~~~~~~~~~~~
         0 errors, 1 warning
         """
       )
       .expectFixDiffs(
         """
-          Autofix for build.gradle line 5: Add android.r8.gradual.support=true flag:
+          Autofix for build.gradle line 6: Add android.r8.gradual.support=true flag:
           gradle.properties:
           @@ -1 +1,2 @@
           -# comments
@@ -3901,7 +3903,7 @@ class GradleDetectorTest : AbstractCheckTest() {
       )
   }
 
-  fun testR8NewApiWithFlag() {
+  fun testR8PackageScopeWithFlag() {
     lint()
       .files(
         gradle(
@@ -3911,6 +3913,7 @@ class GradleDetectorTest : AbstractCheckTest() {
                  release {
                      optimization {
                          enable = true
+                         packageScope = setOf("androidx.**")
                      }
                  }
              }

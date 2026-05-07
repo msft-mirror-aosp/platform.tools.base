@@ -20,22 +20,45 @@ import android.os.Handler
 import android.util.Log
 import androidx.inspection.ArtTooling
 import androidx.inspection.Connection
+import androidx.inspection.Inspector
 import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorExecutors
+import androidx.inspection.InspectorFactory
+import com.android.tools.idea.protobuf.ByteString
 import com.android.tools.ui.inspector.common.FramingProtocol
+import com.android.tools.ui.inspector.payload.SessionHandler
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
+import dalvik.system.DexClassLoader
 import java.io.IOException
 import java.io.OutputStream
+import java.util.ServiceLoader
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
+import kotlin.coroutines.resume
+import kotlinx.coroutines.suspendCancellableCoroutine
 
 private const val TAG = "studio.AppInspectionUtils"
 
-/** Creates a [Connection] that writes events to the given [OutputStream] using [FramingProtocol]. */
-internal fun createAppInspectionConnection(outputStream: OutputStream, crashListener: (Throwable) -> Unit): Connection {
+/**
+ * Creates a [Connection] that writes events to the given [OutputStream] using [FramingProtocol].
+ *
+ * Provides an interoperability bridge with the App Inspection framework, adapting its standard interfaces to the UI Inspector's custom
+ * transport and routing protocol.
+ */
+internal fun createAppInspectionConnection(
+  inspectorId: String,
+  outputStream: OutputStream,
+  crashListener: (Throwable) -> Unit,
+): Connection {
   return object : Connection() {
     override fun sendEvent(event: ByteArray) {
       try {
-        FramingProtocol.writeMessage(outputStream, event)
+        val payload = ByteString.copyFrom(event)
+        val inspectorEvent = UiInspectorProtocol.InspectorMessageEvent.newBuilder().setInspectorId(inspectorId).setPayload(payload).build()
+        val eventWrapper = UiInspectorProtocol.Event.newBuilder().setInspectorMessage(inspectorEvent).build()
+        // Synchronize to prevent byte interleaving from concurrent events, since output stream is shared across inspectors
+        // TODO: refactor using a channel/actor model to enforce sequential writing of messages to the output stream
+        synchronized(outputStream) { FramingProtocol.writeMessage(outputStream, eventWrapper.toByteArray()) }
       } catch (e: IOException) {
         Log.e(TAG, "IO error sending event", e)
       } catch (e: Exception) {
@@ -43,6 +66,15 @@ internal fun createAppInspectionConnection(outputStream: OutputStream, crashList
         crashListener(e)
       }
     }
+  }
+}
+
+/** A [Connection] that delegates to another [Connection]. Used to support reconnecting to existing inspectors across different sessions. */
+// Volatile ensures that updates to activeConnection by the server thread are immediately visible to the inspector thread.
+internal class DelegatingConnection(@Volatile var activeConnection: Connection? = null) : Connection() {
+
+  override fun sendEvent(event: ByteArray) {
+    activeConnection?.sendEvent(event) ?: Log.w(TAG, "No active connection to send event")
   }
 }
 
@@ -85,4 +117,55 @@ private fun createDelegateExecutor(delegate: Executor, crashListener: (Throwable
       }
     }
   }
+}
+
+/** Suspends the coroutine until the inspector replies to the command. */
+internal suspend fun Inspector.handleCommandSuspend(command: ByteArray): ByteArray = suspendCancellableCoroutine { continuation ->
+  val callback =
+    object : Inspector.CommandCallback {
+      override fun reply(responseBytes: ByteArray) {
+        continuation.resume(responseBytes)
+      }
+
+      override fun addCancellationListener(executor: Executor, runnable: Runnable) {
+        continuation.invokeOnCancellation { executor.execute(runnable) }
+      }
+    }
+  onReceiveCommand(command, callback)
+}
+
+/**
+ * Dynamically loads an inspector from a dex file using [ServiceLoader], matching the mechanism used by App Inspection's
+ * `InspectorContext.java`.
+ *
+ * Note that there are a few differences from App Inspection's implementation:
+ * 1. It does not cache the [DexClassLoader]. App Inspection caches them to avoid native library loading conflicts (b/187342510) if the same
+ *    jar is loaded multiple times. We rely on persisting [InspectorBridge]s instead.
+ * 2. It uses `SessionHandler::class.java.classLoader` as the parent class loader, whereas App Inspection uses the application's class
+ *    loader. Since the session handler's loader is already a child of the application's class loader, app classes remain visible through
+ *    delegation.
+ * 3. It does not support native pointers in [InspectorEnvironment].
+ */
+internal fun loadInspectorDynamically(
+  inspectorId: String,
+  dexPath: String,
+  connection: Connection,
+  environment: InspectorEnvironment,
+): Inspector {
+  val optimizedDir = System.getProperty("java.io.tmpdir")
+  val classLoader = DexClassLoader(dexPath, optimizedDir, null, SessionHandler::class.java.classLoader)
+  val loader = ServiceLoader.load(InspectorFactory::class.java, classLoader)
+  val iterator = loader.iterator()
+  var inspector: Inspector? = null
+  while (iterator.hasNext()) {
+    val factory = iterator.next()
+    if (factory.inspectorId == inspectorId) {
+      inspector = factory.createInspector(connection, environment)
+      break
+    }
+  }
+  if (inspector == null) {
+    throw Exception("Failed to find InspectorFactory with id $inspectorId")
+  }
+  return inspector
 }

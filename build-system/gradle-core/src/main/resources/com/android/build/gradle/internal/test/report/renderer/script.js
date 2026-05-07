@@ -160,6 +160,133 @@ const UIUtils = {
 };
 
 /**
+ * Navigation handler for history management (Back/Forward buttons).
+ */
+const Navigation = {
+  isPopping: false,
+
+  init() {
+    // Store initial state
+    history.replaceState(this.captureState(), "");
+
+    window.onpopstate = (event) => {
+      if (event.state) {
+        this.isPopping = true;
+        this.applyState(event.state);
+        this.isPopping = false;
+      }
+    };
+  },
+
+  captureState() {
+    // Deep copy of state, excluding large/unnecessary parts
+    const { processedData, variants, ...restOfState } = TestReportApp.state;
+    const state = JSON.parse(JSON.stringify(restOfState));
+
+    // Always clear search from history state to avoid messy history from keystrokes
+    if (state.filters) {
+      state.filters.search = '';
+    }
+
+    // Always remove density from history state to retain user choice across navigation
+    delete state.density;
+
+    state.chipVisibility = {
+      status: !TestReportApp.elements.statusChipContainer.classList.contains('hidden'),
+      module: !TestReportApp.elements.modChipContainer.classList.contains('hidden'),
+      package: !TestReportApp.elements.pkgChipContainer.classList.contains('hidden'),
+      class: !TestReportApp.elements.clsChipContainer.classList.contains('hidden'),
+      testCase: !TestReportApp.elements.tcChipContainer.classList.contains('hidden')
+    };
+
+    return state;
+  },
+
+  push() {
+    if (this.isPopping) return;
+    history.pushState(this.captureState(), "");
+  },
+
+  replace() {
+    if (this.isPopping) return;
+    history.replaceState(this.captureState(), "");
+  },
+
+  applyState(state) {
+    if (!state) return;
+
+    // Restore state
+    TestReportApp.state = {
+      ...TestReportApp.state,
+      ...state
+    };
+
+    // Reset search UI on navigation
+    if (TestReportApp.elements.searchInput) {
+      TestReportApp.elements.searchInput.value = '';
+      if (TestReportApp.elements.searchClearBtn) {
+        TestReportApp.elements.searchClearBtn.classList.add('hidden');
+      }
+      if (TestReportApp.elements.searchWrapper) {
+        TestReportApp.elements.searchWrapper.classList.remove('expanded');
+      }
+      if (TestReportApp.elements.searchRevealBtn) {
+        TestReportApp.elements.searchRevealBtn.classList.remove('hidden');
+      }
+    }
+
+    // Update segments UI
+    if (TestReportApp.elements.viewSegments) {
+      TestReportApp.elements.viewSegments.querySelectorAll('.segment-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === TestReportApp.state.viewMode);
+      });
+    }
+    if (TestReportApp.elements.densitySegments) {
+      TestReportApp.elements.densitySegments.querySelectorAll('.segment-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === TestReportApp.state.density);
+      });
+      if (TestReportApp.elements.mainTable) {
+        if (TestReportApp.state.density === 'compact') {
+          TestReportApp.elements.mainTable.classList.add('table-compact');
+        } else {
+          TestReportApp.elements.mainTable.classList.remove('table-compact');
+        }
+      }
+    }
+
+    // Restore chip visibility
+    if (state.chipVisibility && TestReportApp.elements) {
+      TestReportApp.elements.statusChipContainer.classList.toggle('hidden', !state.chipVisibility.status);
+      TestReportApp.elements.modChipContainer.classList.toggle('hidden', !state.chipVisibility.module);
+      TestReportApp.elements.pkgChipContainer.classList.toggle('hidden', !state.chipVisibility.package);
+      TestReportApp.elements.clsChipContainer.classList.toggle('hidden', !state.chipVisibility.class);
+      TestReportApp.elements.tcChipContainer.classList.toggle('hidden', !state.chipVisibility.testCase);
+    }
+
+    // Rebuild static dropdowns to reflect restored state (test suite, variants, status)
+    TestReportApp.populateFilters();
+
+    // Update test suite UI specifically since populateFilters handles the dropdown but not the external UI elements fully unless changed
+    if (TestReportApp.elements.tsAllState && TestReportApp.elements.tsSelectedState) {
+      if (TestReportApp.state.filters.testSuite === 'all') {
+        TestReportApp.elements.tsAllState.classList.remove('hidden');
+        TestReportApp.elements.tsSelectedState.classList.add('hidden');
+      } else {
+        TestReportApp.elements.tsAllState.classList.add('hidden');
+        TestReportApp.elements.tsSelectedState.classList.remove('hidden');
+        if (TestReportApp.elements.testSuiteFilterText) {
+          TestReportApp.elements.testSuiteFilterText.textContent = TestReportApp.state.filters.testSuite;
+        }
+      }
+    }
+
+    // Re-render
+    TestReportApp.render();
+    TestReportApp.updateFilterButtons();
+  }
+};
+
+/**
  * Main application object.
  * DEPENDENCY: Requires 'TEST_DATA_SOURCE' to be defined in data.js
  */
@@ -187,6 +314,7 @@ const TestReportApp = {
       this.populateFilters();
       this.bindEvents();
       this.closeDropdownsOnClickOutside();
+      Navigation.init();
       this.render();
     } else {
       console.error("TEST_DATA_SOURCE is not defined. Make sure data.js is loaded before script.js");
@@ -332,6 +460,7 @@ const TestReportApp = {
         this.elements.testSuiteFilterText.textContent = newVal;
       }
       this.render();
+      Navigation.push();
     }, false, false);
 
     // Variants Dropdown
@@ -340,6 +469,7 @@ const TestReportApp = {
       this.state.filters.variants = newArr;
       this.updateVariantButtonText();
       this.render();
+      Navigation.push();
     }, true, true);
 
     // Status Dropdown
@@ -378,6 +508,7 @@ const TestReportApp = {
       this.state.filters.status = newArr;
       updateStatusButtonText();
       this.render();
+      Navigation.push();
     }, false, true);
   },
 
@@ -468,6 +599,7 @@ const TestReportApp = {
                 this.handleHeaderFilterChange(filterType);
                 this.updateFilterButtons();
                 this.render();
+                Navigation.push();
 
                 setTimeout(() => {
                     this.toggleDropdown(config.dropdown, config.btn);
@@ -494,6 +626,7 @@ const TestReportApp = {
                 this.handleHeaderFilterChange();
                 this.updateFilterButtons();
                 this.render();
+                Navigation.push();
             }
         });
     });
@@ -507,6 +640,7 @@ const TestReportApp = {
             this.state.viewMode = btn.dataset.value;
             this.resetSelection();
             this.render();
+            Navigation.push();
         });
     }
 
@@ -554,6 +688,7 @@ const TestReportApp = {
                 }
                 
                 this.render();
+                Navigation.push();
             }
         });
     }
@@ -591,9 +726,10 @@ const TestReportApp = {
             this.state.currentFlatView = 'classes';
         }
         this.render();
+        Navigation.push();
     });
 
-    this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); });
+    this.elements.tableHeaders.addEventListener('click', (e) => { const th = e.target.closest('[data-sort-by]'); if (!th) return; const newSortBy = th.dataset.sortBy; if (this.state.sort.by === newSortBy) { this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc'; } else { this.state.sort.by = newSortBy; this.state.sort.order = 'asc'; } this.render(); Navigation.push(); });
 
   },
 
@@ -772,6 +908,7 @@ const TestReportApp = {
         this.state.currentFlatView = 'testCases';
     }
     this.render();
+    Navigation.push();
   },
 
   handleTreeRowClick(target) {
@@ -950,6 +1087,7 @@ const TestReportApp = {
       this.handleHeaderFilterChange('module');
       this.updateFilterButtons();
       this.render();
+      Navigation.push();
     });
 
     UIUtils.buildActionDropdown(this.elements.packageFilterDropdown, packageOptions, filters.packages, (newArr) => {
@@ -959,6 +1097,7 @@ const TestReportApp = {
       this.handleHeaderFilterChange('package');
       this.updateFilterButtons();
       this.render();
+      Navigation.push();
     });
 
     UIUtils.buildActionDropdown(this.elements.classFilterDropdown, classOptions, filters.classes, (newArr) => {
@@ -967,6 +1106,7 @@ const TestReportApp = {
       this.handleHeaderFilterChange('class');
       this.updateFilterButtons();
       this.render();
+      Navigation.push();
     });
 
     UIUtils.buildActionDropdown(this.elements.tcFilterDropdown, testCaseOptions, filters.testCases, (newArr) => {
@@ -974,6 +1114,7 @@ const TestReportApp = {
       this.handleHeaderFilterChange('testCase');
       this.updateFilterButtons();
       this.render();
+      Navigation.push();
     });
   },
 

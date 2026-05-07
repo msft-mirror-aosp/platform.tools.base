@@ -75,6 +75,25 @@ class HtmlReporterV2Test {
     assertTrue(html.contains("<h1 class=\"header-title\" id=\"project-name\">Local Custom Report</h1>"))
   }
 
+  @Test
+  fun testClientDisplayNameInJson() {
+    val output = File(temporaryFolder.newFolder(), "report.html")
+    val flags = LintCliFlags()
+    val client =
+      object : LintCliClient(flags, "Test Client") {
+        override fun getRootDir(): File? = temporaryFolder.root
+
+        override fun getClientDisplayName(): String = "AGP (9.3.0-dev)"
+      }
+    val reporter = HtmlReporterV2(client, output, flags)
+
+    val stats = LintStats(0, 0)
+    reporter.write(stats, emptyList(), createFakeRegistry())
+
+    val html = output.readText()
+    assertTrue(html.contains("\"lintVersion\":\"AGP (9.3.0-dev)\""))
+  }
+
   private fun createFakeClient(flags: LintCliFlags): LintCliClient {
     return object : LintCliClient(flags, "test-client") {
       override fun getRootDir(): File? = temporaryFolder.root

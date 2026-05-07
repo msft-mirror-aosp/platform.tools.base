@@ -17,9 +17,12 @@
 package com.android.tools.ui.inspector
 
 import com.android.tools.ui.inspector.common.FramingProtocol
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Command
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol.Response
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Command
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.InspectorMessageCommand
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol.Response
+import com.google.protobuf.ByteString
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -33,16 +36,44 @@ class CommandSender(host: String, port: Int) : AutoCloseable {
   private val outputStream = socket.getOutputStream()
   private val inputStream = socket.getInputStream()
 
-  /** Sends a command and waits for a response. */
+  private val nextCommandId = AtomicInteger(1)
+
+  /**
+   * Sends a command and waits for a response.
+   *
+   * TODO: For now, keep the communication synchronous (wait for next message) but validate the ID. Future refactoring will introduce a
+   *   background reader thread for true multiplexing.
+   */
   suspend fun sendMessage(command: Command): Response =
     withContext(Dispatchers.IO) {
+      val commandId = nextCommandId.getAndIncrement()
+      val commandWithId = command.toBuilder().setCommandId(commandId).build()
+
       // Send framed message
-      val payload = command.toByteArray()
+      val payload = commandWithId.toByteArray()
       FramingProtocol.writeMessage(outputStream, payload)
 
       // Read framed response
       val responseBytes = FramingProtocol.readMessage(inputStream)
-      Response.parseFrom(responseBytes)
+      val response = Response.parseFrom(responseBytes)
+
+      require(response.commandId == commandId) { "Received response for wrong command. Expected: $commandId, Got: ${response.commandId}" }
+
+      response
+    }
+
+  /** Sends a command targeted at a specific inspector and returns the unwrapped response payload. */
+  suspend fun sendInspectorCommand(inspectorId: String, payload: ByteArray): ByteArray =
+    withContext(Dispatchers.IO) {
+      val envelope = InspectorMessageCommand.newBuilder().setInspectorId(inspectorId).setPayload(ByteString.copyFrom(payload)).build()
+      val command = Command.newBuilder().setInspectorMessage(envelope).build()
+      val response = sendMessage(command)
+
+      val responseEnvelope = response.inspectorMessage
+      if (responseEnvelope.inspectorId != inspectorId) {
+        error("Received response for wrong inspector: ${responseEnvelope.inspectorId}")
+      }
+      responseEnvelope.payload.toByteArray()
     }
 
   override fun close() {

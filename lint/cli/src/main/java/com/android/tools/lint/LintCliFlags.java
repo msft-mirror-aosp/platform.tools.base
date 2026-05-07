@@ -92,7 +92,6 @@ public class LintCliFlags {
     private boolean allowBaselineSuppress;
     private boolean offline;
     private boolean useHtmlV2;
-    private boolean useK2Uast = true;
     private boolean useKlibLightElementProvider = false;
     private File cacheDir;
 
@@ -905,16 +904,6 @@ public class LintCliFlags {
      */
     public void setOffline(boolean offline) {
         this.offline = offline;
-    }
-
-    /**
-     * Returns `true` if lint is using K2 UAST, formerly known as FIR UAST, by default. `false`,
-     * otherwise, i.e., K1 UAST, retroactively named as FE1.0 UAST.
-     *
-     * @return whether to use K2 UAST
-     */
-    public boolean useK2Uast() {
-        return useK2Uast;
     }
 
     /**

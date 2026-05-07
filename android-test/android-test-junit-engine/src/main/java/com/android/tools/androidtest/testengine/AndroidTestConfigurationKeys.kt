@@ -86,4 +86,7 @@ object AndroidTestConfigurationKeys {
 
   /** Whether to force AOT compilation after installation. */
   const val FORCE_AOT_COMPILATION = "android-test.force-aot-compilation"
+
+  /** The display name of the device, used for directory and file names. */
+  const val DEVICE_ID = "android-test.device-id"
 }

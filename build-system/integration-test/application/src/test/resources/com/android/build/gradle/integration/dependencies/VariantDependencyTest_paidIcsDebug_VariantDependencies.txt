@@ -2,6 +2,12 @@
    - name                 = "paidIcsDebug"
    > mainArtifact:
       > compileDependencies:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1:
             - requestedCoordinates = (null)
             > dependencies:
@@ -16,20 +22,11 @@
                         > dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           > androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
+                           - androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
                               - requestedCoordinates = (null)
-                              > dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
-                                    - requestedCoordinates = (null)
-                                    - dependencies:
-                                       - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                                       - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                              < dependencies
-                           < androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0
+                              - dependencies:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                    - dependencies = "*visited*"
                            > androidx.lifecycle|lifecycle-runtime|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-runtime:2.5.1:
                               - requestedCoordinates = (null)
                               > dependencies:
@@ -67,7 +64,7 @@
                         - dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                      > androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1:
                         - requestedCoordinates = (null)
@@ -77,7 +74,7 @@
                            - androidx.core|core-ktx|1.2.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.core:core-ktx:1.2.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
@@ -95,9 +92,9 @@
                               - dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                            > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1:
                               - requestedCoordinates = (null)
@@ -111,26 +108,29 @@
                                              - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                                 - requestedCoordinates = (null)
                                                 - dependencies         = []
-                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                                 - requestedCoordinates = (null)
                                                 - dependencies:
-                                                   - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                       - dependencies = "*visited*"
-                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
                                                       - requestedCoordinates = (null)
                                                       - dependencies:
-                                                         - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                             - dependencies = "*visited*"
-                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-                                             - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                                - dependencies = "*visited*"
+                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+                                             - org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
+                                                - requestedCoordinates = (null)
+                                                - dependencies:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                                      - dependencies = "*visited*"
                                           < dependencies
                                        < org.jetbrains.kotlinx|kotlinx-coroutines-core-jvm|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
                                     < dependencies
                                  < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
                                  - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                     - dependencies = "*visited*"
                               < dependencies
                            < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1
@@ -138,7 +138,7 @@
                      < androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1
                      - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.savedstate:savedstate:1.2.0:
                         - dependencies = "*visited*"
-                     - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                         - dependencies = "*visited*"
                   < dependencies
                < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0
@@ -264,6 +264,12 @@
          < androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1
       < compileDependencies
       > runtimeDependencies:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.appcompat:appcompat:1.6.1:
             - requestedCoordinates = (null)
             > dependencies:
@@ -311,24 +317,15 @@
                         > dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           > androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0:
+                           - androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0:
                               - requestedCoordinates = (null)
-                              > dependencies:
+                              - dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
                                  - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
-                                    - requestedCoordinates = (null)
-                                    - dependencies:
-                                       - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                                       - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                              < dependencies
-                           < androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                    - dependencies = "*visited*"
                            - androidx.lifecycle|lifecycle-livedata-core|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-livedata-core:2.5.1:
                               - dependencies = "*visited*"
                            - androidx.lifecycle|lifecycle-viewmodel|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-viewmodel:2.5.1:
@@ -342,10 +339,10 @@
                                     - dependencies = "*visited*"
                                  - androidx.lifecycle|lifecycle-common|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.lifecycle:lifecycle-common:2.5.1:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                            < androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.savedstate:savedstate:1.2.0
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                            > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1:
                               - requestedCoordinates = (null)
@@ -359,18 +356,18 @@
                                              - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                                 - requestedCoordinates = (null)
                                                 - dependencies         = []
-                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                                 - requestedCoordinates = (null)
                                                 - dependencies:
-                                                   - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                       - dependencies = "*visited*"
-                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
                                                       - requestedCoordinates = (null)
                                                       - dependencies:
-                                                         - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                             - dependencies = "*visited*"
-                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-                                             - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
+                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+                                             - org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
                                                 - dependencies = "*visited*"
                                           < dependencies
                                        < org.jetbrains.kotlinx|kotlinx-coroutines-core-jvm|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
@@ -378,7 +375,7 @@
                                  < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
                                  - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                     - dependencies = "*visited*"
                               < dependencies
                            < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1
@@ -391,7 +388,7 @@
                         - dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                     - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                         - dependencies = "*visited*"
                   < dependencies
                < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.activity:activity:1.6.0
@@ -527,7 +524,7 @@
                      - androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation-experimental:1.3.0:
                         - requestedCoordinates = (null)
                         - dependencies:
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                   < dependencies
                < androidx.fragment|fragment|1.3.6|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.fragment:fragment:1.3.6
@@ -542,7 +539,7 @@
                         - dependencies = "*visited*"
                - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.savedstate:savedstate:1.2.0:
                   - dependencies = "*visited*"
-               - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                   - dependencies = "*visited*"
             < dependencies
          < androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.appcompat:appcompat:1.6.1
@@ -551,9 +548,17 @@
    < mainArtifact
    > androidTestArtifact:
       > compileDependencies:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          - :|:|debug|api>ics, model>paid|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>paidIcsDebug, org.gradle.usage>java-api|:project:unspecified:
             - requestedCoordinates = (null)
-            - dependencies         = []
+            - dependencies:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - dependencies = "*visited*"
          > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1:
             - requestedCoordinates = (null)
             > dependencies:
@@ -568,20 +573,11 @@
                         > dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           > androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
+                           - androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
                               - requestedCoordinates = (null)
-                              > dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
-                                    - requestedCoordinates = (null)
-                                    - dependencies:
-                                       - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                                       - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                              < dependencies
-                           < androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0
+                              - dependencies:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                    - dependencies = "*visited*"
                            > androidx.lifecycle|lifecycle-runtime|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-runtime:2.5.1:
                               - requestedCoordinates = (null)
                               > dependencies:
@@ -619,7 +615,7 @@
                         - dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                      > androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1:
                         - requestedCoordinates = (null)
@@ -629,7 +625,7 @@
                            - androidx.core|core-ktx|1.2.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.core:core-ktx:1.2.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
@@ -647,9 +643,9 @@
                               - dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                            > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1:
                               - requestedCoordinates = (null)
@@ -663,26 +659,29 @@
                                              - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                                 - requestedCoordinates = (null)
                                                 - dependencies         = []
-                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                                 - requestedCoordinates = (null)
                                                 - dependencies:
-                                                   - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                       - dependencies = "*visited*"
-                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
                                                       - requestedCoordinates = (null)
                                                       - dependencies:
-                                                         - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                             - dependencies = "*visited*"
-                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-                                             - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                                - dependencies = "*visited*"
+                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+                                             - org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
+                                                - requestedCoordinates = (null)
+                                                - dependencies:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                                      - dependencies = "*visited*"
                                           < dependencies
                                        < org.jetbrains.kotlinx|kotlinx-coroutines-core-jvm|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
                                     < dependencies
                                  < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
                                  - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                     - dependencies = "*visited*"
                               < dependencies
                            < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1
@@ -690,7 +689,7 @@
                      < androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1
                      - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.savedstate:savedstate:1.2.0:
                         - dependencies = "*visited*"
-                     - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                         - dependencies = "*visited*"
                   < dependencies
                < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0
@@ -820,9 +819,17 @@
    < androidTestArtifact
    > unitTestArtifact:
       > compileDependencies:
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - requestedCoordinates = (null)
+            - dependencies:
+               - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
+                  - requestedCoordinates = (null)
+                  - dependencies         = []
          - :|:|debug|api>ics, model>paid|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>paidIcsDebug, org.gradle.usage>java-api|:project:unspecified:
             - requestedCoordinates = (null)
-            - dependencies         = []
+            - dependencies:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - dependencies = "*visited*"
          > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.appcompat:appcompat:1.6.1:
             - requestedCoordinates = (null)
             > dependencies:
@@ -837,20 +844,11 @@
                         > dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           > androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
+                           - androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0:
                               - requestedCoordinates = (null)
-                              > dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
-                                    - requestedCoordinates = (null)
-                                    - dependencies:
-                                       - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                                       - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
-                                          - requestedCoordinates = (null)
-                                          - dependencies         = []
-                              < dependencies
-                           < androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation-experimental:1.3.0
+                              - dependencies:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                    - dependencies = "*visited*"
                            > androidx.lifecycle|lifecycle-runtime|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-runtime:2.5.1:
                               - requestedCoordinates = (null)
                               > dependencies:
@@ -888,7 +886,7 @@
                         - dependencies:
                            - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                               - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                      > androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1:
                         - requestedCoordinates = (null)
@@ -898,7 +896,7 @@
                            - androidx.core|core-ktx|1.2.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.core:core-ktx:1.2.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
@@ -916,9 +914,9 @@
                               - dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                            > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1:
                               - requestedCoordinates = (null)
@@ -932,26 +930,29 @@
                                              - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                                 - requestedCoordinates = (null)
                                                 - dependencies         = []
-                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                             > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                                 - requestedCoordinates = (null)
                                                 - dependencies:
-                                                   - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                       - dependencies = "*visited*"
-                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
                                                       - requestedCoordinates = (null)
                                                       - dependencies:
-                                                         - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                             - dependencies = "*visited*"
-                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-                                             - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                                - dependencies = "*visited*"
+                                             < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+                                             - org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
+                                                - requestedCoordinates = (null)
+                                                - dependencies:
+                                                   - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                                      - dependencies = "*visited*"
                                           < dependencies
                                        < org.jetbrains.kotlinx|kotlinx-coroutines-core-jvm|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
                                     < dependencies
                                  < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
                                  - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                     - dependencies = "*visited*"
-                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                 - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                     - dependencies = "*visited*"
                               < dependencies
                            < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1
@@ -959,7 +960,7 @@
                      < androidx.lifecycle|lifecycle-viewmodel-savedstate|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.lifecycle:lifecycle-viewmodel-savedstate:2.5.1
                      - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.savedstate:savedstate:1.2.0:
                         - dependencies = "*visited*"
-                     - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                         - dependencies = "*visited*"
                   < dependencies
                < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-api|androidx.activity:activity:1.6.0
@@ -1088,6 +1089,12 @@
          > :|:|debug|api>ics, model>paid|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>paidIcsDebug, org.gradle.usage>java-runtime|:project:unspecified:
             - requestedCoordinates = (null)
             > dependencies:
+               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                  - requestedCoordinates = (null)
+                  - dependencies:
+                     - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
+                        - requestedCoordinates = (null)
+                        - dependencies         = []
                > androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.appcompat:appcompat:1.6.1:
                   - requestedCoordinates = (null)
                   > dependencies:
@@ -1135,24 +1142,15 @@
                               > dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
-                                 > androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0:
+                                 - androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0:
                                     - requestedCoordinates = (null)
-                                    > dependencies:
+                                    - dependencies:
                                        - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                                           - dependencies = "*visited*"
                                        - androidx.core|core|1.9.0|org.gradle.status>release|androidx.core:core:1.9.0:
                                           - dependencies = "*visited*"
-                                       - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
-                                          - requestedCoordinates = (null)
-                                          - dependencies:
-                                             - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-                                                - requestedCoordinates = (null)
-                                                - dependencies         = []
-                                             - org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains:annotations:13.0:
-                                                - requestedCoordinates = (null)
-                                                - dependencies         = []
-                                    < dependencies
-                                 < androidx.core|core-ktx|1.9.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.core:core-ktx:1.9.0
+                                       - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+                                          - dependencies = "*visited*"
                                  - androidx.lifecycle|lifecycle-livedata-core|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-livedata-core:2.5.1:
                                     - dependencies = "*visited*"
                                  - androidx.lifecycle|lifecycle-viewmodel|2.5.1|org.gradle.status>release|androidx.lifecycle:lifecycle-viewmodel:2.5.1:
@@ -1166,10 +1164,10 @@
                                           - dependencies = "*visited*"
                                        - androidx.lifecycle|lifecycle-common|2.5.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.lifecycle:lifecycle-common:2.5.1:
                                           - dependencies = "*visited*"
-                                       - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                       - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                           - dependencies = "*visited*"
                                  < androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.savedstate:savedstate:1.2.0
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                                  > org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1:
                                     - requestedCoordinates = (null)
@@ -1183,18 +1181,18 @@
                                                    - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                                       - requestedCoordinates = (null)
                                                       - dependencies         = []
-                                                   > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                                   > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                                       - requestedCoordinates = (null)
                                                       - dependencies:
-                                                         - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                             - dependencies = "*visited*"
-                                                         - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+                                                         - org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
                                                             - requestedCoordinates = (null)
                                                             - dependencies:
-                                                               - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                                               - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                                                   - dependencies = "*visited*"
-                                                   < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-                                                   - org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
+                                                   < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+                                                   - org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
                                                       - dependencies = "*visited*"
                                                 < dependencies
                                              < org.jetbrains.kotlinx|kotlinx-coroutines-core-jvm|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
@@ -1202,7 +1200,7 @@
                                        < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
                                        - org.jetbrains.kotlinx|kotlinx-coroutines-bom|1.6.1|org.gradle.category>platform, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlinx:kotlinx-coroutines-bom-derived-platform:1.6.1:
                                           - dependencies = "*visited*"
-                                       - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+                                       - org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
                                           - dependencies = "*visited*"
                                     < dependencies
                                  < org.jetbrains.kotlinx|kotlinx-coroutines-android|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1
@@ -1215,7 +1213,7 @@
                               - dependencies:
                                  - androidx.annotation|annotation|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.jvm.version>8, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation:1.3.0:
                                     - dependencies = "*visited*"
-                           - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                           - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                               - dependencies = "*visited*"
                         < dependencies
                      < androidx.activity|activity|1.6.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.activity:activity:1.6.0
@@ -1351,7 +1349,7 @@
                            - androidx.annotation|annotation-experimental|1.3.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.annotation:annotation-experimental:1.3.0:
                               - requestedCoordinates = (null)
                               - dependencies:
-                                 - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                                 - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                                     - dependencies = "*visited*"
                         < dependencies
                      < androidx.fragment|fragment|1.3.6|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.fragment:fragment:1.3.6
@@ -1366,12 +1364,14 @@
                               - dependencies = "*visited*"
                      - androidx.savedstate|savedstate|1.2.0|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.savedstate:savedstate:1.2.0:
                         - dependencies = "*visited*"
-                     - org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+                     - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
                         - dependencies = "*visited*"
                   < dependencies
                < androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.appcompat:appcompat:1.6.1
             < dependencies
          < :|:|debug|api>ics, model>paid|com.android.build.api.attributes.AgpVersionAttr>{AGP_Version}, com.android.build.gradle.internal.attributes.VariantAttr>paidIcsDebug, org.gradle.usage>java-runtime|:project:unspecified
+         - org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
+            - dependencies = "*visited*"
          - androidx.appcompat|appcompat|1.6.1|org.gradle.category>library, org.gradle.dependency.bundling>external, org.gradle.libraryelements>aar, org.gradle.status>release, org.gradle.usage>java-runtime|androidx.appcompat:appcompat:1.6.1:
             - dependencies = "*visited*"
       < runtimeDependencies
@@ -3480,58 +3480,34 @@
          - lintJar            = (null)
          - androidLibraryData = (null)
       < org.jetbrains.kotlinx|kotlinx-coroutines-core|1.6.1|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1
-      > org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-common/1.7.10/kotlin-stdlib-common-1.7.10.jar{F}
+      > org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}:
+         - type               = NO_ARTIFACT_FILE
+         - artifact           = (null)
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib-common"
-            - version        = "1.7.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
             - attributes:
                * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
                * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-api"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10
-      > org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10:
+      < org.jetbrains.kotlin|kotlin-stdlib-common|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.status>release|org.jetbrains.kotlin:kotlin-stdlib-common:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-common/1.7.10/kotlin-stdlib-common-1.7.10.jar{F}
-         - projectInfo        = (null)
-         > libraryInfo:
-            - group          = "org.jetbrains.kotlin"
-            - name           = "kotlin-stdlib-common"
-            - version        = "1.7.10"
-            - isTestFixtures = false
-            - buildType      = (null)
-            - productFlavors = []
-            - attributes:
-               * "org.gradle.category -> library"
-               * "org.gradle.libraryelements -> jar"
-               * "org.gradle.status -> release"
-               * "org.gradle.usage -> java-runtime"
-            - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10"
-         < libraryInfo
-         - lintJar            = (null)
-         - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-common|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-common:1.7.10
-      > org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
-         - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.6.0/kotlin-stdlib-jdk7-1.6.0.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.8.0/kotlin-stdlib-jdk7-1.8.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib-jdk7"
-            - version        = "1.6.0"
+            - version        = "1.8.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -3541,19 +3517,19 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0"
+               * "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0
-      > org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0:
+      < org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0
+      > org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.6.0/kotlin-stdlib-jdk7-1.6.0.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk7/1.8.0/kotlin-stdlib-jdk7-1.8.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib-jdk7"
-            - version        = "1.6.0"
+            - version        = "1.8.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -3563,19 +3539,19 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-runtime"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0"
+               * "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.6.0
-      > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+      < org.jetbrains.kotlin|kotlin-stdlib-jdk7|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0
+      > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.6.0/kotlin-stdlib-jdk8-1.6.0.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.0/kotlin-stdlib-jdk8-1.8.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib-jdk8"
-            - version        = "1.6.0"
+            - version        = "1.8.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -3585,19 +3561,19 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-api"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0"
+               * "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-      > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0:
+      < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+      > org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.6.0/kotlin-stdlib-jdk8-1.6.0.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib-jdk8/1.8.0/kotlin-stdlib-jdk8-1.8.0.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib-jdk8"
-            - version        = "1.6.0"
+            - version        = "1.8.0"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
@@ -3607,55 +3583,59 @@
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-runtime"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0"
+               * "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.6.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.0
-      > org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+      < org.jetbrains.kotlin|kotlin-stdlib-jdk8|1.8.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.0
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/1.7.10/kotlin-stdlib-1.7.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "1.7.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
             - attributes:
                * "org.gradle.category -> library"
+               * "org.gradle.jvm.environment -> standard-jvm"
                * "org.gradle.libraryelements -> jar"
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-api"
+               * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains.kotlin:kotlin-stdlib:1.7.10
-      > org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10:
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
+      > org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}:
          - type               = JAVA_LIBRARY
-         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/1.7.10/kotlin-stdlib-1.7.10.jar{F}
+         - artifact           = {LOCAL_REPO}/org/jetbrains/kotlin/kotlin-stdlib/{BUILT_IN_KOTLIN_VERSION}/kotlin-stdlib-{BUILT_IN_KOTLIN_VERSION}.jar{F}
          - projectInfo        = (null)
          > libraryInfo:
             - group          = "org.jetbrains.kotlin"
             - name           = "kotlin-stdlib"
-            - version        = "1.7.10"
+            - version        = "{BUILT_IN_KOTLIN_VERSION}"
             - isTestFixtures = false
             - buildType      = (null)
             - productFlavors = []
             - attributes:
                * "org.gradle.category -> library"
+               * "org.gradle.jvm.environment -> standard-jvm"
                * "org.gradle.libraryelements -> jar"
                * "org.gradle.status -> release"
                * "org.gradle.usage -> java-runtime"
+               * "org.jetbrains.kotlin.platform.type -> jvm"
             - capabilities:
-               * "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+               * "org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}"
          < libraryInfo
          - lintJar            = (null)
          - androidLibraryData = (null)
-      < org.jetbrains.kotlin|kotlin-stdlib|1.7.10|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime|org.jetbrains.kotlin:kotlin-stdlib:1.7.10
+      < org.jetbrains.kotlin|kotlin-stdlib|{BUILT_IN_KOTLIN_VERSION}|org.gradle.category>library, org.gradle.jvm.environment>standard-jvm, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-runtime, org.jetbrains.kotlin.platform.type>jvm|org.jetbrains.kotlin:kotlin-stdlib:{BUILT_IN_KOTLIN_VERSION}
       > org.jetbrains|annotations|13.0|org.gradle.category>library, org.gradle.libraryelements>jar, org.gradle.status>release, org.gradle.usage>java-api|org.jetbrains:annotations:13.0:
          - type               = JAVA_LIBRARY
          - artifact           = {LOCAL_REPO}/org/jetbrains/annotations/13.0/annotations-13.0.jar{F}

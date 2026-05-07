@@ -85,13 +85,6 @@ public class AndroidDebugBridge {
          * @param isSuccessful if the bridge is successfully restarted.
          */
         default void restartCompleted(boolean isSuccessful) {}
-
-        /**
-         * Sent when an error occurred during initialization.
-         *
-         * @param exception the exception that occurred.
-         */
-        default void initializationError(@NonNull Exception exception) {}
     }
 
     /**

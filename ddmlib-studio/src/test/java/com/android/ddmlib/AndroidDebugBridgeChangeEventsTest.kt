@@ -54,9 +54,6 @@ class AndroidDebugBridgeChangeEventsTest {
     assertTrue(bridgeChangeListener.restartInitializedCalled)
     events.notifyBridgeRestartCompleted(true)
     assertEquals(true, bridgeChangeListener.restartCompletedWith)
-    val exception = Exception("Test exception instance")
-    events.notifyBridgeInitializationError(exception)
-    assertEquals(exception, bridgeChangeListener.lastInitializationError)
   }
 
   @Test
@@ -105,7 +102,6 @@ class AndroidDebugBridgeChangeEventsTest {
   private class FakeIDebugBridgeChangeListener : AndroidDebugBridge.IDebugBridgeChangeListener {
 
     var lastBridge: AndroidDebugBridge? = null
-    var lastInitializationError: Exception? = null
     var restartInitializedCalled: Boolean = false
     var restartCompletedWith: Boolean? = null
 
@@ -119,10 +115,6 @@ class AndroidDebugBridgeChangeEventsTest {
 
     override fun restartCompleted(isSuccessful: Boolean) {
       restartCompletedWith = isSuccessful
-    }
-
-    override fun initializationError(exception: Exception) {
-      lastInitializationError = exception
     }
   }
 

@@ -33,12 +33,10 @@ class ComposeFlagsTest {
     MinimalSubProject.app("com.example.with")
       .appendToBuild(
         """
+        apply plugin: 'org.jetbrains.kotlin.plugin.compose'
         android {
             buildFeatures {
                 compose = true
-            }
-            composeOptions {
-                kotlinCompilerExtensionVersion = "+"
             }
         }
         """
@@ -71,7 +69,7 @@ class ComposeFlagsTest {
           .subproject(":explicitWithout", explicitWithoutCompose)
           .build()
       )
-      .disableBuiltInKotlin()
+      .withComposeCompilerGradlePlugin(true)
       .create()
 
   @Test

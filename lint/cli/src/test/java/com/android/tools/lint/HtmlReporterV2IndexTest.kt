@@ -21,6 +21,7 @@ import com.android.tools.lint.renderer.STYLE_CSS
 import com.android.tools.lint.renderer.data.LintCheck
 import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
+import com.android.tools.lint.renderer.data.LintOption
 import com.android.tools.lint.renderer.data.LintProject
 import com.android.tools.lint.renderer.data.LintReport
 import com.android.tools.lint.renderer.data.LintVendor
@@ -143,7 +144,24 @@ class HtmlReporterV2IndexTest {
           listOf(
             LintCheck(id = "AdditionalId", summary = "Additional summary", category = "Security", vendor = LintVendor(name = "Google"))
           ),
-        disabledChecks = listOf(LintCheck(id = "DisabledId", summary = "Disabled summary", reason = "Explicitly disabled")),
+        disabledChecks =
+          listOf(
+            LintCheck(
+              id = "DisabledId",
+              summary = "Disabled summary",
+              reason = "Explicitly disabled",
+              urls = listOf("http://example.com/disabled"),
+              options =
+                listOf(
+                  LintOption(
+                    name = "some-option",
+                    description = "Description of some-option",
+                    defaultValue = "default-value",
+                    explanation = "Explanation with <code>code</code>",
+                  )
+                ),
+            )
+          ),
         projects = listOf(LintProject(name = "app", relativePath = "app/", errorCount = 0, warningCount = 1)),
       )
     val json = GsonBuilder().create().toJson(report)
@@ -162,6 +180,10 @@ class HtmlReporterV2IndexTest {
     assertTrue(html.contains("src/Other.kt"))
     assertTrue(html.contains("\"id\":\"AdditionalId\""))
     assertTrue(html.contains("\"id\":\"DisabledId\""))
+    assertTrue(html.contains("http://example.com/disabled"))
+    assertTrue(html.contains("\"name\":\"some-option\""))
+    assertTrue(html.contains("Description of some-option"))
+    assertTrue(html.contains("Explanation with"))
     assertTrue(html.contains("\"name\":\"app\""))
     assertTrue(html.contains("\"lintVersion\":\"8.6.0\""))
   }
@@ -419,8 +441,11 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("data-check-id=\"\${this.escapeHTML(c.id)}\""))
 
     // Verify explanation rendering
-    assertTrue(LINTSCRIPT_JS.contains("if (c.explanation) {"))
-    assertTrue(LINTSCRIPT_JS.contains("c.explanation.replace(/\\n/g, '<br>')"))
+    assertTrue(LINTSCRIPT_JS.contains("renderExplanation(text) {"))
+    assertTrue(LINTSCRIPT_JS.contains("text.trim()"))
+    assertTrue(LINTSCRIPT_JS.contains(".split(/(?:\\s*<br\\s*\\/?>\\s*){2,}|\\n\\n+/)"))
+    assertTrue(LINTSCRIPT_JS.contains(".map(p => `<div>\${p.trim().replace(/\\n/g, '<br>')}</div>`)"))
+    assertTrue(LINTSCRIPT_JS.contains(".join('<div class=\"mt-2\"></div>')"))
 
     // Verify vendor rendering logic
     assertTrue(LINTSCRIPT_JS.contains("if (c.vendor) {"))
@@ -430,7 +455,11 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("<strong>Feedback:</strong> <a href=\"\${this.escapeHTML(c.vendor.feedbackUrl)}\""))
 
     // Verify reason rendering (for disabled checks)
-    assertTrue(LINTSCRIPT_JS.contains("if (c.reason) detailsHtml += `<strong>Reason:</strong> \${this.escapeHTML(c.reason)}<br>`;"))
+    assertTrue(LINTSCRIPT_JS.contains("if (c.reason) detailsHtml += `<strong>Disabled by:</strong> \${this.escapeHTML(c.reason)}<br>`;"))
+
+    // Verify more info rendering for disabled checks
+    assertTrue(LINTSCRIPT_JS.contains("if (c.urls && c.urls.length > 0) {"))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>More info:</strong>"))
 
     // Verify calls to renderCheckRows
     assertTrue(LINTSCRIPT_JS.contains("this.renderCheckRows(checks, this.elements.additionalChecksData);"))
@@ -447,5 +476,19 @@ class HtmlReporterV2IndexTest {
     assertTrue(LINTSCRIPT_JS.contains("element.addEventListener('click'"))
     assertTrue(LINTSCRIPT_JS.contains("const id = row.dataset.checkId;"))
     assertTrue(LINTSCRIPT_JS.contains("this.state.expandedChecks.has(id)"))
+  }
+
+  @Test
+  fun testQuickfixNotes() {
+    assertTrue(LINTSCRIPT_JS.contains("Note: This issue has an associated quickfix operation"))
+    assertTrue(LINTSCRIPT_JS.contains("!issue.vendor && issue.hasAutoFix"))
+    assertTrue(LINTSCRIPT_JS.contains("} else if (c.hasAutoFix) {"))
+  }
+
+  @Test
+  fun testSecondaryLocations() {
+    // Verify LINTSCRIPT_JS contains the logic to render secondary locations
+    assertTrue(LINTSCRIPT_JS.contains("issue.secondaryLocations"))
+    assertTrue(LINTSCRIPT_JS.contains("<strong>Additional locations:</strong>"))
   }
 }

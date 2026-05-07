@@ -40,6 +40,7 @@ internal data class Env<out FX>(
   // Local functions and receivers are different: They aren't shadowed by names. So we keep all.
   val funs: FunEnv,
   val virtualReceivers: PersistentMap<ClassId, Type<FX>>,
+  val varDelegates: PersistentMap<String, Type<FX>> = persistentMapOf(),
 ) {
   override fun toString() =
     "[" +
@@ -57,6 +58,8 @@ internal data class Env<out FX>(
       name.isReceiverName() -> throw IllegalArgumentException("call `receiver()` instead")
       else -> vars[name]?.widenedByBound()
     }
+
+  fun varDelegateAt(name: String): Type<FX>? = varDelegates[name]
 
   fun funAt(name: String, isRightOverloading: (Type.MethodRef) -> Boolean = { true }): Type.MethodRef? =
     funs[name]?.let { overloadings ->
@@ -115,6 +118,9 @@ internal data class Env<out FX>(
         name.isReceiverName() -> throw IllegalArgumentException("call `withReceiver` instead")
         else -> copy(vars = vars.put(name, type))
       }
+
+    internal fun <FX> Env<FX>.withVarDelegate(name: String, delegate: Type<FX>): Env<FX> =
+      copy(varDelegates = varDelegates.put(name, delegate))
 
     internal fun <FX> Env<FX>.withFun(name: String, type: Type.MethodRef): Env<FX> =
       copy(funs = funs.put(name, (funs[name] ?: persistentListOf()).add(type)))

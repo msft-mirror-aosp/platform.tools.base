@@ -1,3 +1,4 @@
+load("//tools/base/bazel:bazel.bzl", "iml_module")
 load("//tools/base/bazel:kotlin.bzl", "kotlin_test")
 load("//tools/base/bazel:maven.bzl", "maven_library")
 load("//tools/base/common:version.bzl", "BASE_VERSION")
@@ -12,7 +13,7 @@ maven_library(
     description = "Utility to remove typedef annotations from classes",
     module_name = "lint-typedef-remover",
     notice = "NOTICE",
-    resource_strip_prefix = "tools/base/lint/libs/lint-typdef-remover",
+    resource_strip_prefix = "tools/base/lint/libs/lint-typedef-remover",
     version = BASE_VERSION,
     visibility = ["//visibility:public"],
     deps = [
@@ -42,8 +43,6 @@ kotlin_test(
         "@maven//:com.google.truth.truth",
     ],
 )
-
-load("//tools/base/bazel:bazel.bzl", "iml_module")
 
 # managed by go/iml_to_build
 iml_module(

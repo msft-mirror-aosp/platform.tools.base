@@ -284,21 +284,52 @@ void Agent::RunHeartbeatThread() {
     // defecting their purposes.
     agent_stub();
     int64_t start_ns = stopwatch.GetElapsed();
-    EmptyResponse response;
-    grpc::ClientContext context;
-    // Linux and Mac are slightly different with respect to default accuracy of
-    // time_point Linux is nanoseconds, mac is milliseconds so we cater to the
-    // lowest common.
-    SetClientContextTimeout(&context, 0,
-                            Clock::ns_to_ms(kHeartBeatIntervalNs) * 2);
-    HeartBeatRequest request;
-    request.set_pid(getpid());
+    int tries = 0;
+    const int kMaxTries = 3;
+    bool is_daemon_alive = false;
 
-    // Status returns OK if it succeeds (daemon is alive), else it returns a
-    // standard grpc error code.
-    const grpc::Status status =
-        agent_stub().HeartBeat(&context, request, &response);
-    bool is_daemon_alive = status.ok();
+    while (tries < kMaxTries) {
+      EmptyResponse response;
+      grpc::ClientContext context;
+      // Linux and Mac are slightly different with respect to default accuracy
+      // of time_point Linux is nanoseconds, mac is milliseconds so we cater to
+      // the lowest common.
+      SetClientContextTimeout(&context, 0,
+                              Clock::ns_to_ms(kHeartBeatIntervalNs) * 2);
+      HeartBeatRequest request;
+      request.set_pid(getpid());
+
+      // Status returns OK if it succeeds (daemon is alive), else it returns a
+      // standard grpc error code.
+      const grpc::Status status =
+          agent_stub().HeartBeat(&context, request, &response);
+      is_daemon_alive = status.ok();
+
+      if (is_daemon_alive) {
+        break;  // Ping succeeded, break out of retry loop.
+      }
+
+      tries++;
+      if (tries < kMaxTries) {
+        // If the ping failed due to an OS-level freeze (e.g., a
+        // "stop-the-world" Heap Dump or GC pause), the local gRPC timer expires
+        // instantly upon unfreezing. We log the retry and immediately attempt
+        // another ping, which is guaranteed to succeed if the app is now
+        // unfrozen and the daemon is healthy.
+        Log::W(Log::Tag::TRANSPORT,
+               "Heartbeat ping failed. This could be due to a local JVM "
+               "freeze. Retrying ping (%d/%d)...",
+               tries, kMaxTries - 1);
+      }
+    }
+
+    if (!is_daemon_alive) {
+      Log::E(Log::Tag::TRANSPORT,
+             "Heartbeat ping permanently failed after %d tries. Daemon is "
+             "considered dead.",
+             kMaxTries);
+    }
+
     if (is_daemon_alive != was_daemon_alive) {
       lock_guard<std::mutex> guard(callback_mutex_);
       for (auto itor = daemon_status_changed_callbacks_.begin();

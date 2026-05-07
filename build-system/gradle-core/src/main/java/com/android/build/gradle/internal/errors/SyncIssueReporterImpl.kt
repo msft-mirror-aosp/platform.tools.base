@@ -23,7 +23,7 @@ import com.android.build.gradle.options.SyncOptions.ErrorFormatMode
 import com.android.build.gradle.options.SyncOptions.EvaluationMode
 import com.android.builder.errors.EvalIssueException
 import com.android.builder.errors.IssueReporter
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 import com.android.ide.common.blame.Message
 import com.google.common.base.MoreObjects
 import com.google.common.collect.ImmutableList
@@ -75,7 +75,7 @@ class SyncIssueReporterImpl(
       when (issue.severity) {
         SyncIssue.SEVERITY_WARNING -> messageReceiverImpl.receiveMessage(Message(Message.Kind.WARNING, issue.message))
         SyncIssue.SEVERITY_ERROR -> {
-          val exception = EvalIssueException(issue.message, issue.data, issue.multiLineMessage)
+          val exception = EvalIssueException(issue.message, issue.data, issue.multiLineMessage?.filterNotNull())
           if (syncErrorToThrow == null) {
             syncErrorToThrow = exception
           } else {

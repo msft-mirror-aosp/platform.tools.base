@@ -71,4 +71,27 @@ class LintPrintTextReportTest {
     rule.build.androidApplication().reconfigure { android.lint.printTextReport = true }
     rule.build.executor.run("lintDebug").apply { assertOutputContains("Unknown issue id \"Fake\"") }
   }
+
+  @Test
+  fun testNoIssuesFoundNotPrintedWithDsl() {
+    rule.build.androidApplication().reconfigure {
+      android.lint.printTextReport = true
+      android.lint.error.clear()
+    }
+    rule.build.executor.run("lintDebug").apply {
+      assertOutputDoesNotContain("No issues found")
+      assertOutputDoesNotContain("0 errors, 0 warnings")
+      assertOutputDoesNotContain("no errors or warnings")
+    }
+  }
+
+  @Test
+  fun testNoIssuesFoundNotPrintedWithOption() {
+    rule.build.androidApplication().reconfigure { android.lint.error.clear() }
+    rule.build.executor.with(OptionalBooleanOption.LINT_PRINT_TEXT_REPORT, true).run("lintDebug").apply {
+      assertOutputDoesNotContain("No issues found")
+      assertOutputDoesNotContain("0 errors, 0 warnings")
+      assertOutputDoesNotContain("no errors or warnings")
+    }
+  }
 }

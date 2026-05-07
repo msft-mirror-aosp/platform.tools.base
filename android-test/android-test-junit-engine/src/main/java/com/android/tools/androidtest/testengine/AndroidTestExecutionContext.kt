@@ -49,7 +49,12 @@ data class AndroidTestExecutionContext(val request: ExecutionRequest) : EngineEx
 class AndroidTestConfiguration(request: ExecutionRequest) {
   private val config = request.configurationParameters
 
-  private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null, deviceSerial: String? = null): String? {
+  /**
+   * Resolves configuration property value.
+   *
+   * @param fallback If false, does not fall back to base key if device-specific key is not found.
+   */
+  private fun get(key: String, agpTestInput: AgpTestSuiteInput? = null, deviceSerial: String? = null, fallback: Boolean = true): String? {
     if (key.isNotEmpty()) {
       if (deviceSerial != null) {
         val deviceSpecificKey = "$key[$deviceSerial]"
@@ -65,6 +70,11 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
           if (agpValue != null) {
             return agpValue
           }
+        }
+
+        // If we only want device-specific overrides, do not fall back to the base key.
+        if (!fallback) {
+          return null
         }
       }
       val valueFromKey = config.get(key).orElse(null) ?: System.getProperty(key) ?: AgpTestSuiteInput.get(key)
@@ -107,15 +117,25 @@ class AndroidTestConfiguration(request: ExecutionRequest) {
       }
       ?.toMap() ?: emptyMap()
 
-  val resultsDir: File? = get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR)?.let { File(it) }
+  // We use fallback = false to distinguish between an explicit device-specific directory
+  // and falling back to the base directory. This allows the engine to append the device ID
+  // when no specific override is provided.
+  fun getResultsDir(deviceSerial: String? = null): File? =
+    get(RESULTS_DIR, AgpTestSuiteInput.RESULTS_DIR, deviceSerial, fallback = false)?.let { File(it) }
 
-  val additionalTestOutputDirOnHost: File? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_HOST)?.let { File(it) }
+  fun getAdditionalTestOutputDirOnHost(deviceSerial: String? = null): File? =
+    get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_HOST, deviceSerial = deviceSerial, fallback = false)?.let { File(it) }
+
+  fun getDeviceId(deviceSerial: String? = null): String? = get(AndroidTestConfigurationKeys.DEVICE_ID, deviceSerial = deviceSerial)
+
   val additionalTestOutputDirOnDevice: String? = get(AndroidTestConfigurationKeys.ADDITIONAL_TEST_OUTPUT_DIR_ON_DEVICE)
   val useTestStorageService: Boolean = get(AndroidTestConfigurationKeys.USE_TEST_STORAGE_SERVICE)?.toBoolean() ?: false
   val isTestCoverageEnabled: Boolean = get(AndroidTestConfigurationKeys.IS_TEST_COVERAGE_ENABLED)?.toBoolean() ?: false
   val forceAotCompilation: Boolean = get(AndroidTestConfigurationKeys.FORCE_AOT_COMPILATION)?.toBoolean() ?: false
 
-  val coverageDirOnHost: File? = get("", AgpTestSuiteInput.COVERAGE_DIR)?.let { File(it, "coverage_data") }
+  fun getCoverageDirOnHost(deviceSerial: String? = null): File? =
+    get("", AgpTestSuiteInput.COVERAGE_DIR, deviceSerial)?.let { File(it, "coverage_data") }
+
   val coverageFileOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_FILE_ON_DEVICE)
   val coverageDirOnDevice: String? = get(AndroidTestConfigurationKeys.COVERAGE_DIR_ON_DEVICE)
 

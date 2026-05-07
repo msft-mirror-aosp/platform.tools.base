@@ -980,9 +980,11 @@ public class VariantDependenciesBuilder {
             }
         }
 
-        // then go through the override or new attributes.
+        // Only add entries if the dimension is not already present in the map. This prevents
+        // `missingDimensionStrategy` from overriding the actual flavor of the module for dimensions
+        // it defines.
         if (flavorSelection != null) {
-            map.putAll(flavorSelection);
+            flavorSelection.forEach(map::putIfAbsent);
         }
 
         return map;

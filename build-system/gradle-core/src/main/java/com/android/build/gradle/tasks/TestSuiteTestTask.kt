@@ -176,6 +176,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     // untouched at the next execution.
     PathUtils.deleteRecursivelyIfExists(resultsDir.get().asFile.toPath())
     PathUtils.deleteRecursivelyIfExists(coverageDir.get().asFile.toPath())
+    if (additionalTestOutputDir.isPresent) {
+      PathUtils.deleteRecursivelyIfExists(additionalTestOutputDir.get().asFile.toPath())
+    }
     logFile.get().asFile.delete()
 
     val streamingFile = streamingOutputFile.get().asFile
@@ -242,7 +245,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     val device = iterator.next()
     val avdName = computeAvdName(device)
     avdService.get().runWithAvd(avdName) { onlineDeviceSerial ->
-      onlineDevices.add(DeviceTestTarget(onlineDeviceSerial, DslDeviceConfigProvider(device)))
+      onlineDevices.add(DeviceTestTarget(onlineDeviceSerial, DslDeviceConfigProvider(device), device.name))
       provisionManagedDevicesAndExecute(iterator, onlineDevices, onDevicesReady)
     }
   }
@@ -254,11 +257,17 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         TestEngineInputProperty(TestEngineInputProperty.STREAMING_FILE, providerToPath(streamingOutputFile)),
         TestEngineInputProperty(TestEngineInputProperty.RESULTS_DIR, providerToPath(resultsDir)),
         TestEngineInputProperty(TestEngineInputProperty.COVERAGE_DIR, providerToPath(coverageDir)),
-        TestEngineInputProperty(
-          AgpTestSuiteInputParameters.ADB_EXECUTABLE.propertyName,
-          buildTools.adbExecutable().get().asFile.absolutePath,
-        ),
       )
+
+    if (additionalTestOutputDir.isPresent) {
+      standardInputs.add(
+        TestEngineInputProperty("android-test.additional-test-output-dir-on-host", providerToPath(additionalTestOutputDir))
+      )
+    }
+
+    standardInputs.add(
+      TestEngineInputProperty(AgpTestSuiteInputParameters.ADB_EXECUTABLE.propertyName, buildTools.adbExecutable().get().asFile.absolutePath)
+    )
 
     if (!testUtilApks.isEmpty) {
       standardInputs.add(
@@ -295,8 +304,24 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       val onlineDeviceSerials = onlineDevices.joinToString(",") { it.serialNumber }
       standardInputs.add(TestEngineInputProperty(TestEngineInputProperty.SERIAL_IDS, onlineDeviceSerials))
 
-      if (!apkBundle.isEmpty) {
-        onlineDevices.forEach { target ->
+      val useDeviceSpecificPaths = managedDevices.get().size == 1
+
+      onlineDevices.forEach { target ->
+        val serial = target.serialNumber
+        if (useDeviceSpecificPaths) {
+          standardInputs.add(TestEngineInputProperty("${TestEngineInputProperty.RESULTS_DIR}[$serial]", providerToPath(resultsDir)))
+          standardInputs.add(TestEngineInputProperty("${TestEngineInputProperty.COVERAGE_DIR}[$serial]", providerToPath(coverageDir)))
+          if (additionalTestOutputDir.isPresent) {
+            standardInputs.add(
+              TestEngineInputProperty("android-test.additional-test-output-dir-on-host[$serial]", providerToPath(additionalTestOutputDir))
+            )
+          }
+          target.deviceName?.let { deviceName ->
+            standardInputs.add(TestEngineInputProperty("android-test.device-id[$serial]", deviceName))
+          }
+        }
+
+        if (!apkBundle.isEmpty) {
           val extractedApks = getApkFiles(apkBundle.singleFile.toPath(), target.deviceConfigProvider, bundleModuleName.orNull)
           val apksString = extractedApks.joinToString(",") { it.toAbsolutePath().toString() }
           standardInputs.add(
@@ -407,7 +432,9 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
               .getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
           )
           creationConfig.sourceContainers.forEach { sourceContainer ->
-            fileCollection.from(sourceContainer.suiteSourceClasspath.getRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR))
+            fileCollection.from(
+              sourceContainer.suiteSourceClasspath.getRuntimeClasspathArtifacts(AndroidArtifacts.ArtifactType.CLASSES_JAR)
+            )
             fileCollection.from(
               sourceContainer.artifacts.forScope(ScopedArtifacts.Scope.PROJECT).getFinalArtifacts(ScopedArtifact.POST_COMPILATION_CLASSES)
             )
@@ -646,9 +673,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
         )
       } else if (creationConfig is TestVariantCreationConfig) {
-        task.engineInputParameters.add(
-          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks)
-        )
+        task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks))
       }
       task.engineInputParameters.add(
         AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTING_APK, creationConfig.artifacts.get(SingleArtifact.APK))
@@ -693,10 +718,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.additionalTestOutputDir.set(additionalTestOutputDir)
       task.additionalTestOutputDir.disallowChanges()
 
-      task.engineInputProperties.put(
-        "android-test.additional-test-output-dir-on-host",
-        additionalTestOutputDir.map { it.asFile.absolutePath },
-      )
       task.engineInputProperties.put(
         "android-test.additional-test-output-dir-on-device",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
@@ -889,9 +910,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
           AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, testedConfig.artifacts.get(SingleArtifact.APK))
         )
       } else if (creationConfig is TestVariantCreationConfig) {
-        task.engineInputParameters.add(
-          AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks)
-        )
+        task.engineInputParameters.add(AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTED_APKS, creationConfig.testedApks))
       }
       task.engineInputParameters.add(
         AgpTestSuiteInputParameter(AgpTestSuiteInputParameters.TESTING_APK, creationConfig.artifacts.get(SingleArtifact.APK))
@@ -944,10 +963,6 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         task.legacyTestReportingRedirectionEnabled.map { it.toString() },
       )
       task.engineInputProperties.put(
-        "android-test.additional-test-output-dir-on-host",
-        additionalTestOutputDir.absolutePath,
-      )
-      task.engineInputProperties.put(
         "android-test.additional-test-output-dir-on-device",
         testData.instrumentationRunnerArguments.map { it.getOrDefault("additionalTestOutputDir", "") },
       )
@@ -989,8 +1004,7 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     @get:InputFiles @get:PathSensitive(PathSensitivity.RELATIVE) val value: Provider<out FileSystemLocation>,
   )
 
-  /** Encapsulates a target device for test execution, pairing its serial number with its configuration characteristics. */
-  class DeviceTestTarget(val serialNumber: String, val deviceConfigProvider: DeviceConfigProvider)
+  class DeviceTestTarget(val serialNumber: String, val deviceConfigProvider: DeviceConfigProvider, val deviceName: String? = null)
 
   /**
    * Implementation of [DeviceConfigProvider] that resolves device characteristics directly from the [ManagedVirtualDevice] DSL. This

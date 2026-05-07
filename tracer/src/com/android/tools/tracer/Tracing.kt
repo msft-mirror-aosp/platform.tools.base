@@ -26,7 +26,7 @@ import androidx.tracing.wire.ExperimentalRingBufferApi
 import androidx.tracing.wire.InMemoryRingBufferTraceSink
 import androidx.tracing.wire.TraceDriver
 import androidx.tracing.wire.TraceSink
-import androidx.tracing.wire.perfettoTraceFile
+import androidx.tracing.wire.createPerfettoFile
 import com.android.tools.tracer.Tracing.initialize
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
@@ -51,7 +51,7 @@ object Tracing {
       return
     }
 
-    initialize(config) { dir -> dir.perfettoTraceFile() }
+    initialize(config) { dir -> dir.createPerfettoFile() }
   }
 
   @VisibleForTesting

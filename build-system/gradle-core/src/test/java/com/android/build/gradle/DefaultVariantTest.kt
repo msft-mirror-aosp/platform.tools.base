@@ -32,8 +32,8 @@ import com.android.build.gradle.internal.variant.VariantModelImpl
 import com.android.builder.core.ComponentTypeImpl
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
-import com.android.builder.model.SyncIssue
 import com.android.builder.model.v2.ide.ProjectType
+import com.android.builder.model.v2.ide.SyncIssue
 import com.google.common.truth.Truth.assertThat
 import kotlin.test.assertFailsWith
 import org.junit.Test

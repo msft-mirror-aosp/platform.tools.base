@@ -111,7 +111,6 @@ _ARTIFACTS = [
     ('tools/vendor/google/game-tools/packaging/game-tools-linux.tar.gz', 'artifacts'),
     ('tools/vendor/google/game-tools/packaging/game-tools-win.zip', 'artifacts'),
     ('tools/base/deploy/service/deploy.service_deploy.jar', 'artifacts'),
-    ('tools/adt/idea/aswb/aswb/aswb_bazel.zip', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.jar', 'artifacts'),
     ('tools/base/sdk-common/tools.sdk-common.src.jar', 'artifacts'),
     ('tools/base/ninepatch/tools.ninepatch.jar', 'artifacts'),
@@ -123,8 +122,8 @@ _ARTIFACTS = [
     ('tools/base/apkparser/tools.binary-resources.jar', 'artifacts'),
     ('tools/base/apkparser/analyzer/libtools.analyzer.jar', 'artifacts'),
     ('prebuilts/studio/layoutlib/layoutlib-repository.zip', 'artifacts'),
-    ('tools/vendor/google/android/legacy-android-cli.zip', 'artifacts'),
     ('tools/vendor/google/android/android-cli.zip', 'artifacts'),
+    ('tools/vendor/google/android/dist/deb/android-cli.deb', 'artifacts'),
     ('tools/vendor/google/lume/dist/lume-distribution.zip', 'artifacts'),
 
     ('tools/base/bazel/owners.zip', 'owners.zip'),

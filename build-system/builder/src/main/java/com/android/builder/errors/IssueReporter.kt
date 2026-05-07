@@ -16,7 +16,7 @@
 
 package com.android.builder.errors
 
-import com.android.builder.model.SyncIssue
+import com.android.builder.model.v2.ide.SyncIssue
 
 /**
  * Base class for error reporting.

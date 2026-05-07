@@ -20,7 +20,9 @@ import com.android.adblib.AdbLogger
 import com.android.adblib.AdbLoggerFactory
 import com.android.adblib.AdbSession
 import com.android.adblib.tools.createStandaloneSession
-import com.android.tools.ui.inspector.protocol.ViewInspectorProtocol
+import com.android.tools.ui.inspector.common.ProtocolConstants
+import com.android.tools.ui.inspector.protocol.UiInspectorProtocol
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol
 import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -57,18 +59,12 @@ class DumpUiCommand : Callable<Int> {
 
     try {
       runBlocking {
-        val injectionManager = InjectionManager(adbSession)
-        val port = injectionManager.injectAndAttach(serial, packageName)
+        val injectionManager = InjectionManager(adbSession, serial, packageName)
+        val port = injectionManager.injectAndAttach()
 
-        CommandSender("localhost", port.toInt()).use { sender ->
-
-          // Send "hello" command to verify communication
-          val command =
-            ViewInspectorProtocol.Command.newBuilder().setHelloCommand(ViewInspectorProtocol.HelloCommand.getDefaultInstance()).build()
-          val response = sender.sendMessage(command)
-
-          System.out.println("Sent: hello command")
-          System.out.println("Received: ${response.helloResponse}")
+        CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
+          createViewInspector(commandSender, injectionManager)
+          viewInspectorDump(commandSender)
         }
       }
       return EXIT_OK
@@ -76,6 +72,59 @@ class DumpUiCommand : Callable<Int> {
       System.err.println("Error: ${e.message}")
       return EXIT_ERROR
     }
+  }
+}
+
+/** Sends a command to the agent to load and create the view inspector dynamically. */
+private suspend fun createViewInspector(commandSender: CommandSender, injectionManager: InjectionManager) {
+  val inspectorMetadata = InspectorRegistry.VIEW_INSPECTOR
+
+  // Push payload jar on demand and get the remote path
+  val dexPath = injectionManager.pushInspectorPayload(inspectorMetadata)
+  val createCommand =
+    UiInspectorProtocol.Command.newBuilder()
+      .setCreateInspector(
+        UiInspectorProtocol.CreateInspectorCommand.newBuilder().setInspectorId(inspectorMetadata.id).setDexPath(dexPath).build()
+      )
+      .build()
+
+  val createResponse = commandSender.sendMessage(createCommand)
+  if (createResponse.status != UiInspectorProtocol.Response.Status.SUCCESS) {
+    throw IllegalStateException("Failed to create inspector: ${createResponse.errorMessage}")
+  }
+}
+
+/** Sends a dump command to the view inspector and prints the view hierarchy. */
+private suspend fun viewInspectorDump(commandSender: CommandSender) {
+  val viewInspectorCommand =
+    ViewInspectorProtocol.Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.getDefaultInstance()).build()
+
+  val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
+  val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
+
+  if (viewInspectorResponse.specializedCase != ViewInspectorProtocol.Response.SpecializedCase.DUMP_VIEWS_RESPONSE) {
+    throw IllegalStateException("Unexpected response: ${viewInspectorResponse.specializedCase}")
+  }
+
+  val dumpResponse = viewInspectorResponse.dumpViewsResponse
+  val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+  System.out.println("View Hierarchy:")
+  for (node in dumpResponse.nodesList) {
+    printNode(node, stringTable, 0)
+  }
+}
+
+private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int, String>, indent: Int) {
+  val prefix = "  ".repeat(indent)
+  val className = stringTable[node.className] ?: "Unknown"
+  val bounds = node.bounds
+  System.out.println(
+    "${prefix}[$className] (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
+  )
+
+  for (child in node.childrenList) {
+    printNode(child, stringTable, indent + 1)
   }
 }
 

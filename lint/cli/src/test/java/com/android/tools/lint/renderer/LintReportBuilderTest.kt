@@ -18,6 +18,7 @@ package com.android.tools.lint.renderer
 
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
+import com.android.tools.lint.client.api.LintClient
 import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Incident
@@ -26,11 +27,14 @@ import com.android.tools.lint.detector.api.Location
 import com.android.tools.lint.detector.api.Position
 import com.android.tools.lint.detector.api.Project
 import com.android.tools.lint.detector.api.Severity
+import com.android.tools.lint.detector.api.StringOption
 import com.android.tools.lint.detector.api.TextFormat
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
@@ -39,6 +43,11 @@ import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.whenever
 
 class LintReportBuilderTest {
+  @Before
+  fun setUp() {
+    LintClient.clientName = LintClient.CLIENT_UNIT_TESTS
+  }
+
   @Test
   fun testBuildReport() {
     val client = createMockClient()
@@ -87,6 +96,10 @@ class LintReportBuilderTest {
       assertEquals("app.src.main.java.com.example", packageName)
       assertEquals(11, location?.line)
       assertEquals(6, location?.column)
+      assertEquals(
+        "To suppress this error, use the issue id \"TestIssue1\" as explained in the <a href=\"#SuppressInfo\">Suppressing Warnings and Errors</a> section.",
+        suppressMessage,
+      )
     }
   }
 
@@ -212,6 +225,34 @@ class LintReportBuilderTest {
   }
 
   @Test
+  fun testAdditionalAndDisabledChecksSorting() {
+    val client = createMockClient()
+    val rootProjectDir = File("/path/to/project")
+    val builder = LintReportBuilder(client, "Test Report", rootProjectDir, "1.0") { null }
+
+    val issueZ = mock(Issue::class.java)
+    `when`(issueZ.id).thenReturn("Z-Issue")
+    `when`(issueZ.category).thenReturn(Category.CORRECTNESS)
+
+    val issueA = mock(Issue::class.java)
+    `when`(issueA.id).thenReturn("A-Issue")
+    `when`(issueA.category).thenReturn(Category.CORRECTNESS)
+
+    val issueM = mock(Issue::class.java)
+    `when`(issueM.id).thenReturn("M-Issue")
+    `when`(issueM.category).thenReturn(Category.CORRECTNESS)
+
+    val issueB = mock(Issue::class.java)
+    `when`(issueB.id).thenReturn("B-Issue")
+    `when`(issueB.category).thenReturn(Category.CORRECTNESS)
+
+    val report = builder.buildReport(emptyList(), listOf(issueZ, issueA), mapOf(issueM to "Reason M", issueB to "Reason B"))
+
+    assertEquals(listOf("A-Issue", "Z-Issue"), report.additionalChecks.map { it.id })
+    assertEquals(listOf("B-Issue", "M-Issue"), report.disabledChecks.map { it.id })
+  }
+
+  @Test
   fun testVendorNames() {
     val client = createMockClient()
     val rootProjectDir = File("/path/to/project")
@@ -223,6 +264,9 @@ class LintReportBuilderTest {
 
     val vendor = mock(Vendor::class.java)
     `when`(vendor.vendorName).thenReturn("Custom Vendor")
+    `when`(vendor.identifier).thenReturn("com.example:lint")
+    `when`(vendor.feedbackUrl).thenReturn("http://example.com/feedback")
+    `when`(vendor.contact).thenReturn("http://example.com/contact")
     `when`(issue.vendor).thenReturn(vendor)
 
     val incident = mock(Incident::class.java)
@@ -238,6 +282,9 @@ class LintReportBuilderTest {
     val lintIssue = report.issues[0]
 
     assertEquals("Custom Vendor", lintIssue.vendor?.name)
+    assertEquals("com.example:lint", lintIssue.vendor?.identifier)
+    assertEquals("http://example.com/feedback", lintIssue.vendor?.feedbackUrl)
+    assertEquals("http://example.com/contact", lintIssue.vendor?.contact)
 
     // Test AOSP Vendor is ignored/set to null
     `when`(issue.vendor).thenReturn(AOSP_VENDOR)
@@ -335,6 +382,48 @@ class LintReportBuilderTest {
     val lintIssue = report.issues[0]
 
     assertEquals(listOf("http://example.com/icon1.png", "http://example.com/icon2.jpg"), lintIssue.images)
+  }
+
+  @Test
+  fun testOptions() {
+    val client = createMockClient()
+    val rootProjectDir = File("/path/to/project")
+    val builder = LintReportBuilder(client, "Test Report", rootProjectDir, "1.0") { null }
+
+    val issue = mock(Issue::class.java)
+    `when`(issue.id).thenReturn("TestIssue")
+    `when`(issue.category).thenReturn(Category.CORRECTNESS)
+
+    val option = StringOption("test-option", "Option description", "default-val")
+    option.issue = issue
+    `when`(issue.getOptions()).thenReturn(listOf(option))
+
+    val incident = mock(Incident::class.java)
+    `when`(incident.issue).thenReturn(issue)
+    `when`(incident.severity).thenReturn(Severity.ERROR)
+
+    val location = mock(Location::class.java)
+    `when`(location.file).thenReturn(File("/path/to/project/file.java"))
+    `when`(incident.location).thenReturn(location)
+    `when`(incident.file).thenReturn(File("/path/to/project/file.java"))
+
+    val report = builder.buildReport(listOf(incident), emptyList(), emptyMap())
+    val lintIssue = report.issues[0]
+
+    assertEquals(1, lintIssue.options.size)
+    with(lintIssue.options[0]) {
+      assertEquals("test-option", name)
+      assertEquals("\"default-val\"", defaultValue)
+      assertEquals("<b>test-option</b> (default is \"default-val\"): Option description.<br/>\n", description)
+      assertNotNull(explanation)
+      assertTrue(explanation!!.contains("test-option"))
+      assertTrue(explanation!!.contains("default-val"))
+    }
+
+    val reportWithChecks = builder.buildReport(emptyList(), listOf(issue), emptyMap())
+    val lintCheck = reportWithChecks.additionalChecks[0]
+    assertEquals(1, lintCheck.options.size)
+    assertEquals("test-option", lintCheck.options[0].name)
   }
 
   private fun createMockClient(): LintCliClient {

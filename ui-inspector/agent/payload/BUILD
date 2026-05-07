@@ -1,5 +1,5 @@
 load("//tools/base/bazel:android.bzl", "dex_library")
-load("//tools/base/bazel:kotlin.bzl", "kotlin_library", "kotlin_test")
+load("//tools/base/bazel:kotlin.bzl", "kotlin_library")
 load("//tools/base/bazel:robolectric.bzl", "robolectric_test")
 
 package(default_visibility = ["//tools/base/ui-inspector:__subpackages__"])
@@ -35,29 +35,9 @@ dex_library(
     ],
 )
 
-kotlin_test(
-    name = "payload_tests",
-    srcs = glob(
-        ["src/test/java/**/*.kt"],
-        # Exclude tests that require robolectric
-        exclude = ["src/test/java/**/appinspection/*.kt"],
-    ),
-    jvm_flags = ["-Dtest.suite.jar=payload_tests.jar"],
-    test_class = "com.android.testutils.JarTestSuite",
-    deps = [
-        ":ui_inspector_payload_src",
-        "//prebuilts/tools/common/m2:androidx.inspection.inspection.1.0.0",
-        "//tools/adt/idea/.idea/libraries:junit4",
-        "//tools/adt/idea/.idea/libraries:truth",
-        "//tools/base/bazel:studio-proto",
-        "//tools/base/testutils:tools.testutils",
-        "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
-    ],
-)
-
 robolectric_test(
     name = "payload_robolectric_tests",
-    srcs = glob(["src/test/java/**/appinspection/*.kt"]),
+    srcs = glob(["src/test/java/**/*.kt"]),
     friends = [":ui_inspector_payload_src"],
     deps = [
         ":ui_inspector_payload_src",
@@ -68,6 +48,7 @@ robolectric_test(
         "//tools/base/testutils:tools.testutils",
         "//tools/base/ui-inspector/common",
         "//tools/base/ui-inspector/common/proto:ui_inspector_protocol_java_proto",
+        "@maven//:org.jetbrains.kotlinx.kotlinx-coroutines-core",
         "@maven//:org.mockito.mockito-core",
         "@maven//:org.robolectric.robolectric",
     ],

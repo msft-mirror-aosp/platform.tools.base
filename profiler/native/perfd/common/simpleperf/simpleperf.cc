@@ -25,6 +25,7 @@
 #include <cstring>
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "utils/bash_command.h"
 #include "utils/clock.h"
@@ -74,6 +75,16 @@ int Simpleperf::WaitForSimpleperf(int simpleperf_pid, int* status) {
 void Simpleperf::Record(int pid, const string& pkg_name, const string& abi_arch,
                         const string& trace_path, int sampling_interval_us,
                         const string& log_path) const {
+  // Security Fix: Validate pkg_name to prevent flag injection.
+  // Because the package name is later split by spaces and passed to execvp,
+  // an attacker could provide a package name with spaces and inject arbitrary
+  // flags into the simpleperf command execution.
+  if (!pkg_name.empty() &&
+      pkg_name.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRS"
+                                 "TUVWXYZ0123456789._-") != string::npos) {
+    Log::E(Log::Tag::PROFILER, "Invalid package name: %s", pkg_name.c_str());
+    return;
+  }
   //  Redirect stdout and stderr to a log file (useful if simpleperf
   //  crashes).
   int fd = open(log_path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC,
@@ -86,15 +97,16 @@ void Simpleperf::Record(int pid, const string& pkg_name, const string& abi_arch,
                                            sampling_interval_us);
 
   // Converts the record command to a C string.
-  char command_buffer[record_command.length() + 1];
-  strcpy(command_buffer, record_command.c_str());
-  char* argv[record_command.length() + 1];
-  SplitRecordCommand(command_buffer, argv);
+  std::vector<char> command_buffer(record_command.begin(),
+                                   record_command.end());
+  command_buffer.push_back('\0');
+  std::vector<char*> argv(record_command.length() + 1);
+  SplitRecordCommand(command_buffer.data(), argv.data());
 
   // Execute the simpleperf record command.
   Log::D(Log::Tag::PROFILER, "Running Simpleperf: '%s'",
          record_command.c_str());
-  int result = execvp(*argv, argv);
+  int result = execvp(argv[0], argv.data());
   // execvp() returns only if an error has occurred.
   Log::E(Log::Tag::PROFILER,
          "Running Simpleperf execvp() failed: result=%d '%s'", result,

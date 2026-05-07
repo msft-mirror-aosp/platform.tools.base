@@ -887,28 +887,6 @@ public class ManifestMerger2 {
     }
 
     /**
-     * Set an android namespaced attribute for the manifest element.
-     *
-     * @param document the document whose attributes will be modified
-     * @param attribute the new attribute to be set
-     * @param value the new value of the attribute
-     * @return the previous value of the attribute or null if the attribute was not set.
-     */
-    public static String setManifestAndroidAttribute(
-            @NotNull XmlDocument document, @NotNull String attribute, @NotNull String value) {
-        XmlElement manifest = document.getRootNode();
-        if (manifest == null) {
-            return null;
-        }
-        String previousValue =
-                manifest.getXml().hasAttributeNS(SdkConstants.ANDROID_URI, attribute)
-                        ? manifest.getXml().getAttributeNS(SdkConstants.ANDROID_URI, attribute)
-                        : null;
-        setAndroidAttribute(manifest, attribute, value);
-        return previousValue;
-    }
-
-    /**
      * Adds internet permission to document if not already present.
      *
      * @param document the document which gets edited if necessary.

@@ -41,6 +41,9 @@ class ActivityManager(private val deviceState: DeviceState) : Service {
       }
 
       "crash" -> {
+        if (deviceState.apiLevel < 26) {
+          return errorReporting.reportUnknownCommand(shellCommandOutput, cmd)
+        }
         if (args.size <= 1) {
           return errorReporting.reportMissingArgument(
             shellCommandOutput = shellCommandOutput,
@@ -49,6 +52,21 @@ class ActivityManager(private val deviceState: DeviceState) : Service {
         }
         val packageName = args[1]
         deviceState.stopClients(packageName)
+        shellCommandOutput.writeExitCode(0)
+      }
+
+      "gc" -> {
+        if (args.size <= 1) {
+          return errorReporting.reportMissingArgument(shellCommandOutput = shellCommandOutput, message = "Argument expected after \"gc\"\n")
+        }
+        val pid = args[1].toIntOrNull() ?: throw IllegalArgumentException("gc command for \"processName\" is not implemented by fakeAdb")
+
+        val hasGcCapability = deviceState.deviceCapabilities?.capabilities?.contains("gc") ?: false
+        if (!hasGcCapability) {
+          return errorReporting.reportUnknownCommand(shellCommandOutput, cmd)
+        }
+
+        deviceState.addGcPid(pid)
         shellCommandOutput.writeExitCode(0)
       }
 

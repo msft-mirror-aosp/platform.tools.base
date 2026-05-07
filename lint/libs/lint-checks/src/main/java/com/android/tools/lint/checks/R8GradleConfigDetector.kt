@@ -122,7 +122,7 @@ class R8GradleConfigDetector : Detector(), GradleScanner {
             "since it enables considerable download and storage savings, and optimizes your app's resource table.",
         category = Category.PERFORMANCE,
         priority = 2,
-        severity = Severity.WARNING,
+        severity = Severity.ERROR,
         implementation = Implementation(R8GradleConfigDetector::class.java, Scope.GRADLE_SCOPE),
         moreInfo = "https://developer.android.com/topic/performance/app-optimization/enable-app-optimization",
         androidSpecific = true,

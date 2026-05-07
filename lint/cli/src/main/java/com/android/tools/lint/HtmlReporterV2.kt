@@ -34,7 +34,7 @@ class HtmlReporterV2(client: LintCliClient, output: File, flags: LintCliFlags) :
     val titlePrefix = if (flags.isCheckDependencies) "Aggregate" else "Local"
     val reportTitle = "$titlePrefix $title"
 
-    val builder = LintReportBuilder(client, reportTitle, rootProjectDir, client.getClientDisplayRevision()) { getUrl(it) }
+    val builder = LintReportBuilder(client, reportTitle, rootProjectDir, client.getClientDisplayName()) { getUrl(it) }
     val lintReport = builder.buildReport(incidents, computeExtraIssues(registry), computeMissingIssues(registry, incidents))
 
     render(lintReport, output)

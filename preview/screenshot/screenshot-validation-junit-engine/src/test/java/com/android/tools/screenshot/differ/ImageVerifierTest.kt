@@ -123,6 +123,30 @@ class ImageVerifierTest {
     assertThat(diffImage.exists()).isFalse()
   }
 
+  @Test
+  fun verify_emptyImageFile_throws() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val diffImage = File(diffDir, "diff.png")
+    val emptyFile = File(newDir, "empty.png").apply { createNewFile() }
+    val refFile = File(createImageFile("circle", refDir))
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(emptyFile, refFile, diffImage, tempDir.root) }
+    assertThat(error).hasMessageThat().contains("Cannot read preview image file")
+  }
+
+  @Test
+  fun verify_emptyReferenceImageFile_throws() {
+    val imageVerifier = ImageVerifier(PixelPerfect())
+    val diffImage = File(diffDir, "diff.png")
+    val newFile = File(createImageFile("circle", newDir))
+    val emptyFile = File(refDir, "empty.png").apply { createNewFile() }
+
+    val error =
+      assertThrows(ScreenshotImageInvalidException::class.java) { imageVerifier.verify(newFile, emptyFile, diffImage, tempDir.root) }
+    assertThat(error).hasMessageThat().contains("Cannot read reference image file")
+  }
+
   /** Create a reference image for this test from the supplied test image [name]. */
   private fun createImageFile(name: String, dir: File): String {
     val resourceStream = javaClass.getResourceAsStream("$name.png")

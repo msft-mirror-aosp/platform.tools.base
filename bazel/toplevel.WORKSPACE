@@ -12,6 +12,8 @@ http_archive(
         # applied to the 54.0 release, except it drops the .py and .pyi files
         # from the patch to avoid merge conflicts.
         "@//tools/base/bazel/bzlmod:perfetto_pr_5348.patch",
+        # This patch the same as https://github.com/google/perfetto/pull/5541
+        "@//tools/base/bazel/bzlmod:perfetto_pr_5541.patch",
     ],
     sha256 = "8a6144d81592e00fb9e75da42483a2544315b25e3113845505d69950083913c1",
     strip_prefix = "perfetto-54.0",

@@ -139,6 +139,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -146,6 +147,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -242,6 +244,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -303,6 +306,7 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro Fold",
                         "XR Headset",
                         "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -381,6 +385,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm2.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -388,6 +393,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -482,6 +488,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -542,8 +549,9 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
                         "XR Headset",
+                        "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -616,6 +624,7 @@ public class DeviceManagerTest {
         // cf /sdklib/src/main/java/com/android/sdklib/devices/nexus.xml
         assertThat(listDisplayNames(dm.getDevices(DeviceCategory.VENDOR)))
                 .containsExactly(
+                        "AI Glasses (Display)",
                         "AI Glasses",
                         "Television (4K)",
                         "Television (1080p)",
@@ -623,6 +632,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Small Round",
                         "Wear OS Rectangular",
                         "Wear OS Square",
@@ -717,6 +727,7 @@ public class DeviceManagerTest {
                         "Large Desktop",
                         "Medium Desktop",
                         "Small Desktop",
+                        "Desktop (Preview)",
                         "Wear OS Rectangular",
                         "Wear OS Small Round",
                         "Wear OS Square",
@@ -777,8 +788,9 @@ public class DeviceManagerTest {
                         "Pixel 10 Pro",
                         "Pixel 10 Pro XL",
                         "Pixel 10 Pro Fold",
-                        "XR Glasses",
                         "XR Headset",
+                        "XR Glasses",
+                        "AI Glasses (Display)",
                         "AI Glasses");
     }
 
@@ -819,6 +831,18 @@ public class DeviceManagerTest {
         assertThat(properties.get("environment.height")).isEqualTo("900");
         assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
         assertThat(properties.get("hw.lcd.transparent")).isEqualTo("yes");
+    }
+
+    @Test
+    public final void testGetXrGlassesHardwareProperties() {
+        final Device glassesDevice = dm.getDevice("xr_glasses_device", "Google");
+
+        Map<String, String> properties = DeviceManager.getHardwareProperties(glassesDevice);
+        assertThat(properties.get("environment.width")).isNull();
+        assertThat(properties.get("environment.height")).isNull();
+        assertThat(properties.get("hw.screen")).isEqualTo("no-touch");
+        assertThat(properties.get("hw.lcd.transparent")).isNull();
+        assertThat(properties.get("hw.dimmingLevels")).isNotEmpty();
     }
 
     @Test
@@ -1192,8 +1216,10 @@ public class DeviceManagerTest {
                             + "Warning: Unsupported device desktop_small\n"
                             + "Warning: Unsupported device desktop_medium\n"
                             + "Warning: Unsupported device desktop_large\n"
+                            + "Warning: Unsupported device desktop_api37\n"
                             + "Warning: Unsupported device xr_headset_device\n"
                             + "Warning: Unsupported device ai_glasses_device\n"
+                            + "Warning: Unsupported device ai_glasses_displayless\n"
                             + "Warning: Unsupported device xr_glasses_device\n");
     }
 

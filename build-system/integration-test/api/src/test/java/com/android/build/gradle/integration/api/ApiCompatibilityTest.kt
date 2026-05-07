@@ -21,7 +21,10 @@ import com.android.build.gradle.integration.common.truth.ScannerSubject.Companio
 import org.junit.Rule
 import org.junit.Test
 
-/** Integration test to ensure that plugin binary compatibility of AGP APIs is preserved. */
+/**
+ * This test should be deleted when [BooleanOption.USE_NEW_DSL] is no longer an option. Integration test to ensure that plugin binary
+ * compatibility of AGP APIs is preserved.
+ */
 class ApiCompatibilityTest {
 
   @get:Rule val project = GradleTestProject.builder().fromTestProject("apiBinaryCompatibility").create()

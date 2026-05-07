@@ -48,7 +48,7 @@ ForegroundProcessTracker::IsTrackingForegroundProcessSupported() {
   ProcessInfo processInfo = runDumpsysTopActivityCommand();
 
   if (!processInfo.isEmpty) {
-    handshake_retry_count = 0;
+    handshake_retry_count.store(0);
     // a top-activity was found
     layoutInspectorForegroundProcessSupported.set_support_type(
         TrackingForegroundProcessSupported::SUPPORTED);
@@ -63,7 +63,7 @@ ForegroundProcessTracker::IsTrackingForegroundProcessSupported() {
   bool has_awake_activities = hasAwakeActivities();
 
   if (has_sleeping_activities && !has_awake_activities) {
-    handshake_retry_count = 0;
+    handshake_retry_count.store(0);
     layoutInspectorForegroundProcessSupported.set_support_type(
         TrackingForegroundProcessSupported::UNKNOWN);
     return layoutInspectorForegroundProcessSupported;
@@ -73,8 +73,8 @@ ForegroundProcessTracker::IsTrackingForegroundProcessSupported() {
   // NOT_SUPPORTED, retry a few times to avoid false negatives. For example when
   // the device is unlocked there can be a brief moment when there is no
   // top-activity but there are awake activities.
-  if (handshake_retry_count < maxHandshakeAttempts) {
-    handshake_retry_count += 1;
+  if (handshake_retry_count.load() < maxHandshakeAttempts) {
+    handshake_retry_count++;
     layoutInspectorForegroundProcessSupported.set_support_type(
         TrackingForegroundProcessSupported::UNKNOWN);
     return layoutInspectorForegroundProcessSupported;
@@ -99,7 +99,7 @@ ForegroundProcessTracker::IsTrackingForegroundProcessSupported() {
   }
 
   layoutInspectorForegroundProcessSupported.set_reason_not_supported(reason);
-  handshake_retry_count = 0;
+  handshake_retry_count.store(0);
   return layoutInspectorForegroundProcessSupported;
 }
 
@@ -108,12 +108,23 @@ void ForegroundProcessTracker::StartTracking() {
   // probably means a new Project was opened in Studio, which is now waiting to
   // receive a foreground process. We should send the last seen foreground
   // process.
-  if (shouldDoPolling_.load() && !latestForegroundProcess_.isEmpty) {
-    sendForegroundProcessEvent(latestForegroundProcess_);
+  {
+    // SECURITY CONCERN: Data Race on latestForegroundProcess_
+    // Protected access to ensure thread safety against background polling
+    // writes.
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    if (shouldDoPolling_.load() && !latestForegroundProcess_.isEmpty) {
+      sendForegroundProcessEvent(latestForegroundProcess_);
+    }
   }
 
   // checking both variables makes sure that only one thread is running at any
   // time.
+  // SECURITY CONCERN: Process Crash via Race Condition
+  // Protected thread creation block to prevent multiple concurrent calls
+  // from overwriting an active std::thread, which causes std::terminate() and
+  // DoS.
+  std::lock_guard<std::mutex> threadLock(threadMutex_);
   if (shouldDoPolling_.load() || isThreadRunning_.load()) {
     return;
   }
@@ -133,15 +144,25 @@ void ForegroundProcessTracker::StartTracking() {
 void ForegroundProcessTracker::StopTracking() {
   // if shouldDoPolling is false it means the polling loop is terminated, but
   // not necessarily that the thread was terminated.
-  if (!shouldDoPolling_.exchange(false) && !isThreadRunning_.load()) {
-    return;
+  {
+    // SECURITY CONCERN: Process Crash via Race Condition
+    // Synchronized to avoid racing with StartTracking and concurrent joins.
+    std::lock_guard<std::mutex> threadLock(threadMutex_);
+    if (!shouldDoPolling_.exchange(false) && !isThreadRunning_.load()) {
+      return;
+    }
+
+    if (workerThread_.joinable()) {
+      workerThread_.join();
+      isThreadRunning_.store(false);
+    }
   }
 
-  if (workerThread_.joinable()) {
-    workerThread_.join();
-    isThreadRunning_.store(false);
+  // SECURITY CONCERN: Data Race on latestForegroundProcess_
+  {
+    std::lock_guard<std::mutex> stateLock(stateMutex_);
+    latestForegroundProcess_ = {};
   }
-  latestForegroundProcess_ = {};
 }
 
 void ForegroundProcessTracker::sendForegroundProcessEvent(
@@ -160,6 +181,10 @@ void ForegroundProcessTracker::sendForegroundProcessEvent(
 void ForegroundProcessTracker::doPolling() {
   ProcessInfo processInfo = runDumpsysTopActivityCommand();
 
+  // SECURITY CONCERN: Data Race on latestForegroundProcess_
+  // Need a lock to ensure thread-safe updates against
+  // StartTracking/StopTracking.
+  std::lock_guard<std::mutex> stateLock(stateMutex_);
   if (!processInfo.isEmpty &&
       latestForegroundProcess_.pid.compare(processInfo.pid) != 0) {
     // Foreground process has changed, send event to Studio
@@ -189,6 +214,15 @@ ProcessInfo ForegroundProcessTracker::parseProcessInfo(
 
   std::string pid = matches.str(1);
   std::string processName = matches.str(2);
+
+  // SECURITY CONCERN: Unsanitized Input from dumpsys
+  // Malicious app package/process names could contain shell metacharacters
+  // resulting in command injection on Studio's side. Sanitize the string.
+  for (char& c : processName) {
+    if (!std::isalnum(c) && c != '.' && c != '_' && c != ':' && c != '/') {
+      c = '_';
+    }
+  }
 
   processInfo.pid = pid;
   processInfo.processName = processName;

@@ -94,8 +94,14 @@ data class LintIssue(
   val className: String? = null,
   /** Whether the issue was automatically fixed. */
   val wasAutoFixed: Boolean = false,
+  /** Whether the issue has an associated quickfix. */
+  val hasAutoFix: Boolean = false,
   /** List of images related to this issue. */
   val images: List<String> = emptyList(),
+  /** Message explaining how to suppress this issue. */
+  val suppressMessage: String? = null,
+  /** List of options for this issue. */
+  val options: List<LintOption> = emptyList(),
 )
 
 /** Represents a lint check. */
@@ -110,8 +116,26 @@ data class LintCheck(
   val category: String? = null,
   /** The vendor who provided the check. */
   val vendor: LintVendor? = null,
+  /** Whether the check has an associated quickfix. */
+  val hasAutoFix: Boolean = false,
   /** The reason for the check status (e.g., why it's disabled). */
   val reason: String? = null,
+  /** URLs with more information about the check. */
+  val urls: List<String> = emptyList(),
+  /** List of options for this check. */
+  val options: List<LintOption> = emptyList(),
+)
+
+/** Represents a configuration option for a lint check. */
+data class LintOption(
+  /** The name of the option. */
+  val name: String,
+  /** A description of the option. */
+  val description: String,
+  /** The default value of the option. */
+  val defaultValue: String? = null,
+  /** An explanation of how to configure the option, including code snippets. */
+  val explanation: String? = null,
 )
 
 /** Location of a lint issue. */

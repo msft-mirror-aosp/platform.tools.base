@@ -57,6 +57,44 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+*:focus-visible {
+    outline: 2px solid var(--text-blue-600) !important;
+    outline-offset: 2px !important;
+    border-radius: 4px;
+}
+
+th:focus-visible, td:focus-visible {
+    outline-offset: -2px !important;
+    position: relative;
+    z-index: 50;
+    border-radius: 0;
+}
+
+/* Match the table's rounded corners for the top-left and top-right cells */
+th:first-child:focus-visible {
+    border-top-left-radius: 0.5rem;
+}
+th:last-child:focus-visible {
+    border-top-right-radius: 0.5rem;
+}
+
+a.breadcrumb-link:focus-visible,
+.group-by-btn-style:focus-visible {
+    outline-offset: -2px !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
 /* Custom Scrollbar Styling */
 * {
     scrollbar-width: thin;
@@ -258,31 +296,59 @@ header {
 .icon-btn:hover, .icon-btn.active { background-color: var(--bg-hover); color: var(--text-main); }
 
 /* Filter Chips */
+
 .filter-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.375rem;
-    padding: 0.25rem 0.5rem;
     background-color: #eff6ff;
     color: #1e40af;
     border: 1px solid #dbeafe;
     border-radius: 9999px;
     font-size: 0.8125rem;
     font-weight: 500;
-    cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    padding: 0;
+    overflow: hidden;
 }
-.filter-chip:hover { background-color: #dbeafe; }
+
+.filter-chip-btn {
+    background: transparent;
+    border: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    outline: none;
+}
+
+.filter-chip-btn:hover,
+.filter-chip:hover .filter-chip-btn {
+    background-color: #dbeafe;
+}
+
+.filter-chip-btn:focus-visible {
+    outline: 2px solid var(--text-blue-600) !important;
+    outline-offset: -2px !important;
+}
+
+
 .filter-chip.active { box-shadow: 0 0 0 2px #2563eb; }
 
 .chip-close {
     display: inline-flex;
-    margin-right: -0.25rem;
-    margin-left: 0.25rem;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.25rem;
+    margin-left: 0;
     padding: 0.125rem;
     border-radius: 9999px;
     color: #2563eb;
+    background: transparent;
+    border: none;
+    cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
 }
 .chip-close:hover { background-color: #bfdbfe; color: #1e40af; }
@@ -656,6 +722,14 @@ header {
     transition: background-color 0.15s;
     font-size: 0.875rem;
     color: var(--text-gray-900);
+    width: 100%;
+    text-align: left;
+    border: none;
+    background: transparent;
+}
+
+.popover-item:focus-visible {
+    outline-offset: -2px !important;
 }
 
 .popover-item:hover {
@@ -677,9 +751,17 @@ header {
 
 .dropdown-item {
     display: block;
+    width: 100%;
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
     color: var(--text-dark);
+    text-align: left;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+.dropdown-item:focus-visible {
+    outline-offset: -2px !important;
 }
 .dropdown-item:hover { background: var(--bg-hover); }
 
@@ -745,10 +827,11 @@ tbody tr:hover { background-color: var(--bg-selected) !important; }
 
 .breadcrumbs-container {
     min-height: 28px;
+    padding: 0.25rem 0.5rem;
 }
 
 #flat-breadcrumbs {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 breadcrumb-separator { color: var(--text-muted); }
@@ -770,12 +853,11 @@ a.breadcrumb-link:hover { background-color: var(--bg-hover); text-decoration: un
 }
 
 /* --- SOURCE VIEW --- */
-
 #source-breadcrumbs {
     flex: 0 0 auto;
     margin-top: 1rem;
-    margin-bottom: 1rem;
-    padding-left: 0.25rem;
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0.5rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;

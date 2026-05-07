@@ -214,7 +214,7 @@ $STYLE_CSS
             <table id="main-table">
                 <thead id="table-headers">
                     <tr>
-                        <th class="cursor-pointer sticky-name" data-sort="id">ID</th>
+                        <th class="cursor-pointer" data-sort="id">ID</th>
                         <th class="cursor-pointer" data-sort="severity">Severity</th>
                         <th class="cursor-pointer" data-sort="category">Category</th>
                         <th class="cursor-pointer" data-sort="module">Module</th>

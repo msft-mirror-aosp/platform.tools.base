@@ -39,5 +39,4 @@ android {
 
 dependencies {
     implementation project(':app:mylibrary')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
 }

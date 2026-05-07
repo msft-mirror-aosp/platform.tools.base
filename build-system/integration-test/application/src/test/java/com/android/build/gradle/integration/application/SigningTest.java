@@ -40,7 +40,7 @@ import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.OptionalBooleanOption;
 import com.android.build.gradle.options.StringOption;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.model.SyncIssue;
+import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.model.v2.dsl.SigningConfig;
 import com.android.builder.model.v2.ide.AndroidArtifact;
 import com.android.builder.model.v2.ide.Variant;

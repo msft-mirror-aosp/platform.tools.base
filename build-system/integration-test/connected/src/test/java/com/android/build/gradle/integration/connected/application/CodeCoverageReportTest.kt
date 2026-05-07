@@ -79,7 +79,7 @@ class CodeCoverageReportTest {
           implementation(project(":lib"))
 
           testImplementation("junit:junit:4.13.2")
-          testImplementation("org.mockito:mockito-core:5.12.0")
+          testImplementation("org.mockito:mockito-core:5.20.0")
           testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
           testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -126,7 +126,7 @@ class CodeCoverageReportTest {
           }
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 
@@ -167,7 +167,7 @@ class CodeCoverageReportTest {
 
           dependencies {
             testImplementation("junit:junit:4.13.2")
-            testImplementation("org.mockito:mockito-core:5.12.0")
+            testImplementation("org.mockito:mockito-core:5.20.0")
             testImplementation("org.jdeferred:jdeferred-android-aar:1.2.3")
             testImplementation("commons-logging:commons-logging:1.1.1")
 

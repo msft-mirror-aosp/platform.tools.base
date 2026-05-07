@@ -26,8 +26,6 @@ import com.android.build.gradle.integration.manageddevice.utils.CustomAndroidSdk
 import com.android.build.gradle.integration.manageddevice.utils.addManagedDevice
 import com.android.build.gradle.integration.utp.AndroidTestUtil
 import com.android.build.gradle.integration.utp.applyAndroidTestConfiguration
-import org.junit.Assume.assumeFalse
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,37 +53,24 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
         }
 
         util.testTaskName = ":${moduleName}:allDevicesCheck"
-        val deviceName = if (util.runWithBuiltInPlatform) BUILT_IN_DEVICE_NAME else DSL_DEVICE_NAME
+        val deviceName = DSL_DEVICE_NAME
         val deviceOutputDir = "$TEST_RESULTS/$deviceName"
 
         util.testResultXmlPath =
           if (util.runWithBuiltInPlatform) {
-            "${moduleName}/$TEST_RESULTS/TEST-$deviceName.xml"
+            "${moduleName}/$deviceOutputDir/TEST-$deviceName.xml"
           } else {
             "${moduleName}/$deviceOutputDir/TEST-$DSL_DEVICE_NAME-_$moduleName-.xml"
           }
 
-        if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) {
-          util.testReportPath =
-            if (util.runWithBuiltInPlatform) {
-              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/com.example.android.kotlin.feature.html"
-            } else {
-              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin.feature.html"
-            }
-          util.testLogcatPath = "${moduleName}/$deviceOutputDir/logcat-com.example.android.kotlin.feature.ExampleInstrumentedTest-useAppContext.txt"
-        } else {
-          util.testReportPath =
-            if (util.runWithBuiltInPlatform) {
-              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/com.example.android.kotlin.html"
-            } else {
-              "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin.html"
-            }
-          util.testLogcatPath = "${moduleName}/$deviceOutputDir/logcat-com.example.android.kotlin.ExampleInstrumentedTest-useAppContext.txt"
-        }
+        util.testReportPath =
+          "${moduleName}/$REPORTS/androidTests/managedDevice/debug/$deviceName/com.example.android.kotlin${if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) ".feature" else ""}.html"
+        util.testLogcatPath =
+          "${moduleName}/$deviceOutputDir/logcat-com.example.android.kotlin${if (rule.build.subProject(":$moduleName") is AndroidDynamicFeatureProject) ".feature" else ""}.ExampleInstrumentedTest-useAppContext.txt"
+
         util.testResultPbPath = "${moduleName}/$deviceOutputDir/test-result.pb"
         util.testCoverageXmlPath = "${moduleName}/$TEST_COV_XML"
-        util.testAdditionalOutputPath =
-          "${moduleName}/build/outputs/managed_device_android_test_additional_output/debug/$deviceName"
+        util.testAdditionalOutputPath = "${moduleName}/build/outputs/managed_device_android_test_additional_output/debug/$deviceName"
       },
     )
 
@@ -115,7 +100,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun runAndroidTestWithNoTestClasses() {
-    // TODO(b/476442048): Implement built-in test platform for Managed Device.
     util.runAndroidTestWithNoTestClasses()
   }
 
@@ -153,25 +137,21 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun additionalTestOutputWithTestStorageService() {
-    assumeFalse(runWithBuiltInPlatform)
     util.additionalTestOutputWithTestStorageService()
   }
 
   @Test
   fun additionalTestOutputWithoutTestStorageService() {
-    assumeFalse(runWithBuiltInPlatform)
     util.additionalTestOutputWithoutTestStorageService()
   }
 
   @Test
   fun additionalTestOutputWithBenchmarkFiles() {
-    assumeFalse(runWithBuiltInPlatform)
     util.additionalTestOutputWithBenchmarkFiles()
   }
 
   @Test
   fun additionalTestOutputWithBenchmarkV3Files() {
-    assumeFalse(runWithBuiltInPlatform)
     util.additionalTestOutputWithBenchmarkV3Files()
   }
 
@@ -192,7 +172,6 @@ class AndroidManagedDeviceTest(val runWithBuiltInPlatform: Boolean) {
 
   @Test
   fun connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature() {
-    assumeFalse(runWithBuiltInPlatform)
     util.connectedAndroidTestWithAdditionalTestOutputUsingTestStorageServiceWithDynamicFeature()
   }
 

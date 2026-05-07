@@ -19,12 +19,15 @@ package com.android.tools.agent.app.inspection;
 import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
+
 import androidx.annotation.NonNull;
 import androidx.inspection.Inspector;
 import androidx.inspection.InspectorEnvironment;
 import androidx.inspection.InspectorExecutors;
 import androidx.inspection.InspectorFactory;
+
 import dalvik.system.DexClassLoader;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -176,6 +179,12 @@ final class InspectorContext {
                     try (InputStream inputStream = jarFile.getInputStream(entry)) {
                         Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
+                    // SECURITY: Restrict permissions on the extracted shared libraries.
+                    file.setReadable(true, false);
+                    file.setWritable(true, false);
+                    file.setExecutable(true, false);
+                    // RESOURCE MANAGEMENT: Ensure we clean up the extracted files on exit.
+                    file.deleteOnExit();
                 }
             }
             return workingDir.getAbsolutePath();

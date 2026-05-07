@@ -178,6 +178,79 @@ abstract class AbstractMultipleArtifactTest<T : FileSystemLocation>(
     }
   }
 
+  @Test
+  fun testGetImplWithAttributes() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+    val value1 = allocateValue("val1")
+    val producer1 = taskAllocator(project.tasks, "producer1")
+    producer1.configure { it.getOutputFile().set(value1) }
+
+    val attributes1 = ArtifactTypeQualifiers(mapOf("key1" to "value1"))
+    artifact.addInitialProvider(producer1, producer1.flatMap { it.getOutputFile() }, attributes1)
+
+    val value2 = allocateValue("val2")
+    val producer2 = taskAllocator(project.tasks, "producer2")
+    producer2.configure { it.getOutputFile().set(value2) }
+
+    val attributes2 = ArtifactTypeQualifiers(mapOf("key2" to "value2"))
+    artifact.addInitialProvider(producer2, producer2.flatMap { it.getOutputFile() }, attributes2)
+
+    // Test exact match
+    val result1 = artifact.getImplWithAttributes(attributes1)
+    assertThat(result1).isNotNull()
+    assertThat(result1?.qualifiers).isEqualTo(attributes1.value)
+    assertThat(result1?.producerName).isEqualTo("producer1")
+
+    // Test non-match
+    val attributes3 = ArtifactTypeQualifiers(mapOf("key3" to "value3"))
+    assertThat(artifact.getImplWithAttributes(attributes3)).isNull()
+  }
+
+  @Test
+  fun testGetImplWithAttributesMultipleMatches() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+    val value1 = allocateValue("val1")
+    val producer1 = taskAllocator(project.tasks, "producer1")
+    producer1.configure { it.getOutputFile().set(value1) }
+
+    val attributes1 = ArtifactTypeQualifiers(mapOf("key1" to "value1"))
+    artifact.addInitialProvider(producer1, producer1.flatMap { it.getOutputFile() }, attributes1)
+
+    val value2 = allocateValue("val2")
+    val producer2 = taskAllocator(project.tasks, "producer2")
+    producer2.configure { it.getOutputFile().set(value2) }
+
+    // Use same attributes
+    artifact.addInitialProvider(producer2, producer2.flatMap { it.getOutputFile() }, attributes1)
+
+    try {
+      artifact.getImplWithAttributes(attributes1)
+      fail("getImplWithAttributes should have failed")
+    } catch (e: IllegalArgumentException) {
+      assertThat(e.message).contains("There are multiple artifacts matching requested attributes")
+      assertThat(e.message).contains("key1=value1")
+    }
+  }
+
+  @Test
+  fun testEnsureAttributesUniqueness() {
+    val artifact = MultipleArtifactContainer { allocateProperty() }
+    val value1 = allocateValue("val1")
+    val producer1 = taskAllocator(project.tasks, "producer1")
+    producer1.configure { it.getOutputFile().set(value1) }
+
+    val attributes1 = ArtifactTypeQualifiers(mapOf("key1" to "value1"))
+    artifact.addInitialProvider(producer1, producer1.flatMap { it.getOutputFile() }, attributes1)
+
+    try {
+      attributes1.ensureAttributesUniqueness(artifact)
+      fail("ensureAttributesUniqueness should have failed")
+    } catch (e: RuntimeException) {
+      assertThat(e.message).contains("An artifact with qualifiers <key1=value1> has already been added")
+      assertThat(e.message).contains("by Task named `producer1`")
+    }
+  }
+
   fun testReplace(
     initialProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleProducerTask<T>>,
     secondProducerAllocator: (TaskContainer, String) -> TaskProvider<out MultipleArtifactTransformTask<T>>,

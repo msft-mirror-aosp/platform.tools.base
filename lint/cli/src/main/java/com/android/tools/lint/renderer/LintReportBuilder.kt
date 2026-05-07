@@ -17,6 +17,8 @@ package com.android.tools.lint.renderer
 
 import com.android.tools.lint.HtmlReporter
 import com.android.tools.lint.LintCliClient
+import com.android.tools.lint.LintSyntaxHighlighter
+import com.android.tools.lint.Reporter
 import com.android.tools.lint.client.api.IssueRegistry.Companion.AOSP_VENDOR
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -27,8 +29,10 @@ import com.android.tools.lint.getPath
 import com.android.tools.lint.renderer.data.LintCheck
 import com.android.tools.lint.renderer.data.LintIssue
 import com.android.tools.lint.renderer.data.LintLocation
+import com.android.tools.lint.renderer.data.LintOption
 import com.android.tools.lint.renderer.data.LintReport
 import com.android.tools.lint.renderer.data.LintVendor
+import com.android.utils.HtmlBuilder
 import com.android.utils.SdkUtils
 import java.io.File
 import java.time.ZoneId
@@ -72,8 +76,8 @@ class LintReportBuilder(
           }
         }
         .map(::createLintIssue)
-    val additionalChecks = extraIssues.map(::createLintCheck)
-    val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }
+    val additionalChecks = extraIssues.map(::createLintCheck).sortedBy { it.id }
+    val disabledChecks = missingIssues.map { (issue, reason) -> createLintCheck(issue, reason) }.sortedBy { it.id }
 
     return LintReport(
       name = title,
@@ -149,7 +153,12 @@ class LintReportBuilder(
       className = file.nameWithoutExtension,
       vendor = createLintVendor(issue),
       wasAutoFixed = incident.wasAutoFixed,
+      hasAutoFix = Reporter.hasAutoFix(issue),
       images = images,
+      suppressMessage =
+        "To suppress this error, use the issue id \"${issue.id}\" as explained in the " +
+          "<a href=\"#SuppressInfo\">Suppressing Warnings and Errors</a> section.",
+      options = createLintOptions(issue),
     )
   }
 
@@ -160,8 +169,42 @@ class LintReportBuilder(
       explanation = issue.getExplanation(TextFormat.HTML) ?: "",
       category = issue.category.fullName,
       vendor = createLintVendor(issue),
+      hasAutoFix = Reporter.hasAutoFix(issue),
       reason = reason,
+      urls = issue.moreInfo,
+      options = createLintOptions(issue),
     )
+  }
+
+  private fun createLintOptions(issue: Issue): List<LintOption> {
+    val options = issue.getOptions()
+    if (options.isEmpty()) return emptyList()
+    return options.map { option ->
+      val name = option.name
+      val defaultValue = option.defaultAsString()
+      val builder = HtmlBuilder()
+      val snippet =
+        "<lint>\n" +
+          "    <issue id=\"${issue.id}\">\n" +
+          "        <option name=\"$name\" value=\"${defaultValue ?: "some string"}\" />\n" +
+          "    </issue>\n" +
+          "</lint>\n"
+
+      val highlighter = LintSyntaxHighlighter("lint.xml", snippet)
+      highlighter.isPadCaretLine = true
+      highlighter.isDedent = true
+      val start = snippet.indexOf(name) - 1
+      val end = snippet.lastIndexOf(" />")
+      highlighter.generateHtml(builder, start, end, false)
+      val highlighted = builder.html
+
+      LintOption(
+        name = name,
+        description = option.describe(TextFormat.HTML, includeExample = false),
+        defaultValue = defaultValue,
+        explanation = highlighted,
+      )
+    }
   }
 
   private fun parseErrorLines(errorLine: String?): Pair<String?, String?> {

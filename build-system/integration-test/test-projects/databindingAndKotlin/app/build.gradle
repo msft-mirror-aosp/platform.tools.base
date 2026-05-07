@@ -49,5 +49,4 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs.class).config
 
 dependencies {
     implementation project(':library')
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:${libs.versions.kotlinVersion.get()}"
 }

@@ -37,7 +37,7 @@ import com.android.build.gradle.internal.variant.VariantPathHelper;
 import com.android.build.gradle.options.BooleanOption;
 import com.android.build.gradle.options.ProjectOptions;
 import com.android.builder.core.ComponentTypeImpl;
-import com.android.builder.model.SyncIssue;
+import com.android.builder.model.v2.ide.SyncIssue;
 import com.android.builder.profile.NameAnonymizer;
 import com.android.builder.profile.NameAnonymizerSerializer;
 import com.android.utils.FileUtils;

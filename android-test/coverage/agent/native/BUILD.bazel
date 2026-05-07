@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//tools/base/bazel:android.bzl", "ANDROID_COPTS", "ANDROID_LINKOPTS", "android_cc_binary")
+
+cc_binary(
+    name = "coverage_agent.so",
+    srcs = [
+        "coverage_agent.cc",
+        "instrumenter.cc",
+        "instrumenter.h",
+    ],
+    copts = ANDROID_COPTS,
+    linkopts = ANDROID_LINKOPTS,
+    linkshared = 1,
+    deps = [
+        "//prebuilts/studio/jdk:jni_headers",
+        "//tools/base/android-test/coverage/common:log",
+    ],
+)
+
+android_cc_binary(
+    name = "android_coverage_agent",
+    binary = ":coverage_agent.so",
+    filename = "coverage_agent.so",
+    visibility = ["//visibility:public"],
+)

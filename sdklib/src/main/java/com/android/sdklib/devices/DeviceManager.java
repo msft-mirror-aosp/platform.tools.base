@@ -19,6 +19,7 @@ import static com.android.sdklib.devices.Device.isAiGlasses;
 import static com.android.sdklib.devices.Device.isAutomotive;
 import static com.android.sdklib.devices.Device.isAutomotiveDistantDisplay;
 import static com.android.sdklib.devices.Device.isRollable;
+import static com.android.sdklib.devices.Device.isXrGlasses;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -805,6 +806,8 @@ public class DeviceManager {
 
         if (isAiGlasses(d)) {
             props.put(ConfigKey.LCD_TRANSPARENT, "yes");
+        } else if (isXrGlasses(d)) {
+            props.put(HardwareProperties.HW_DIMMING_LEVELS, "0.0,0.25,0.5,0.75,1.0");
         }
         return props;
     }

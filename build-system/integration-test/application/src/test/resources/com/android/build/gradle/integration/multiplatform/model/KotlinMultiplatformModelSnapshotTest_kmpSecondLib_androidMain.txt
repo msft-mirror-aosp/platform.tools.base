@@ -148,11 +148,9 @@
           "type": "PROJECT",
           "projectInfo": {
             "componentInfo": {
-              "buildType": "release",
               "productFlavors": {},
               "attributes": {
                 "com.android.build.api.attributes.AgpVersionAttr": "{AGP_Version}",
-                "com.android.build.gradle.internal.attributes.VariantAttr": "release",
                 "org.gradle.category": "library",
                 "org.gradle.jvm.environment": "android",
                 "org.gradle.libraryelements": "jar",
@@ -190,11 +188,9 @@
           "type": "PROJECT",
           "projectInfo": {
             "componentInfo": {
-              "buildType": "release",
               "productFlavors": {},
               "attributes": {
                 "com.android.build.api.attributes.AgpVersionAttr": "{AGP_Version}",
-                "com.android.build.gradle.internal.attributes.VariantAttr": "release",
                 "org.gradle.category": "library",
                 "org.gradle.jvm.environment": "android",
                 "org.gradle.libraryelements": "jar",

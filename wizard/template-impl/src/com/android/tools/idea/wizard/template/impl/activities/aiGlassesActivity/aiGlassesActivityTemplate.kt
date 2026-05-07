@@ -36,7 +36,7 @@ val aiGlassesActivityTemplate
   get() = template {
     name = "Basic AI Glasses Activity"
     description = "Creates a new basic AI glasses activity"
-    minApi = 30
+    minApi = 36
     constraints = listOf(TemplateConstraint.AndroidX, TemplateConstraint.Kotlin, TemplateConstraint.Material3, TemplateConstraint.Compose)
 
     category = Category.Activity

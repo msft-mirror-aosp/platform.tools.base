@@ -54,8 +54,6 @@ import com.android.build.gradle.internal.utils.fromDisallowChanges
 import com.android.build.gradle.internal.utils.setDisallowChanges
 import com.android.build.gradle.options.BooleanOption
 import com.android.build.gradle.options.BooleanOption.LINT_ANALYSIS_PER_COMPONENT
-import com.android.build.gradle.options.OptionalBooleanOption
-import com.android.build.gradle.options.ProjectOptions
 import com.android.buildanalyzer.common.TaskCategory
 import com.android.utils.FileUtils
 import com.google.common.annotations.VisibleForTesting
@@ -111,8 +109,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
   @get:Input abstract val sarifReportEnabled: Property<Boolean>
 
   @get:OutputFile @get:Optional abstract val sarifReportOutputFile: RegularFileProperty
-
-  @get:Input abstract val textReportToStdOut: Property<Boolean>
 
   @get:Internal abstract val androidSdkHome: Property<String>
 
@@ -331,7 +327,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     if (sarifReportEnabled.get()) {
       arguments.add("--sarif", sarifReportOutputFile.get())
     }
-    if (textReportToStdOut.get()) {
+    if (autoFix.get()) {
       arguments.add("--text", "stdout")
     }
 
@@ -459,7 +455,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions)
     }
   }
 
@@ -503,7 +499,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions)
     }
   }
 
@@ -548,7 +544,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     }
 
     override fun configureOutputSettings(task: AndroidLintTask) {
-      task.configureOutputSettings(creationConfig.global.lintOptions, creationConfig.services.projectOptions)
+      task.configureOutputSettings(creationConfig.global.lintOptions)
     }
   }
 
@@ -566,10 +562,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
 
     override val description: String
       get() = "Fix lint on the ${creationConfig.name} variant"
-
-    override fun configureOutputSettings(task: AndroidLintTask) {
-      task.textReportToStdOut.setDisallowChanges(true)
-    }
   }
 
   /** CreationAction for the lintVital task. Does not use the variant with tests. */
@@ -597,10 +589,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         variantName = creationConfig.name,
       )
     }
-
-    override fun configureOutputSettings(task: AndroidLintTask) {
-      // do nothing
-    }
   }
 
   /** Creates the updateLintBaseline task. */
@@ -625,10 +613,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         } else {
           super.checkDependenciesOverride
         }
-
-    override fun configureOutputSettings(task: AndroidLintTask) {
-      // do nothing
-    }
   }
 
   abstract class VariantCreationAction(val variant: VariantWithTests) :
@@ -863,7 +847,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
       task.uastInputs.initialize(task.project, variant.main)
     }
 
-    abstract fun configureOutputSettings(task: AndroidLintTask)
+    open fun configureOutputSettings(task: AndroidLintTask) {}
 
     companion object {
       @JvmStatic
@@ -930,7 +914,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     htmlReportEnabled.convention(false)
     xmlReportEnabled.convention(false)
     sarifReportEnabled.convention(false)
-    textReportToStdOut.convention(false)
     useHtmlV2.convention(false)
   }
 
@@ -939,7 +922,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     htmlReportEnabled.disallowChanges()
     xmlReportEnabled.disallowChanges()
     sarifReportEnabled.disallowChanges()
-    textReportToStdOut.disallowChanges()
     useHtmlV2.disallowChanges()
   }
 
@@ -1024,7 +1006,6 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         // do nothing
       }
       autoFix -> {
-        this.textReportToStdOut.setDisallowChanges(true)
         this.outputs.upToDateWhen {
           it.logger.debug(LINT_FIX_UP_TO_DATE_MESSAGE)
           false
@@ -1036,7 +1017,7 @@ abstract class AndroidLintTask : NonIncrementalTask() {
         this.outputs.upToDateWhen { false }
       }
       else -> {
-        configureOutputSettings(lintOptions, taskCreationServices.projectOptions)
+        configureOutputSettings(lintOptions)
       }
     }
     this.finalizeOutputTypes()
@@ -1049,12 +1030,9 @@ abstract class AndroidLintTask : NonIncrementalTask() {
     this.uastInputs.initializeForStandalone(project, taskCreationServices, uastReferenceKotlinCompileTaskName)
   }
 
-  private fun configureOutputSettings(lintOptions: Lint, projectOptions: ProjectOptions) {
+  private fun configureOutputSettings(lintOptions: Lint) {
     // Always output the text report for the text output task
     this.textReportEnabled.setDisallowChanges(true)
-    this.textReportToStdOut.setDisallowChanges(
-      projectOptions.get(OptionalBooleanOption.LINT_PRINT_TEXT_REPORT) ?: lintOptions.printTextReport
-    )
     this.htmlReportEnabled.setDisallowChanges(lintOptions.htmlReport)
     this.xmlReportEnabled.setDisallowChanges(lintOptions.xmlReport)
     this.sarifReportEnabled.setDisallowChanges(lintOptions.sarifReport)

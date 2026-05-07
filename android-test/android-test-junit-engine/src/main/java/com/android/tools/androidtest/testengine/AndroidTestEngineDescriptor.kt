@@ -43,7 +43,8 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
 
     config.deviceSerials.forEach { deviceSerial ->
       val androidVersion = getAndroidVersion(adbController, deviceSerial)
-      val displayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val defaultDisplayName = if (androidVersion.isNotEmpty()) "$deviceSerial - $androidVersion" else deviceSerial
+      val deviceId = config.getDeviceId(deviceSerial) ?: defaultDisplayName
       // Android Studio expects the device serial in the UniqueId to match results
       // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
@@ -51,8 +52,8 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
         AndroidDeviceDescriptor(
           uniqueId = deviceUniqueId,
           deviceSerial = deviceSerial,
-          deviceId = displayName,
-          deviceDisplayName = displayName,
+          deviceId = deviceId,
+          deviceDisplayName = defaultDisplayName,
         )
       deviceDescriptor.setParent(this)
       dynamicTestExecutor.execute(deviceDescriptor)

@@ -139,6 +139,12 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
   @get:OutputFile abstract val outputResources: RegularFileProperty
 
+  @get:Input abstract val enableKeepRadiusReport: Property<Boolean>
+
+  @get:Optional @get:OutputFile abstract val keepRadiusDataOutput: RegularFileProperty
+
+  @get:Optional @get:OutputFile abstract val keepRadiusReportOutput: RegularFileProperty
+
   @get:OutputFile abstract val proguardSeedsOutput: RegularFileProperty
 
   @get:OutputFile abstract val proguardUsageOutput: RegularFileProperty
@@ -208,6 +214,14 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
         else -> error("Unexpected component type: $componentType")
       }
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::keepRadiusDataOutput)
+        .on(InternalArtifactType.R8_MAPPING_KEEP_RADIUS_DATA)
+
+      creationConfig.artifacts
+        .setInitialProvider(taskProvider, R8Task::keepRadiusReportOutput)
+        .on(InternalArtifactType.R8_MAPPING_KEEP_RADIUS_REPORT)
 
       creationConfig.artifacts.setInitialProvider(taskProvider, R8Task::proguardSeedsOutput).on(InternalArtifactType.R8_MAPPING_SEEDS)
 
@@ -299,6 +313,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       task.errorFormatMode.set(SyncOptions.getErrorFormatMode(creationConfig.services.projectOptions))
       task.legacyMultiDexEnabled.setDisallowChanges(
         creationConfig is ApkCreationConfig && creationConfig.dexing.dexingType == DexingType.LEGACY_MULTIDEX
+      )
+
+      task.enableKeepRadiusReport.setDisallowChanges(
+        creationConfig.services.projectOptions.getProvider(BooleanOption.R8_ENABLE_KEEP_RADIUS_REPORT)
       )
 
       task.executionOptions.setDisallowChanges(creationConfig.global.settingsOptions.executionProfile?.r8Options)
@@ -512,6 +530,10 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
         }
       )
       it.resourcesJar.set(resourcesJar)
+      if (enableKeepRadiusReport.get()) {
+        it.keepRadiusDataOutput.set(keepRadiusDataOutput.get().asFile)
+        it.keepRadiusReportOutput.set(keepRadiusReportOutput.get().asFile)
+      }
       it.mappingFile.set(mappingFile.get().asFile)
       it.mappingPartitionFile.set(mappingPartitionFile.get().asFile)
       it.proguardSeedsOutput.set(proguardSeedsOutput.get().asFile)
@@ -583,6 +605,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       keepRuleWithOrigins: List<KeepRuleFile>,
       inputProguardMapping: File?,
       proguardConfigurations: MutableList<String>,
+      keepRadiusDataOutput: File?,
+      keepRadiusReportOutput: File?,
       mappingFile: File,
       mappingPartitionFile: File,
       proguardSeedsOutput: File,
@@ -632,6 +656,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
 
       val proguardOutputFiles =
         ProguardOutputFiles(
+          keepRadiusDataOutput?.toPath(),
+          keepRadiusReportOutput?.toPath(),
           mappingFile.toPath(),
           mappingPartitionFile.toPath(),
           proguardSeedsOutput.toPath(),
@@ -714,6 +740,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
       abstract val proguardConfigurationFiles: ListProperty<KeepRuleFile>
       abstract val inputProguardMapping: RegularFileProperty
       abstract val proguardConfigurations: ListProperty<String>
+      abstract val keepRadiusDataOutput: RegularFileProperty
+      abstract val keepRadiusReportOutput: RegularFileProperty
       abstract val mappingFile: RegularFileProperty
       abstract val mappingPartitionFile: RegularFileProperty
       abstract val proguardSeedsOutput: RegularFileProperty
@@ -763,6 +791,8 @@ abstract class R8Task @Inject constructor(projectLayout: ProjectLayout) : Progua
           parameters.proguardConfigurationFiles.get(),
           parameters.inputProguardMapping.orNull?.asFile,
           parameters.proguardConfigurations.get(),
+          parameters.keepRadiusDataOutput.orNull?.asFile,
+          parameters.keepRadiusReportOutput.orNull?.asFile,
           parameters.mappingFile.get().asFile,
           parameters.mappingPartitionFile.get().asFile,
           parameters.proguardSeedsOutput.get().asFile,

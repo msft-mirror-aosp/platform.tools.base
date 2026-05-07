@@ -37,18 +37,11 @@ private const val AGENT_FILE_NAME = "lib_ui_inspector_agent.so"
 /** The name of the service jar file. */
 private const val SERVICE_JAR_FILE_NAME = "lib_ui_inspector_service.jar"
 
-/** The relative path to the agent directory in the source tree or runfiles. */
-private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT_FILE_NAME"
-
-/** The relative path to the service jar in the runfiles. */
-private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
-
-// TODO: Consider using unique names or subdirectories to avoid race conditions if multiple instances run concurrently on the same device.
-/** The temporary path on the device where the agent is first pushed. */
-private const val DEVICE_TMP_AGENT_PATH = "/data/local/tmp/$AGENT_FILE_NAME"
-
-/** The temporary path on the device where the service jar is first pushed. */
-private const val DEVICE_TMP_SERVICE_JAR_PATH = "/data/local/tmp/$SERVICE_JAR_FILE_NAME"
+/**
+ * A globally writable directory on the device used as a staging area for pushing agent binaries before they are moved to the app's private
+ * directory.
+ */
+private const val DEVICE_TMP_DIR = "/data/local/tmp"
 
 /** The name of the payload jar file. */
 private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
@@ -57,7 +50,20 @@ private const val PAYLOAD_JAR_FILE_NAME = "lib_ui_inspector_payload.jar"
 private const val HOST_PAYLOAD_JAR_PATH = "tools/base/ui-inspector/agent/payload/$PAYLOAD_JAR_FILE_NAME"
 
 /** The temporary path on the device where the payload jar is first pushed. */
-private const val DEVICE_TMP_PAYLOAD_JAR_PATH = "/data/local/tmp/$PAYLOAD_JAR_FILE_NAME"
+private const val DEVICE_TMP_PAYLOAD_JAR_PATH = "$DEVICE_TMP_DIR/$PAYLOAD_JAR_FILE_NAME"
+
+/** The relative path to the agent directory in the source tree or runfiles. */
+private const val HOST_AGENT_PATH = "tools/base/ui-inspector/agent/native/$AGENT_FILE_NAME"
+
+/** The relative path to the service jar in the runfiles. */
+private const val HOST_SERVICE_JAR_PATH = "tools/base/ui-inspector/agent/service/$SERVICE_JAR_FILE_NAME"
+
+// TODO: Consider using unique names or subdirectories to avoid race conditions if multiple instances run concurrently on the same device.
+/** The temporary path on the device where the agent is first pushed. */
+private const val DEVICE_TMP_AGENT_PATH = "$DEVICE_TMP_DIR/$AGENT_FILE_NAME"
+
+/** The temporary path on the device where the service jar is first pushed. */
+private const val DEVICE_TMP_SERVICE_JAR_PATH = "$DEVICE_TMP_DIR/$SERVICE_JAR_FILE_NAME"
 
 /** Default resolver that locates the agent binary in the Bazel runfiles directory. It uses the device ABI to find the correct binary. */
 private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(HOST_AGENT_PATH, abi, AGENT_FILE_NAME) }
@@ -70,10 +76,20 @@ private val DEFAULT_AGENT_PATH_RESOLVER: (String) -> Path = { abi -> Paths.get(H
  */
 class InjectionManager(
   private val adbSession: AdbSession,
+  val serial: String,
+  val packageName: String,
   private val agentPathResolver: (String) -> Path = DEFAULT_AGENT_PATH_RESOLVER,
   private val serviceJarPath: Path = Paths.get(HOST_SERVICE_JAR_PATH),
   private val payloadJarPath: Path = Paths.get(HOST_PAYLOAD_JAR_PATH),
 ) {
+
+  private val deviceSelector = DeviceSelector.fromSerialNumber(serial)
+
+  /**
+   * The absolute path to the application's private data directory on the device, queried via `run-as`. This is queried at runtime to
+   * correctly support multi-user environments (e.g. /data/user/10/) where the standard /data/data/ prefix is not applicable.
+   */
+  @Volatile private var appDataDir: String? = null
 
   /**
    * Push the agent to the device and attach it to the specified app.
@@ -82,13 +98,13 @@ class InjectionManager(
    * @param packageName The package name of the app to attach the agent to.
    * @return The forwarded TCP port number on the host. Connect to this port to communicate with the agent.
    */
-  suspend fun injectAndAttach(serial: String, packageName: String): String = coroutineScope {
-    val deviceSelector = DeviceSelector.fromSerialNumber(serial)
-
+  suspend fun injectAndAttach(): String = coroutineScope {
     val deviceAbi = getDeviceAbi(deviceSelector)
     val agentLocalPath = getAgentLocalPath(deviceAbi)
     val serviceJarLocalPath = getServiceJarLocalPath()
     val payloadJarLocalPath = getPayloadJarLocalPath()
+
+    appDataDir = queryAppDataDir(deviceSelector, packageName)
 
     val pidDeferred = async { getPid(deviceSelector, packageName) }
     val agentPush = async { pushFileToDevice(deviceSelector, agentLocalPath, DEVICE_TMP_AGENT_PATH) }
@@ -149,6 +165,15 @@ class InjectionManager(
     // We take the first one, which is usually the main process.
     // TODO: Handle multi-process apps more robustly.
     return output.split(" ")[0]
+  }
+
+  /** Queries the device for the absolute path to the app's data directory. */
+  private suspend fun queryAppDataDir(deviceSelector: DeviceSelector, packageName: String): String {
+    val output = runShellCommand(deviceSelector, "run-as $packageName pwd").stdout.trim()
+    if (output.isEmpty()) {
+      throw IllegalStateException("Failed to get app data directory for package $packageName")
+    }
+    return output
   }
 
   /** Queries the device for its CPU ABI. */
@@ -218,10 +243,34 @@ class InjectionManager(
     return remoteTmpPath
   }
 
+  /**
+   * Pushes an inspector payload jar to the device and sets it up in the app's data directory.
+   *
+   * @param inspector The metadata of the inspector to push.
+   * @return The full remote path to the pushed jar file on the device.
+   */
+  suspend fun pushInspectorPayload(inspector: InspectorMetadata): String {
+    val remoteFileName = inspector.localJarPath.fileName.toString()
+    val remoteTmpPath = "$DEVICE_TMP_DIR/$remoteFileName"
+
+    // Push to tmp folder
+    pushFileToDevice(deviceSelector, inspector.localJarPath, remoteTmpPath)
+
+    // Copy to app dir via run-as
+    val setupCmd =
+      "run-as $packageName sh -c '" +
+        "rm -f $remoteFileName && " +
+        "cat $remoteTmpPath > $remoteFileName && " +
+        "chmod 444 $remoteFileName'"
+    runShellCommand(deviceSelector, setupCmd)
+
+    return "$appDataDir/$remoteFileName"
+  }
+
   private suspend fun attachAgent(deviceSelector: DeviceSelector, packageName: String, pid: String) {
-    val appPath = "/data/data/$packageName/$AGENT_FILE_NAME"
-    val appJarPath = "/data/data/$packageName/$SERVICE_JAR_FILE_NAME"
-    val appPayloadJarPath = "/data/data/$packageName/$PAYLOAD_JAR_FILE_NAME"
+    val appPath = "$appDataDir/$AGENT_FILE_NAME"
+    val appJarPath = "$appDataDir/$SERVICE_JAR_FILE_NAME"
+    val appPayloadJarPath = "$appDataDir/$PAYLOAD_JAR_FILE_NAME"
     val attachCmd = "cmd activity attach-agent $packageName \"$appPath=$appJarPath;$appPayloadJarPath;$pid\""
     runShellCommand(deviceSelector, attachCmd)
   }

@@ -133,6 +133,9 @@ abstract class DeployRunnerTestBase {
   open fun tearDown() {
     val currentTime = System.currentTimeMillis()
     Trace.end()
+    // Flush after each run to avoid running out of memory by trying to trace the full suite of tests.
+    // This will result in a trace file per-test rather than a single file for all tests.
+    Trace.flush()
     if (benchmark != null) {
       val timeTaken = currentTime - startTime
 

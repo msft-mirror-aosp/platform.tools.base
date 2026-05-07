@@ -436,7 +436,7 @@ const LintReportApp = {
     renderFlatIssues(issues) {
         if (!this.elements.tableHeaders) return;
         this.elements.tableHeaders.innerHTML = `<tr>
-            <th class="cursor-pointer sticky-name" data-sort="id">ID</th>
+            <th class="cursor-pointer" data-sort="id">ID</th>
             <th class="cursor-pointer" data-sort="severity">Severity</th>
             <th class="cursor-pointer" data-sort="category">Category</th>
             <th class="cursor-pointer" data-sort="module">Module</th>
@@ -460,7 +460,7 @@ const LintReportApp = {
                 : (this.escapeHTML(locationStr));
             const plClass = `pl-level-${'$'}{Math.min(level, 8)}`;
             rowsHtml.push(`<tr class="issue-row" data-issue-id="${'$'}{this.escapeHTML(issue.id)}" data-index="${'$'}{index}" data-parent-id="${'$'}{parentId}">
-                <td class="sticky-name ${'$'}{plClass}">${'$'}{this.escapeHTML(issue.id)}</td>
+                <td class="${'$'}{plClass}">${'$'}{this.escapeHTML(issue.id)}</td>
                 <td class="${'$'}{severityClass}">${'$'}{this.escapeHTML(issue.severityDescription)}</td>
                 <td>${'$'}{this.escapeHTML(issue.category)}</td>
                 <td>${'$'}{this.escapeHTML(issue.module)}</td>
@@ -471,20 +471,62 @@ const LintReportApp = {
             if (isExpanded) {
                 const codeSnippet = issue.sourceContext ? `<pre class="errorlines">${'$'}{issue.sourceContext}</pre>` : (issue.errorLine1 ? `<pre class="errorlines">${'$'}{this.escapeHTML(issue.errorLine1)}\n${'$'}{this.escapeHTML(issue.errorLine2 || '')}</pre>` : '');
                 const autoFixedMsg = issue.wasAutoFixed ? '<div class="mt-4 text-green-600 font-medium">This issue was automatically fixed.</div>' : '';
+                const quickfixMsg = (!issue.vendor && issue.hasAutoFix) ? '<div class="mt-4 text-gray-500 text-sm">Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.</div>' : '';
                 const urlsHtml = (issue.urls && issue.urls.length > 0)
-                    ? `<br><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul>`
+                    ? `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{issue.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`
+                    : '';
+                const secondaryHtml = (issue.secondaryLocations && issue.secondaryLocations.length > 0)
+                    ? `<div class="mt-4"><strong>Additional locations:</strong><ul class="more-info-list">${'$'}{issue.secondaryLocations.map(loc => {
+                        const locStr = `${'$'}{loc.file}${'$'}{loc.line ? ':' + loc.line : ''}${'$'}{loc.message ? ': ' + loc.message : ''}`;
+                        return `<li>${'$'}{loc.url ? `<a href="${'$'}{loc.url}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(locStr)}</a>` : this.escapeHTML(locStr)}</li>`;
+                    }).join('')}</ul></div>`
                     : '';
                 const imagesHtml = (issue.images && issue.images.length > 0)
                     ? `<div class="mt-4 flex gap-4 overflow-x-auto pb-2">${'$'}{issue.images.map(url => `<div class="flex-shrink-0"><a href="${'$'}{this.escapeHTML(url)}" target="_blank"><img src="${'$'}{this.escapeHTML(url)}" class="h-32 object-contain border border-gray-300 rounded-md p-1 bg-gray-50 hover:border-blue-500 transition-all shadow-sm"></a></div>`).join('')}</div>`
                     : '';
-
+                let vendorHtml = '';
+                if (issue.vendor) {
+                    vendorHtml = `<div class="vendor mt-4 text-sm text-gray-500">`;
+                    if (issue.vendor.name) vendorHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(issue.vendor.name)}<br>`;
+                    if (issue.vendor.identifier) vendorHtml += `<strong>Identifier:</strong> ${'$'}{this.escapeHTML(issue.vendor.identifier)}<br>`;
+                    if (issue.vendor.contact) {
+                        const contact = issue.vendor.contact;
+                        if (contact.startsWith('http://') || contact.startsWith('https://')) {
+                             vendorHtml += `<strong>Contact:</strong> <a href="${'$'}{this.escapeHTML(contact)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(contact)}</a><br>`;
+                        } else {
+                             vendorHtml += `<strong>Contact:</strong> ${'$'}{this.escapeHTML(contact)}<br>`;
+                        }
+                    }
+                    if (issue.vendor.feedbackUrl) vendorHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(issue.vendor.feedbackUrl)}</a><br>`;
+                    vendorHtml += `</div>`;
+                }
+                const suppressHtml = issue.suppressMessage ? `<div class="mt-4 text-sm text-gray-500">${'$'}{issue.suppressMessage}</div>` : '';
                 rowsHtml.push(`<tr class="explanation-row" data-parent-id="${'$'}{parentId}"><td colspan="7"><div class="explanation-content">
-                    <strong>Summary:</strong> ${'$'}{issue.summary}<br><br>
-                    <strong>Explanation:</strong><br>${'$'}{issue.explanation.replace(/\n/g, '<br>')}
+                    <div class="mb-4"><strong>Summary:</strong> ${'$'}{issue.summary}</div>
+                    <div class="mb-4">
+                        <strong>Explanation:</strong>
+                        <div class="mt-1">${'$'}{this.renderExplanation(issue.explanation)}</div>
+                    </div>
+                    ${'$'}{issue.options && issue.options.length > 0 ? `
+                        <div class="mt-4">This check can be configured via the following options:</div>
+                        <div class="options mt-2 ml-4">
+                            ${'$'}{issue.options.map(opt => `
+                                <div class="mb-2">${'$'}{opt.description}</div>
+                                ${'$'}{opt.explanation ? `
+                                    <div class="mb-2">To configure this option, use a <code>lint.xml</code> file in the project or source folder using an <code>&lt;option&gt;</code> block like the following:</div>
+                                    <pre class="errorlines mb-4">${'$'}{opt.explanation}</pre>
+                                ` : ''}
+                            `).join('')}
+                        </div>
+                    ` : ''}
                     ${'$'}{urlsHtml}
+                    ${'$'}{secondaryHtml}
                     ${'$'}{autoFixedMsg}
+                    ${'$'}{quickfixMsg}
                     ${'$'}{imagesHtml}
                     ${'$'}{codeSnippet}
+                    ${'$'}{suppressHtml}
+                    ${'$'}{vendorHtml}
                 </div></td></tr>`);
             }
         });
@@ -536,23 +578,39 @@ const LintReportApp = {
 
             if (isExpanded) {
                 let detailsHtml = '<div class="explanation-content text-sm">';
+                if (c.reason) detailsHtml += `<strong>Disabled by:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
                 if (c.explanation) {
-                    detailsHtml += `<strong>Explanation:</strong><br>${'$'}{c.explanation.replace(/\n/g, '<br>')}<br><br>`;
+                    detailsHtml += `<div class="mb-4">${'$'}{this.renderExplanation(c.explanation)}</div>`;
+                }
+                if (c.options && c.options.length > 0) {
+                    detailsHtml += `<div class="mt-4">This check can be configured via the following options:</div><div class="options mt-2 ml-4">`;
+                    c.options.forEach(opt => {
+                        detailsHtml += `<div class="mb-2">${'$'}{opt.description}</div>`;
+                        if (opt.explanation) {
+                            detailsHtml += `<div class="mb-2">To configure this option, use a <code>lint.xml</code> file in the project or source folder using an <code>&lt;option&gt;</code> block like the following:</div>`;
+                            detailsHtml += `<pre class="errorlines mb-4">${'$'}{opt.explanation}</pre>`;
+                        }
+                    });
+                    detailsHtml += `</div>`;
+                }
+                if (c.urls && c.urls.length > 0) {
+                    detailsHtml += `<div class="mt-4"><strong>More info:</strong><ul class="more-info-list">${'$'}{c.urls.map(url => `<li><a href="${'$'}{this.escapeHTML(url)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(url)}</a></li>`).join('')}</ul></div>`;
                 }
                 if (c.vendor) {
                     if (c.vendor.name) detailsHtml += `<strong>Vendor:</strong> ${'$'}{this.escapeHTML(c.vendor.name)}<br>`;
                     if (c.vendor.identifier) detailsHtml += `<strong>Identifier:</strong> ${'$'}{this.escapeHTML(c.vendor.identifier)}<br>`;
                     if (c.vendor.contact) {
                         const contact = c.vendor.contact;
-                        if (contact.startsWith('http')) {
+                        if (contact.startsWith('http://') || contact.startsWith('https://')) {
                             detailsHtml += `<strong>Contact:</strong> <a href="${'$'}{this.escapeHTML(contact)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(contact)}</a><br>`;
                         } else {
                             detailsHtml += `<strong>Contact:</strong> ${'$'}{this.escapeHTML(contact)}<br>`;
                         }
                     }
                     if (c.vendor.feedbackUrl) detailsHtml += `<strong>Feedback:</strong> <a href="${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}" class="text-blue-600 hover:underline">${'$'}{this.escapeHTML(c.vendor.feedbackUrl)}</a><br>`;
+                } else if (c.hasAutoFix) {
+                    detailsHtml += `<div class="mt-4 text-gray-500 text-sm">Note: This issue has an associated quickfix operation in Android Studio and IntelliJ IDEA.</div>`;
                 }
-                if (c.reason) detailsHtml += `<strong>Reason:</strong> ${'$'}{this.escapeHTML(c.reason)}<br>`;
                 detailsHtml += '</div>';
 
                 rowsHtml.push(`<tr class="explanation-row"><td colspan="2">${'$'}{detailsHtml}</td></tr>`);
@@ -569,6 +627,14 @@ const LintReportApp = {
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
+    },
+
+    renderExplanation(text) {
+        if (!text) return '';
+        return text.trim()
+            .split(/(?:\s*<br\s*\/?>\s*){2,}|\n\n+/)
+            .map(p => `<div>${'$'}{p.trim().replace(/\n/g, '<br>')}</div>`)
+            .join('<div class="mt-2"></div>');
     },
 
     matchesSearch(issue, query) {

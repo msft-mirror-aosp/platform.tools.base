@@ -86,7 +86,7 @@
     </d:device>
 
     <d:device>
-        <d:name>AI Glasses</d:name>
+        <d:name>AI Glasses (Display)</d:name>
         <d:id>ai_glasses_device</d:id>
         <d:manufacturer>Google</d:manufacturer>
         <d:hardware>
@@ -164,6 +164,76 @@
             <d:nav-state>nonav</d:nav-state>
         </d:state>
         <d:tag-id>ai-glasses</d:tag-id>
+    </d:device>
+
+    <d:device>
+        <d:name>AI Glasses</d:name>
+        <d:id>ai_glasses_displayless</d:id>
+        <d:manufacturer>Google</d:manufacturer>
+        <d:hardware>
+            <d:environment>
+                <d:width>1200</d:width>
+                <d:height>900</d:height>
+            </d:environment>
+            <d:touchpad>
+                <d:width>1542</d:width>
+                <d:height>297</d:height>
+            </d:touchpad>
+            <d:networking>
+                Wifi
+                Bluetooth
+            </d:networking>
+            <d:sensors>
+                Accelerometer
+                Compass
+                Gyroscope
+                LightSensor
+                ProximitySensor
+            </d:sensors>
+            <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>back</d:location>
+                <d:sensor-orientation>0</d:sensor-orientation>
+                <d:autofocus>false</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
+            <d:keyboard>nokeys</d:keyboard>
+            <d:nav>nonav</d:nav>
+            <d:ram unit="GiB">4</d:ram>
+            <d:buttons>soft</d:buttons>
+            <d:internal-storage unit="GiB">10</d:internal-storage>
+            <d:removable-storage unit="MiB">0</d:removable-storage>
+            <d:cpu>Generic CPU</d:cpu>
+            <d:gpu>Generic GPU</d:gpu>
+            <d:abi>
+                armeabi
+                armeabi-v7a
+                arm64-v8a
+            </d:abi>
+            <d:dock> </d:dock>
+            <d:power-type>battery</d:power-type>
+        </d:hardware>
+        <d:software>
+            <d:api-level>36</d:api-level>
+            <d:live-wallpaper-support>false</d:live-wallpaper-support>
+            <d:bluetooth-profiles> </d:bluetooth-profiles>
+            <d:gl-version>3.2</d:gl-version>
+            <d:gl-extensions/>
+            <d:status-bar>false</d:status-bar>
+        </d:software>
+        <d:state name="Landscape" default="true">
+            <d:description>The device in landscape view</d:description>
+            <d:screen-orientation>land</d:screen-orientation>
+            <d:keyboard-state>keyshidden</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+        <d:tag-id>ai-glasses</d:tag-id>
+        <d:boot-props>
+            <d:boot-prop>
+                <d:prop-name>ro.boot.display_device</d:prop-name>
+                <d:prop-value>none</d:prop-value>
+            </d:boot-prop>
+        </d:boot-props>
     </d:device>
 
     <d:device>
@@ -262,10 +332,6 @@
             <d:boot-prop>
                 <d:prop-name>emulator.dev.xr.disp_modality</d:prop-name>
                 <d:prop-value>ost</d:prop-value>
-            </d:boot-prop>
-            <d:boot-prop>
-                <d:prop-name>emulator.dev.xr.dimming_levels</d:prop-name>
-                <d:prop-value>0.0,0.25,0.5,0.75,1.0</d:prop-value>
             </d:boot-prop>
         </d:boot-props>
     </d:device>

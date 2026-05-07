@@ -250,4 +250,37 @@ class ScreenshotTest {
     assertThat(exampleTestDiffDir.listDirectoryEntries().map { it.name })
       .containsExactly("simpleComposableTest_simpleComposable_c5877f71_0.png", "simpleComposableTest2_simpleComposable_7362dd6b_0.png")
   }
+
+  @Test
+  fun runPreviewScreenshotTestWithNoMatchingFilter() {
+    val build = rule.build { androidApplication { pluginCallbacks += FilterMatchingNothingCallback::class.java } }
+    val appProject = build.androidApplication()
+
+    build.updateReferenceImage()
+
+    // Validate previews - should pass because no tests are run and failOnNoMatchingTests is false
+    build.sstExecutor().run(":app:validateDebugScreenshotTest")
+  }
+
+  @Test
+  fun runPreviewScreenshotTestMissingReferences() {
+    val build = rule.build
+    val appProject = build.androidApplication()
+
+    // Run validation without updating references - should fail
+    val result = build.sstExecutor().expectFailure().run(":app:validateDebugScreenshotTest")
+
+    result.assertErrorContains("There were failing tests")
+  }
+}
+
+class FilterMatchingNothingCallback : com.android.build.gradle.integration.common.fixture.project.plugins.GenericCallback {
+  override fun handleProject(project: org.gradle.api.Project) {
+    project.afterEvaluate {
+      project.tasks.named("validateDebugScreenshotTest", org.gradle.api.tasks.testing.Test::class.java) {
+        it.setTestNameIncludePatterns(listOf("*NonExistent*"))
+        it.filter.isFailOnNoMatchingTests = false
+      }
+    }
+  }
 }

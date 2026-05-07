@@ -19,15 +19,14 @@ import com.android.SdkConstants.DOT_KT
 import com.android.testutils.TestUtils
 import com.android.tools.lint.client.api.LintFixPerformer.Companion.skipAnnotation
 import com.android.tools.lint.detector.api.ClassContext.Companion.getInternalName
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.util.Locale.getDefault
 import java.util.jar.JarInputStream
 import java.util.regex.Pattern
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles.JVM_CONFIG_FILES
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
-import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.analysis.api.standalone.buildStandaloneAnalysisAPISession
 import org.jetbrains.kotlin.psi.KtAnnotated
 import org.jetbrains.kotlin.psi.KtAnnotationEntry
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
@@ -61,53 +60,55 @@ fun main() {
     File(TestUtils.getWorkspaceRoot().toFile(), "prebuilts/tools/common/lint-psi/kotlin-compiler/kotlin-compiler-sources.jar")
 
   val parentDisposable = Disposer.newDisposable("ExtractMigrationTable")
-  val env = KotlinCoreEnvironment.createForProduction(parentDisposable, CompilerConfiguration(), JVM_CONFIG_FILES)
+  try {
+    val session = buildStandaloneAnalysisAPISession(parentDisposable) {}
 
-  JarInputStream(ByteArrayInputStream(currentSources.readBytes())).use { jis ->
-    var entry = jis.nextJarEntry
-    while (entry != null) {
-      val fileName = entry.name
-      if (
-        fileName.endsWith(DOT_KT) &&
-          !entry.isDirectory &&
-          fileName.contains("org/jetbrains/kotlin/analysis/api/") &&
-          !fileName.contains("Test")
-      ) {
-        val text = String(jis.readAllBytes(), Charsets.UTF_8)
-        extract(env, fileName, text, typeMap, subMap, apiMap)
+    JarInputStream(ByteArrayInputStream(currentSources.readBytes())).use { jis ->
+      var entry = jis.nextJarEntry
+      while (entry != null) {
+        val fileName = entry.name
+        if (
+          fileName.endsWith(DOT_KT) &&
+            !entry.isDirectory &&
+            fileName.contains("org/jetbrains/kotlin/analysis/api/") &&
+            !fileName.contains("Test")
+        ) {
+          val text = String(jis.readAllBytes(), Charsets.UTF_8)
+          extract(session.project, fileName, text, typeMap, subMap, apiMap)
+        }
+        entry = jis.nextJarEntry
       }
-      entry = jis.nextJarEntry
     }
-  }
 
-  val typeToInternalName = { typeName: String -> "\"" + getInternalName(typeName).replace("$", "\\$") + "\"" }
+    val typeToInternalName = { typeName: String -> "\"" + getInternalName(typeName).replace("$", "\\$") + "\"" }
 
-  println("=".repeat(6) + " type mapping " + "=".repeat(6))
-  println()
-  printMap(typeMap, typeToInternalName)
-  println()
-  println("=".repeat(6) + " type hierarchy " + "=".repeat(6))
-  println()
-  printMap(subMap, typeToInternalName) { superTs ->
-    // Collection literals are not allowed outside annotation.
-    superTs.joinToString(prefix = "arrayOf(", postfix = ")", transform = typeToInternalName)
-  }
-  println()
-  println("=".repeat(6) + " API mapping " + "=".repeat(6))
-  println()
-  printMap(apiMap) { api ->
-    if ("." in api) {
-      val sig = api.substringAfter(" ")
-      val names = api.substringBefore(" ")
-      val clsName = names.substringBeforeLast(".")
-      val mtdName = names.substringAfterLast(".")
-      "// " + getInternalName(clsName).replace("$", "\\$") + "\n      \"" + mtdName + " " + sig + "\""
-    } else {
-      "\"$api\""
+    println("=".repeat(6) + " type mapping " + "=".repeat(6))
+    println()
+    printMap(typeMap, typeToInternalName)
+    println()
+    println("=".repeat(6) + " type hierarchy " + "=".repeat(6))
+    println()
+    printMap(subMap, typeToInternalName) { superTs ->
+      // Collection literals are not allowed outside annotation.
+      superTs.joinToString(prefix = "arrayOf(", postfix = ")", transform = typeToInternalName)
     }
+    println()
+    println("=".repeat(6) + " API mapping " + "=".repeat(6))
+    println()
+    printMap(apiMap) { api ->
+      if ("." in api) {
+        val sig = api.substringAfter(" ")
+        val names = api.substringBefore(" ")
+        val clsName = names.substringBeforeLast(".")
+        val mtdName = names.substringAfterLast(".")
+        "// " + getInternalName(clsName).replace("$", "\\$") + "\n      \"" + mtdName + " " + sig + "\""
+      } else {
+        "\"$api\""
+      }
+    }
+  } finally {
+    Disposer.dispose(parentDisposable)
   }
-
-  Disposer.dispose(parentDisposable)
 }
 
 private fun printMap(m: Map<String, String>, formatter: (String) -> String) {
@@ -125,14 +126,14 @@ private fun <K, V> printMap(m: Map<K, V>, kFormatter: (K) -> String, vFormatter:
 }
 
 private fun extract(
-  env: KotlinCoreEnvironment,
+  ideaProject: Project,
   fileName: String,
   text: String,
   typeMap: MutableMap<String, String>,
   subMap: MutableMap<String, Collection<String>>,
   apiMap: MutableMap<String, String>,
 ) {
-  val factory = KtPsiFactory(env.project)
+  val factory = KtPsiFactory(ideaProject)
   val ktFile = factory.createFile(fileName, text)
   ktFile.acceptChildren(
     object : KtVisitorVoid() {

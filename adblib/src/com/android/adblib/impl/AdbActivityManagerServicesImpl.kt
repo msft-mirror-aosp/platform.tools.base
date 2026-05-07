@@ -48,6 +48,10 @@ class AdbActivityManagerServicesImpl(override val session: AdbSession) : AdbActi
     runAmCommand(device, "am crash $packageName")
   }
 
+  override suspend fun gc(device: DeviceSelector, pid: Int) {
+    runAmCommand(device, "am gc $pid")
+  }
+
   override suspend fun capabilities(device: DeviceSelector): AmCapabilitiesResult {
     // See Android platform implementation here:
     // https://cs.android.com/android/platform/superproject/main/+/1b409eb6cacc9508e6f415353ddcacdcb6bdaf26:frameworks/base/services/core/java/com/android/server/am/ActivityManagerShellCommand.java;l=480

@@ -155,6 +155,119 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
       )
   }
 
+  fun testBaseAssumption_moreCommonKotlinFunctions() {
+    lint()
+      .files(
+        kotlin(
+            """
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            @WorkerThread fun work() { }
+            @UiThread fun updateUi() { }
+
+            class Container @UiThread constructor() {
+                val field: String by lazy { work(); "foo" } // error TODO(b/508005741)
+            }
+
+            @UiThread fun main() {
+                // Creating lazy thunks all ok
+                val m: Int by lazy { work(); 42 }
+                val n: Int by lazy { updateUi(); 42 }
+                val p = lazy { work(); 42 }
+                val q = lazy { updateUi(); 42 }
+
+                m // error
+                n // ok
+                p.value // error
+                q.value // ok
+
+                repeat(10, ::work) // error
+                repeat(10, ::updateUi) // ok
+
+                run { work() } // error
+                0.run { work() } // error
+                run { updateUi() } // ok
+                0.run { updateUi() } // ok
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/Container.kt:18: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            m // error
+            ~
+        src/Container.kt:20: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            p.value // error
+            ~~~~~~~
+        src/Container.kt:23: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            repeat(10, ::work) // error
+            ~~~~~~~~~~~~~~~~~~
+        src/Container.kt:26: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            run { work() } // error
+            ~~~~~~~~~~~~~~
+        src/Container.kt:27: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            0.run { work() } // error
+              ~~~~~~~~~~~~~~
+        5 errors
+        """
+          .trimIndent()
+      )
+  }
+
+  fun testCustomDelegate() {
+    lint()
+      .files(
+        kotlin(
+            """
+            import kotlin.reflect.KProperty
+            import androidx.annotation.WorkerThread
+            import androidx.annotation.UiThread
+
+            class MyHeavyDelegate {
+                @WorkerThread
+                operator fun getValue(thisRef: Any?, property: KProperty<*>): Int = 42
+
+                companion object {
+                    @UiThread fun create() = MyHeavyDelegate()
+                }
+            }
+
+            @UiThread fun main() {
+                val n: Int by MyHeavyDelegate()
+                n // error
+            }
+
+            @WorkerThread fun background() {
+                val m: Int by MyHeavyDelegate.create() // error, because the creation requests `UiThread`
+                m // ok
+            }
+            """
+              .trimIndent()
+          )
+          .indented(),
+        SUPPORT_ANNOTATIONS_JAR,
+      )
+      .run()
+      .expect(
+        """
+        src/MyHeavyDelegate.kt:16: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
+            n // error
+            ~
+        src/MyHeavyDelegate.kt:20: Error: Call must be from @{Main,Ui}Thread, but context is allowing @WorkerThread [ThreadConstraint]
+            val m: Int by MyHeavyDelegate.create() // error, because the creation requests `UiThread`
+                                          ~~~~~~~~
+        2 errors
+        """
+          .trimIndent()
+      )
+  }
+
   fun testInferredAny_376518592() {
     lint()
       .files(

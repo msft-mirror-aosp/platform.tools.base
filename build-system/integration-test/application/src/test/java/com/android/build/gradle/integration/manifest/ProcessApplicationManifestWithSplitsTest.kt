@@ -16,12 +16,10 @@
 
 package com.android.build.gradle.integration.manifest
 
-import com.android.build.VariantOutput
-import com.android.build.gradle.api.ApkVariantOutput
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
+import com.android.build.api.variant.FilterConfiguration
 import com.android.build.gradle.integration.common.fixture.project.GradleRule
-import com.android.build.gradle.integration.common.fixture.project.plugins.LegacyApplicationCallback
-import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-import com.android.build.gradle.options.BooleanOption
+import com.android.build.gradle.integration.common.fixture.project.plugins.ApplicationComponentCallback
 import com.android.build.gradle.options.StringOption
 import com.android.testutils.truth.PathSubject.assertThat
 import kotlin.test.assertTrue
@@ -66,20 +64,19 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
         }
         pluginCallbacks += MyAppCallback::class.java
       }
-      gradleProperties { add(BooleanOption.USE_NEW_DSL, false) }
     }
 
-  class MyAppCallback : LegacyApplicationCallback {
-    override fun handleExtension(project: Project, extension: BaseAppModuleExtension) {
+  class MyAppCallback : ApplicationComponentCallback {
+    override fun handleExtension(project: Project, androidComponents: ApplicationAndroidComponentsExtension) {
       val abiCodes = mapOf("armeabi-v7a" to 2, "arm64-v8a" to 3, "x86" to 8, "x86_64" to 9)
 
-      extension.applicationVariants.all { variant ->
+      androidComponents.onVariants { variant ->
         variant.outputs.forEach { output ->
-          // need to force this as the API does not return the right thing.
-          output as ApkVariantOutput
-          val baseAbiVersionCode = abiCodes[output.getFilter(VariantOutput.FilterType.ABI)]
+          val abiFilter = output.filters.find { it.filterType == FilterConfiguration.FilterType.ABI }
+          val abi = abiFilter?.identifier
+          val baseAbiVersionCode = abiCodes[abi]
           if (baseAbiVersionCode != null) {
-            output.versionCodeOverride = baseAbiVersionCode * 1000 + variant.versionCode
+            output.versionCode.set(baseAbiVersionCode * 1000 + (output.versionCode.get()))
           }
         }
       }
@@ -104,8 +101,7 @@ class ProcessApplicationManifestWithSplitsTest(private val abi: String, private 
     val build = rule.build
     val app = build.androidApplication()
 
-    val result =
-      build.executor.with(StringOption.IDE_BUILD_TARGET_ABI, abi).with(BooleanOption.ENABLE_LEGACY_API, true).run(":app:assembleDebug")
+    val result = build.executor.with(StringOption.IDE_BUILD_TARGET_ABI, abi).run(":app:assembleDebug")
     assertTrue { result.failedTasks.isEmpty() }
 
     val manifestFile = app.intermediatesDir.resolve("merged_manifest/debug/processDebugMainManifest/AndroidManifest.xml")

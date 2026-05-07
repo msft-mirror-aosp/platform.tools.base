@@ -37,6 +37,9 @@ Java_com_android_tools_agent_echo_EchoService_sendEchoMessage(
         event->set_kind(profiler::proto::Event::ECHO);
         // Set echo data on event.
         auto *echo = event->mutable_echo();
+        // SECURITY NOTE: Input from JNI is passed directly without validation.
+        // Downstream consumers must sanitize this data to prevent issues like
+        // Log Injection or XSS if displayed in a UI.
         echo->set_data(message.get().c_str());
         // Send event to daemon via grpc.
         profiler::proto::EmptyResponse response;

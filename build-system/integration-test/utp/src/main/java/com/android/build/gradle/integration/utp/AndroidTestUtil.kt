@@ -30,6 +30,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.testing.platform.proto.api.core.TestSuiteResultProto.TestSuiteResult
 import java.io.File
 import java.nio.file.Path
+import kotlin.io.path.exists
 import kotlin.io.path.readText
 
 class AndroidTestUtil(
@@ -59,6 +60,44 @@ class AndroidTestUtil(
 
   fun selectModule(moduleName: String) {
     onSelectModule(moduleName, this)
+  }
+
+  private fun resolvePath(relativePath: String): Path {
+    val path = project.resolve(relativePath)
+    if (runWithBuiltInPlatform && !path.exists()) {
+      // For built-in platform, the output might be in a different level of directory.
+      // Search for the file in the parent or siblings.
+      val fileName = path.fileName.toString()
+      // Search in the parent directory and its children.
+      val parent = path.parent
+      if (parent.exists()) {
+        val found = parent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
+        if (found != null) {
+          return found.toPath()
+        }
+      }
+      // If not found, try searching from the parent of the parent (siblings of parent).
+      val grandParent = parent.parent
+      if (grandParent.exists()) {
+        val foundInGrandParent = grandParent.toFile().walkTopDown().maxDepth(3).find { it.name == fileName }
+        if (foundInGrandParent != null) {
+          return foundInGrandParent.toPath()
+        }
+      }
+    }
+    return path
+  }
+
+  private fun resolveTestResultPbPath(): Path {
+    val path = project.resolve(testResultPbPath)
+    if (runWithBuiltInPlatform && !path.exists()) {
+      // For built-in platform, the listener might have appended a device-specific subdirectory.
+      val pbFile = path.parent.toFile().walkTopDown().maxDepth(2).find { it.name == "test-result.pb" }
+      if (pbFile != null) {
+        return pbFile.toPath()
+      }
+    }
+    return path
   }
 
   fun enableAndroidTestOrchestrator(projectDef: AndroidProjectDefinition<out CommonExtension>) {
@@ -107,7 +146,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
   }
@@ -146,7 +185,7 @@ class AndroidTestUtil(
     executor.expectFailure().run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
   }
 
   fun androidTest() {
@@ -156,9 +195,11 @@ class AndroidTestUtil(
 
     assertThat(project.resolve(testReportPath).resolveSibling("index.html")).exists()
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
 
-    val testSuiteResult = project.resolve(testResultPbPath).toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val testSuiteResult = testResultPb.toFile().inputStream().use { TestSuiteResult.parseFrom(it) }
     assertThat(testSuiteResult.testResultCount).isAtLeast(1)
     assertThat(testSuiteResult.testResultList.any { it.testCase.testMethod == "useAppContext" }).isTrue()
   }
@@ -171,7 +212,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
   }
 
   fun androidTestWithOrchestratorAndCodeCoverage() {
@@ -185,7 +226,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubFuncForTestingCodeCoverage" desc="()V" line="9">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
   }
@@ -195,8 +236,8 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testLogcatPath)).exists()
-    val logcatText = project.resolve(testLogcatPath).readText()
+    assertThat(resolvePath(testLogcatPath)).exists()
+    val logcatText = resolvePath(testLogcatPath).readText()
     assertThat(logcatText).contains("TestRunner: started: useAppContext(com.example.android.kotlin.ExampleInstrumentedTest)")
     assertThat(logcatText).contains("TestLogger: test logs")
     assertThat(logcatText).contains("TestRunner: finished: useAppContext(com.example.android.kotlin.ExampleInstrumentedTest)")
@@ -208,7 +249,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
   }
 
   fun additionalTestOutputWithTestStorageService() {
@@ -258,11 +299,11 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve("${testAdditionalOutputPath}/myTestStorageOutputFile1")).contains("output message1")
-    assertThat(project.resolve("${testAdditionalOutputPath}/myTestStorageOutputFile2.txt")).contains("output message2")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/myTestStorageOutputFile3")).contains("output message3")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/nested/myTestStorageOutputFile4")).contains("output message4")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/white space/myTestStorageOutputFile5")).contains("output message5")
+    assertThat(resolvePath("${testAdditionalOutputPath}/myTestStorageOutputFile1")).contains("output message1")
+    assertThat(resolvePath("${testAdditionalOutputPath}/myTestStorageOutputFile2.txt")).contains("output message2")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/myTestStorageOutputFile3")).contains("output message3")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/nested/myTestStorageOutputFile4")).contains("output message4")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/white space/myTestStorageOutputFile5")).contains("output message5")
   }
 
   fun additionalTestOutputWithoutTestStorageService() {
@@ -306,7 +347,7 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve("${testAdditionalOutputPath}/myTestFile1")).contains("output message 1")
+    assertThat(resolvePath("${testAdditionalOutputPath}/myTestFile1")).contains("output message 1")
   }
 
   fun additionalTestOutputWithBenchmarkFiles() {
@@ -376,9 +417,9 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve("${testAdditionalOutputPath}/sampleFile_1")).contains("This is a sample file.")
+    assertThat(resolvePath("${testAdditionalOutputPath}/sampleFile_1")).contains("This is a sample file.")
     assertThat(
-        project.resolve(
+        resolvePath(
           "${testAdditionalOutputPath}/" +
             "additionaltestoutput.benchmark.message_com.example.helloworld" +
             ".AdditionalTestOutputExampleTest.createSampleFileAndReportIt.txt"
@@ -457,9 +498,9 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve("${testAdditionalOutputPath}/sampleFile_1")).contains("This is a sample file.")
+    assertThat(resolvePath("${testAdditionalOutputPath}/sampleFile_1")).contains("This is a sample file.")
     assertThat(
-        project.resolve(
+        resolvePath(
           "${testAdditionalOutputPath}/" +
             "additionaltestoutput.benchmark.message_com.example.helloworld" +
             ".AdditionalTestOutputExampleTest.createSampleFileAndReportIt.txt"
@@ -477,9 +518,11 @@ class AndroidTestUtil(
 
     assertThat(project.resolve(testResultXmlPath)).exists()
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
 
-    val deviceInfo = getDeviceInfo(project.resolve(testResultPbPath).toFile())
+    val testResultPb = resolveTestResultPbPath()
+    assertThat(testResultPb).exists()
+
+    val deviceInfo = getDeviceInfo(testResultPb.toFile())
     assertThat(deviceInfo).isNotNull()
     assertThat(deviceInfo?.name).isNotEmpty()
 
@@ -489,13 +532,13 @@ class AndroidTestUtil(
 
     assertThat(project.resolve(testResultXmlPath)).doesNotExist()
     assertThat(project.resolve(testReportPath)).doesNotExist()
-    assertThat(project.resolve(testResultPbPath)).doesNotExist()
+    assertThat(resolveTestResultPbPath()).doesNotExist()
 
     executor.run(testTaskName)
 
     assertThat(project.resolve(testResultXmlPath)).exists()
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
   }
 
   fun androidTestWithOrchestratorWithDynamicFeature() {
@@ -507,7 +550,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
   }
 
   fun connectedAndroidTestWithLogcatWithDynamicFeature() {
@@ -517,8 +560,8 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve(testLogcatPath)).exists()
-    val logcatText = project.resolve(testLogcatPath).readText()
+    assertThat(resolvePath(testLogcatPath)).exists()
+    val logcatText = resolvePath(testLogcatPath).readText()
     assertThat(logcatText).contains("TestRunner: started: useAppContext(com.example.android.kotlin.feature.ExampleInstrumentedTest)")
     assertThat(logcatText).contains("TestLogger: test logs")
     assertThat(logcatText).contains("TestRunner: finished: useAppContext(com.example.android.kotlin.feature.ExampleInstrumentedTest)")
@@ -572,11 +615,11 @@ class AndroidTestUtil(
 
     executor.run(testTaskName)
 
-    assertThat(project.resolve("${testAdditionalOutputPath}/myTestStorageOutputFile1")).contains("output message1")
-    assertThat(project.resolve("${testAdditionalOutputPath}/myTestStorageOutputFile2.txt")).contains("output message2")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/myTestStorageOutputFile3")).contains("output message3")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/nested/myTestStorageOutputFile4")).contains("output message4")
-    assertThat(project.resolve("${testAdditionalOutputPath}/subdir/white space/myTestStorageOutputFile5")).contains("output message5")
+    assertThat(resolvePath("${testAdditionalOutputPath}/myTestStorageOutputFile1")).contains("output message1")
+    assertThat(resolvePath("${testAdditionalOutputPath}/myTestStorageOutputFile2.txt")).contains("output message2")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/myTestStorageOutputFile3")).contains("output message3")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/nested/myTestStorageOutputFile4")).contains("output message4")
+    assertThat(resolvePath("${testAdditionalOutputPath}/subdir/white space/myTestStorageOutputFile5")).contains("output message5")
   }
 
   fun androidTestWithForceCompilation() {
@@ -587,7 +630,7 @@ class AndroidTestUtil(
     val result = executor.withEnableInfoLogging(true).run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
 
     result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin")
     result.assertOutputContains("Running force AOT compilation (speed) for com.example.android.kotlin.test")
@@ -609,7 +652,7 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
+    assertThat(resolveTestResultPbPath()).exists()
     assertThat(project.resolve(testCoverageXmlPath))
       .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
@@ -627,8 +670,9 @@ class AndroidTestUtil(
     executor.run(testTaskName)
 
     assertThat(project.resolve(testReportPath)).exists()
-    assertThat(project.resolve(testResultPbPath)).exists()
-    assertThat(project.resolve(testCoverageXmlPath)).contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
+    assertThat(resolveTestResultPbPath()).exists()
+    assertThat(project.resolve(testCoverageXmlPath))
+      .contains("""<method name="stubDynamicFeature1FuncForTestingCodeCoverage" desc="()V" line="8">""")
     assertThat(project.resolve(testCoverageXmlPath)).contains("""<counter type="INSTRUCTION" missed="3" covered="5"/>""")
   }
 

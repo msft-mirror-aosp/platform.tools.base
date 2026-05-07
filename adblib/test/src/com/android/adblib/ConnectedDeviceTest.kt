@@ -331,7 +331,7 @@ class ConnectedDeviceTest {
   fun testShellCommandAllowsCrLfOnOldDevices(): Unit = runBlockingWithTimeout {
     // Prepare
     // Below API 21, only "shell" is supported
-    val fakeDevice = addFakeConnectedDevice(19)
+    val fakeDevice = addFakeConnectedDevice(sdk = 19)
 
     // Act
     val output = fakeDevice.shell.command("getprop").withTextCollector().allowStripCrLfForLegacyShell(false).execute().first().stdout
@@ -883,15 +883,27 @@ class ConnectedDeviceTest {
   }
 
   @Test
-  fun testActivityManagerCapabilitiesReturnsNullOnOlderDevice(): Unit = runBlockingWithTimeout {
+  fun testActivityManagerCapabilitiesThrowsOnOlderDevice(): Unit = runBlockingWithTimeout {
     // Prepare
-    val fakeDevice = addFakeConnectedDevice()
+    val fakeDevice = addFakeConnectedDevice(sdk = 33)
 
     // Act
-    val capabilitiesResult = fakeDevice.activityManager.capabilities()
+    exceptionRule.expect(AdbActivityManagerException::class.java)
+    fakeDevice.activityManager.capabilities()
 
     // Assert
-    Assert.assertNull(capabilitiesResult)
+    Assert.fail() // Should not be reached
+  }
+
+  @Test
+  fun testActivityManagerIsCrashSupported(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device25 = addFakeConnectedDevice("device25", sdk = 25)
+    val device26 = addFakeConnectedDevice("device26", sdk = 26)
+
+    // Act/Assert
+    Assert.assertFalse(device25.activityManager.isCrashSupported())
+    Assert.assertTrue(device26.activityManager.isCrashSupported())
   }
 
   @Test
@@ -903,8 +915,7 @@ class ConnectedDeviceTest {
     val result = fakeDevice.activityManager.capabilities()
 
     // Assert
-    Assert.assertNotNull(result)
-    Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+    Assert.assertEquals(listOf("start.suspend", "gc"), result.capabilities)
     Assert.assertEquals(
       listOf(
         "method-trace-profiling",
@@ -914,11 +925,11 @@ class ConnectedDeviceTest {
         "hprof-heap-dump-streaming",
         "app_info",
       ),
-      result?.vmCapabilities,
+      result.vmCapabilities,
     )
-    Assert.assertEquals(listOf("opengl-tracing", "view-hierarchy", "support_boot_stages", "app_info"), result?.frameworkCapabilities)
-    Assert.assertEquals("Dalvik", result?.vmInfo?.name)
-    Assert.assertEquals("2.1.0", result?.vmInfo?.version)
+    Assert.assertEquals(listOf("opengl-tracing", "view-hierarchy", "support_boot_stages", "app_info"), result.frameworkCapabilities)
+    Assert.assertEquals("Dalvik", result.vmInfo?.name)
+    Assert.assertEquals("2.1.0", result.vmInfo?.version)
   }
 
   @Test
@@ -956,9 +967,7 @@ class ConnectedDeviceTest {
 
     // Assert
     Assert.assertTrue(job.isCompleted)
-    Assert.assertNotNull(result)
-    Assert.assertNotNull(result)
-    Assert.assertEquals(listOf("start.suspend"), result?.capabilities)
+    Assert.assertEquals(listOf("start.suspend", "gc"), result.capabilities)
     Assert.assertEquals(
       listOf(
         "method-trace-profiling",
@@ -968,17 +977,17 @@ class ConnectedDeviceTest {
         "hprof-heap-dump-streaming",
         "app_info",
       ),
-      result?.vmCapabilities,
+      result.vmCapabilities,
     )
-    Assert.assertEquals(listOf("opengl-tracing", "view-hierarchy", "support_boot_stages", "app_info"), result?.frameworkCapabilities)
-    Assert.assertEquals("Dalvik", result?.vmInfo?.name)
-    Assert.assertEquals("2.1.0", result?.vmInfo?.version)
+    Assert.assertEquals(listOf("opengl-tracing", "view-hierarchy", "support_boot_stages", "app_info"), result.frameworkCapabilities)
+    Assert.assertEquals("Dalvik", result.vmInfo?.name)
+    Assert.assertEquals("2.1.0", result.vmInfo?.version)
   }
 
   @Test
   fun testActivityManagerWaitsForServiceToBeReady(): Unit = runBlockingWithTimeout {
     // Prepare
-    val fakeDevice = addFakeConnectedDevice()
+    val fakeDevice = addFakeConnectedDevice(sdk = 36)
     val deviceState = fakeDevice.toDeviceState()
     deviceState.serviceManager.removeService(ActivityManager.SERVICE_NAME)
 
@@ -991,10 +1000,10 @@ class ConnectedDeviceTest {
 
     // Act: Add the activity service back
     deviceState.serviceManager.setService(ActivityManager.SERVICE_NAME, ActivityManager(deviceState))
-    val result = asyncCapabilities.await()
+    runCatching { asyncCapabilities.await() }
 
-    // Assert: Capabilities returns null for API 30 in FakeAdbServer (default)
-    Assert.assertNull(result)
+    // Assert: Activity manager command will now complete
+    Assert.assertTrue(asyncCapabilities.isCompleted)
   }
 
   @Test
@@ -1415,6 +1424,49 @@ class ConnectedDeviceTest {
   }
 
   @Test
+  fun testActivityManagerGcWorks(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice(sdk = 36)
+    val pid = 101
+
+    // Act
+    fakeDevice.activityManager.gc(pid)
+
+    // Assert
+    Assert.assertEquals(listOf(pid), fakeDevice.toDeviceState().gcPids)
+  }
+
+  @Test
+  fun testActivityManagerGcThrowsIOExceptionIfDeviceRemainsOffline(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val fakeDevice = addFakeConnectedDevice(sdk = 36)
+    val delay = Duration.ofMillis(500)
+    setHostPropertyValue(fakeDevice.session.host, AdbLibProperties.AM_SERVICE_TIMEOUT, delay)
+    fakeDevice.toDeviceState().deviceStatus = com.android.fakeadbserver.DeviceState.DeviceStatus.AUTHORIZING
+    fakeDevice.waitUntilState(DeviceState.AUTHORIZING)
+
+    // Act
+    exceptionRule.expect(AdbIOTimeoutException::class.java)
+    fakeDevice.activityManager.gc(101)
+
+    // Assert
+    Assert.fail("Should not reach")
+  }
+
+  @Test
+  fun testActivityManagerIsCapabilitiesSupported(): Unit = runBlockingWithTimeout {
+    // Prepare
+    val device30 = addFakeConnectedDevice("device30", sdk = 30)
+    val device34 = addFakeConnectedDevice("device34", sdk = 34)
+    val device36 = addFakeConnectedDevice("device36", sdk = 36)
+
+    // Act/Assert
+    Assert.assertFalse(device30.activityManager.isGcSupported())
+    Assert.assertFalse(device34.activityManager.isGcSupported())
+    Assert.assertTrue(device36.activityManager.isGcSupported())
+  }
+
+  @Test
   fun testWaitUntilStateThrowsIOExceptionWhenDeviceDisconnects(): Unit = runBlockingWithTimeout {
     // Prepare
     val connectedDevice = addFakeConnectedDevice()
@@ -1599,10 +1651,10 @@ class ConnectedDeviceTest {
 
   class MyTestException(message: String) : IOException(message)
 
-  private suspend fun addFakeConnectedDevice(sdk: Int = 30): ConnectedDevice {
+  private suspend fun addFakeConnectedDevice(serialNumber: String = "1234", sdk: Int = 30): ConnectedDevice {
     val deviceState =
       fakeAdbRule.fakeAdb.connectDevice(
-        "1234",
+        serialNumber,
         "test1",
         "test2",
         "model",

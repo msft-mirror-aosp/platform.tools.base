@@ -21,7 +21,30 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-30-images",
+    srcs = [
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/wifi/WifiConfigStore.xml",
+        "data/system/display_settings_freeform.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -47,7 +70,7 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -72,7 +95,7 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -98,7 +121,33 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-32AospAtd-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -123,7 +172,7 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -147,7 +196,7 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -173,7 +222,33 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-33AospAtd-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -202,7 +277,36 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-34AospAtd-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "data/misc/pixel_fold/devicestate/device_state_configuration.xml",
+        "data/misc/pixel_fold/display_settings.xml",
+        "data/misc/pixel_fold/displayconfig/display_layout_configuration.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -228,7 +332,33 @@ filegroup(
         "userdata.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-33PlayStore-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/local.prop",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/gceconfigs/gpu.config",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "userdata.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -257,7 +387,7 @@ filegroup(
         "system.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -287,7 +417,7 @@ filegroup(
         "system.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )
 
 filegroup(
@@ -323,5 +453,41 @@ filegroup(
         "system.img",
         "vendor.img",
     ],
-    visibility = ["//visibility:public"],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
+)
+
+filegroup(
+    name = "arm64-android-35PlayStore-images",
+    srcs = [
+        "NOTICE.txt",
+        "VerifiedBootParams.textproto",
+        "advancedFeatures.ini",
+        "build.prop",
+        "data/empty_data_disk",
+        "data/local.prop",
+        "data/misc/GoldfishSkinConfig",
+        "data/misc/apns/apns-conf.xml",
+        "data/misc/emulator/config/radioconfig.xml",
+        "data/misc/emulator/version.txt",
+        "data/misc/modem_simulator/etc/modem_simulator/files/numeric_operator.xml",
+        "data/misc/modem_simulator/iccprofile_for_carrierapitests.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim0.xml",
+        "data/misc/modem_simulator/iccprofile_for_sim_tel_alaska.xml",
+        "data/misc/pixel_9_pro_fold/devicestate/device_state_configuration.xml",
+        "data/misc/pixel_9_pro_fold/display_settings.xml",
+        "data/misc/pixel_9_pro_fold/displayconfig/display_layout_configuration.xml",
+        "data/misc/pixel_9_pro_fold/extra_feature.xml",
+        "data/misc/pixel_fold/devicestate/device_state_configuration.xml",
+        "data/misc/pixel_fold/display_settings.xml",
+        "data/misc/pixel_fold/displayconfig/display_layout_configuration.xml",
+        "data/misc/pixel_fold/extra_feature.xml",
+        "encryptionkey.img",
+        "kernel-ranchu",
+        "kernel_cmdline.txt",
+        "ramdisk.img",
+        "source.properties",
+        "system.img",
+        "vendor.img",
+    ],
+    visibility = ["@//prebuilts/studio/sdk:__pkg__"],
 )

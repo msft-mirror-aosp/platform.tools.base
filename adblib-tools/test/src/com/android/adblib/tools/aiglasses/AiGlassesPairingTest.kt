@@ -31,7 +31,11 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.takeWhile
+import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
@@ -45,6 +49,11 @@ class AiGlassesPairingTest {
 
   private val broadcastResponses = ConcurrentHashMap<String, String>()
   private val dumpsysResponses = ConcurrentHashMap<String, String>()
+
+  @After
+  fun tearDown() {
+    AiGlassesPairing.POLLING_TIMEOUT = 30.seconds
+  }
 
   @Test
   fun checkBondState_sendsCorrectCommandAndParsesResult() = runBlockingWithTimeout {
@@ -227,10 +236,7 @@ class AiGlassesPairingTest {
       "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/MainActivity}\n",
     )
 
-    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
-    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
-    registerBroadcastResponse("pm grant com.google.android.glasses.core android.permission.ACCESS_FINE_LOCATION", "")
-    registerBroadcastResponse("monkey -p com.google.android.glasses.companion -c android.intent.category.LAUNCHER 1", "")
+    setupDeviceMocks()
 
     val states = mutableListOf<String>()
     val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
@@ -287,12 +293,206 @@ class AiGlassesPairingTest {
     }
   }
 
+  // TODO: Remove this test once http://b/505111138 is fixed
+  @Test
+  fun pairToGlasses_tapsButtonWhenStuckInIdle() = runBlockingWithTimeout {
+    val device = createConnectedDevice(api = 37)
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    // Setup to simulate stuck in IDLE
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    // Mock location hardening
+    setupDeviceMocks()
+
+    // Mock focus-driven UI bypass
+    registerBroadcastResponse("input keyevent KEYCODE_TAB", "")
+    registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    // Mock foreground check to succeed immediately
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/com.google.android.glasses.companion.setup.ui.SetupActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+
+    var idleCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "IDLE") {
+          idleCount++
+        }
+        idleCount < 4
+      }
+      .collect()
+
+    // Verify that focus navigation was executed
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_TAB"))
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+  }
+
+  // TODO: Remove this test once http://b/505111138 is fixed
+  @Test
+  fun pairToGlasses_tapsButtonWhenStuckInUiCdmAssociating() = runBlockingWithTimeout {
+    val device = createConnectedDevice(api = 37)
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    // Setup to simulate stuck in UI_CDM_ASSOCIATING
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=UI_CDM_ASSOCIATING\n",
+    )
+
+    // Mock location hardening
+    setupDeviceMocks()
+
+    // Mock focus-driven UI bypass
+    registerBroadcastResponse("input keyevent KEYCODE_TAB", "")
+    registerBroadcastResponse("input keyevent KEYCODE_DPAD_CENTER", "")
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    // Mock foreground check to succeed immediately
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/com.google.android.glasses.companion.setup.ui.SetupActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+
+    var cdmCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "UI_CDM_ASSOCIATING") {
+          cdmCount++
+        }
+        cdmCount < 3
+      }
+      .collect()
+
+    // Verify that focus navigation was executed
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_TAB"))
+    assertTrue(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+  }
+
+  // TODO: Remove this test once http://b/505111138 is fixed
+  @Test
+  fun pairToGlasses_doesNotTapButtonWhenOnApi36() = runBlockingWithTimeout {
+    val device = createConnectedDevice(api = 36)
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/com.google.android.glasses.companion.setup.ui.SetupActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+
+    var idleCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "IDLE") {
+          idleCount++
+        }
+        idleCount < 4
+      }
+      .collect()
+
+    // Verify that focus navigation was NOT executed
+    assertFalse(executedCommands.contains("input keyevent KEYCODE_TAB"))
+    assertFalse(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+  }
+
+  // TODO: Remove this test once http://b/505111138 is fixed
+  @Test
+  fun pairToGlasses_doesNotTapButtonWhenSetupActivityNotInForeground() = runBlockingWithTimeout {
+    val device = createConnectedDevice(api = 37)
+    val glassesAddress = "AA:BB:CC:DD:EE:FF"
+
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.GET_PAIRING_STATE com.google.android.glasses.companion",
+      "state=IDLE\n",
+    )
+    registerBroadcastResponse(
+      "am broadcast -a com.google.android.glasses.companion.ASSISTED_PAIR --es address \"$glassesAddress\" --ez auto_cdm true -p com.google.android.glasses.companion",
+      "Broadcast completed: result=-1, data=\"Successfully sent pairing broadcast\"\n",
+    )
+
+    setupDeviceMocks()
+
+    val pairing = AiGlassesPairing(fakeAdbRule.adbSession)
+    AiGlassesPairing.POLLING_TIMEOUT = 5.seconds
+
+    registerDumpsysResponse(
+      "dumpsys window displays",
+      "  mCurrentFocus=Window{12345 u0 com.google.android.glasses.companion/com.google.android.glasses.companion.MainActivity}\n",
+    )
+
+    val states = mutableListOf<String>()
+    val flow = pairing.run { device.pairToGlasses(glassesAddress, true) }
+
+    var idleCount = 0
+    flow
+      .takeWhile {
+        states.add(it)
+        if (it == "IDLE") {
+          idleCount++
+        }
+        idleCount < 4
+      }
+      .collect()
+
+    // Verify that focus navigation was NOT executed
+    assertFalse(executedCommands.contains("input keyevent KEYCODE_TAB"))
+    assertFalse(executedCommands.contains("input keyevent KEYCODE_DPAD_CENTER"))
+  }
+
+  private fun setupDeviceMocks() {
+    registerBroadcastResponse("cmd location set-location-enabled true", "")
+    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.NEARBY_WIFI_DEVICES", "")
+    registerBroadcastResponse("pm grant com.google.android.glasses.companion android.permission.BLUETOOTH_CONNECT", "")
+    registerBroadcastResponse("pm grant com.google.android.glasses.core android.permission.ACCESS_FINE_LOCATION", "")
+    registerBroadcastResponse("monkey -p com.google.android.glasses.companion -c android.intent.category.LAUNCHER 1", "")
+  }
+
   private val executedCommands = CopyOnWriteArrayList<String>()
   private val executedDumpsysCommands = CopyOnWriteArrayList<String>()
 
-  private suspend fun createConnectedDevice(): ConnectedDevice {
+  private suspend fun createConnectedDevice(api: Int = 36): ConnectedDevice {
     val fakeDevice =
-      fakeAdbRule.fakeAdb.connectDevice("device1", "test1", "test2", "model", AndroidApiLevel(36), DeviceState.HostConnectionType.USB)
+      fakeAdbRule.fakeAdb.connectDevice("device1", "test1", "test2", "model", AndroidApiLevel(api), DeviceState.HostConnectionType.USB)
     fakeDevice.deviceStatus = DeviceState.DeviceStatus.ONLINE
     // Register handlers (SHELL and SHELL_V2 to be safe)
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
@@ -326,6 +526,22 @@ class AiGlassesPairingTest {
     fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
       0,
       FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "monkey", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "input", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "input", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL, "cmd", broadcastResponses, executedCommands),
+    )
+    fakeAdbRule.fakeAdb.fakeAdbServer.handlers.add(
+      0,
+      FakeShellCommandHandler(ShellProtocolType.SHELL_V2, "cmd", broadcastResponses, executedCommands),
     )
     return deviceServices.session.waitForOnlineConnectedDevice(fakeDevice.deviceId)
   }

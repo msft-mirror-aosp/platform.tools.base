@@ -294,13 +294,14 @@ bool ArrayParamsEntryHook::Apply(lir::CodeIr* code_ir) {
   code_ir->instructions.InsertBefore(bytecode, hook_invoke);
 
   // clean up registries used by us
-  // registers are assigned to a marker value 0xFE_FE_FE_FE (decimal
-  // value: -16843010) to help identify use of uninitialized registers.
+  // SECURITY: Set registers to 0 instead of 0xFEFEFEFE. The GC scans reference
+  // registers, and assigning a non-zero, non-null value can cause the GC to
+  // crash trying to traverse an invalid address.
   for (dex::u2 i = 0; i < regs_count; ++i) {
     auto cleanup = code_ir->Alloc<lir::Bytecode>();
     cleanup->opcode = dex::OP_CONST;
     cleanup->operands.push_back(code_ir->Alloc<lir::VReg>(i));
-    cleanup->operands.push_back(code_ir->Alloc<lir::Const32>(0xFEFEFEFE));
+    cleanup->operands.push_back(code_ir->Alloc<lir::Const32>(0));
     code_ir->instructions.InsertBefore(bytecode, cleanup);
   }
 

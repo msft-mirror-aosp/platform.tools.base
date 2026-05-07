@@ -255,19 +255,12 @@ td {
     border-bottom: 1px solid var(--border-color);
     border-right: 1px solid var(--border-color);
 }
-th:last-child, td:last-child { border-right: none; }
-
-.sticky-name {
-    position: sticky; left: 0; z-index: 5;
-    background-color: inherit;
-    border-right: 1px solid var(--border-color);
-}
-thead th.sticky-name { z-index: 20; background: var(--bg-subtle); }
-
 tr:hover { background-color: var(--bg-selected); }
 
 .explanation-row { background-color: var(--bg-subtle); }
 .explanation-content { padding: 1rem 2rem; white-space: normal; color: var(--text-gray-600); }
+.explanation-content a { color: var(--text-blue-600); }
+.explanation-content a:hover { text-decoration: underline; }
 .more-info-list { margin-left: 1.5rem; margin-top: 0.25rem; list-style-type: disc; }
 .more-info-list li { margin-bottom: 0.125rem; }
 
@@ -347,12 +340,17 @@ tr.issue-row:hover { cursor: pointer; }
 .p-6 { padding: 1.5rem; }
 .pb-2 { padding-bottom: 0.5rem; }
 
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
 .mt-4 { margin-top: 1rem; }
 .mt-8 { margin-top: 2rem; }
 .mt-12 { margin-top: 3rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-8 { margin-bottom: 2rem; }
 .mb-12 { margin-bottom: 3rem; }
+.ml-4 { margin-left: 1rem; }
 .ml-6 { margin-left: 1.5rem; }
 
 .space-y-1 > * + * { margin-top: 0.25rem; }

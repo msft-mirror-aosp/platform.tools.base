@@ -743,6 +743,10 @@ sealed class InternalArtifactType<T : FileSystemLocation>(
   /** Metadata file included in the app bundle as output from R8 */
   object R8_METADATA : InternalArtifactType<RegularFile>(FILE)
 
+  object R8_MAPPING_KEEP_RADIUS_DATA : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradius.pb")
+
+  object R8_MAPPING_KEEP_RADIUS_REPORT : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "keepradiusreport.html")
+
   object R8_MAPPING_SEEDS : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "seeds.txt")
 
   object R8_MAPPING_USAGE : InternalArtifactType<RegularFile>(FILE, Category.OUTPUTS, "mapping", "usage.txt")

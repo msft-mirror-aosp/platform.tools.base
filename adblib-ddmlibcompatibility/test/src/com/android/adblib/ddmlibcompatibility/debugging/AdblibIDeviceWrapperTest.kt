@@ -1,22 +1,20 @@
 package com.android.adblib.ddmlibcompatibility.debugging
 
 import com.android.adblib.AdbDeviceFailResponseException
-import com.android.adblib.AdbSession
 import com.android.adblib.ConnectedDevice
 import com.android.adblib.DeviceSelector
 import com.android.adblib.RemoteFileMode
 import com.android.adblib.SocketSpec
-import com.android.adblib.connectedDevicesTracker
 import com.android.adblib.ddmlibcompatibility.testutils.InitAndroidDebugBridgeRule
 import com.android.adblib.ddmlibcompatibility.testutils.UseAdbLibAndroidDebugBridgeRule
+import com.android.adblib.ddmlibcompatibility.testutils.createConnectedDevice
+import com.android.adblib.ddmlibcompatibility.testutils.waitForConnectedDevice
 import com.android.adblib.deviceInfo
 import com.android.adblib.scope
 import com.android.adblib.testingutils.CoroutineTestUtils.runBlockingWithTimeout
 import com.android.adblib.testingutils.CoroutineTestUtils.yieldUntil
 import com.android.adblib.testingutils.FakeAdbServerProviderRule
 import com.android.adblib.testingutils.TestingAdbSessionHost
-import com.android.adblib.waitForDevice
-import com.android.adblib.waitUntilState
 import com.android.ddmlib.AdbCommandRejectedException
 import com.android.ddmlib.AdbHelper
 import com.android.ddmlib.AndroidDebugBridge
@@ -43,12 +41,12 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.hamcrest.CoreMatchers
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -161,16 +159,93 @@ class AdblibIDeviceWrapperTest {
     // Note that `serialNumber` above matches an emulator pattern and as a result a call to
     // `createAvdData` triggers `connectedDevice.session.openEmulatorConsole` which throws
     // a `java.io.IOException: Error connecting channel to address 'localhost/127.0.0.1:64178'`.
-    assertNull(avdDataFuture.get())
+    // In this case `mAvdDataFuture` is NOT set to allow for retries.
+    try {
+      avdDataFuture.get(100, TimeUnit.MILLISECONDS)
+      fail("Future should not have been completed")
+    } catch (e: TimeoutException) {
+      // Expected
+    }
     assertNull(adblibIDeviceWrapper.avdName)
     assertNull(adblibIDeviceWrapper.avdPath)
 
     // Act / Assert
-    // Trying to retrieve avdData again retries querying the data from the emulator as indicated
-    // by avdDataFuture2 not being an `ImmediateFuture`
+    // Trying to retrieve avdData again returns the same future as indicated
+    // by avdDataFuture2 being the same instance as avdDataFuture
     val avdDataFuture2 = adblibIDeviceWrapper.avdData
-    assertNotEquals(avdDataFuture2::class.java.simpleName, "ImmediateFuture")
-    assertNull(avdDataFuture2.get())
+    assertEquals(avdDataFuture, avdDataFuture2)
+    try {
+      avdDataFuture2.get(100, TimeUnit.MILLISECONDS)
+      fail("Future should not have been completed")
+    } catch (e: TimeoutException) {
+      // Expected
+    }
+
+    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.FAILED }
+    Unit
+  }
+
+  @Test
+  fun getAvdDataRetriesAndSucceeds() = runBlockingWithTimeout {
+    // Prepare
+    val avdName = "myAvd-36"
+    val avdPath = Path.of("/android/avds/myAvd-36.avd").toString()
+
+    val emulatorConsole = fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName = avdName, avdPath = avdPath).get()
+    val consolePort = emulatorConsole.port
+    val serialNumber = "emulator-$consolePort"
+    // We first require authentication to force a failure
+    emulatorConsole.authRequired = true
+
+    val (connectedDevice, _) = createConnectedDevice(serialNumber, DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act / Assert: First call fails to connect to console due to authentication failures
+    val avdDataFuture = adblibIDeviceWrapper.avdData
+    try {
+      avdDataFuture.get(100, TimeUnit.MILLISECONDS)
+      fail("Future should not have been completed")
+    } catch (e: TimeoutException) {
+      // Expected
+    }
+    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.FAILED }
+
+    // Prepare: Now stop requiring authorization
+    emulatorConsole.authRequired = false
+
+    // Act: retry getting avdData future
+    val avdData = adblibIDeviceWrapper.avdData.get()
+
+    // Assert
+    assertNotNull(avdData)
+    assertEquals(avdName, avdData?.name)
+    adblibIDeviceWrapper.avdFetchStatusFlow.first { it == AdblibIDeviceWrapper.AvdFetchStatus.SUCCEEDED }
+    Unit
+  }
+
+  @Test
+  fun getAvdDataConcurrentCalls() = runBlockingWithTimeout {
+    // Prepare
+    val avdName = "myAvd-36"
+    val avdPath = Path.of("/android/avds/myAvd-36.avd").toString()
+    val emulatorPort = fakeAdbRule.fakeAdb.fakeAdbServer.connectEmulatorConsole(avdName = avdName, avdPath = avdPath).get().port
+    val deviceId = "emulator-$emulatorPort"
+    val (connectedDevice, _) = createConnectedDevice(deviceId, DeviceState.DeviceStatus.ONLINE)
+    val adblibIDeviceWrapper = createAdblibIDeviceWrapper(connectedDevice, bridge)
+
+    // Act: Make multiple concurrent calls
+    val futures = (1..10).map { adblibIDeviceWrapper.avdData }
+
+    // Assert: All futures are the same instance
+    val firstFuture = futures[0]
+    futures.forEach { assertTrue("All futures should be the same instance", it === firstFuture) }
+
+    // Assert: All futures eventually complete with the same value
+    val results = futures.map { it.get(2, TimeUnit.SECONDS) }
+    results.forEach {
+      assertEquals(avdName, it?.name)
+      assertEquals(avdPath, it?.path)
+    }
   }
 
   @Test
@@ -1044,37 +1119,7 @@ class AdblibIDeviceWrapperTest {
     deviceStatus: DeviceState.DeviceStatus = DeviceState.DeviceStatus.ONLINE,
     sdk: AndroidApiLevel = AndroidApiLevel(30),
     delayStdout: Duration = Duration.ZERO,
-  ): Pair<ConnectedDevice, DeviceState> {
-    // Connect a fake device to the server and wait for it to come online.
-    val fakeDevice = fakeAdb.connectDevice(serialNumber, "test1", "test2", "model", sdk, DeviceState.HostConnectionType.USB)
-    fakeDevice.delayStdout = delayStdout
-    // Ensure the initialization sequence OFFLINE -> ONLINE started in
-    // `fakeAdb.connectDevice` is complete, and we have a stable handle to the ConnectedDevice.
-    val connectedDevice = waitForConnectedDevice(hostServices.session, serialNumber, DeviceState.DeviceStatus.ONLINE)
-
-    if (deviceStatus != DeviceState.DeviceStatus.ONLINE) {
-      fakeDevice.deviceStatus = deviceStatus
-      connectedDevice.waitForDeviceState(deviceStatus)
-    }
-
-    return Pair(connectedDevice, fakeDevice)
-  }
-
-  private suspend fun waitForConnectedDevice(
-    session: AdbSession,
-    serialNumber: String,
-    deviceStatus: DeviceState.DeviceStatus,
-  ): ConnectedDevice {
-    val connectedDevice = session.connectedDevicesTracker.waitForDevice(serialNumber)
-
-    connectedDevice.waitForDeviceState(deviceStatus)
-    return connectedDevice
-  }
-
-  private suspend fun ConnectedDevice.waitForDeviceState(deviceStatus: DeviceState.DeviceStatus) {
-    val targetState = com.android.adblib.DeviceState.parseState(deviceStatus.state)
-    waitUntilState(targetState)
-  }
+  ) = fakeAdbRule.createConnectedDevice(serialNumber, deviceStatus, sdk, delayStdout)
 
   private fun createAdblibIDeviceWrapper(connectedDevice: ConnectedDevice, bridge: AndroidDebugBridge): AdblibIDeviceWrapper {
     return AdblibIDeviceWrapper(connectedDevice, bridge, deviceState = { connectedDevice.deviceInfo.deviceState })

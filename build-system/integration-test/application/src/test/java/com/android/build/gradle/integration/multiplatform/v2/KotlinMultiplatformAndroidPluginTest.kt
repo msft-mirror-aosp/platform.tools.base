@@ -180,7 +180,11 @@ class KotlinMultiplatformAndroidPluginTest(private val publishLibs: Boolean) {
             "com/example/kmpfirstlib/KmpAndroidActivity",
           )
         resources {
-          containsExactly("kmp_resource.txt", "META-INF/kmpFirstLib.kotlin_module")
+          if (publishLibs) {
+            containsExactly("kmp_resource.txt", "META-INF/com.example_kmpFirstLib.kotlin_module")
+          } else {
+            containsExactly("kmp_resource.txt", "META-INF/Kotlin Multiplatform_kmpFirstLib.kotlin_module")
+          }
           resourceAsText("kmp_resource.txt").isEqualTo("kmp resource")
         }
       }

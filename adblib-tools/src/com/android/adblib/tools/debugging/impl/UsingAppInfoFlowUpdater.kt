@@ -25,6 +25,7 @@ import com.android.adblib.CoroutineScopeCache
 import com.android.adblib.activityManager
 import com.android.adblib.adbLogger
 import com.android.adblib.getOrPutSynchronized
+import com.android.adblib.isCapabilitiesSupported
 import com.android.adblib.scope
 import com.android.adblib.tools.debugging.AtomicStateFlow
 import com.android.adblib.tools.debugging.JdwpProcess
@@ -205,14 +206,14 @@ internal class UsingAppInfoFlowUpdater(private val process: JdwpProcess) : JdwpP
 
       private val deferredVmInfo: Deferred<VmInfo?> =
         device.scope.async {
-          // Note: The result of `capabilities()` is cached per device
-          device.activityManager.capabilities()?.let { amCapabilities ->
+          if (device.activityManager.isCapabilitiesSupported()) {
+            // Note: The result of `capabilities()` is cached per device
+            val amCapabilities = device.activityManager.capabilities()
             VmInfo(vmIdentifier = buildVmIdentifier(amCapabilities), features = buildFeatureList(amCapabilities))
+          } else {
+            logger.info { "Device capabilities is not supported" }
+            null
           }
-            ?: run {
-              logger.info { "Device capabilities is not supported" }
-              null
-            }
         }
 
       private fun buildVmIdentifier(amCapabilities: AmCapabilitiesResult): String {

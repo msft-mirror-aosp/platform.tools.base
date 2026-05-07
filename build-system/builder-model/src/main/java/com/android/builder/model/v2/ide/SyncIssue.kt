@@ -225,6 +225,58 @@ interface SyncIssue : AndroidModel {
 
     /** Indicates that a manifest is missing */
     const val TYPE_MISSING_ANDROID_MANIFEST = 44
+
+    /** JCenter Maven is deprecated and it should not be used in build scripts. */
+    const val TYPE_JCENTER_IS_DEPRECATED = 45
+
+    /** Java version used by AGP is too low. */
+    const val TYPE_AGP_USED_JAVA_VERSION_TOO_LOW = 46
+
+    /**
+     * Indicates that the project uses a compile SDK version that's newer than the highest version that the build system has been tested
+     * with.
+     *
+     * The data is the maximum supported compile SDK version for this version of the Android Gradle Plugin.
+     */
+    const val TYPE_COMPILE_SDK_VERSION_TOO_HIGH = 47
+
+    /** Indicates that the project uses a compile SDK version that's lower than required. */
+    const val TYPE_COMPILE_SDK_VERSION_TOO_LOW = 48
+
+    /** Trying to read/write to a variant api property that will not be used as the feature using it is disabled. */
+    const val TYPE_ACCESSING_DISABLED_FEATURE_VARIANT_API = 49
+
+    /** Using the variant API to set the application ID to a dynamic value */
+    const val TYPE_APPLICATION_ID_MUST_NOT_BE_DYNAMIC = 50
+
+    /**
+     * Using the removed API. The support for the API was removed but API and associated types were left intact to not fail sync with
+     * ClassNotFoundException which would be confusing to users.
+     */
+    const val TYPE_REMOVED_API = 51
+
+    /**
+     * Using an empty flavor dimension. An empty flavor dimension results in an error when calculating the dimension combinations and no
+     * variants are created..
+     */
+    const val TYPE_EMPTY_FLAVOR_DIMENSION = 52
+
+    /** A sync issue type for exceptions that were converted to a sync issue. */
+    const val TYPE_EXCEPTION = 53
+
+    /** Indicates that the namespace is missing */
+    const val TYPE_NAMESPACE_NOT_SET = 54
+
+    /** Indicates an inconsistent usage of build feature settings in regard to other DSL settings or plugins applied. */
+    const val TYPE_INCONSISTENT_BUILD_FEATURE_SETTING = 55
+
+    /**
+     * Missing Compose Compiler Gradle plugin when compose is enabled and Kotlin version is 2.0 or higher. Data is the Kotlin version used.
+     */
+    const val TYPE_MISSING_COMPOSE_COMPILER_GRADLE_PLUGIN = 56
+
+    /** Disabling the library constraints results in better sync performance, this will be surfaced to the user via this issue. */
+    const val TYPE_LIBRARY_CONSTRAINTS_SHOULD_BE_DISABLED = 57
   }
 }
 

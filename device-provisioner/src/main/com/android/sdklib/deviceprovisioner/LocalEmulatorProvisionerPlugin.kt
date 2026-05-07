@@ -250,7 +250,7 @@ class LocalEmulatorDeviceHandle(
   extensions: List<ExtensionProvider<LocalEmulatorDeviceHandle, *>> = emptyList(),
   initialAvdInfo: AvdInfo,
   initialDeviceProperties: LocalEmulatorProperties = context.disconnectedDeviceProperties(initialAvdInfo),
-) : DeviceHandle {
+) : DeviceHandle, GlassesPairableDeviceHandle {
   private val logger by context::logger
   private val clock by context::clock
 
@@ -555,31 +555,36 @@ class LocalEmulatorDeviceHandle(
   }
 
   /** Sets the phone that is paired to this device; if null, clears the paired phone. */
-  fun updatePairedPhone(companion: LocalEmulatorDeviceHandle?) {
-    updatePairedDevice(UserSettingsKey.PAIRED_PHONE_AVD_ID, companion)
+  override fun updatePairedPhone(phoneHandle: GlassesPairableDeviceHandle?) {
+    AvdBuilder.updateUserSettings(
+      (state.properties as LocalEmulatorProperties).avdPath,
+      mapOf("${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1" to phoneHandle?.id?.toString()),
+      logger.asILogger(),
+    )
+    avdScanner.rescanAsync()
   }
 
-  fun addPairedGlasses(id: DeviceId, mac: String?) {
+  override fun addPairedGlasses(glassesId: DeviceId, mac: String?) {
     val currentList = getPairedGlassesFromDisk()
-    val existingIndex = currentList.indexOfFirst { it.id == id }
+    val existingIndex = currentList.indexOfFirst { it.id == glassesId }
     val newList =
       if (existingIndex >= 0) {
-        currentList.toMutableList().apply { this[existingIndex] = PairedGlassesInfo(id, mac) }
+        currentList.toMutableList().apply { this[existingIndex] = PairedGlassesInfo(glassesId, mac) }
       } else {
-        currentList + PairedGlassesInfo(id, mac)
+        currentList + PairedGlassesInfo(glassesId, mac)
       }
     updatePairedGlassesState(newList)
   }
 
-  fun removePairedGlasses(id: DeviceId) {
+  override fun removePairedGlasses(glassesId: DeviceId) {
     val currentList = getPairedGlassesFromDisk()
-    if (currentList.any { it.id == id }) {
-      val newList = currentList.filter { it.id != id }
+    if (currentList.any { it.id == glassesId }) {
+      val newList = currentList.filter { it.id != glassesId }
       updatePairedGlassesState(newList)
     }
   }
 
-  fun clearPairedGlasses() {
+  override fun clearPairedGlasses() {
     updatePairedGlassesState(emptyList())
   }
 
@@ -610,15 +615,6 @@ class LocalEmulatorDeviceHandle(
     }
 
     AvdBuilder.updateUserSettings(avdPath, map, logger.asILogger())
-    avdScanner.rescanAsync()
-  }
-
-  private fun updatePairedDevice(key: String, companion: LocalEmulatorDeviceHandle?) {
-    AvdBuilder.updateUserSettings(
-      (state.properties as LocalEmulatorProperties).avdPath,
-      mapOf(key to companion?.id?.toString()),
-      logger.asILogger(),
-    )
     avdScanner.rescanAsync()
   }
 }
@@ -716,7 +712,7 @@ data class LocalEmulatorProperties(
       deviceType = avdInfo.toDeviceType()
       hasPlayStore = avdInfo.hasPlayStore()
       wearPairingId = avdInfo.id.takeIf { isPairable() }
-      pairedPhoneId = avdInfo.userSettings[UserSettingsKey.PAIRED_PHONE_AVD_ID]?.let { DeviceId.fromString(it) }
+      pairedPhoneId = avdInfo.userSettings["${UserSettingsKey.PAIRED_PHONE_AVD_ID_PREFIX}1"]?.let { DeviceId.fromString(it) }
       pairedGlassesInfos = PairedGlassesInfo.parseFromSettings(avdInfo.userSettings)
       density = avdInfo.density
       resolution = avdInfo.resolution

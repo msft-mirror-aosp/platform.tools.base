@@ -96,6 +96,11 @@ package com.android.build.api.artifact {
   public static interface Artifact.Transformable {
   }
 
+  @org.gradle.api.Incubating public static interface Artifact.WithQualifiers {
+    method @InaccessibleFromKotlin public java.util.List<java.lang.String>? getQualifierKeys();
+    property public abstract java.util.List<java.lang.String>? qualifierKeys;
+  }
+
   public abstract sealed exhaustive class ArtifactKind<T extends org.gradle.api.file.FileSystemLocation> implements java.io.Serializable {
     method public abstract kotlin.reflect.KClass<T> dataType();
   }
@@ -119,8 +124,10 @@ package com.android.build.api.artifact {
     method @Deprecated public <FileTypeT extends org.gradle.api.file.FileSystemLocation> void add(com.android.build.api.artifact.MultipleArtifact<FileTypeT> type, FileTypeT artifact);
     method public <MultipleArtifactT extends com.android.build.api.artifact.MultipleArtifact<org.gradle.api.file.Directory> & com.android.build.api.artifact.Artifact.Appendable> void addStaticDirectory(MultipleArtifactT type, org.gradle.api.file.Directory inputLocation);
     method public com.android.build.api.variant.ScopedArtifacts forScope(com.android.build.api.variant.ScopedArtifacts.Scope scope);
+    method @org.gradle.api.Incubating public <FileTypeT extends org.gradle.api.file.FileSystemLocation, ArtifactTypeT extends com.android.build.api.artifact.MultipleArtifact<FileTypeT> & com.android.build.api.artifact.Artifact.WithQualifiers> org.gradle.api.provider.Provider<FileTypeT> get(ArtifactTypeT type, java.util.Map<java.lang.String,java.lang.String> attributes);
     method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> org.gradle.api.provider.Provider<FileTypeT> get(com.android.build.api.artifact.SingleArtifact<FileTypeT> type);
     method public <FileTypeT extends org.gradle.api.file.FileSystemLocation> org.gradle.api.provider.Provider<java.util.List<FileTypeT>> getAll(com.android.build.api.artifact.MultipleArtifact<FileTypeT> type);
+    method @org.gradle.api.Incubating public <FileTypeT extends org.gradle.api.file.FileSystemLocation, ArtifactTypeT extends com.android.build.api.artifact.MultipleArtifact<FileTypeT> & com.android.build.api.artifact.Artifact.WithQualifiers> java.util.Collection<com.android.build.api.artifact.RegisteredArtifactWithQualifiers<FileTypeT>> getAllWithAttributes(ArtifactTypeT type);
     method public com.android.build.api.variant.BuiltArtifactsLoader getBuiltArtifactsLoader();
     method public <TaskT extends org.gradle.api.Task> com.android.build.api.artifact.TaskBasedOperation<TaskT> use(org.gradle.api.tasks.TaskProvider<TaskT> taskProvider);
   }
@@ -140,6 +147,8 @@ package com.android.build.api.artifact {
   }
 
   public abstract sealed exhaustive class MultipleArtifact<FileTypeT extends org.gradle.api.file.FileSystemLocation> extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT> {
+    method @InaccessibleFromKotlin public final java.util.List<java.lang.String>? getAttributeKeys();
+    property public final java.util.List<java.lang.String>? attributeKeys;
   }
 
   public static final class MultipleArtifact.MULTIDEX_KEEP_PROGUARD extends com.android.build.api.artifact.MultipleArtifact<org.gradle.api.file.RegularFile> implements com.android.build.api.artifact.Artifact.Replaceable com.android.build.api.artifact.Artifact.Transformable {
@@ -164,9 +173,17 @@ package com.android.build.api.artifact {
 
   public interface OutOperationRequest<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT> & com.android.build.api.artifact.Artifact.Appendable> void toAppendTo(ArtifactTypeT type);
+    method @org.gradle.api.Incubating public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Multiple<FileTypeT> & com.android.build.api.artifact.Artifact.Appendable & com.android.build.api.artifact.Artifact.WithQualifiers> void toAppendTo(ArtifactTypeT type, java.util.Map<java.lang.String,java.lang.String> qualifiers);
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<FileTypeT> & com.android.build.api.artifact.Artifact.Replaceable> void toCreate(ArtifactTypeT type);
     method public <ArtifactTypeT extends com.android.build.api.artifact.Artifact.Single<FileTypeT>> void toListenTo(ArtifactTypeT type);
     method public com.android.build.api.artifact.OutOperationRequest<FileTypeT> withName(String name);
+  }
+
+  @org.gradle.api.Incubating public interface RegisteredArtifactWithQualifiers<FileTypeT extends org.gradle.api.file.FileSystemLocation> {
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public org.gradle.api.provider.Provider<FileTypeT> getArtifact();
+    method @InaccessibleFromKotlin @org.gradle.api.Incubating public java.util.Map<java.lang.String,java.lang.String> getQualifiers();
+    property @org.gradle.api.Incubating public abstract org.gradle.api.provider.Provider<FileTypeT> artifact;
+    property @org.gradle.api.Incubating public abstract java.util.Map<java.lang.String,java.lang.String> qualifiers;
   }
 
   public abstract sealed exhaustive class ScopedArtifact extends com.android.build.api.artifact.Artifact.Single<org.gradle.api.file.Directory> {

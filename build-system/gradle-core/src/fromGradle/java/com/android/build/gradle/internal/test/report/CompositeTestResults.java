@@ -156,6 +156,9 @@ public abstract class CompositeTestResults extends TestResultModel {
     }
 
     protected void addDevice(String deviceName, TestResult testResult) {
+        if (deviceName == null) {
+            deviceName = "";
+        }
         DeviceTestResults deviceResults = devices.get(deviceName);
         if (deviceResults == null) {
             deviceResults = new DeviceTestResults(deviceName, null);
@@ -166,6 +169,12 @@ public abstract class CompositeTestResults extends TestResultModel {
     }
 
     protected void addVariant(String projectName, String flavorName, TestResult testResult) {
+        if (projectName == null) {
+            projectName = "";
+        }
+        if (flavorName == null) {
+            flavorName = "";
+        }
         String key = getVariantKey(projectName, flavorName);
         VariantTestResults variantResults = variants.get(key);
         if (variantResults == null) {
