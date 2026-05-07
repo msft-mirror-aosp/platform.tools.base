@@ -22,6 +22,7 @@ namespace coverage {
 class Log {
  public:
   static void I(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
+  static void W(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
   static void E(const char* fmt, ...) __attribute__((format(printf, 1, 2)));
 
  private:

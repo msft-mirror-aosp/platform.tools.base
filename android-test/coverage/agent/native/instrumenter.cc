@@ -16,11 +16,49 @@
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
+#include <limits>
 #include <string_view>
 
+#include "slicer/dex_ir.h"
+#include "slicer/reader.h"
+#include "slicer/writer.h"
 #include "tools/base/android-test/coverage/common/log.h"
 
 namespace coverage {
+
+namespace {
+
+/**
+ * An allocator for Slicer that uses JVMTI's allocation mechanism.
+ * This is necessary because ART will eventually deallocate the new class bytes
+ * using JVMTI's Deallocate.
+ */
+class JvmtiAllocator : public dex::Writer::Allocator {
+ public:
+  explicit JvmtiAllocator(jvmtiEnv* jvmti) : jvmti_(jvmti) {}
+
+  void* Allocate(size_t size) override {
+    unsigned char* alloc = nullptr;
+    jvmtiError error = jvmti_->Allocate(size, &alloc);
+    if (error != JVMTI_ERROR_NONE) {
+      Log::E("Error: JVMTI Allocate failed. Error code: %d", error);
+      return nullptr;
+    }
+    return reinterpret_cast<void*>(alloc);
+  }
+
+  void Free(void* ptr) override {
+    if (ptr == nullptr) {
+      return;
+    }
+    jvmti_->Deallocate(reinterpret_cast<unsigned char*>(ptr));
+  }
+
+ private:
+  jvmtiEnv* jvmti_;
+};
+
+}  // namespace
 
 Instrumenter* Instrumenter::instance_ = nullptr;
 
@@ -38,18 +76,66 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     const char* name, jobject protection_domain, jint class_data_len,
     const unsigned char* class_data, jint* new_class_data_len,
     unsigned char** new_class_data) {
+  if (jvmti == nullptr || name == nullptr || class_data == nullptr ||
+      class_data_len <= 0 || new_class_data_len == nullptr ||
+      new_class_data == nullptr) {
+    return;
+  }
+
   if (instance_ == nullptr ||
       !instance_->ShouldInstrument(loader, name, class_being_redefined)) {
     return;
   }
 
-  // TODO: Instrumentation logic (Slicer IR parsing) to be added here.
-  // After successful instrumentation, tag the class (if it exists)
-  // to avoid future re-instrumentation.
-  // TODO: Handle tagging for classes instrumented during their initial load
-  // to avoid redundant instrumentation during future re-transformations.
-  if (class_being_redefined != nullptr) {
-    jvmti->SetTag(class_being_redefined, kInstrumentedTag);
+  // TODO: Instrumentation logic will be added here.
+
+  // The class name from JVMTI needs to be converted to a JNI descriptor.
+  std::string descriptor = "L" + std::string(name) + ";";
+
+  dex::Reader reader(class_data, class_data_len);
+  auto class_index = reader.FindClassIndex(descriptor.c_str());
+  if (class_index == dex::kNoIndex) {
+    Log::W("Could not find class index for %s. Skipping instrumentation.",
+           descriptor.c_str());
+    return;
+  }
+
+  // Create an IR for only the specific class that ART is loading. This
+  // effectively "prunes" the DEX so that the resulting byte array only contains
+  // one class definition, which is a requirement for JVMTI class
+  // redefinition/retransformation in ART.
+  reader.CreateClassIr(class_index);
+  auto dex_ir = reader.GetIr();
+  if (dex_ir == nullptr) {
+    Log::E("Slicer failed to generate IR for %s", descriptor.c_str());
+    return;
+  }
+
+  // TODO: Apply basic block instrumentation here in future steps.
+
+  dex::Writer writer(dex_ir);
+  JvmtiAllocator allocator(jvmti);
+  size_t new_image_size = 0;
+  dex::u1* new_image = writer.CreateImage(&allocator, &new_image_size);
+
+  if (new_image != nullptr) {
+    if (new_image_size > std::numeric_limits<jint>::max()) {
+      Log::E("Error: Generated DEX image size exceeds jint max for %s", name);
+      jvmti->Deallocate(reinterpret_cast<unsigned char*>(new_image));
+      return;
+    }
+
+    *new_class_data_len = static_cast<jint>(new_image_size);
+    *new_class_data = reinterpret_cast<unsigned char*>(new_image);
+
+    // After successful instrumentation, tag the class (if it exists)
+    // to avoid future redundant instrumentation.
+    // TODO: Handle tagging for classes instrumented during their initial load.
+    if (class_being_redefined != nullptr) {
+      jvmti->SetTag(class_being_redefined, kInstrumentedTag);
+    }
+  } else {
+    Log::E("Slicer failed to produce new DEX image for %s", name);
   }
 }
 
