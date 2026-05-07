@@ -48,12 +48,13 @@ class AndroidTestEngineDescriptor(uniqueId: UniqueId) :
       // Android Studio expects the device serial in the UniqueId to match results
       // with its internal device model.
       val deviceUniqueId = uniqueId.append("device", deviceSerial)
+      val deviceDisplayName = if (deviceId != defaultDisplayName) "$deviceId ($defaultDisplayName)" else defaultDisplayName
       val deviceDescriptor =
         AndroidDeviceDescriptor(
           uniqueId = deviceUniqueId,
           deviceSerial = deviceSerial,
           deviceId = deviceId,
-          deviceDisplayName = defaultDisplayName,
+          deviceDisplayName = deviceDisplayName,
         )
       deviceDescriptor.setParent(this)
       dynamicTestExecutor.execute(deviceDescriptor)
