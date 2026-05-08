@@ -634,8 +634,8 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
       task.description = "Installs and runs the tests for $variantName on connected devices."
       task.outputs.upToDateWhen { false }
 
-      task.testSuiteName.setDisallowChanges("androidTest")
-      task.testSuiteTarget.setDisallowChanges("connected")
+      task.testSuiteName.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_NAME)
+      task.testSuiteTarget.setDisallowChanges(CONNECTED_TEST_TEST_SUITE_TARGET_NAME)
       task.testedVariantName.setDisallowChanges(variantName)
       task.modulePath.setDisallowChanges(creationConfig.services.projectInfo.path)
 
@@ -825,6 +825,13 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
         .setInitialProvider(taskProvider, TestSuiteTestTask::coverageDir)
         .withName("connected")
         .on(InternalArtifactType.CODE_COVERAGE)
+
+      if (creationConfig is DeviceTestCreationConfig) {
+        creationConfig.mainVariant.artifacts
+          .use(taskProvider)
+          .wiredWith(TestSuiteTestTask::coverageDir)
+          .toAppendTo(InternalMultipleArtifactType.TEST_SUITE_CODE_COVERAGE)
+      }
     }
   }
 
@@ -1064,6 +1071,10 @@ abstract class TestSuiteTestTask : Test(), GlobalTask {
     const val TEST_SUITE_METADATA_VARIANT_KEY = "testedVariantName"
     const val TEST_SUITE_METADATA_SUITE_KEY = "testSuiteName"
     const val TEST_SUITE_METADATA_TARGET_KEY = "testTarget"
+
+    const val CONNECTED_TEST_TEST_SUITE_NAME = "androidTest"
+
+    const val CONNECTED_TEST_TEST_SUITE_TARGET_NAME = "connected"
 
     fun parseMetadata(metadataFile: File): Map<String, String> {
       val metadata =
