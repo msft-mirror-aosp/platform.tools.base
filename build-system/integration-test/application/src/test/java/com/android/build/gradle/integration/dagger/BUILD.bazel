@@ -5,9 +5,11 @@ maven_repository(
     name = "dagger_prebuilts",
     # keep sorted
     artifacts = [
-        "@maven//:com.google.dagger.hilt-android-gradle-plugin_2.40.1",
-        "@maven//:com.google.dagger.hilt-android_2.40.1",
-        "@maven//:com.google.dagger.hilt-compiler_2.40.1",
+        "@maven//:com.google.dagger.hilt-android-gradle-plugin_2.59",
+        "@maven//:com.google.dagger.hilt-android_2.59",
+        "@maven//:com.google.dagger.hilt-compiler_2.59",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib-common_2.2.20",
+        "@maven//:org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
     ],
 )
 
