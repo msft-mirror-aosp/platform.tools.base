@@ -896,10 +896,14 @@ _CLASS_JARS = [
     "com.google.dagger:dagger-compiler:2.6",
     "com.google.dagger.hilt.android:com.google.dagger.hilt.android.gradle.plugin:pom:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-android:2.40.1",
+    "com.google.dagger:hilt-android:2.59",
     "com.google.dagger:hilt-android-compiler:2.40.1",
+    "com.google.dagger:hilt-android-compiler:2.59",
     "com.google.dagger:hilt-android-gradle-plugin:2.40.1",
+    "com.google.dagger:hilt-android-gradle-plugin:2.59",
     "com.google.dagger:hilt-android-testing:2.44.2",  # Dependency of architecture-samples
     "com.google.dagger:hilt-compiler:2.40.1",
+    "com.google.dagger:hilt-compiler:2.59",
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.7.10-1.0.6",
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.8.10-1.0.9",  # Dependency of architecture-samples
     "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin:pom:1.8.21-1.0.11",

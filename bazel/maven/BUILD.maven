@@ -37553,6 +37553,28 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "androidx.fragment.fragment_1.5.1",
+    pom = "repository/androidx/fragment/fragment/1.5.1/fragment-1.5.1.pom",
+    repo_root_path = "repository",
+    repo_path = "androidx/fragment/fragment/1.5.1",
+    deps = [
+        "androidx.activity.activity_1.5.1",
+        "androidx.annotation.annotation_1.1.0",
+        "androidx.annotation.annotation-experimental_1.0.0",
+        "androidx.collection.collection_1.1.0",
+        "androidx.core.core-ktx_1.2.0",
+        "androidx.lifecycle.lifecycle-livedata-core_2.5.1",
+        "androidx.lifecycle.lifecycle-viewmodel_2.5.1",
+        "androidx.lifecycle.lifecycle-viewmodel-savedstate_2.5.1",
+        "androidx.loader.loader_1.0.0",
+        "androidx.savedstate.savedstate_1.2.0",
+        "androidx.viewpager.viewpager_1.0.0",
+        "org.jetbrains.kotlin.kotlin-stdlib_1.6.21",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "androidx.fragment.fragment_1.5.2",
     pom = "repository/androidx/fragment/fragment/1.5.2/fragment-1.5.2.pom",
     repo_root_path = "repository",
@@ -37678,28 +37700,6 @@ maven_artifact(
         "androidx.lifecycle.lifecycle-viewmodel-savedstate_2.3.0",
         "androidx.savedstate.savedstate_1.1.0",
         "androidx.annotation.annotation-experimental_1.0.0",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-maven_artifact(
-    name = "androidx.fragment.fragment_1.5.1",
-    pom = "repository/androidx/fragment/fragment/1.5.1/fragment-1.5.1.pom",
-    repo_root_path = "repository",
-    repo_path = "androidx/fragment/fragment/1.5.1",
-    deps = [
-        "androidx.activity.activity_1.5.1",
-        "androidx.annotation.annotation_1.1.0",
-        "androidx.annotation.annotation-experimental_1.0.0",
-        "androidx.collection.collection_1.1.0",
-        "androidx.core.core-ktx_1.2.0",
-        "androidx.lifecycle.lifecycle-livedata-core_2.5.1",
-        "androidx.lifecycle.lifecycle-viewmodel_2.5.1",
-        "androidx.lifecycle.lifecycle-viewmodel-savedstate_2.5.1",
-        "androidx.loader.loader_1.0.0",
-        "androidx.savedstate.savedstate_1.2.0",
-        "androidx.viewpager.viewpager_1.0.0",
-        "org.jetbrains.kotlin.kotlin-stdlib_1.6.21",
     ],
     visibility = ["//visibility:public"],
 )
@@ -75984,6 +75984,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.dagger-compiler_2.59",
+    pom = "repository/com/google/dagger/dagger-compiler/2.59/dagger-compiler-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger-compiler/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.dagger.dagger-spi_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.20-2.0.3",
+        "com.google.googlejavaformat.google-java-format_1.33.0",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.0.0-jre",
+        "com.squareup.javapoet_1.13.0",
+        "com.squareup.kotlinpoet_1.11.0",
+        "javax.inject.javax.inject_1",
+        "net.ltgt.gradle.incap.incap_0.2",
+        "org.checkerframework.checker-compat-qual_2.5.3",
+        "org.jetbrains.kotlin.kotlin-metadata-jvm_2.2.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.dagger-compiler_2.6",
     pom = "repository/com/google/dagger/dagger-compiler/2.6/dagger-compiler-2.6.pom",
     repo_root_path = "repository",
@@ -76011,6 +76036,15 @@ maven_artifact(
     pom = "repository/com/google/dagger/dagger-lint-aar/2.44.2/dagger-lint-aar-2.44.2.pom",
     repo_root_path = "repository",
     repo_path = "com/google/dagger/dagger-lint-aar/2.44.2",
+    parent = "org.sonatype.oss.oss-parent_7",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.dagger.dagger-lint-aar_2.59",
+    pom = "repository/com/google/dagger/dagger-lint-aar/2.59/dagger-lint-aar-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger-lint-aar/2.59",
     parent = "org.sonatype.oss.oss-parent_7",
     visibility = ["//visibility:public"],
 )
@@ -76149,6 +76183,24 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.dagger-spi_2.59",
+    pom = "repository/com/google/dagger/dagger-spi/2.59/dagger-spi-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger-spi/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.20-2.0.3",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.0.0-jre",
+        "com.squareup.javapoet_1.13.0",
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.dagger_2.22.1",
     pom = "repository/com/google/dagger/dagger/2.22.1/dagger-2.22.1.pom",
     repo_root_path = "repository",
@@ -76224,6 +76276,20 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.dagger_2.59",
+    pom = "repository/com/google/dagger/dagger/2.59/dagger-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/dagger/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "jakarta.inject.jakarta.inject-api_2.0.1",
+        "javax.inject.javax.inject_1",
+        "org.jspecify.jspecify_1.0.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.dagger_2.6",
     pom = "repository/com/google/dagger/dagger/2.6/dagger-2.6.pom",
     repo_root_path = "repository",
@@ -76259,6 +76325,29 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.hilt-android-compiler_2.59",
+    pom = "repository/com/google/dagger/hilt-android-compiler/2.59/hilt-android-compiler-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-android-compiler/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.dagger.dagger-compiler_2.59",
+        "com.google.dagger.dagger-spi_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.20-2.0.3",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.0.0-jre",
+        "com.squareup.javapoet_1.13.0",
+        "javax.inject.javax.inject_1",
+        "net.ltgt.gradle.incap.incap_0.2",
+        "org.jetbrains.kotlin.kotlin-metadata-jvm_2.2.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.hilt-android-gradle-plugin_2.40.1",
     pom = "repository/com/google/dagger/hilt-android-gradle-plugin/2.40.1/hilt-android-gradle-plugin-2.40.1.pom",
     repo_root_path = "repository",
@@ -76284,6 +76373,21 @@ maven_artifact(
         "org.javassist.javassist_3.26.0-GA",
         "org.ow2.asm.asm_9.0",
         "com.squareup.javapoet_1.13.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.dagger.hilt-android-gradle-plugin_2.59",
+    pom = "repository/com/google/dagger/hilt-android-gradle-plugin/2.59/hilt-android-gradle-plugin-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-android-gradle-plugin/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.0.21",
+        "org.ow2.asm.asm_9.8",
+        "com.squareup.javapoet_1.13.0",
+        "org.jetbrains.kotlin.kotlin-bom_2.2.0",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76362,6 +76466,31 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "com.google.dagger.hilt-android_2.59",
+    pom = "repository/com/google/dagger/hilt-android/2.59/hilt-android-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-android/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.dagger.dagger-lint-aar_2.59",
+        "com.google.dagger.hilt-core_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "androidx.activity.activity_1.5.1",
+        "androidx.annotation.annotation_1.7.1",
+        "androidx.annotation.annotation-experimental_1.3.1",
+        "androidx.fragment.fragment_1.5.1",
+        "androidx.lifecycle.lifecycle-common_2.5.1",
+        "androidx.lifecycle.lifecycle-viewmodel_2.5.1",
+        "androidx.lifecycle.lifecycle-viewmodel-savedstate_2.5.1",
+        "androidx.savedstate.savedstate_1.2.0",
+        "javax.inject.javax.inject_1",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "com.google.dagger.hilt-compiler_2.40.1",
     pom = "repository/com/google/dagger/hilt-compiler/2.40.1/hilt-compiler-2.40.1.pom",
     repo_root_path = "repository",
@@ -76380,6 +76509,29 @@ maven_artifact(
         "net.ltgt.gradle.incap.incap_0.2",
         "org.jetbrains.kotlin.kotlin-stdlib_1.5.30",
         "org.jetbrains.kotlinx.kotlinx-metadata-jvm_0.3.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.dagger.hilt-compiler_2.59",
+    pom = "repository/com/google/dagger/hilt-compiler/2.59/hilt-compiler-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-compiler/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.dagger.dagger-compiler_2.59",
+        "com.google.dagger.dagger-spi_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "com.google.devtools.ksp.symbol-processing-api_2.2.20-2.0.3",
+        "com.google.guava.failureaccess_1.0.2",
+        "com.google.guava.guava_33.0.0-jre",
+        "com.squareup.javapoet_1.13.0",
+        "javax.inject.javax.inject_1",
+        "net.ltgt.gradle.incap.incap_0.2",
+        "org.jetbrains.kotlin.kotlin-metadata-jvm_2.2.20",
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -76407,6 +76559,21 @@ maven_artifact(
     deps = [
         "com.google.dagger.dagger_2.44.2",
         "com.google.code.findbugs.jsr305_3.0.2",
+        "javax.inject.javax.inject_1",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.dagger.hilt-core_2.59",
+    pom = "repository/com/google/dagger/hilt-core/2.59/hilt-core-2.59.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/dagger/hilt-core/2.59",
+    parent = "org.sonatype.oss.oss-parent_7",
+    deps = [
+        "com.google.dagger.dagger_2.59",
+        "com.google.code.findbugs.jsr305_3.0.2",
+        "jakarta.inject.jakarta.inject-api_2.0.1",
         "javax.inject.javax.inject_1",
     ],
     visibility = ["//visibility:public"],
@@ -76612,6 +76779,17 @@ maven_artifact(
     repo_path = "com/google/devtools/ksp/symbol-processing-api/2.1.10-1.0.31",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.0.20",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.devtools.ksp.symbol-processing-api_2.2.20-2.0.3",
+    pom = "repository/com/google/devtools/ksp/symbol-processing-api/2.2.20-2.0.3/symbol-processing-api-2.2.20-2.0.3.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/devtools/ksp/symbol-processing-api/2.2.20-2.0.3",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.10",
     ],
     visibility = ["//visibility:public"],
 )
@@ -77600,6 +77778,18 @@ maven_artifact(
         "org.jetbrains.kotlin.kotlin-stdlib-jdk8_1.7.10",
         "com.google.android.gms.strict-version-matcher-plugin_1.2.4",
         "com.google.code.gson.gson_2.8.5",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "com.google.googlejavaformat.google-java-format_1.33.0",
+    pom = "repository/com/google/googlejavaformat/google-java-format/1.33.0/google-java-format-1.33.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/googlejavaformat/google-java-format/1.33.0",
+    parent = "com.google.googlejavaformat.google-java-format-parent_1.33.0",
+    deps = [
+        "com.google.guava.guava_32.1.3-jre",
     ],
     visibility = ["//visibility:public"],
 )
@@ -89222,6 +89412,14 @@ maven_artifact(
 )
 
 maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-bom_2.2.0",
+    pom = "repository/org/jetbrains/kotlin/kotlin-bom/2.2.0/kotlin-bom-2.2.0.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-bom/2.2.0",
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
     name = "org.jetbrains.kotlin.kotlin-build-common_1.3.20",
     pom = "repository/org/jetbrains/kotlin/kotlin-build-common/1.3.20/kotlin-build-common-1.3.20.pom",
     repo_root_path = "repository",
@@ -93068,6 +93266,17 @@ maven_artifact(
     repo_path = "org/jetbrains/kotlin/kotlin-metadata-jvm/2.2.0",
     deps = [
         "org.jetbrains.kotlin.kotlin-stdlib_2.2.0",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+maven_artifact(
+    name = "org.jetbrains.kotlin.kotlin-metadata-jvm_2.2.20",
+    pom = "repository/org/jetbrains/kotlin/kotlin-metadata-jvm/2.2.20/kotlin-metadata-jvm-2.2.20.pom",
+    repo_root_path = "repository",
+    repo_path = "org/jetbrains/kotlin/kotlin-metadata-jvm/2.2.20",
+    deps = [
+        "org.jetbrains.kotlin.kotlin-stdlib_2.2.20",
     ],
     visibility = ["//visibility:public"],
 )
@@ -103131,6 +103340,13 @@ maven_artifact(
     pom = "repository/com/google/errorprone/error_prone_parent/2.9.0/error_prone_parent-2.9.0.pom",
     repo_root_path = "repository",
     repo_path = "com/google/errorprone/error_prone_parent/2.9.0",
+)
+
+maven_artifact(
+    name = "com.google.googlejavaformat.google-java-format-parent_1.33.0",
+    pom = "repository/com/google/googlejavaformat/google-java-format-parent/1.33.0/google-java-format-parent-1.33.0.pom",
+    repo_root_path = "repository",
+    repo_path = "com/google/googlejavaformat/google-java-format-parent/1.33.0",
 )
 
 maven_artifact(
