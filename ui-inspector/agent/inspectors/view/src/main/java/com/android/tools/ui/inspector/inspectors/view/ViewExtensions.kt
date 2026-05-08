@@ -20,13 +20,18 @@ import android.content.res.Resources
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
+import com.android.tools.ui.inspector.inspectors.view.property.PropertyCache
+import com.android.tools.ui.inspector.inspectors.view.property.ProtoAttributeReader
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Rect
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Resource
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
 
 /** Flattens a view hierarchy into a [ViewNode] proto. */
 internal fun View.toViewNode(stringTable: StringTable): ViewNode {
-  return createViewNode(view = this, stringTable = stringTable).build()
+  // Cache used to store view properties data. Created once and shared across all recursive calls of createViewNode
+  val propertyCache = PropertyCache.createViewPropertyCache()
+  return createViewNode(view = this, stringTable = stringTable, propertyCache = propertyCache).build()
 }
 
 /**
@@ -35,7 +40,7 @@ internal fun View.toViewNode(stringTable: StringTable): ViewNode {
  * Returns a [ViewNode.Builder] to allow the parent to add it directly to its children list without eager building, optimizing memory
  * allocations during traversal.
  */
-private fun createViewNode(view: View, stringTable: StringTable): ViewNode.Builder {
+private fun createViewNode(view: View, stringTable: StringTable, propertyCache: PropertyCache<View>): ViewNode.Builder {
   val viewClass = view::class.java
 
   val location = IntArray(2)
@@ -81,22 +86,53 @@ private fun createViewNode(view: View, stringTable: StringTable): ViewNode.Build
         else -> ViewNode.Visibility.VISIBLE // Fallback
       }
     // TODO: add support for View flags (e.g. isWebView)
-    // TODO: add support for identifying properties (e.g. textValue for TextViews)
-    // TODO: add support for full Property inspection (attributes)
     // TODO: add support for attribute resolution stack (where properties come from)
     // TODO: add support for theme and style resolution
 
+    populateAttributes(this, view, stringTable, propertyCache)
+
     if (view is ViewGroup) {
       for (i in 0 until view.childCount) {
-        addChildren(createViewNode(view = view.getChildAt(i), stringTable = stringTable))
+        addChildren(createViewNode(view = view.getChildAt(i), stringTable = stringTable, propertyCache = propertyCache))
       }
     }
   }
 }
 
 /**
+ * Resolves and populates attributes into the [ViewNode.Builder].
+ *
+ * Traverses the View hierarchy recursively using the [PropertyCache] and writes mapped values as simplified [ViewNode.Attribute] key-value
+ * string pairs.
+ */
+private fun populateAttributes(
+  viewNodeBuilder: ViewNode.Builder,
+  view: View,
+  stringTable: StringTable,
+  viewPropertyCache: PropertyCache<View>,
+) {
+  val viewPropertyData = viewPropertyCache.getOrResolve(view)
+  view.forEachProtoAttribute(viewPropertyData, stringTable) { attribute -> viewNodeBuilder.addAttributes(attribute) }
+}
+
+/** Resolves and iterates over Android framework properties for this view, converting them into Proto [Attribute] messages. */
+private fun View.forEachProtoAttribute(
+  propertyData: PropertyCache.PropertyData<View>,
+  stringTable: StringTable,
+  onAttributeResolved: (Attribute) -> Unit,
+) {
+  val reader = ProtoAttributeReader(this, propertyData.properties, stringTable, onAttributeResolved)
+  for (companion in propertyData.companions) {
+    companion.readProperties(this, reader)
+  }
+}
+
+/**
  * Resolves a resource ID into a [Resource] proto message containing namespace, type, and name. Returns null if the resource ID is invalid
  * or cannot be found.
+ *
+ * TODO: We should simplify this in the future and migrate to [resolveResourceToString] to avoid the redundant [Resource] proto message. At
+ *   the moment the Resource is simply converted to string by the host.
  */
 private fun View.createResource(stringTable: StringTable, resourceId: Int): Resource? {
   if (!isValidResourceId(resourceId)) {
@@ -112,6 +148,27 @@ private fun View.createResource(stringTable: StringTable, resourceId: Int): Reso
       }
       .build()
   } catch (_: Resources.NotFoundException) {
+    null
+  }
+}
+
+/** Resolves a framework resource ID directly into its string representation (e.g., `"@id/my_view"`). */
+internal fun View.resolveResourceToString(resourceId: Int): String? {
+  if (!isValidResourceId(resourceId)) {
+    return null
+  }
+  return try {
+    val type = resources.getResourceTypeName(resourceId)
+    val pkg = resources.getResourcePackageName(resourceId)
+    val name = resources.getResourceEntryName(resourceId)
+    if (pkg == "android") {
+      "@android:$type/$name"
+    } else if (pkg == context.packageName) {
+      "@$type/$name"
+    } else {
+      "@$pkg:$type/$name"
+    }
+  } catch (ex: Resources.NotFoundException) {
     null
   }
 }

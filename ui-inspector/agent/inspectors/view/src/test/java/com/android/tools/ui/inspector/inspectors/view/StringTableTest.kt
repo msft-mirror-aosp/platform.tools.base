@@ -74,4 +74,23 @@ class StringTableTest {
     val entries = table.toStringEntries()
     assertThat(entries).isEmpty()
   }
+
+  @Test
+  fun testGetString_zeroIdReturnsEmptyString() {
+    val table = StringTable()
+    assertThat(table.getString(0)).isEqualTo("")
+  }
+
+  @Test
+  fun testGetString_validIdReturnsCorrectString() {
+    val table = StringTable()
+    val id = table.put("hello")
+    assertThat(table.getString(id)).isEqualTo("hello")
+  }
+
+  @Test
+  fun testGetString_invalidIdReturnsNull() {
+    val table = StringTable()
+    assertThat(table.getString(999)).isNull()
+  }
 }

@@ -32,6 +32,11 @@ internal class StringTable {
     return innerMap.computeIfAbsent(str) { innerMap.size + 1 }
   }
 
+  fun getString(id: Int): String? {
+    if (id == 0) return ""
+    return innerMap.entries.firstOrNull { it.value == id }?.key
+  }
+
   fun toStringEntries(): List<StringEntry> =
     innerMap.entries.map { entry ->
       StringEntry.newBuilder()

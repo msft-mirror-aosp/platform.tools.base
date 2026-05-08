@@ -387,6 +387,38 @@ class ViewInspectorTest {
     return null
   }
 
+  @Test
+  fun testDumpViews_gravity() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val textView = TextView(activity).apply { gravity = android.view.Gravity.TOP or android.view.Gravity.START }
+    activity.setContentView(textView)
+
+    val inspector =
+      ViewInspector(
+        object : Connection() {
+          override fun sendEvent(data: ByteArray) {}
+        },
+        mockEnvironment,
+      )
+    val response = runDumpCommand(inspector)
+
+    val dumpResponse = response.dumpViewsResponse
+    val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+    val textViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TextView", stringTable)
+    assertThat(textViewNode).isNotNull()
+
+    // Verify that we have attributes
+    assertThat(textViewNode!!.attributesCount).isAtLeast(1)
+
+    // Verify that we can find the "gravity" attribute
+    val gravityAttr = textViewNode.attributesList.find { stringTable[it.name] == "gravity" }
+    assertThat(gravityAttr).isNotNull()
+
+    // Verify that the value is resolved correctly as flags joined by "|"
+    assertThat(stringTable[gravityAttr!!.value]).isEqualTo("top|start")
+  }
+
   private class TestView(context: Context) : View(context) {
     override fun getSourceLayoutResId(): Int = android.R.layout.simple_list_item_1
   }

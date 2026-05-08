@@ -127,6 +127,12 @@ private fun printNode(node: ViewInspectorProtocol.ViewNode, stringTable: Map<Int
     "${prefix}[$className]$resourceStr$layoutResourceStr (${bounds.x}, ${bounds.y}, ${bounds.width}, ${bounds.height}) visibility=${node.visibility.name}"
   )
 
+  for (attr in node.attributesList) {
+    val name = stringTable[attr.name] ?: "unknown"
+    val value = if (attr.value == 0) "" else stringTable[attr.value] ?: "unknown"
+    System.out.println("$prefix  prop: $name=$value")
+  }
+
   for (child in node.childrenList) {
     printNode(child, stringTable, indent + 1)
   }

@@ -16,9 +16,17 @@
 
 package com.android.tools.ui.inspector.inspectors.view
 
+import android.app.Activity
+import android.view.View
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [29])
 class ViewExtensionsTest {
 
   @Test
@@ -47,5 +55,23 @@ class ViewExtensionsTest {
   fun testIsValidResourceId_negativeAndZero() {
     assertThat(isValidResourceId(0)).isFalse()
     assertThat(isValidResourceId(-1)).isFalse()
+  }
+
+  @Test
+  fun testResolveResourceToString() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val view = View(activity)
+
+    // 1. Test valid platform system resource
+    val systemResourceStr = view.resolveResourceToString(android.R.layout.simple_list_item_1)
+    assertThat(systemResourceStr).isEqualTo("@android:layout/simple_list_item_1")
+
+    // 2. Test invalid resource ID (-1)
+    val invalidResourceStr = view.resolveResourceToString(-1)
+    assertThat(invalidResourceStr).isNull()
+
+    // 3. Test non-existent positive ID (triggers NotFoundException internally)
+    val nonExistentResourceStr = view.resolveResourceToString(999999)
+    assertThat(nonExistentResourceStr).isNull()
   }
 }

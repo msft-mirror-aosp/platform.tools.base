@@ -64,6 +64,23 @@ message ViewNode {
 
     // The layout resource that inflated this view (e.g., @layout/activity_main)
     Resource layout_resource = 8;
+
+    // Represents a key-value pair for a view property.
+    message Attribute {
+        // TODO: mapping everything to strings has issues:
+        //  1. Everything is converted to string, even primitives like int
+        //  2. We loose the type of objects which can make things more difficult,
+        //     for example Dimension attributes are converted to strings without any
+        //     indication about the unit used (pixel, dp, sp)
+
+        // Index in the string table for the attribute name
+        int32 name = 1;
+        // Index in the string table for the attribute value
+        int32 value = 2;
+    }
+
+    // The list of resolved attributes for this view.
+    repeated Attribute attributes = 9;
 }
 
 // Maps a string to a unique ID to optimize payload size.
