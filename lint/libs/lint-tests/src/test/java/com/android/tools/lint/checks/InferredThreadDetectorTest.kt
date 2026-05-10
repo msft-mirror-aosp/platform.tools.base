@@ -4138,16 +4138,13 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         src/test/pkg/Runnable.java:57: Error: Argument must allow calling run() from @WorkerThread, but that call is requiring @{Main,Ui}Thread [ThreadConstraint]
             runWithIt(new B(), this::a);
                                ~~~~~~~
-        src/test/pkg/Runnable.java:57: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
-            runWithIt(new B(), this::a);
-            ~~~~~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/Runnable.java:71: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
             invokeLater(() -> c());
                               ~~~
         src/test/pkg/Runnable.java:76: Error: Call must be from @{Main,Ui}Thread, but a super method is allowing @WorkerThread [ThreadConstraint]
             invokeInBackground(() -> d());
                                      ~~~
-        8 errors
+        7 errors
         """
           .trimIndent()
       )
@@ -4253,9 +4250,6 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         src/test/pkg/Test.kt:40: Error: Argument must run from @WorkerThread, but is requiring @{Main,Ui}Thread [ThreadConstraint]
             runWithIt(B(), this::a)
                            ~~~~~~~
-        src/test/pkg/Test.kt:40: Error: Statement must run from @WorkerThread, incompatible with earlier code that must run from @{Main,Ui}Thread [ThreadConstraint]
-            runWithIt(B(), this::a)
-            ~~~~~~~~~~~~~~~~~~~~~~~
         src/test/pkg/Test.kt:50: Error: Call must be from @WorkerThread, but a super method is allowing @{Main,Ui}Thread [ThreadConstraint]
             invokeLater({ c() })
                           ~~~
@@ -4265,7 +4259,7 @@ class InferredThreadDetectorTest : AbstractCheckTest() {
         src/test/pkg/Test.kt:60: Error: Call must be from @WorkerThread, but context is allowing @{Main,Ui}Thread [ThreadConstraint]
             @UiThread fun uiThreadStatic() { unannotatedStatic() }
                                              ~~~~~~~~~~~~~~~~~~~
-        8 errors
+        7 errors
         """
           .trimIndent()
       )
