@@ -19,7 +19,11 @@
 #include <limits>
 #include <string_view>
 
+#include "slicer/code_ir.h"
+#include "slicer/control_flow_graph.h"
 #include "slicer/dex_ir.h"
+#include "slicer/dex_ir_builder.h"
+#include "slicer/instrumentation.h"
 #include "slicer/reader.h"
 #include "slicer/writer.h"
 #include "tools/base/android-test/coverage/common/log.h"
@@ -87,8 +91,6 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     return;
   }
 
-  // TODO: Instrumentation logic will be added here.
-
   // The class name from JVMTI needs to be converted to a JNI descriptor.
   std::string descriptor = "L" + std::string(name) + ";";
 
@@ -111,7 +113,33 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
     return;
   }
 
-  // TODO: Apply basic block instrumentation here in future steps.
+  // Pre-build the declaration for CoverageTracker.hit(int) once
+  // per class to avoid redundant lookups for every method.
+  ir::Builder builder(dex_ir);
+  auto ir_proto = builder.GetProto(builder.GetType("V"),
+                                   builder.GetTypeList({builder.GetType("I")}));
+
+  auto hit_method_decl = builder.GetMethodDecl(
+      builder.GetAsciiString("hit"), ir_proto,
+      builder.GetType("Lcom/android/tools/coverage/CoverageTracker;"));
+
+  bool modified = false;
+  for (auto& ir_class : dex_ir->classes) {
+    for (auto& method : ir_class->virtual_methods) {
+      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir)) {
+        modified = true;
+      }
+    }
+    for (auto& method : ir_class->direct_methods) {
+      if (instance_->InstrumentMethod(method, hit_method_decl, dex_ir)) {
+        modified = true;
+      }
+    }
+  }
+
+  if (!modified) {
+    return;
+  }
 
   dex::Writer writer(dex_ir);
   JvmtiAllocator allocator(jvmti);
@@ -137,6 +165,60 @@ void JNICALL Instrumenter::OnClassFileLoadHook(
   } else {
     Log::E("Slicer failed to produce new DEX image for %s", name);
   }
+}
+
+bool Instrumenter::InstrumentMethod(
+    ir::EncodedMethod* ir_method, ir::MethodDecl* hit_method_decl,
+    const std::shared_ptr<ir::DexFile>& dex_ir) const {
+  if (ir_method->code == nullptr) {
+    return false;  // Abstract or native method
+  }
+
+  lir::CodeIr code_ir(ir_method, dex_ir);
+
+  // Allocate 1 scratch register for our instrumentation.
+  slicer::AllocateScratchRegs alloc_regs(1);
+  if (!alloc_regs.Apply(&code_ir)) {
+    Log::W("Failed to allocate scratch register for method %s. Skipping.",
+           ir_method->decl->name->c_str());
+    return false;
+  }
+
+  dex::u4 scratch_reg = *alloc_regs.ScratchRegs().begin();
+
+  // Find the first bytecode instruction to inject our call before it.
+  lir::Instruction* trace_point = nullptr;
+  for (auto instr : code_ir.instructions) {
+    if (dynamic_cast<lir::Bytecode*>(instr)) {
+      trace_point = instr;
+      break;
+    }
+  }
+
+  if (trace_point != nullptr) {
+    // Inject: const vX, <dummy_id>
+    auto load_id = code_ir.Alloc<lir::Bytecode>();
+    load_id->opcode = dex::OP_CONST;
+    load_id->operands.push_back(code_ir.Alloc<lir::VReg>(scratch_reg));
+    load_id->operands.push_back(code_ir.Alloc<lir::Const32>(
+        42));  // dummy ID 42 to be replaced by block id
+
+    // Inject: invoke-static/range {vX}, CoverageTracker.hit(I)V
+    auto call_mark = code_ir.Alloc<lir::Bytecode>();
+    call_mark->opcode = dex::OP_INVOKE_STATIC_RANGE;
+    call_mark->operands.push_back(
+        code_ir.Alloc<lir::VRegRange>(scratch_reg, 1));
+    call_mark->operands.push_back(code_ir.Alloc<lir::Method>(
+        hit_method_decl, hit_method_decl->orig_index));
+
+    code_ir.instructions.InsertBefore(trace_point, load_id);
+    code_ir.instructions.InsertBefore(trace_point, call_mark);
+  } else {
+    return false;
+  }
+
+  code_ir.Assemble();
+  return true;
 }
 
 bool Instrumenter::ShouldInstrument(jobject loader, const char* name,

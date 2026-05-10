@@ -19,7 +19,14 @@
 
 #include <jni.h>
 #include <jvmti.h>
+
 #include <string>
+
+namespace ir {
+struct EncodedMethod;
+struct MethodDecl;
+struct DexFile;
+}  // namespace ir
 
 namespace coverage {
 
@@ -43,6 +50,12 @@ class Instrumenter {
 
   // Helper to determine if a class should be instrumented.
   bool ShouldInstrument(jobject loader, const char* name, jclass klass) const;
+
+  // Instruments a single method by allocating scratch registers and injecting
+  // coverage tracking calls. Returns true if the method was modified.
+  bool InstrumentMethod(ir::EncodedMethod* ir_method,
+                        ir::MethodDecl* hit_method_decl,
+                        const std::shared_ptr<ir::DexFile>& dex_ir) const;
 
   jvmtiEnv* jvmti_;
   std::string inclusion_prefix_;
