@@ -34,6 +34,7 @@ def studio_win(build_env: bazel.BuildEnv):
       '//tools/adt/idea/studio:android-studio.win.zip',
       '//tools/vendor/google/skia:skiaparser.zip',
       '//tools/vendor/google/skia:skia_test_support.zip',
+      '//tools/vendor/google/lume/dist:lume-sdk',
   ]
   test_tag_filters = '-noci:studio-win,-qa_smoke,-qa_fast,-qa_unreliable,-perfgate-release,-no_k2'
 
@@ -82,6 +83,7 @@ def studio_win(build_env: bazel.BuildEnv):
           ('tools/vendor/google/skia/skia_test_support.zip', ''),
           ('tools/base/profiler/native/trace_processor_daemon/trace_processor_daemon.exe', ''),
           ('tools/base/profiler/native/sherlock/sherlock_trace_processor.exe', ''),
+          ('tools/vendor/google/lume/dist/lume-sdk.zip', ''),
       ],
       missing_ok=(build_type == studio.BuildType.PRESUBMIT),
   )
