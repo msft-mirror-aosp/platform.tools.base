@@ -22,6 +22,7 @@ import androidx.inspection.InspectorEnvironment
 import androidx.inspection.InspectorFactory
 import com.android.tools.ui.inspector.common.ProtocolConstants
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Command
+import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsCommand
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.DumpViewsResponse
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.Response
 import kotlinx.coroutines.CoroutineScope
@@ -41,15 +42,16 @@ class ViewInspector(connection: Connection, private val environment: InspectorEn
   override fun onReceiveCommand(data: ByteArray, callback: CommandCallback) {
     val command = Command.parseFrom(data)
     when (command.specializedCase) {
-      Command.SpecializedCase.DUMP_VIEWS_COMMAND -> handleDumpViewsCommand(callback)
+      Command.SpecializedCase.DUMP_VIEWS_COMMAND -> handleDumpViewsCommand(command.dumpViewsCommand, callback)
       else -> error("Unknown command: ${command.specializedCase}")
     }
   }
 
-  private fun handleDumpViewsCommand(callback: CommandCallback) {
+  private fun handleDumpViewsCommand(dumpViewsCommand: DumpViewsCommand, callback: CommandCallback) {
+    val includeAttributes = dumpViewsCommand.includeAttributes
     scope.launch {
       val stringTable = StringTable()
-      val nodes = withContext(mainDispatcher) { RootsDetector.getRootViews().map { it.toViewNode(stringTable) } }
+      val nodes = withContext(mainDispatcher) { RootsDetector.getRootViews().map { it.toViewNode(stringTable, includeAttributes) } }
       callback.reply {
         dumpViewsResponse = DumpViewsResponse.newBuilder().addAllNodes(nodes).addAllStrings(stringTable.toStringEntries()).build()
       }

@@ -90,7 +90,9 @@ message StringEntry {
 }
 
 // Command to dump the view hierarchy of all root views.
-message DumpViewsCommand {}
+message DumpViewsCommand {
+    bool include_attributes = 1;
+}
 
 message DumpViewsResponse {
     // The flattened list of root views.

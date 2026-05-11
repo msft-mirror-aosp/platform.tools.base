@@ -27,11 +27,22 @@ import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProto
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode
 import com.android.tools.ui.inspector.view.inspector.protocol.ViewInspectorProtocol.ViewNode.Attribute
 
+/** Models the configuration for attribute extraction. */
+internal sealed class AttributeExtraction {
+  data class Enabled(val propertyCache: PropertyCache<View>) : AttributeExtraction()
+
+  object Disabled : AttributeExtraction()
+}
+
 /** Flattens a view hierarchy into a [ViewNode] proto. */
-internal fun View.toViewNode(stringTable: StringTable): ViewNode {
-  // Cache used to store view properties data. Created once and shared across all recursive calls of createViewNode
-  val propertyCache = PropertyCache.createViewPropertyCache()
-  return createViewNode(view = this, stringTable = stringTable, propertyCache = propertyCache).build()
+internal fun View.toViewNode(stringTable: StringTable, includeAttributes: Boolean = true): ViewNode {
+  val attributeExtraction =
+    if (includeAttributes) {
+      AttributeExtraction.Enabled(PropertyCache.createViewPropertyCache())
+    } else {
+      AttributeExtraction.Disabled
+    }
+  return createViewNode(view = this, stringTable = stringTable, attributeExtraction = attributeExtraction).build()
 }
 
 /**
@@ -40,7 +51,7 @@ internal fun View.toViewNode(stringTable: StringTable): ViewNode {
  * Returns a [ViewNode.Builder] to allow the parent to add it directly to its children list without eager building, optimizing memory
  * allocations during traversal.
  */
-private fun createViewNode(view: View, stringTable: StringTable, propertyCache: PropertyCache<View>): ViewNode.Builder {
+private fun createViewNode(view: View, stringTable: StringTable, attributeExtraction: AttributeExtraction): ViewNode.Builder {
   val viewClass = view::class.java
 
   val location = IntArray(2)
@@ -89,11 +100,14 @@ private fun createViewNode(view: View, stringTable: StringTable, propertyCache: 
     // TODO: add support for attribute resolution stack (where properties come from)
     // TODO: add support for theme and style resolution
 
-    populateAttributes(this, view, stringTable, propertyCache)
+    when (attributeExtraction) {
+      is AttributeExtraction.Enabled -> populateAttributes(this, view, stringTable, attributeExtraction.propertyCache)
+      AttributeExtraction.Disabled -> {}
+    }
 
     if (view is ViewGroup) {
       for (i in 0 until view.childCount) {
-        addChildren(createViewNode(view = view.getChildAt(i), stringTable = stringTable, propertyCache = propertyCache))
+        addChildren(createViewNode(view = view.getChildAt(i), stringTable = stringTable, attributeExtraction = attributeExtraction))
       }
     }
   }

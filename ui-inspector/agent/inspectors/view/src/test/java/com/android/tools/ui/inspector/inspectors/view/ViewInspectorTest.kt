@@ -360,7 +360,7 @@ class ViewInspectorTest {
     }
   }
 
-  private fun runDumpCommand(inspector: ViewInspector): Response {
+  private fun runDumpCommand(inspector: ViewInspector, includeAttributes: Boolean = true): Response {
     var replyData: ByteArray? = null
     val callback =
       object : Inspector.CommandCallback {
@@ -370,7 +370,10 @@ class ViewInspectorTest {
 
         override fun addCancellationListener(executor: Executor, runnable: Runnable) {}
       }
-    val command = Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.getDefaultInstance()).build()
+    val command =
+      Command.newBuilder()
+        .setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.newBuilder().setIncludeAttributes(includeAttributes).build())
+        .build()
     inspector.onReceiveCommand(command.toByteArray(), callback)
     // Idle the main looper to ensure tasks posted to the main thread (e.g., by MainThreadExecutor)
     // are executed before we parse the reply.
@@ -422,4 +425,30 @@ class ViewInspectorTest {
   private class TestView(context: Context) : View(context) {
     override fun getSourceLayoutResId(): Int = android.R.layout.simple_list_item_1
   }
+
+  @Test
+  fun testDumpViews_excludeAttributes() =
+    runTest(testDispatcher) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val textView = TextView(activity).apply { gravity = android.view.Gravity.TOP }
+      activity.setContentView(textView)
+
+      val inspector =
+        ViewInspector(
+          object : Connection() {
+            override fun sendEvent(data: ByteArray) {}
+          },
+          mockEnvironment,
+        )
+      val response = runDumpCommand(inspector, includeAttributes = false)
+
+      val dumpResponse = response.dumpViewsResponse
+      val stringTable = dumpResponse.stringsList.associate { it.id to it.value }
+
+      val textViewNode = findNodeByClassName(dumpResponse.getNodes(0), "TextView", stringTable)
+      assertThat(textViewNode).isNotNull()
+
+      // Verify that we have NO attributes collected
+      assertThat(textViewNode!!.attributesCount).isEqualTo(0)
+    }
 }

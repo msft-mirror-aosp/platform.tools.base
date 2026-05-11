@@ -46,6 +46,7 @@ class DumpUiCommand : Callable<Int> {
 
   @Option(names = ["--serial"], required = true, description = ["Device serial number"]) var serial: String = ""
   @Option(names = ["--package"], required = true, description = ["App package name"]) var packageName: String = ""
+  @Option(names = ["--include-attributes"], description = ["Include view attributes in the dump"]) var includeAttributes: Boolean = false
 
   companion object {
     /** Factory for creating [AdbSession]. Can be overridden in tests. */
@@ -64,7 +65,7 @@ class DumpUiCommand : Callable<Int> {
 
         CommandSender(host = "localhost", port = port.toInt()).use { commandSender ->
           createViewInspector(commandSender, injectionManager)
-          viewInspectorDump(commandSender)
+          viewInspectorDump(commandSender, includeAttributes)
         }
       }
       return EXIT_OK
@@ -95,9 +96,11 @@ private suspend fun createViewInspector(commandSender: CommandSender, injectionM
 }
 
 /** Sends a dump command to the view inspector and prints the view hierarchy. */
-private suspend fun viewInspectorDump(commandSender: CommandSender) {
+private suspend fun viewInspectorDump(commandSender: CommandSender, includeAttributes: Boolean) {
   val viewInspectorCommand =
-    ViewInspectorProtocol.Command.newBuilder().setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.getDefaultInstance()).build()
+    ViewInspectorProtocol.Command.newBuilder()
+      .setDumpViewsCommand(ViewInspectorProtocol.DumpViewsCommand.newBuilder().setIncludeAttributes(includeAttributes).build())
+      .build()
 
   val responsePayload = commandSender.sendInspectorCommand(ProtocolConstants.VIEW_INSPECTOR_ID, viewInspectorCommand.toByteArray())
   val viewInspectorResponse = ViewInspectorProtocol.Response.parseFrom(responsePayload)
