@@ -166,6 +166,12 @@ const Navigation = {
         CoverageReportApp.state.selectedModule = state.reportState.selectedModule;
         CoverageReportApp.state.selectedPackage = state.reportState.selectedPackage;
         CoverageReportApp.state.sort = state.reportState.sort;
+        CoverageReportApp.state.columnWidths = state.reportState.columnWidths || {};
+
+        // Re-apply CSS variables for column widths
+        for (const [id, width] of Object.entries(CoverageReportApp.state.columnWidths)) {
+            document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+        }
 
         // Restore filter chips visibility
         CoverageReportApp.setFilterChipsVisibility(state.chipVisibility);
@@ -404,6 +410,7 @@ const CoverageReportApp = {
         filters: { modules: [], testSuite: 'Aggregated', packages: [], classes: [], variants: [], search: '' },
         density: 'comfy',
         sort: { by: 'name', order: 'asc' },
+        columnWidths: {},
     },
     elements: {},
     fullReport: null,
@@ -417,6 +424,7 @@ const CoverageReportApp = {
         this.populateGlobalStats();
         this.populateFilters();
         this.bindEvents();
+        this.initResizableColumns();
         this.render();
         this.closeDropdownOnClickOutside();
     },
@@ -876,6 +884,57 @@ const CoverageReportApp = {
         }
     },
 
+    initResizableColumns() {
+        const headerRow = this.elements.tableHeaders;
+        let activeResizer = null;
+        let startX, startWidth, resizerId;
+
+        const setColumnWidth = (id, width) => {
+            document.documentElement.style.setProperty(`--col-width-${id.replace(/\./g, '-')}`, `${width}px`);
+        };
+
+        const onMouseMove = (e) => {
+            if (!activeResizer) return;
+            const diffX = e.pageX - startX;
+            const newWidth = Math.max(50, startWidth + diffX);
+
+            this.state.columnWidths[resizerId] = newWidth;
+            setColumnWidth(resizerId, newWidth);
+        };
+
+        const onMouseUp = () => {
+            if (activeResizer) {
+                activeResizer.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                activeResizer = null;
+                setTimeout(() => { this.isResizing = false; }, 0);
+            }
+        };
+
+        headerRow.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resizer')) {
+                activeResizer = e.target;
+                resizerId = activeResizer.dataset.resizerId;
+                const columnTh = activeResizer.closest('th');
+                startX = e.pageX;
+                startWidth = columnTh.getBoundingClientRect().width;
+
+                activeResizer.classList.add('resizing');
+                this.isResizing = true;
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        });
+
+        // Apply initial widths if any
+        for (const [id, width] of Object.entries(this.state.columnWidths)) {
+            setColumnWidth(id, width);
+        }
+    },
+
     handleVariantSelection(e) {
         // This is now handled by buildActionDropdown's onSelectionChange callback
     },
@@ -1014,10 +1073,12 @@ const CoverageReportApp = {
     },
 
     handleHeaderClick(e) {
-        const th = e.target.closest('[data-sort-by]');
-        if (!th) return;
+        if (this.isResizing || e.target.classList.contains('resizer')) return;
+        const target = e.target.closest('[data-sort-by]');
 
-        const newSortBy = th.dataset.sortBy;
+        if (!target) return;
+
+        const newSortBy = target.dataset.sortBy;
         if (this.state.sort.by === newSortBy) {
             this.state.sort.order = this.state.sort.order === 'asc' ? 'desc' : 'asc';
         } else {
@@ -1528,6 +1589,13 @@ const CoverageReportApp = {
         });
     },
 
+    getColumnStyle(key, defaultWidth) {
+        const varName = `--col-width-${key.replace(/\./g, '-')}`;
+        const widthVal = defaultWidth ? `${defaultWidth}px` : 'auto';
+        const maxVal = defaultWidth ? `${defaultWidth}px` : 'none';
+        return `style="width: var(${varName}, ${widthVal}); min-width: var(${varName}, ${widthVal}); max-width: var(${varName}, ${maxVal});"`;
+    },
+
     getCoverageValues(item, variantName) {
         const found = item.variantCoverages ? item.variantCoverages.find(v => v.name === variantName) : null;
 
@@ -1564,16 +1632,18 @@ const CoverageReportApp = {
         const sortIndicator = (key) => sort.by === key ? (sort.order === 'asc' ? '▲' : '▼') : '';
         const getAriaSort = (key) => sort.by === key ? (sort.order === 'asc' ? 'ascending' : 'descending') : 'none';
 
-        topHeader.innerHTML = `<th class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}</th>`;
-        subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
+        topHeader.innerHTML = `<th class="${firstColClass}" tabindex="0" data-sort-by="name" aria-sort="${getAriaSort('name')}">${mainHeaderTitle} ${sortIndicator('name')}<div class="resizer" data-resizer-id="name"></div></th>`;
+        subHeader.innerHTML = `<th class="py-2 px-6 sticky-name bg-gray-50 z-30" data-col-id="name"></th>`;
 
         if (viewMode === 'flat' && !this.state.selectedModule) {
             if (currentView === 'classes') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Path</th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
+                const pathStyle = this.getColumnStyle('path', 300);
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30" ${pathStyle}>Path<div class="resizer" data-resizer-id="path"></div></th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30" ${pathStyle} data-col-id="path"></th>`;
             } else if (currentView === 'packages') {
-                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30">Module</th>`;
-                subHeader.innerHTML += `<th class="py-2 px-6 sticky-name bg-gray-50 z-30"></th>`;
+                const modStyle = this.getColumnStyle('module', 200);
+                topHeader.innerHTML += `<th class="py-4 px-6 text-left font-semibold text-gray-700 bg-gray-50 z-30" ${modStyle}>Module<div class="resizer" data-resizer-id="module"></div></th>`;
+                subHeader.innerHTML += `<th class="py-2 px-6 bg-gray-50 z-30" ${modStyle} data-col-id="module"></th>`;
             }
         }
 
@@ -1588,8 +1658,11 @@ const CoverageReportApp = {
 
             const instrKey = `instruction.${v}.percent`;
             const branchKey = `branch.${v}.percent`;
-            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${instrKey}" aria-sort="${getAriaSort(instrKey)}">Instruction ${sortIndicator(instrKey)}</th>
-                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${branchKey}" aria-sort="${getAriaSort(branchKey)}">Branch ${sortIndicator(branchKey)}</th>`;
+            const instrStyle = this.getColumnStyle(instrKey);
+            const branchStyle = this.getColumnStyle(branchKey);
+
+            subHeader.innerHTML += `<th class="py-2 px-4 text-center text-xs font-medium text-gray-600 border-l border-gray-200 cursor-pointer" tabindex="0" data-sort-by="${instrKey}" aria-sort="${getAriaSort(instrKey)}" ${instrStyle}>Instruction ${sortIndicator(instrKey)}<div class="resizer" data-resizer-id="${instrKey}"></div></th>
+                                    <th class="py-2 px-4 text-center text-xs font-medium text-gray-600 cursor-pointer" tabindex="0" data-sort-by="${branchKey}" aria-sort="${getAriaSort(branchKey)}" ${branchStyle}>Branch ${sortIndicator(branchKey)}<div class="resizer" data-resizer-id="${branchKey}"></div></th>`;
         });
 
         this.elements.tableHeaders.innerHTML = '';
@@ -1616,15 +1689,17 @@ const CoverageReportApp = {
             const chevron = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow w-4 h-4 text-gray-600 ${!hasChildren ? 'invisible' : ''} ${isSearching ? 'open' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
             const coverageCells = [...this.state.filters.variants].sort().map(v => {
                 const vals = this.getCoverageValues(item, v);
+                const instrKey = `instruction.${v}.percent`;
+                const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             const rowClasses = `table-row border-b border-gray-200 hover:bg-gray-50 ${level > 0 && !isSearching ? 'child-row hidden' : 'child-row'}`;
             const ariaExpanded = hasChildren ? `aria-expanded="${isSearching ? 'true' : 'false'}"` : '';
-            const interactiveAttrs = hasChildren 
-                ? `tabindex="0" class="flex items-center gap-2 cursor-pointer pl-level-${level}"` 
+            const interactiveAttrs = hasChildren
+                ? `tabindex="0" class="flex items-center gap-2 cursor-pointer pl-level-${level}"`
                 : `tabindex="0" role="link" class="flex items-center gap-2 cursor-pointer pl-level-${level} class-link" data-class-name="${item.name}" data-module-name="${context.moduleName}" data-package-name="${context.packageName}" data-test-suite-name="${context.testSuiteName || ''}"`;
 
             return `<tr class="${rowClasses}" data-id="${item.name}" data-parent-id="${parentId}">
@@ -1655,9 +1730,11 @@ const CoverageReportApp = {
             const variants = [...this.state.filters.variants].sort();
             const coverageCells = variants.map(v => {
                 const vals = this.getCoverageValues(item, v);
+                const instrKey = `instruction.${v}.percent`;
+                const branchKey = `branch.${v}.percent`;
                 return `
-                <td class="py-3 px-4 text-center"><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
-                <td class="py-3 px-4 text-center"><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(instrKey)}><div class="flex flex-col"><span class="font-bold ${vals.instrColor}">${vals.instrPercent}</span><span class="text-xs text-gray-500">${vals.instrRatio}</span></div></td>
+                <td class="py-3 px-4 text-center" ${this.getColumnStyle(branchKey)}><div class="flex flex-col"><span class="font-bold ${vals.branchColor}">${vals.branchPercent}</span><span class="text-xs text-gray-500">${vals.branchRatio}</span></div></td>
             `}).join('');
 
             let nameCell;
@@ -1665,13 +1742,13 @@ const CoverageReportApp = {
                 case 'packages':
                     nameCell = `<td class="py-3 px-6 sticky-name font-medium text-blue-700 hover:underline cursor-pointer" tabindex="0" title="${item.name}" data-name="${item.name}" data-type="${item.type}" data-module-name="${item.moduleName}">${item.name}</td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate max-w-150" title="${item.moduleName}">${item.moduleName}</td>`;
+                        nameCell += `<td class="py-3 px-6 text-gray-500 text-sm truncate" title="${item.moduleName}" ${this.getColumnStyle('module', 200)}>${item.moduleName}</td>`;
                     }
                     break;
                 case 'classes':
                     nameCell = `<td class="py-3 px-6 sticky-name cursor-pointer class-link" tabindex="0" role="link" title="${item.name}" data-class-name="${item.name}" data-module-name="${item.moduleName}" data-package-name="${item.packageName}"><span class="font-medium text-blue-700 hover:underline">${item.name}</span></td>`;
                     if (!this.state.selectedModule) {
-                        nameCell += `<td class="px-2 max-w-300" title="${item.moduleName} > ${item.packageName}">
+                        nameCell += `<td class="px-2" title="${item.moduleName} > ${item.packageName}" ${this.getColumnStyle('path', 300)}>
                             <div class="flex flex-col" style="overflow: hidden; width: 100%;">
                                 <span class="text-xs text-gray-500 truncate-block">${item.moduleName}</span>
                                 <span class="text-sm text-gray-500 truncate-block">${item.packageName}</span>
