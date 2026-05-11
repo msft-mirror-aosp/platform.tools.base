@@ -191,7 +191,7 @@ class LintReportBuilderTest {
 
     with(lintIssue) {
       assertEquals("default", packageName)
-      assertEquals("build", className)
+      assertEquals("build.gradle", className)
     }
   }
 

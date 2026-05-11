@@ -564,12 +564,18 @@ const LintReportApp = {
         const groups = {};
         issues.forEach(issue => {
             let key = "Unknown";
+            let displayName = null;
             if (groupByKey === 'modules') key = issue.module || "Unknown";
             else if (groupByKey === 'packages') key = issue.packageName || "default";
-            else if (groupByKey === 'classes') key = issue.className || "Unknown";
+            else if (groupByKey === 'classes') {
+                key = issue.className || "Unknown";
+                if (key !== "Unknown" && key.includes('.')) {
+                    displayName = key.substring(0, key.lastIndexOf('.'));
+                }
+            }
 
             if (!groups[key]) {
-                groups[key] = { name: key, total: 0, errors: 0, warnings: 0, info: 0, hints: 0, issues: [] };
+                groups[key] = { name: key, displayName: displayName || key, total: 0, errors: 0, warnings: 0, info: 0, hints: 0, issues: [] };
             }
             groups[key].total++;
             const sev = issue.severityDescription;
@@ -599,7 +605,7 @@ const LintReportApp = {
 
         let rowsHtml = sorted.map(group => `
             <tr class="issue-row" data-group-type="${'$'}{groupByKey}" data-group-name="${'$'}{this.escapeHTML(group.name)}">
-                <td class="font-medium">${'$'}{this.escapeHTML(group.name)}</td>
+                <td class="font-medium">${'$'}{this.escapeHTML(group.displayName)}</td>
                 <td>${'$'}{group.total}</td>
                 <td class="${'$'}{group.errors > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}">${'$'}{group.errors}</td>
                 <td class="${'$'}{group.warnings > 0 ? 'text-yellow-600 font-bold' : 'text-gray-400'}">${'$'}{group.warnings}</td>
