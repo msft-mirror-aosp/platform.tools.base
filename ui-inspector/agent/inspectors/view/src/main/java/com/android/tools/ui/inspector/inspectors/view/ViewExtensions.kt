@@ -96,7 +96,6 @@ private fun createViewNode(view: View, stringTable: StringTable, attributeExtrac
         View.GONE -> ViewNode.Visibility.GONE
         else -> ViewNode.Visibility.VISIBLE // Fallback
       }
-    // TODO: add support for View flags (e.g. isWebView)
     // TODO: add support for attribute resolution stack (where properties come from)
     // TODO: add support for theme and style resolution
 
