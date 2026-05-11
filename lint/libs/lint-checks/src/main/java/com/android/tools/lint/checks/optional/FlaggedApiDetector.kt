@@ -32,7 +32,6 @@ import com.android.tools.lint.detector.api.ApiConstraint
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.ConstantEvaluator
 import com.android.tools.lint.detector.api.Detector
-import com.android.tools.lint.detector.api.ExtensionSdk.Companion.ANDROID_SDK_ID
 import com.android.tools.lint.detector.api.Implementation
 import com.android.tools.lint.detector.api.Incident
 import com.android.tools.lint.detector.api.Issue
@@ -264,7 +263,7 @@ class FlaggedApiDetector : Detector(), SourceCodeScanner {
   }
 
   private fun ApiConstraint.isFinalized(): Boolean {
-    return getSdk() == ANDROID_SDK_ID && min() < CUR_DEVELOPMENT
+    return getConstraints().any { it.fromInclusive() != CUR_DEVELOPMENT }
   }
 
   private fun getFlagMethodName(flagName: String): String = constantNameToCamelCase(flagName.removePrefix("FLAG_"))
