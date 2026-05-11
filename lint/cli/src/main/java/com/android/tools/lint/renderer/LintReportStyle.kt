@@ -490,6 +490,21 @@ tr.issue-row:hover { cursor: pointer; }
 .hover\:underline:hover { text-decoration: underline; }
 .cursor-pointer { cursor: pointer; }
 
+/* Tree View Styles */
+.collapsible-arrow {
+    transition: transform 0.2s ease-in-out;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+}
+.collapsible-arrow.open {
+    transform: rotate(90deg);
+}
+.invisible {
+    visibility: hidden;
+}
+
 .pl-level-0 { padding-left: 1rem; }
 .pl-level-1 { padding-left: 2rem; }
 .pl-level-2 { padding-left: 3rem; }

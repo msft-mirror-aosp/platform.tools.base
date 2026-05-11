@@ -96,6 +96,34 @@ class HtmlReporterV2IndexTest {
   }
 
   @Test
+  fun testViewModeControls() {
+    val reportData = "const lintReport = { 'issues': [] };"
+    val html = getIndexHtml(reportData, "Lint Report")
+
+    // Check for view mode control buttons
+    assertTrue(html.contains("id=\"view-segments\""))
+    assertTrue(html.contains("data-value=\"flat\""))
+    assertTrue(html.contains("data-value=\"tree\""))
+    assertTrue(html.contains("data-tooltip=\"Flat View\""))
+    assertTrue(html.contains("data-tooltip=\"Hierarchical View\""))
+
+    // Check default starting state: Flat View is active by default
+    assertTrue(html.contains("<button data-value=\"flat\" class=\"segment-btn active\""))
+    assertTrue(LINTSCRIPT_JS.contains("viewMode: 'flat'"))
+
+    // Check that LINTSCRIPT_JS handles hierarchical view
+    assertTrue(LINTSCRIPT_JS.contains("viewSegments: document.getElementById('view-segments')"))
+    assertTrue(LINTSCRIPT_JS.contains("this.setupViewSegments"))
+    assertTrue(LINTSCRIPT_JS.contains("renderTreeView(issues)"))
+    assertTrue(LINTSCRIPT_JS.contains("getHierarchicalData(issues)"))
+    assertTrue(LINTSCRIPT_JS.contains("expandedNodes: new Set()"))
+
+    // Check style
+    assertTrue(STYLE_CSS.contains(".collapsible-arrow"))
+    assertTrue(STYLE_CSS.contains(".collapsible-arrow.open"))
+  }
+
+  @Test
   fun testSearchControl() {
     val reportData = "const lintReport = { 'issues': [] };"
     val html = getIndexHtml(reportData, "Lint Report")

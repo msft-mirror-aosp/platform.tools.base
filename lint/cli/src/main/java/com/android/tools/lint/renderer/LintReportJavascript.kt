@@ -29,7 +29,7 @@ const LintReportApp = {
         searchQuery: '',
         expandedIssues: new Set(),
         expandedChecks: new Set(),
-        collapsedNodes: new Set(),
+        expandedNodes: new Set(),
         sort: { by: 'name', order: 'asc' },
         filters: { severities: [], categories: [], modules: [], packages: [], classes: [] },
         isSeverityAdded: false,
@@ -161,6 +161,7 @@ const LintReportApp = {
     },
 
     bindEvents() {
+        this.setupViewSegments(this.elements, this.state);
         this.setupDensitySegments(this.elements, this.state, [
             this.elements.mainTable
         ]);
@@ -355,13 +356,37 @@ const LintReportApp = {
         }
         this.renderStats();
         this.renderBreadcrumbs();
-        this.renderContent(issues);
+        this.updateSegmentsUI();
+
+        if (this.state.viewMode === 'tree') {
+            this.renderTreeView(issues);
+        } else {
+            this.renderContent(issues);
+        }
+
         this.renderAdditionalChecks();
         this.renderDisabledChecks();
     },
 
+    updateSegmentsUI() {
+        if (this.elements.viewSegments) {
+            this.elements.viewSegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === this.state.viewMode);
+            });
+        }
+        if (this.elements.densitySegments) {
+            this.elements.densitySegments.querySelectorAll('.segment-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.value === this.state.density);
+            });
+        }
+    },
+
     renderBreadcrumbs() {
         if (!this.elements.breadcrumbs) return;
+        if (this.state.viewMode === 'tree') {
+            this.elements.breadcrumbs.innerHTML = '';
+            return;
+        }
 
         const levels = [];
         levels.push({ name: 'All Issues', action: () => {
@@ -534,6 +559,10 @@ const LintReportApp = {
     },
 
     renderContent(issues) {
+        if (this.elements.groupByBtn) {
+            this.elements.groupByBtn.parentElement.style.display = this.state.viewMode === 'flat' ? 'block' : 'none';
+        }
+
         if (this.state.currentView === 'issues') {
             this.renderFlatIssues(issues);
         } else {
@@ -544,6 +573,124 @@ const LintReportApp = {
             const text = this.state.currentView;
             this.elements.groupByText.textContent = text.charAt(0).toUpperCase() + text.slice(1);
         }
+    },
+
+    renderTreeView(issues) {
+        const root = this.getHierarchicalData(issues);
+        this.elements.tableHeaders.innerHTML = `<tr>
+            <th class="cursor-pointer" data-sort="name">Element</th>
+            <th class="cursor-pointer" data-sort="total">Total</th>
+            <th class="cursor-pointer" data-sort="errors">Errors</th>
+            <th class="cursor-pointer" data-sort="warnings">Warnings</th>
+            <th class="cursor-pointer" data-sort="info">Info</th>
+            <th class="cursor-pointer" data-sort="hints">Hints</th>
+        </tr>`;
+
+        let rowsHtml = [];
+        const isSearching = !!this.state.searchQuery;
+
+        const renderNode = (node, level, parentId = '') => {
+            const id = parentId ? `${'$'}{parentId}/${'$'}{node.name}` : node.name;
+            const hasChildren = (node.children && Object.keys(node.children).length > 0);
+            const isOpen = isSearching || this.state.expandedNodes.has(id);
+            const chevron = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="collapsible-arrow w-4 h-4 text-gray-600 ${'$'}{!hasChildren ? 'invisible' : ''} ${'$'}{isOpen ? 'open' : ''}"><path d="m9 18 6-6-6-6"></path></svg>`;
+
+            const plClass = `pl-level-${'$'}{Math.min(level, 8)}`;
+            const isVisible = !parentId || parentId.split('/').every((p, i, arr) => {
+                const partialId = arr.slice(0, i + 1).join('/');
+                return this.state.expandedNodes.has(partialId);
+            });
+
+            rowsHtml.push(`
+                <tr class="issue-row ${'$'}{!isVisible ? 'hidden' : ''}" data-id="${'$'}{this.escapeHTML(id)}" data-parent-id="${'$'}{this.escapeHTML(parentId)}" data-type="${'$'}{node.type || 'root'}">
+                    <td class="${'$'}{plClass}"><div class="flex items-center gap-2">${'$'}{chevron}<span class="font-medium">${'$'}{this.escapeHTML(node.name)}</span></div></td>
+                    <td>${'$'}{node.total}</td>
+                    <td class="${'$'}{node.errors > 0 ? 'text-red-600 font-bold' : 'text-gray-400'}">${'$'}{node.errors}</td>
+                    <td class="${'$'}{node.warnings > 0 ? 'text-yellow-600 font-bold' : 'text-gray-400'}">${'$'}{node.warnings}</td>
+                    <td class="${'$'}{node.info > 0 ? 'text-blue-600 font-bold' : 'text-gray-400'}">${'$'}{node.info}</td>
+                    <td class="${'$'}{node.hints > 0 ? 'text-green-600 font-bold' : 'text-gray-400'}">${'$'}{node.hints}</td>
+                </tr>
+            `);
+
+            if (node.children) {
+                Object.values(node.children).sort((a,b) => a.name.localeCompare(b.name)).forEach(child => renderNode(child, level + 1, id));
+            }
+        };
+
+        Object.values(root.children).sort((a,b) => a.name.localeCompare(b.name)).forEach(mod => renderNode(mod, 0));
+        this.elements.lintData.innerHTML = rowsHtml.join('');
+
+        this.elements.lintData.querySelectorAll('.issue-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                const id = row.dataset.id;
+                const type = row.dataset.type;
+
+                const arrow = row.querySelector('.collapsible-arrow:not(.invisible)');
+                if (arrow) {
+                    const isOpen = arrow.classList.contains('open');
+                    if (isOpen) this.state.expandedNodes.delete(id);
+                    else this.state.expandedNodes.add(id);
+                    this.render();
+                } else {
+                    // Clicking a leaf: show issues for it
+                    const parts = id.split('/');
+                    this.state.viewMode = 'flat';
+                    this.state.currentView = 'issues';
+
+                    if (parts.length >= 1) {
+                        this.state.filters.modules.length = 0;
+                        this.state.filters.modules.push(parts[0]);
+                        this.state.isModuleAdded = true;
+                    }
+                    if (parts.length >= 2) {
+                        this.state.filters.packages.length = 0;
+                        this.state.filters.packages.push(parts[1]);
+                    }
+                    if (parts.length >= 3) {
+                        this.state.filters.classes.length = 0;
+                        this.state.filters.classes.push(parts[2]);
+                    }
+
+                    this.populateFilters();
+                    this.updateFilterButtons();
+                    this.render();
+                }
+            });
+        });
+    },
+
+    getHierarchicalData(issues) {
+        const root = { name: "Project", children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+        issues.forEach(issue => {
+            const moduleName = issue.module || "Unknown";
+            const pkgName = issue.packageName || "default";
+            const className = issue.className || "Unknown";
+
+            if (!root.children[moduleName]) {
+                root.children[moduleName] = { name: moduleName, type: 'module', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const module = root.children[moduleName];
+
+            if (!module.children[pkgName]) {
+                module.children[pkgName] = { name: pkgName, type: 'package', children: {}, total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const pkg = module.children[pkgName];
+
+            if (!pkg.children[className]) {
+                pkg.children[className] = { name: className, type: 'class', total: 0, errors: 0, warnings: 0, info: 0, hints: 0 };
+            }
+            const cls = pkg.children[className];
+
+            [root, module, pkg, cls].forEach(node => {
+                node.total++;
+                const sev = issue.severityDescription;
+                if (sev === 'Fatal' || sev === 'Error') node.errors++;
+                else if (sev === 'Warning') node.warnings++;
+                else if (sev === 'Information' || sev === 'Informational' || sev === 'Info') node.info++;
+                else if (sev === 'Hint') node.hints++;
+            });
+        });
+        return root;
     },
 
     renderFlatIssues(issues) {
@@ -893,6 +1040,16 @@ const LintReportApp = {
             tableElements.forEach(table => {
                 if (table) table.classList.toggle('table-compact', isCompact);
             });
+        });
+    },
+
+    setupViewSegments(elements, state) {
+        if (!elements.viewSegments) return;
+        elements.viewSegments.addEventListener('click', (e) => {
+            const btn = e.target.closest('.segment-btn');
+            if (!btn) return;
+            state.viewMode = btn.dataset.value;
+            this.render();
         });
     },
 
