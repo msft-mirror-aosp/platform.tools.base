@@ -16,6 +16,7 @@
 
 #include "tools/base/android-test/coverage/agent/native/instrumenter.h"
 
+#include <atomic>
 #include <limits>
 #include <string_view>
 
@@ -61,6 +62,9 @@ class JvmtiAllocator : public dex::Writer::Allocator {
  private:
   jvmtiEnv* jvmti_;
 };
+
+// Global atomic counter for unique basic block IDs.
+static std::atomic<uint32_t> g_next_block_id(0);
 
 }  // namespace
 
@@ -178,7 +182,7 @@ bool Instrumenter::InstrumentMethod(
 
   // Allocate 1 scratch register for our instrumentation.
   slicer::AllocateScratchRegs alloc_regs(1);
-  if (!alloc_regs.Apply(&code_ir)) {
+  if (!alloc_regs.Apply(&code_ir) || alloc_regs.ScratchRegs().empty()) {
     Log::W("Failed to allocate scratch register for method %s. Skipping.",
            ir_method->decl->name->c_str());
     return false;
@@ -186,22 +190,50 @@ bool Instrumenter::InstrumentMethod(
 
   dex::u4 scratch_reg = *alloc_regs.ScratchRegs().begin();
 
-  // Find the first bytecode instruction to inject our call before it.
-  lir::Instruction* trace_point = nullptr;
-  for (auto instr : code_ir.instructions) {
-    if (dynamic_cast<lir::Bytecode*>(instr)) {
-      trace_point = instr;
-      break;
-    }
-  }
+  lir::ControlFlowGraph cfg(&code_ir, true);
 
-  if (trace_point != nullptr) {
-    // Inject: const vX, <dummy_id>
+  bool injected = false;
+  for (const auto& block : cfg.basic_blocks) {
+    lir::Instruction* trace_point = nullptr;
+
+    if (block.region.first == nullptr) continue;
+
+    // Find the first bytecode instruction in this basic block.
+    for (auto instr = block.region.first; instr != nullptr;
+         instr = (instr == block.region.last) ? nullptr : instr->next) {
+      if (dynamic_cast<lir::Bytecode*>(instr)) {
+        trace_point = instr;
+        break;
+      }
+    }
+
+    if (trace_point == nullptr) continue;
+
+    // Dalvik requires that OP_MOVE_RESULT_* and OP_MOVE_EXCEPTION instructions
+    // immediately follow the instruction that produced the result/exception.
+    // We cannot safely inject code between them, so we advance the trace point.
+    while (auto trace_bytecode = dynamic_cast<lir::Bytecode*>(trace_point)) {
+      auto opcode = trace_bytecode->opcode;
+      if (opcode != dex::OP_MOVE_RESULT && opcode != dex::OP_MOVE_RESULT_WIDE &&
+          opcode != dex::OP_MOVE_RESULT_OBJECT &&
+          opcode != dex::OP_MOVE_EXCEPTION) {
+        break;
+      }
+      trace_point = trace_point->next;
+    }
+
+    if (trace_point == nullptr) continue;
+
+    // Assign a globally unique block ID only for blocks we are actually
+    // instrumenting.
+    uint32_t block_id = g_next_block_id.fetch_add(1);
+
+    // Inject: const vX, <block_id>
     auto load_id = code_ir.Alloc<lir::Bytecode>();
     load_id->opcode = dex::OP_CONST;
     load_id->operands.push_back(code_ir.Alloc<lir::VReg>(scratch_reg));
-    load_id->operands.push_back(code_ir.Alloc<lir::Const32>(
-        42));  // dummy ID 42 to be replaced by block id
+    load_id->operands.push_back(
+        code_ir.Alloc<lir::Const32>(static_cast<dex::u4>(block_id)));
 
     // Inject: invoke-static/range {vX}, CoverageTracker.hit(I)V
     auto call_mark = code_ir.Alloc<lir::Bytecode>();
@@ -213,7 +245,12 @@ bool Instrumenter::InstrumentMethod(
 
     code_ir.instructions.InsertBefore(trace_point, load_id);
     code_ir.instructions.InsertBefore(trace_point, call_mark);
-  } else {
+    injected = true;
+
+    // TODO: Record the mapping of block_id -> source file / line numbers here.
+  }
+
+  if (!injected) {
     return false;
   }
 
